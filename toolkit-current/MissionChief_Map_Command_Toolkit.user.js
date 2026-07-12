@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      3.4.2
-// @description  MissionChief operational map command centre with a persistent collapsible command bar, responsive iOS Mobile Mode and Tablet Mode, portable full-settings backup and restore, deep performance optimisation, advanced Discord financial intelligence, multi-period ledger reporting, chart attachments, guarded co-admin Transport Sweep, resource-gap intelligence, transport alerts, live mission inspection, cinematic payout themes, analytics, coverage planning, profiles, bookmarks, and shortcuts.
+// @version      3.5.1
+// @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
 // @match        *://missionchief.co.uk/*
@@ -50,7 +50,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '3.4.2',
+        version: '3.5.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -59,7 +59,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         criticalDrawerId: 'mc-map-command-toolkit-critical-drawer',
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v342',
+        styleId: 'mc-map-command-toolkit-style-v351',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -312,6 +312,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V140__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
+    const UI_THEMES = Object.freeze({
+        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '▦', description: 'The original operational command interface.' }),
+        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' })
+    });
+    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk']);
+
     const THEMES = {
         default: { full: 'Default', label: 'Default', short: 'STD', icon: '□' },
         control: { full: 'Control Room', label: 'Control', short: 'CTL', icon: '◐' },
@@ -551,6 +557,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function defaultState() {
         return {
+            uiTheme: 'mapCommand',
             theme: getLegacyTheme(),
             position: getLegacyPosition(),
             activeTab: 'skins',
@@ -623,6 +630,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
             while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
 
+            merged.uiTheme = normaliseUiTheme(merged.uiTheme);
             merged.theme = normaliseTheme(merged.theme);
             merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
             if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
@@ -692,6 +700,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function getLegacyPosition() {
         const saved = localStorage.getItem(SCRIPT.legacyPosition);
         return POSITIONS[saved] ? saved : 'bl';
+    }
+
+    function normaliseUiTheme(key) {
+        return UI_THEMES[key] ? key : 'mapCommand';
+    }
+
+    function applyUiTheme(key, announce = false) {
+        const nextTheme = normaliseUiTheme(key);
+        const changed = state.uiTheme !== nextTheme;
+        state.uiTheme = nextTheme;
+        saveState();
+        updateUI();
+        if (announce && changed) showToast(`${UI_THEMES[nextTheme].label} interface active`);
     }
 
     function normaliseTheme(key) {
@@ -2785,6 +2806,679 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-config-actions [data-action="reset-config"] { grid-column:1 / -1 !important; }
         #${SCRIPT.panelId} .mcms-hidden-file { display:none !important; }
 
+
+        /* v3.5.1 complete interface themes */
+        #${SCRIPT.panelId} .mcms-ui-theme-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+            margin-bottom: 7px !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-btn {
+            position: relative !important;
+            display: grid !important;
+            grid-template-columns: 48px minmax(0, 1fr) !important;
+            align-items: center !important;
+            gap: 8px !important;
+            min-width: 0 !important;
+            height: 58px !important;
+            padding: 6px 8px !important;
+            border: 1px solid rgba(255,255,255,.14) !important;
+            border-radius: 10px !important;
+            background: rgba(255,255,255,.055) !important;
+            color: rgba(255,255,255,.82) !important;
+            cursor: pointer !important;
+            text-align: left !important;
+            overflow: hidden !important;
+            transition: transform 140ms ease, border-color 140ms ease, background 140ms ease !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-btn:hover,
+        #${SCRIPT.panelId} .mcms-ui-theme-btn:focus-visible {
+            transform: translateY(-1px) !important;
+            border-color: rgba(124,194,255,.72) !important;
+            background: rgba(93,169,255,.12) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color: rgba(124,194,255,.92) !important;
+            background: linear-gradient(135deg, rgba(25,118,210,.34), rgba(20,50,82,.26)) !important;
+            box-shadow: inset 0 0 0 1px rgba(145,210,255,.14), 0 5px 14px rgba(0,0,0,.18) !important;
+            color: #fff !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            align-items: end !important;
+            gap: 3px !important;
+            width: 48px !important;
+            height: 36px !important;
+            padding: 5px !important;
+            border: 1px solid rgba(255,255,255,.16) !important;
+            border-radius: 7px !important;
+            background: rgba(3,7,12,.74) !important;
+            overflow: hidden !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview span { display: block !important; border-radius: 2px 2px 0 0 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview span:nth-child(1) { height: 52% !important; background: #4c89bd !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview span:nth-child(2) { height: 86% !important; background: #d7e8f7 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview span:nth-child(3) { height: 68% !important; background: #2c5f87 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk {
+            border-radius: 1px !important;
+            border-color: #00f0ff !important;
+            background: #080b12 !important;
+            box-shadow: inset 0 0 9px rgba(0,240,255,.20) !important;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span { border-radius: 0 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-copy { min-width: 0 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-copy strong,
+        #${SCRIPT.panelId} .mcms-ui-theme-copy small { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-copy strong { color: inherit !important; font-size: 10px !important; font-weight: 950 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-copy small { margin-top: 4px !important; color: rgba(255,255,255,.48) !important; font-size: 7px !important; font-weight: 900 !important; letter-spacing: .7px !important; }
+
+        html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy strong { font-size: 13px !important; }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy small { font-size: 8.5px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-grid { gap: 6px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 62px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }
+
+        html[data-mcms-ui-theme="cyberpunk"] {
+            --mcms-cp-yellow: #fcee0a;
+            --mcms-cp-cyan: #00f0ff;
+            --mcms-cp-red: #ff003c;
+            --mcms-cp-ink: #070a10;
+            --mcms-cp-panel: #0b1019;
+            --mcms-cp-panel-2: #111925;
+            --mcms-cp-text: #f5f7ef;
+            --mcms-cp-muted: #90a3ad;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId},
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} *,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId},
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} *,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} *,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId},
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} * {
+            font-family: "Bahnschrift SemiCondensed", "Arial Narrow", Tahoma, Arial, sans-serif !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} {
+            color: var(--mcms-cp-text) !important;
+            filter: drop-shadow(0 8px 13px rgba(0,0,0,.46)) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-shell {
+            border: 1px solid var(--mcms-cp-cyan) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(145deg, rgba(12,17,27,.97), rgba(3,7,12,.96)) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-cp-yellow), inset 0 -2px 0 rgba(255,0,60,.72), 0 0 13px rgba(0,240,255,.27), 0 7px 18px rgba(0,0,0,.48) !important;
+            backdrop-filter: blur(8px) saturate(1.22) !important;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-menu-btn {
+            background: linear-gradient(135deg, rgba(252,238,10,.08), rgba(0,240,255,.04)) !important;
+            color: var(--mcms-cp-yellow) !important;
+            text-shadow: 1px 0 var(--mcms-cp-red), -1px 0 rgba(0,240,255,.75) !important;
+            transition: background 120ms steps(2,end), color 120ms ease, filter 120ms ease !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            background: var(--mcms-cp-yellow) !important;
+            color: var(--mcms-cp-ink) !important;
+            filter: brightness(1.08) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+            border-top: 1px solid rgba(0,240,255,.64) !important;
+            background: rgba(0,240,255,.08) !important;
+            color: var(--mcms-cp-cyan) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+            background: var(--mcms-cp-cyan) !important;
+            color: var(--mcms-cp-ink) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            position: relative !important;
+            border: 1px solid rgba(0,240,255,.52) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(100deg, rgba(7,11,18,.96), rgba(15,24,35,.94)) !important;
+            color: #dbeef0 !important;
+            box-shadow: inset 2px 0 0 rgba(0,240,255,.65), 0 4px 10px rgba(0,0,0,.36) !important;
+            clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 5px 100%, 0 calc(100% - 5px)) !important;
+            transition: transform 110ms ease, background 110ms ease, border-color 110ms ease, color 110ms ease !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn:hover {
+            transform: translateX(2px) !important;
+            border-color: var(--mcms-cp-yellow) !important;
+            color: #fff !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-key {
+            border-radius: 0 !important;
+            border: 1px solid rgba(252,238,10,.72) !important;
+            background: rgba(252,238,10,.09) !important;
+            color: var(--mcms-cp-yellow) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+            border-color: var(--mcms-cp-yellow) !important;
+            background: linear-gradient(100deg, var(--mcms-cp-yellow), #d7c900) !important;
+            color: var(--mcms-cp-ink) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 13px rgba(252,238,10,.32), 0 4px 10px rgba(0,0,0,.42) !important;
+            animation: mcmsCyberSignal 2.8s ease-in-out infinite !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {
+            border-color: var(--mcms-cp-ink) !important;
+            background: rgba(7,10,16,.92) !important;
+            color: var(--mcms-cp-yellow) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-quick {
+            border-color: rgba(0,240,255,.80) !important;
+            background: linear-gradient(100deg, rgba(0,240,255,.18), rgba(4,18,27,.96)) !important;
+            color: #bdfaff !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
+            border-color: rgba(252,238,10,.86) !important;
+            background: linear-gradient(100deg, rgba(252,238,10,.16), rgba(24,22,5,.96)) !important;
+            color: #fff7a2 !important;
+        }
+
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} {
+            border: 1px solid var(--mcms-cp-cyan) !important;
+            border-radius: 1px !important;
+            background:
+                linear-gradient(180deg, rgba(11,16,25,.985), rgba(5,8,13,.985)),
+                repeating-linear-gradient(90deg, rgba(0,240,255,.035) 0 1px, transparent 1px 22px),
+                repeating-linear-gradient(0deg, rgba(252,238,10,.022) 0 1px, transparent 1px 22px) !important;
+            color: var(--mcms-cp-text) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-cp-yellow), inset -2px 0 0 rgba(255,0,60,.78), 0 0 0 1px rgba(252,238,10,.15), 0 0 24px rgba(0,240,255,.24), 0 18px 44px rgba(0,0,0,.62) !important;
+            backdrop-filter: blur(12px) saturate(1.18) !important;
+            scrollbar-color: var(--mcms-cp-yellow) rgba(0,240,255,.08) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId}.mcms-open {
+            animation: mcmsCyberPanelIn 190ms cubic-bezier(.16,.78,.22,1) both !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId}::-webkit-scrollbar { width: 8px !important; }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background: rgba(0,240,255,.06) !important; }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background: var(--mcms-cp-yellow) !important; border: 2px solid #0b1019 !important; }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-header {
+            position: relative !important;
+            border-bottom: 1px solid var(--mcms-cp-cyan) !important;
+            background: linear-gradient(90deg, var(--mcms-cp-yellow) 0 76%, rgba(252,238,10,.13) 76% 100%) !important;
+            margin: -3px -3px 9px -3px !important;
+            padding: 5px 5px 6px 5px !important;
+            overflow: hidden !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-header::after {
+            content: '' !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 34% !important;
+            height: 2px !important;
+            background: var(--mcms-cp-red) !important;
+            box-shadow: 0 0 8px var(--mcms-cp-red) !important;
+            animation: mcmsCyberScan 4.8s linear infinite !important;
+            pointer-events: none !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-drag-handle {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding: 2px 5px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-title {
+            color: var(--mcms-cp-ink) !important;
+            font-weight: 1000 !important;
+            letter-spacing: 1.25px !important;
+            text-shadow: 1px 0 rgba(255,0,60,.72) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-subtitle {
+            color: rgba(7,10,16,.76) !important;
+            font-weight: 900 !important;
+            letter-spacing: .35px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-close {
+            border: 1px solid var(--mcms-cp-ink) !important;
+            border-radius: 0 !important;
+            background: var(--mcms-cp-ink) !important;
+            color: var(--mcms-cp-yellow) !important;
+            clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-close:hover {
+            background: var(--mcms-cp-red) !important;
+            color: #fff !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tabs {
+            gap: 4px !important;
+            border-bottom: 1px solid rgba(0,240,255,.20) !important;
+            padding-bottom: 7px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tab-btn {
+            position: relative !important;
+            border: 1px solid rgba(0,240,255,.34) !important;
+            border-radius: 0 !important;
+            background: rgba(0,240,255,.045) !important;
+            color: #9fdce0 !important;
+            letter-spacing: .55px !important;
+            clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tab-btn:hover {
+            border-color: var(--mcms-cp-cyan) !important;
+            color: #fff !important;
+            background: rgba(0,240,255,.12) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            border-color: var(--mcms-cp-yellow) !important;
+            background: var(--mcms-cp-yellow) !important;
+            color: var(--mcms-cp-ink) !important;
+            box-shadow: inset 0 -3px 0 var(--mcms-cp-red), 0 0 10px rgba(252,238,10,.20) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
+            animation: mcmsCyberTabIn 150ms steps(3,end) both !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-section-label {
+            position: relative !important;
+            margin-top: 11px !important;
+            padding: 5px 7px 5px 16px !important;
+            border: 0 !important;
+            border-bottom: 1px solid rgba(0,240,255,.34) !important;
+            background: linear-gradient(90deg, rgba(252,238,10,.14), transparent 70%) !important;
+            color: var(--mcms-cp-yellow) !important;
+            font-size: 9px !important;
+            font-weight: 1000 !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-section-label::before {
+            content: '' !important;
+            position: absolute !important;
+            left: 4px !important;
+            top: 7px !important;
+            width: 6px !important;
+            height: 6px !important;
+            background: var(--mcms-cp-cyan) !important;
+            box-shadow: 0 0 7px rgba(0,240,255,.72) !important;
+            transform: rotate(45deg) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-bookmark-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-pin-btn,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn {
+            border-color: rgba(0,240,255,.38) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(110deg, rgba(8,13,21,.94), rgba(17,25,37,.88)) !important;
+            color: #c9e9ec !important;
+            box-shadow: inset 2px 0 0 rgba(0,240,255,.34) !important;
+            clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 5px 100%, 0 calc(100% - 5px)) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-pin-btn:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color: var(--mcms-cp-yellow) !important;
+            background: linear-gradient(110deg, rgba(252,238,10,.13), rgba(0,240,255,.08)) !important;
+            color: #fff !important;
+            transform: translateY(-1px) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-pin-btn.mcms-on,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color: var(--mcms-cp-yellow) !important;
+            background: linear-gradient(105deg, var(--mcms-cp-yellow), #d7ca00) !important;
+            color: var(--mcms-cp-ink) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 12px rgba(252,238,10,.22) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-iconbox,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-iconbox,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-pill,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-pill {
+            background: var(--mcms-cp-ink) !important;
+            border-color: var(--mcms-cp-ink) !important;
+            color: var(--mcms-cp-yellow) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-iconbox {
+            border-radius: 0 !important;
+            border: 1px solid rgba(0,240,255,.38) !important;
+            background: rgba(0,240,255,.07) !important;
+            color: var(--mcms-cp-cyan) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-pill {
+            border-radius: 0 !important;
+            border: 1px solid rgba(252,238,10,.38) !important;
+            background: rgba(252,238,10,.07) !important;
+            color: var(--mcms-cp-yellow) !important;
+            letter-spacing: .5px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-row-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-bookmark-name,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-title,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main strong {
+            color: #d8edef !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-input,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-select {
+            border: 1px solid rgba(0,240,255,.52) !important;
+            border-radius: 0 !important;
+            background: rgba(4,10,16,.92) !important;
+            color: #e7ffff !important;
+            box-shadow: inset 2px 0 0 rgba(0,240,255,.35) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-input:focus,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-select:focus {
+            border-color: var(--mcms-cp-yellow) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 0 2px rgba(252,238,10,.12), 0 0 10px rgba(0,240,255,.20) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-select option {
+            background: #080d15 !important;
+            color: #e8ffff !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-history-older,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-discord-card,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-discord-empty {
+            border-color: rgba(0,240,255,.25) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(105deg, rgba(0,240,255,.055), rgba(252,238,10,.025)) !important;
+            box-shadow: inset 2px 0 0 rgba(0,240,255,.22) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-status {
+            color: #91b9bd !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-status {
+            border-color: rgba(252,238,10,.25) !important;
+            box-shadow: inset 2px 0 0 rgba(252,238,10,.50) !important;
+            color: #c4c694 !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-value,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-value {
+            color: var(--mcms-cp-yellow) !important;
+            text-shadow: 0 0 8px rgba(252,238,10,.22) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-footer {
+            border-top: 1px solid rgba(0,240,255,.28) !important;
+            color: #6f989d !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-build {
+            color: var(--mcms-cp-cyan) !important;
+            letter-spacing: .55px !important;
+        }
+
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.toastId} {
+            border: 1px solid var(--mcms-cp-cyan) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(100deg, rgba(4,9,15,.98), rgba(15,23,33,.97)) !important;
+            color: var(--mcms-cp-yellow) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-cp-red), 0 0 16px rgba(0,240,255,.26), 0 7px 18px rgba(0,0,0,.46) !important;
+            font-family: "Bahnschrift SemiCondensed", "Arial Narrow", Tahoma, Arial, sans-serif !important;
+            letter-spacing: .6px !important;
+            clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.cleanExitId} {
+            border: 1px solid var(--mcms-cp-yellow) !important;
+            border-radius: 0 !important;
+            background: #080c13 !important;
+            color: var(--mcms-cp-yellow) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-cp-red), 0 0 14px rgba(252,238,10,.26) !important;
+            font-family: "Bahnschrift SemiCondensed", "Arial Narrow", Tahoma, Arial, sans-serif !important;
+            letter-spacing: .55px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} {
+            border: 1px solid var(--mcms-cp-cyan) !important;
+            border-radius: 1px !important;
+            background: linear-gradient(145deg, rgba(8,13,21,.985), rgba(3,7,12,.98)) !important;
+            color: var(--mcms-cp-text) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-cp-yellow), inset -2px 0 0 rgba(255,0,60,.66), 0 0 20px rgba(0,240,255,.22), 0 14px 34px rgba(0,0,0,.56) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-head {
+            border-bottom-color: rgba(0,240,255,.35) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-drawer-title,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-title {
+            color: var(--mcms-cp-yellow) !important;
+            letter-spacing: .7px !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-drawer-close {
+            border: 1px solid var(--mcms-cp-red) !important;
+            border-radius: 0 !important;
+            background: rgba(255,0,60,.12) !important;
+            color: #ff8ca8 !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-critical-row,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-alert,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap {
+            border-radius: 1px !important;
+            border-color: rgba(0,240,255,.28) !important;
+            background: rgba(0,240,255,.045) !important;
+            box-shadow: inset 2px 0 0 rgba(0,240,255,.24) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-critical-row:hover {
+            border-color: var(--mcms-cp-yellow) !important;
+            background: rgba(252,238,10,.09) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-type {
+            border-radius: 0 !important;
+            border-color: rgba(0,240,255,.42) !important;
+            background: rgba(0,240,255,.08) !important;
+            color: var(--mcms-cp-cyan) !important;
+        }
+
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-alliance-credit-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-age-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-unit-commitment-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-transport-watcher-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-resource-gap-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-stuck-mission-badge,
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-spawn-label {
+            border-radius: 1px !important;
+            font-family: "Bahnschrift SemiCondensed", "Arial Narrow", Tahoma, Arial, sans-serif !important;
+            letter-spacing: .45px !important;
+            clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 4px 100%, 0 calc(100% - 4px)) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-spawn-label {
+            border-color: var(--mcms-cp-cyan) !important;
+            background: rgba(3,12,18,.95) !important;
+            color: var(--mcms-cp-yellow) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 16px rgba(0,240,255,.38) !important;
+        }
+
+        /* Cyberpunk readability and contrast pass. */
+        html[data-mcms-ui-theme="cyberpunk"] {
+            --mcms-cp-text: #f7fbfc;
+            --mcms-cp-muted: #b7c9cf;
+            --mcms-cp-soft: #d8e7ea;
+            --mcms-cp-ink: #05070b;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-row-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-bookmark-name,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-title,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main strong,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-title,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-critical-name,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row {
+            color: var(--mcms-cp-text) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-footer,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-history-older > summary,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-history-older > summary::after,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-log,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row span:last-child {
+            color: var(--mcms-cp-muted) !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span {
+            font-size: 8px !important;
+            line-height: 1.25 !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-input::placeholder {
+            color: #9fb5bc !important;
+            opacity: 1 !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-input:focus-visible,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-select:focus-visible,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:focus-visible,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} button:focus-visible,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.criticalDrawerId} button:focus-visible {
+            outline: 2px solid var(--mcms-cp-yellow) !important;
+            outline-offset: 2px !important;
+        }
+
+        /* Yellow active controls always use dark text, including nested labels. */
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-mobile,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-text,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-text,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy strong,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: var(--mcms-cp-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy strong {
+            font-weight: 1000 !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: rgba(5,7,11,.78) !important;
+        }
+
+        /* Red controls also use dark text to meet small-text contrast targets. */
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel:focus-visible,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-close:hover,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-close:focus-visible {
+            background: #ff315f !important;
+            color: var(--mcms-cp-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] .mcms-transport-watcher-count {
+            border-color: var(--mcms-cp-ink) !important;
+            background: var(--mcms-cp-yellow) !important;
+            color: var(--mcms-cp-ink) !important;
+            text-shadow: none !important;
+        }
+
+        /* Disabled controls remain distinguishable without becoming unreadable. */
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} button:disabled {
+            border-color: #41535b !important;
+            background: #111821 !important;
+            color: #9dafb5 !important;
+            box-shadow: none !important;
+            filter: saturate(.35) !important;
+            opacity: .78 !important;
+            text-shadow: none !important;
+            cursor: not-allowed !important;
+            animation: none !important;
+        }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled .mcms-label,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled .mcms-text,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled strong,
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled small {
+            color: #9dafb5 !important;
+            text-shadow: none !important;
+        }
+
+        /* Device-specific small copy receives a minimum readable size. */
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 9px !important;
+        }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 8.5px !important;
+        }
+
+        @keyframes mcmsCyberPanelIn {
+            0% { opacity: 0; transform: translateY(8px) scale(.985); filter: saturate(.5) brightness(1.35); }
+            45% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: saturate(1.35) brightness(1.08); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+        }
+        @keyframes mcmsCyberTabIn {
+            0% { opacity: .22; transform: translateX(-4px); }
+            55% { opacity: .85; transform: translateX(1px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes mcmsCyberSignal {
+            0%, 100% { filter: brightness(1); }
+            48% { filter: brightness(1); }
+            50% { filter: brightness(1.18); }
+            52% { filter: brightness(.94); }
+            54% { filter: brightness(1.08); }
+        }
+        @keyframes mcmsCyberScan {
+            0% { transform: translateX(-110%); opacity: 0; }
+            8% { opacity: 1; }
+            42% { opacity: 1; }
+            50%, 100% { transform: translateX(390%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId}.mcms-open,
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active,
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-header::after,
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+                animation: none !important;
+            }
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn,
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn,
+            html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button {
+                transition: none !important;
+            }
+        }
+
     `);
 
     function isVisible(el) {
@@ -3223,6 +3917,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function applyRootAttributes() {
         const root = document.documentElement;
+        root.setAttribute('data-mcms-ui-theme', normaliseUiTheme(state.uiTheme));
         root.setAttribute('data-mc-map-skin', state.theme);
         root.setAttribute('data-mcms-clean', String(Boolean(state.cleanMode)));
         root.setAttribute('data-mcms-marker-focus', String(Boolean(state.markerFocus)));
@@ -10247,6 +10942,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         panel.id = SCRIPT.panelId;
         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
 
+        const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
+            const theme = UI_THEMES[key];
+            return `
+                <button class="mcms-ui-theme-btn" type="button" data-ui-theme="${key}" title="${escapeHtml(theme.description)}" aria-pressed="false">
+                    <span class="mcms-ui-theme-preview mcms-ui-theme-preview-${key}" aria-hidden="true"><span></span><span></span><span></span></span>
+                    <span class="mcms-ui-theme-copy"><strong>${escapeHtml(theme.label)}</strong><small>${escapeHtml(theme.short)}</small></span>
+                </button>
+            `;
+        }).join('');
+
         const buildThemeButtons = keys => keys.map(key => {
             const theme = THEMES[key];
             return `
@@ -10259,6 +10964,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 </button>
             `;
         }).join('');
+        const uiThemeButtons = buildUiThemeButtons();
         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
 
@@ -10284,6 +10990,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
             </div>
             <section class="mcms-tab-panel" data-panel="skins">
+                <div class="mcms-section-label">Interface theme</div>
+                <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+                <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
                 <div class="mcms-section-label">Core skins</div>
                 <div class="mcms-grid-2">${coreThemeButtons}</div>
                 <div class="mcms-section-label">Emergency services</div>
@@ -10465,7 +11174,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark and saved Discord webhook. The JSON file can contain the private webhook token, so store it securely. Current and legacy toolkit backup files are supported.</div>
             </section>
             <div class="mcms-footer">
-                <span>v3.4.0: Added complete settings backup and restore across desktop, Tablet Mode and iOS Mobile Mode, including profiles, bookmarks, device layouts and the saved Discord webhook.</span>
+                <span>v3.5.1: Completed a full Cyberpunk readability pass with accessible active-state contrast, clearer secondary text, improved focus visibility and readable disabled controls.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;
@@ -10473,12 +11182,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         panel.addEventListener('click', event => {
             const closeButton = closestEventTarget(event, '.mcms-close');
             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
+            const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
             const toggleButton = closestEventTarget(event, '[data-toggle]');
             const positionButton = closestEventTarget(event, '.mcms-position-btn');
             const actionButton = closestEventTarget(event, '[data-action]');
             if (closeButton) { closePanel(); return; }
             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+            if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
@@ -10832,6 +11543,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         refreshTabletModeUi(panel);
         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.tab === state.activeTab));
         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => tabPanel.classList.toggle('mcms-active', tabPanel.dataset.panel === state.activeTab));
+        panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
+            const active = btn.dataset.uiTheme === state.uiTheme;
+            btn.classList.toggle('mcms-active', active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
         panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
 
@@ -11251,7 +11967,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             clearDiscordPreviewChartUrl();
             removeOldInstances();
             const root = document.documentElement;
-            for (const attribute of ['data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view']) root.removeAttribute(attribute);
         });
 
         runAutoNight(true);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      3.5.1
+// @version      3.7.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -50,7 +50,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '3.5.1',
+        version: '3.7.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -59,7 +59,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         criticalDrawerId: 'mc-map-command-toolkit-critical-drawer',
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v351',
+        styleId: 'mc-map-command-toolkit-style-v371',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -314,9 +314,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const UI_THEMES = Object.freeze({
         mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '▦', description: 'The original operational command interface.' }),
-        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' })
+        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),
+        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
+        umbrella: Object.freeze({ label: 'Umbrella', short: 'BIOHAZARD', icon: '☣', description: 'Sterile corporate containment interface with classified incident panels, biohazard alerts and high-contrast Umbrella command styling.' })
     });
-    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk']);
+    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella']);
 
     const THEMES = {
         default: { full: 'Default', label: 'Default', short: 'STD', icon: '□' },
@@ -2807,7 +2809,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-hidden-file { display:none !important; }
 
 
-        /* v3.5.1 complete interface themes */
+        /* v3.7.0 complete interface themes */
         #${SCRIPT.panelId} .mcms-ui-theme-grid {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2872,6 +2874,64 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 {
+            position: relative !important;
+            border-radius: 5px !important;
+            border-color: #7fbd52 !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(188,255,108,.055) 0 1px, transparent 1px 4px),
+                radial-gradient(circle at 50% 44%, #172817, #071008 78%) !important;
+            box-shadow: inset 0 0 12px rgba(160,255,94,.26), 0 0 8px rgba(123,206,73,.12) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4::after {
+            content: 'STAT' !important;
+            position: absolute !important;
+            left: 4px !important;
+            top: 2px !important;
+            color: #c8ff8b !important;
+            font: 800 5px/1 Consolas, monospace !important;
+            letter-spacing: .5px !important;
+            opacity: .9 !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span {
+            border-radius: 1px 1px 0 0 !important;
+            box-shadow: 0 0 5px currentColor !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(1) { height: 66% !important; background: #78b94c !important; color: #78b94c !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(2) { height: 88% !important; background: #c8ff8b !important; color: #c8ff8b !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="fallout4"] { grid-column: auto !important; }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella {
+            position: relative !important;
+            border-radius: 2px !important;
+            border-color: #d6193f !important;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,.96) 0 48%, #171a20 48% 52%, #b80f30 52% 100%) !important;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,.18), 0 0 8px rgba(214,25,63,.20) !important;
+            clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella::before {
+            content: '☣' !important;
+            position: absolute !important;
+            inset: 0 !important;
+            display: grid !important;
+            place-items: center !important;
+            color: #ffffff !important;
+            font: 900 15px/1 "Arial Narrow", "Segoe UI", sans-serif !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,.75) !important;
+            z-index: 2 !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella::after {
+            content: 'U.C.S.' !important;
+            position: absolute !important;
+            right: 3px !important;
+            bottom: 2px !important;
+            color: #ffffff !important;
+            font: 900 4.7px/1 "Arial Narrow", "Segoe UI", sans-serif !important;
+            letter-spacing: .55px !important;
+            z-index: 3 !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella span { opacity: 0 !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-copy { min-width: 0 !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-copy strong,
         #${SCRIPT.panelId} .mcms-ui-theme-copy small { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
@@ -3442,6 +3502,1903 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-size: 8.5px !important;
         }
 
+
+        /* Fallout 4 — high-contrast Pip-Boy / Vault-Tec interface theme. */
+        html[data-mcms-ui-theme="fallout4"] {
+            --mcms-fo-green: #b9ff72;
+            --mcms-fo-green-strong: #d3ff9b;
+            --mcms-fo-green-mid: #79b94f;
+            --mcms-fo-green-dim: #426a35;
+            --mcms-fo-amber: #ffd36a;
+            --mcms-fo-red: #ff8b72;
+            --mcms-fo-ink: #061008;
+            --mcms-fo-panel: #0a130c;
+            --mcms-fo-panel-2: #111d12;
+            --mcms-fo-text: #edffd9;
+            --mcms-fo-muted: #bed4ad;
+            --mcms-fo-soft: #d8e9ca;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId},
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} *,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId},
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} *,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} *,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId},
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} * {
+            font-family: Consolas, "Lucida Console", "Courier New", monospace !important;
+        }
+
+        /* Compact command bar / Pip-Boy bezel. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} {
+            color: var(--mcms-fo-text) !important;
+            filter: drop-shadow(0 7px 12px rgba(0,0,0,.58)) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-shell {
+            border: 2px solid #5f784e !important;
+            border-radius: 7px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(186,255,114,.025) 0 1px, transparent 1px 4px),
+                linear-gradient(145deg, rgba(23,34,22,.985), rgba(7,14,9,.985)) !important;
+            box-shadow:
+                inset 0 0 0 2px #1f2d1d,
+                inset 4px 0 0 #314b2a,
+                inset -3px 0 0 #151d14,
+                0 0 0 1px rgba(185,255,114,.14),
+                0 8px 18px rgba(0,0,0,.56) !important;
+            backdrop-filter: blur(7px) saturate(.78) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-menu-btn {
+            background:
+                radial-gradient(circle at 50% 48%, rgba(185,255,114,.13), transparent 72%),
+                linear-gradient(180deg, #1a2a1b, #0b140d) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            text-shadow: 0 0 6px rgba(185,255,114,.68) !important;
+            border-right: 1px solid rgba(185,255,114,.24) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            background: var(--mcms-fo-green) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 0 0 2px rgba(6,16,8,.35) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+            border-top: 1px solid rgba(185,255,114,.42) !important;
+            background: rgba(84,126,66,.22) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.45) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+            background: var(--mcms-fo-amber) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            border: 1px solid rgba(137,191,92,.72) !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(185,255,114,.018) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(18,31,19,.97), rgba(7,15,9,.97)) !important;
+            color: var(--mcms-fo-soft) !important;
+            box-shadow: inset 3px 0 0 #385c31, inset 0 1px rgba(211,255,155,.07), 0 4px 9px rgba(0,0,0,.42) !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.22) !important;
+            transition: transform 130ms ease, border-color 130ms ease, background 130ms ease, color 130ms ease, box-shadow 130ms ease !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn:hover {
+            transform: translateX(2px) !important;
+            border-color: var(--mcms-fo-green-strong) !important;
+            background: linear-gradient(180deg, rgba(39,66,36,.98), rgba(12,24,14,.98)) !important;
+            color: #f4ffe9 !important;
+            box-shadow: inset 4px 0 0 var(--mcms-fo-green-mid), 0 0 9px rgba(185,255,114,.17), 0 4px 9px rgba(0,0,0,.46) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-key {
+            border: 1px solid var(--mcms-fo-green-mid) !important;
+            border-radius: 3px !important;
+            background: #09130b !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 0 0 5px rgba(185,255,114,.14) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+            border-color: var(--mcms-fo-green-strong) !important;
+            background: linear-gradient(180deg, var(--mcms-fo-green-strong), #8ec85d) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 4px 0 0 #3f6d31, inset 0 0 0 1px rgba(6,16,8,.22), 0 0 14px rgba(185,255,114,.28), 0 4px 10px rgba(0,0,0,.45) !important;
+            animation: mcmsFalloutPower 3.4s ease-in-out infinite !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {
+            border-color: var(--mcms-fo-ink) !important;
+            background: #0a170c !important;
+            color: var(--mcms-fo-green-strong) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-quick {
+            border-color: rgba(185,255,114,.84) !important;
+            background: linear-gradient(180deg, rgba(50,83,42,.95), rgba(10,20,12,.97)) !important;
+            color: #e8ffd2 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
+            border-color: rgba(255,211,106,.86) !important;
+            background: linear-gradient(180deg, rgba(92,69,25,.74), rgba(24,19,8,.97)) !important;
+            color: #ffe7a7 !important;
+        }
+
+        /* Main terminal panel. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} {
+            border: 2px solid #5d744d !important;
+            border-radius: 8px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(190,255,118,.026) 0 1px, transparent 1px 4px),
+                radial-gradient(ellipse at 50% 18%, rgba(83,132,65,.12), transparent 58%),
+                linear-gradient(180deg, rgba(12,23,14,.992), rgba(5,12,7,.992)) !important;
+            color: var(--mcms-fo-text) !important;
+            box-shadow:
+                inset 0 0 0 2px #1e2b1d,
+                inset 5px 0 0 #34482f,
+                inset -4px 0 0 #121a12,
+                inset 0 0 38px rgba(101,166,71,.08),
+                0 0 0 1px rgba(185,255,114,.12),
+                0 18px 44px rgba(0,0,0,.68) !important;
+            backdrop-filter: blur(10px) saturate(.82) !important;
+            scrollbar-color: var(--mcms-fo-green-mid) #071009 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId}.mcms-open {
+            animation: mcmsFalloutBoot 260ms steps(5,end) both !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId}::-webkit-scrollbar { width: 9px !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background: #071009 !important; border-left: 1px solid #243523 !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background: #5d8f46 !important; border: 2px solid #071009 !important; border-radius: 3px !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-header {
+            position: relative !important;
+            margin: -3px -3px 9px -3px !important;
+            padding: 6px 6px 7px 6px !important;
+            border: 1px solid #526848 !important;
+            border-bottom-color: var(--mcms-fo-green-mid) !important;
+            border-radius: 6px 6px 2px 2px !important;
+            background:
+                repeating-linear-gradient(90deg, rgba(185,255,114,.025) 0 1px, transparent 1px 16px),
+                linear-gradient(180deg, #273324, #151f16) !important;
+            box-shadow: inset 0 1px rgba(231,255,218,.08), inset 0 -3px #0c140d !important;
+            overflow: hidden !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-header::before {
+            content: 'ROBCO INDUSTRIES UNIFIED OPERATING SYSTEM' !important;
+            position: absolute !important;
+            right: 8px !important;
+            top: 3px !important;
+            color: rgba(185,255,114,.48) !important;
+            font-size: 5.5px !important;
+            font-weight: 800 !important;
+            letter-spacing: .45px !important;
+            pointer-events: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-header::after {
+            content: '' !important;
+            position: absolute !important;
+            left: -28% !important;
+            top: 0 !important;
+            width: 24% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(200,255,139,.12), transparent) !important;
+            animation: mcmsFalloutSweep 6.8s linear infinite !important;
+            pointer-events: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-drag-handle {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding: 5px 6px 2px 6px !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-title {
+            color: var(--mcms-fo-green-strong) !important;
+            font-weight: 950 !important;
+            letter-spacing: .95px !important;
+            text-shadow: 0 0 6px rgba(185,255,114,.48) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-subtitle {
+            color: var(--mcms-fo-muted) !important;
+            font-weight: 750 !important;
+            letter-spacing: .15px !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.16) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-reset-panel,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-close {
+            border: 1px solid #698252 !important;
+            border-radius: 4px !important;
+            background: linear-gradient(180deg, #1f2d1f, #0d160f) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 0 1px rgba(221,255,198,.08) !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.34) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-reset-panel:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-close:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-reset-panel:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-close:focus-visible {
+            border-color: var(--mcms-fo-red) !important;
+            background: var(--mcms-fo-red) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+
+        /* Tabs and section navigation. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tabs {
+            gap: 4px !important;
+            padding: 0 1px 7px 1px !important;
+            border-bottom: 1px solid rgba(185,255,114,.24) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-btn {
+            border: 1px solid #405b38 !important;
+            border-radius: 3px !important;
+            background: linear-gradient(180deg, #162318, #0a130c) !important;
+            color: #cfe8bc !important;
+            letter-spacing: .25px !important;
+            box-shadow: inset 0 1px rgba(222,255,201,.045) !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.16) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-btn:focus-visible {
+            border-color: var(--mcms-fo-green-mid) !important;
+            background: #243a22 !important;
+            color: #f0ffe4 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            border-color: var(--mcms-fo-green-strong) !important;
+            background: var(--mcms-fo-green-strong) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 -3px 0 #4f7b3c, 0 0 10px rgba(185,255,114,.18) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
+            animation: mcmsFalloutDataIn 190ms steps(4,end) both !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-section-label {
+            position: relative !important;
+            margin: 11px 0 6px 0 !important;
+            padding: 5px 8px 5px 18px !important;
+            border: 1px solid rgba(118,171,82,.34) !important;
+            border-left: 4px solid var(--mcms-fo-green-mid) !important;
+            border-radius: 3px !important;
+            background: linear-gradient(90deg, rgba(82,130,65,.24), rgba(12,23,14,.28) 72%) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            font-size: 9px !important;
+            font-weight: 950 !important;
+            letter-spacing: .7px !important;
+            text-transform: uppercase !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.25) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-section-label::before {
+            content: '▸' !important;
+            position: absolute !important;
+            left: 6px !important;
+            top: 4px !important;
+            color: var(--mcms-fo-amber) !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.32) !important;
+        }
+
+        /* Buttons, controls, profiles and forms. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-bookmark-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-pin-btn,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn {
+            border: 1px solid #45643c !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(185,255,114,.014) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(20,34,21,.96), rgba(8,17,10,.96)) !important;
+            color: var(--mcms-fo-soft) !important;
+            box-shadow: inset 3px 0 0 #2b4828, inset 0 1px rgba(226,255,204,.04) !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.13) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-pin-btn:hover,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color: var(--mcms-fo-green-mid) !important;
+            background: linear-gradient(180deg, #2c4828, #122216) !important;
+            color: #f2ffe8 !important;
+            box-shadow: inset 4px 0 0 var(--mcms-fo-green-mid), 0 0 8px rgba(185,255,114,.12) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-pin-btn.mcms-on,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color: var(--mcms-fo-green-strong) !important;
+            background: linear-gradient(180deg, var(--mcms-fo-green-strong), #8fc85d) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 4px 0 0 #426b35, inset 0 0 0 1px rgba(6,16,8,.18), 0 0 10px rgba(185,255,114,.17) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-iconbox,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-iconbox,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-pill,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-pill {
+            border-color: var(--mcms-fo-ink) !important;
+            background: #0a170c !important;
+            color: var(--mcms-fo-green-strong) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-iconbox {
+            border: 1px solid #527847 !important;
+            border-radius: 3px !important;
+            background: #0c180e !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 0 0 7px rgba(185,255,114,.12) !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.34) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-pill {
+            border: 1px solid rgba(255,211,106,.42) !important;
+            border-radius: 3px !important;
+            background: rgba(255,211,106,.07) !important;
+            color: #ffe2a0 !important;
+            letter-spacing: .45px !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-row-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-bookmark-name,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-title,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-title,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-critical-name,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row {
+            color: var(--mcms-fo-text) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-input,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-select {
+            border: 1px solid #507745 !important;
+            border-radius: 3px !important;
+            background: #071009 !important;
+            color: var(--mcms-fo-text) !important;
+            box-shadow: inset 3px 0 0 #2d4b2a, inset 0 0 8px rgba(185,255,114,.05) !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.16) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-input:focus,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-select:focus {
+            border-color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-fo-green-mid), 0 0 0 2px rgba(185,255,114,.12), 0 0 10px rgba(185,255,114,.10) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-input::placeholder {
+            color: #a8bf96 !important;
+            opacity: 1 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-select option {
+            background: #08110a !important;
+            color: var(--mcms-fo-text) !important;
+        }
+
+        /* Information cards and financial intelligence. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-history-older,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-card,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-empty,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-stat,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-breakdown,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-card,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-stat,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-entry,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-log {
+            border-color: rgba(111,160,79,.38) !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(185,255,114,.012) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(18,31,19,.82), rgba(7,15,9,.82)) !important;
+            box-shadow: inset 3px 0 0 rgba(75,119,58,.55), inset 0 1px rgba(223,255,203,.035) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-footer,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-history-older > summary,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-history-older > summary::after,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-log,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row span:last-child {
+            color: var(--mcms-fo-muted) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-status {
+            border-color: rgba(255,211,106,.38) !important;
+            box-shadow: inset 3px 0 0 rgba(255,211,106,.62) !important;
+            color: #ffe8ad !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-value,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-value,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-stat strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-line strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-stat b {
+            color: var(--mcms-fo-green-strong) !important;
+            text-shadow: 0 0 6px rgba(185,255,114,.30) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-title,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-result,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-breakdown b,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-line,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-foot,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-date,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-stat span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-mini-stats span {
+            color: var(--mcms-fo-muted) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] { border-color: rgba(185,255,114,.62) !important; box-shadow: inset 4px 0 var(--mcms-fo-green-mid) !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="negative"] { border-color: rgba(255,139,114,.68) !important; box-shadow: inset 4px 0 var(--mcms-fo-red) !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="neutral"] { border-color: rgba(255,211,106,.66) !important; box-shadow: inset 4px 0 var(--mcms-fo-amber) !important; }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-chart {
+            border-color: #45643c !important;
+            border-radius: 4px !important;
+            background: #071009 !important;
+            filter: sepia(.25) hue-rotate(42deg) saturate(.78) brightness(.9) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-title {
+            color: var(--mcms-fo-green-strong) !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.25) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-result {
+            border: 1px solid var(--mcms-fo-ink) !important;
+            border-radius: 3px !important;
+            background: var(--mcms-fo-amber) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-breakdown b,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-head,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-count {
+            color: var(--mcms-fo-amber) !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-mini-stats span {
+            border: 1px solid rgba(111,160,79,.28) !important;
+            border-radius: 3px !important;
+            background: rgba(49,79,42,.28) !important;
+            color: var(--mcms-fo-muted) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-mini-stats b {
+            color: var(--mcms-fo-green-strong) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="good"] {
+            border-color: rgba(185,255,114,.54) !important;
+            color: var(--mcms-fo-green-strong) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="bad"] {
+            border-color: rgba(255,139,114,.58) !important;
+            color: #ffc1b4 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="busy"] {
+            border-color: rgba(255,211,106,.58) !important;
+            color: #ffe6aa !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-state {
+            border: 1px solid rgba(111,160,79,.35) !important;
+            border-radius: 3px !important;
+            background: #0b160d !important;
+            color: var(--mcms-fo-muted) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-state.mcms-running {
+            border-color: var(--mcms-fo-amber) !important;
+            background: var(--mcms-fo-amber) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-entry.mcms-current {
+            border-color: var(--mcms-fo-amber) !important;
+            background: rgba(255,211,106,.09) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-fo-amber) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-heat-key {
+            border-radius: 3px !important;
+            border: 1px solid rgba(235,255,220,.26) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-footer {
+            border-top: 1px solid rgba(118,171,82,.36) !important;
+            color: #9fb68f !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-build {
+            color: var(--mcms-fo-amber) !important;
+            letter-spacing: .45px !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
+        }
+
+        /* Toasts, drawers and map-overlay readouts. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.toastId} {
+            border: 2px solid #607a50 !important;
+            border-radius: 5px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(185,255,114,.025) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(19,32,20,.98), rgba(7,15,9,.98)) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-fo-green-mid), inset 0 0 12px rgba(185,255,114,.06), 0 8px 18px rgba(0,0,0,.56) !important;
+            font-family: Consolas, "Lucida Console", monospace !important;
+            letter-spacing: .35px !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.34) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.cleanExitId} {
+            border: 2px solid #607a50 !important;
+            border-radius: 4px !important;
+            background: #0a150c !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-fo-amber), 0 0 12px rgba(185,255,114,.16) !important;
+            font-family: Consolas, "Lucida Console", monospace !important;
+            letter-spacing: .35px !important;
+            text-shadow: 0 0 4px rgba(185,255,114,.28) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} {
+            border: 2px solid #5d744d !important;
+            border-radius: 7px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(185,255,114,.023) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(13,24,15,.99), rgba(5,12,7,.99)) !important;
+            color: var(--mcms-fo-text) !important;
+            box-shadow: inset 4px 0 0 #38562f, inset 0 0 25px rgba(185,255,114,.05), 0 15px 36px rgba(0,0,0,.64) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-head {
+            border-bottom-color: rgba(185,255,114,.32) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-drawer-title,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-title {
+            color: var(--mcms-fo-green-strong) !important;
+            letter-spacing: .45px !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.28) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-drawer-close {
+            border: 1px solid var(--mcms-fo-red) !important;
+            border-radius: 3px !important;
+            background: rgba(255,139,114,.12) !important;
+            color: #ffc1b4 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-critical-row,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-alert,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap {
+            border-radius: 4px !important;
+            border-color: rgba(111,160,79,.42) !important;
+            background: rgba(36,58,32,.30) !important;
+            box-shadow: inset 3px 0 0 rgba(91,141,69,.48) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-critical-row:hover {
+            border-color: var(--mcms-fo-green-strong) !important;
+            background: rgba(111,176,79,.18) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-type {
+            border-radius: 3px !important;
+            border-color: rgba(255,211,106,.50) !important;
+            background: rgba(255,211,106,.09) !important;
+            color: #ffe2a0 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] .mcms-alliance-credit-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-mission-age-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-unit-commitment-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-transport-watcher-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-resource-gap-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-stuck-mission-badge,
+        html[data-mcms-ui-theme="fallout4"] .mcms-mission-spawn-label {
+            border-radius: 3px !important;
+            font-family: Consolas, "Lucida Console", monospace !important;
+            letter-spacing: .25px !important;
+            backdrop-filter: blur(3px) saturate(.75) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] .mcms-mission-spawn-label {
+            border-color: var(--mcms-fo-green-mid) !important;
+            background: rgba(5,15,8,.95) !important;
+            color: var(--mcms-fo-green-strong) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-fo-amber), 0 0 13px rgba(185,255,114,.25) !important;
+            text-shadow: 0 0 5px rgba(185,255,114,.40) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] .mcms-transport-watcher-count {
+            border-color: var(--mcms-fo-ink) !important;
+            background: var(--mcms-fo-amber) !important;
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+
+        /* Explicit readability rules: luminous surfaces always use dark ink. */
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-mobile,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-text,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-text,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: var(--mcms-fo-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: rgba(6,16,8,.78) !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span {
+            font-size: 8px !important;
+            line-height: 1.28 !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-input:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-select:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} button:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.criticalDrawerId} button:focus-visible,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} button:focus-visible {
+            outline: 2px solid var(--mcms-fo-amber) !important;
+            outline-offset: 2px !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:disabled,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} button:disabled {
+            border-color: #465443 !important;
+            background: #111812 !important;
+            color: #a9b7a1 !important;
+            box-shadow: none !important;
+            filter: saturate(.35) !important;
+            opacity: .78 !important;
+            text-shadow: none !important;
+            cursor: not-allowed !important;
+            animation: none !important;
+        }
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:disabled .mcms-label,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:disabled .mcms-text,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:disabled strong,
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button:disabled small {
+            color: #a9b7a1 !important;
+            text-shadow: none !important;
+        }
+
+        /* Device-specific readability without changing established layouts. */
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 9px !important;
+        }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 8.5px !important;
+        }
+
+        @keyframes mcmsFalloutBoot {
+            0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }
+            35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }
+            62% { opacity: 1; transform: scaleY(1.015) scaleX(.998); filter: brightness(.92) contrast(1.08); }
+            100% { opacity: 1; transform: scale(1); filter: none; }
+        }
+        @keyframes mcmsFalloutDataIn {
+            0% { opacity: .18; transform: translateY(3px); filter: brightness(1.5); }
+            55% { opacity: .86; transform: translateY(-1px); filter: brightness(1.12); }
+            100% { opacity: 1; transform: translateY(0); filter: none; }
+        }
+        @keyframes mcmsFalloutPower {
+            0%, 100% { filter: brightness(1); }
+            48% { filter: brightness(1); }
+            50% { filter: brightness(1.10); }
+            52% { filter: brightness(.97); }
+            54% { filter: brightness(1.05); }
+        }
+        @keyframes mcmsFalloutSweep {
+            0% { transform: translateX(0); opacity: 0; }
+            8% { opacity: 1; }
+            62% { opacity: .85; }
+            72%, 100% { transform: translateX(560%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId}.mcms-open,
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active,
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-header::after,
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+                animation: none !important;
+            }
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn,
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn,
+            html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} button {
+                transition: none !important;
+            }
+        }
+
+        /* Umbrella Biohazard Command — sterile corporate containment interface theme. */
+        html[data-mcms-ui-theme="umbrella"] {
+            --mcms-um-white: #f1f3f6;
+            --mcms-um-white-strong: #ffffff;
+            --mcms-um-red: #c8102e;
+            --mcms-um-red-dark: #670d20;
+            --mcms-um-amber: #ffd24a;
+            --mcms-um-red-hot: #ff4261;
+            --mcms-um-ink: #0a0c11;
+            --mcms-um-panel: #0e1117;
+            --mcms-um-panel-2: #1a1e26;
+            --mcms-um-text: #f7f8fa;
+            --mcms-um-muted: #c4cad3;
+            --mcms-um-soft: #e7eaee;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} * {
+            font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif !important;
+        }
+
+        /* Compact command bar / containment command chassis. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} {
+            color: var(--mcms-um-text) !important;
+            filter: drop-shadow(0 7px 12px rgba(0,0,0,.58)) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-shell {
+            border: 2px solid #5c626c !important;
+            border-radius: 7px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 4px),
+                linear-gradient(145deg, rgba(23,34,22,.985), rgba(7,14,9,.985)) !important;
+            box-shadow:
+                inset 0 0 0 2px #1c2027,
+                inset 4px 0 0 #6d1023,
+                inset -3px 0 0 #090b0f,
+                0 0 0 1px rgba(216,25,63,.14),
+                0 8px 18px rgba(0,0,0,.56) !important;
+            backdrop-filter: blur(7px) saturate(.78) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn {
+            background:
+                radial-gradient(circle at 50% 48%, rgba(216,25,63,.13), transparent 72%),
+                linear-gradient(180deg, #23272f, #0b0e13) !important;
+            color: var(--mcms-um-white-strong) !important;
+            text-shadow: 0 0 6px rgba(216,25,63,.68) !important;
+            border-right: 1px solid rgba(216,25,63,.24) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            background: var(--mcms-um-white) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 0 0 2px rgba(6,16,8,.35) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+            border-top: 1px solid rgba(216,25,63,.42) !important;
+            background: rgba(200,16,46,.22) !important;
+            color: var(--mcms-um-white-strong) !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.45) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+            background: var(--mcms-um-amber) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            border: 1px solid rgba(216,25,63,.72) !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(216,25,63,.018) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(18,31,19,.97), rgba(7,15,9,.97)) !important;
+            color: var(--mcms-um-soft) !important;
+            box-shadow: inset 3px 0 0 #83132b, inset 0 1px rgba(255,255,255,.07), 0 4px 9px rgba(0,0,0,.42) !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.22) !important;
+            transition: transform 130ms ease, border-color 130ms ease, background 130ms ease, color 130ms ease, box-shadow 130ms ease !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn:hover {
+            transform: translateX(2px) !important;
+            border-color: var(--mcms-um-white-strong) !important;
+            background: linear-gradient(180deg, rgba(39,66,36,.98), rgba(12,24,14,.98)) !important;
+            color: #ffffff !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-red), 0 0 9px rgba(216,25,63,.17), 0 4px 9px rgba(0,0,0,.46) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-key {
+            border: 1px solid var(--mcms-um-red) !important;
+            border-radius: 3px !important;
+            background: #0c0f14 !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 0 0 5px rgba(216,25,63,.14) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+            border-color: var(--mcms-um-white-strong) !important;
+            background: linear-gradient(180deg, var(--mcms-um-white-strong), #e8ebef) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 4px 0 0 #7b1027, inset 0 0 0 1px rgba(6,16,8,.22), 0 0 14px rgba(216,25,63,.28), 0 4px 10px rgba(0,0,0,.45) !important;
+            animation: mcmsUmbrellaPower 3.4s ease-in-out infinite !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {
+            border-color: var(--mcms-um-ink) !important;
+            background: #11151b !important;
+            color: var(--mcms-um-white-strong) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-quick {
+            border-color: rgba(216,25,63,.84) !important;
+            background: linear-gradient(180deg, rgba(50,83,42,.95), rgba(10,20,12,.97)) !important;
+            color: #ffffff !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
+            border-color: rgba(255,211,106,.86) !important;
+            background: linear-gradient(180deg, rgba(92,69,25,.74), rgba(24,19,8,.97)) !important;
+            color: #ffe49a !important;
+        }
+
+        /* Main containment command panel. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} {
+            border: 2px solid #656b75 !important;
+            border-radius: 8px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(255,255,255,.026) 0 1px, transparent 1px 4px),
+                radial-gradient(ellipse at 50% 18%, rgba(200,16,46,.12), transparent 58%),
+                linear-gradient(180deg, rgba(12,23,14,.992), rgba(5,12,7,.992)) !important;
+            color: var(--mcms-um-text) !important;
+            box-shadow:
+                inset 0 0 0 2px #1b1f26,
+                inset 5px 0 0 #7a1127,
+                inset -4px 0 0 #080a0e,
+                inset 0 0 38px rgba(216,25,63,.08),
+                0 0 0 1px rgba(216,25,63,.12),
+                0 18px 44px rgba(0,0,0,.68) !important;
+            backdrop-filter: blur(10px) saturate(.82) !important;
+            scrollbar-color: var(--mcms-um-red) #080a0e !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}.mcms-open {
+            animation: mcmsUmbrellaBoot 260ms steps(5,end) both !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}::-webkit-scrollbar { width: 9px !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background: #080a0e !important; border-left: 1px solid #272c35 !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background: #b81435 !important; border: 2px solid #080a0e !important; border-radius: 3px !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header {
+            position: relative !important;
+            margin: -3px -3px 9px -3px !important;
+            padding: 6px 6px 7px 6px !important;
+            border: 1px solid #5f6670 !important;
+            border-bottom-color: var(--mcms-um-red) !important;
+            border-radius: 6px 6px 2px 2px !important;
+            background:
+                repeating-linear-gradient(90deg, rgba(216,25,63,.025) 0 1px, transparent 1px 16px),
+                linear-gradient(180deg, #262a31, #14171d) !important;
+            box-shadow: inset 0 1px rgba(255,255,255,.08), inset 0 -3px #090c10 !important;
+            overflow: hidden !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::before {
+            content: 'UMBRELLA CORPORATION // CONTAINMENT COMMAND SYSTEM' !important;
+            position: absolute !important;
+            right: 8px !important;
+            top: 3px !important;
+            color: rgba(216,25,63,.48) !important;
+            font-size: 5.5px !important;
+            font-weight: 800 !important;
+            letter-spacing: .45px !important;
+            pointer-events: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::after {
+            content: '' !important;
+            position: absolute !important;
+            left: -28% !important;
+            top: 0 !important;
+            width: 24% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent) !important;
+            animation: mcmsUmbrellaSweep 6.8s linear infinite !important;
+            pointer-events: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-drag-handle {
+            border: 0 !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding: 5px 6px 2px 6px !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-title {
+            color: var(--mcms-um-white-strong) !important;
+            font-weight: 950 !important;
+            letter-spacing: .95px !important;
+            text-shadow: 0 0 6px rgba(216,25,63,.48) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-subtitle {
+            color: var(--mcms-um-muted) !important;
+            font-weight: 750 !important;
+            letter-spacing: .15px !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.16) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-reset-panel,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-close {
+            border: 1px solid #727984 !important;
+            border-radius: 4px !important;
+            background: linear-gradient(180deg, #23272e, #0d1015) !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 0 1px rgba(255,255,255,.08) !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.34) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-reset-panel:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-close:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-reset-panel:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-close:focus-visible {
+            border-color: var(--mcms-um-red-hot) !important;
+            background: var(--mcms-um-red-hot) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+
+        /* Tabs and section navigation. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tabs {
+            gap: 4px !important;
+            padding: 0 1px 7px 1px !important;
+            border-bottom: 1px solid rgba(216,25,63,.24) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn {
+            border: 1px solid #424852 !important;
+            border-radius: 3px !important;
+            background: linear-gradient(180deg, #191d24, #0e1117) !important;
+            color: #dfe3e8 !important;
+            letter-spacing: .25px !important;
+            box-shadow: inset 0 1px rgba(255,255,255,.045) !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.16) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn:focus-visible {
+            border-color: var(--mcms-um-red) !important;
+            background: #2b3039 !important;
+            color: #ffffff !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            border-color: var(--mcms-um-white-strong) !important;
+            background: var(--mcms-um-white-strong) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 -3px 0 #760e25, 0 0 10px rgba(216,25,63,.18) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
+            animation: mcmsUmbrellaDataIn 190ms steps(4,end) both !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-section-label {
+            position: relative !important;
+            margin: 11px 0 6px 0 !important;
+            padding: 5px 8px 5px 18px !important;
+            border: 1px solid rgba(118,171,82,.34) !important;
+            border-left: 4px solid var(--mcms-um-red) !important;
+            border-radius: 3px !important;
+            background: linear-gradient(90deg, rgba(82,130,65,.24), rgba(12,23,14,.28) 72%) !important;
+            color: var(--mcms-um-white-strong) !important;
+            font-size: 9px !important;
+            font-weight: 950 !important;
+            letter-spacing: .7px !important;
+            text-transform: uppercase !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.25) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-section-label::before {
+            content: '▸' !important;
+            position: absolute !important;
+            left: 6px !important;
+            top: 4px !important;
+            color: var(--mcms-um-amber) !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.32) !important;
+        }
+
+        /* Buttons, controls, profiles and forms. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-bookmark-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-pin-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn {
+            border: 1px solid #45643c !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(216,25,63,.014) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(20,34,21,.96), rgba(8,17,10,.96)) !important;
+            color: var(--mcms-um-soft) !important;
+            box-shadow: inset 3px 0 0 #2b4828, inset 0 1px rgba(226,255,204,.04) !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.13) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-pin-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color: var(--mcms-um-red) !important;
+            background: linear-gradient(180deg, #2c4828, #122216) !important;
+            color: #f2ffe8 !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-red), 0 0 8px rgba(216,25,63,.12) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-pin-btn.mcms-on,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color: var(--mcms-um-white-strong) !important;
+            background: linear-gradient(180deg, var(--mcms-um-white-strong), #8fc85d) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+            box-shadow: inset 4px 0 0 #426b35, inset 0 0 0 1px rgba(6,16,8,.18), 0 0 10px rgba(216,25,63,.17) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-iconbox,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-iconbox,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-pill,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-pill {
+            border-color: var(--mcms-um-ink) !important;
+            background: #11151b !important;
+            color: var(--mcms-um-white-strong) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-iconbox {
+            border: 1px solid #527847 !important;
+            border-radius: 3px !important;
+            background: #0c180e !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 0 0 7px rgba(216,25,63,.12) !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.34) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-pill {
+            border: 1px solid rgba(255,211,106,.42) !important;
+            border-radius: 3px !important;
+            background: rgba(255,211,106,.07) !important;
+            color: #ffe49a !important;
+            letter-spacing: .45px !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-row-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-bookmark-name,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-title,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-title,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-name,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row {
+            color: var(--mcms-um-text) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select {
+            border: 1px solid #507745 !important;
+            border-radius: 3px !important;
+            background: #080a0e !important;
+            color: var(--mcms-um-text) !important;
+            box-shadow: inset 3px 0 0 #2d4b2a, inset 0 0 8px rgba(216,25,63,.05) !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.16) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input:focus,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select:focus {
+            border-color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-red), 0 0 0 2px rgba(216,25,63,.12), 0 0 10px rgba(216,25,63,.10) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input::placeholder {
+            color: #a8bf96 !important;
+            opacity: 1 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select option {
+            background: #08110a !important;
+            color: var(--mcms-um-text) !important;
+        }
+
+        /* Information cards and financial intelligence. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-history-older,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-empty,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-breakdown,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-entry,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-log {
+            border-color: rgba(111,160,79,.38) !important;
+            border-radius: 4px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(216,25,63,.012) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(18,31,19,.82), rgba(7,15,9,.82)) !important;
+            box-shadow: inset 3px 0 0 rgba(75,119,58,.55), inset 0 1px rgba(223,255,203,.035) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-footer,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-empty-state,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-history-older > summary,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-history-older > summary::after,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-log,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row span:last-child {
+            color: var(--mcms-um-muted) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-status {
+            border-color: rgba(255,211,106,.38) !important;
+            box-shadow: inset 3px 0 0 rgba(255,211,106,.62) !important;
+            color: #ffe8ad !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-value,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-value,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-stat strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-line strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat b {
+            color: var(--mcms-um-white-strong) !important;
+            text-shadow: 0 0 6px rgba(216,25,63,.30) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-title,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-result,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-breakdown b,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-line,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-foot,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-date,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-stat span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-mini-stats span {
+            color: var(--mcms-um-muted) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] { border-color: rgba(216,25,63,.62) !important; box-shadow: inset 4px 0 var(--mcms-um-red) !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="negative"] { border-color: rgba(255,139,114,.68) !important; box-shadow: inset 4px 0 var(--mcms-um-red-hot) !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-card[data-tone="neutral"] { border-color: rgba(255,211,106,.66) !important; box-shadow: inset 4px 0 var(--mcms-um-amber) !important; }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-chart {
+            border-color: #45643c !important;
+            border-radius: 4px !important;
+            background: #080a0e !important;
+            filter: sepia(.25) hue-rotate(42deg) saturate(.78) brightness(.9) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-title {
+            color: var(--mcms-um-white-strong) !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.25) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-result {
+            border: 1px solid var(--mcms-um-ink) !important;
+            border-radius: 3px !important;
+            background: var(--mcms-um-amber) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-breakdown b,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-head,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-count {
+            color: var(--mcms-um-amber) !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-mini-stats span {
+            border: 1px solid rgba(111,160,79,.28) !important;
+            border-radius: 3px !important;
+            background: rgba(49,79,42,.28) !important;
+            color: var(--mcms-um-muted) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-mini-stats b {
+            color: var(--mcms-um-white-strong) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="good"] {
+            border-color: rgba(216,25,63,.54) !important;
+            color: var(--mcms-um-white-strong) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="bad"] {
+            border-color: rgba(255,139,114,.58) !important;
+            color: #ffc1b4 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-discord-status[data-tone="busy"] {
+            border-color: rgba(255,211,106,.58) !important;
+            color: #ffe6aa !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-state {
+            border: 1px solid rgba(111,160,79,.35) !important;
+            border-radius: 3px !important;
+            background: #0b160d !important;
+            color: var(--mcms-um-muted) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-state.mcms-running {
+            border-color: var(--mcms-um-amber) !important;
+            background: var(--mcms-um-amber) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-entry.mcms-current {
+            border-color: var(--mcms-um-amber) !important;
+            background: rgba(255,211,106,.09) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-um-amber) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-heat-key {
+            border-radius: 3px !important;
+            border: 1px solid rgba(235,255,220,.26) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-footer {
+            border-top: 1px solid rgba(118,171,82,.36) !important;
+            color: #9fb68f !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-build {
+            color: var(--mcms-um-amber) !important;
+            letter-spacing: .45px !important;
+            text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
+        }
+
+        /* Toasts, drawers and map-overlay readouts. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.toastId} {
+            border: 2px solid #607a50 !important;
+            border-radius: 5px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(216,25,63,.025) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(19,32,20,.98), rgba(7,15,9,.98)) !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-red), inset 0 0 12px rgba(216,25,63,.06), 0 8px 18px rgba(0,0,0,.56) !important;
+            font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif !important;
+            letter-spacing: .35px !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.34) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.cleanExitId} {
+            border: 2px solid #607a50 !important;
+            border-radius: 4px !important;
+            background: #0a150c !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-amber), 0 0 12px rgba(216,25,63,.16) !important;
+            font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif !important;
+            letter-spacing: .35px !important;
+            text-shadow: 0 0 4px rgba(216,25,63,.28) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} {
+            border: 2px solid #656b75 !important;
+            border-radius: 7px !important;
+            background:
+                repeating-linear-gradient(0deg, rgba(216,25,63,.023) 0 1px, transparent 1px 4px),
+                linear-gradient(180deg, rgba(13,24,15,.99), rgba(5,12,7,.99)) !important;
+            color: var(--mcms-um-text) !important;
+            box-shadow: inset 4px 0 0 #38562f, inset 0 0 25px rgba(216,25,63,.05), 0 15px 36px rgba(0,0,0,.64) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-head {
+            border-bottom-color: rgba(216,25,63,.32) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-title,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-title {
+            color: var(--mcms-um-white-strong) !important;
+            letter-spacing: .45px !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.28) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-close {
+            border: 1px solid var(--mcms-um-red-hot) !important;
+            border-radius: 3px !important;
+            background: rgba(255,139,114,.12) !important;
+            color: #ffc1b4 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-row,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-alert,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-gap {
+            border-radius: 4px !important;
+            border-color: rgba(111,160,79,.42) !important;
+            background: rgba(36,58,32,.30) !important;
+            box-shadow: inset 3px 0 0 rgba(91,141,69,.48) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-row:hover {
+            border-color: var(--mcms-um-white-strong) !important;
+            background: rgba(216,25,63,.18) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-type {
+            border-radius: 3px !important;
+            border-color: rgba(255,211,106,.50) !important;
+            background: rgba(255,211,106,.09) !important;
+            color: #ffe49a !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-alliance-credit-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-age-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-unit-commitment-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-transport-watcher-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-resource-gap-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-stuck-mission-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-spawn-label {
+            border-radius: 3px !important;
+            font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif !important;
+            letter-spacing: .25px !important;
+            backdrop-filter: blur(3px) saturate(.75) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-spawn-label {
+            border-color: var(--mcms-um-red) !important;
+            background: rgba(5,15,8,.95) !important;
+            color: var(--mcms-um-white-strong) !important;
+            box-shadow: inset 3px 0 0 var(--mcms-um-amber), 0 0 13px rgba(216,25,63,.25) !important;
+            text-shadow: 0 0 5px rgba(216,25,63,.40) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-transport-watcher-count {
+            border-color: var(--mcms-um-ink) !important;
+            background: var(--mcms-um-amber) !important;
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+
+        /* Explicit readability rules: luminous surfaces always use dark ink. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-mobile,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-text,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-text,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: var(--mcms-um-ink) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: rgba(6,16,8,.78) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span {
+            font-size: 8px !important;
+            line-height: 1.28 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} button:focus-visible {
+            outline: 2px solid var(--mcms-um-amber) !important;
+            outline-offset: 2px !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} button:disabled {
+            border-color: #525862 !important;
+            background: #171a20 !important;
+            color: #b7bdc6 !important;
+            box-shadow: none !important;
+            filter: saturate(.35) !important;
+            opacity: .78 !important;
+            text-shadow: none !important;
+            cursor: not-allowed !important;
+            animation: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled .mcms-text,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled strong,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled small {
+            color: #b7bdc6 !important;
+            text-shadow: none !important;
+        }
+
+        /* Device-specific readability without changing established layouts. */
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 9px !important;
+        }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 8.5px !important;
+        }
+
+        @keyframes mcmsUmbrellaBoot {
+            0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }
+            35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }
+            62% { opacity: 1; transform: scaleY(1.015) scaleX(.998); filter: brightness(.92) contrast(1.08); }
+            100% { opacity: 1; transform: scale(1); filter: none; }
+        }
+        @keyframes mcmsUmbrellaDataIn {
+            0% { opacity: .18; transform: translateY(3px); filter: brightness(1.5); }
+            55% { opacity: .86; transform: translateY(-1px); filter: brightness(1.12); }
+            100% { opacity: 1; transform: translateY(0); filter: none; }
+        }
+        @keyframes mcmsUmbrellaPower {
+            0%, 100% { filter: brightness(1); }
+            48% { filter: brightness(1); }
+            50% { filter: brightness(1.10); }
+            52% { filter: brightness(.97); }
+            54% { filter: brightness(1.05); }
+        }
+        @keyframes mcmsUmbrellaSweep {
+            0% { transform: translateX(0); opacity: 0; }
+            8% { opacity: 1; }
+            62% { opacity: .85; }
+            72%, 100% { transform: translateX(560%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}.mcms-open,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::after,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+                animation: none !important;
+            }
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button {
+                transition: none !important;
+            }
+        }
+
+
+
+        /* Umbrella identity layer: sterile containment hardware and classified incident records. */
+        html[data-mcms-ui-theme="umbrella"] {
+            --mcms-um-red-deep: #8f0c28;
+            --mcms-um-red-bright: #df2148;
+            --mcms-um-steel: #5f6670;
+            --mcms-um-paper: #eef1f4;
+            --mcms-um-paper-2: #dfe3e8;
+            --mcms-um-paper-text: #11141a;
+            --mcms-um-rule: #b5bbc4;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-shell {
+            border: 1px solid #6a707a !important;
+            border-radius: 2px !important;
+            background:
+                linear-gradient(135deg, transparent 0 9px, rgba(255,255,255,.05) 9px 10px, transparent 10px),
+                linear-gradient(180deg, rgba(24,28,35,.99), rgba(8,10,14,.99)) !important;
+            box-shadow: inset 5px 0 0 var(--mcms-um-red), inset 0 1px 0 rgba(255,255,255,.11), 0 9px 22px rgba(0,0,0,.55) !important;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn {
+            background:
+                repeating-conic-gradient(from 0deg at 50% 52%, rgba(255,255,255,.06) 0 12deg, transparent 12deg 24deg),
+                linear-gradient(180deg, #cb1639, #850c26) !important;
+            color: #ffffff !important;
+            border-right-color: rgba(255,255,255,.20) !important;
+            text-shadow: 0 2px 3px rgba(0,0,0,.58) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            background: #f7f8fa !important;
+            color: #9b0d2b !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 0 0 2px #c8102e !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+            border-top-color: rgba(255,255,255,.20) !important;
+            background: #12151b !important;
+            color: #ffffff !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+            background: var(--mcms-um-amber) !important;
+            color: #11141a !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            border-radius: 1px !important;
+            border-color: #5e6570 !important;
+            background: linear-gradient(180deg, #22262e, #101319) !important;
+            color: #f3f5f7 !important;
+            box-shadow: inset 3px 0 0 #8d1029, inset 0 1px rgba(255,255,255,.08), 0 4px 9px rgba(0,0,0,.42) !important;
+            text-shadow: none !important;
+            clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn:hover {
+            transform: translateX(2px) !important;
+            border-color: #ffffff !important;
+            background: linear-gradient(180deg, #343944, #171a20) !important;
+            color: #ffffff !important;
+            box-shadow: inset 4px 0 0 var(--mcms-um-red-bright), 0 0 0 1px rgba(255,255,255,.10), 0 5px 12px rgba(0,0,0,.48) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+            border-color: #7f0d25 !important;
+            background: linear-gradient(180deg, #d91d43, #a30d2d) !important;
+            color: #ffffff !important;
+            box-shadow: inset 4px 0 0 #ffffff, inset 0 0 0 1px rgba(255,255,255,.10), 0 0 13px rgba(216,25,63,.25), 0 5px 11px rgba(0,0,0,.50) !important;
+            animation: mcmsUmbrellaAlert 4.2s ease-in-out infinite !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {
+            border-color: #ffffff !important;
+            background: #ffffff !important;
+            color: #9c0d2b !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} {
+            border: 1px solid #737a84 !important;
+            border-radius: 2px !important;
+            background:
+                linear-gradient(135deg, transparent 0 13px, rgba(255,255,255,.035) 13px 14px, transparent 14px),
+                radial-gradient(circle at 86% 4%, rgba(200,16,46,.10), transparent 24%),
+                linear-gradient(180deg, rgba(20,23,29,.995), rgba(7,9,13,.995)) !important;
+            color: #f6f7f9 !important;
+            box-shadow: inset 6px 0 0 #b10e30, inset 0 0 0 1px #1f242c, 0 20px 48px rgba(0,0,0,.70) !important;
+            clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 13px 100%, 0 calc(100% - 13px)) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}.mcms-open {
+            animation: mcmsUmbrellaPanelIn 250ms cubic-bezier(.18,.78,.25,1) both !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header {
+            margin: -3px -3px 10px -3px !important;
+            padding: 7px 7px 8px 7px !important;
+            border: 1px solid #777e88 !important;
+            border-left: 6px solid #c8102e !important;
+            border-bottom: 3px solid #c8102e !important;
+            border-radius: 1px !important;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 18px 100%,
+                linear-gradient(180deg, #2b2f37, #14171d) !important;
+            box-shadow: inset 0 1px rgba(255,255,255,.10), inset 0 -1px #05070a !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::before {
+            content: 'UMBRELLA CORPORATION // CONTAINMENT COMMAND SYSTEM' !important;
+            right: 8px !important;
+            top: 3px !important;
+            color: rgba(255,255,255,.55) !important;
+            font-size: 5.5px !important;
+            letter-spacing: .7px !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::after {
+            width: 16% !important;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), rgba(216,25,63,.22), transparent) !important;
+            animation: mcmsUmbrellaScan 5.8s linear infinite !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-title {
+            color: #ffffff !important;
+            font-weight: 950 !important;
+            letter-spacing: 1.2px !important;
+            text-shadow: 2px 0 0 rgba(216,25,63,.55) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-subtitle {
+            color: #d3d8df !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tabs {
+            gap: 3px !important;
+            border-bottom: 1px solid #646b75 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn {
+            border-radius: 1px !important;
+            border-color: #555c66 !important;
+            background: linear-gradient(180deg, #252932, #11141a) !important;
+            color: #e8ebef !important;
+            text-shadow: none !important;
+            clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn:focus-visible {
+            border-color: #ffffff !important;
+            background: #363b45 !important;
+            color: #ffffff !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            border-color: #8e0c28 !important;
+            background: linear-gradient(180deg, #d81d43, #a10d2d) !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 -3px 0 #ffffff, 0 0 9px rgba(216,25,63,.20) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
+            animation: mcmsUmbrellaRecordIn 180ms ease-out both !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-section-label {
+            min-height: 24px !important;
+            padding: 5px 8px 5px 23px !important;
+            border: 1px solid #aeb4bd !important;
+            border-left: 6px solid #c8102e !important;
+            border-radius: 1px !important;
+            background:
+                repeating-linear-gradient(135deg, rgba(0,0,0,.035) 0 4px, transparent 4px 8px),
+                linear-gradient(180deg, #f4f6f8, #dfe3e8) !important;
+            color: #11141a !important;
+            letter-spacing: .85px !important;
+            text-shadow: none !important;
+            box-shadow: inset 0 -1px rgba(0,0,0,.10) !important;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-section-label::before {
+            content: '☣' !important;
+            left: 7px !important;
+            color: #a60d2c !important;
+            font-size: 11px !important;
+            text-shadow: none !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn {
+            border-radius: 1px !important;
+            border-color: #555c66 !important;
+            background: linear-gradient(180deg, #252932, #11141a) !important;
+            color: #f1f3f6 !important;
+            text-shadow: none !important;
+            box-shadow: inset 3px 0 0 #791026, inset 0 1px rgba(255,255,255,.06), 0 3px 8px rgba(0,0,0,.34) !important;
+            clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color: #ffffff !important;
+            background: #343943 !important;
+            color: #ffffff !important;
+            box-shadow: inset 4px 0 0 #d91c42, 0 4px 10px rgba(0,0,0,.40) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color: #8a0c27 !important;
+            background: linear-gradient(180deg, #db1d43, #a40d2d) !important;
+            color: #ffffff !important;
+            box-shadow: inset 4px 0 0 #ffffff, inset 0 0 0 1px rgba(255,255,255,.08), 0 0 11px rgba(216,25,63,.20) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active * {
+            color: #ffffff !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
+            color: rgba(255,255,255,.82) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-iconbox,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-pill,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-float-key {
+            border-radius: 1px !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} textarea {
+            border: 1px solid #9299a3 !important;
+            border-left: 4px solid #c8102e !important;
+            border-radius: 1px !important;
+            background: #f2f4f6 !important;
+            color: #101319 !important;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,.14) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input::placeholder,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} textarea::placeholder {
+            color: #626975 !important;
+            opacity: 1 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input:focus,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select:focus,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} textarea:focus {
+            border-color: #a90d2d !important;
+            border-left-color: #df2148 !important;
+            background: #ffffff !important;
+            color: #0a0c11 !important;
+            box-shadow: 0 0 0 2px rgba(216,25,63,.22), inset 0 1px 2px rgba(0,0,0,.10) !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-finance-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-status-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-panel-note {
+            border-radius: 1px !important;
+            border-color: #adb3bc !important;
+            background: linear-gradient(180deg, #f2f4f6, #dfe3e8) !important;
+            color: #11141a !important;
+            box-shadow: inset 4px 0 0 #b70e31, 0 3px 9px rgba(0,0,0,.28) !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-finance-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-status-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-panel-note * {
+            color: #11141a !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-state,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-stat span,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-meta {
+            color: #c8ced6 !important;
+            font-size: 8px !important;
+            line-height: 1.3 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-card .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-card .mcms-ops-entry-meta,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-finance-card .mcms-ops-stat-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-card .mcms-sweep-meta {
+            color: #4f5661 !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} {
+            border: 1px solid #737a84 !important;
+            border-left: 6px solid #c8102e !important;
+            border-radius: 2px !important;
+            background:
+                linear-gradient(135deg, transparent 0 12px, rgba(255,255,255,.04) 12px 13px, transparent 13px),
+                linear-gradient(180deg, rgba(21,24,30,.99), rgba(7,9,13,.99)) !important;
+            color: #f7f8fa !important;
+            box-shadow: inset 0 0 0 1px #20242b, 0 17px 38px rgba(0,0,0,.66) !important;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-header,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-header {
+            border-bottom: 3px solid #c8102e !important;
+            background: linear-gradient(180deg, #30343d, #171a20) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-card,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat {
+            border-radius: 1px !important;
+            border-color: #aeb4bd !important;
+            background: linear-gradient(180deg, #f2f4f6, #dde1e6) !important;
+            color: #11141a !important;
+            box-shadow: inset 4px 0 0 #b70e31 !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-critical-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-card *,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat * {
+            color: #11141a !important;
+            text-shadow: none !important;
+        }
+
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.toastId} {
+            border: 1px solid #737a84 !important;
+            border-left: 6px solid #c8102e !important;
+            border-radius: 1px !important;
+            background: linear-gradient(180deg, #f4f6f8, #dfe3e8) !important;
+            color: #11141a !important;
+            box-shadow: 0 12px 28px rgba(0,0,0,.52) !important;
+            text-shadow: none !important;
+            clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-alliance-credit-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-age-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-unit-commitment-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-transport-watcher-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-resource-gap-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-stuck-mission-badge,
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-spawn-label {
+            border-radius: 1px !important;
+            border-color: #f2f4f6 !important;
+            background: rgba(13,16,21,.96) !important;
+            color: #ffffff !important;
+            box-shadow: inset 3px 0 0 #c8102e, 0 5px 13px rgba(0,0,0,.48) !important;
+            text-shadow: none !important;
+            backdrop-filter: blur(4px) saturate(.8) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-mission-spawn-label {
+            border-color: #d6193f !important;
+            box-shadow: inset 4px 0 0 #ffffff, 0 0 12px rgba(216,25,63,.24) !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] .mcms-transport-watcher-count {
+            border-color: #11141a !important;
+            background: #ffd24a !important;
+            color: #11141a !important;
+            text-shadow: none !important;
+        }
+
+        /* Readability guarantees for saturated and light surfaces. */
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-mobile,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-text,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-label,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-text {
+            color: #ffffff !important;
+            text-shadow: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} button:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input:focus-visible,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select:focus-visible {
+            outline: 2px solid #ffd24a !important;
+            outline-offset: 2px !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled,
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} button:disabled {
+            border-color: #555b64 !important;
+            background: #1d2026 !important;
+            color: #b8bec7 !important;
+            box-shadow: none !important;
+            opacity: .78 !important;
+            filter: saturate(.25) !important;
+            animation: none !important;
+        }
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button:disabled * {
+            color: #b8bec7 !important;
+            text-shadow: none !important;
+        }
+
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 9px !important;
+        }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
+            font-size: 8.5px !important;
+        }
+
+        @keyframes mcmsUmbrellaPanelIn {
+            0% { opacity: 0; transform: translateY(7px) scale(.988); filter: grayscale(.8) contrast(1.25); }
+            45% { opacity: 1; transform: translateY(-1px) scale(1.001); filter: grayscale(.15) contrast(1.08); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }
+        }
+        @keyframes mcmsUmbrellaRecordIn {
+            0% { opacity: .18; transform: translateX(-5px); clip-path: inset(0 100% 0 0); }
+            58% { opacity: .86; transform: translateX(1px); clip-path: inset(0 0 0 0); }
+            100% { opacity: 1; transform: translateX(0); clip-path: inset(0 0 0 0); }
+        }
+        @keyframes mcmsUmbrellaAlert {
+            0%, 100% { filter: brightness(1); }
+            48% { filter: brightness(1); }
+            50% { filter: brightness(1.12); }
+            52% { filter: brightness(.96); }
+            54% { filter: brightness(1.05); }
+        }
+        @keyframes mcmsUmbrellaScan {
+            0% { transform: translateX(0); opacity: 0; }
+            8% { opacity: 1; }
+            58% { opacity: .88; }
+            70%, 100% { transform: translateX(760%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId}.mcms-open,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::after,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {
+                animation: none !important;
+            }
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn,
+            html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} button {
+                transition: none !important;
+            }
+        }
         @keyframes mcmsCyberPanelIn {
             0% { opacity: 0; transform: translateY(8px) scale(.985); filter: saturate(.5) brightness(1.35); }
             45% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: saturate(1.35) brightness(1.08); }
@@ -3477,6 +5434,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button {
                 transition: none !important;
             }
+        }
+
+        /* Semantic alliance eligibility colours must remain consistent across every UI theme. */
+        html .mcms-alliance-credit-badge.mcms-credit-qualified {
+            border-color: rgba(76,225,126,.82) !important;
+            background: rgba(7,31,18,.90) !important;
+            color: #79f2a3 !important;
+            box-shadow: inset 3px 0 0 #35d778, 0 2px 8px rgba(0,0,0,.34), 0 0 8px rgba(53,215,120,.18) !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,.92), 0 0 5px rgba(53,215,120,.24) !important;
+        }
+        html .mcms-alliance-credit-badge.mcms-credit-unqualified {
+            border-color: rgba(255,213,79,.78) !important;
+            background: rgba(39,30,6,.90) !important;
+            color: #ffe082 !important;
+            box-shadow: inset 3px 0 0 #ffd54f, 0 2px 8px rgba(0,0,0,.34), 0 0 8px rgba(255,213,79,.14) !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,.92), 0 0 5px rgba(255,213,79,.18) !important;
         }
 
     `);
@@ -11174,7 +13147,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark and saved Discord webhook. The JSON file can contain the private webhook token, so store it securely. Current and legacy toolkit backup files are supported.</div>
             </section>
             <div class="mcms-footer">
-                <span>v3.5.1: Completed a full Cyberpunk readability pass with accessible active-state contrast, clearer secondary text, improved focus visibility and readable disabled controls.</span>
+                <span>v3.7.0: Added the complete Umbrella Biohazard Command interface theme with containment styling, classified incident panels and built-in high-contrast readability.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;

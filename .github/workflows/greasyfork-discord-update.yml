@@ -1,4 +1,4 @@
-name: Greasy Fork Release Mirror and Discord Update
+name: Greasy Fork Discord Update
 
 on:
   schedule:
@@ -10,7 +10,7 @@ on:
     paths:
       - ".github/workflows/greasyfork-discord-update.yml"
       - ".github/scripts/extract_greasyfork_changelog.py"
-      - ".github/scripts/validate_userscript.mjs"
+      - ".github/scripts/test_extract_greasyfork_changelog.py"
 
 permissions:
   contents: write
@@ -21,15 +21,19 @@ concurrency:
 
 jobs:
   check-for-update:
-    name: Check and Mirror Greasy Fork Release
+    name: Check Greasy Fork Version
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Test changelog extractor
+        shell: bash
+        run: python3 .github/scripts/test_extract_greasyfork_changelog.py
 
       - name: Read Greasy Fork version
         id: version
@@ -39,7 +43,6 @@ jobs:
 
           META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
           STATE_FILE=".github/greasyfork-version.txt"
-          RELEASE_STATE_FILE=".github/greasyfork-release-version.txt"
 
           curl \
             --fail \
@@ -49,7 +52,8 @@ jobs:
             --max-time 30 \
             --retry 3 \
             --retry-delay 5 \
-            "$META_URL" \
+            --header "Cache-Control: no-cache" \
+            "${META_URL}?cache_bust=$(date +%s%N)" \
             --output greasyfork-script.meta.js
 
           CURRENT_VERSION="$(
@@ -76,53 +80,35 @@ jobs:
             PREVIOUS_VERSION=""
           fi
 
-          if [[ -f "$RELEASE_STATE_FILE" ]]; then
-            MIRRORED_VERSION="$(tr -d '\r\n ' < "$RELEASE_STATE_FILE")"
-          else
-            MIRRORED_VERSION=""
-          fi
-
           echo "Current Greasy Fork version: $CURRENT_VERSION"
           echo "Previously announced version: ${PREVIOUS_VERSION:-none}"
-          echo "Previously mirrored version: ${MIRRORED_VERSION:-none}"
           echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "previous=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
 
           if [[ -n "$PREVIOUS_VERSION" && "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]]; then
-            CHANGED=true
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           else
-            CHANGED=false
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [[ "$CURRENT_VERSION" != "$MIRRORED_VERSION" ]]; then
-            MIRROR_NEEDED=true
-          else
-            MIRROR_NEEDED=false
-          fi
-
-          if [[ "$CHANGED" == true || "$MIRROR_NEEDED" == true ]]; then
-            PROCESS=true
-          else
-            PROCESS=false
-          fi
-
-          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
-          echo "mirror_needed=$MIRROR_NEEDED" >> "$GITHUB_OUTPUT"
-          echo "process=$PROCESS" >> "$GITHUB_OUTPUT"
-
-      - name: Read Greasy Fork changelog
-        if: steps.version.outputs.process == 'true'
+      - name: Read new Greasy Fork changelog entries
+        if: steps.version.outputs.changed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
         shell: bash
         run: |
           set -euo pipefail
 
           HISTORY_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions?show_all_versions=1&list_all=1"
           rm -f greasyfork-history.html greasyfork-changelog.txt
+          PAGE_MATCHED=false
 
-          for attempt in 1 2 3 4 5 6; do
-            echo "Reading changelog for version $CURRENT_VERSION (attempt $attempt of 6)..."
+          # Greasy Fork's metadata endpoint can update before the History page.
+          # Retry for several minutes so Discord receives the actual changelog.
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            echo "Reading History range $PREVIOUS_VERSION -> $CURRENT_VERSION (attempt $attempt of 10)..."
+            rm -f greasyfork-history.html greasyfork-changelog.txt
 
             if curl \
               --fail \
@@ -132,33 +118,50 @@ jobs:
               --max-time 30 \
               --retry 2 \
               --retry-delay 5 \
+              --header "Accept: text/html" \
+              --header "Cache-Control: no-cache" \
+              --header "Pragma: no-cache" \
               --user-agent "Mozilla/5.0 GitHub-Actions Greasy-Fork-Update-Monitor" \
               "${HISTORY_URL}&cache_bust=$(date +%s%N)" \
               --output greasyfork-history.html; then
+
               if python3 .github/scripts/extract_greasyfork_changelog.py \
                 "$CURRENT_VERSION" \
+                "$PREVIOUS_VERSION" \
                 greasyfork-history.html \
                 greasyfork-changelog.txt; then
-                break
+                PAGE_MATCHED=true
+
+                if [[ -s greasyfork-changelog.txt ]]; then
+                  echo "New changelog content found."
+                  break
+                fi
+
+                # A matching version with no changelog may still be propagating.
+                # Give it a short grace period, then post without repeating old text.
+                if [[ "$attempt" -ge 4 ]]; then
+                  echo "No new changelog was entered for the unannounced versions."
+                  break
+                fi
               fi
             fi
 
-            if [[ "$attempt" -lt 6 ]]; then
-              sleep 10
+            if [[ "$attempt" -lt 10 ]]; then
+              sleep 20
             fi
           done
 
-          if [[ ! -f greasyfork-changelog.txt ]]; then
-            echo "::warning::The History entry was not available yet. Continuing without a changelog."
-            : > greasyfork-changelog.txt
-          elif [[ -s greasyfork-changelog.txt ]]; then
-            echo "Changelog found:"
-            cat greasyfork-changelog.txt
-          else
-            echo "The version was found, but no changelog was entered."
+          if [[ "$PAGE_MATCHED" != true || ! -f greasyfork-changelog.txt ]]; then
+            echo "::error::Greasy Fork History did not reach version $CURRENT_VERSION with the previous-version boundary $PREVIOUS_VERSION."
+            echo "The announcement has not been marked as sent; the next scheduled run will retry."
+            exit 1
           fi
 
-      # Announce first. The optional GitHub mirror must never block Discord.
+          if [[ -s greasyfork-changelog.txt ]]; then
+            echo "Changelog to send:"
+            cat greasyfork-changelog.txt
+          fi
+
       - name: Post update to Discord
         if: steps.version.outputs.changed == 'true'
         env:
@@ -255,198 +258,8 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No version-state change to commit."
-          else
-            git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
-            git push
+            exit 0
           fi
 
-      - name: Download published userscript
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
-          rm -f greasyfork-script.user.js
-
-          for attempt in 1 2 3 4 5 6; do
-            echo "Downloading published userscript (attempt $attempt of 6)..."
-
-            curl \
-              --fail \
-              --silent \
-              --show-error \
-              --location \
-              --max-time 60 \
-              --retry 2 \
-              --retry-delay 5 \
-              --user-agent "Mozilla/5.0 GitHub-Actions Greasy-Fork-Release-Mirror" \
-              "${INSTALL_URL}?cache_bust=$(date +%s%N)" \
-              --output greasyfork-script.user.js
-
-            DOWNLOADED_VERSION="$(
-              sed -nE \
-                's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' \
-                greasyfork-script.user.js |
-                head -n 1 |
-                xargs
-            )"
-
-            if [[ "$DOWNLOADED_VERSION" == "$CURRENT_VERSION" ]]; then
-              break
-            fi
-
-            echo "Downloaded version '${DOWNLOADED_VERSION:-unknown}' does not yet match '$CURRENT_VERSION'."
-            rm -f greasyfork-script.user.js
-
-            if [[ "$attempt" -lt 6 ]]; then
-              sleep 10
-            fi
-          done
-
-          if [[ ! -s greasyfork-script.user.js ]]; then
-            echo "::error::Could not download the published userscript for version $CURRENT_VERSION."
-            exit 1
-          fi
-
-      - name: Validate published userscript
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          node --check greasyfork-script.user.js
-          npm install --no-save --ignore-scripts acorn@8.15.0
-          node .github/scripts/validate_userscript.mjs \
-            greasyfork-script.user.js \
-            "$CURRENT_VERSION"
-
-      - name: Prepare archive files
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          VERSION_DIR="toolkit-releases/v${CURRENT_VERSION}"
-          CURRENT_DIR="toolkit-current"
-          USER_FILENAME="MissionChief_Map_Command_Toolkit_v${CURRENT_VERSION}.user.js"
-          TEXT_FILENAME="MissionChief_Map_Command_Toolkit_v${CURRENT_VERSION}.txt"
-          DETECTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          SHA256="$(tr -d '\r\n ' < greasyfork-script.sha256)"
-
-          mkdir -p "$VERSION_DIR" "$CURRENT_DIR"
-          cp greasyfork-script.user.js "$VERSION_DIR/$USER_FILENAME"
-          cp greasyfork-script.user.js "$VERSION_DIR/$TEXT_FILENAME"
-          cp greasyfork-script.user.js "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.user.js"
-          cp greasyfork-script.user.js "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.txt"
-
-          cmp --silent "$VERSION_DIR/$USER_FILENAME" "$VERSION_DIR/$TEXT_FILENAME"
-          cmp --silent "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.user.js" "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.txt"
-
-          jq -n \
-            --arg version "$CURRENT_VERSION" \
-            --arg detected_at "$DETECTED_AT" \
-            --arg sha256 "$SHA256" \
-            --arg source "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit" \
-            --arg install "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js" \
-            '{
-              version: $version,
-              detectedAt: $detected_at,
-              sha256: $sha256,
-              source: $source,
-              install: $install
-            }' > "$VERSION_DIR/release-info.json"
-
-          printf '%s\n' "$VERSION_DIR/$USER_FILENAME" > archive-user-file.txt
-          printf '%s\n' "$VERSION_DIR/$TEXT_FILENAME" > archive-text-file.txt
-
-      - name: Commit Greasy Fork archive
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add toolkit-releases toolkit-current
-
-          if git diff --cached --quiet; then
-            echo "The published version is already archived."
-          else
-            git commit -m "Archive MissionChief Toolkit v${CURRENT_VERSION} from Greasy Fork"
-            git push
-          fi
-
-      - name: Create or update GitHub release
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TAG="v${CURRENT_VERSION}"
-          USER_FILE="$(cat archive-user-file.txt)"
-          TEXT_FILE="$(cat archive-text-file.txt)"
-          TARGET_SHA="$(git rev-parse HEAD)"
-
-          {
-            echo "Automatically mirrored from the published Greasy Fork release."
-            echo
-            if [[ -s greasyfork-changelog.txt ]]; then
-              echo "## What changed"
-              echo
-              cat greasyfork-changelog.txt
-              echo
-            fi
-            echo "## Source"
-            echo
-            echo "- Greasy Fork: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
-            echo "- SHA-256: $(tr -d '\r\n ' < greasyfork-script.sha256)"
-          } > github-release-notes.md
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$USER_FILE" "$TEXT_FILE" --clobber
-            gh release edit "$TAG" \
-              --title "MissionChief Map Command Toolkit v${CURRENT_VERSION}" \
-              --notes-file github-release-notes.md
-          else
-            gh release create "$TAG" \
-              "$USER_FILE" \
-              "$TEXT_FILE" \
-              --target "$TARGET_SHA" \
-              --title "MissionChief Map Command Toolkit v${CURRENT_VERSION}" \
-              --notes-file github-release-notes.md \
-              --latest
-          fi
-
-      - name: Save mirrored release version
-        if: steps.version.outputs.mirror_needed == 'true'
-        env:
-          CURRENT_VERSION: ${{ steps.version.outputs.current }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          RELEASE_STATE_FILE=".github/greasyfork-release-version.txt"
-          printf '%s\n' "$CURRENT_VERSION" > "$RELEASE_STATE_FILE"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$RELEASE_STATE_FILE"
-
-          if git diff --cached --quiet; then
-            echo "No mirrored-release state change to commit."
-          else
-            git commit -m "Track mirrored Greasy Fork release ${CURRENT_VERSION}"
-            git push
-          fi
+          git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
+          git push

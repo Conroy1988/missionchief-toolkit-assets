@@ -129,43 +129,73 @@ def normalise_version(value):
 
 
 def main():
-    if len(sys.argv) != 4:
-        raise SystemExit("Usage: extract_greasyfork_changelog.py VERSION HTML_FILE OUTPUT_FILE")
+    if len(sys.argv) != 5:
+        raise SystemExit(
+            "Usage: extract_greasyfork_changelog.py CURRENT_VERSION "
+            "PREVIOUS_VERSION HTML_FILE OUTPUT_FILE"
+        )
 
-    target_version = sys.argv[1].strip().lstrip("vV")
-    html_path = Path(sys.argv[2])
-    output_path = Path(sys.argv[3])
+    current_version = sys.argv[1].strip().lstrip("vV")
+    previous_version = sys.argv[2].strip().lstrip("vV")
+    html_path = Path(sys.argv[3])
+    output_path = Path(sys.argv[4])
     html = html_path.read_text(encoding="utf-8", errors="replace")
 
     parser = HistoryParser()
     parser.feed(html)
 
-    if not parser.entries:
+    entries = []
+    for raw_version, raw_changelog in parser.entries:
+        version = normalise_version(raw_version)
+        if version:
+            entries.append((version, clean_text(raw_changelog)))
+
+    if not entries:
         print("No Greasy Fork History entries were found.", file=sys.stderr)
         return 1
 
-    # Greasy Fork sorts History newest first. Only use the latest entry so an
-    # older changelog can never be repeated for a newer release.
-    latest_version_text, latest_changelog_text = parser.entries[0]
-    latest_version = normalise_version(latest_version_text)
-
-    if latest_version != target_version:
+    # Greasy Fork sorts History newest first. Do not process a cached/stale page.
+    latest_version = entries[0][0]
+    if latest_version != current_version:
         print(
-            f"Latest History version is {latest_version or 'unknown'}, expected {target_version}.",
+            f"Latest History version is {latest_version}, expected {current_version}.",
             file=sys.stderr,
         )
         return 1
 
-    changelog = clean_text(latest_changelog_text)
+    # Collect every non-empty changelog since the last Discord announcement.
+    # This matters when several Greasy Fork versions are published before the
+    # scheduled workflow runs. Older, already-announced changelogs are excluded.
+    new_changelogs = []
+    previous_found = not previous_version
+
+    for version, changelog in entries:
+        if previous_version and version == previous_version:
+            previous_found = True
+            break
+        if changelog:
+            new_changelogs.append((version, changelog))
+
+    if not previous_found:
+        print(
+            f"Previously announced version {previous_version} was not found in History.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # Present oldest-to-newest so the Discord summary reads naturally.
+    new_changelogs.reverse()
+    sections = [f"**v{version}**\n{changelog}" for version, changelog in new_changelogs]
+    combined = "\n\n".join(sections)
 
     # Discord embed field values are limited to 1024 characters.
-    if len(changelog) > 1000:
-        changelog = changelog[:997].rstrip() + "..."
+    if len(combined) > 1000:
+        combined = combined[:997].rstrip() + "..."
 
-    output_path.write_text(changelog, encoding="utf-8")
+    output_path.write_text(combined, encoding="utf-8")
     print(
-        f"Matched latest Greasy Fork version {target_version}; "
-        f"changelog length: {len(changelog)}"
+        f"Matched Greasy Fork range {previous_version or 'initial'} -> {current_version}; "
+        f"new changelog entries: {len(new_changelogs)}; output length: {len(combined)}"
     )
     return 0
 

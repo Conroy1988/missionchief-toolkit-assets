@@ -44,7 +44,13 @@ jobs:
           META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
           STATE_FILE=".github/greasyfork-version.txt"
 
-          curl \
+          # Safe defaults ensure a temporary Greasy Fork outage simply skips this
+          # check and is retried by the next scheduled run without sending an email.
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+          echo "current=" >> "$GITHUB_OUTPUT"
+          echo "previous=" >> "$GITHUB_OUTPUT"
+
+          if ! curl \
             --fail \
             --silent \
             --show-error \
@@ -54,7 +60,10 @@ jobs:
             --retry-delay 5 \
             --header "Cache-Control: no-cache" \
             "${META_URL}?cache_bust=$(date +%s%N)" \
-            --output greasyfork-script.meta.js
+            --output greasyfork-script.meta.js; then
+            echo "::warning::Greasy Fork metadata is temporarily unavailable. The next scheduled run will retry."
+            exit 0
+          fi
 
           CURRENT_VERSION="$(
             sed -nE \
@@ -65,13 +74,13 @@ jobs:
           )"
 
           if [[ -z "$CURRENT_VERSION" ]]; then
-            echo "::error::Could not detect the @version value from Greasy Fork."
-            exit 1
+            echo "::warning::Could not detect @version from Greasy Fork. The next scheduled run will retry."
+            exit 0
           fi
 
           if [[ ! "$CURRENT_VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]; then
-            echo "::error::Greasy Fork returned an unsafe version value: $CURRENT_VERSION"
-            exit 1
+            echo "::warning::Greasy Fork returned an unexpected version value. The next scheduled run will retry."
+            exit 0
           fi
 
           if [[ -f "$STATE_FILE" ]]; then
@@ -87,11 +96,10 @@ jobs:
 
           if [[ -n "$PREVIOUS_VERSION" && "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Read new Greasy Fork changelog entries
+        id: changelog
         if: steps.version.outputs.changed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
@@ -103,6 +111,7 @@ jobs:
           HISTORY_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions?show_all_versions=1&list_all=1"
           rm -f greasyfork-history.html greasyfork-changelog.txt
           PAGE_MATCHED=false
+          echo "ready=false" >> "$GITHUB_OUTPUT"
 
           # Greasy Fork's metadata endpoint can update before the History page.
           # Retry for several minutes so Discord receives the actual changelog.
@@ -152,10 +161,11 @@ jobs:
           done
 
           if [[ "$PAGE_MATCHED" != true || ! -f greasyfork-changelog.txt ]]; then
-            echo "::error::Greasy Fork History did not reach version $CURRENT_VERSION with the previous-version boundary $PREVIOUS_VERSION."
-            echo "The announcement has not been marked as sent; the next scheduled run will retry."
-            exit 1
+            echo "::warning::Greasy Fork History has not caught up yet. No Discord post was sent; the next scheduled run will retry."
+            exit 0
           fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
           if [[ -s greasyfork-changelog.txt ]]; then
             echo "Changelog to send:"
@@ -163,7 +173,7 @@ jobs:
           fi
 
       - name: Post update to Discord
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.changed == 'true' && steps.changelog.outputs.ready == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK }}
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
@@ -242,7 +252,7 @@ jobs:
           echo "Discord update notification sent."
 
       - name: Save latest announced version
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.changed == 'true' && steps.changelog.outputs.ready == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash

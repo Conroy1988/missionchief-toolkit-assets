@@ -10,6 +10,7 @@ on:
     paths:
       - ".github/workflows/greasyfork-discord-update.yml"
       - ".github/scripts/extract_greasyfork_changelog.py"
+      - ".github/scripts/fetch_greasyfork_changelog.sh"
       - ".github/scripts/test_extract_greasyfork_changelog.py"
 
 permissions:
@@ -44,8 +45,6 @@ jobs:
           META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
           STATE_FILE=".github/greasyfork-version.txt"
 
-          # Safe defaults: temporary Greasy Fork failures are retried by the next
-          # scheduled run and do not create failed-run emails.
           echo "changed=false" >> "$GITHUB_OUTPUT"
           echo "current=" >> "$GITHUB_OUTPUT"
           echo "previous=" >> "$GITHUB_OUTPUT"
@@ -108,131 +107,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          VERSION_API_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions.json?show_all_versions=1&list_all=1"
-          HISTORY_URLS=(
-            "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions.html?show_all_versions=1&list_all=1"
-            "https://greasyfork.org/en/scripts/586018/versions.html?show_all_versions=1&list_all=1"
-          )
-          BROWSER_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
-
-          rm -f greasyfork-versions.json greasyfork-history.html greasyfork-changelog.txt
           echo "ready=false" >> "$GITHUB_OUTPUT"
 
-          # First use Greasy Fork's JSON versions endpoint. It is more reliable
-          # than the rendered History page and confirms that both boundaries exist.
-          API_READY=false
-          for attempt in 1 2 3; do
-            echo "Checking Greasy Fork versions API (attempt $attempt of 3)..."
-            rm -f greasyfork-versions.json
+          if bash .github/scripts/fetch_greasyfork_changelog.sh; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
 
-            if curl \
-              --fail \
-              --silent \
-              --show-error \
-              --location \
-              --compressed \
-              --http1.1 \
-              --max-time 30 \
-              --retry 2 \
-              --retry-delay 3 \
-              --header "Accept: application/json" \
-              --header "Accept-Language: en-GB,en;q=0.9" \
-              --header "Cache-Control: no-cache" \
-              --user-agent "$BROWSER_UA" \
-              "${VERSION_API_URL}&cache_bust=$(date +%s%N)" \
-              --output greasyfork-versions.json; then
-
-              if jq -e \
-                --arg current "$CURRENT_VERSION" \
-                --arg previous "$PREVIOUS_VERSION" \
-                '
-                  type == "array"
-                  and length > 0
-                  and .[0].version == $current
-                  and (
-                    if $previous == ""
-                    then true
-                    else any(.[]; .version == $previous)
-                    end
-                  )
-                ' greasyfork-versions.json >/dev/null; then
-                API_READY=true
-                break
-              fi
-
-              echo "Versions API has not exposed the complete range yet."
-              jq -r '.[0:8][]?.version' greasyfork-versions.json 2>/dev/null | paste -sd ', ' - || true
+            if [[ -s greasyfork-changelog.txt ]]; then
+              echo "Changelog to send:"
+              cat greasyfork-changelog.txt
+            else
+              echo "No new changelog text was entered for the unannounced versions."
             fi
-
-            if [[ "$attempt" -lt 3 ]]; then
-              sleep 8
-            fi
-          done
-
-          if [[ "$API_READY" != true ]]; then
-            echo "::warning::Greasy Fork has published the metadata version, but its versions API has not caught up yet. No Discord post was sent; the next scheduled run will retry."
-            exit 0
-          fi
-
-          # The JSON API deliberately omits changelog text, so fetch the rendered
-          # History page only after the API confirms the new version is available.
-          PAGE_MATCHED=false
-          for attempt in 1 2 3 4; do
-            echo "Reading Greasy Fork History $PREVIOUS_VERSION -> $CURRENT_VERSION (attempt $attempt of 4)..."
-
-            for HISTORY_URL in "${HISTORY_URLS[@]}"; do
-              rm -f greasyfork-history.html greasyfork-changelog.txt
-
-              if curl \
-                --fail \
-                --silent \
-                --show-error \
-                --location \
-                --compressed \
-                --http1.1 \
-                --max-time 30 \
-                --retry 2 \
-                --retry-delay 3 \
-                --header "Accept: text/html,application/xhtml+xml" \
-                --header "Accept-Language: en-GB,en;q=0.9" \
-                --header "Cache-Control: no-cache" \
-                --header "Pragma: no-cache" \
-                --referer "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit" \
-                --user-agent "$BROWSER_UA" \
-                "${HISTORY_URL}&cache_bust=$(date +%s%N)" \
-                --output greasyfork-history.html; then
-
-                echo "Downloaded History HTML: $(wc -c < greasyfork-history.html) bytes"
-
-                if python3 .github/scripts/extract_greasyfork_changelog.py \
-                  "$CURRENT_VERSION" \
-                  "$PREVIOUS_VERSION" \
-                  greasyfork-history.html \
-                  greasyfork-changelog.txt; then
-                  PAGE_MATCHED=true
-                  break 2
-                fi
-              fi
-            done
-
-            if [[ "$attempt" -lt 4 ]]; then
-              sleep 10
-            fi
-          done
-
-          if [[ "$PAGE_MATCHED" != true || ! -f greasyfork-changelog.txt ]]; then
-            echo "::warning::Greasy Fork's versions API contains $CURRENT_VERSION, but the rendered History page is not readable yet. No Discord post was sent; the next scheduled run will retry."
-            exit 0
-          fi
-
-          echo "ready=true" >> "$GITHUB_OUTPUT"
-
-          if [[ -s greasyfork-changelog.txt ]]; then
-            echo "Changelog to send:"
-            cat greasyfork-changelog.txt
           else
-            echo "No new changelog text was entered for the unannounced versions."
+            echo "::warning::The new Greasy Fork version is live, but its History entry could not yet be read. No Discord post was sent; the next scheduled run will retry."
           fi
 
       - name: Post update to Discord

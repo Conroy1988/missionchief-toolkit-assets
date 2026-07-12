@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent
 EXTRACTOR = ROOT / "extract_greasyfork_changelog.py"
 
 
-def run_case(version: str, html: str):
+def run_case(current: str, previous: str, html: str):
     with tempfile.TemporaryDirectory() as temp_dir:
         temp = Path(temp_dir)
         html_path = temp / "history.html"
@@ -18,7 +18,14 @@ def run_case(version: str, html: str):
         html_path.write_text(html, encoding="utf-8")
 
         result = subprocess.run(
-            [sys.executable, str(EXTRACTOR), version, str(html_path), str(output_path)],
+            [
+                sys.executable,
+                str(EXTRACTOR),
+                current,
+                previous,
+                str(html_path),
+                str(output_path),
+            ],
             text=True,
             capture_output=True,
             check=False,
@@ -59,38 +66,69 @@ def entry(version: str, changelog: str | None) -> str:
 
 
 def main() -> int:
-    # The void <input> elements match Greasy Fork's real History markup and must
-    # not corrupt the parser's element depth.
+    # Several releases happened before the workflow ran. The latest version has
+    # no changelog, but an intermediate version does. Include the new changelog
+    # once and never repeat the previously announced version's changelog.
     result, output = run_case(
+        "3.7.1",
         "3.5.1",
         history(
-            entry(
-                "3.5.1",
-                "<p>Major update</p><ul><li>New mobile controls</li><li>Performance fixes</li></ul>",
-            )
-            + entry("3.4.2", "<p>Older changelog</p>")
+            entry("3.7.1", None)
+            + entry("3.7.0", None)
+            + entry("3.6.0", "<p>Major interface update</p>")
+            + entry("3.5.1", "<p>Already announced</p>")
         ),
     )
     assert result.returncode == 0, result.stderr
     assert output is not None
-    assert "Major update" in output
-    assert "New mobile controls" in output
-    assert "Performance fixes" in output
+    assert "**v3.6.0**" in output
+    assert "Major interface update" in output
+    assert "Already announced" not in output
 
-    # A new version without a changelog must produce an empty result rather
-    # than incorrectly repeating the previous version's changelog.
+    # Multiple new changelogs are combined in chronological order.
     result, output = run_case(
-        "3.5.2",
-        history(entry("3.5.2", None) + entry("3.5.1", "<p>Do not repeat this</p>")),
+        "4.0.0",
+        "3.7.1",
+        history(
+            entry("4.0.0", "<p>Current release</p>")
+            + entry("3.9.0", "<p>Earlier release</p>")
+            + entry("3.7.1", "<p>Do not repeat</p>")
+        ),
+    )
+    assert result.returncode == 0, result.stderr
+    assert output is not None
+    assert output.index("**v3.9.0**") < output.index("**v4.0.0**")
+    assert "Do not repeat" not in output
+
+    # New versions without any changelog produce an empty result, not an old one.
+    result, output = run_case(
+        "4.0.2",
+        "4.0.0",
+        history(
+            entry("4.0.2", None)
+            + entry("4.0.1", None)
+            + entry("4.0.0", "<p>Do not repeat this</p>")
+        ),
     )
     assert result.returncode == 0, result.stderr
     assert output == ""
 
-    # If the page has not refreshed to the requested version yet, fail so the
-    # workflow retries later instead of posting a changelog from an old entry.
+    # If the page has not refreshed to the requested current version, fail so
+    # the workflow retries rather than posting against stale History data.
     result, output = run_case(
-        "3.5.3",
-        history(entry("3.5.2", "<p>Old information</p>")),
+        "4.1.0",
+        "4.0.2",
+        history(entry("4.0.2", "<p>Old information</p>")),
+    )
+    assert result.returncode != 0
+    assert output is None
+
+    # The previous announcement boundary must be present, preventing accidental
+    # reuse of unrelated older changelogs.
+    result, output = run_case(
+        "4.2.0",
+        "3.0.0",
+        history(entry("4.2.0", "<p>New</p>") + entry("4.1.0", "<p>Other</p>")),
     )
     assert result.returncode != 0
     assert output is None

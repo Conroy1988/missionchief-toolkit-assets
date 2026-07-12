@@ -32,6 +32,7 @@ jobs:
 
           META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
           STATE_FILE=".github/greasyfork-version.txt"
+          RELEASE_STATE_FILE=".github/greasyfork-release-version.txt"
 
           curl \
             --fail \
@@ -68,19 +69,42 @@ jobs:
             PREVIOUS_VERSION=""
           fi
 
+          if [[ -f "$RELEASE_STATE_FILE" ]]; then
+            MIRRORED_VERSION="$(tr -d '\r\n ' < "$RELEASE_STATE_FILE")"
+          else
+            MIRRORED_VERSION=""
+          fi
+
           echo "Current Greasy Fork version: $CURRENT_VERSION"
-          echo "Previously recorded version: ${PREVIOUS_VERSION:-none}"
+          echo "Previously announced version: ${PREVIOUS_VERSION:-none}"
+          echo "Previously mirrored version: ${MIRRORED_VERSION:-none}"
           echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "previous=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
 
           if [[ -n "$PREVIOUS_VERSION" && "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            CHANGED=true
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            CHANGED=false
           fi
 
+          if [[ "$CURRENT_VERSION" != "$MIRRORED_VERSION" ]]; then
+            MIRROR_NEEDED=true
+          else
+            MIRROR_NEEDED=false
+          fi
+
+          if [[ "$CHANGED" == true || "$MIRROR_NEEDED" == true ]]; then
+            PROCESS=true
+          else
+            PROCESS=false
+          fi
+
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "mirror_needed=$MIRROR_NEEDED" >> "$GITHUB_OUTPUT"
+          echo "process=$PROCESS" >> "$GITHUB_OUTPUT"
+
       - name: Read Greasy Fork changelog
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.process == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash
@@ -128,7 +152,7 @@ jobs:
           fi
 
       - name: Download published userscript
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.mirror_needed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash
@@ -179,7 +203,7 @@ jobs:
           fi
 
       - name: Validate published userscript
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.mirror_needed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash
@@ -193,7 +217,7 @@ jobs:
             "$CURRENT_VERSION"
 
       - name: Prepare archive files
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.mirror_needed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash
@@ -234,7 +258,7 @@ jobs:
           printf '%s\n' "$VERSION_DIR/$TEXT_FILENAME" > archive-text-file.txt
 
       - name: Commit Greasy Fork archive
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.mirror_needed == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
         shell: bash
@@ -253,7 +277,7 @@ jobs:
           fi
 
       - name: Create or update GitHub release
-        if: steps.version.outputs.changed == 'true'
+        if: steps.version.outputs.mirror_needed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
@@ -294,6 +318,28 @@ jobs:
               --title "MissionChief Map Command Toolkit v${CURRENT_VERSION}" \
               --notes-file github-release-notes.md \
               --latest
+          fi
+
+      - name: Save mirrored release version
+        if: steps.version.outputs.mirror_needed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RELEASE_STATE_FILE=".github/greasyfork-release-version.txt"
+          printf '%s\n' "$CURRENT_VERSION" > "$RELEASE_STATE_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$RELEASE_STATE_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No mirrored-release state change to commit."
+          else
+            git commit -m "Track mirrored Greasy Fork release ${CURRENT_VERSION}"
+            git push
           fi
 
       - name: Post update to Discord

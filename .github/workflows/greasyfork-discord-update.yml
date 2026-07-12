@@ -1,11 +1,8 @@
-name: Greasy Fork Discord Update
+name: Greasy Fork Release Mirror and Discord Update
 
 on:
   schedule:
-    # Check Greasy Fork every 5 minutes
     - cron: "*/5 * * * *"
-
-  # Adds a button so the workflow can also be tested manually
   workflow_dispatch:
 
 permissions:
@@ -17,12 +14,15 @@ concurrency:
 
 jobs:
   check-for-update:
-    name: Check Greasy Fork Version
+    name: Mirror New Greasy Fork Release
     runs-on: ubuntu-latest
+    timeout-minutes: 12
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Read Greasy Fork version
         id: version
@@ -38,6 +38,7 @@ jobs:
             --silent \
             --show-error \
             --location \
+            --max-time 30 \
             --retry 3 \
             --retry-delay 5 \
             "$META_URL" \
@@ -56,6 +57,11 @@ jobs:
             exit 1
           fi
 
+          if [[ ! "$CURRENT_VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]; then
+            echo "::error::Greasy Fork returned an unsafe version value: $CURRENT_VERSION"
+            exit 1
+          fi
+
           if [[ -f "$STATE_FILE" ]]; then
             PREVIOUS_VERSION="$(tr -d '\r\n ' < "$STATE_FILE")"
           else
@@ -64,7 +70,6 @@ jobs:
 
           echo "Current Greasy Fork version: $CURRENT_VERSION"
           echo "Previously recorded version: ${PREVIOUS_VERSION:-none}"
-
           echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
           echo "previous=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
 
@@ -83,13 +88,12 @@ jobs:
           set -euo pipefail
 
           HISTORY_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions?show_all_versions=1&list_all=1"
-          rm -f greasyfork-history.html greasyfork-changelog.txt greasyfork-version-found
+          rm -f greasyfork-history.html greasyfork-changelog.txt
 
-          # Greasy Fork can take a few seconds to expose the newest History entry.
           for attempt in 1 2 3 4 5 6; do
             echo "Reading changelog for version $CURRENT_VERSION (attempt $attempt of 6)..."
 
-            if ! curl \
+            if curl \
               --fail \
               --silent \
               --show-error \
@@ -100,145 +104,12 @@ jobs:
               --user-agent "Mozilla/5.0 GitHub-Actions Greasy-Fork-Update-Monitor" \
               "${HISTORY_URL}&cache_bust=$(date +%s%N)" \
               --output greasyfork-history.html; then
-              echo "::warning::Could not download the Greasy Fork History page on attempt $attempt."
-              if [[ "$attempt" -lt 6 ]]; then
-                sleep 10
-                continue
+              if python3 .github/scripts/extract_greasyfork_changelog.py \
+                "$CURRENT_VERSION" \
+                greasyfork-history.html \
+                greasyfork-changelog.txt; then
+                break
               fi
-              break
-            fi
-
-            python3 - "$CURRENT_VERSION" <<'PY'
-          import re
-          import sys
-          from html.parser import HTMLParser
-          from pathlib import Path
-
-          target_version = sys.argv[1].strip().lstrip("vV")
-          html = Path("greasyfork-history.html").read_text(encoding="utf-8", errors="replace")
-
-
-          class HistoryParser(HTMLParser):
-              BLOCK_TAGS = {"br", "p", "div", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6"}
-              VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
-
-              def __init__(self):
-                  super().__init__(convert_charrefs=True)
-                  self.in_history = False
-                  self.history_ul_depth = 0
-                  self.in_entry = False
-                  self.entry_depth = 0
-                  self.version_depth = 0
-                  self.changelog_depth = 0
-                  self.version_parts = []
-                  self.changelog_parts = []
-                  self.entries = []
-
-              @staticmethod
-              def classes(attrs):
-                  return set(dict(attrs).get("class", "").split())
-
-              def handle_starttag(self, tag, attrs):
-                  classes = self.classes(attrs)
-
-                  if tag == "ul" and "history_versions" in classes and not self.in_history:
-                      self.in_history = True
-                      self.history_ul_depth = 1
-                      return
-
-                  if self.in_history:
-                      if tag == "ul":
-                          self.history_ul_depth += 1
-
-                      if tag == "li" and not self.in_entry:
-                          self.in_entry = True
-                          self.entry_depth = 1
-                          self.version_parts = []
-                          self.changelog_parts = []
-                          return
-
-                  if self.in_entry:
-                      if tag == "li":
-                          self.entry_depth += 1
-
-                      if tag == "span" and "version-number" in classes and self.version_depth == 0:
-                          self.version_depth = 1
-                      elif self.version_depth and tag not in self.VOID_TAGS:
-                          self.version_depth += 1
-
-                      if tag == "span" and "version-changelog" in classes and self.changelog_depth == 0:
-                          self.changelog_depth = 1
-                      elif self.changelog_depth:
-                          if tag == "li":
-                              self.changelog_parts.append("\n• ")
-                          elif tag in self.BLOCK_TAGS:
-                              self.changelog_parts.append("\n")
-                          if tag not in self.VOID_TAGS:
-                              self.changelog_depth += 1
-
-              def handle_startendtag(self, tag, attrs):
-                  if self.in_entry and self.changelog_depth and tag == "br":
-                      self.changelog_parts.append("\n")
-
-              def handle_endtag(self, tag):
-                  if self.in_entry:
-                      if self.version_depth:
-                          self.version_depth -= 1
-
-                      if self.changelog_depth:
-                          if tag in self.BLOCK_TAGS:
-                              self.changelog_parts.append("\n")
-                          self.changelog_depth -= 1
-
-                      if tag == "li":
-                          self.entry_depth -= 1
-                          if self.entry_depth == 0:
-                              self.entries.append(("".join(self.version_parts), "".join(self.changelog_parts)))
-                              self.in_entry = False
-
-                  if self.in_history and tag == "ul":
-                      self.history_ul_depth -= 1
-                      if self.history_ul_depth == 0:
-                          self.in_history = False
-
-              def handle_data(self, data):
-                  if self.in_entry and self.version_depth:
-                      self.version_parts.append(data)
-                  if self.in_entry and self.changelog_depth:
-                      self.changelog_parts.append(data)
-
-
-          def clean_text(value):
-              value = value.replace("\u00a0", " ")
-              value = re.sub(r"[ \t]+", " ", value)
-              lines = [line.strip() for line in value.splitlines()]
-              lines = [line for line in lines if line]
-              return "\n".join(lines).strip()
-
-
-          parser = HistoryParser()
-          parser.feed(html)
-
-          for raw_version, raw_changelog in parser.entries:
-              version_match = re.search(r"(?:^|\s)v?([0-9][0-9A-Za-z._+-]*)", clean_text(raw_version))
-              if not version_match:
-                  continue
-
-              version = version_match.group(1).lstrip("vV")
-              if version != target_version:
-                  continue
-
-              changelog = clean_text(raw_changelog)
-              if len(changelog) > 950:
-                  changelog = changelog[:947].rstrip() + "..."
-
-              Path("greasyfork-version-found").write_text("yes\n", encoding="utf-8")
-              Path("greasyfork-changelog.txt").write_text(changelog, encoding="utf-8")
-              break
-          PY
-
-            if [[ -f greasyfork-version-found ]]; then
-              break
             fi
 
             if [[ "$attempt" -lt 6 ]]; then
@@ -246,14 +117,183 @@ jobs:
             fi
           done
 
-          if [[ ! -f greasyfork-version-found ]]; then
-            echo "::warning::The new version was found in metadata, but its History entry was not available yet. Posting without a changelog."
+          if [[ ! -f greasyfork-changelog.txt ]]; then
+            echo "::warning::The History entry was not available yet. Continuing without a changelog."
             : > greasyfork-changelog.txt
           elif [[ -s greasyfork-changelog.txt ]]; then
             echo "Changelog found:"
             cat greasyfork-changelog.txt
           else
             echo "The version was found, but no changelog was entered."
+          fi
+
+      - name: Download published userscript
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+          rm -f greasyfork-script.user.js
+
+          for attempt in 1 2 3 4 5 6; do
+            echo "Downloading published userscript (attempt $attempt of 6)..."
+
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --location \
+              --max-time 60 \
+              --retry 3 \
+              --retry-delay 5 \
+              --user-agent "Mozilla/5.0 GitHub-Actions Greasy-Fork-Release-Mirror" \
+              "${INSTALL_URL}?cache_bust=$(date +%s%N)" \
+              --output greasyfork-script.user.js
+
+            DOWNLOADED_VERSION="$(
+              sed -nE \
+                's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' \
+                greasyfork-script.user.js |
+                head -n 1 |
+                xargs
+            )"
+
+            if [[ "$DOWNLOADED_VERSION" == "$CURRENT_VERSION" ]]; then
+              break
+            fi
+
+            echo "Downloaded version '${DOWNLOADED_VERSION:-unknown}' does not yet match '$CURRENT_VERSION'."
+            rm -f greasyfork-script.user.js
+
+            if [[ "$attempt" -lt 6 ]]; then
+              sleep 10
+            fi
+          done
+
+          if [[ ! -s greasyfork-script.user.js ]]; then
+            echo "::error::Could not download the published userscript for version $CURRENT_VERSION."
+            exit 1
+          fi
+
+      - name: Validate published userscript
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node --check greasyfork-script.user.js
+          npm install --no-save --ignore-scripts acorn@8.15.0
+          node .github/scripts/validate_userscript.mjs \
+            greasyfork-script.user.js \
+            "$CURRENT_VERSION"
+
+      - name: Prepare archive files
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION_DIR="toolkit-releases/v${CURRENT_VERSION}"
+          CURRENT_DIR="toolkit-current"
+          USER_FILENAME="MissionChief_Map_Command_Toolkit_v${CURRENT_VERSION}.user.js"
+          TEXT_FILENAME="MissionChief_Map_Command_Toolkit_v${CURRENT_VERSION}.txt"
+          DETECTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          SHA256="$(tr -d '\r\n ' < greasyfork-script.sha256)"
+
+          mkdir -p "$VERSION_DIR" "$CURRENT_DIR"
+          cp greasyfork-script.user.js "$VERSION_DIR/$USER_FILENAME"
+          cp greasyfork-script.user.js "$VERSION_DIR/$TEXT_FILENAME"
+          cp greasyfork-script.user.js "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.user.js"
+          cp greasyfork-script.user.js "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.txt"
+
+          cmp --silent "$VERSION_DIR/$USER_FILENAME" "$VERSION_DIR/$TEXT_FILENAME"
+          cmp --silent "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.user.js" "$CURRENT_DIR/MissionChief_Map_Command_Toolkit.txt"
+
+          jq -n \
+            --arg version "$CURRENT_VERSION" \
+            --arg detected_at "$DETECTED_AT" \
+            --arg sha256 "$SHA256" \
+            --arg source "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit" \
+            --arg install "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js" \
+            '{
+              version: $version,
+              detectedAt: $detected_at,
+              sha256: $sha256,
+              source: $source,
+              install: $install
+            }' > "$VERSION_DIR/release-info.json"
+
+          printf '%s\n' "$VERSION_DIR/$USER_FILENAME" > archive-user-file.txt
+          printf '%s\n' "$VERSION_DIR/$TEXT_FILENAME" > archive-text-file.txt
+
+      - name: Commit Greasy Fork archive
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add toolkit-releases toolkit-current
+
+          if git diff --cached --quiet; then
+            echo "The published version is already archived."
+          else
+            git commit -m "Archive MissionChief Toolkit v${CURRENT_VERSION} from Greasy Fork"
+            git push
+          fi
+
+      - name: Create or update GitHub release
+        if: steps.version.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="v${CURRENT_VERSION}"
+          USER_FILE="$(cat archive-user-file.txt)"
+          TEXT_FILE="$(cat archive-text-file.txt)"
+          TARGET_SHA="$(git rev-parse HEAD)"
+
+          {
+            echo "Automatically mirrored from the published Greasy Fork release."
+            echo
+            if [[ -s greasyfork-changelog.txt ]]; then
+              echo "## What changed"
+              echo
+              cat greasyfork-changelog.txt
+              echo
+            fi
+            echo "## Source"
+            echo
+            echo "- Greasy Fork: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
+            echo "- SHA-256: $(tr -d '\r\n ' < greasyfork-script.sha256)"
+          } > github-release-notes.md
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$USER_FILE" "$TEXT_FILE" --clobber
+            gh release edit "$TAG" \
+              --title "MissionChief Map Command Toolkit v${CURRENT_VERSION}" \
+              --notes-file github-release-notes.md
+          else
+            gh release create "$TAG" \
+              "$USER_FILE" \
+              "$TEXT_FILE" \
+              --target "$TARGET_SHA" \
+              --title "MissionChief Map Command Toolkit v${CURRENT_VERSION}" \
+              --notes-file github-release-notes.md \
+              --latest
           fi
 
       - name: Post update to Discord
@@ -265,6 +305,7 @@ jobs:
           SCRIPT_URL: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit
           HISTORY_URL: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions
           INSTALL_URL: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+          RELEASE_URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.current }}
         shell: bash
         run: |
           set -euo pipefail
@@ -274,12 +315,7 @@ jobs:
             exit 1
           fi
 
-          if [[ -f greasyfork-changelog.txt ]]; then
-            CHANGELOG="$(cat greasyfork-changelog.txt)"
-          else
-            CHANGELOG=""
-          fi
-
+          CHANGELOG="$(cat greasyfork-changelog.txt 2>/dev/null || true)"
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
           jq -n \
@@ -289,55 +325,38 @@ jobs:
             --arg script_url "$SCRIPT_URL" \
             --arg history_url "$HISTORY_URL" \
             --arg install_url "$INSTALL_URL" \
+            --arg release_url "$RELEASE_URL" \
             --arg timestamp "$TIMESTAMP" \
             '{
               username: "MissionChief Toolkit Updates",
-              allowed_mentions: {
-                parse: []
-              },
+              allowed_mentions: { parse: [] },
               embeds: [
                 {
                   title: "MissionChief Map Command Toolkit Updated",
-                  description: "A new version of the toolkit is now live on Greasy Fork.",
+                  description: "A new version is live on Greasy Fork and has been archived on GitHub.",
                   url: $script_url,
                   color: 3447003,
                   fields: (
                     [
-                      {
-                        name: "Previous Version",
-                        value: ("`" + $previous + "`"),
-                        inline: true
-                      },
-                      {
-                        name: "New Version",
-                        value: ("`" + $current + "`"),
-                        inline: true
-                      }
+                      { name: "Previous Version", value: ("`" + $previous + "`"), inline: true },
+                      { name: "New Version", value: ("`" + $current + "`"), inline: true }
                     ]
                     +
                     (if ($changelog | length) > 0 then
-                      [
-                        {
-                          name: "What Changed",
-                          value: $changelog,
-                          inline: false
-                        }
-                      ]
+                      [{ name: "What Changed", value: $changelog, inline: false }]
                     else
                       []
                     end)
                     +
                     [
                       {
-                        name: "Update",
-                        value: ("[View on Greasy Fork](" + $script_url + ")\n[View version history](" + $history_url + ")\n[Install or update the script](" + $install_url + ")"),
+                        name: "Update and Archive",
+                        value: ("[View on Greasy Fork](" + $script_url + ")\n[View version history](" + $history_url + ")\n[Install or update the script](" + $install_url + ")\n[Download the GitHub release](" + $release_url + ")"),
                         inline: false
                       }
                     ]
                   ),
-                  footer: {
-                    text: "MissionChief Map Command Toolkit"
-                  },
+                  footer: { text: "MissionChief Map Command Toolkit" },
                   timestamp: $timestamp
                 }
               ]
@@ -347,6 +366,9 @@ jobs:
             --fail \
             --silent \
             --show-error \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
             --request POST \
             --header "Content-Type: application/json" \
             --data @discord-payload.json \
@@ -364,12 +386,10 @@ jobs:
           set -euo pipefail
 
           STATE_FILE=".github/greasyfork-version.txt"
-
           printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add "$STATE_FILE"
 
           if git diff --cached --quiet; then

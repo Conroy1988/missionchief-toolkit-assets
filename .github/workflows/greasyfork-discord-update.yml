@@ -2,7 +2,7 @@ name: Greasy Fork Discord Update
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "3-58/5 * * * *"
   workflow_dispatch:
   push:
     branches:

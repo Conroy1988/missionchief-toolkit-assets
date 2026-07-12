@@ -1,0 +1,173 @@
+name: Greasy Fork Discord Update
+
+on:
+  schedule:
+    # Check Greasy Fork every 10 minutes
+    - cron: "*/5 * * * *"
+
+  # Adds a button so the workflow can also be tested manually
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: greasyfork-update-monitor
+  cancel-in-progress: false
+
+jobs:
+  check-for-update:
+    name: Check Greasy Fork Version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read Greasy Fork version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
+          STATE_FILE=".github/greasyfork-version.txt"
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --retry 3 \
+            --retry-delay 5 \
+            "$META_URL" \
+            --output greasyfork-script.meta.js
+
+          CURRENT_VERSION="$(
+            sed -nE \
+              's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' \
+              greasyfork-script.meta.js |
+              head -n 1 |
+              xargs
+          )"
+
+          if [[ -z "$CURRENT_VERSION" ]]; then
+            echo "::error::Could not detect the @version value from Greasy Fork."
+            exit 1
+          fi
+
+          if [[ -f "$STATE_FILE" ]]; then
+            PREVIOUS_VERSION="$(tr -d '\r\n ' < "$STATE_FILE")"
+          else
+            PREVIOUS_VERSION=""
+          fi
+
+          echo "Current Greasy Fork version: $CURRENT_VERSION"
+          echo "Previously recorded version: ${PREVIOUS_VERSION:-none}"
+
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "previous=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
+
+          if [[ -n "$PREVIOUS_VERSION" && "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post update to Discord
+        if: steps.version.outputs.changed == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
+          SCRIPT_URL: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit
+          INSTALL_URL: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+            echo "::error::The DISCORD_UPDATE_WEBHOOK repository secret has not been configured."
+            exit 1
+          fi
+
+          TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          jq -n \
+            --arg current "$CURRENT_VERSION" \
+            --arg previous "$PREVIOUS_VERSION" \
+            --arg script_url "$SCRIPT_URL" \
+            --arg install_url "$INSTALL_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              username: "MissionChief Toolkit Updates",
+              allowed_mentions: {
+                parse: []
+              },
+              embeds: [
+                {
+                  title: "MissionChief Map Command Toolkit Updated",
+                  description: "A new version of the toolkit is now live on Greasy Fork.",
+                  url: $script_url,
+                  color: 3447003,
+                  fields: [
+                    {
+                      name: "Previous Version",
+                      value: ("`" + $previous + "`"),
+                      inline: true
+                    },
+                    {
+                      name: "New Version",
+                      value: ("`" + $current + "`"),
+                      inline: true
+                    },
+                    {
+                      name: "Update",
+                      value: ("[View on Greasy Fork](" + $script_url + ")\n[Install or update the script](" + $install_url + ")"),
+                      inline: false
+                    }
+                  ],
+                  footer: {
+                    text: "MissionChief Map Command Toolkit"
+                  },
+                  timestamp: $timestamp
+                }
+              ]
+            }' > discord-payload.json
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-payload.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true"
+
+          echo
+          echo "Discord update notification sent."
+
+      - name: Save latest version
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STATE_FILE=".github/greasyfork-version.txt"
+
+          printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "$STATE_FILE"
+
+          if git diff --cached --quiet; then
+            echo "No version-state change to commit."
+            exit 0
+          fi
+
+          git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
+          git push

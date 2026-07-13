@@ -1,0 +1,35 @@
+name: Migrate Umbrella theme audio
+
+on:
+  push:
+    paths:
+      - '.github/workflows/migrate-umbrella-audio.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy legacy audio into the theme package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p themes/umbrella/audio
+          cp biohazzard-cashout.mp3 themes/umbrella/audio/umbrella-containment-cashout.mp3
+      - name: Commit audio path
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add themes/umbrella/audio/umbrella-containment-cashout.mp3
+          if git diff --cached --quiet; then
+            echo 'Umbrella audio already migrated.'
+            exit 0
+          fi
+          git commit -m 'Migrate Umbrella Containment cashout audio'
+          git push

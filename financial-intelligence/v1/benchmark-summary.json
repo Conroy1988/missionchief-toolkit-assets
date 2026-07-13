@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "version": "2026.07.14.1",
+  "generatedAt": "2026-07-14T00:00:00Z",
+  "sampleSize": 0,
+  "minimumSampleSize": 20,
+  "bands": [],
+  "message": "Benchmark collection is enabled in Toolkit v4.5.0. Comparative percentiles appear after a statistically useful sample has been collected."
+}

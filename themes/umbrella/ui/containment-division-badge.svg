@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+<title id="title">BSL-4 Containment Division badge</title>
+<desc id="desc">Circular corporate containment badge with an original hazard shield and transparent background.</desc>
+<defs><path id="topArc" d="M112 320a208 208 0 0 1 416 0"/><path id="bottomArc" d="M528 320a208 208 0 0 1-416 0"/></defs>
+<g>
+  <circle cx="320" cy="320" r="282" fill="#0a0d12" stroke="#727983" stroke-width="10"/>
+  <circle cx="320" cy="320" r="250" fill="#151a21" stroke="#c8102e" stroke-width="18"/>
+  <circle cx="320" cy="320" r="204" fill="#0b1114" stroke="#e7ecef" stroke-width="4" stroke-dasharray="12 8"/>
+  <g fill="#f0f3f5" font-family="Arial Narrow,Arial,sans-serif" font-weight="900" letter-spacing="8"><text font-size="34"><textPath href="#topArc" startOffset="50%" text-anchor="middle">UMBRELLA CONTAINMENT</textPath></text><text font-size="28"><textPath href="#bottomArc" startOffset="50%" text-anchor="middle">AUTHORIZED PERSONNEL</textPath></text></g>
+  <path d="M320 173 438 220v100c0 88-50 145-118 177-68-32-118-89-118-177V220Z" fill="#111820" stroke="#dfe5e8" stroke-width="8"/>
+  <path d="M320 212 397 243v72c0 58-31 99-77 126-46-27-77-68-77-126v-72Z" fill="#c8102e"/>
+  <g transform="translate(320 321)" fill="#f5f7f8"><circle r="24"/><path d="M0-31c-22-63-79-69-105-34 38-8 62 11 72 43Z"/><path d="M27 16c65 13 99-34 81-74-12 36-39 47-72 39Z"/><path d="M-27 16c-43 50-20 104 24 109-27-26-24-55-3-81Z"/></g>
+  <rect x="254" y="494" width="132" height="50" rx="8" fill="#e9edf0"/>
+  <text x="320" y="528" text-anchor="middle" fill="#11161d" font-family="Consolas,monospace" font-size="28" font-weight="900">BSL-4</text>
+</g>
+</svg>

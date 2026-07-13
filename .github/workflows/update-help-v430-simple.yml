@@ -1,0 +1,24 @@
+name: Apply Help Centre v4.3.0 patch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-help-v430-simple.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/update-help-v430.py
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add help/index.html help/manifest.json
+          git commit -m 'Update Help Centre for Umbrella Containment v4.3.0'
+          git push

@@ -84,7 +84,7 @@ def main() -> int:
     assert "Major interface update" in output
     assert "Already announced" not in output
 
-    # Multiple new changelogs are combined in chronological order.
+    # Multiple short changelogs remain chronological.
     result, output = run_case(
         "4.0.0",
         "3.7.1",
@@ -98,6 +98,40 @@ def main() -> int:
     assert output is not None
     assert output.index("**v3.9.0**") < output.index("**v4.0.0**")
     assert "Do not repeat" not in output
+
+    # When the Discord limit is exceeded, older sections are omitted first and
+    # the newest release notes are always retained.
+    result, output = run_case(
+        "5.0.0",
+        "4.7.0",
+        history(
+            entry("5.0.0", "<p>LATEST UNIQUE RELEASE NOTES</p>")
+            + entry("4.9.0", "<p>" + ("Middle changes " * 55) + "</p>")
+            + entry("4.8.0", "<p>" + ("Old changes " * 65) + "</p>")
+            + entry("4.7.0", "<p>Already announced</p>")
+        ),
+    )
+    assert result.returncode == 0, result.stderr
+    assert output is not None
+    assert len(output) <= 1000
+    assert "LATEST UNIQUE RELEASE NOTES" in output
+    assert "Omitted" in output
+    assert "Already announced" not in output
+
+    # A single oversized latest changelog is shortened rather than discarded.
+    result, output = run_case(
+        "5.1.0",
+        "5.0.0",
+        history(
+            entry("5.1.0", "<p>LATEST START " + ("detail " * 300) + "</p>")
+            + entry("5.0.0", "<p>Already announced</p>")
+        ),
+    )
+    assert result.returncode == 0, result.stderr
+    assert output is not None
+    assert len(output) <= 1000
+    assert "LATEST START" in output
+    assert "shortened" in output
 
     # New versions without any changelog produce an empty result, not an old one.
     result, output = run_case(
@@ -131,7 +165,7 @@ def main() -> int:
     assert result.returncode != 0
     assert output is None
 
-    # Jina Reader-style Markdown works when Greasy Fork blocks GitHub Actions.
+    # Reader-style Markdown works when Greasy Fork blocks GitHub Actions.
     reader_markdown = """
 Title: Version history for MissionChief Map Command Toolkit
 URL Source: https://greasyfork.org/en/scripts/586018/versions

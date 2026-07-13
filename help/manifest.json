@@ -1,13 +1,14 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "1.0.0",
+  "guideVersion": "4.2.0",
   "toolkitVersion": "4.2.0",
   "updated": "2026-07-13",
   "path": "help/index.html",
-  "sha256": "14fc9c56c0736049c8b0f818725a81ae41ae704e2b42280065f6d621bdffed6b",
-  "bytes": 52394,
+  "contentCommit": "e163d67015aae7059d50031cb45ca5425f1cbee6",
+  "gitBlobSha1": "ccad16912030ea5d941476d41f13f3777c923577",
   "sections": 18,
   "searchEnabled": true,
   "standalone": true,
-  "viewerMode": "fetched by userscript and rendered in a sandboxed srcdoc iframe"
+  "viewerMode": "Fetched by the userscript and rendered in a sandboxed srcdoc iframe",
+  "privacy": "Static public documentation only; no MissionChief account data is sent to GitHub"
 }

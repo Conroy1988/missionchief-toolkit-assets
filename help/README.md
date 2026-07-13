@@ -8,4 +8,4 @@ Public user documentation for the MissionChief Map Command Toolkit.
 - No MissionChief account data is sent to this repository.
 - Major Toolkit releases must update the guide when user-facing behaviour changes.
 
-Current Toolkit coverage: **v4.2.0**
+Current Toolkit coverage: **v4.2.1**

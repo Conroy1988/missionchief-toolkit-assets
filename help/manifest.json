@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.2.0",
-  "toolkitVersion": "4.2.0",
+  "guideVersion": "4.2.1",
+  "toolkitVersion": "4.2.1",
   "updated": "2026-07-13",
   "path": "help/index.html",
   "contentCommit": "e163d67015aae7059d50031cb45ca5425f1cbee6",
@@ -10,5 +10,6 @@
   "searchEnabled": true,
   "standalone": true,
   "viewerMode": "Fetched by the userscript and rendered in a sandboxed srcdoc iframe",
-  "privacy": "Static public documentation only; no MissionChief account data is sent to GitHub"
+  "privacy": "Static public documentation only; no MissionChief account data is sent to GitHub",
+  "navigationHotfix": "Internal fragment links are intercepted and scrolled inside the guide document."
 }

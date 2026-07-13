@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" role="img" aria-labelledby="title desc">
+<title id="title">Containment surveillance terminal</title>
+<desc id="desc">Original red security camera and artificial intelligence eye graphic on transparent background.</desc>
+<defs><radialGradient id="iris" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#fff"/><stop offset=".16" stop-color="#ff9aa8"/><stop offset=".35" stop-color="#ff2d4e"/><stop offset=".68" stop-color="#9a0d25"/><stop offset="1" stop-color="#17050a"/></radialGradient><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<g fill="none" stroke="#7c858e" stroke-width="3"><path d="M42 66h636v288H42z"/><path d="M64 90h592v240H64z" stroke-dasharray="14 8"/><path d="M42 128h32M42 292h32M646 128h32M646 292h32"/></g>
+<path d="M130 210c72-98 176-142 230-142s158 44 230 142c-72 98-176 142-230 142s-158-44-230-142Z" fill="#100d12" stroke="#c8102e" stroke-width="8"/>
+<ellipse cx="360" cy="210" rx="118" ry="118" fill="#0b0e13" stroke="#dce1e4" stroke-width="6"/>
+<circle cx="360" cy="210" r="76" fill="url(#iris)" filter="url(#glow)"/><circle cx="360" cy="210" r="27" fill="#090a0e"/><circle cx="338" cy="182" r="12" fill="#fff" opacity=".85"/>
+<g stroke="#c8102e" stroke-width="4" opacity=".9"><path d="M360 68v44M360 308v44M218 210h44M458 210h44"/><path d="m258 108 31 31m142 142 31 31m0-204-31 31M289 281l-31 31"/></g>
+<g fill="#dbe1e4" font-family="Consolas,monospace"><text x="66" y="54" font-size="24">RED QUEUE // SURVEILLANCE NODE</text><text x="66" y="388" font-size="18" fill="#c8102e">TARGET ACQUISITION: ACTIVE</text><text x="456" y="388" font-size="18">CLEARANCE BSL-4</text></g>
+</svg>

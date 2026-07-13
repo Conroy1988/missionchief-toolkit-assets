@@ -41,6 +41,8 @@ BOILERPLATE_LINES = {
     "these are all versions of this script.",
 }
 
+DISCORD_FIELD_LIMIT = 1000
+
 
 class HistoryParser(HTMLParser):
     """Extract top-level version entries from Greasy Fork's History page."""
@@ -180,7 +182,7 @@ def clean_reader_fragment(value):
 
 
 def parse_reader_entries(text):
-    """Parse Jina Reader/Markdown/plain-text output as a fallback."""
+    """Parse reader/Markdown/plain-text output as a fallback."""
     text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
     lines = text.splitlines()
@@ -237,6 +239,43 @@ def extract_entries(document):
     return parse_reader_entries(document), "reader text"
 
 
+def format_changelogs(newest_first):
+    """Fit changelog sections into Discord while always preserving newest notes."""
+    chronological = list(reversed(newest_first))
+    sections = [f"**v{version}**\n{changelog}" for version, changelog in chronological]
+    combined = "\n\n".join(sections)
+
+    if len(combined) <= DISCORD_FIELD_LIMIT:
+        return combined
+
+    # Drop the oldest sections first. The previous implementation cut the end of
+    # the string, which removed the newest release notes and repeated old entries.
+    for omitted in range(1, len(sections)):
+        label = "entry" if omitted == 1 else "entries"
+        note = (
+            f"_Omitted {omitted} earlier unannounced changelog {label}; "
+            "see version history._"
+        )
+        candidate = note + "\n\n" + "\n\n".join(sections[omitted:])
+        if len(candidate) <= DISCORD_FIELD_LIMIT:
+            return candidate
+
+    # The newest single changelog is itself too long. Keep its beginning and state
+    # clearly that it was shortened, rather than losing the newest release entirely.
+    latest = sections[-1]
+    if len(sections) > 1:
+        note = (
+            f"_Omitted {len(sections) - 1} earlier unannounced changelog "
+            f"{'entry' if len(sections) == 2 else 'entries'}; "
+            "the latest entry was shortened. See version history._\n\n"
+        )
+    else:
+        note = "_The latest changelog was shortened; see version history._\n\n"
+
+    available = max(0, DISCORD_FIELD_LIMIT - len(note) - 3)
+    return note + latest[:available].rstrip() + "..."
+
+
 def main():
     if len(sys.argv) != 5:
         raise SystemExit(
@@ -281,12 +320,7 @@ def main():
         )
         return 1
 
-    new_changelogs.reverse()
-    sections = [f"**v{version}**\n{changelog}" for version, changelog in new_changelogs]
-    combined = "\n\n".join(sections)
-
-    if len(combined) > 1000:
-        combined = combined[:997].rstrip() + "..."
+    combined = format_changelogs(new_changelogs)
 
     output_path.write_text(combined, encoding="utf-8")
     print(

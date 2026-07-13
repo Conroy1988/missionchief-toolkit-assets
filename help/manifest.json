@@ -1,15 +1,15 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.2.1",
-  "toolkitVersion": "4.2.1",
+  "guideVersion": "4.3.0",
+  "toolkitVersion": "4.3.0",
   "updated": "2026-07-13",
   "path": "help/index.html",
-  "contentCommit": "e163d67015aae7059d50031cb45ca5425f1cbee6",
-  "gitBlobSha1": "ccad16912030ea5d941476d41f13f3777c923577",
   "sections": 18,
   "searchEnabled": true,
   "standalone": true,
   "viewerMode": "Fetched by the userscript and rendered in a sandboxed srcdoc iframe",
   "privacy": "Static public documentation only; no MissionChief account data is sent to GitHub",
-  "navigationHotfix": "Internal fragment links are intercepted and scrolled inside the guide document."
+  "navigationHotfix": "Internal fragment links are intercepted and scrolled inside the guide document.",
+  "umbrellaContainmentPackage": "themes/umbrella/manifest.json",
+  "runtimeGuidePatch": "Toolkit v4.3.0 upgrades the hosted guide copy in memory with the current Umbrella Containment naming and feature notes before rendering."
 }

@@ -15,8 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Update searchable guide and manifest
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
           import json
 
@@ -48,6 +49,7 @@ jobs:
           manifest['updated'] = '2026-07-13'
           manifest['umbrellaContainmentPackage'] = 'themes/umbrella/manifest.json'
           manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+          PY
       - name: Commit guide update
         shell: bash
         run: |
@@ -61,5 +63,3 @@ jobs:
           fi
           git commit -m 'Update Help Centre for Umbrella Containment v4.3.0'
           git push
-
-# Triggered after workflow registration.

@@ -1,0 +1,62 @@
+name: Help Centre v4.2.1 navigation hotfix
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/help-centre-v4.2.1-hotfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply guide navigation correction
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          guide_path = Path('help/index.html')
+          source = guide_path.read_text(encoding='utf-8')
+          source = source.replace('Guide for Toolkit v4.2.0', 'Guide for Toolkit v4.2.1')
+          source = source.replace('Help Centre for v4.2.0', 'Help Centre for v4.2.1')
+
+          needle = "nav.addEventListener('click',closeMenu);"
+          guard = """nav.addEventListener('click',closeMenu);const jump=h=>{if(!h.startsWith('#'))return false;let id='';try{id=decodeURIComponent(h.slice(1))}catch(_){id=h.slice(1)}const t=id?document.getElementById(id):document.documentElement;if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});return true};document.addEventListener('click',e=>{const a=e.target instanceof Element?e.target.closest('a[href]'):null;if(!a)return;const h=a.getAttribute('href')||'';if(h.startsWith('#')){e.preventDefault();jump(h)}});"""
+          if 'const jump=h=>' not in source:
+              if needle not in source:
+                  raise SystemExit('Expected guide navigation insertion point was not found.')
+              source = source.replace(needle, guard, 1)
+          guide_path.write_text(source, encoding='utf-8', newline='\n')
+
+          manifest_path = Path('help/manifest.json')
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['guideVersion'] = '4.2.1'
+          manifest['toolkitVersion'] = '4.2.1'
+          manifest['updated'] = '2026-07-13'
+          manifest['navigationHotfix'] = 'Internal fragment links are intercepted and scrolled inside the guide document.'
+          manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+
+          readme_path = Path('help/README.md')
+          readme = readme_path.read_text(encoding='utf-8').replace('Current Toolkit coverage: **v4.2.0**', 'Current Toolkit coverage: **v4.2.1**')
+          readme_path.write_text(readme, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Commit corrected guide
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "Guide already corrected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add help/index.html help/manifest.json help/README.md
+          git commit -m "Fix Help Centre internal navigation for v4.2.1"
+          git push

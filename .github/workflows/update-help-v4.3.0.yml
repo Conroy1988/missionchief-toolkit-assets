@@ -61,3 +61,5 @@ jobs:
           fi
           git commit -m 'Update Help Centre for Umbrella Containment v4.3.0'
           git push
+
+# Triggered after workflow registration.

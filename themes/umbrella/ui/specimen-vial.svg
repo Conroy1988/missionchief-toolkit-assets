@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 720" role="img" aria-labelledby="title desc">
+<title id="title">Secure specimen vial</title>
+<desc id="desc">Transparent laboratory vial with red specimen fluid and containment markings.</desc>
+<defs><linearGradient id="glass" x1="0" x2="1"><stop offset="0" stop-color="#cde2e8" stop-opacity=".18"/><stop offset=".18" stop-color="#fff" stop-opacity=".72"/><stop offset=".46" stop-color="#b8d4dc" stop-opacity=".20"/><stop offset=".78" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#9ab8c0" stop-opacity=".15"/></linearGradient><linearGradient id="fluid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6378"/><stop offset=".3" stop-color="#d7193f"/><stop offset="1" stop-color="#6d071b"/></linearGradient></defs>
+<g>
+  <rect x="124" y="42" width="172" height="88" rx="18" fill="#11151b" stroke="#717a83" stroke-width="7"/><path d="M142 62h136M142 84h136M142 106h136" stroke="#373d45" stroke-width="7"/>
+  <path d="M150 126h120v58c0 24 22 43 38 58 27 25 44 62 44 101v258c0 43-35 77-78 77H146c-43 0-78-34-78-77V343c0-39 17-76 44-101 16-15 38-34 38-58Z" fill="url(#glass)" stroke="#dbe5e9" stroke-width="8"/>
+  <path d="M83 400h254v201c0 34-27 61-61 61H144c-34 0-61-27-61-61Z" fill="url(#fluid)" opacity=".92"/><path d="M83 400c48-31 80 22 126 0s82 27 128 0" fill="none" stroke="#ff9aaa" stroke-width="7" opacity=".8"/>
+  <rect x="104" y="276" width="212" height="126" rx="8" fill="#e9edef" stroke="#aab2b9" stroke-width="5"/><text x="210" y="316" text-anchor="middle" fill="#11161d" font-family="Arial Narrow,Arial,sans-serif" font-size="28" font-weight="900">UMBRA BIOLOGICS</text><text x="210" y="350" text-anchor="middle" fill="#c8102e" font-family="Consolas,monospace" font-size="24" font-weight="900">SPECIMEN T-07</text><text x="210" y="379" text-anchor="middle" fill="#11161d" font-family="Consolas,monospace" font-size="18">BSL-4 // DO NOT OPEN</text><path d="M118 210h184" stroke="#eaf3f6" stroke-width="8" opacity=".7"/><path d="M124 156h172" stroke="#c8102e" stroke-width="8" opacity=".8"/>
+</g>
+</svg>

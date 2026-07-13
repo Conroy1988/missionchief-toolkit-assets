@@ -27,10 +27,20 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Check out repository
+      - name: Check out latest main
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
+
+      - name: Synchronize repository state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --prune
+          git checkout -B main origin/main
+          echo "Using repository commit: $(git rev-parse HEAD)"
+          echo "Tracked Greasy Fork version: $(tr -d '\r\n ' < .github/greasyfork-version.txt 2>/dev/null || echo none)"
 
       - name: Test changelog extractor
         shell: bash
@@ -122,8 +132,40 @@ jobs:
             echo "::warning::The new Greasy Fork version is live, but its History entry could not yet be read. No Discord post was sent; the next scheduled run will retry."
           fi
 
-      - name: Post update to Discord
+      - name: Confirm update is still unannounced
+        id: pending
         if: steps.version.outputs.changed == 'true' && steps.changelog.outputs.ready == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "pending=false" >> "$GITHUB_OUTPUT"
+
+          git fetch origin main --prune
+          REMOTE_STATE="$(
+            git show origin/main:.github/greasyfork-version.txt 2>/dev/null |
+              tr -d '\r\n ' || true
+          )"
+
+          echo "State used for this run: ${PREVIOUS_VERSION:-none}"
+          echo "Current state on main: ${REMOTE_STATE:-none}"
+
+          if [[ "$REMOTE_STATE" == "$CURRENT_VERSION" ]]; then
+            echo "Version $CURRENT_VERSION has already been announced. Skipping duplicate Discord post."
+            exit 0
+          fi
+
+          if [[ "$REMOTE_STATE" != "$PREVIOUS_VERSION" ]]; then
+            echo "::warning::The announcement state changed while this run was active. Skipping to prevent repeated changelogs."
+            exit 0
+          fi
+
+          echo "pending=true" >> "$GITHUB_OUTPUT"
+
+      - name: Post update to Discord
+        if: steps.pending.outputs.pending == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK }}
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
@@ -202,24 +244,48 @@ jobs:
           echo "Discord update notification sent."
 
       - name: Save latest announced version
-        if: steps.version.outputs.changed == 'true' && steps.changelog.outputs.ready == 'true'
+        if: steps.pending.outputs.pending == 'true'
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.previous }}
         shell: bash
         run: |
           set -euo pipefail
 
           STATE_FILE=".github/greasyfork-version.txt"
-          printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "$STATE_FILE"
 
-          if git diff --cached --quiet; then
-            echo "No version-state change to commit."
-            exit 0
-          fi
+          for attempt in 1 2 3; do
+            echo "Saving announcement state (attempt $attempt of 3)..."
+            git fetch origin main --prune
+            git reset --hard origin/main
 
-          git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
-          git push
+            REMOTE_STATE="$(tr -d '\r\n ' < "$STATE_FILE" 2>/dev/null || true)"
+
+            if [[ "$REMOTE_STATE" == "$CURRENT_VERSION" ]]; then
+              echo "Version $CURRENT_VERSION is already recorded."
+              exit 0
+            fi
+
+            if [[ "$REMOTE_STATE" != "$PREVIOUS_VERSION" ]]; then
+              echo "::warning::Main now records ${REMOTE_STATE:-none}, not ${PREVIOUS_VERSION:-none}. Refusing to overwrite newer announcement state."
+              exit 0
+            fi
+
+            printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
+            git add "$STATE_FILE"
+            git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
+
+            if git push origin HEAD:main; then
+              echo "Recorded Greasy Fork version $CURRENT_VERSION."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 3 ]]; then
+              sleep 5
+            fi
+          done
+
+          echo "::error::Discord was notified, but the announcement state could not be saved after three attempts."
+          exit 1

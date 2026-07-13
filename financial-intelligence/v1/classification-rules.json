@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "version": "2026.07.14.1",
+  "updatedAt": "2026-07-14T00:00:00Z",
+  "minimumToolkitVersion": "4.5.0",
+  "rules": [
+    {"id":"income-refund","direction":"income","match":"regex","pattern":"refund|reimburse|cancel(?:ed|led)?","key":"refunds","label":"Refunds & Reimbursements","accountingGroup":"otherIncome","missionType":"","confidence":0.98},
+    {"id":"income-alliance-mission","direction":"income","match":"regex","pattern":"^\\[alliance\\]","key":"allianceMissions","label":"Alliance Missions","accountingGroup":"operatingIncome","missionType":"alliance","confidence":0.99},
+    {"id":"income-patient","direction":"income","match":"regex","pattern":"patient (?:transport|treatment)|hospital\\s*-\\s*alliance","key":"patientIncome","label":"Patient Transport & Treatment","accountingGroup":"operatingIncome","missionType":"transport","confidence":0.98},
+    {"id":"income-prisoner","direction":"income","match":"regex","pattern":"prisoner.*transport|police\\s*-\\s*alliance","key":"prisonerIncome","label":"Prisoner Transport","accountingGroup":"operatingIncome","missionType":"transport","confidence":0.98},
+    {"id":"income-login","direction":"income","match":"contains","pattern":"daily login reward","key":"dailyLogin","label":"Daily Login Rewards","accountingGroup":"otherIncome","missionType":"","confidence":0.99},
+    {"id":"income-task","direction":"income","match":"contains","pattern":"completed task","key":"taskRewards","label":"Task Rewards","accountingGroup":"otherIncome","missionType":"task","confidence":0.97},
+    {"id":"income-event","direction":"income","match":"regex","pattern":"event|bonus|reward","key":"eventBonus","label":"Event & Bonus Income","accountingGroup":"otherIncome","missionType":"","confidence":0.78},
+    {"id":"spend-vehicle","direction":"spending","match":"regex","pattern":"vehicle bought|vehicle purchase|bought vehicle","key":"vehicles","label":"Vehicle Purchases","accountingGroup":"capitalInvestment","missionType":"","confidence":0.99},
+    {"id":"spend-vehicle-upgrade","direction":"spending","match":"regex","pattern":"vehicle.*upgrad|upgrade.*vehicle|vehicle equipment|equipment for .*vehicle","key":"vehicleUpgrades","label":"Vehicle Upgrades & Equipment","accountingGroup":"capitalInvestment","missionType":"","confidence":0.94},
+    {"id":"spend-building","direction":"spending","match":"regex","pattern":"building constructed|station constructed|new building","excludePattern":"building complex.*upgrad|upgraded to building complex","key":"buildings","label":"Buildings & Stations","accountingGroup":"capitalInvestment","missionType":"","confidence":0.98},
+    {"id":"spend-extension","direction":"spending","match":"regex","pattern":"upgrad|extended guard|extension|speciali[sz]ation built|attached building|building complex","key":"extensions","label":"Extensions & Building Upgrades","accountingGroup":"capitalInvestment","missionType":"","confidence":0.90},
+    {"id":"spend-training","direction":"spending","match":"regex","pattern":"education|training|school|course|applicant","key":"training","label":"Training & Education","accountingGroup":"operatingExpense","missionType":"","confidence":0.93},
+    {"id":"spend-recruitment","direction":"spending","match":"regex","pattern":"recruit|personnel|staff|hire","key":"recruitment","label":"Recruitment & Staffing","accountingGroup":"operatingExpense","missionType":"","confidence":0.90},
+    {"id":"spend-alliance","direction":"spending","match":"regex","pattern":"alliance|association|verband|fund|donation|contribution","key":"allianceSpending","label":"Alliance Contributions","accountingGroup":"operatingExpense","missionType":"","confidence":0.92}
+  ],
+  "fallbacks": {
+    "income": {"key":"unclassifiedIncome","label":"Unclassified Positive Income","accountingGroup":"otherIncome","missionType":"","confidence":0.35},
+    "spending": {"key":"unclassifiedSpending","label":"Unclassified Spending","accountingGroup":"operatingExpense","missionType":"","confidence":0.25}
+  }
+}

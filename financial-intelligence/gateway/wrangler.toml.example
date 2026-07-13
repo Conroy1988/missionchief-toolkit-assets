@@ -1,0 +1,18 @@
+name = "missionchief-financial-vault"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+[vars]
+GITHUB_OWNER = "YOUR_GITHUB_OWNER"
+GITHUB_REPO = "YOUR_DEDICATED_VAULT_REPOSITORY"
+GITHUB_BRANCH = "main"
+GITHUB_VAULT_ROOT = "financial-vault-data/v1"
+GITHUB_BENCHMARK_ROOT = "financial-intelligence/benchmark-submissions"
+BENCHMARK_ENABLED = "true"
+EXTRA_ALLOWED_ORIGINS = ""
+
+# Set these using `wrangler secret put`, never in this file:
+# GITHUB_APP_ID
+# GITHUB_INSTALLATION_ID
+# GITHUB_APP_PRIVATE_KEY
+# VAULT_HMAC_SECRET

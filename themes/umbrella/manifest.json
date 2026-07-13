@@ -15,7 +15,12 @@
   },
   "legacyCompatibility": {
     "settingIds": ["umbrella", "biohazard"],
-    "legacyAudio": "biohazzard-cashout.mp3"
+    "legacyAudio": "biohazzard-cashout.mp3",
+    "legacyRootRetained": true
+  },
+  "audio": {
+    "gitBlobSha1": "0cd598dde95bea6c107a1c17751472c07bdda818",
+    "migrationCommit": "6516e7fad8063e0278c9ac384396a61cea27268f"
   },
   "notes": "Original transparent artwork created for the MissionChief Map Command Toolkit. Operational status colours remain protected."
 }

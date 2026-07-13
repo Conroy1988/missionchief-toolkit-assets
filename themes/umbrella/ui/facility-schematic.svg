@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Underground containment facility schematic</title>
+<desc id="desc">Transparent technical floor plan with laboratories, quarantine sectors and secure access routes.</desc>
+<g fill="none" stroke="#8da69a" stroke-width="2" opacity=".75">
+  <rect x="36" y="42" width="1128" height="716" rx="24" stroke="#c8102e" stroke-width="5"/>
+  <path d="M90 112h410v194H90zm0 234h410v322H90zm450-234h570v156H540zm0 196h278v360H540zm318 0h252v360H858z"/>
+  <path d="M220 112v194M370 112v194M90 206h410M90 438h410M90 546h410M210 346v322M356 346v322"/>
+  <path d="M640 112v156M786 112v156M932 112v156M540 190h570"/>
+  <path d="M540 418h278M540 528h278M676 308v360M858 416h252M858 526h252M984 308v360"/>
+  <circle cx="600" cy="388" r="28"/><circle cx="748" cy="388" r="28"/><circle cx="920" cy="388" r="28"/><circle cx="1046" cy="388" r="28"/>
+  <path d="M500 400h40M818 400h40M500 576h40M818 576h40"/><path d="M602 702h132m-66-34v68"/>
+</g>
+<g fill="#c8102e"><circle cx="90" cy="112" r="6"/><circle cx="500" cy="306" r="6"/><circle cx="540" cy="308" r="6"/><circle cx="1110" cy="668" r="6"/><rect x="486" y="384" width="12" height="32"/><rect x="822" y="384" width="12" height="32"/></g>
+<g fill="#dfe8e3" font-family="Consolas,monospace" font-size="20" opacity=".72"><text x="105" y="140">SECTOR A // ADMINISTRATION</text><text x="105" y="376">SECTOR B // RESEARCH LABS</text><text x="558" y="142">SECTOR C // QUARANTINE</text><text x="558" y="338">SECTOR D // SPECIMEN STORAGE</text><text x="876" y="338">SECTOR E // DECONTAMINATION</text><text x="92" y="730">FACILITY GRID 07-ARK // ACCESS LEVEL 4</text></g>
+<g opacity=".5" stroke="#c8102e" stroke-width="1"><path d="M36 82h1128M36 718h1128"/><path d="M80 42v716M1120 42v716"/></g>
+</svg>

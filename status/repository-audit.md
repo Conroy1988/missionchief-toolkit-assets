@@ -4,9 +4,9 @@
 
 ## Summary
 
-- Repository files: **62**
+- Repository files: **84**
 - Media files: **28**
-- GitHub Actions workflows: **3**
+- GitHub Actions workflows: **9**
 - Greasy Fork version: **4.10.4**
 - Repository URLs referenced by current script/repository: **25**
 - Missing referenced paths: **0**
@@ -49,13 +49,20 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 ## Workflow inventory
 
 - `.github/workflows/discord-commit-notifications.yml`
-- `.github/workflows/greasyfork-discord-update.yml`
+- `.github/workflows/greasyfork-release-monitor.yml`
+- `.github/workflows/import-canonical-userscript.yml`
+- `.github/workflows/release-readiness-check.yml`
+- `.github/workflows/release-toolkit-dry-run.yml`
+- `.github/workflows/release-toolkit.yml`
 - `.github/workflows/repository-audit.yml`
+- `.github/workflows/update-release-dashboard.yml`
+- `.github/workflows/validate-userscript.yml`
 
 ## Referenced GitHub Actions secrets
 
 - `DISCORD_COMMITS_WEBHOOK`
-- `DISCORD_UPDATE_WEBHOOK`
+- `DISCORD_RELEASE_WEBHOOK`
+- `MIGRATION_REPO_TOKEN`
 
 ## Safety findings
 

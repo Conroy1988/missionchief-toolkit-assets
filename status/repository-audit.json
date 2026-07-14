@@ -1,6 +1,6 @@
 {
   "repository": "Conroy1988/missionchief-toolkit-assets",
-  "commit": "18b8e7cf4483dd8412c050a71ff5a54df2215c20",
+  "commit": "d722476cd12f54842304924de512e776fe178280",
   "greasyFork": {
     "scriptFetched": true,
     "fetchError": null,
@@ -8,11 +8,16 @@
     "rawRepositoryReferences": 25
   },
   "inventory": {
-    "files": 62,
+    "files": 84,
     "mediaFiles": 28,
-    "workflows": 3,
+    "workflows": 9,
     "possibleUserscripts": [
       ".github/scripts/validate_userscript.mjs",
+      ".github/scripts/validate_userscript.py",
+      ".github/workflows/import-canonical-userscript.yml",
+      ".github/workflows/validate-userscript.yml",
+      "dist/MissionChief_Map_Command_Toolkit.user.js",
+      "src/MissionChief_Map_Command_Toolkit.user.js",
       "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
       "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
       "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
@@ -20,17 +25,17 @@
     ],
     "suffixCounts": {
       ".html": 1,
-      ".js": 4,
-      ".json": 10,
-      ".md": 5,
+      ".js": 6,
+      ".json": 14,
+      ".md": 9,
       ".mjs": 1,
       ".mp3": 14,
       ".png": 1,
-      ".py": 3,
-      ".sh": 1,
+      ".py": 6,
+      ".sh": 2,
       ".svg": 13,
-      ".txt": 6,
-      ".yml": 3
+      ".txt": 8,
+      ".yml": 9
     }
   },
   "dependencies": {
@@ -93,13 +98,20 @@
   "automation": {
     "workflows": [
       ".github/workflows/discord-commit-notifications.yml",
-      ".github/workflows/greasyfork-discord-update.yml",
-      ".github/workflows/repository-audit.yml"
+      ".github/workflows/greasyfork-release-monitor.yml",
+      ".github/workflows/import-canonical-userscript.yml",
+      ".github/workflows/release-readiness-check.yml",
+      ".github/workflows/release-toolkit-dry-run.yml",
+      ".github/workflows/release-toolkit.yml",
+      ".github/workflows/repository-audit.yml",
+      ".github/workflows/update-release-dashboard.yml",
+      ".github/workflows/validate-userscript.yml"
     ],
     "possibleOneShotWorkflows": [],
     "referencedSecrets": [
       "DISCORD_COMMITS_WEBHOOK",
-      "DISCORD_UPDATE_WEBHOOK"
+      "DISCORD_RELEASE_WEBHOOK",
+      "MIGRATION_REPO_TOKEN"
     ]
   },
   "duplicates": {

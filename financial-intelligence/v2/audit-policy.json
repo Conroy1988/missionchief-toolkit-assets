@@ -1,0 +1,30 @@
+{
+  "schema": 2,
+  "version": "2026.07.14.1",
+  "updatedAt": "2026-07-14T00:00:00Z",
+  "minimumToolkitVersion": "4.6.0",
+  "architecture": {
+    "playerLedgerStorage": "local-only",
+    "playerDataUploads": false,
+    "discordWebhookUploads": false,
+    "repositoryCredentialsRequired": false
+  },
+  "risk": {
+    "classificationCritical": 80,
+    "classificationWarning": 92,
+    "capitalIncomeRatio": 150,
+    "allianceConcentration": 75,
+    "categoryConcentration": 80,
+    "volatilityWarning": 120,
+    "revenueContraction": -20,
+    "drawdownWarning": 30,
+    "runwayCriticalDays": 3
+  },
+  "scan": {
+    "pageCap": 5000,
+    "batchSize": 3,
+    "retryAttempts": 3,
+    "checkpointPages": 100,
+    "description": "Deep scans read only the authenticated player's MissionChief credit ledger and retain results locally in the browser."
+  }
+}

@@ -1,8 +1,8 @@
 {
   "theme": "bond007",
   "displayName": "007 Intelligence",
-  "packageVersion": "2.0.0",
-  "toolkitVersion": "4.10.0",
+  "packageVersion": "2.1.0",
+  "toolkitVersion": "4.10.1",
   "generated": "2026-07-14",
   "assets": {
     "legacy007Logo": "007-logo.svg",
@@ -10,14 +10,21 @@
     "gunbarrelReticle": "ui/gunbarrel-reticle.svg",
     "dossierGrid": "ui/classified-dossier-grid.svg",
     "agentSilhouette": "ui/agent-silhouette.svg",
+    "agentPortrait": "payout/daniel-craig-007-portrait.png",
     "goldDivider": "ui/gold-divider.svg",
     "payoutSeal": "payout/funds-authorised-seal.svg",
     "cashoutAudio": "../../james-bond-cashout.mp3"
+  },
+  "portraitAttribution": {
+    "subject": "Daniel Craig as James Bond",
+    "source": "https://pngimg.com/image/93472",
+    "license": "CC BY-NC 4.0",
+    "use": "Non-commercial fan-made MissionChief userscript theme asset"
   },
   "legacyCompatibility": {
     "settingIds": ["bond007", "jamesBond"],
     "legacyAudio": "james-bond-cashout.mp3",
     "legacyRootRetained": true
   },
-  "notes": "Original transparent artwork package for the MissionChief Map Command Toolkit. The existing hosted 007 logo and audio are retained. Operational status colours remain protected."
+  "notes": "Transparent 007 artwork package for the MissionChief Map Command Toolkit. The hosted 007 logo and audio are retained. Operational status colours remain protected."
 }

@@ -39,7 +39,9 @@
     "text/javascript",
     "application/x-javascript",
     "text/plain",
-    "application/octet-stream"
+    "application/octet-stream",
+    "text/x-userscript",
+    "text/x-userscript-meta"
   ],
   "mediaExtensions": {
     ".mp3": {
@@ -156,7 +158,6 @@
       "kind": "userscript",
       "required": true,
       "compareLatestReleaseVersion": true,
-      "compareLatestReleaseHash": true,
       "minBytes": 1000000,
       "maxBytes": 2500000
     },
@@ -184,6 +185,15 @@
         403,
         429
       ]
+    }
+  ],
+  "crossEndpointComparisons": [
+    {
+      "left": "github-latest-userscript",
+      "right": "greasyfork-install-userscript",
+      "field": "bodySha256",
+      "code": "distribution-body-mismatch",
+      "description": "The Greasy Fork executable userscript body differs from the verified GitHub Release asset."
     }
   ],
   "network": {

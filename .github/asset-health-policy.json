@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-07-15-initial",
+  "repository": {
+    "stableRef": "main"
+  },
+  "latestReleaseDashboard": "status/release-dashboard.json",
+  "scanFiles": [
+    "src/MissionChief_Map_Command_Toolkit.user.js",
+    ".github/release-settings.json",
+    "README.md",
+    "status/README.md",
+    "status/release-dashboard.json"
+  ],
+  "scanTextExtensions": [
+    ".js",
+    ".json",
+    ".md",
+    ".yml",
+    ".yaml"
+  ],
+  "excludedDirectories": [
+    ".git",
+    "node_modules",
+    "release-bundle",
+    "__pycache__"
+  ],
+  "monitoredHosts": [
+    "raw.githubusercontent.com",
+    "update.greasyfork.org"
+  ],
+  "excludedHosts": [
+    "discord.com",
+    "discordapp.com",
+    "api.github.com"
+  ],
+  "scriptContentTypes": [
+    "application/javascript",
+    "text/javascript",
+    "application/x-javascript",
+    "text/plain",
+    "application/octet-stream"
+  ],
+  "mediaExtensions": {
+    ".mp3": {
+      "contentTypes": [
+        "audio/mpeg",
+        "audio/mp3",
+        "application/octet-stream"
+      ],
+      "minBytes": 1024,
+      "maxBytes": 30000000
+    },
+    ".wav": {
+      "contentTypes": [
+        "audio/wav",
+        "audio/x-wav",
+        "audio/wave",
+        "application/octet-stream"
+      ],
+      "minBytes": 1024,
+      "maxBytes": 30000000
+    },
+    ".ogg": {
+      "contentTypes": [
+        "audio/ogg",
+        "application/ogg",
+        "application/octet-stream"
+      ],
+      "minBytes": 512,
+      "maxBytes": 30000000
+    },
+    ".png": {
+      "contentTypes": [
+        "image/png",
+        "application/octet-stream"
+      ],
+      "minBytes": 64,
+      "maxBytes": 15000000
+    },
+    ".jpg": {
+      "contentTypes": [
+        "image/jpeg",
+        "application/octet-stream"
+      ],
+      "minBytes": 64,
+      "maxBytes": 15000000
+    },
+    ".jpeg": {
+      "contentTypes": [
+        "image/jpeg",
+        "application/octet-stream"
+      ],
+      "minBytes": 64,
+      "maxBytes": 15000000
+    },
+    ".gif": {
+      "contentTypes": [
+        "image/gif",
+        "application/octet-stream"
+      ],
+      "minBytes": 32,
+      "maxBytes": 15000000
+    },
+    ".webp": {
+      "contentTypes": [
+        "image/webp",
+        "application/octet-stream"
+      ],
+      "minBytes": 32,
+      "maxBytes": 15000000
+    },
+    ".svg": {
+      "contentTypes": [
+        "image/svg+xml",
+        "text/xml",
+        "application/xml",
+        "text/plain",
+        "application/octet-stream"
+      ],
+      "minBytes": 32,
+      "maxBytes": 5000000
+    },
+    ".json": {
+      "contentTypes": [
+        "application/json",
+        "text/json",
+        "text/plain",
+        "application/octet-stream"
+      ],
+      "minBytes": 2,
+      "maxBytes": 5000000,
+      "repositoryAsset": false
+    }
+  },
+  "explicitEndpoints": [
+    {
+      "id": "github-latest-userscript",
+      "urlSource": {
+        "path": ".github/release-settings.json",
+        "jsonPointer": "/greasyFork/sourceUrl"
+      },
+      "kind": "userscript",
+      "required": true,
+      "compareLatestReleaseVersion": true,
+      "compareLatestReleaseHash": true,
+      "minBytes": 1000000,
+      "maxBytes": 2500000
+    },
+    {
+      "id": "greasyfork-install-userscript",
+      "urlSource": {
+        "path": ".github/release-settings.json",
+        "jsonPointer": "/greasyFork/installUrl"
+      },
+      "kind": "userscript",
+      "required": true,
+      "compareLatestReleaseVersion": true,
+      "compareLatestReleaseHash": true,
+      "minBytes": 1000000,
+      "maxBytes": 2500000
+    },
+    {
+      "id": "greasyfork-metadata",
+      "urlSource": {
+        "path": ".github/release-settings.json",
+        "jsonPointer": "/greasyFork/metadataUrl"
+      },
+      "kind": "metadata",
+      "required": true,
+      "compareLatestReleaseVersion": true,
+      "minBytes": 40,
+      "maxBytes": 50000
+    },
+    {
+      "id": "greasyfork-project-page",
+      "urlSource": {
+        "path": ".github/release-settings.json",
+        "jsonPointer": "/greasyFork/scriptUrl"
+      },
+      "kind": "url",
+      "required": false,
+      "allowedWarningStatuses": [
+        403,
+        429
+      ]
+    }
+  ],
+  "network": {
+    "timeoutSeconds": 30,
+    "retries": 3,
+    "retryBackoffSeconds": 2,
+    "signatureBytes": 4096,
+    "maxBytesPerAsset": 30000000,
+    "userAgent": "MissionChief-Toolkit-Asset-Health/1.0 (+https://github.com/Conroy1988/missionchief-toolkit-assets)"
+  },
+  "limits": {
+    "maxEndpoints": 250
+  }
+}

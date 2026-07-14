@@ -1,0 +1,8 @@
+MissionChief Map Command Toolkit v4.11.0 release trigger
+
+Feature: Smart Bookmark Labels
+Baseline: v4.10.4
+Baseline SHA-256: 37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82
+Expected v4.11.0 SHA-256: 528a6aa829b8e6f5fb3f0c421e74959ff3dba5c2fedb5065dfa254fccf5a014f
+
+The issue-triggered bootstrap restores the exact validated baseline, applies the deterministic patch, validates the userscript, commits the canonical source and distribution files, then invokes Release Readiness Check and Release Toolkit.

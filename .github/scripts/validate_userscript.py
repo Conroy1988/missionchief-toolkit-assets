@@ -19,6 +19,7 @@ MANIFEST = DIST / "release-manifest.json"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
+CONFLICT_RE = re.compile(r"^(?:<<<<<<< .+|=======|>>>>>>> .+)$", re.MULTILINE)
 
 
 def fail(message: str) -> None:
@@ -89,7 +90,7 @@ def main() -> int:
     except UnicodeDecodeError as exc:
         fail(f"source is not valid UTF-8: {exc}")
 
-    if any(marker in text for marker in ("<<<<<<<", "=======", ">>>>>>>")):
+    if CONFLICT_RE.search(text):
         fail("unresolved merge-conflict markers were found")
 
     meta = metadata(text)

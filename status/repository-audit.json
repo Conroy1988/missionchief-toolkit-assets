@@ -1,6 +1,6 @@
 {
   "repository": "Conroy1988/missionchief-toolkit-assets",
-  "commit": "d722476cd12f54842304924de512e776fe178280",
+  "commit": "7d87a81c1eec951d4a3bb83cb08f71ec2d9ff8e4",
   "greasyFork": {
     "scriptFetched": true,
     "fetchError": null,
@@ -8,9 +8,9 @@
     "rawRepositoryReferences": 25
   },
   "inventory": {
-    "files": 84,
+    "files": 94,
     "mediaFiles": 28,
-    "workflows": 9,
+    "workflows": 16,
     "possibleUserscripts": [
       ".github/scripts/validate_userscript.mjs",
       ".github/scripts/validate_userscript.py",
@@ -24,18 +24,19 @@
       "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
     ],
     "suffixCounts": {
+      ".b64": 1,
       ".html": 1,
       ".js": 6,
       ".json": 14,
-      ".md": 9,
+      ".md": 10,
       ".mjs": 1,
       ".mp3": 14,
       ".png": 1,
       ".py": 6,
       ".sh": 2,
       ".svg": 13,
-      ".txt": 8,
-      ".yml": 9
+      ".txt": 9,
+      ".yml": 16
     }
   },
   "dependencies": {
@@ -97,17 +98,32 @@
   },
   "automation": {
     "workflows": [
+      ".github/workflows/bootstrap-v4.11.0-smart-bookmarks-v2.yml",
+      ".github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml",
+      ".github/workflows/check-v4.11.0-distribution-handoff.yml",
+      ".github/workflows/diagnose-v4.11.0-production-release.yml",
       ".github/workflows/discord-commit-notifications.yml",
+      ".github/workflows/dispatch-v4.11.0-bootstrap-from-pr.yml",
       ".github/workflows/greasyfork-release-monitor.yml",
       ".github/workflows/import-canonical-userscript.yml",
       ".github/workflows/release-readiness-check.yml",
       ".github/workflows/release-toolkit-dry-run.yml",
       ".github/workflows/release-toolkit.yml",
       ".github/workflows/repository-audit.yml",
+      ".github/workflows/retry-v4.11.0-greasyfork-webhook.yml",
+      ".github/workflows/retry-v4.11.0-production-release.yml",
       ".github/workflows/update-release-dashboard.yml",
       ".github/workflows/validate-userscript.yml"
     ],
-    "possibleOneShotWorkflows": [],
+    "possibleOneShotWorkflows": [
+      ".github/workflows/bootstrap-v4.11.0-smart-bookmarks-v2.yml",
+      ".github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml",
+      ".github/workflows/check-v4.11.0-distribution-handoff.yml",
+      ".github/workflows/diagnose-v4.11.0-production-release.yml",
+      ".github/workflows/dispatch-v4.11.0-bootstrap-from-pr.yml",
+      ".github/workflows/retry-v4.11.0-greasyfork-webhook.yml",
+      ".github/workflows/retry-v4.11.0-production-release.yml"
+    ],
     "referencedSecrets": [
       "DISCORD_COMMITS_WEBHOOK",
       "DISCORD_RELEASE_WEBHOOK",

@@ -4,13 +4,13 @@
 
 ## Summary
 
-- Repository files: **84**
+- Repository files: **94**
 - Media files: **28**
-- GitHub Actions workflows: **9**
+- GitHub Actions workflows: **16**
 - Greasy Fork version: **4.10.4**
 - Repository URLs referenced by current script/repository: **25**
 - Missing referenced paths: **0**
-- Possible one-shot workflows: **0**
+- Possible one-shot workflows: **7**
 - Duplicate media groups: **1**
 
 ## Current userscript source
@@ -48,13 +48,20 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 
 ## Workflow inventory
 
+- `.github/workflows/bootstrap-v4.11.0-smart-bookmarks-v2.yml` — review as possible temporary workflow
+- `.github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml` — review as possible temporary workflow
+- `.github/workflows/check-v4.11.0-distribution-handoff.yml` — review as possible temporary workflow
+- `.github/workflows/diagnose-v4.11.0-production-release.yml` — review as possible temporary workflow
 - `.github/workflows/discord-commit-notifications.yml`
+- `.github/workflows/dispatch-v4.11.0-bootstrap-from-pr.yml` — review as possible temporary workflow
 - `.github/workflows/greasyfork-release-monitor.yml`
 - `.github/workflows/import-canonical-userscript.yml`
 - `.github/workflows/release-readiness-check.yml`
 - `.github/workflows/release-toolkit-dry-run.yml`
 - `.github/workflows/release-toolkit.yml`
 - `.github/workflows/repository-audit.yml`
+- `.github/workflows/retry-v4.11.0-greasyfork-webhook.yml` — review as possible temporary workflow
+- `.github/workflows/retry-v4.11.0-production-release.yml` — review as possible temporary workflow
 - `.github/workflows/update-release-dashboard.yml`
 - `.github/workflows/validate-userscript.yml`
 

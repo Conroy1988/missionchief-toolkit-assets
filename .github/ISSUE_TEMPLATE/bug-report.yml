@@ -1,0 +1,173 @@
+name: Bug report
+
+description: Report a reproducible problem with the MissionChief Map Command Toolkit.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please check that Tampermonkey has installed the latest Toolkit version and reproduce the issue once after a hard refresh before submitting.
+
+        Do not include account passwords, webhook URLs, private tokens or other sensitive information.
+
+  - type: input
+    id: toolkit-version
+    attributes:
+      label: Toolkit version
+      description: The version shown in Tampermonkey or the Toolkit interface.
+      placeholder: "4.11.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-source
+    attributes:
+      label: Installation source
+      options:
+        - Greasy Fork
+        - GitHub release
+        - Local or manually modified copy
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 142, Firefox 140, Safari 18"
+    validations:
+      required: true
+
+  - type: input
+    id: tampermonkey
+    attributes:
+      label: Tampermonkey version
+      placeholder: "5.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-mode
+    attributes:
+      label: Device and Toolkit mode
+      options:
+        - Windows or Linux desktop — Desktop Mode
+        - Windows or Linux tablet — Tablet Mode
+        - macOS — Desktop Mode
+        - iPadOS — Tablet Mode
+        - iPhone or iOS — iOS Mobile Mode
+        - Android — mobile browser
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      options:
+        - Map controls, markers or overlays
+        - Bookmarks or map jumps
+        - Mission Age Watch or Critical View
+        - Mission Inspector, Transport Watcher or mission processing
+        - Vehicle Code Status or vehicle processing
+        - Payouts, completion history or financial features
+        - Themes, map skins or visual presentation
+        - Settings panel, import or export
+        - Tablet or iOS layout
+        - GitHub, Greasy Fork or release infrastructure
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem summary
+      description: State what is broken and where it appears.
+      placeholder: "The bookmark row overlaps the map controls after switching to Tablet Mode."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give exact steps starting from opening MissionChief.
+      placeholder: |
+        1. Open MissionChief in a new tab.
+        2. Open the Toolkit menu.
+        3. Enable Tablet Mode.
+        4. Add a bookmark and close the menu.
+        5. Observe the bookmark row.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: "The bookmark row should remain inside the map area without covering other controls."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      placeholder: "The final bookmark is drawn over the layer control."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Did this work in an earlier Toolkit version?
+      options:
+        - Yes
+        - No
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: last-working-version
+    attributes:
+      label: Last known working version
+      description: Leave blank when unknown.
+      placeholder: "4.11.1"
+
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Browser console output
+      description: Paste relevant red errors or warnings. Use a code block where possible.
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recording
+      description: Drag files into this box. Remove personal or alliance-sensitive information first.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Include relevant enabled features, theme, map skin, mission count, vehicle count or settings changes.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reproduced this on the latest available Toolkit version.
+          required: true
+        - label: I checked that another enabled userscript is not obviously causing the same problem.
+          required: true
+        - label: I removed passwords, tokens, webhook URLs and other sensitive information.
+          required: true

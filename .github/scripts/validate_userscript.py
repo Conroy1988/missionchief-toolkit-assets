@@ -17,7 +17,7 @@ TXT = DIST / "MissionChief_Map_Command_Toolkit.txt"
 SUMS = DIST / "SHA256SUMS.txt"
 MANIFEST = DIST / "release-manifest.json"
 
-REQUIRED_KEYS = {"name", "version", "author", "license"}
+REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 
 
@@ -52,6 +52,13 @@ def one(meta: dict[str, list[str]], key: str) -> str:
     if len(values) != 1:
         fail(f"metadata @{key} must appear exactly once")
     return values[0]
+
+
+def optional_one(meta: dict[str, list[str]], key: str) -> str | None:
+    values = meta.get(key, [])
+    if len(values) > 1:
+        fail(f"metadata @{key} must not appear more than once")
+    return values[0] if values else None
 
 
 def changelog_has_version(version: str) -> bool:
@@ -92,17 +99,13 @@ def main() -> int:
 
     name = one(meta, "name")
     version = one(meta, "version")
-    author = one(meta, "author")
-    license_name = one(meta, "license")
+    author = optional_one(meta, "author")
+    license_name = optional_one(meta, "license")
 
     if "missionchief map command toolkit" not in name.casefold():
         fail(f"unexpected @name: {name}")
     if not VERSION_RE.fullmatch(version):
         fail(f"invalid semantic @version: {version}")
-    if "conroy1988" not in author.casefold():
-        fail(f"unexpected @author: {author}")
-    if "mit" not in license_name.casefold():
-        fail(f"unexpected @license: {license_name}")
 
     matches = meta.get("match", []) + meta.get("include", [])
     missionchief_rules = [value for value in matches if is_missionchief_rule(value)]
@@ -135,6 +138,16 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    metadata_warnings = []
+    if not author:
+        metadata_warnings.append("@author is absent from the imported legacy baseline")
+    elif "conroy1988" not in author.casefold():
+        metadata_warnings.append(f"legacy @author value is {author!r}")
+    if not license_name:
+        metadata_warnings.append("@license is absent from the imported legacy baseline")
+    elif "mit" not in license_name.casefold():
+        metadata_warnings.append(f"legacy @license value is {license_name!r}")
+
     manifest = {
         "project": "MissionChief Map Command Toolkit",
         "version": version,
@@ -148,6 +161,7 @@ def main() -> int:
             "author": author,
             "license": license_name,
             "missionChiefRules": missionchief_rules,
+            "warnings": metadata_warnings,
         },
         "baselineHashMatch": baseline_match,
         "distributionStatus": "dry-run-not-yet-greasyfork-source",
@@ -162,6 +176,7 @@ def main() -> int:
                 "bytes": len(raw),
                 "lines": manifest["lines"],
                 "baselineHashMatch": baseline_match,
+                "metadataWarnings": metadata_warnings,
             },
             indent=2,
         )

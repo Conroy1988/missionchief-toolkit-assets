@@ -5,7 +5,7 @@ set -euo pipefail
 : "${MIGRATION_REPO_TOKEN:?MIGRATION_REPO_TOKEN is required}"
 
 PRIVATE_REPO="Conroy1988/missionchief-map-command-toolkit-private"
-PRIVATE_URL="https://x-access-token:${MIGRATION_REPO_TOKEN}@github.com/${PRIVATE_REPO}.git"
+PRIVATE_URL="https://github.com/${PRIVATE_REPO}.git"
 SOURCE_REPO="${GITHUB_REPOSITORY}"
 SOURCE_COMMIT="${GITHUB_SHA}"
 RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
@@ -45,8 +45,27 @@ EXPECTED_HASH="$(jq -r '.sha256' "${BUNDLE_DIR}/release-manifest-v${RELEASE_VERS
 ACTUAL_HASH="$(sha256sum "${BUNDLE_DIR}/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js" | awk '{print $1}')"
 test "$EXPECTED_HASH" = "$ACTUAL_HASH"
 
-git clone --depth 1 "$PRIVATE_URL" "$PRIVATE_DIR"
+HTTP_CODE="$(curl --silent --show-error --output "${WORK_DIR}/private-repo-check.json" --write-out '%{http_code}' \
+  --header "Authorization: Bearer ${MIGRATION_REPO_TOKEN}" \
+  --header "Accept: application/vnd.github+json" \
+  --header "X-GitHub-Api-Version: 2022-11-28" \
+  "https://api.github.com/repos/${PRIVATE_REPO}")"
+
+if [[ "$HTTP_CODE" != "200" ]]; then
+  MESSAGE="$(jq -r '.message // "Unknown GitHub API error"' "${WORK_DIR}/private-repo-check.json" 2>/dev/null || true)"
+  echo "::error::MIGRATION_REPO_TOKEN cannot access ${PRIVATE_REPO} (HTTP ${HTTP_CODE}: ${MESSAGE})."
+  exit 1
+fi
+
+[[ "$(jq -r '.permissions.push // false' "${WORK_DIR}/private-repo-check.json")" == "true" ]] || {
+  echo "::error::MIGRATION_REPO_TOKEN does not have push permission for ${PRIVATE_REPO}."
+  exit 1
+}
+
+BASIC_AUTH="$(printf 'x-access-token:%s' "$MIGRATION_REPO_TOKEN" | base64 -w0)"
+git -c http.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" clone --depth 1 "$PRIVATE_URL" "$PRIVATE_DIR"
 cd "$PRIVATE_DIR"
+git config http."https://github.com/".extraheader "AUTHORIZATION: basic ${BASIC_AUTH}"
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -68,18 +87,7 @@ jq -n \
   --arg releaseUrl "$RELEASE_URL" \
   --arg sha256 "$ACTUAL_HASH" \
   --arg backedUpAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-  '{
-    project: $project,
-    version: $version,
-    sourceRepository: $sourceRepository,
-    sourceCommit: $sourceCommit,
-    githubRelease: $releaseUrl,
-    sha256: $sha256,
-    greasyForkVerified: true,
-    filesValidated: true,
-    textCopyByteIdentical: true,
-    backedUpAt: $backedUpAt
-  }' > "$TARGET_ROOT/backup-record.json"
+  '{project:$project,version:$version,sourceRepository:$sourceRepository,sourceCommit:$sourceCommit,githubRelease:$releaseUrl,sha256:$sha256,greasyForkVerified:true,filesValidated:true,textCopyByteIdentical:true,backedUpAt:$backedUpAt}' > "$TARGET_ROOT/backup-record.json"
 
 rm -rf current/release
 mkdir -p current/release

@@ -1,0 +1,16 @@
+{
+  "project": "MissionChief Map Command Toolkit",
+  "greasyFork": {
+    "scriptId": 586018,
+    "syncEnabled": false,
+    "sourceUrl": "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/dist/MissionChief_Map_Command_Toolkit.user.js",
+    "metadataUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js",
+    "scriptUrl": "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit",
+    "installUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+  },
+  "release": {
+    "discordSecret": "DISCORD_RELEASE_WEBHOOK",
+    "requireGreasyForkVerificationBeforeDiscord": true,
+    "externalMigrationBackup": "not-configured"
+  }
+}

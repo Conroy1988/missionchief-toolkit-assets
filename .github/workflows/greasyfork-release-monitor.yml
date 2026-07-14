@@ -94,21 +94,19 @@ jobs:
             exit 1
           fi
 
-          CHANGELOG="$(cat greasyfork-changelog.txt 2>/dev/null || true)"
           SCRIPT_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
           HISTORY_URL="${SCRIPT_URL}/versions"
           INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
-          TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
-          jq -n \
-            --arg current "$CURRENT_VERSION" \
-            --arg previous "$PREVIOUS_VERSION" \
-            --arg changelog "$CHANGELOG" \
-            --arg script_url "$SCRIPT_URL" \
-            --arg history_url "$HISTORY_URL" \
-            --arg install_url "$INSTALL_URL" \
-            --arg timestamp "$TIMESTAMP" \
-            '{username:"MissionChief Toolkit Releases",allowed_mentions:{parse:[]},embeds:[{title:"MissionChief Map Command Toolkit Updated",description:"A new Toolkit version is live on Greasy Fork.",url:$script_url,color:3447003,fields:[{name:"Previous Version",value:("`"+$previous+"`"),inline:true},{name:"New Version",value:("`"+$current+"`"),inline:true},{name:"What Changed",value:$changelog,inline:false},{name:"Links",value:("[Greasy Fork]("+$script_url+")\n[Version history]("+$history_url+")\n[Install or update]("+$install_url+")"),inline:false}],footer:{text:"MissionChief Map Command Toolkit · fallback monitor"},timestamp:$timestamp}]}' > discord-payload.json
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode fallback \
+            --version "$CURRENT_VERSION" \
+            --previous-version "$PREVIOUS_VERSION" \
+            --changelog greasyfork-changelog.txt \
+            --output discord-payload.json \
+            --script-url "$SCRIPT_URL" \
+            --history-url "$HISTORY_URL" \
+            --install-url "$INSTALL_URL"
 
           curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
             --request POST --header 'Content-Type: application/json' \

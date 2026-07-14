@@ -44,6 +44,7 @@ def main() -> None:
     version = data.get("currentVersion", "Unknown")
     latest_version = latest.get("version") or dry_run.get("version") or version
     latest_state = "Verified public release" if latest else "Validated dry run"
+    validated_hash = source.get("validatedSha256") or latest.get("sha256") or dry_run.get("sha256") or "Not yet recorded"
 
     rows = [
         ("Canonical source", source.get("state", "unknown")),
@@ -78,7 +79,7 @@ def main() -> None:
         f"- **Latest recorded version:** `{latest_version}`",
         f"- **State:** {latest_state}",
         f"- **Canonical path:** `{source.get('canonicalPath', 'src/MissionChief_Map_Command_Toolkit.user.js')}`",
-        f"- **Validated SHA-256:** `{source.get('validatedSha256', latest.get('sha256', dry_run.get('sha256', 'Not yet recorded'))}`",
+        f"- **Validated SHA-256:** `{validated_hash}`",
         f"- **Distribution candidate:** `{candidate.get('path', 'dist/MissionChief_Map_Command_Toolkit.user.js')}`",
         "",
         "## Repository health",

@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.11.2] - 2026-07-14
+
+### Fixed
+- Restored the full Toolkit stylesheet to the sparse `document-start` phase so Chrome no longer rematches thousands of selectors against an already-rendered MissionChief page.
+- Changed the complete settings panel to first-open construction instead of building hundreds of controls during every page startup.
+- Prevented Major Incident Feed rendering from bypassing the deferred operational-startup gate through the general UI refresh path.
+
+### Performance
+- Preserved the deferred vehicle API, mission snapshot and operational monitor startup introduced in v4.11.1.
+- Reduced initial Toolkit construction to the core map command control and persistent shortcut bar.
+- Added lightweight startup timings for stylesheet installation, core UI readiness, settings-panel construction and operational startup under `window.__MCMS_STARTUP_METRICS__`.
+
+### Compatibility
+- Preserved Smart Bookmark Labels, all interface themes, responsive modes and the early Alliance Buildings map blocker.
+
 ## [4.11.1] - 2026-07-14
 
 ### Performance

@@ -1,0 +1,25 @@
+{
+  "project": "MissionChief Map Command Toolkit",
+  "version": "4.10.4",
+  "source": "src/MissionChief_Map_Command_Toolkit.user.js",
+  "distributionFiles": [
+    "dist/MissionChief_Map_Command_Toolkit.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.txt"
+  ],
+  "sha256": "37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82",
+  "bytes": 1679941,
+  "lines": 27427,
+  "metadata": {
+    "name": "MissionChief Map Command Toolkit",
+    "author": "Conroy1988",
+    "license": "MIT",
+    "missionChiefRules": [
+      "*://missionchief.co.uk/*",
+      "*://www.missionchief.co.uk/*",
+      "*://*.missionchief.co.uk/*"
+    ],
+    "warnings": []
+  },
+  "baselineHashMatch": true,
+  "distributionStatus": "dry-run-not-yet-greasyfork-source"
+}

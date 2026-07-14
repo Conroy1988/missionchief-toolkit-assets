@@ -1,0 +1,2 @@
+37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82  MissionChief_Map_Command_Toolkit.user.js
+37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82  MissionChief_Map_Command_Toolkit.txt

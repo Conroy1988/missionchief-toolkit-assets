@@ -1,0 +1,126 @@
+name: Release Toolkit Dry Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Validated Toolkit version to prepare"
+        required: true
+        default: "4.10.4"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toolkit-release-dry-run
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate and prepare release bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate canonical source and rebuild distribution
+        run: python3 .github/scripts/validate_userscript.py
+
+      - name: Check JavaScript syntax
+        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Verify distribution files are identical
+        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Prepare immutable release bundle
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/prepare_release_bundle.py "$RELEASE_VERSION"
+
+      - name: Verify bundle integrity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          USER_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js"
+          TXT_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt"
+          cmp --silent "$USER_FILE" "$TXT_FILE"
+          test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+
+      - name: Upload reviewable release bundle
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-v${{ inputs.version }}-release-dry-run
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Update release dashboard
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+
+          jq \
+            --arg version "$RELEASE_VERSION" \
+            --arg hash "$HASH" \
+            --arg now "$NOW" \
+            '.currentVersion = $version
+             | .status.validation = "passed"
+             | .status.githubRelease = "dry-run-ready"
+             | .status.greasyForkSync = "legacy-monitor"
+             | .status.backup = "dry-run-bundle-prepared"
+             | .status.discordRelease = "configured-not-sent-in-dry-run"
+             | .releaseDryRun = {
+                 version: $version,
+                 sha256: $hash,
+                 state: "passed",
+                 githubReleaseCreated: false,
+                 greasyForkChanged: false,
+                 discordPosted: false,
+                 completedAt: $now
+               }
+             | .lastUpdated = $now' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+
+          mv status/release-dashboard.tmp status/release-dashboard.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/release-dashboard.json
+
+          if git diff --cached --quiet; then
+            echo "Release dashboard already records this dry run."
+            exit 0
+          fi
+
+          git commit -m "Record Toolkit ${RELEASE_VERSION} release dry run"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Write workflow summary
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          {
+            echo "# Toolkit v${RELEASE_VERSION} release dry run"
+            echo
+            echo "- ✅ Canonical source validated"
+            echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Version and changelog matched"
+            echo "- ✅ Immutable backup bundle prepared"
+            echo "- ✅ SHA-256 integrity verified"
+            echo "- ⏸️ GitHub Release not published"
+            echo "- ⏸️ Greasy Fork not changed"
+            echo "- ⏸️ Discord release announcement not sent"
+          } >> "$GITHUB_STEP_SUMMARY"

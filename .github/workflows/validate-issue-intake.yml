@@ -54,7 +54,7 @@ jobs:
           }
 
       - name: Validate issue-form structure
-        shell: ruby
+        shell: ruby {0}
         run: |
           require "json"
           require "yaml"

@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "guideVersion": "4.6.0",
-  "toolkitVersion": "4.6.0",
+  "toolkitVersion": "4.10.0",
   "updated": "2026-07-14",
   "path": "help/index.html",
   "sections": 19,
@@ -11,8 +11,9 @@
   "privacy": "Static public documentation and financial intelligence feeds only; no MissionChief player ledger or Discord webhook data is sent to GitHub",
   "navigationHotfix": "Internal fragment links are intercepted and scrolled inside the guide document.",
   "umbrellaContainmentPackage": "themes/umbrella/manifest.json",
+  "bond007IntelligencePackage": "themes/james-bond/manifest.json",
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.6.0 injects the current maximum-range Financial Command and player-linked local Financial Archive section before sandboxed rendering."
+  "runtimeGuidePatch": "Toolkit v4.10.0 retains the v4.6 Financial Command guide patch and adds the hosted 007 Intelligence transparent artwork package."
 }

@@ -6,11 +6,11 @@
   "distribution": "Greasy Fork",
   "status": {
     "validation": "passed",
-    "githubRelease": "awaiting-production-workflow",
-    "greasyForkSync": "release-webhook-configured",
-    "backup": "private-repository-ready",
+    "githubRelease": "published",
+    "greasyForkSync": "pending-live-version-4.11.0",
+    "backup": "blocked-pending-greasyfork-verification",
     "discordDevelopment": "configured",
-    "discordRelease": "configured",
+    "discordRelease": "blocked-pending-greasyfork-verification",
     "assetAudit": "passed",
     "releaseReadiness": "passed"
   },
@@ -24,7 +24,7 @@
     "referencedPaths": 25,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-14T19:29:25Z",
+  "lastUpdated": "2026-07-14T20:10:40Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
     "validatedSha256": "528a6aa829b8e6f5fb3f0c421e74959ff3dba5c2fedb5065dfa254fccf5a014f",
@@ -34,6 +34,20 @@
     "path": "dist/MissionChief_Map_Command_Toolkit.user.js",
     "version": "4.11.0",
     "state": "validated"
+  },
+  "pendingRelease": {
+    "version": "4.11.0",
+    "sha256": "528a6aa829b8e6f5fb3f0c421e74959ff3dba5c2fedb5065dfa254fccf5a014f",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.11.0",
+    "githubReleasePublished": true,
+    "greasyForkExpectedVersion": "4.11.0",
+    "greasyForkObservedVersion": "4.10.4",
+    "greasyForkVerified": false,
+    "privateBackupCommitted": false,
+    "discordPosted": false,
+    "workflowRun": "https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/29362435779",
+    "state": "awaiting-greasyfork-synchronization",
+    "recordedAt": "2026-07-14T20:10:40Z"
   },
   "releaseDryRun": {
     "version": "4.10.4",

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="MI6 Section 00 command seal">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1b8"/><stop offset=".42" stop-color="#d8b45f"/><stop offset="1" stop-color="#8f6c25"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity=".28"/></filter>
+    <path id="toparc" d="M92 256a164 164 0 0 1 328 0"/>
+    <path id="bottomarc" d="M420 256a164 164 0 0 1-328 0"/>
+  </defs>
+  <g fill="none" stroke="url(#gold)" filter="url(#soft)">
+    <circle cx="256" cy="256" r="220" stroke-width="8"/>
+    <circle cx="256" cy="256" r="198" stroke-width="2" opacity=".8"/>
+    <circle cx="256" cy="256" r="157" stroke-width="3" opacity=".95"/>
+    <circle cx="256" cy="256" r="141" stroke-width="1.5" opacity=".45"/>
+    <g stroke-width="3" opacity=".85">
+      <path d="M256 23v26M256 463v26M23 256h26M463 256h26"/>
+      <path d="M91 91l18 18M403 403l18 18M421 91l-18 18M109 403l-18 18"/>
+    </g>
+  </g>
+  <g fill="url(#gold)">
+    <path d="M256 98l18 30h35l-18 24 10 33-45-19-45 19 10-33-18-24h35z" opacity=".94"/>
+    <path d="M182 212h148v18H182z"/>
+    <path d="M197 230h118l-12 21h-94z" opacity=".82"/>
+    <path d="M207 267h98v11h-98z" opacity=".75"/>
+    <path d="M240 285h32v82h-32z"/>
+    <path d="M205 303h102v19H205z" opacity=".86"/>
+    <path d="M185 367h142v13H185z"/>
+    <circle cx="256" cy="286" r="8" fill="#a71924"/>
+  </g>
+  <text fill="#f3ead2" font-family="Georgia,serif" font-size="54" font-weight="700" text-anchor="middle" x="256" y="267" letter-spacing="7">MI6</text>
+  <text fill="#d8b45f" font-family="Arial,sans-serif" font-size="23" font-weight="800" text-anchor="middle" x="256" y="350" letter-spacing="5">SECTION 00</text>
+  <g fill="#d8b45f" font-family="Arial,sans-serif" font-size="19" font-weight="700" letter-spacing="4">
+    <text><textPath href="#toparc" startOffset="50%" text-anchor="middle">SECRET INTELLIGENCE SERVICE</textPath></text>
+    <text><textPath href="#bottomarc" startOffset="50%" text-anchor="middle">LONDON • EYES ONLY • LONDON</textPath></text>
+  </g>
+</svg>

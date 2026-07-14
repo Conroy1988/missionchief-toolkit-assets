@@ -1,0 +1,116 @@
+name: Performance Regression Check
+
+on:
+  pull_request:
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/performance-budget.json"
+      - ".github/scripts/check_performance_budget.py"
+      - ".github/workflows/performance-regression-check.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/performance-budget.json"
+      - ".github/scripts/check_performance_budget.py"
+      - ".github/workflows/performance-regression-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-performance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  performance:
+    name: Check static performance budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve comparison source
+        id: base
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
+          BASE_REF=""
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            BASE_REF="${PR_BASE_SHA:-}"
+          elif [[ "$EVENT_NAME" == "push" && -n "${PUSH_BEFORE_SHA:-}" && ! "$PUSH_BEFORE_SHA" =~ ^0+$ ]]; then
+            BASE_REF="$PUSH_BEFORE_SHA"
+          else
+            BASE_REF="$(git tag --merged HEAD --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)"
+            [[ -n "$BASE_REF" ]] || BASE_REF="HEAD^"
+          fi
+
+          if git cat-file -e "${BASE_REF}:${SOURCE}" 2>/dev/null; then
+            git show "${BASE_REF}:${SOURCE}" > /tmp/performance-base.user.js
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+            echo "Comparison source: $BASE_REF"
+          else
+            echo "::warning::No comparison source was available; only absolute budgets will be enforced."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "ref=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run performance budget
+        id: budget
+        shell: bash
+        run: |
+          set +e
+          ARGS=(
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js
+            --policy .github/performance-budget.json
+            --json-output performance-budget-report.json
+            --markdown-output performance-budget-report.md
+          )
+          if [[ "${{ steps.base.outputs.available }}" == "true" ]]; then
+            ARGS+=(--base /tmp/performance-base.user.js)
+          fi
+          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
+          STATUS=$?
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish performance summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f performance-budget-report.md ]]; then
+            cat performance-budget-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Performance report was not created."
+            exit 1
+          fi
+
+      - name: Upload performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-performance-budget
+          path: |
+            performance-budget-report.json
+            performance-budget-report.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop on performance regression
+        if: steps.budget.outputs.exit_code != '0'
+        run: |
+          echo "Static performance-budget checks failed. Review the workflow summary and diagnostics artifact."
+          exit 1

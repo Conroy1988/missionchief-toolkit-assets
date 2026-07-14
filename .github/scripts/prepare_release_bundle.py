@@ -86,9 +86,13 @@ def main() -> int:
 
     versioned_user = OUTPUT / f"MissionChief_Map_Command_Toolkit_v{requested_version}.user.js"
     versioned_txt = OUTPUT / f"MissionChief_Map_Command_Toolkit_v{requested_version}.txt"
+    stable_sums = OUTPUT / "SHA256SUMS.txt"
+    versioned_sums = OUTPUT / f"SHA256SUMS-v{requested_version}.txt"
+
     shutil.copy2(DIST / "MissionChief_Map_Command_Toolkit.user.js", versioned_user)
     shutil.copy2(DIST / "MissionChief_Map_Command_Toolkit.txt", versioned_txt)
-    shutil.copy2(DIST / "SHA256SUMS.txt", OUTPUT / "SHA256SUMS.txt")
+    shutil.copy2(DIST / "SHA256SUMS.txt", stable_sums)
+    shutil.copy2(DIST / "SHA256SUMS.txt", versioned_sums)
 
     notes = extract_release_notes(requested_version)
     (OUTPUT / f"CHANGELOG-v{requested_version}.md").write_text(
@@ -105,7 +109,8 @@ def main() -> int:
         "bundleFiles": [
             versioned_user.name,
             versioned_txt.name,
-            "SHA256SUMS.txt",
+            stable_sums.name,
+            versioned_sums.name,
             f"CHANGELOG-v{requested_version}.md",
             f"release-manifest-v{requested_version}.json",
             f"migration-handover-v{requested_version}.md",

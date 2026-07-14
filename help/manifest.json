@@ -1,18 +1,18 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.5.0",
-  "toolkitVersion": "4.5.0",
+  "guideVersion": "4.6.0",
+  "toolkitVersion": "4.6.0",
   "updated": "2026-07-14",
   "path": "help/index.html",
   "sections": 19,
   "searchEnabled": true,
   "standalone": true,
   "viewerMode": "Fetched by the userscript and rendered in a sandboxed srcdoc iframe",
-  "privacy": "Static public documentation only; no MissionChief account data is sent to GitHub",
+  "privacy": "Static public documentation and financial intelligence feeds only; no MissionChief player ledger or Discord webhook data is sent to GitHub",
   "navigationHotfix": "Internal fragment links are intercepted and scrolled inside the guide document.",
   "umbrellaContainmentPackage": "themes/umbrella/manifest.json",
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
-  "financialBenchmarkFeed": "financial-intelligence/v1/benchmark-summary.json",
-  "financialVaultGateway": "financial-intelligence/gateway/README.md",
-  "runtimeGuidePatch": "Toolkit v4.5.0 injects the current Financial Command and Financial Vault section into the hosted guide before sandboxed rendering."
+  "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
+  "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
+  "runtimeGuidePatch": "Toolkit v4.6.0 injects the current maximum-range Financial Command and player-linked local Financial Archive section before sandboxed rendering."
 }

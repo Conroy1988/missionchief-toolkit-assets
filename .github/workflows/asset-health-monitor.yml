@@ -9,6 +9,7 @@ on:
       - ".github/release-settings.json"
       - ".github/ASSET_HEALTH.md"
       - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/check_distribution_body_parity.py"
       - ".github/scripts/test_asset_health.py"
       - ".github/workflows/asset-health-monitor.yml"
       - "status/release-dashboard.json"
@@ -30,6 +31,7 @@ on:
       - ".github/release-settings.json"
       - ".github/ASSET_HEALTH.md"
       - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/check_distribution_body_parity.py"
       - ".github/scripts/test_asset_health.py"
       - ".github/workflows/asset-health-monitor.yml"
       - "status/release-dashboard.json"
@@ -84,16 +86,32 @@ jobs:
         run: |
           set +e
           python3 .github/scripts/test_asset_health.py
-          TEST_STATUS=$?
+          ASSET_TEST_STATUS=$?
+          python3 .github/scripts/check_distribution_body_parity.py --self-test
+          PARITY_TEST_STATUS=$?
 
-          if [[ "$TEST_STATUS" -eq 0 ]]; then
+          if [[ "$ASSET_TEST_STATUS" -eq 0 && "$PARITY_TEST_STATUS" -eq 0 ]]; then
             python3 .github/scripts/check_asset_health.py \
               --mode "$CHECK_MODE" \
               --json-output asset-health-report.json \
               --markdown-output asset-health-report.md
-            STATUS=$?
+            CHECKER_STATUS=$?
+
+            PARITY_STATUS=0
+            if [[ "$CHECK_MODE" == "live" && -f asset-health-report.json ]]; then
+              python3 .github/scripts/check_distribution_body_parity.py \
+                --report asset-health-report.json \
+                --markdown asset-health-report.md
+              PARITY_STATUS=$?
+            fi
+
+            if [[ "$CHECKER_STATUS" -ne 0 || "$PARITY_STATUS" -ne 0 ]]; then
+              STATUS=1
+            else
+              STATUS=0
+            fi
           else
-            STATUS=$TEST_STATUS
+            STATUS=1
             NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
             jq -n \
               --arg now "$NOW" \
@@ -107,7 +125,7 @@ jobs:
                 latestRelease: {version: null, sha256: null},
                 discovery: {scanFiles: [], localMediaFiles: []},
                 checks: [],
-                failures: [{severity: "failure", code: "self-test-failure", message: "Asset-health checker self-tests failed.", subject: ""}],
+                failures: [{severity: "failure", code: "self-test-failure", message: "One or more asset-health checker self-tests failed.", subject: ""}],
                 warnings: [],
                 summary: {endpoints: 0, localMediaFiles: 0, failures: 1, warnings: 0},
                 fingerprint: "self-test-failure"
@@ -116,7 +134,7 @@ jobs:
           # Toolkit asset-health report
 
           - Failures: **1**
-          - The asset-health checker self-tests failed. Review the workflow log before trusting any live result.
+          - One or more asset-health checker self-tests failed. Review the workflow log before trusting any live result.
           EOF
           fi
 
@@ -192,7 +210,7 @@ jobs:
               echo "- Failure fingerprint: \`${FINGERPRINT}\`"
               echo "- Workflow run: ${RUN_URL}"
               echo
-              sed -n '1,260p' asset-health-report.md
+              sed -n '1,300p' asset-health-report.md
               echo
               echo '_This issue is maintained automatically. Repeated unhealthy checks update this incident without sending duplicate Discord alerts._'
             } > /tmp/asset-health-issue.md

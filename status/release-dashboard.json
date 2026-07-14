@@ -6,12 +6,13 @@
   "distribution": "Greasy Fork",
   "status": {
     "validation": "passed",
-    "githubRelease": "dry-run-ready",
-    "greasyForkSync": "legacy-monitor",
-    "backup": "dry-run-bundle-prepared",
+    "githubRelease": "ready-for-first-production-release",
+    "greasyForkSync": "release-webhook-configured",
+    "backup": "private-repository-ready",
     "discordDevelopment": "configured",
-    "discordRelease": "configured-not-sent-in-dry-run",
-    "assetAudit": "passed"
+    "discordRelease": "configured",
+    "assetAudit": "passed",
+    "releaseReadiness": "passed"
   },
   "channels": {
     "development": "Mission-Chief-Dev",
@@ -23,7 +24,7 @@
     "referencedPaths": 25,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-14T16:05:00Z",
+  "lastUpdated": "2026-07-14T18:13:26Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
     "validatedSha256": "37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82",
@@ -42,5 +43,14 @@
     "greasyForkChanged": false,
     "discordPosted": false,
     "completedAt": "2026-07-14T16:05:00Z"
+  },
+  "releaseReadiness": {
+    "version": "4.10.4",
+    "state": "passed",
+    "requiredSecrets": true,
+    "privateRepositoryReadWrite": true,
+    "greasyForkMetadataVerified": true,
+    "publicReleaseCreated": false,
+    "completedAt": "2026-07-14T18:13:26Z"
   }
 }

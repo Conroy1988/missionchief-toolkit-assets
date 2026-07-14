@@ -1,0 +1,117 @@
+{
+  "repository": "Conroy1988/missionchief-toolkit-assets",
+  "commit": "18b8e7cf4483dd8412c050a71ff5a54df2215c20",
+  "greasyFork": {
+    "scriptFetched": true,
+    "fetchError": null,
+    "version": "4.10.4",
+    "rawRepositoryReferences": 25
+  },
+  "inventory": {
+    "files": 62,
+    "mediaFiles": 28,
+    "workflows": 3,
+    "possibleUserscripts": [
+      ".github/scripts/validate_userscript.mjs",
+      "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+      "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+      "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+      "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+    ],
+    "suffixCounts": {
+      ".html": 1,
+      ".js": 4,
+      ".json": 10,
+      ".md": 5,
+      ".mjs": 1,
+      ".mp3": 14,
+      ".png": 1,
+      ".py": 3,
+      ".sh": 1,
+      ".svg": 13,
+      ".txt": 6,
+      ".yml": 3
+    }
+  },
+  "dependencies": {
+    "rawUrls": [
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/bf-bad-company-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/gta-vice-city-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg",
+      "https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg"
+    ],
+    "referencedPaths": [
+      "bf-bad-company-cashout.mp3",
+      "cyberpunk-cashout.mp3",
+      "factorio-cashout.mp3",
+      "fallout-cashout.mp3",
+      "financial-intelligence/v1/classification-rules.json",
+      "financial-intelligence/v2/audit-policy.json",
+      "gta-vice-city-cashout.mp3",
+      "help/index.html",
+      "james-bond-cashout.mp3",
+      "scarface-cashout.mp3",
+      "themes/james-bond/007-logo.svg",
+      "themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "themes/james-bond/payout/funds-authorised-seal.svg",
+      "themes/james-bond/ui/agent-silhouette.svg",
+      "themes/james-bond/ui/classified-dossier-grid.svg",
+      "themes/james-bond/ui/gold-divider.svg",
+      "themes/james-bond/ui/gunbarrel-reticle.svg",
+      "themes/james-bond/ui/mi6-command-seal.svg",
+      "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "themes/umbrella/payout/transfer-authorized-seal.svg",
+      "themes/umbrella/ui/containment-division-badge.svg",
+      "themes/umbrella/ui/facility-schematic.svg",
+      "themes/umbrella/ui/specimen-vial.svg",
+      "themes/umbrella/ui/surveillance-terminal.svg",
+      "themes/umbrella/ui/umbrella-containment-emblem.svg"
+    ],
+    "missingPaths": []
+  },
+  "automation": {
+    "workflows": [
+      ".github/workflows/discord-commit-notifications.yml",
+      ".github/workflows/greasyfork-discord-update.yml",
+      ".github/workflows/repository-audit.yml"
+    ],
+    "possibleOneShotWorkflows": [],
+    "referencedSecrets": [
+      "DISCORD_COMMITS_WEBHOOK",
+      "DISCORD_UPDATE_WEBHOOK"
+    ]
+  },
+  "duplicates": {
+    "mediaGroups": [
+      [
+        "biohazzard-cashout.mp3",
+        "themes/umbrella/audio/umbrella-containment-cashout.mp3"
+      ]
+    ]
+  },
+  "policy": {
+    "destructiveChangesPerformed": false,
+    "existingPublicPathsPreserved": true
+  }
+}

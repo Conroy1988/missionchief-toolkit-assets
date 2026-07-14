@@ -1,23 +1,27 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 2,
-  "currentVersion": "4.3.0",
+  "currentVersion": "4.10.4",
   "sourceOfTruth": "GitHub",
   "distribution": "Greasy Fork",
   "status": {
-    "validation": "foundation",
+    "validation": "repository-audit-complete",
     "githubRelease": "not-configured",
     "greasyForkSync": "legacy-monitor",
     "backup": "not-configured",
     "discordDevelopment": "configured",
-    "discordRelease": "secret-configured"
+    "discordRelease": "secret-configured",
+    "assetAudit": "passed"
   },
   "channels": {
     "development": "Mission-Chief-Dev",
     "releases": "Mission-Chief"
   },
   "assets": {
-    "policy": "Existing public paths remain stable during migration"
+    "policy": "Existing public paths remain stable during migration",
+    "discoveredFiles": 28,
+    "referencedPaths": 25,
+    "missingReferencedPaths": 0
   },
   "lastUpdated": "2026-07-14"
 }

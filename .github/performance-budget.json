@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-07-14-initial",
+  "rationale": "Initial guardrails are calibrated to Toolkit v4.11.2 and permit normal feature growth while blocking abrupt startup-workload expansion.",
+  "requiredSourceFragments": [
+    "@run-at       document-start",
+    "__MCMS_STARTUP_METRICS__"
+  ],
+  "absoluteLimits": {
+    "bytes": 1900000,
+    "lines": 31000
+  },
+  "relativeLimits": {
+    "bytes": {
+      "warnDelta": 35000,
+      "warnPercent": 2.0,
+      "failDelta": 120000,
+      "failPercent": 6.0
+    },
+    "lines": {
+      "warnDelta": 700,
+      "warnPercent": 2.0,
+      "failDelta": 1800,
+      "failPercent": 6.0
+    },
+    "css_bytes": {
+      "warnDelta": 25000,
+      "warnPercent": 4.0,
+      "failDelta": 65000,
+      "failPercent": 10.0
+    },
+    "css_rule_blocks": {
+      "warnDelta": 25,
+      "failDelta": 100
+    },
+    "set_interval_calls": {
+      "warnDelta": 1,
+      "failDelta": 3
+    },
+    "set_timeout_calls": {
+      "warnDelta": 5,
+      "failDelta": 20
+    },
+    "mutation_observers": {
+      "warnDelta": 1,
+      "failDelta": 3
+    },
+    "resize_observers": {
+      "warnDelta": 1,
+      "failDelta": 2
+    },
+    "request_animation_frame_calls": {
+      "warnDelta": 5,
+      "failDelta": 20
+    },
+    "event_listener_calls": {
+      "warnDelta": 20,
+      "failDelta": 75
+    },
+    "startup_hook_calls": {
+      "warnDelta": 2,
+      "failDelta": 6
+    }
+  }
+}

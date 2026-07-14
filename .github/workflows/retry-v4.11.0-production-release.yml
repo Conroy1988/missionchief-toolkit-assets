@@ -1,0 +1,54 @@
+name: Retry Toolkit v4.11.0 Production Release
+
+on:
+  pull_request:
+    types:
+      - opened
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  release:
+    name: Dispatch and verify Toolkit v4.11.0 production release
+    if: github.event.pull_request.title == '[Release Retry] Toolkit v4.11.0 Production Release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Dispatch Release Toolkit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKFLOW="release-toolkit.yml"
+          BEFORE_ID="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run "$WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
+            --field version="4.11.0" \
+            --field confirmation="RELEASE"
+
+          RUN_ID=""
+          for attempt in $(seq 1 30); do
+            CANDIDATE="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ "$CANDIDATE" != "0" && "$CANDIDATE" != "$BEFORE_ID" ]]; then
+              RUN_ID="$CANDIDATE"
+              break
+            fi
+            sleep 5
+          done
+
+          [[ -n "$RUN_ID" ]] || { echo "::error::Release Toolkit run could not be identified."; exit 1; }
+          echo "Release Toolkit run: $RUN_ID"
+
+          set +e
+          gh run watch "$RUN_ID" --repo "$GITHUB_REPOSITORY" --exit-status --interval 15
+          STATUS=$?
+          set -e
+
+          if [[ "$STATUS" -ne 0 ]]; then
+            echo "::group::Release Toolkit failed-step logs"
+            gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed || true
+            echo "::endgroup::"
+            exit "$STATUS"
+          fi

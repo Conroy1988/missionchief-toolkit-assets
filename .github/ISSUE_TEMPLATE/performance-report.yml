@@ -1,0 +1,175 @@
+name: Performance report
+
+description: Report slow startup, freezing, lag, excessive processing or memory use.
+title: "[Performance]: "
+labels:
+  - performance
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when MissionChief or the Toolkit becomes slow, freezes temporarily, or consumes excessive resources.
+
+        Before reporting, compare one clean load with the Toolkit enabled and one with only this userscript disabled. Do not include private tokens, webhook URLs or account credentials.
+
+  - type: input
+    id: toolkit-version
+    attributes:
+      label: Toolkit version
+      placeholder: "4.11.2"
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 142"
+    validations:
+      required: true
+
+  - type: input
+    id: tampermonkey
+    attributes:
+      label: Tampermonkey version
+      placeholder: "5.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-mode
+    attributes:
+      label: Device and Toolkit mode
+      options:
+        - Windows or Linux desktop — Desktop Mode
+        - Windows or Linux tablet — Tablet Mode
+        - macOS — Desktop Mode
+        - iPadOS — Tablet Mode
+        - iPhone or iOS — iOS Mobile Mode
+        - Android — mobile browser
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: Main performance symptom
+      options:
+        - Game cannot be interacted with during startup
+        - Toolkit controls take too long to appear
+        - Opening the Toolkit menu is slow
+        - Map movement or zooming is laggy
+        - Mission markers or mission list update slowly
+        - Vehicle processing is slow
+        - Performance degrades over time
+        - High memory or CPU use
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: duration
+    attributes:
+      label: Approximate delay or freeze duration
+      placeholder: "About 15 seconds"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sequence
+    attributes:
+      label: What happens during the delay?
+      description: Describe what is visible and what cannot be clicked or moved.
+      placeholder: "The map appears, but clicks and map dragging do nothing until the Toolkit bar finishes appearing."
+    validations:
+      required: true
+
+  - type: input
+    id: mission-count
+    attributes:
+      label: Approximate visible mission count
+      placeholder: "250"
+
+  - type: input
+    id: vehicle-count
+    attributes:
+      label: Approximate personal vehicle count
+      placeholder: "1,500"
+
+  - type: textarea
+    id: enabled-systems
+    attributes:
+      label: Relevant enabled Toolkit systems
+      description: List systems such as Major Incident Feed, Transport Watcher, Mission Inspector, Stuck Mission Detector, Mission Age Watch, payout tracking and coverage overlays.
+      placeholder: "Major Incident Feed, Transport Watcher and Mission Age Watch are enabled."
+
+  - type: textarea
+    id: startup-metrics
+    attributes:
+      label: Startup metrics
+      description: Open the browser console after loading, run `window.__MCMS_STARTUP_METRICS__`, and paste the returned object here.
+      render: javascript
+
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Browser console errors or warnings
+      render: shell
+
+  - type: textarea
+    id: comparison
+    attributes:
+      label: Comparison with the Toolkit disabled
+      description: State how long MissionChief takes to become interactive when only this userscript is disabled.
+      placeholder: "Toolkit enabled: 15 seconds. Toolkit disabled: 2 seconds."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Was an earlier Toolkit version faster?
+      options:
+        - Yes
+        - No
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: last-fast-version
+    attributes:
+      label: Last known faster version
+      placeholder: "4.11.0"
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction procedure
+      placeholder: |
+        1. Close all MissionChief tabs.
+        2. Open MissionChief in a new tab.
+        3. Attempt to drag the map immediately.
+        4. Record when interaction becomes possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, recording or browser performance profile
+      description: Drag supporting files here after removing personal or alliance-sensitive information.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I tested the latest available Toolkit version.
+          required: true
+        - label: I compared startup or responsiveness with only this userscript disabled.
+          required: true
+        - label: I removed passwords, tokens, webhook URLs and other sensitive information.
+          required: true

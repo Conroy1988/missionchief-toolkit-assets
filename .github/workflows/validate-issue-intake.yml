@@ -1,0 +1,118 @@
+name: Validate Issue Intake
+
+on:
+  pull_request:
+    paths:
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/labels.json"
+      - ".github/workflows/sync-repository-labels.yml"
+      - ".github/workflows/validate-issue-intake.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/labels.json"
+      - ".github/workflows/sync-repository-labels.yml"
+      - ".github/workflows/validate-issue-intake.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate forms and managed labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate managed label catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .labels
+            | type == "array"
+              and length > 0
+              and all(
+                type == "object"
+                and (.name | type == "string" and length > 0)
+                and (.color | type == "string" and test("^[0-9A-Fa-f]{6}$"))
+                and (.description | type == "string" and length <= 100)
+              )
+          ' .github/labels.json >/dev/null
+
+          DUPLICATES="$(jq -r '.labels[].name' .github/labels.json | sort | uniq -d)"
+          [[ -z "$DUPLICATES" ]] || {
+            echo "::error::Duplicate managed labels detected:"
+            printf '%s\n' "$DUPLICATES"
+            exit 1
+          }
+
+      - name: Validate issue-form structure
+        shell: ruby {0}
+        run: |
+          require "json"
+          require "yaml"
+
+          catalogue = JSON.parse(File.read(".github/labels.json"))
+          managed_labels = catalogue.fetch("labels").map { |label| label.fetch("name") }
+          form_paths = Dir[".github/ISSUE_TEMPLATE/*.yml"].reject { |path| File.basename(path) == "config.yml" }
+
+          abort "No issue forms were found" if form_paths.empty?
+
+          form_paths.each do |path|
+            form = YAML.safe_load(File.read(path), aliases: false)
+            abort "#{path}: top level must be a mapping" unless form.is_a?(Hash)
+
+            %w[name description body].each do |key|
+              abort "#{path}: missing #{key}" unless form.key?(key)
+            end
+
+            abort "#{path}: body must be a non-empty array" unless form["body"].is_a?(Array) && !form["body"].empty?
+
+            labels = Array(form["labels"])
+            missing_labels = labels - managed_labels
+            abort "#{path}: unmanaged labels: #{missing_labels.join(', ')}" unless missing_labels.empty?
+
+            ids = []
+            form["body"].each_with_index do |entry, index|
+              abort "#{path}: body entry #{index + 1} must be a mapping" unless entry.is_a?(Hash)
+              abort "#{path}: body entry #{index + 1} has no type" unless entry["type"].is_a?(String)
+
+              next if entry["type"] == "markdown"
+
+              id = entry["id"]
+              abort "#{path}: body entry #{index + 1} has no id" unless id.is_a?(String) && !id.empty?
+              abort "#{path}: duplicate id #{id}" if ids.include?(id)
+              ids << id
+
+              attributes = entry["attributes"]
+              abort "#{path}: #{id} has no attributes mapping" unless attributes.is_a?(Hash)
+              abort "#{path}: #{id} has no label" unless attributes["label"].is_a?(String) && !attributes["label"].empty?
+            end
+
+            puts "Validated issue form: #{path}"
+          end
+
+          config_path = ".github/ISSUE_TEMPLATE/config.yml"
+          config = YAML.safe_load(File.read(config_path), aliases: false)
+          abort "#{config_path}: top level must be a mapping" unless config.is_a?(Hash)
+          abort "#{config_path}: blank_issues_enabled must be false" unless config["blank_issues_enabled"] == false
+          puts "Validated issue chooser: #{config_path}"
+
+      - name: Write validation summary
+        shell: bash
+        run: |
+          {
+            echo "# Issue intake validation"
+            echo
+            echo "- Forms: $(find .github/ISSUE_TEMPLATE -maxdepth 1 -name '*-*.yml' | wc -l)"
+            echo "- Managed labels: $(jq '.labels | length' .github/labels.json)"
+            echo "- Blank issues: disabled"
+            echo "- Result: passed"
+          } >> "$GITHUB_STEP_SUMMARY"

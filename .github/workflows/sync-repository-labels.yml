@@ -1,0 +1,102 @@
+name: Synchronize Repository Labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/labels.json"
+      - ".github/workflows/sync-repository-labels.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: repository-label-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Create and update managed labels
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate label catalogue
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .labels
+            | type == "array"
+              and length > 0
+              and all(
+                type == "object"
+                and (.name | type == "string" and length > 0)
+                and (.color | test("^[0-9A-Fa-f]{6}$"))
+                and (.description | type == "string" and length <= 100)
+              )
+          ' .github/labels.json >/dev/null
+
+          DUPLICATES="$(jq -r '.labels[].name' .github/labels.json | sort | uniq -d)"
+          [[ -z "$DUPLICATES" ]] || {
+            echo "::error::Duplicate managed labels detected:"
+            printf '%s\n' "$DUPLICATES"
+            exit 1
+          }
+
+      - name: Synchronize labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r LABEL; do
+            NAME="$(jq -r '.name' <<< "$LABEL")"
+            COLOR="$(jq -r '.color' <<< "$LABEL")"
+            DESCRIPTION="$(jq -r '.description' <<< "$LABEL")"
+            ENCODED_NAME="$(jq -rn --arg value "$NAME" '$value | @uri')"
+            PAYLOAD="$(
+              jq -n \
+                --arg name "$NAME" \
+                --arg color "$COLOR" \
+                --arg description "$DESCRIPTION" \
+                '{new_name:$name,color:$color,description:$description}'
+            )"
+
+            if gh api "repos/${GITHUB_REPOSITORY}/labels/${ENCODED_NAME}" >/dev/null 2>&1; then
+              echo "Updating label: $NAME"
+              gh api \
+                --method PATCH \
+                "repos/${GITHUB_REPOSITORY}/labels/${ENCODED_NAME}" \
+                --input - <<< "$PAYLOAD" >/dev/null
+            else
+              echo "Creating label: $NAME"
+              jq -n \
+                --arg name "$NAME" \
+                --arg color "$COLOR" \
+                --arg description "$DESCRIPTION" \
+                '{name:$name,color:$color,description:$description}' |
+              gh api \
+                --method POST \
+                "repos/${GITHUB_REPOSITORY}/labels" \
+                --input - >/dev/null
+            fi
+          done < <(jq -c '.labels[]' .github/labels.json)
+
+      - name: Write synchronization summary
+        shell: bash
+        run: |
+          {
+            echo "# Repository label synchronization"
+            echo
+            echo "Managed labels: $(jq '.labels | length' .github/labels.json)"
+            echo
+            jq -r '.labels[] | "- `\(.name)` — \(.description)"' .github/labels.json
+          } >> "$GITHUB_STEP_SUMMARY"

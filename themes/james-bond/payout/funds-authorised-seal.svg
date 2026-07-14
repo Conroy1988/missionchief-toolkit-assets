@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="520" viewBox="0 0 520 520" role="img" aria-label="MI6 funds authorised seal">
+  <defs>
+    <path id="a" d="M84 260a176 176 0 0 1 352 0"/>
+    <path id="b" d="M436 260a176 176 0 0 1-352 0"/>
+  </defs>
+  <g fill="none" stroke="#a71924" opacity=".9">
+    <circle cx="260" cy="260" r="222" stroke-width="12"/>
+    <circle cx="260" cy="260" r="194" stroke-width="3" stroke-dasharray="7 9"/>
+    <circle cx="260" cy="260" r="128" stroke-width="5"/>
+  </g>
+  <path d="M157 262l61 63 145-160" fill="none" stroke="#a71924" stroke-width="27" stroke-linecap="square" stroke-linejoin="miter"/>
+  <g fill="#a71924" font-family="Arial,sans-serif" font-weight="900" letter-spacing="5">
+    <text font-size="33"><textPath href="#a" startOffset="50%" text-anchor="middle">MI6 FUNDS RELEASED</textPath></text>
+    <text font-size="28"><textPath href="#b" startOffset="50%" text-anchor="middle">SECTION 00 • EYES ONLY</textPath></text>
+    <text x="260" y="405" font-size="24" text-anchor="middle">AUTHORISED</text>
+  </g>
+</svg>

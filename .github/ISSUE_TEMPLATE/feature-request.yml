@@ -1,0 +1,127 @@
+name: Feature request
+
+description: Propose a useful improvement or new capability for the Toolkit.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Strong feature requests explain the player problem first, then the proposed solution. Please consider Desktop, Tablet and iOS behaviour where relevant.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or limitation
+      description: What is difficult, repetitive, unclear or currently impossible for MissionChief players?
+      placeholder: "When many alliance missions are clustered together, it is difficult to identify which incidents need my units without opening each mission."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: Describe what the Toolkit should do from the user's point of view.
+      placeholder: "Add an optional map indicator that distinguishes alliance missions where I have an eligible unit nearby."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Primary Toolkit area
+      options:
+        - Map controls, markers or overlays
+        - Bookmarks or map jumps
+        - Mission Age Watch or Critical View
+        - Mission Inspector, Transport Watcher or mission processing
+        - Vehicle Code Status or vehicle processing
+        - Payouts, completion history or financial features
+        - Themes, map skins or visual presentation
+        - Settings, import or export
+        - Tablet or iOS experience
+        - GitHub, Greasy Fork or release infrastructure
+        - New area
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who benefits most?
+      options:
+        - All Toolkit users
+        - Large-account users
+        - Alliance administrators
+        - Desktop users
+        - Tablet users
+        - iOS users
+        - Theme or visual-customisation users
+        - Developers and maintainers
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Suggested user workflow
+      description: Explain how the user would enable, configure and use the feature.
+      placeholder: |
+        1. Open the Map tab.
+        2. Enable the new indicator.
+        3. Choose the minimum mission value.
+        4. Relevant mission markers receive a compact badge.
+    validations:
+      required: true
+
+  - type: textarea
+    id: visual-design
+    attributes:
+      label: Visual or interaction concept
+      description: Describe placement, controls, colours, animations or touch behaviour. Screenshots and mock-ups can be dragged here.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain existing Toolkit features, MissionChief controls or other approaches that do not fully solve the problem.
+
+  - type: dropdown
+    id: default-state
+    attributes:
+      label: Recommended default state
+      options:
+        - Enabled by default
+        - Disabled by default and user-selectable
+        - Automatic based on device or context
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance and compatibility considerations
+      description: Note expected mission, marker or vehicle scale; mobile implications; theme requirements; and any risk of visual clutter.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References or examples
+      description: Add relevant MissionChief screenshots, Leaflet examples or links to similar behaviour.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked that the Toolkit does not already provide this behaviour.
+          required: true
+        - label: This request explains a user problem rather than only requesting a cosmetic change without context.
+          required: true
+        - label: I considered Desktop, Tablet and iOS implications where relevant.
+          required: true

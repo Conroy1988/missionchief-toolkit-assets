@@ -1,0 +1,88 @@
+name: Reconcile Release Announcement State
+
+on:
+  workflow_run:
+    workflows:
+      - Release Toolkit
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toolkit-production-release
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Synchronize release announcement tracker
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Verify completed release state
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          DASHBOARD_FILE="status/release-dashboard.json"
+          VERSION="$(jq -r '.latestRelease.version // empty' "$DASHBOARD_FILE")"
+          GREASYFORK_VERIFIED="$(jq -r '.latestRelease.greasyForkVerified // false' "$DASHBOARD_FILE")"
+          DISCORD_POSTED="$(jq -r '.latestRelease.discordPosted // false' "$DASHBOARD_FILE")"
+
+          [[ -n "$VERSION" ]] || { echo "::error::The release dashboard has no latest release version."; exit 1; }
+          [[ "$GREASYFORK_VERIFIED" == "true" ]] || { echo "::error::The latest release is not verified on Greasy Fork."; exit 1; }
+          [[ "$DISCORD_POSTED" == "true" ]] || { echo "::error::The latest release is not recorded as announced to Discord."; exit 1; }
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Reconcile fallback announcement tracker
+        env:
+          CURRENT_VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATE_FILE=".github/greasyfork-version.txt"
+          DASHBOARD_FILE="status/release-dashboard.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main --prune
+            git reset --hard origin/main
+
+            REMOTE_STATE="$(tr -d '\r\n ' < "$STATE_FILE" 2>/dev/null || true)"
+            DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' "$DASHBOARD_FILE" 2>/dev/null || true)"
+            DASHBOARD_GREASYFORK="$(jq -r '.latestRelease.greasyForkVerified // false' "$DASHBOARD_FILE" 2>/dev/null || true)"
+            DASHBOARD_DISCORD="$(jq -r '.latestRelease.discordPosted // false' "$DASHBOARD_FILE" 2>/dev/null || true)"
+
+            [[ "$REMOTE_STATE" == "$CURRENT_VERSION" ]] && {
+              echo "Fallback tracker already records Toolkit ${CURRENT_VERSION}."
+              exit 0
+            }
+
+            if [[ "$DASHBOARD_VERSION" != "$CURRENT_VERSION" ||
+                  "$DASHBOARD_GREASYFORK" != "true" ||
+                  "$DASHBOARD_DISCORD" != "true" ]]; then
+              echo "::error::The verified dashboard state changed before tracker reconciliation."
+              exit 1
+            fi
+
+            printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
+            git add "$STATE_FILE"
+            git commit -m "Reconcile announced Toolkit version ${CURRENT_VERSION}"
+            git push origin HEAD:main && exit 0
+            sleep 5
+          done
+
+          echo "::error::Could not reconcile the release announcement tracker after three attempts."
+          exit 1

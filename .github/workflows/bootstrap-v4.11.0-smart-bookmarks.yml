@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,7 +19,6 @@ concurrency:
 jobs:
   bootstrap-and-release:
     name: Restore canonical source, apply v4.11.0 and run release pipeline
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 70
 

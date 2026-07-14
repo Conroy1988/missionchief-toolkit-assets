@@ -8,7 +8,17 @@
   ],
   "absoluteLimits": {
     "bytes": 1900000,
-    "lines": 31000
+    "lines": 31000,
+    "css_bytes": 950000,
+    "css_rule_blocks": 7000,
+    "set_interval_calls": 4,
+    "set_timeout_calls": 25,
+    "mutation_observers": 8,
+    "resize_observers": 4,
+    "request_animation_frame_calls": 20,
+    "event_listener_calls": 120,
+    "query_selector_calls": 400,
+    "startup_hook_calls": 10
   },
   "relativeLimits": {
     "bytes": {

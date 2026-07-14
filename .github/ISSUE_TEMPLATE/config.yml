@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Install or update the Toolkit
+    url: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit
+    about: Use the official Greasy Fork page for the current public version.
+  - name: Review releases and changelogs
+    url: https://github.com/Conroy1988/missionchief-toolkit-assets/releases
+    about: Check whether a problem has already been corrected in a newer release.
+  - name: Read project and release status
+    url: https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/status/README.md
+    about: View the current canonical version and release-pipeline state.

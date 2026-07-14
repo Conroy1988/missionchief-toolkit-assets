@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - opened
+      - synchronize
 
 permissions:
   actions: write
@@ -11,11 +12,42 @@ permissions:
 
 jobs:
   dispatch:
-    name: Dispatch validated v4.11.0 bootstrap
+    name: Dispatch and diagnose validated v4.11.0 bootstrap
     if: github.event.pull_request.title == '[Release Trigger] Toolkit v4.11.0 Smart Bookmark Labels'
     runs-on: ubuntu-latest
+    timeout-minutes: 75
     steps:
       - name: Dispatch bootstrap workflow on main
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run bootstrap-v4.11.0-smart-bookmarks.yml --repo "$GITHUB_REPOSITORY" --ref main
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKFLOW="bootstrap-v4.11.0-smart-bookmarks.yml"
+          BEFORE_ID="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run "$WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main
+
+          RUN_ID=""
+          for attempt in $(seq 1 30); do
+            CANDIDATE="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ "$CANDIDATE" != "0" && "$CANDIDATE" != "$BEFORE_ID" ]]; then
+              RUN_ID="$CANDIDATE"
+              break
+            fi
+            sleep 5
+          done
+
+          [[ -n "$RUN_ID" ]] || { echo "::error::Bootstrap workflow run could not be identified."; exit 1; }
+          echo "Bootstrap workflow run: $RUN_ID"
+
+          set +e
+          gh run watch "$RUN_ID" --repo "$GITHUB_REPOSITORY" --exit-status --interval 10
+          STATUS=$?
+          set -e
+
+          if [[ "$STATUS" -ne 0 ]]; then
+            echo "::group::Bootstrap failed-step logs"
+            gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed || true
+            echo "::endgroup::"
+            exit "$STATUS"
+          fi

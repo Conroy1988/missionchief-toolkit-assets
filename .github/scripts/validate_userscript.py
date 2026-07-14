@@ -5,8 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import shutil
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,7 +18,6 @@ SUMS = DIST / "SHA256SUMS.txt"
 MANIFEST = DIST / "release-manifest.json"
 
 REQUIRED_KEYS = {"name", "version", "author", "license"}
-MISSIONCHIEF_MATCH = re.compile(r"^https?://(?:www\.)?missionchief\.co\.uk/", re.I)
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 
 
@@ -44,7 +41,7 @@ def metadata(text: str) -> dict[str, list[str]]:
 
     result: dict[str, list[str]] = {}
     for line in text[start:end].splitlines():
-        match = re.match(r"^//\s+@([A-Za-z0-9:_-]+)\s+(.+?)\s*$", line)
+        match = re.match(r"^//\s*@([A-Za-z0-9:_-]+)\s+(.+?)\s*$", line)
         if match:
             result.setdefault(match.group(1).lower(), []).append(match.group(2))
     return result
@@ -61,7 +58,15 @@ def changelog_has_version(version: str) -> bool:
     if not CHANGELOG.exists():
         return False
     text = CHANGELOG.read_text(encoding="utf-8")
-    return re.search(rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$", text, re.M) is not None
+    return re.search(
+        rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$",
+        text,
+        re.M,
+    ) is not None
+
+
+def is_missionchief_rule(value: str) -> bool:
+    return "missionchief.co.uk" in value.casefold()
 
 
 def main() -> int:
@@ -90,17 +95,18 @@ def main() -> int:
     author = one(meta, "author")
     license_name = one(meta, "license")
 
-    if "MissionChief Map Command Toolkit" not in name:
+    if "missionchief map command toolkit" not in name.casefold():
         fail(f"unexpected @name: {name}")
     if not VERSION_RE.fullmatch(version):
         fail(f"invalid semantic @version: {version}")
-    if "Conroy1988" not in author:
+    if "conroy1988" not in author.casefold():
         fail(f"unexpected @author: {author}")
-    if license_name.casefold() != "mit":
+    if "mit" not in license_name.casefold():
         fail(f"unexpected @license: {license_name}")
 
     matches = meta.get("match", []) + meta.get("include", [])
-    if not any(MISSIONCHIEF_MATCH.match(value) for value in matches):
+    missionchief_rules = [value for value in matches if is_missionchief_rule(value)]
+    if not missionchief_rules:
         fail("no MissionChief UK @match or @include rule was found")
 
     if not changelog_has_version(version):
@@ -141,20 +147,25 @@ def main() -> int:
             "name": name,
             "author": author,
             "license": license_name,
-            "missionChiefRules": [value for value in matches if MISSIONCHIEF_MATCH.match(value)],
+            "missionChiefRules": missionchief_rules,
         },
         "baselineHashMatch": baseline_match,
         "distributionStatus": "dry-run-not-yet-greasyfork-source",
     }
     MANIFEST.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
-    print(json.dumps({
-        "version": version,
-        "sha256": user_hash,
-        "bytes": len(raw),
-        "lines": manifest["lines"],
-        "baselineHashMatch": baseline_match,
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "version": version,
+                "sha256": user_hash,
+                "bytes": len(raw),
+                "lines": manifest["lines"],
+                "baselineHashMatch": baseline_match,
+            },
+            indent=2,
+        )
+    )
     return 0
 
 

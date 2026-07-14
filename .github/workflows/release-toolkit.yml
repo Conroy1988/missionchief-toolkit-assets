@@ -1,0 +1,269 @@
+name: Release Toolkit
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Validated Toolkit version to publish"
+        required: true
+        type: string
+      confirmation:
+        description: "Type RELEASE to confirm a public release"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toolkit-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Validate, publish and verify Toolkit release
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Production release safety gate
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$CONFIRMATION" != "RELEASE" ]]; then
+            echo "::error::Public release confirmation was not entered exactly as RELEASE."
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid release version: $RELEASE_VERSION"
+            exit 1
+          fi
+
+          if [[ "$(jq -r '.greasyFork.syncEnabled' .github/release-settings.json)" != "true" ]]; then
+            echo "::error::Greasy Fork GitHub synchronization is not enabled in .github/release-settings.json. Configure and verify Greasy Fork before publishing."
+            exit 1
+          fi
+
+          if gh release view "v${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "::error::GitHub Release v${RELEASE_VERSION} already exists."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Validate canonical source and rebuild distribution
+        run: python3 .github/scripts/validate_userscript.py
+
+      - name: Check JavaScript syntax
+        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Verify distribution files are identical
+        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Prepare immutable release bundle
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/prepare_release_bundle.py "$RELEASE_VERSION"
+
+      - name: Verify release bundle integrity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          USER_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js"
+          TXT_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt"
+          MANIFEST="release-bundle/release-manifest-v${RELEASE_VERSION}.json"
+
+          cmp --silent "$USER_FILE" "$TXT_FILE"
+          EXPECTED_HASH="$(jq -r '.sha256' "$MANIFEST")"
+          test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$EXPECTED_HASH"
+          test "$(jq -r '.version' "$MANIFEST")" = "$RELEASE_VERSION"
+
+      - name: Upload immutable workflow backup
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-v${{ inputs.version }}-validated-release
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release create "v${RELEASE_VERSION}" \
+            --target "$GITHUB_SHA" \
+            --title "MissionChief Map Command Toolkit v${RELEASE_VERSION}" \
+            --notes-file "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
+            "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js" \
+            "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt" \
+            "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
+            "release-bundle/release-manifest-v${RELEASE_VERSION}.json" \
+            "release-bundle/SHA256SUMS-v${RELEASE_VERSION}.txt" \
+            "release-bundle/migration-handover-v${RELEASE_VERSION}.md"
+
+      - name: Wait for Greasy Fork synchronization
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          SYNCED=false
+
+          for attempt in $(seq 1 30); do
+            echo "Greasy Fork verification attempt $attempt of 30..."
+
+            if curl --fail --silent --show-error --location --compressed \
+              --max-time 30 \
+              --header "Cache-Control: no-cache" \
+              "${META_URL}?cache_bust=$(date +%s%N)" \
+              --output greasyfork-release.meta.js; then
+              LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork-release.meta.js | head -n 1 | xargs)"
+              echo "Expected version: $RELEASE_VERSION"
+              echo "Greasy Fork version: ${LIVE_VERSION:-unavailable}"
+
+              if [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]]; then
+                SYNCED=true
+                break
+              fi
+            fi
+
+            sleep 60
+          done
+
+          if [[ "$SYNCED" != "true" ]]; then
+            echo "::error::GitHub Release was created, but Greasy Fork did not publish version $RELEASE_VERSION within 30 minutes. Discord was not notified."
+            exit 1
+          fi
+
+      - name: Post verified release to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+            echo "::error::The DISCORD_RELEASE_WEBHOOK repository secret is not configured."
+            exit 1
+          fi
+
+          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          CHANGELOG="$(cat "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md")"
+          CHANGELOG="${CHANGELOG:0:1000}"
+          HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+          TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          jq -n \
+            --arg version "$RELEASE_VERSION" \
+            --arg changelog "$CHANGELOG" \
+            --arg hash "$HASH" \
+            --arg release_url "$RELEASE_URL" \
+            --arg script_url "$SCRIPT_URL" \
+            --arg install_url "$INSTALL_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              username: "MissionChief Toolkit Releases",
+              allowed_mentions: { parse: [] },
+              embeds: [{
+                title: ("MissionChief Map Command Toolkit v" + $version + " Released"),
+                description: "Validated on GitHub and verified live on Greasy Fork.",
+                url: $release_url,
+                color: 5763719,
+                fields: [
+                  { name: "Version", value: ("`" + $version + "`"), inline: true },
+                  { name: "Validation", value: "✅ Passed", inline: true },
+                  { name: "Greasy Fork", value: "✅ Verified", inline: true },
+                  { name: "What Changed", value: $changelog, inline: false },
+                  { name: "Integrity", value: ("SHA-256: `" + $hash + "`"), inline: false },
+                  { name: "Links", value: ("[GitHub Release](" + $release_url + ")\n[View on Greasy Fork](" + $script_url + ")\n[Install or update](" + $install_url + ")"), inline: false }
+                ],
+                footer: { text: "MissionChief Map Command Toolkit" },
+                timestamp: $timestamp
+              }]
+            }' > discord-release-payload.json
+
+          curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-release-payload.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true"
+
+      - name: Record successful release in dashboard
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
+
+          jq \
+            --arg version "$RELEASE_VERSION" \
+            --arg hash "$HASH" \
+            --arg now "$NOW" \
+            --arg releaseUrl "$RELEASE_URL" \
+            '.currentVersion = $version
+             | .status.validation = "passed"
+             | .status.githubRelease = "published"
+             | .status.greasyForkSync = "verified"
+             | .status.backup = "github-release-and-workflow-artifact"
+             | .status.discordRelease = "posted"
+             | .latestRelease = {
+                 version: $version,
+                 sha256: $hash,
+                 githubRelease: $releaseUrl,
+                 greasyForkVerified: true,
+                 discordPosted: true,
+                 completedAt: $now
+               }
+             | .lastUpdated = $now' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+
+          mv status/release-dashboard.tmp status/release-dashboard.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/release-dashboard.json
+          git commit -m "Record Toolkit ${RELEASE_VERSION} verified release"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Write release summary
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          {
+            echo "# Toolkit v${RELEASE_VERSION} release"
+            echo
+            echo "- ✅ Canonical source validated"
+            echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Immutable release bundle prepared"
+            echo "- ✅ GitHub Release published"
+            echo "- ✅ Greasy Fork version verified"
+            echo "- ✅ Discord release announcement posted"
+            echo "- ✅ Release dashboard updated"
+          } >> "$GITHUB_STEP_SUMMARY"

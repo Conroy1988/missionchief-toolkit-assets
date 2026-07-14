@@ -15,7 +15,7 @@ The checker discovers and verifies:
 
 For repository media, it validates local file size, file signatures, public HTTP status, content type and public size parity. Git LFS pointer files are rejected.
 
-For public userscript endpoints, it downloads the complete payload and verifies both `@version` and SHA-256 against `status/release-dashboard.json -> latestRelease`.
+For public userscripts, the GitHub Release asset remains the full-file SHA-256 authority and must match `status/release-dashboard.json -> latestRelease`. Greasy Fork must expose the same `@version` and the same byte-identical executable body after the userscript metadata block; its service-generated metadata envelope may differ without weakening code-integrity verification.
 
 ## Execution
 

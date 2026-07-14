@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.10.4
+// @version      4.11.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.10.4',
+        version: '4.11.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -882,7 +882,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.10.4',
+        guideVersion: '4.11.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1068,6 +1068,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         { id: 'dund', label: 'DUND', name: 'Dundee', lat: 56.4620, lng: -2.9707, zoom: 11 },
         { id: 'stir', label: 'STIR', name: 'Stirling', lat: 56.1165, lng: -3.9369, zoom: 11 }
     ];
+
+
+    const SMART_BOOKMARK_LABEL_MAX = 12;
+    const SMART_BOOKMARK_SINGLE_WORD_MAX = 5;
+    const SMART_BOOKMARK_WORDS = Object.freeze({
+        edinburgh: 'EDIN', glasgow: 'GLA', london: 'LDN', manchester: 'MAN', liverpool: 'LIV',
+        birmingham: 'BHM', newcastle: 'NCL', aberdeen: 'ABDN', dundee: 'DND', stirling: 'STIR',
+        perth: 'PER', fife: 'FIFE', wakefield: 'WKFD', livingston: 'LVSTN', kirkcaldy: 'KRKDY',
+        dunfermline: 'DNFRM', musselburgh: 'MSLBG', bonnyrigg: 'BNYRG', bathgate: 'BTHGT',
+        dalkeith: 'DLKTH', leith: 'LEITH', paisley: 'PSLY', ayr: 'AYR', inverness: 'INV',
+        centre: 'CTR', center: 'CTR', station: 'STN', headquarters: 'HQ', airport: 'AP',
+        hospital: 'HOSP', fire: 'FIRE', police: 'POL', ambulance: 'AMB', training: 'TRG',
+        control: 'CTRL', dispatch: 'DSP', operations: 'OPS', response: 'RSP', depot: 'DPT',
+        district: 'DIST', central: 'CEN', north: 'N', south: 'S', east: 'E', west: 'W',
+        northeast: 'NE', northwest: 'NW', southeast: 'SE', southwest: 'SW',
+        northern: 'N', southern: 'S', eastern: 'E', western: 'W'
+    });
+    const SMART_BOOKMARK_STOP_WORDS = new Set(['the', 'of', 'and', 'at', 'in', 'for', 'on', 'to']);
+    const SMART_BOOKMARK_OPTIONAL_WORDS = new Set(['city', 'county', 'area', 'region']);
 
     const SUPPRESSION_SELECTORS = [
         '.modal.show', '.modal.in', '.modal-backdrop', '.bootbox.modal',
@@ -1429,7 +1448,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             delete merged.discordReport.includeBenchmark;
             merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
             merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
-            merged.bookmarks = merged.bookmarks.map(item => item ? { ...item, pinned: Boolean(item.pinned) } : null);
+            merged.bookmarks = merged.bookmarks.map(item => item ? {
+                ...item,
+                name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+                shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+                pinned: Boolean(item.pinned)
+            } : null);
             merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
 
             if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
@@ -13192,6 +13216,125 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             }
         }
 
+        /* v4.11.0: compact Smart Bookmark Labels; theme colours and artwork remain untouched. */
+        #${SCRIPT.controlId} .mcms-screen-pins {
+            display:flex !important;
+            flex-wrap:wrap !important;
+            grid-template-columns:none !important;
+            align-items:center !important;
+            align-content:flex-start !important;
+            justify-content:flex-start !important;
+            gap:5px !important;
+            width:auto !important;
+            max-width:min(360px,calc(100vw - 24px)) !important;
+            max-height:132px !important;
+            overflow-y:auto !important;
+            overflow-x:hidden !important;
+        }
+        #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            flex:0 0 auto !important;
+            width:auto !important;
+            min-width:52px !important;
+            max-width:112px !important;
+            height:29px !important;
+            padding:0 10px !important;
+            font-size:9px !important;
+            line-height:1 !important;
+            letter-spacing:.18px !important;
+            text-align:center !important;
+            white-space:nowrap !important;
+            overflow:hidden !important;
+            text-overflow:ellipsis !important;
+        }
+        #${SCRIPT.panelId} .mcms-bookmark-name-btn {
+            appearance:none !important;
+            -webkit-appearance:none !important;
+            display:flex !important;
+            flex-direction:column !important;
+            align-items:flex-start !important;
+            justify-content:center !important;
+            gap:2px !important;
+            min-width:0 !important;
+            min-height:30px !important;
+            padding:0 2px !important;
+            border:0 !important;
+            background:transparent !important;
+            color:inherit !important;
+            line-height:1.05 !important;
+            text-align:left !important;
+            cursor:pointer !important;
+            white-space:normal !important;
+            overflow:hidden !important;
+        }
+        #${SCRIPT.panelId} .mcms-bookmark-name-main {
+            display:block !important;
+            width:100% !important;
+            overflow:hidden !important;
+            text-overflow:ellipsis !important;
+            white-space:nowrap !important;
+        }
+        #${SCRIPT.panelId} .mcms-bookmark-short {
+            display:block !important;
+            max-width:100% !important;
+            color:rgba(255,255,255,.55) !important;
+            font-size:7px !important;
+            line-height:1 !important;
+            font-weight:900 !important;
+            letter-spacing:.35px !important;
+            white-space:nowrap !important;
+            overflow:hidden !important;
+            text-overflow:ellipsis !important;
+        }
+        #${SCRIPT.panelId} .mcms-bookmark-name-btn:hover .mcms-bookmark-name-main,
+        #${SCRIPT.panelId} .mcms-bookmark-name-btn:focus-visible .mcms-bookmark-name-main {
+            text-decoration:underline !important;
+        }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+            display:flex !important;
+            flex-wrap:wrap !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            gap:5px !important;
+            width:100% !important;
+            max-width:none !important;
+            max-height:none !important;
+            overflow:visible !important;
+        }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            flex:0 0 auto !important;
+            width:auto !important;
+            min-width:56px !important;
+            max-width:126px !important;
+            height:var(--mcms-tablet-pin-height,31px) !important;
+            padding:0 11px !important;
+            border-radius:9px !important;
+            font-size:10px !important;
+        }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+            display:flex !important;
+            flex-wrap:wrap !important;
+            justify-content:flex-start !important;
+            align-items:center !important;
+            gap:4px !important;
+            width:100% !important;
+            max-width:none !important;
+            overflow:visible !important;
+        }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            flex:0 0 auto !important;
+            width:auto !important;
+            min-width:50px !important;
+            max-width:98px !important;
+            height:var(--mcms-mobile-pin-height,30px) !important;
+            padding:0 8px !important;
+            border-radius:8px !important;
+            font-size:clamp(8.5px,2.15vw,9.5px) !important;
+        }
+        html[data-mcms-economy="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+
 
     `);
 
@@ -13478,7 +13621,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         observeTabletMapArea(mapEl);
 
         const margin = rect.width < 700 ? 8 : 10;
-        const gap = 7;
+        const gap = 5;
         const menuWidth = 52;
         const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
@@ -13491,14 +13634,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
         const preferredFilterWidth = contentWidth >= 600 ? 92 : 82;
-        const preferredPinWidth = contentWidth >= 600 ? 100 : 92;
+        const preferredPinWidth = contentWidth >= 600 ? 78 : 70;
 
         let filterColumns = Math.max(1, Math.min(filterCount, Math.floor((contentWidth + gap) / (preferredFilterWidth + gap)) || 1));
         let pinColumns = pinCount
             ? Math.max(1, Math.min(pinCount, Math.floor((contentWidth + gap) / (preferredPinWidth + gap)) || 1))
             : 1;
         let filterHeight = 48;
-        let pinHeight = 42;
+        let pinHeight = 31;
         const availableMapHeight = Math.max(80, rect.height - (margin * 2) - nudgeY);
 
         let estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
@@ -13517,7 +13660,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         if (estimatedHeight > availableMapHeight) {
             filterHeight = 46;
-            pinHeight = 40;
+            pinHeight = 29;
             estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
         }
 
@@ -13562,9 +13705,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const maxPortraitColumns = viewport.orientation === 'portrait' ? 5 : commandCount;
         let columns = Math.max(3, Math.min(commandCount, maxPortraitColumns, Math.floor((dockWidth + gap) / (minCommandWidth + gap)) || 3));
         if (viewport.orientation === 'landscape' && dockWidth >= 700) columns = commandCount;
-        let pinColumns = pinCount ? Math.max(2, Math.min(pinCount, Math.floor((dockWidth + gap) / (88 + gap)) || 2)) : 1;
+        let pinColumns = pinCount ? Math.max(2, Math.min(pinCount, Math.floor((dockWidth + gap) / (70 + gap)) || 2)) : 1;
         let commandHeight = viewport.orientation === 'landscape' ? 42 : 44;
-        let pinHeight = 34;
+        let pinHeight = 30;
         const availableMapHeight = Math.max(72, rect.height - (margin * 2) - nudgeY);
 
         let estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
@@ -13578,7 +13721,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         if (estimatedHeight > availableMapHeight) {
             commandHeight = 40;
-            pinHeight = 31;
+            pinHeight = 28;
             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
 
@@ -17343,6 +17486,125 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         heatmapTimer = runtimeSetTimeout(updateCoverageHeatmap, state.economyMode ? 650 : 180);
     }
 
+    function sanitiseBookmarkShortLabel(value) {
+        return String(value || '')
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/gu, '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9&/+ -]+/gu, ' ')
+            .replace(/\s+/gu, ' ')
+            .trim()
+            .slice(0, SMART_BOOKMARK_LABEL_MAX);
+    }
+
+    function compactBookmarkWord(value, targetLength = SMART_BOOKMARK_SINGLE_WORD_MAX) {
+        const original = String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/gu, '');
+        const key = original.toLowerCase().replace(/[^a-z0-9]+/gu, '');
+        if (!key) return '';
+        if (SMART_BOOKMARK_WORDS[key]) return SMART_BOOKMARK_WORDS[key];
+
+        let upper = key.toUpperCase();
+        if (upper.length <= targetLength) return upper;
+        upper = upper
+            .replace(/BOROUGH$/u, 'BORO')
+            .replace(/BURGH$/u, 'BRG')
+            .replace(/FIELD$/u, 'FD')
+            .replace(/SHIRE$/u, 'SHR')
+            .replace(/INGTON$/u, 'NGTN')
+            .replace(/CHESTER$/u, 'CHST');
+
+        let compressed = upper.charAt(0) + upper.slice(1).replace(/[AEIOUY]/gu, '');
+        compressed = compressed.replace(/(.)\1+/gu, '$1');
+        if (compressed.length <= targetLength) return compressed;
+
+        const target = Math.max(3, targetLength);
+        const chars = Array.from(compressed);
+        if (target <= 3) return `${chars[0]}${chars[Math.floor(chars.length / 2)]}${chars[chars.length - 1]}`;
+        const result = [chars[0]];
+        const interior = chars.slice(1, -1);
+        const slots = target - 2;
+        for (let index = 0; index < slots; index += 1) {
+            const position = slots === 1 ? 0 : Math.round(index * (interior.length - 1) / (slots - 1));
+            const character = interior[Math.max(0, position)];
+            if (character && result[result.length - 1] !== character) result.push(character);
+        }
+        if (result[result.length - 1] !== chars[chars.length - 1]) result.push(chars[chars.length - 1]);
+        return result.join('').slice(0, target);
+    }
+
+    function makeSmartBookmarkLabel(name, manualLabel = '') {
+        const manual = sanitiseBookmarkShortLabel(manualLabel);
+        if (manual) return manual;
+
+        const rawWords = String(name || '')
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/gu, '')
+            .toLowerCase()
+            .match(/[a-z0-9]+/gu) || [];
+        let words = rawWords.filter(word => !SMART_BOOKMARK_STOP_WORDS.has(word));
+        if (words.length > 2) words = words.filter(word => !SMART_BOOKMARK_OPTIONAL_WORDS.has(word));
+        if (!words.length) words = rawWords;
+        if (!words.length) return 'PIN';
+
+        const tokens = words.map((word, index) => compactBookmarkWord(word, index === 0 ? 5 : 4)).filter(Boolean);
+        while (tokens.length > 1 && /^[NSEW]$/u.test(tokens[0]) && /^[NSEW]$/u.test(tokens[1])) {
+            tokens.splice(0, 2, `${tokens[0]}${tokens[1]}`);
+        }
+
+        if (tokens.length === 1) return sanitiseBookmarkShortLabel(tokens[0]) || 'PIN';
+        let label = tokens.join(' ');
+        if (label.length <= SMART_BOOKMARK_LABEL_MAX) return label;
+
+        const first = tokens[0].slice(0, 5);
+        const remainder = tokens.slice(1).map(token => token.length <= 3 ? token : token.slice(0, 3));
+        label = [first, ...remainder].join(' ');
+        if (label.length <= SMART_BOOKMARK_LABEL_MAX) return label;
+
+        const initials = tokens.slice(1).map(token => token.charAt(0)).join('');
+        label = initials ? `${first} ${initials}` : first;
+        return sanitiseBookmarkShortLabel(label) || 'PIN';
+    }
+
+    function bookmarkScreenLabel(bookmark) {
+        return makeSmartBookmarkLabel(bookmark?.name || 'Bookmark', bookmark?.shortLabel || '');
+    }
+
+    function resolveScreenPinLabels(entries) {
+        const counts = new Map();
+        entries.forEach(entry => {
+            const key = entry.baseLabel.toUpperCase();
+            counts.set(key, (counts.get(key) || 0) + 1);
+        });
+        const seen = new Map();
+        return entries.map(entry => {
+            const key = entry.baseLabel.toUpperCase();
+            const total = counts.get(key) || 1;
+            if (total === 1) return { ...entry, label: entry.baseLabel };
+            const number = (seen.get(key) || 0) + 1;
+            seen.set(key, number);
+            const suffix = ` ${number}`;
+            const available = Math.max(3, SMART_BOOKMARK_LABEL_MAX - suffix.length);
+            return { ...entry, label: `${entry.baseLabel.slice(0, available).trim()}${suffix}` };
+        });
+    }
+
+    function editBookmarkLabel(slot) {
+        const bookmark = state.bookmarks[slot];
+        if (!bookmark) return;
+        const name = pageWindow.prompt('Bookmark name:', bookmark.name || `Bookmark ${slot + 1}`);
+        if (name === null) return;
+        const cleanName = String(name || bookmark.name || `Bookmark ${slot + 1}`).trim().slice(0, 80) || `Bookmark ${slot + 1}`;
+        const currentShortLabel = sanitiseBookmarkShortLabel(bookmark.shortLabel || '');
+        const shortLabel = pageWindow.prompt('Short screen label (leave blank for automatic):', currentShortLabel);
+        bookmark.name = cleanName;
+        if (shortLabel !== null) bookmark.shortLabel = sanitiseBookmarkShortLabel(shortLabel);
+        saveState();
+        renderBookmarks();
+        renderScreenPins();
+        updateUI();
+        showToast(`${bookmark.name} · ${bookmarkScreenLabel(bookmark)}`);
+    }
+
     function saveBookmark(slot) {
         const map = findLeafletMapInstance(true);
         if (!map || typeof map.getCenter !== 'function' || typeof map.getZoom !== 'function') {
@@ -17366,8 +17628,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const name = pageWindow.prompt('Bookmark name:', fallback);
         if (name === null) return;
 
+        const cleanName = String(name || fallback).trim().slice(0, 80) || fallback;
+        const currentShortLabel = sanitiseBookmarkShortLabel(existing?.shortLabel || '');
+        const shortLabelPrompt = pageWindow.prompt('Short screen label (leave blank for automatic):', currentShortLabel);
+        const shortLabel = shortLabelPrompt === null ? currentShortLabel : sanitiseBookmarkShortLabel(shortLabelPrompt);
+
         state.bookmarks[slot] = {
-            name: String(name || fallback).trim() || fallback,
+            name: cleanName,
+            shortLabel,
             lat: Number(center.lat.toFixed(6)),
             lng: Number(center.lng.toFixed(6)),
             zoom: Number(zoom),
@@ -17378,7 +17646,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         renderBookmarks();
         renderScreenPins();
         updateUI();
-        showToast('Bookmark saved');
+        showToast(`Bookmark saved · ${bookmarkScreenLabel(state.bookmarks[slot])}`);
     }
 
     function goBookmark(slot) {
@@ -25884,15 +26152,46 @@ Create the private backup now?`);
             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
         `;
 
-        ['click', 'dblclick', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+        ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
             control.addEventListener(eventName, stopMapInteraction, { passive: false });
         });
+
+        let screenPinLongPressTimer = 0;
+        let screenPinLongPressButton = null;
+        const cancelScreenPinLongPress = () => {
+            runtimeClearTimeout(screenPinLongPressTimer);
+            screenPinLongPressTimer = 0;
+            screenPinLongPressButton = null;
+        };
+        control.addEventListener('pointerdown', event => {
+            const pinButton = closestEventTarget(event, '.mcms-screen-pin-btn[data-full-label]');
+            if (!pinButton || event.pointerType === 'mouse') return;
+            cancelScreenPinLongPress();
+            screenPinLongPressButton = pinButton;
+            screenPinLongPressTimer = runtimeSetTimeout(() => {
+                if (screenPinLongPressButton !== pinButton) return;
+                pinButton.dataset.mcmsLongPress = 'true';
+                showToast(pinButton.dataset.fullLabel || pinButton.textContent || 'Bookmark');
+            }, 560);
+        });
+        control.addEventListener('pointermove', cancelScreenPinLongPress, { passive: true });
+        control.addEventListener('pointercancel', cancelScreenPinLongPress, { passive: true });
+        control.addEventListener('pointerup', () => {
+            runtimeClearTimeout(screenPinLongPressTimer);
+            screenPinLongPressTimer = 0;
+            screenPinLongPressButton = null;
+        }, { passive: true });
 
         control.addEventListener('click', event => {
             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
             const toggleButton = closestEventTarget(event, '[data-toggle]');
             const actionButton = closestEventTarget(event, '[data-action]');
+            if (actionButton?.dataset.mcmsLongPress === 'true') {
+                delete actionButton.dataset.mcmsLongPress;
+                event.preventDefault();
+                return;
+            }
             if (menuButton) { togglePanel(); return; }
             if (dockToggleButton) { toggleCommandBar(); return; }
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
@@ -26183,7 +26482,7 @@ Create the private backup now?`);
                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
             </section>
             <div class="mcms-footer">
-                <span>v4.10.4: 007 portrait now extends naturally beneath the protected toolbar boundary instead of ending visibly at the waist.</span>
+                <span>v4.11.0: Smart Bookmark Labels add compact theme-safe shortcuts, automatic abbreviations, collision protection and manual overrides.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;
@@ -26296,12 +26595,18 @@ Create the private backup now?`);
             if (!bookmark) {
                 return `<div class="mcms-bookmark-row"><span class="mcms-bookmark-name">Slot ${index + 1} empty</span><span></span><span></span><button class="mcms-bookmark-btn" type="button" data-action="bookmark-save" data-slot="${index}">Save</button><span></span></div>`;
             }
+            const screenLabel = bookmarkScreenLabel(bookmark);
+            const labelMode = bookmark.shortLabel ? 'CUSTOM' : 'AUTO';
+            const labelTitle = `${bookmark.name} · Screen label: ${screenLabel} (${labelMode.toLowerCase()})`;
             return `
                 <div class="mcms-bookmark-row">
-                    <span class="mcms-bookmark-name" title="${escapeHtml(bookmark.name)}">${escapeHtml(bookmark.name)}</span>
+                    <button class="mcms-bookmark-name mcms-bookmark-name-btn" type="button" data-action="bookmark-label" data-slot="${index}" title="${escapeHtml(labelTitle)}" aria-label="Edit ${escapeHtml(bookmark.name)} name and short label">
+                        <span class="mcms-bookmark-name-main">${escapeHtml(bookmark.name)}</span>
+                        <span class="mcms-bookmark-short">${escapeHtml(screenLabel)} · ${labelMode}</span>
+                    </button>
                     <button class="mcms-bookmark-btn" type="button" data-action="bookmark-go" data-slot="${index}">Go</button>
                     <button class="mcms-pin-btn ${bookmark.pinned ? 'mcms-on' : ''}" type="button" data-action="bookmark-pin" data-slot="${index}" title="Pin as persistent screen shortcut">${bookmark.pinned ? 'ON' : 'PIN'}</button>
-                    <button class="mcms-bookmark-btn" type="button" data-action="bookmark-save" data-slot="${index}">Save</button>
+                    <button class="mcms-bookmark-btn" type="button" data-action="bookmark-save" data-slot="${index}" title="Update this bookmark from the current map view">Save</button>
                     <button class="mcms-bookmark-btn" type="button" data-action="bookmark-delete" data-slot="${index}">×</button>
                 </div>`;
         }).join('');
@@ -26310,16 +26615,33 @@ Create the private backup now?`);
     function renderScreenPins() {
         const dock = document.querySelector(`#${SCRIPT.controlId} .mcms-screen-pins`);
         if (!dock) return;
-        const buttons = [];
+        const entries = [];
         for (const place of QUICK_PLACES) {
             if (!state.quickPins[place.id]) continue;
-            buttons.push(`<button class="mcms-screen-pin-btn mcms-pin-quick" type="button" data-action="place-go" data-place="${place.id}" title="Jump to ${escapeHtml(place.name)}">${escapeHtml(place.name)}</button>`);
+            entries.push({
+                kind: 'quick',
+                id: place.id,
+                fullName: place.name,
+                baseLabel: sanitiseBookmarkShortLabel(place.label) || makeSmartBookmarkLabel(place.name)
+            });
         }
         state.bookmarks.forEach((bookmark, index) => {
             if (!bookmark || !bookmark.pinned) return;
-            buttons.push(`<button class="mcms-screen-pin-btn mcms-pin-custom" type="button" data-action="bookmark-go" data-slot="${index}" title="Jump to ${escapeHtml(bookmark.name)}">${escapeHtml(bookmark.name)}</button>`);
+            entries.push({
+                kind: 'bookmark',
+                index,
+                fullName: bookmark.name,
+                baseLabel: bookmarkScreenLabel(bookmark)
+            });
         });
-        dock.innerHTML = buttons.join('');
+
+        dock.innerHTML = resolveScreenPinLabels(entries).map(entry => {
+            const action = entry.kind === 'quick'
+                ? `data-action="place-go" data-place="${escapeHtml(entry.id)}"`
+                : `data-action="bookmark-go" data-slot="${entry.index}"`;
+            const className = entry.kind === 'quick' ? 'mcms-pin-quick' : 'mcms-pin-custom';
+            return `<button class="mcms-screen-pin-btn ${className}" type="button" ${action} data-full-label="${escapeHtml(entry.fullName)}" data-smart-label="${escapeHtml(entry.label)}" title="Jump to ${escapeHtml(entry.fullName)}" aria-label="Jump to ${escapeHtml(entry.fullName)}">${escapeHtml(entry.label)}</button>`;
+        }).join('');
         if (isTouchLayoutActive()) fitControlToMap();
     }
 
@@ -26332,6 +26654,7 @@ Create the private backup now?`);
         }
         if (action === 'quick-pin') { toggleQuickPin(button.dataset.place); return; }
         if (action === 'bookmark-save') { saveBookmark(Number(button.dataset.slot)); return; }
+        if (action === 'bookmark-label') { editBookmarkLabel(Number(button.dataset.slot)); return; }
         if (action === 'bookmark-go') { goBookmark(Number(button.dataset.slot)); return; }
         if (action === 'bookmark-delete') { deleteBookmark(Number(button.dataset.slot)); return; }
         if (action === 'bookmark-pin') { toggleBookmarkPin(Number(button.dataset.slot)); return; }
@@ -27415,7 +27738,7 @@ Create the private backup now?`);
 
         runAutoNight(true);
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 250);
-        console.debug(`[${SCRIPT.name}] v4.10.4 grounded 007 payout portrait ready.`);
+        console.debug(`[${SCRIPT.name}] v4.11.0 Smart Bookmark Labels ready.`);
     }
 
     if (document.readyState === 'loading') {

@@ -6,8 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
-### Pipeline
-- GitHub release automation is being introduced without changing the current Greasy Fork distribution path.
+## [4.11.0] - 2026-07-14
+
+### Added
+- Added Smart Bookmark Labels with UK-aware place and operational-word abbreviation dictionaries.
+- Added consonant-compression fallback for custom user-entered locations.
+- Added automatic duplicate-label numbering across quick places and custom bookmarks.
+- Added manual short-label overrides without requiring the bookmark location to be resaved.
+- Added full-name desktop tooltips, accessible labels and touch long-press name previews.
+
+### Changed
+- Replaced equal-width bookmark shortcut tiles with compact content-sized controls.
+- Reduced bookmark shortcut height and spacing across Desktop, Tablet and iOS Mobile Mode.
+- Preserved every existing interface theme, colour treatment, border, shadow and active state.
+- Updated responsive dock calculations for the smaller bookmark footprint.
 
 ## [4.10.4] - 2026-07-14
 

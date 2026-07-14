@@ -56,6 +56,11 @@ jobs:
       - name: Verify distribution files are identical
         run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
+      - name: Commit stable Greasy Fork source mirror
+        id: greasyfork_mirror
+        shell: bash
+        run: bash .github/scripts/sync_greasyfork_root_mirror.sh
+
       - name: Prepare immutable release bundle
         env:
           RELEASE_VERSION: ${{ inputs.version }}
@@ -101,11 +106,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_TARGET_SHA: ${{ steps.greasyfork_mirror.outputs.target_sha }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ -n "$RELEASE_TARGET_SHA" ]] || { echo "::error::Greasy Fork source mirror target SHA was not recorded."; exit 1; }
           gh release create "v${RELEASE_VERSION}" \
-            --target "$GITHUB_SHA" \
+            --target "$RELEASE_TARGET_SHA" \
             --title "MissionChief Map Command Toolkit v${RELEASE_VERSION}" \
             --notes-file "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
             "release-bundle/MissionChief_Map_Command_Toolkit.user.js" \
@@ -206,6 +213,7 @@ jobs:
             echo
             echo "- ✅ Canonical source validated"
             echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Stable root-level Greasy Fork source mirror committed"
             echo "- ✅ Immutable release bundle prepared"
             echo "- ✅ Stable Greasy Fork release asset published"
             echo "- ✅ GitHub Release published"

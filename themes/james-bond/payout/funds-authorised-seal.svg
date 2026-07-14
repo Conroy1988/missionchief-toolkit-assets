@@ -1,17 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="520" height="520" viewBox="0 0 520 520" role="img" aria-label="MI6 funds authorised seal">
-  <defs>
-    <path id="a" d="M84 260a176 176 0 0 1 352 0"/>
-    <path id="b" d="M436 260a176 176 0 0 1-352 0"/>
-  </defs>
-  <g fill="none" stroke="#a71924" opacity=".9">
-    <circle cx="260" cy="260" r="222" stroke-width="12"/>
-    <circle cx="260" cy="260" r="194" stroke-width="3" stroke-dasharray="7 9"/>
-    <circle cx="260" cy="260" r="128" stroke-width="5"/>
+  <g fill="none" stroke="#a71924">
+    <circle cx="260" cy="260" r="222" stroke-width="12" opacity=".94"/>
+    <circle cx="260" cy="260" r="194" stroke-width="3" stroke-dasharray="8 10" opacity=".82"/>
+    <circle cx="260" cy="260" r="124" stroke-width="5" opacity=".9"/>
   </g>
-  <path d="M157 262l61 63 145-160" fill="none" stroke="#a71924" stroke-width="27" stroke-linecap="square" stroke-linejoin="miter"/>
-  <g fill="#a71924" font-family="Arial,sans-serif" font-weight="900" letter-spacing="5">
-    <text font-size="33"><textPath href="#a" startOffset="50%" text-anchor="middle">MI6 FUNDS RELEASED</textPath></text>
-    <text font-size="28"><textPath href="#b" startOffset="50%" text-anchor="middle">SECTION 00 • EYES ONLY</textPath></text>
-    <text x="260" y="405" font-size="24" text-anchor="middle">AUTHORISED</text>
+  <path d="M157 253l62 66 146-161" fill="none" stroke="#a71924" stroke-width="28" stroke-linecap="square" stroke-linejoin="miter"/>
+  <g fill="#a71924" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900">
+    <text x="260" y="82" font-size="34" letter-spacing="7">MI6</text>
+    <text x="260" y="125" font-size="23" letter-spacing="4">FUNDS RELEASED</text>
+    <text x="260" y="414" font-size="23" letter-spacing="4">SECTION 00</text>
+    <text x="260" y="456" font-size="19" letter-spacing="5">EYES ONLY</text>
   </g>
 </svg>

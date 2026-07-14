@@ -47,8 +47,13 @@ jobs:
             ".github/workflows/release-recovery-validation.yml"
           ]
           files.each do |path|
-            YAML.safe_load(File.read(path), aliases: true)
-            puts "Parsed #{path}"
+            begin
+              YAML.parse_file(path)
+              puts "Parsed #{path}"
+            rescue Psych::SyntaxError => error
+              warn "YAML syntax error in #{path}: #{error.message}"
+              raise
+            end
           end
 
       - name: Validate documented confirmation phrases

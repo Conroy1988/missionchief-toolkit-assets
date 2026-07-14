@@ -37,24 +37,26 @@ jobs:
       - name: Run rollback generator self-tests
         run: python3 .github/scripts/prepare_rollback_candidate.py --self-test
 
-      - name: Parse recovery workflow YAML
+      - name: Parse direct recovery workflow YAML
         shell: ruby {0}
         run: |
           require "yaml"
-          files = [
-            ".github/workflows/release-recovery.yml",
-            ".github/workflows/prepare-release-rollback.yml",
-            ".github/workflows/release-recovery-validation.yml"
-          ]
-          files.each do |path|
-            begin
-              YAML.parse_file(path)
-              puts "Parsed #{path}"
-            rescue Psych::SyntaxError => error
-              warn "YAML syntax error in #{path}: #{error.message}"
-              raise
-            end
-          end
+          YAML.parse_file(".github/workflows/release-recovery.yml")
+          puts "Parsed direct recovery workflow"
+
+      - name: Parse rollback workflow YAML
+        shell: ruby {0}
+        run: |
+          require "yaml"
+          YAML.parse_file(".github/workflows/prepare-release-rollback.yml")
+          puts "Parsed rollback workflow"
+
+      - name: Parse validator workflow YAML
+        shell: ruby {0}
+        run: |
+          require "yaml"
+          YAML.parse_file(".github/workflows/release-recovery-validation.yml")
+          puts "Parsed recovery validator workflow"
 
       - name: Validate documented confirmation phrases
         shell: bash

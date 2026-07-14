@@ -56,6 +56,73 @@ jobs:
       - name: Check JavaScript syntax
         run: node --check src/MissionChief_Map_Command_Toolkit.user.js
 
+      - name: Resolve released performance baseline
+        id: performance_base
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
+          BASE_REF="$(git tag --merged HEAD --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)"
+          [[ -n "$BASE_REF" ]] || BASE_REF="HEAD^"
+
+          if git cat-file -e "${BASE_REF}:${SOURCE}" 2>/dev/null; then
+            git show "${BASE_REF}:${SOURCE}" > /tmp/performance-base.user.js
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "ref=$BASE_REF" >> "$GITHUB_OUTPUT"
+            echo "Release performance baseline: $BASE_REF"
+          else
+            echo "::warning::No released performance baseline is available; only absolute budgets will be enforced."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "ref=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check release performance budget
+        id: performance
+        shell: bash
+        run: |
+          set +e
+          ARGS=(
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js
+            --policy .github/performance-budget.json
+            --json-output performance-budget-report.json
+            --markdown-output performance-budget-report.md
+          )
+          if [[ "${{ steps.performance_base.outputs.available }}" == "true" ]]; then
+            ARGS+=(--base /tmp/performance-base.user.js)
+          fi
+          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
+          STATUS=$?
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish release performance summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f performance-budget-report.md ]]; then
+            cat performance-budget-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Performance report was not created."
+            exit 1
+          fi
+
+      - name: Upload release performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-release-performance-budget
+          path: |
+            performance-budget-report.json
+            performance-budget-report.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop on release performance regression
+        if: steps.performance.outputs.exit_code != '0'
+        run: |
+          echo "Release performance-budget checks failed. Review the workflow summary and diagnostics artifact."
+          exit 1
+
       - name: Verify distribution parity
         run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
@@ -137,6 +204,7 @@ jobs:
             echo "- ✅ Release settings enabled"
             echo "- ✅ Canonical userscript validated"
             echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Static performance budget passed"
             echo "- ✅ Distribution files are byte-identical"
             echo "- ✅ Changelog and release bundle prepared"
             echo "- ✅ SHA-256 verified: \`${HASH}\`"

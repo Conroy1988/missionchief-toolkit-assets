@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="80" viewBox="0 0 1200 80" role="img" aria-label="MI6 gold dossier divider">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#8b6822" stop-opacity="0"/><stop offset=".15" stop-color="#d8b45f"/><stop offset=".5" stop-color="#fff0b0"/><stop offset=".85" stop-color="#d8b45f"/><stop offset="1" stop-color="#8b6822" stop-opacity="0"/></linearGradient></defs>
+  <path d="M0 40h518l22-18h120l22 18h518" fill="none" stroke="url(#g)" stroke-width="3"/>
+  <path d="M570 40l30-25 30 25-30 25z" fill="none" stroke="#d8b45f" stroke-width="3"/>
+  <circle cx="600" cy="40" r="7" fill="#a71924"/>
+  <g stroke="#d8b45f" stroke-width="2" opacity=".65"><path d="M470 30v20M730 30v20M444 35v10M756 35v10"/></g>
+</svg>

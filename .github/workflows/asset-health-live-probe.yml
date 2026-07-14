@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/asset-health-policy.json"
       - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/check_distribution_body_parity.py"
       - ".github/scripts/test_asset_health.py"
       - ".github/workflows/asset-health-live-probe.yml"
 
@@ -30,89 +31,23 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Run checker self-tests
-        run: python3 .github/scripts/test_asset_health.py
+        run: |
+          python3 .github/scripts/test_asset_health.py
+          python3 .github/scripts/check_distribution_body_parity.py --self-test
 
       - name: Run live public endpoint probe
-        continue-on-error: true
         run: |
           python3 .github/scripts/check_asset_health.py \
             --mode live \
             --json-output asset-health-live-report.json \
             --markdown-output asset-health-live-report.md
-
-      - name: Compare GitHub and Greasy Fork userscripts
-        if: always()
-        shell: python
-        run: |
-          import difflib
-          import hashlib
-          import json
-          import urllib.request
-          from pathlib import Path
-
-          settings = json.loads(Path('.github/release-settings.json').read_text(encoding='utf-8'))
-          urls = {
-              'github': settings['greasyFork']['sourceUrl'],
-              'greasyfork': settings['greasyFork']['installUrl'],
-          }
-
-          def fetch(url):
-              request = urllib.request.Request(url, headers={'User-Agent': 'MissionChief-Toolkit-Asset-Health-Diagnostic/1.0'})
-              with urllib.request.urlopen(request, timeout=45) as response:
-                  return response.read()
-
-          def split_payload(data):
-              marker = b'// ==/UserScript=='
-              position = data.find(marker)
-              if position < 0:
-                  return data, b''
-              body_start = data.find(b'\n', position)
-              if body_start < 0:
-                  return data, b''
-              return data[:body_start + 1], data[body_start + 1:]
-
-          github = fetch(urls['github'])
-          greasyfork = fetch(urls['greasyfork'])
-          github_meta, github_body = split_payload(github)
-          greasy_meta, greasy_body = split_payload(greasyfork)
-
-          report = {
-              'githubBytes': len(github),
-              'greasyForkBytes': len(greasyfork),
-              'githubSha256': hashlib.sha256(github).hexdigest(),
-              'greasyForkSha256': hashlib.sha256(greasyfork).hexdigest(),
-              'githubBodySha256': hashlib.sha256(github_body).hexdigest(),
-              'greasyForkBodySha256': hashlib.sha256(greasy_body).hexdigest(),
-              'bodyByteIdentical': github_body == greasy_body,
-          }
-          Path('userscript-comparison.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
-
-          github_lines = github.decode('utf-8', errors='replace').splitlines()
-          greasy_lines = greasyfork.decode('utf-8', errors='replace').splitlines()
-          diff = list(difflib.unified_diff(github_lines, greasy_lines, fromfile='github-release', tofile='greasyfork', n=3))
-          Path('userscript-comparison.diff').write_text('\n'.join(diff[:600]) + '\n', encoding='utf-8')
-
-          meta_diff = list(difflib.unified_diff(
-              github_meta.decode('utf-8', errors='replace').splitlines(),
-              greasy_meta.decode('utf-8', errors='replace').splitlines(),
-              fromfile='github-metadata',
-              tofile='greasyfork-metadata',
-              n=3,
-          ))
-          Path('userscript-metadata.diff').write_text('\n'.join(meta_diff) + '\n', encoding='utf-8')
-          print(json.dumps(report, indent=2))
+          python3 .github/scripts/check_distribution_body_parity.py \
+            --report asset-health-live-report.json \
+            --markdown asset-health-live-report.md
 
       - name: Publish live probe summary
         if: always()
-        run: |
-          cat asset-health-live-report.md >> "$GITHUB_STEP_SUMMARY"
-          if [[ -f userscript-comparison.json ]]; then
-            echo >> "$GITHUB_STEP_SUMMARY"
-            echo '## GitHub / Greasy Fork transformation' >> "$GITHUB_STEP_SUMMARY"
-            echo '```json' >> "$GITHUB_STEP_SUMMARY"
-            cat userscript-comparison.json >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: cat asset-health-live-report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload live probe diagnostics
         if: always()
@@ -122,8 +57,5 @@ jobs:
           path: |
             asset-health-live-report.json
             asset-health-live-report.md
-            userscript-comparison.json
-            userscript-comparison.diff
-            userscript-metadata.diff
           if-no-files-found: error
           retention-days: 7

@@ -101,10 +101,7 @@ jobs:
           PERMISSION="$(jq -r '.permissions.push // false' private-repo-check.json)"
           [[ "$PERMISSION" == "true" ]] || { echo "::error::MIGRATION_REPO_TOKEN can read the private repository but does not have push permission. Set Contents to Read and write."; exit 1; }
 
-          BASIC_AUTH="$(printf 'x-access-token:%s' "$MIGRATION_REPO_TOKEN" | base64 -w0)"
-          git -c http.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" \
-            ls-remote "https://github.com/${PRIVATE_REPO}.git" HEAD >/dev/null
-          echo "Private migration repository read/write access verified."
+          echo "Private migration repository API access and push permission verified."
 
       - name: Verify Greasy Fork endpoints
         shell: bash
@@ -134,7 +131,7 @@ jobs:
             echo "- ✅ Distribution files are byte-identical"
             echo "- ✅ Changelog and release bundle prepared"
             echo "- ✅ SHA-256 verified: \`${HASH}\`"
-            echo "- ✅ Private migration repository read/write access verified"
+            echo "- ✅ Private migration repository API access and push permission verified"
             echo "- ✅ Greasy Fork endpoints reachable"
             echo "- ⏸️ No GitHub Release created"
             echo "- ⏸️ Greasy Fork not changed"

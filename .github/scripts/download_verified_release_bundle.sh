@@ -77,9 +77,9 @@ grep -Fq "$EXPECTED_HASH" "$OUTPUT_DIR/$SUMS" || {
   exit 1
 }
 
-if [[ -f "$OUTPUT_DIR/$STABLE_USER" || -f "$OUTPUT_DIR/$STABLE_TXT" ]]; then
+if [[ "$REQUIRE_STABLE_ASSETS" == "true" ]]; then
   [[ -f "$OUTPUT_DIR/$STABLE_USER" && -f "$OUTPUT_DIR/$STABLE_TXT" ]] || {
-    echo "::error::Only one stable release asset is present."
+    echo "::error::One or both stable release assets are missing."
     exit 1
   }
   cmp --silent "$OUTPUT_DIR/$STABLE_USER" "$OUTPUT_DIR/$STABLE_TXT" || {

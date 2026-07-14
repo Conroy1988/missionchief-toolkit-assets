@@ -21,9 +21,9 @@ concurrency:
 
 jobs:
   release:
-    name: Validate, publish and verify Toolkit release
+    name: Validate, publish, back up and verify Toolkit release
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Check out latest main
@@ -37,12 +37,14 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
           CONFIRMATION: ${{ inputs.confirmation }}
           GH_TOKEN: ${{ github.token }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           [[ "$CONFIRMATION" == "RELEASE" ]] || { echo "::error::Type RELEASE exactly to confirm."; exit 1; }
           [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || { echo "::error::Invalid release version: $RELEASE_VERSION"; exit 1; }
           [[ "$(jq -r '.greasyFork.syncEnabled' .github/release-settings.json)" == "true" ]] || { echo "::error::Greasy Fork release synchronization is not enabled."; exit 1; }
+          [[ -n "${MIGRATION_REPO_TOKEN:-}" ]] || { echo "::error::MIGRATION_REPO_TOKEN is not configured."; exit 1; }
           gh release view "v${RELEASE_VERSION}" >/dev/null 2>&1 && { echo "::error::GitHub Release v${RELEASE_VERSION} already exists."; exit 1; } || true
 
       - name: Validate canonical source and rebuild distribution
@@ -137,15 +139,25 @@ jobs:
           done
           [[ "$SYNCED" == "true" ]] || { echo "::error::Greasy Fork did not publish version $RELEASE_VERSION within 30 minutes. Discord was not notified."; exit 1; }
 
+      - name: Back up validated release to private migration repository
+        id: private_backup
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+        shell: bash
+        run: bash .github/scripts/backup_release_to_private_repo.sh
+
       - name: Post verified release to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
           RELEASE_VERSION: ${{ inputs.version }}
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ inputs.version }}
+          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
         shell: bash
         run: |
           set -euo pipefail
           [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
+          [[ -n "${BACKUP_COMMIT:-}" ]] || { echo "::error::Private backup commit was not recorded."; exit 1; }
           SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
           INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
           CHANGELOG="$(cat "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md")"
@@ -154,9 +166,9 @@ jobs:
           TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           jq -n \
             --arg version "$RELEASE_VERSION" --arg changelog "$CHANGELOG" --arg hash "$HASH" \
-            --arg release_url "$RELEASE_URL" --arg script_url "$SCRIPT_URL" \
-            --arg install_url "$INSTALL_URL" --arg timestamp "$TIMESTAMP" \
-            '{username:"MissionChief Toolkit Releases",allowed_mentions:{parse:[]},embeds:[{title:("MissionChief Map Command Toolkit v"+$version+" Released"),description:"Validated on GitHub and verified live on Greasy Fork.",url:$release_url,color:5763719,fields:[{name:"Version",value:("`"+$version+"`"),inline:true},{name:"Validation",value:"✅ Passed",inline:true},{name:"Greasy Fork",value:"✅ Verified",inline:true},{name:"What Changed",value:$changelog,inline:false},{name:"Integrity",value:("SHA-256: `"+$hash+"`"),inline:false},{name:"Links",value:("[GitHub Release]("+$release_url+")\n[View on Greasy Fork]("+$script_url+")\n[Install or update]("+$install_url+")"),inline:false}],footer:{text:"MissionChief Map Command Toolkit"},timestamp:$timestamp}]}' > discord-release-payload.json
+            --arg backup_commit "$BACKUP_COMMIT" --arg release_url "$RELEASE_URL" \
+            --arg script_url "$SCRIPT_URL" --arg install_url "$INSTALL_URL" --arg timestamp "$TIMESTAMP" \
+            '{username:"MissionChief Toolkit Releases",allowed_mentions:{parse:[]},embeds:[{title:("MissionChief Map Command Toolkit v"+$version+" Released"),description:"Validated on GitHub, verified live on Greasy Fork, and archived privately.",url:$release_url,color:5763719,fields:[{name:"Version",value:("`"+$version+"`"),inline:true},{name:"Validation",value:"✅ Passed",inline:true},{name:"Greasy Fork",value:"✅ Verified",inline:true},{name:"Private Backup",value:("✅ `"+$backup_commit+"`"),inline:false},{name:"What Changed",value:$changelog,inline:false},{name:"Integrity",value:("SHA-256: `"+$hash+"`"),inline:false},{name:"Links",value:("[GitHub Release]("+$release_url+")\n[View on Greasy Fork]("+$script_url+")\n[Install or update]("+$install_url+")"),inline:false}],footer:{text:"MissionChief Map Command Toolkit"},timestamp:$timestamp}]}' > discord-release-payload.json
           curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
             --request POST --header "Content-Type: application/json" \
             --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
@@ -164,14 +176,16 @@ jobs:
       - name: Record successful release in dashboard
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
         shell: bash
         run: |
           set -euo pipefail
           NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
-          jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" --arg releaseUrl "$RELEASE_URL" \
-            '.currentVersion=$version | .status.validation="passed" | .status.githubRelease="published" | .status.greasyForkSync="verified" | .status.backup="github-release-and-workflow-artifact" | .status.discordRelease="posted" | .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,discordPosted:true,completedAt:$now} | .lastUpdated=$now' \
+          jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
+             --arg releaseUrl "$RELEASE_URL" --arg backupCommit "$BACKUP_COMMIT" \
+            '.currentVersion=$version | .status.validation="passed" | .status.githubRelease="published" | .status.greasyForkSync="verified" | .status.backup="private-repository-verified" | .status.discordRelease="posted" | .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} | .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json
           git config user.name "github-actions[bot]"
@@ -184,6 +198,7 @@ jobs:
       - name: Write release summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
+          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
         shell: bash
         run: |
           {
@@ -195,6 +210,7 @@ jobs:
             echo "- ✅ Stable Greasy Fork release asset published"
             echo "- ✅ GitHub Release published"
             echo "- ✅ Greasy Fork version verified"
+            echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
             echo "- ✅ Release dashboard updated"
           } >> "$GITHUB_STEP_SUMMARY"

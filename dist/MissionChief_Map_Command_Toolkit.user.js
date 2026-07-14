@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.11.0
+// @version      4.11.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.11.0',
+        version: '4.11.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4110',
+        styleId: 'mc-map-command-toolkit-style-v4111',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -779,6 +779,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return callback;
     }
 
+
+    function runtimeRunWhenIdle(callback, timeout = STARTUP_IDLE_TIMEOUT_MS) {
+        if (runtime.destroyed || typeof callback !== 'function') return null;
+        const maxWait = Math.max(50, Number(timeout) || STARTUP_IDLE_TIMEOUT_MS);
+        let settled = false;
+        let idleId = null;
+        let fallbackTimer = null;
+
+        const run = deadline => {
+            if (settled || runtime.destroyed) return;
+            settled = true;
+            if (fallbackTimer !== null) runtimeClearTimeout(fallbackTimer);
+            fallbackTimer = null;
+            callback(deadline || { didTimeout: true, timeRemaining: () => 0 });
+        };
+
+        if (typeof pageWindow.requestIdleCallback === 'function') {
+            try {
+                idleId = pageWindow.requestIdleCallback(run, { timeout: maxWait });
+                fallbackTimer = runtimeSetTimeout(() => run(null), maxWait + 120);
+                runtimeOnCleanup(() => {
+                    if (settled || idleId === null || typeof pageWindow.cancelIdleCallback !== 'function') return;
+                    try { pageWindow.cancelIdleCallback(idleId); } catch (err) {}
+                });
+                return idleId;
+            } catch (err) {}
+        }
+
+        fallbackTimer = runtimeSetTimeout(() => run(null), Math.min(350, maxWait));
+        return fallbackTimer;
+    }
+
     function runtimeFetch(input, init = {}) {
         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
         const Controller = pageWindow.AbortController || globalThis.AbortController;
@@ -882,7 +914,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.11.0',
+        guideVersion: '4.11.1',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1036,6 +1068,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const VEHICLE_CODE_STATUS_BY_CODE = new Map(VEHICLE_CODE_STATUS_DEFINITIONS.map(item => [item.code, item]));
     const VEHICLE_API_MIN_REFRESH_MS = 20 * 1000;
     const DOM_REFRESH_DEBOUNCE_MS = 260;
+    const STARTUP_IDLE_TIMEOUT_MS = 2500;
+    const STARTUP_OPERATIONAL_DELAY_MS = 700;
+    const STARTUP_OBSERVER_DELAY_MS = 900;
+    const STARTUP_SETTLE_WINDOW_MS = 8000;
+    const STARTUP_MUTATION_DEBOUNCE_MS = 520;
     const BUILDING_VISIBILITY_RECHECK_MS = 4000;
     const MAP_DISCOVERY_RETRY_MS = 2000;
     const FALLBACK_MISSION_REFRESH_MS = 15 * 1000;
@@ -1163,6 +1200,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let resourceGapGroup = null;
     let resourceGapTimer = null;
     let missionSnapshotTimer = null;
+    let bootStarted = false;
+    let bootStartedAt = 0;
+    let operationalStartupStarted = false;
+    let operationalStartupComplete = false;
+    let startupDataPassActive = false;
+    let mainMutationObserver = null;
     let opsRefreshTimer = null;
     let payoutFlashTimer = null;
     let toastFlashTimer = null;
@@ -1749,10 +1792,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         else document.addEventListener('readystatechange', () => (document.head || document.documentElement)?.appendChild(style), { once: true });
     }
 
-    removeOldInstances();
-    try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+    let mainStylesInstalled = false;
 
-    addStyle(`
+    function installMainStyles() {
+        if (mainStylesInstalled && document.getElementById(SCRIPT.styleId)) return;
+        mainStylesInstalled = true;
+        addStyle(`
         html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: none !important; }
         html[data-mc-map-skin="control"] .leaflet-container { background: #111820 !important; }
         html[data-mc-map-skin="control"] .leaflet-tile-pane img.leaflet-tile { filter: invert(92%) hue-rotate(182deg) brightness(62%) contrast(112%) saturate(72%) !important; }
@@ -13336,7 +13381,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
 
 
-    `);
+        `);
+    }
 
     function isVisible(el) {
         if (!el || !(el instanceof Element)) return false;
@@ -14758,11 +14804,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 rebuildMissionCommitmentIndex();
                 resourceGapAnalysisCache.clear();
                 resourceGapVehicleContextCache.key = '';
-                if (state.unitCommitment) scheduleUnitCommitmentRefresh(280);
-                scheduleMissionSnapshotRefresh(650);
-                if (state.resourceGap.enabled) scheduleResourceGapRefresh(520);
-                if (operationalUiIsVisible()) scheduleOperationalPanelsRender(750);
-                if (criticalViewActive) runtimeSetTimeout(() => { applyCriticalViewFilter(); fitCriticalMissions(); }, 320);
+                if (!startupDataPassActive) {
+                    if (state.unitCommitment) scheduleUnitCommitmentRefresh(280);
+                    scheduleMissionSnapshotRefresh(650);
+                    if (state.resourceGap.enabled) scheduleResourceGapRefresh(520);
+                    if (operationalUiIsVisible()) scheduleOperationalPanelsRender(750);
+                    if (criticalViewActive) runtimeSetTimeout(() => { applyCriticalViewFilter(); fitCriticalMissions(); }, 320);
+                }
                 return true;
             })
             .catch(() => {
@@ -27136,8 +27184,8 @@ Create the private backup now?`);
             createControl(mapEl);
             const map = findLeafletMapInstance(false);
             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
-            if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(0);
-            else removeMajorIncidentFeed();
+            if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+            else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
         }
@@ -27408,29 +27456,94 @@ Create the private backup now?`);
     }
 
 
-    function boot() {
-        if (runtime.destroyed) return;
+    function connectMainMutationObserver() {
+        if (!mainMutationObserver || runtime.destroyed || !document.body) return;
+        try { mainMutationObserver.disconnect(); } catch (err) {}
+
+        const roots = new Set();
+        const mapElement = getLargestLeafletMap();
+        const mapRoot = mapElement?.closest?.('#map_outer') || mapElement?.parentElement || mapElement;
+        const missionRoot = document.querySelector('#missions, #mission_list, .missions-panel, .mission-list');
+        if (mapRoot?.isConnected) roots.add(mapRoot);
+        if (missionRoot?.isConnected) roots.add(missionRoot);
+
+        if (!roots.size) {
+            mainMutationObserver.observe(document.body, { childList: true, subtree: true });
+            return;
+        }
+
+        for (const root of roots) mainMutationObserver.observe(root, { childList: true, subtree: true });
+        mainMutationObserver.observe(document.body, { childList: true, subtree: false });
+    }
+
+    async function runDeferredOperationalStartup() {
+        if (operationalStartupStarted || runtime.destroyed) return;
+        if (document.hidden) {
+            runtimeSetTimeout(() => scheduleDeferredOperationalStartup(0), 1000);
+            return;
+        }
+        operationalStartupStarted = true;
+
         loadCachedFinancialRules();
         loadCachedFinancialPolicy();
         ensureFinanceVaultCredential(financePlayerIdentity());
-        applyRootAttributes();
-        if (installAllianceBuildingsPageOptimisation()) return;
-        createCleanExit();
         scanInlineMissionMarkerData();
         installMissionMarkerAddHook();
         installRadioMessageHook();
-        runtimeSetTimeout(() => { if (vehicleDataNeeded()) refreshPersonalVehicleData(true); }, 900);
+
+        startupDataPassActive = true;
+        try {
+            if (vehicleDataNeeded()) await refreshPersonalVehicleData(true);
+        } finally {
+            startupDataPassActive = false;
+        }
+
+        runtimeClearTimeout(missionSnapshotTimer);
+        missionSnapshotTimer = null;
+        if (missionSnapshotsNeeded()) refreshMissionSnapshots();
+        if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(180);
+        if (state.transportWatcher) scheduleTransportWatcherRefresh(220);
+        if (state.resourceGap.enabled) scheduleResourceGapRefresh(260);
+        if (state.unitCommitment) scheduleUnitCommitmentRefresh(300);
+        if (state.allianceCredits) scheduleAllianceCreditRefresh(320);
+        if (state.missionAge) scheduleMissionAgeRefresh(340);
+
+        operationalStartupComplete = true;
+        scheduleOperationalPanelsRender(0);
+        if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(120);
+        scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+
+    }
+
+    function scheduleDeferredOperationalStartup(delay = STARTUP_OPERATIONAL_DELAY_MS) {
+        if (operationalStartupStarted || runtime.destroyed) return;
+        runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
+            runDeferredOperationalStartup().catch(err => {
+                operationalStartupComplete = true;
+                startupDataPassActive = false;
+                console.debug(`[${SCRIPT.name}] Deferred startup recovered after an operational initialisation error.`, err);
+                connectMainMutationObserver();
+            });
+        }, STARTUP_IDLE_TIMEOUT_MS), Math.max(0, Number(delay) || 0));
+    }
+
+
+    function boot() {
+        if (runtime.destroyed || bootStarted) return;
+        bootStarted = true;
+        bootStartedAt = Date.now();
+        removeOldInstances();
+        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+        installMainStyles();
+        applyRootAttributes();
+        if (installAllianceBuildingsPageOptimisation()) return;
+        createCleanExit();
+        installMissionMarkerAddHook();
+        installRadioMessageHook();
         lastObservedCredits = readCurrentCreditTotal();
         installCreditsUpdateHook();
         observeCreditValue();
-        createCriticalDrawer();
-        createMissionInspector();
-        if (missionSnapshotsNeeded()) refreshMissionSnapshots();
-        if (state.missionSpawn.enabled) primeMissionSpawnDetector();
-        if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(0);
-        if (state.transportWatcher) scheduleTransportWatcherRefresh(0);
-        if (state.resourceGap.enabled) scheduleResourceGapRefresh(0);
-        scheduleOperationalPanelsRender(0);
 
         let attempts = 0;
         let bootTimer = null;
@@ -27442,8 +27555,11 @@ Create the private backup now?`);
             installCreditsUpdateHook();
             observeCreditValue();
             const ready = ensureUi();
-            if (ready) {
+            const mapReady = Boolean(getLargestLeafletMap());
+            if (ready && (mapReady || attempts >= 12)) {
                 scheduleMarkerStateSync(0, false);
+                scheduleDeferredOperationalStartup();
+                runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
                 return;
             }
             if (attempts >= 90 || runtime.destroyed) return;
@@ -27487,6 +27603,10 @@ Create the private backup now?`);
             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
 
             runtimeClearTimeout(mutationTimer);
+            const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+            const mutationDelay = startupSettling
+                ? STARTUP_MUTATION_DEBOUNCE_MS
+                : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
             mutationTimer = runtimeSetTimeout(() => {
                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
                 const panelMissing = !document.getElementById(SCRIPT.panelId);
@@ -27499,11 +27619,10 @@ Create the private backup now?`);
                     schedulePanelPosition(true, 50);
                     scheduleCriticalDrawerDock(60);
                 }
-                if (missionChanged) scheduleEnabledMapRefreshes({ includeSnapshots: true, positionPanel: false });
-            }, state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+                if (missionChanged) scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+            }, mutationDelay);
         }));
-
-        observer.observe(document.body, { childList: true, subtree: true });
+        mainMutationObserver = observer;
 
         runtimeListen(document, 'keydown', handleKeyboard);
         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
@@ -27574,6 +27693,7 @@ Create the private backup now?`);
                 if (runtime.destroyed || document.hidden) return;
                 invalidateMapElementCache();
                 ensureUi();
+                connectMainMutationObserver();
                 recoverMajorIncidentFeed(event?.type || 'navigation');
             }, 120);
             runtimeSetTimeout(() => {
@@ -27674,10 +27794,9 @@ Create the private backup now?`);
             scheduleMajorIncidentFeedRender(80);
         });
         runtimeSetTimeout(() => {
-            if (document.hidden) return;
-            scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
-        }, 850);
-        runtimeSetTimeout(() => scheduleOperationalPanelsRender(0, false), 1100);
+            if (document.hidden || !operationalStartupComplete) return;
+            scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+        }, 2200);
 
         runtimeOnCleanup(() => {
             transportSweepRuntime.stopRequested = true;
@@ -27736,14 +27855,19 @@ Create the private backup now?`);
             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
         });
 
-        runAutoNight(true);
-        if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 250);
-        console.debug(`[${SCRIPT.name}] v4.11.0 Smart Bookmark Labels ready.`);
+        runtimeSetTimeout(() => runAutoNight(true), 180);
+        if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+        console.debug(`[${SCRIPT.name}] v4.11.1 Performance Bootstrap ready.`);
+    }
+
+    function scheduleBoot() {
+        if (runtime.destroyed || bootStarted) return;
+        runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
     }
 
     if (document.readyState === 'loading') {
-        runtimeListen(document, 'DOMContentLoaded', boot, { once: true });
+        runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
     } else {
-        boot();
+        scheduleBoot();
     }
 })();

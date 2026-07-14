@@ -1,8 +1,8 @@
 {
   "theme": "bond007",
   "displayName": "007 Intelligence",
-  "packageVersion": "2.1.0",
-  "toolkitVersion": "4.10.1",
+  "packageVersion": "2.1.1",
+  "toolkitVersion": "4.10.2",
   "generated": "2026-07-14",
   "assets": {
     "legacy007Logo": "007-logo.svg",
@@ -25,6 +25,9 @@
     "settingIds": ["bond007", "jamesBond"],
     "legacyAudio": "james-bond-cashout.mp3",
     "legacyRootRetained": true
+  },
+  "layout": {
+    "payoutDossier": "Protected opaque reading field with a translucent portrait reveal zone on desktop and tablet; mobile remains fully opaque."
   },
   "notes": "Transparent 007 artwork package for the MissionChief Map Command Toolkit. The hosted 007 logo and audio are retained. Operational status colours remain protected."
 }

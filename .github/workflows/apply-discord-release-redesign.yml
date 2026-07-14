@@ -1,0 +1,165 @@
+name: Apply Discord Release Notification Redesign
+
+on:
+  push:
+    paths:
+      - ".github/workflows/apply-discord-release-redesign.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-discord-release-redesign
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Install and validate redesigned release embeds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Replace primary and fallback Discord payload blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          release_path = Path('.github/workflows/release-toolkit.yml')
+          release_text = release_path.read_text(encoding='utf-8')
+          release_start = release_text.index('      - name: Post verified release to Discord\n')
+          release_end = release_text.index('      - name: Record successful release in dashboard\n', release_start)
+          release_block = '''      - name: Post verified release to Discord
+                env:
+                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+                  RELEASE_VERSION: ${{ inputs.version }}
+                  RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ inputs.version }}
+                  BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
+                shell: bash
+                run: |
+                  set -euo pipefail
+                  [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
+                  [[ -n "${BACKUP_COMMIT:-}" ]] || { echo "::error::Private backup commit was not recorded."; exit 1; }
+                  SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
+                  INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+                  HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+
+                  python3 .github/scripts/build_discord_release_payload.py \\
+                    --mode primary \\
+                    --version "$RELEASE_VERSION" \\
+                    --changelog "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \\
+                    --output discord-release-payload.json \\
+                    --release-url "$RELEASE_URL" \\
+                    --script-url "$SCRIPT_URL" \\
+                    --install-url "$INSTALL_URL" \\
+                    --sha256 "$HASH" \\
+                    --backup-commit "$BACKUP_COMMIT"
+
+                  curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \\
+                    --request POST --header "Content-Type: application/json" \\
+                    --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
+
+          '''
+          release_path.write_text(release_text[:release_start] + release_block + release_text[release_end:], encoding='utf-8')
+
+          fallback_path = Path('.github/workflows/greasyfork-release-monitor.yml')
+          fallback_text = fallback_path.read_text(encoding='utf-8')
+          fallback_start = fallback_text.index('      - name: Post fallback release notification\n')
+          fallback_end = fallback_text.index('      - name: Record announced version\n', fallback_start)
+          fallback_block = '''      - name: Post fallback release notification
+                if: steps.pending.outputs.pending == 'true'
+                env:
+                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+                  CURRENT_VERSION: ${{ steps.version.outputs.live }}
+                  PREVIOUS_VERSION: ${{ steps.version.outputs.announced }}
+                shell: bash
+                run: |
+                  set -euo pipefail
+                  if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+                    echo "::error::The DISCORD_RELEASE_WEBHOOK repository secret is not configured."
+                    exit 1
+                  fi
+
+                  SCRIPT_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
+                  HISTORY_URL="${SCRIPT_URL}/versions"
+                  INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+
+                  python3 .github/scripts/build_discord_release_payload.py \\
+                    --mode fallback \\
+                    --version "$CURRENT_VERSION" \\
+                    --previous-version "$PREVIOUS_VERSION" \\
+                    --changelog greasyfork-changelog.txt \\
+                    --output discord-payload.json \\
+                    --script-url "$SCRIPT_URL" \\
+                    --history-url "$HISTORY_URL" \\
+                    --install-url "$INSTALL_URL"
+
+                  curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \\
+                    --request POST --header 'Content-Type: application/json' \\
+                    --data @discord-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
+
+          '''
+          fallback_path.write_text(fallback_text[:fallback_start] + fallback_block + fallback_text[fallback_end:], encoding='utf-8')
+          PY
+
+      - name: Validate payload builder and both embed modes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/build_discord_release_payload.py
+          cat > /tmp/release-notes.md <<'EOF'
+          # MissionChief Map Command Toolkit v9.9.9
+
+          ### Performance
+          - Defers heavy startup work until MissionChief has constructed its map.
+          - Consolidates operational scans into one coordinated pass.
+
+          ### Changed
+          - Creates advanced panels on demand.
+          - Uses a quieter DOM observer after the page has settled.
+
+          ### Fixed
+          - Prevents duplicate startup refreshes.
+          EOF
+
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode primary --version 9.9.9 --changelog /tmp/release-notes.md \
+            --output /tmp/primary.json --release-url https://example.com/release \
+            --script-url https://example.com/script --install-url https://example.com/install \
+            --sha256 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef \
+            --backup-commit abcdef0123456789abcdef0123456789abcdef01
+
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode fallback --version 9.9.9 --previous-version 9.9.8 \
+            --changelog /tmp/release-notes.md --output /tmp/fallback.json \
+            --script-url https://example.com/script --history-url https://example.com/history \
+            --install-url https://example.com/install
+
+          python3 -m json.tool /tmp/primary.json >/dev/null
+          python3 -m json.tool /tmp/fallback.json >/dev/null
+          ! grep -F '# MissionChief' /tmp/primary.json
+          ! grep -F '### Performance' /tmp/primary.json
+          grep -F 'TOOLKIT DEPLOYMENT COMPLETE' /tmp/primary.json
+          grep -F 'TOOLKIT RELEASE SIGNAL ACQUIRED' /tmp/fallback.json
+
+      - name: Remove one-time installer and commit redesign
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/apply-discord-release-redesign.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/scripts/build_discord_release_payload.py \
+                  .github/workflows/release-toolkit.yml \
+                  .github/workflows/greasyfork-release-monitor.yml \
+                  .github/workflows/apply-discord-release-redesign.yml
+          git commit -m "Redesign Discord release notifications"
+          git pull --rebase origin main
+          git push origin HEAD:main

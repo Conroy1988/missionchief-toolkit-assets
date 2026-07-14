@@ -1,9 +1,19 @@
 name: Discord Development Updates
 
+run-name: Development commits · ${{ github.ref_name }}
+
 on:
   push:
     branches:
       - main
+      - "agent/**"
+      - "feature/**"
+      - "fix/**"
+      - "hotfix/**"
+      - "release/**"
+      - "trigger/**"
+      - "diagnostics/**"
+      - "chore/**"
 
 permissions:
   contents: read

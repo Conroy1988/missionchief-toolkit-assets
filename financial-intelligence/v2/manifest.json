@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "version": "2026.07.14.1",
+  "toolkitVersion": "4.6.0",
+  "architecture": "github-hosted-intelligence-local-player-archive",
+  "feeds": {
+    "classificationRules": "financial-intelligence/v1/classification-rules.json",
+    "auditPolicy": "financial-intelligence/v2/audit-policy.json"
+  },
+  "privacy": {
+    "playerFinancialDataUploaded": false,
+    "discordWebhookUploaded": false,
+    "githubTokenRequiredByUsers": false,
+    "storage": "Player ledger history is stored in the browser and in user-created private Toolkit or Financial Archive exports."
+  },
+  "removedComponents": [
+    "remote-player-vault",
+    "cloudflare-write-gateway",
+    "anonymous-benchmark-submission",
+    "benchmark-aggregation-workflow"
+  ]
+}

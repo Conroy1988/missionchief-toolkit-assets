@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.11.1
+// @version      4.11.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.11.1',
+        version: '4.11.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4111',
+        styleId: 'mc-map-command-toolkit-style-v4112',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -811,6 +811,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return fallbackTimer;
     }
 
+    function startupClock() {
+        try { return Number(pageWindow.performance?.now?.()) || Date.now(); }
+        catch (err) { return Date.now(); }
+    }
+
+    function recordStartupMetric(name, startedAt, extra = {}) {
+        const finishedAt = startupClock();
+        const elapsedMs = Math.max(0, finishedAt - Number(startedAt || finishedAt));
+        const metrics = pageWindow.__MCMS_STARTUP_METRICS__ || {};
+        metrics.version = SCRIPT.version;
+        metrics[name] = Math.round(elapsedMs * 10) / 10;
+        Object.assign(metrics, extra);
+        pageWindow.__MCMS_STARTUP_METRICS__ = metrics;
+        return elapsedMs;
+    }
+
     function runtimeFetch(input, init = {}) {
         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
         const Controller = pageWindow.AbortController || globalThis.AbortController;
@@ -914,7 +930,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.11.1',
+        guideVersion: '4.11.2',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1206,6 +1222,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalStartupComplete = false;
     let startupDataPassActive = false;
     let mainMutationObserver = null;
+    let settingsPanelActivated = false;
     let opsRefreshTimer = null;
     let payoutFlashTimer = null;
     let toastFlashTimer = null;
@@ -1796,6 +1813,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function installMainStyles() {
         if (mainStylesInstalled && document.getElementById(SCRIPT.styleId)) return;
+        const styleStartedAt = startupClock();
         mainStylesInstalled = true;
         addStyle(`
         html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: none !important; }
@@ -13382,7 +13400,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 
         `);
+        recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
     }
+
+    // Install presentation rules while the document is still sparse. This avoids a late
+    // full-page selector rematch after MissionChief has rendered its map and mission list.
+    removeOldInstances();
+    try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+    installMainStyles();
+    applyRootAttributes();
 
     function isVisible(el) {
         if (!el || !(el instanceof Element)) return false;
@@ -25772,7 +25798,7 @@ Create the private backup now?`);
     }
 
     function openPanel() {
-        const panel = document.getElementById(SCRIPT.panelId);
+        const panel = document.getElementById(SCRIPT.panelId) || createPanel();
         if (!panel) return;
         applyRootAttributes();
         refreshTabletModeUi(panel);
@@ -25796,7 +25822,7 @@ Create the private backup now?`);
 
     function togglePanel() {
         const panel = document.getElementById(SCRIPT.panelId);
-        if (!panel) return;
+        if (!panel) { openPanel(); return; }
         panel.classList.contains('mcms-open') ? closePanel() : openPanel();
     }
 
@@ -26254,7 +26280,10 @@ Create the private backup now?`);
     }
 
     function createPanel() {
-        if (document.getElementById(SCRIPT.panelId)) return;
+        const existingPanel = document.getElementById(SCRIPT.panelId);
+        if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
+        const panelStartedAt = startupClock();
+        settingsPanelActivated = true;
         const panel = document.createElement('div');
         panel.id = SCRIPT.panelId;
         panel.setAttribute('role', 'dialog');
@@ -26621,6 +26650,8 @@ Create the private backup now?`);
         renderBookmarks();
         renderProfiles();
         updateUI();
+        recordStartupMetric('settingsPanelBuildMs', panelStartedAt, { settingsPanelLazy: true });
+        return panel;
     }
 
     function renderQuickPlaces() {
@@ -26969,8 +27000,8 @@ Create the private backup now?`);
 
     function updateUI() {
         applyRootAttributes();
-        if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(40);
-        else removeMajorIncidentFeed();
+        if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+        else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
 
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
@@ -27179,7 +27210,7 @@ Create the private backup now?`);
 
     function ensureUi() {
         const mapEl = getLargestLeafletMap();
-        createPanel();
+        if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
         if (mapEl) {
             createControl(mapEl);
             const map = findLeafletMapInstance(false);
@@ -27189,7 +27220,7 @@ Create the private backup now?`);
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
         }
-        return Boolean(document.getElementById(SCRIPT.panelId));
+        return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
     }
 
     function mutationBelongsToToolkit(mutation) {
@@ -27478,6 +27509,7 @@ Create the private backup now?`);
 
     async function runDeferredOperationalStartup() {
         if (operationalStartupStarted || runtime.destroyed) return;
+        const operationalPerformanceStartedAt = startupClock();
         if (document.hidden) {
             runtimeSetTimeout(() => scheduleDeferredOperationalStartup(0), 1000);
             return;
@@ -27513,6 +27545,7 @@ Create the private backup now?`);
         scheduleOperationalPanelsRender(0);
         if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(120);
         scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+        recordStartupMetric('operationalStartupMs', operationalPerformanceStartedAt, { operationalStartupComplete: true });
 
     }
 
@@ -27533,9 +27566,7 @@ Create the private backup now?`);
         if (runtime.destroyed || bootStarted) return;
         bootStarted = true;
         bootStartedAt = Date.now();
-        removeOldInstances();
-        try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
-        installMainStyles();
+        const bootPerformanceStartedAt = startupClock();
         applyRootAttributes();
         if (installAllianceBuildingsPageOptimisation()) return;
         createCleanExit();
@@ -27557,6 +27588,7 @@ Create the private backup now?`);
             const ready = ensureUi();
             const mapReady = Boolean(getLargestLeafletMap());
             if (ready && (mapReady || attempts >= 12)) {
+                recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
                 scheduleMarkerStateSync(0, false);
                 scheduleDeferredOperationalStartup();
                 runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
@@ -27609,7 +27641,7 @@ Create the private backup now?`);
                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
             mutationTimer = runtimeSetTimeout(() => {
                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
-                const panelMissing = !document.getElementById(SCRIPT.panelId);
+                const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();

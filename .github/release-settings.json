@@ -11,6 +11,6 @@
   "release": {
     "discordSecret": "DISCORD_RELEASE_WEBHOOK",
     "requireGreasyForkVerificationBeforeDiscord": true,
-    "externalMigrationBackup": "not-configured"
+    "externalMigrationBackup": "Conroy1988/missionchief-map-command-toolkit-private"
   }
 }

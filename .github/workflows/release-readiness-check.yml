@@ -1,0 +1,123 @@
+name: Release Readiness Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Toolkit version to validate without publishing"
+        required: true
+        default: "4.10.4"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-release-readiness
+  cancel-in-progress: false
+
+jobs:
+  readiness:
+    name: Verify release pipeline readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate required secrets
+        env:
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${DISCORD_RELEASE_WEBHOOK:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
+          [[ -n "${MIGRATION_REPO_TOKEN:-}" ]] || { echo "::error::MIGRATION_REPO_TOKEN is not configured."; exit 1; }
+          echo "Required release secrets are configured."
+
+      - name: Validate release settings
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || { echo "::error::Invalid version: $RELEASE_VERSION"; exit 1; }
+          [[ "$(jq -r '.greasyFork.syncEnabled' .github/release-settings.json)" == "true" ]] || { echo "::error::Greasy Fork synchronization is disabled."; exit 1; }
+          [[ "$(jq -r '.release.externalMigrationBackup' .github/release-settings.json)" == "Conroy1988/missionchief-map-command-toolkit-private" ]] || { echo "::error::Private migration repository is not configured correctly."; exit 1; }
+
+      - name: Validate canonical userscript
+        run: python3 .github/scripts/validate_userscript.py
+
+      - name: Check JavaScript syntax
+        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Verify distribution parity
+        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Prepare release bundle without publishing
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 .github/scripts/prepare_release_bundle.py "$RELEASE_VERSION"
+
+      - name: Verify bundle integrity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          USER_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js"
+          TXT_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt"
+          MANIFEST="release-bundle/release-manifest-v${RELEASE_VERSION}.json"
+          cmp --silent "$USER_FILE" "$TXT_FILE"
+          EXPECTED_HASH="$(jq -r '.sha256' "$MANIFEST")"
+          ACTUAL_HASH="$(sha256sum "$USER_FILE" | awk '{print $1}')"
+          [[ "$EXPECTED_HASH" == "$ACTUAL_HASH" ]] || { echo "::error::Release bundle SHA-256 mismatch."; exit 1; }
+
+      - name: Verify private migration repository access
+        env:
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-remote "https://x-access-token:${MIGRATION_REPO_TOKEN}@github.com/Conroy1988/missionchief-map-command-toolkit-private.git" HEAD >/dev/null
+          echo "Private migration repository access verified."
+
+      - name: Verify Greasy Fork endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
+          curl --fail --silent --show-error --location --max-time 30 "$META_URL" -o greasyfork.meta.js
+          curl --fail --silent --show-error --location --max-time 30 "$SCRIPT_URL" -o /dev/null
+          LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork.meta.js | head -n 1 | xargs)"
+          [[ -n "$LIVE_VERSION" ]] || { echo "::error::Could not read the current Greasy Fork version."; exit 1; }
+          echo "Current Greasy Fork version: $LIVE_VERSION"
+
+      - name: Write readiness summary
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+          {
+            echo "# Toolkit v${RELEASE_VERSION} release readiness"
+            echo
+            echo "- ✅ Required repository secrets configured"
+            echo "- ✅ Release settings enabled"
+            echo "- ✅ Canonical userscript validated"
+            echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Distribution files are byte-identical"
+            echo "- ✅ Changelog and release bundle prepared"
+            echo "- ✅ SHA-256 verified: \`${HASH}\`"
+            echo "- ✅ Private migration repository access verified"
+            echo "- ✅ Greasy Fork endpoints reachable"
+            echo "- ⏸️ No GitHub Release created"
+            echo "- ⏸️ Greasy Fork not changed"
+            echo "- ⏸️ Discord not notified"
+          } >> "$GITHUB_STEP_SUMMARY"

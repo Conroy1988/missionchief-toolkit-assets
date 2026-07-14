@@ -6,11 +6,15 @@ on:
       - main
     paths:
       - ".github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml"
+  issues:
+    types:
+      - opened
   workflow_dispatch:
 
 permissions:
   contents: write
   actions: write
+  issues: read
 
 concurrency:
   group: toolkit-v4-11-0-bootstrap
@@ -19,6 +23,7 @@ concurrency:
 jobs:
   bootstrap-and-release:
     name: Restore canonical source, apply v4.11.0 and run release pipeline
+    if: github.event_name != 'issues' || github.event.issue.title == '[Release] Toolkit v4.11.0 Smart Bookmark Labels'
     runs-on: ubuntu-latest
     timeout-minutes: 70
 

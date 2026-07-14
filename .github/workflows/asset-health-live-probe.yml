@@ -1,0 +1,55 @@
+name: Asset Health Live Probe
+run-name: Asset health live probe · PR ${{ github.event.pull_request.number }}
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/asset-health-policy.json"
+      - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/test_asset_health.py"
+      - ".github/workflows/asset-health-live-probe.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-asset-health-live-probe-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  live-probe:
+    name: Probe real public endpoints without incident actions
+    if: github.event.pull_request.title == 'Add scheduled public asset-health monitoring'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v7
+
+      - name: Run checker self-tests
+        run: python3 .github/scripts/test_asset_health.py
+
+      - name: Run live public endpoint probe
+        run: |
+          python3 .github/scripts/check_asset_health.py \
+            --mode live \
+            --json-output asset-health-live-report.json \
+            --markdown-output asset-health-live-report.md
+
+      - name: Publish live probe summary
+        if: always()
+        run: cat asset-health-live-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload live probe diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-asset-health-live-probe
+          path: |
+            asset-health-live-report.json
+            asset-health-live-report.md
+          if-no-files-found: error
+          retention-days: 7

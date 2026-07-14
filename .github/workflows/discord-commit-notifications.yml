@@ -1,0 +1,104 @@
+name: Discord Development Updates
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: discord-development-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Post development update
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Build and post Discord message
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+          COMPARE_URL: ${{ github.event.compare }}
+          BRANCH: ${{ github.ref_name }}
+          PUSHER: ${{ github.actor }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          COMMITS_JSON: ${{ toJson(github.event.commits) }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+            echo "::error::DISCORD_COMMITS_WEBHOOK is not configured."
+            exit 1
+          fi
+
+          COMMIT_COUNT="$(jq 'length' <<< "$COMMITS_JSON")"
+          SHORT_SHA="${AFTER_SHA:0:7}"
+
+          COMMIT_LINES="$(
+            jq -r '
+              .[:10]
+              | map("[`" + (.id[0:7]) + "`](${{ github.server_url }}/${{ github.repository }}/commit/" + .id + ") " + ((.message | split("\n")[0])[:120]))
+              | join("\n")
+            ' <<< "$COMMITS_JSON"
+          )"
+
+          if [[ "$COMMIT_COUNT" -gt 10 ]]; then
+            COMMIT_LINES+=$'\n'"…and $((COMMIT_COUNT - 10)) more commit(s)."
+          fi
+
+          if [[ -z "$COMMIT_LINES" ]]; then
+            COMMIT_LINES="No commit summary was supplied by GitHub."
+          fi
+
+          jq -n \
+            --arg repository "$REPOSITORY" \
+            --arg repository_url "$REPOSITORY_URL" \
+            --arg compare_url "$COMPARE_URL" \
+            --arg branch "$BRANCH" \
+            --arg pusher "$PUSHER" \
+            --arg short_sha "$SHORT_SHA" \
+            --arg commit_count "$COMMIT_COUNT" \
+            --arg commit_lines "$COMMIT_LINES" \
+            '{
+              username: "MissionChief Toolkit Development",
+              allowed_mentions: { parse: [] },
+              embeds: [
+                {
+                  title: ("Development update · " + $short_sha),
+                  url: $compare_url,
+                  description: $commit_lines,
+                  color: 5793266,
+                  fields: [
+                    { name: "Repository", value: ("[" + $repository + "](" + $repository_url + ")"), inline: true },
+                    { name: "Branch", value: ("`" + $branch + "`"), inline: true },
+                    { name: "Pushed by", value: ("`" + $pusher + "`"), inline: true },
+                    { name: "Commits", value: $commit_count, inline: true }
+                  ],
+                  footer: { text: "MissionChief Map Command Toolkit · Development" }
+                }
+              ]
+            }' > discord-development-payload.json
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 3 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-development-payload.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true"
+
+          echo
+          echo "Development notification posted to Discord."

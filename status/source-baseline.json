@@ -1,0 +1,12 @@
+{
+  "project": "MissionChief Map Command Toolkit",
+  "source": "Greasy Fork live distribution",
+  "sourceUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
+  "importedVersion": "4.10.4",
+  "sha256": "37952e796f3b11b3ce9bcaee860e7bd3d206afbc9c7de9fac63fd8d940427c82",
+  "bytes": 1679941,
+  "lines": 27426,
+  "importedAt": "2026-07-14T15:32:11Z",
+  "workflowCommit": "f96b3840e3f6e7b4115c4d6284e272da86e303f0",
+  "canonicalStatus": "baseline-imported-not-yet-distribution-source"
+}

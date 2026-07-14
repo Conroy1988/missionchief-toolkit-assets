@@ -97,6 +97,7 @@ jobs:
       - name: Validate rollback candidate
         env:
           RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          SOURCE_VERSION: ${{ inputs.source_version }}
         shell: bash
         run: |
           set -euo pipefail
@@ -106,7 +107,7 @@ jobs:
           [[ "$(jq -r '.version' dist/release-manifest.json)" == "$RECOVERY_VERSION" ]]
           python3 .github/scripts/check_performance_budget.py \
             --candidate src/MissionChief_Map_Command_Toolkit.user.js \
-            --base "rollback-source/MissionChief_Map_Command_Toolkit_v${{ inputs.source_version }}.user.js" \
+            --base "rollback-source/MissionChief_Map_Command_Toolkit_v${SOURCE_VERSION}.user.js" \
             --policy .github/performance-budget.json \
             --json-output rollback-performance.json \
             --markdown-output rollback-performance.md
@@ -137,28 +138,28 @@ jobs:
           git commit -m "Prepare Toolkit v${RECOVERY_VERSION} rollback to v${SOURCE_VERSION} implementation"
           git push origin "$BRANCH"
 
-          cat > /tmp/rollback-pr.md <<EOF
-## Emergency rollback candidate
-
-This PR restores the verified executable implementation from **v${SOURCE_VERSION}** and republishes it under the monotonic recovery version **v${RECOVERY_VERSION}**.
-
-### Integrity
-
-- Current public version when prepared: \`v${CURRENT_VERSION}\`
-- Restored source release: \`v${SOURCE_VERSION}\`
-- Restored source SHA-256: \`${SOURCE_HASH}\`
-- Recovery candidate SHA-256: \`${CANDIDATE_HASH}\`
-- JavaScript syntax: passed
-- Distribution `.user.js` / `.txt` parity: passed
-- Static performance budget: passed
-
-### Safety
-
-- This PR does **not** publish a GitHub Release.
-- This PR does **not** change Greasy Fork.
-- This PR does **not** post to Discord.
-- After review and merge, run **Release Readiness Check** and the normal **Release Toolkit** workflow for v${RECOVERY_VERSION}.
-EOF
+          {
+            echo "## Emergency rollback candidate"
+            echo
+            echo "This PR restores the verified executable implementation from **v${SOURCE_VERSION}** and republishes it under the monotonic recovery version **v${RECOVERY_VERSION}**."
+            echo
+            echo "### Integrity"
+            echo
+            echo "- Current public version when prepared: \`v${CURRENT_VERSION}\`"
+            echo "- Restored source release: \`v${SOURCE_VERSION}\`"
+            echo "- Restored source SHA-256: \`${SOURCE_HASH}\`"
+            echo "- Recovery candidate SHA-256: \`${CANDIDATE_HASH}\`"
+            echo "- JavaScript syntax: passed"
+            echo "- Distribution \`.user.js\` / \`.txt\` parity: passed"
+            echo "- Static performance budget: passed"
+            echo
+            echo "### Safety"
+            echo
+            echo "- This PR does **not** publish a GitHub Release."
+            echo "- This PR does **not** change Greasy Fork."
+            echo "- This PR does **not** post to Discord."
+            echo "- After review and merge, run **Release Readiness Check** and the normal **Release Toolkit** workflow for v${RECOVERY_VERSION}."
+          } > /tmp/rollback-pr.md
 
           PR_URL="$(gh pr create \
             --base main \

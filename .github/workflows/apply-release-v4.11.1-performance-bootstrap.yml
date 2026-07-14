@@ -1,0 +1,153 @@
+name: Apply and release Toolkit v4.11.1 Performance Bootstrap
+
+on:
+  pull_request:
+    types:
+      - opened
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply_release:
+    name: Validate, commit and release v4.11.1
+    if: >-
+      github.event.pull_request.title == '[Release] Toolkit v4.11.1 Performance Bootstrap' &&
+      github.event.pull_request.head.ref == 'agent/v4.11.1-performance-bootstrap'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check out release trigger
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: trigger
+          fetch-depth: 1
+
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          path: repo
+          fetch-depth: 0
+
+      - name: Apply performance bootstrap patch
+        working-directory: repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE='src/MissionChief_Map_Command_Toolkit.user.js'
+          EXPECTED_BASE='528a6aa829b8e6f5fb3f0c421e74959ff3dba5c2fedb5065dfa254fccf5a014f'
+          EXPECTED_RESULT='c9574c7b6947c457e5c96b2726a740f3693ab39c9e15643664232c687a56a4a8'
+          PATCH_SOURCE='../trigger/.github/patches/v4.11.1-performance-bootstrap.patch.gz.b64'
+
+          test "$(sha256sum "$SOURCE" | awk '{print $1}')" = "$EXPECTED_BASE" || {
+            echo '::error::Canonical v4.11.0 source changed before the performance patch could be applied.'
+            exit 1
+          }
+
+          base64 --decode "$PATCH_SOURCE" | gzip --decompress --stdout > /tmp/v4.11.1-performance-bootstrap.patch
+          git apply --check /tmp/v4.11.1-performance-bootstrap.patch
+          git apply /tmp/v4.11.1-performance-bootstrap.patch
+
+          test "$(sha256sum "$SOURCE" | awk '{print $1}')" = "$EXPECTED_RESULT" || {
+            echo '::error::Patched source hash does not match the locally validated v4.11.1 build.'
+            exit 1
+          }
+
+      - name: Update changelog and repository version
+        working-directory: repo
+        run: python3 ../trigger/.github/scripts/apply_v4111_metadata.py
+
+      - name: Validate canonical source and distribution
+        working-directory: repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test "$(jq -r '.version' dist/release-manifest.json)" = '4.11.1'
+          test "$(jq -r '.sha256' dist/release-manifest.json)" = 'c9574c7b6947c457e5c96b2726a740f3693ab39c9e15643664232c687a56a4a8'
+
+      - name: Commit validated v4.11.1 candidate to main
+        id: source_commit
+        working-directory: repo
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/MissionChief_Map_Command_Toolkit.user.js CHANGELOG.md README.md dist/
+          git diff --cached --quiet && { echo '::error::No v4.11.1 changes were staged.'; exit 1; }
+          git commit -m 'Release Toolkit v4.11.1 performance bootstrap'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Run release readiness check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKFLOW='release-readiness-check.yml'
+          BEFORE_ID="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run "$WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main --field version='4.11.1'
+          RUN_ID=''
+          for attempt in $(seq 1 40); do
+            CANDIDATE="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ "$CANDIDATE" != '0' && "$CANDIDATE" != "$BEFORE_ID" ]]; then RUN_ID="$CANDIDATE"; break; fi
+            sleep 5
+          done
+          [[ -n "$RUN_ID" ]] || { echo '::error::Release readiness run could not be identified.'; exit 1; }
+          echo "Release readiness run: $RUN_ID"
+          set +e
+          gh run watch "$RUN_ID" --repo "$GITHUB_REPOSITORY" --exit-status --interval 15
+          STATUS=$?
+          set -e
+          if [[ "$STATUS" -ne 0 ]]; then
+            gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed || true
+            exit "$STATUS"
+          fi
+
+      - name: Run production release pipeline
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKFLOW='release-toolkit.yml'
+          BEFORE_ID="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run "$WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
+            --field version='4.11.1' \
+            --field confirmation='RELEASE'
+          RUN_ID=''
+          for attempt in $(seq 1 40); do
+            CANDIDATE="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ "$CANDIDATE" != '0' && "$CANDIDATE" != "$BEFORE_ID" ]]; then RUN_ID="$CANDIDATE"; break; fi
+            sleep 5
+          done
+          [[ -n "$RUN_ID" ]] || { echo '::error::Production release run could not be identified.'; exit 1; }
+          echo "Production release run: $RUN_ID"
+          set +e
+          gh run watch "$RUN_ID" --repo "$GITHUB_REPOSITORY" --exit-status --interval 20
+          STATUS=$?
+          set -e
+          if [[ "$STATUS" -ne 0 ]]; then
+            gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --log-failed || true
+            exit "$STATUS"
+          fi
+
+      - name: Close completed release trigger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_COMMIT: ${{ steps.source_commit.outputs.sha }}
+        shell: bash
+        run: |
+          gh pr close "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --comment "v4.11.1 was validated, committed, released, verified on Greasy Fork, backed up privately and announced. Source commit: \`$SOURCE_COMMIT\`."

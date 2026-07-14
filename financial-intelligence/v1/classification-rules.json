@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "2026.07.14.1",
+  "version": "2026.07.14.2",
   "updatedAt": "2026-07-14T00:00:00Z",
   "minimumToolkitVersion": "4.5.0",
   "rules": [
@@ -20,7 +20,7 @@
     {"id":"spend-alliance","direction":"spending","match":"regex","pattern":"alliance|association|verband|fund|donation|contribution","key":"allianceSpending","label":"Alliance Contributions","accountingGroup":"operatingExpense","missionType":"","confidence":0.92}
   ],
   "fallbacks": {
-    "income": {"key":"unclassifiedIncome","label":"Unclassified Positive Income","accountingGroup":"otherIncome","missionType":"","confidence":0.35},
+    "income": {"key":"unclassifiedIncome","label":"Unclassified Mission / Income","accountingGroup":"operatingIncome","missionType":"unclassified","confidence":0.45},
     "spending": {"key":"unclassifiedSpending","label":"Unclassified Spending","accountingGroup":"operatingExpense","missionType":"","confidence":0.25}
   }
 }

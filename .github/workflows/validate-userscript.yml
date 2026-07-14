@@ -39,7 +39,30 @@ jobs:
           fetch-depth: 0
 
       - name: Validate userscript and build dist
-        run: python3 .github/scripts/validate_userscript.py
+        id: validate
+        shell: bash
+        run: |
+          set +e
+          python3 .github/scripts/validate_userscript.py > validation.log 2>&1
+          status=$?
+          cat validation.log
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload validation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-validation-diagnostics
+          path: validation.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on validation failure
+        if: steps.validate.outputs.exit_code != '0'
+        run: |
+          echo "Userscript validation failed. See the diagnostics artifact."
+          exit 1
 
       - name: Check JavaScript syntax
         run: node --check src/MissionChief_Map_Command_Toolkit.user.js

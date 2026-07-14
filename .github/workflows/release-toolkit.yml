@@ -36,6 +36,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -59,8 +60,6 @@ jobs:
             echo "::error::GitHub Release v${RELEASE_VERSION} already exists."
             exit 1
           fi
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Validate canonical source and rebuild distribution
         run: python3 .github/scripts/validate_userscript.py

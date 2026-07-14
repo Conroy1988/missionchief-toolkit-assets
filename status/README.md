@@ -8,11 +8,11 @@
 |---|:---:|---|
 | Canonical source | 🔵 | Validated Baseline |
 | Validation | 🟢 | Passed |
-| GitHub Release | 🟡 | Dry Run Ready |
-| Greasy Fork | 🟡 | Legacy Monitor |
-| Private backup | 🔵 | Dry Run Bundle Prepared |
+| GitHub Release | 🔵 | Ready For First Production Release |
+| Greasy Fork | 🔵 | Release Webhook Configured |
+| Private backup | 🔵 | Private Repository Ready |
 | Discord development | 🟢 | Configured |
-| Discord releases | 🔵 | Configured Not Sent In Dry Run |
+| Discord releases | 🟢 | Configured |
 | Asset audit | 🟢 | Passed |
 
 ## Release state
@@ -28,7 +28,7 @@
 - **Discovered media files:** 28
 - **Referenced hosted paths:** 25
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-14T16:05:00Z`
+- **Last dashboard update:** `2026-07-14T18:13:26Z`
 
 ## Release channels
 

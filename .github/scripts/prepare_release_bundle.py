@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import shutil
 import sys
@@ -44,13 +45,75 @@ def extract_release_notes(version: str) -> str:
     return notes + "\n"
 
 
+def resolve_release_mode() -> str:
+    if len(sys.argv) == 3:
+        mode = sys.argv[2].strip().lower()
+    else:
+        workflow_name = os.environ.get("GITHUB_WORKFLOW", "").strip()
+        mode = "production" if workflow_name == "Release Toolkit" else "dry-run"
+
+    if mode not in {"dry-run", "production"}:
+        fail(f"invalid release mode: {mode}")
+    return mode
+
+
+def handover_lines(version: str, source_hash: str, manifest: dict, release_mode: str) -> list[str]:
+    if release_mode == "production":
+        release_state = [
+            "- GitHub canonical source: validated",
+            "- Distribution bundle: prepared for production publication",
+            f"- GitHub Release: published by the controlled release workflow as `v{version}`",
+            "- Greasy Fork: must be verified at the matching version before backup or announcement",
+            "- Private migration backup: runs only after Greasy Fork verification",
+            "- Discord release announcement: runs only after Greasy Fork verification and private backup",
+        ]
+        next_gate = (
+            "The controlled production workflow must verify the matching Greasy Fork version, "
+            "commit the complete release to the private migration repository, and only then post the release announcement."
+        )
+    else:
+        release_state = [
+            "- GitHub canonical source: validated",
+            "- Distribution bundle: prepared in dry-run mode",
+            "- GitHub Release: not published",
+            "- Greasy Fork: unchanged and still serving the live public script",
+            "- Private migration backup: not written",
+            "- Discord release announcement: not sent",
+        ]
+        next_gate = (
+            "Run the controlled production release workflow only after the dry-run bundle, checksums, "
+            "release notes and migration handover have been reviewed."
+        )
+
+    return [
+        f"# MissionChief Map Command Toolkit v{version} — migration handover",
+        "",
+        "## Release state",
+        "",
+        *release_state,
+        "",
+        "## Integrity",
+        "",
+        f"- SHA-256: `{source_hash}`",
+        f"- Source bytes: `{manifest.get('bytes')}`",
+        f"- Source lines: `{manifest.get('lines')}`",
+        "",
+        "## Next approval gate",
+        "",
+        next_gate,
+        "",
+    ]
+
+
 def main() -> int:
-    if len(sys.argv) != 2:
-        fail("usage: prepare_release_bundle.py <version>")
+    if len(sys.argv) not in {2, 3}:
+        fail("usage: prepare_release_bundle.py <version> [dry-run|production]")
 
     requested_version = sys.argv[1].strip()
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", requested_version):
         fail(f"invalid version: {requested_version}")
+
+    release_mode = resolve_release_mode()
 
     manifest_path = DIST / "release-manifest.json"
     if not manifest_path.exists():
@@ -102,7 +165,10 @@ def main() -> int:
 
     release_manifest = {
         **manifest,
-        "releaseMode": "dry-run",
+        "releaseMode": release_mode,
+        "distributionStatus": (
+            "production-bundle-prepared" if release_mode == "production" else "dry-run-bundle-prepared"
+        ),
         "preparedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "releaseTag": f"v{requested_version}",
         "releaseNotesFile": f"CHANGELOG-v{requested_version}.md",
@@ -122,35 +188,13 @@ def main() -> int:
     )
 
     (OUTPUT / f"migration-handover-v{requested_version}.md").write_text(
-        "\n".join(
-            [
-                f"# MissionChief Map Command Toolkit v{requested_version} — migration handover",
-                "",
-                "## Release state",
-                "",
-                "- GitHub canonical source: validated",
-                "- Distribution bundle: prepared in dry-run mode",
-                "- GitHub Release: not published",
-                "- Greasy Fork: unchanged and still serving the live public script",
-                "- Discord release announcement: not sent",
-                "",
-                "## Integrity",
-                "",
-                f"- SHA-256: `{source_hash}`",
-                f"- Source bytes: `{manifest.get('bytes')}`",
-                f"- Source lines: `{manifest.get('lines')}`",
-                "",
-                "## Next approval gate",
-                "",
-                "Configure Greasy Fork code synchronisation to the validated GitHub distribution URL only after the release workflow has passed an end-to-end dry run.",
-                "",
-            ]
-        ),
+        "\n".join(handover_lines(requested_version, source_hash, manifest, release_mode)),
         encoding="utf-8",
     )
 
     print(json.dumps({
         "version": requested_version,
+        "mode": release_mode,
         "sha256": source_hash,
         "bundle": str(OUTPUT.relative_to(ROOT)),
         "files": sorted(path.name for path in OUTPUT.iterdir()),

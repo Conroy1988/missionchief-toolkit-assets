@@ -1,0 +1,32 @@
+name: Build Financial Benchmark Summary
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: financial-benchmark-summary
+  cancel-in-progress: false
+
+jobs:
+  aggregate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build rolling benchmark feed
+        run: node financial-intelligence/gateway/scripts/aggregate-benchmarks.mjs
+      - name: Commit updated benchmark summary
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add financial-intelligence/v1/benchmark-summary.json
+          if git diff --cached --quiet; then
+            echo 'Benchmark summary unchanged.'
+            exit 0
+          fi
+          git commit -m 'Update MissionChief financial benchmark summary'
+          git push

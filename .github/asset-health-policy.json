@@ -190,7 +190,7 @@
     "timeoutSeconds": 30,
     "retries": 3,
     "retryBackoffSeconds": 2,
-    "signatureBytes": 4096,
+    "signatureBytes": 65536,
     "maxBytesPerAsset": 30000000,
     "userAgent": "MissionChief-Toolkit-Asset-Health/1.0 (+https://github.com/Conroy1988/missionchief-toolkit-assets)"
   },

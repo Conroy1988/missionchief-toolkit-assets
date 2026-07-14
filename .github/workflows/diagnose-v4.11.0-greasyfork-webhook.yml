@@ -1,0 +1,77 @@
+name: Diagnose Toolkit v4.11.0 Greasy Fork Webhook
+
+on:
+  pull_request:
+    types:
+      - opened
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Inspect and redeliver the Greasy Fork release webhook
+    if: github.event.pull_request.title == '[Diagnose] Toolkit v4.11.0 Greasy Fork Webhook'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Inspect release delivery without exposing webhook secrets
+        env:
+          ADMIN_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+          EXPECTED_VERSION: '4.11.0'
+          META_URL: 'https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${ADMIN_TOKEN:-}" ]] || { echo '::error::MIGRATION_REPO_TOKEN is unavailable.'; exit 1; }
+          export GH_TOKEN="$ADMIN_TOKEN"
+
+          set +e
+          HOOKS_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/hooks" 2>hooks-error.log)"
+          HOOK_STATUS=$?
+          set -e
+          if [[ "$HOOK_STATUS" -ne 0 ]]; then
+            echo '::error::The configured token cannot read repository webhook deliveries.'
+            sed -E 's#https?://[^ ]+#<redacted>#g' hooks-error.log
+            exit 1
+          fi
+
+          HOOK_ID="$(jq -r '[.[] | select(((.config.url // "") | ascii_downcase | contains("greasyfork")))][0].id // empty' <<<"$HOOKS_JSON")"
+          [[ -n "$HOOK_ID" ]] || { echo '::error::No Greasy Fork repository webhook was found.'; exit 1; }
+
+          EVENTS="$(jq -r --argjson id "$HOOK_ID" '.[] | select(.id == $id) | (.events | join(","))' <<<"$HOOKS_JSON")"
+          ACTIVE="$(jq -r --argjson id "$HOOK_ID" '.[] | select(.id == $id) | .active' <<<"$HOOKS_JSON")"
+          LAST_CODE="$(jq -r --argjson id "$HOOK_ID" '.[] | select(.id == $id) | (.last_response.code // 0)' <<<"$HOOKS_JSON")"
+          echo "Greasy Fork hook active: $ACTIVE"
+          echo "Configured events: $EVENTS"
+          echo "Last response code: $LAST_CODE"
+
+          DELIVERIES="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GITHUB_REPOSITORY}/hooks/${HOOK_ID}/deliveries?per_page=100")"
+          DELIVERY_ID="$(jq -r '[.[] | select(.event == "release")][0].id // empty' <<<"$DELIVERIES")"
+          if [[ -z "$DELIVERY_ID" ]]; then
+            echo '::error::No release-event delivery exists for the Greasy Fork webhook.'
+            echo 'The webhook is not receiving GitHub Release events.'
+            exit 1
+          fi
+
+          jq -r '[.[] | select(.event == "release")][0] | "Latest release delivery: status=\(.status // "unknown") code=\(.status_code // 0) action=\(.action // "unknown") redelivery=\(.redelivery // false) delivered_at=\(.delivered_at // "unknown")"' <<<"$DELIVERIES"
+
+          echo 'Requesting a redelivery of the latest release event...'
+          gh api --method POST -H 'Accept: application/vnd.github+json' \
+            "repos/${GITHUB_REPOSITORY}/hooks/${HOOK_ID}/deliveries/${DELIVERY_ID}/attempts" >/dev/null
+
+          for attempt in $(seq 1 12); do
+            sleep 15
+            curl --fail --silent --show-error --location --compressed --max-time 30 \
+              --header 'Cache-Control: no-cache' \
+              "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork.meta.js
+            LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork.meta.js | head -n 1 | xargs)"
+            echo "Greasy Fork check ${attempt}/12: ${LIVE_VERSION:-unavailable}"
+            if [[ "$LIVE_VERSION" == "$EXPECTED_VERSION" ]]; then
+              echo 'Greasy Fork synchronized successfully after webhook redelivery.'
+              exit 0
+            fi
+          done
+
+          echo '::error::Webhook redelivery completed, but Greasy Fork still did not publish v4.11.0.'
+          exit 1

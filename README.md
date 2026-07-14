@@ -1,108 +1,159 @@
+<div align="center">
+
 # MissionChief Map Command Toolkit
 
-[![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-Install-670000?logo=tampermonkey&logoColor=white)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
-[![Release Pipeline](https://img.shields.io/badge/Release%20Pipeline-v2%20Foundation-2563eb)](status/release-dashboard.json)
+**Operational map command, monitoring and presentation suite for MissionChief UK**
+
+[![Greasy Fork](https://img.shields.io/badge/Install-Greasy%20Fork-670000?logo=tampermonkey&logoColor=white)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
+[![Current Version](https://img.shields.io/badge/version-4.10.4-2563eb)](status/release-dashboard.json)
+[![Validation](https://img.shields.io/badge/validation-passed-16a34a)](../../actions/workflows/validate-userscript.yml)
+[![Release Pipeline](https://img.shields.io/badge/release%20pipeline-v2-7c3aed)](docs/RELEASE_PIPELINE.md)
 [![Platform](https://img.shields.io/badge/MissionChief-UK-0f766e)](https://www.missionchief.co.uk/)
-[![Licence](https://img.shields.io/badge/Licence-MIT-16a34a)](#licence)
+[![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence)
 
-A feature-rich MissionChief userscript providing an expanded map command interface, operational overlays, mission monitoring, payout presentation, responsive desktop/tablet/mobile layouts, themed interfaces and supporting media assets.
+[Install Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) · [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) · [Release Pipeline](docs/RELEASE_PIPELINE.md) · [Changelog](CHANGELOG.md) · [Live Status](status/release-dashboard.json)
 
-> **Migration status:** GitHub is being established as the canonical source of truth. Greasy Fork remains the public installation and update platform. Existing public asset paths are being preserved to avoid breaking installed versions.
-
-## Release dashboard
-
-| Component | Current state |
-|---|---|
-| Canonical source | GitHub migration in progress |
-| Public distribution | Greasy Fork |
-| Development notifications | `Mission-Chief-Dev` |
-| Release notifications | `Mission-Chief` |
-| Existing Greasy Fork monitor | Active during migration |
-| Validation pipeline | Foundation stage |
-| Automated GitHub releases | Planned |
-| Automated backups | Planned |
-
-Machine-readable status: [`status/release-dashboard.json`](status/release-dashboard.json)
-
-## Toolkit highlights
-
-- Mission and alliance visibility controls
-- Mission Age Watch and critical mission workflows
-- Alliance payout overlays and completion history
-- Vehicle code status and transport monitoring
-- Coverage heat maps, bookmarks and map jumps
-- Desktop, tablet and iOS mobile modes
-- Multiple complete interface themes
-- Configurable payout presentations and hosted audio
-- Import/export settings and persistent UI state
-- MissionChief-specific performance and usability improvements
-
-## Distribution
-
-The supported public release remains available through Greasy Fork:
-
-- [View the script](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
-- [Install or update](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)
-- [Version history](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions)
-
-## Repository role
-
-This repository currently serves several connected purposes:
-
-1. Hosting stable images, theme packages and audio used by existing Toolkit installations.
-2. Running the current Greasy Fork monitoring and Discord notification automation.
-3. Becoming the canonical source, validation and release system for future Toolkit versions.
-4. Providing release-state, documentation and backup records.
-
-### Asset stability policy
-
-Existing public files will not be renamed, moved or deleted until every reference has been audited. New organisation will be introduced alongside current paths first. Compatibility takes priority over cosmetic restructuring.
-
-## Release Pipeline v2
-
-The planned controlled release path is:
-
-```text
-Canonical userscript in GitHub
-        ↓
-Automated validation
-        ↓
-Version and changelog verification
-        ↓
-GitHub tag, release and immutable backup
-        ↓
-Greasy Fork synchronisation
-        ↓
-Greasy Fork version verification
-        ↓
-Discord release announcement
-```
-
-Routine development pushes are routed to the development channel. Verified public releases are routed separately to the release channel.
-
-## Project structure
-
-The repository is being migrated incrementally. Planned additions include:
-
-```text
-src/          Canonical userscript source
-dist/         Validated public release files
-status/       Release dashboard state
-docs/         Project and user documentation
-backups/      Release manifests and migration records
-.github/      Validation, release and notification automation
-```
-
-Current media and theme paths remain unchanged during this process.
-
-## Development
-
-The project is maintained by **Conroy1988** for the MissionChief UK community. Release automation is designed to prevent mismatched versions, repeated changelogs, incomplete backups and premature Discord announcements.
-
-## Licence
-
-The Toolkit code is intended to remain available under the MIT licence. Individual third-party references, game trademarks and externally hosted materials remain the property of their respective owners.
+</div>
 
 ---
 
-**MissionChief Map Command Toolkit** · GitHub-controlled releases · Greasy Fork distribution
+## Overview
+
+MissionChief Map Command Toolkit expands the MissionChief UK map into a configurable operational command centre. It combines mission awareness, fleet monitoring, map utilities, responsive layouts, themed interfaces, payout presentations and persistent user settings in one userscript.
+
+GitHub is the canonical source of truth. Greasy Fork remains the supported public installation and update platform.
+
+## Release health
+
+| Component | State |
+|---|---|
+| Canonical source | ✅ GitHub |
+| Current validated version | `4.10.4` |
+| Validation | ✅ Passed |
+| Asset dependency audit | ✅ Passed |
+| Distribution candidate | ✅ Built |
+| Greasy Fork source sync | ✅ Configured |
+| Greasy Fork release webhook | ✅ Releases only |
+| Development Discord | `Mission-Chief-Dev` |
+| Release Discord | `Mission-Chief` |
+| Production release workflow | ✅ Installed |
+| Immutable release bundle | ✅ Supported |
+
+Machine-readable status: [`status/release-dashboard.json`](status/release-dashboard.json)
+
+## Core capabilities
+
+### Mission command
+
+- Mission and alliance mission visibility controls
+- Mission Age Watch with progress synchronization
+- Critical mission workflows and clearing-state tracking
+- Patient and transport monitoring
+- Alliance payout overlays and completion history
+- News-feed incident navigation
+
+### Fleet awareness
+
+- Vehicle code status panel
+- Transport watcher and counts
+- Unit-count overlays
+- Focus and visibility controls
+- Rapid map navigation to active incidents
+
+### Map operations
+
+- Coverage heat maps
+- Landmark bookmarks and quick jumps
+- Coverage rings and overlays
+- Day, night and themed map presentation
+- Desktop, tablet and iOS mobile layouts
+
+### Presentation and themes
+
+- Full interface themes including Map Command, Cyberpunk, Fallout, Umbrella and Factorio-inspired designs
+- Configurable mission-completion presentations
+- Hosted audio and visual assets
+- Emergency flash effects and completion history
+- Persistent UI state and cross-device settings export/import
+
+## Install
+
+Install or update through Greasy Fork:
+
+**[Install MissionChief Map Command Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)**
+
+Other public links:
+
+- [Script information](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
+- [Version history](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit/versions)
+- [Canonical changelog](CHANGELOG.md)
+
+## Release pipeline
+
+```text
+Canonical GitHub source
+        ↓
+Validation and syntax checks
+        ↓
+Byte-identical .user.js and .txt build
+        ↓
+Versioned release bundle and SHA-256 manifest
+        ↓
+GitHub Release
+        ↓
+Greasy Fork release webhook
+        ↓
+Live-version verification
+        ↓
+Discord release post
+        ↓
+Dashboard and backup records
+```
+
+The production workflow does not announce a release until Greasy Fork is verified as serving the expected version. See the full [release-pipeline documentation](docs/RELEASE_PIPELINE.md).
+
+## Repository structure
+
+```text
+src/             Canonical userscript source
+dist/            Validated distribution candidate
+docs/            Project and release documentation
+status/          Machine-readable release and audit state
+.github/         Validation, release and notification automation
+*.mp3 / images   Stable public assets used by installed versions
+```
+
+## Asset stability policy
+
+Existing public asset paths are treated as compatibility-critical. Images, sounds, manifests and theme resources already referenced by installed Toolkit versions are not renamed, relocated or deleted without a migration path.
+
+## Development workflow
+
+1. Update `src/MissionChief_Map_Command_Toolkit.user.js`.
+2. Increase the userscript `@version`.
+3. Add the matching entry to `CHANGELOG.md`.
+4. Allow validation to complete.
+5. Run **Release Toolkit** for an approved public release.
+
+Routine commits are posted to `Mission-Chief-Dev`. Formal releases are posted separately to `Mission-Chief` only after Greasy Fork verification.
+
+## Project principles
+
+- **Release integrity:** source, metadata, changelog, manifest and tag must agree.
+- **No premature announcements:** Discord follows successful distribution verification.
+- **Compatibility first:** existing public asset URLs remain stable.
+- **Recoverability:** every formal release contains checksums, a manifest and migration handover.
+- **Clear separation:** development activity and public release notifications use different channels.
+
+## Licence
+
+The Toolkit is maintained by **Conroy1988** and distributed under the MIT licence. MissionChief trademarks, game content and third-party referenced material remain the property of their respective owners.
+
+---
+
+<div align="center">
+
+**MissionChief Map Command Toolkit**  
+GitHub-controlled releases · Greasy Fork distribution · Verified Discord announcements
+
+</div>

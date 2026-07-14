@@ -1,0 +1,263 @@
+name: Asset Health Monitor
+run-name: Asset health · ${{ github.event_name }}
+
+on:
+  pull_request:
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/asset-health-policy.json"
+      - ".github/release-settings.json"
+      - ".github/ASSET_HEALTH.md"
+      - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/check_distribution_body_parity.py"
+      - ".github/scripts/test_asset_health.py"
+      - ".github/workflows/asset-health-monitor.yml"
+      - "status/release-dashboard.json"
+      - "**/*.mp3"
+      - "**/*.wav"
+      - "**/*.ogg"
+      - "**/*.png"
+      - "**/*.jpg"
+      - "**/*.jpeg"
+      - "**/*.gif"
+      - "**/*.webp"
+      - "**/*.svg"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/asset-health-policy.json"
+      - ".github/release-settings.json"
+      - ".github/ASSET_HEALTH.md"
+      - ".github/scripts/check_asset_health.py"
+      - ".github/scripts/check_distribution_body_parity.py"
+      - ".github/scripts/test_asset_health.py"
+      - ".github/workflows/asset-health-monitor.yml"
+      - "status/release-dashboard.json"
+      - "**/*.mp3"
+      - "**/*.wav"
+      - "**/*.ogg"
+      - "**/*.png"
+      - "**/*.jpg"
+      - "**/*.jpeg"
+      - "**/*.gif"
+      - "**/*.webp"
+      - "**/*.svg"
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('toolkit-asset-health-pr-{0}', github.event.pull_request.number) || 'toolkit-production-coordination' }}
+  cancel-in-progress: false
+
+jobs:
+  asset-health:
+    name: Verify public Toolkit assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve check mode
+        id: mode
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "value=static" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=live" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run checker self-tests and asset health
+        id: health
+        shell: bash
+        env:
+          CHECK_MODE: ${{ steps.mode.outputs.value }}
+        run: |
+          set +e
+          python3 .github/scripts/test_asset_health.py
+          ASSET_TEST_STATUS=$?
+          python3 .github/scripts/check_distribution_body_parity.py --self-test
+          PARITY_TEST_STATUS=$?
+
+          if [[ "$ASSET_TEST_STATUS" -eq 0 && "$PARITY_TEST_STATUS" -eq 0 ]]; then
+            python3 .github/scripts/check_asset_health.py \
+              --mode "$CHECK_MODE" \
+              --json-output asset-health-report.json \
+              --markdown-output asset-health-report.md
+            CHECKER_STATUS=$?
+
+            PARITY_STATUS=0
+            if [[ "$CHECK_MODE" == "live" && -f asset-health-report.json ]]; then
+              python3 .github/scripts/check_distribution_body_parity.py \
+                --report asset-health-report.json \
+                --markdown asset-health-report.md
+              PARITY_STATUS=$?
+            fi
+
+            if [[ "$CHECKER_STATUS" -ne 0 || "$PARITY_STATUS" -ne 0 ]]; then
+              STATUS=1
+            else
+              STATUS=0
+            fi
+          else
+            STATUS=1
+            NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            jq -n \
+              --arg now "$NOW" \
+              --arg mode "$CHECK_MODE" \
+              --arg repository "$GITHUB_REPOSITORY" \
+              '{
+                schemaVersion: 1,
+                generatedAt: $now,
+                mode: $mode,
+                repository: $repository,
+                latestRelease: {version: null, sha256: null},
+                discovery: {scanFiles: [], localMediaFiles: []},
+                checks: [],
+                failures: [{severity: "failure", code: "self-test-failure", message: "One or more asset-health checker self-tests failed.", subject: ""}],
+                warnings: [],
+                summary: {endpoints: 0, localMediaFiles: 0, failures: 1, warnings: 0},
+                fingerprint: "self-test-failure"
+              }' > asset-health-report.json
+            cat > asset-health-report.md <<'EOF'
+          # Toolkit asset-health report
+
+          - Failures: **1**
+          - One or more asset-health checker self-tests failed. Review the workflow log before trusting any live result.
+          EOF
+          fi
+
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish asset-health summary
+        if: always()
+        shell: bash
+        run: |
+          test -f asset-health-report.md
+          cat asset-health-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload asset-health diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-asset-health
+          path: |
+            asset-health-report.json
+            asset-health-report.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Reconcile asset-health incident
+        if: always() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_DEVELOPMENT_WEBHOOK: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="[Asset Health] Toolkit public assets unavailable"
+          FAILURES="$(jq -r '.summary.failures // 1' asset-health-report.json)"
+          WARNINGS="$(jq -r '.summary.warnings // 0' asset-health-report.json)"
+          FINGERPRINT="$(jq -r '.fingerprint // "unknown"' asset-health-report.json)"
+          VERSION="$(jq -r '.latestRelease.version // "unknown"' asset-health-report.json)"
+
+          gh issue list --state all --limit 100 --json number,title,state,url > /tmp/asset-health-issues.json
+          NUMBER="$(jq -r --arg title "$TITLE" '[.[] | select(.title == $title)] | sort_by(.number) | last | .number // empty' /tmp/asset-health-issues.json)"
+          STATE="$(jq -r --arg title "$TITLE" '[.[] | select(.title == $title)] | sort_by(.number) | last | .state // empty' /tmp/asset-health-issues.json)"
+
+          post_discord() {
+            local alert_title="$1"
+            local description="$2"
+            local color="$3"
+            if [[ -z "${DISCORD_DEVELOPMENT_WEBHOOK:-}" ]]; then
+              echo "::warning::DISCORD_COMMITS_WEBHOOK is not configured; GitHub incident state was still reconciled."
+              return 0
+            fi
+            jq -n \
+              --arg title "$alert_title" \
+              --arg description "$description" \
+              --arg timestamp "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+              --argjson color "$color" \
+              '{embeds: [{title: $title, description: $description, color: $color, timestamp: $timestamp}]}' \
+              > /tmp/asset-health-discord.json
+            curl --fail --silent --show-error \
+              --header 'Content-Type: application/json' \
+              --data @/tmp/asset-health-discord.json \
+              "$DISCORD_DEVELOPMENT_WEBHOOK" \
+              >/dev/null || echo "::warning::Asset-health Discord notification failed."
+          }
+
+          if [[ "$FAILURES" -gt 0 ]]; then
+            {
+              echo '<!-- missionchief-toolkit-asset-health -->'
+              echo "<!-- asset-health-fingerprint:${FINGERPRINT} -->"
+              echo "Automated public-asset monitoring detected **${FAILURES} required failure(s)** and **${WARNINGS} warning(s)**."
+              echo
+              echo "- Latest verified release: \`${VERSION}\`"
+              echo "- Failure fingerprint: \`${FINGERPRINT}\`"
+              echo "- Workflow run: ${RUN_URL}"
+              echo
+              sed -n '1,300p' asset-health-report.md
+              echo
+              echo '_This issue is maintained automatically. Repeated unhealthy checks update this incident without sending duplicate Discord alerts._'
+            } > /tmp/asset-health-issue.md
+
+            TRANSITION="existing"
+            if [[ -z "$NUMBER" ]]; then
+              ISSUE_URL="$(gh issue create \
+                --title "$TITLE" \
+                --body-file /tmp/asset-health-issue.md \
+                --label 'area: release pipeline' \
+                --label 'needs-triage' \
+                --label 'priority: high')"
+              NUMBER="${ISSUE_URL##*/}"
+              TRANSITION="created"
+            else
+              if [[ "$STATE" == "CLOSED" ]]; then
+                gh issue reopen "$NUMBER"
+                TRANSITION="reopened"
+              fi
+              gh issue edit "$NUMBER" \
+                --body-file /tmp/asset-health-issue.md \
+                --add-label 'area: release pipeline' \
+                --add-label 'needs-triage' \
+                --add-label 'priority: high'
+            fi
+
+            if [[ "$TRANSITION" == "created" || "$TRANSITION" == "reopened" ]]; then
+              ISSUE_URL="https://github.com/${GITHUB_REPOSITORY}/issues/${NUMBER}"
+              post_discord \
+                "❌ Toolkit asset-health incident" \
+                "${FAILURES} required public asset check(s) failed for v${VERSION}.\n\n[Open incident](${ISSUE_URL}) · [Workflow run](${RUN_URL})" \
+                15158332
+            fi
+          elif [[ -n "$NUMBER" && "$STATE" == "OPEN" ]]; then
+            gh issue comment "$NUMBER" --body "✅ Public asset health recovered. All required checks passed in ${RUN_URL}."
+            gh issue close "$NUMBER" --reason completed
+            ISSUE_URL="https://github.com/${GITHUB_REPOSITORY}/issues/${NUMBER}"
+            post_discord \
+              "✅ Toolkit asset health recovered" \
+              "All required public asset checks are healthy for v${VERSION}.\n\n[Resolved incident](${ISSUE_URL}) · [Workflow run](${RUN_URL})" \
+              3066993
+          else
+            echo "Asset health is healthy; no incident transition required."
+          fi
+
+      - name: Stop on asset-health failure
+        if: steps.health.outputs.exit_code != '0'
+        run: |
+          echo "Public asset-health checks failed. Review the workflow summary, diagnostics artifact and managed incident."
+          exit 1

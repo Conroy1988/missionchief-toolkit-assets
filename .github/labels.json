@@ -1,0 +1,89 @@
+{
+  "labels": [
+    {
+      "name": "bug",
+      "color": "d73a4a",
+      "description": "Something in the Toolkit is not working as intended"
+    },
+    {
+      "name": "enhancement",
+      "color": "a2eeef",
+      "description": "A proposed improvement or new Toolkit capability"
+    },
+    {
+      "name": "performance",
+      "color": "fbca04",
+      "description": "Startup, responsiveness, memory or processing performance"
+    },
+    {
+      "name": "needs-triage",
+      "color": "ededed",
+      "description": "Awaiting initial review and classification"
+    },
+    {
+      "name": "needs-info",
+      "color": "d4c5f9",
+      "description": "Additional reproduction details or diagnostics are required"
+    },
+    {
+      "name": "confirmed",
+      "color": "0e8a16",
+      "description": "The report has been reproduced or otherwise verified"
+    },
+    {
+      "name": "priority: critical",
+      "color": "b60205",
+      "description": "Release-blocking, data-loss or game-unusable problem"
+    },
+    {
+      "name": "priority: high",
+      "color": "d93f0b",
+      "description": "Significant problem requiring prompt attention"
+    },
+    {
+      "name": "priority: normal",
+      "color": "c2e0c6",
+      "description": "Normal development priority"
+    },
+    {
+      "name": "area: map",
+      "color": "1d76db",
+      "description": "Map controls, markers, overlays, bookmarks or Leaflet behaviour"
+    },
+    {
+      "name": "area: interface",
+      "color": "5319e7",
+      "description": "Toolkit panels, controls, layout or general interface"
+    },
+    {
+      "name": "area: mobile",
+      "color": "006b75",
+      "description": "Tablet Mode, iOS Mobile Mode or touch interaction"
+    },
+    {
+      "name": "area: themes",
+      "color": "f9d0c4",
+      "description": "Interface themes, map skins or payout presentation"
+    },
+    {
+      "name": "area: mission systems",
+      "color": "0052cc",
+      "description": "Mission Age Watch, Critical View, Inspector, transport or mission processing"
+    },
+    {
+      "name": "area: vehicles",
+      "color": "bfd4f2",
+      "description": "Vehicle data, status panels, filters or commitment processing"
+    },
+    {
+      "name": "area: finance",
+      "color": "0e8a16",
+      "description": "Payouts, completion history, financial vault or economy features"
+    },
+    {
+      "name": "area: release pipeline",
+      "color": "000000",
+      "description": "GitHub Actions, Greasy Fork, backups, Discord or release infrastructure"
+    }
+  ]
+}

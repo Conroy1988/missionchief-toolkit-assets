@@ -6,6 +6,7 @@ on:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/performance-budget.json"
       - ".github/scripts/check_performance_budget.py"
+      - ".github/scripts/test_performance_budget.py"
       - ".github/workflows/performance-regression-check.yml"
   push:
     branches:
@@ -14,6 +15,7 @@ on:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/performance-budget.json"
       - ".github/scripts/check_performance_budget.py"
+      - ".github/scripts/test_performance_budget.py"
       - ".github/workflows/performance-regression-check.yml"
   workflow_dispatch:
 
@@ -35,6 +37,9 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Run performance checker self-tests
+        run: python3 .github/scripts/test_performance_budget.py
 
       - name: Resolve comparison source
         id: base

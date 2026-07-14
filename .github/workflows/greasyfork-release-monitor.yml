@@ -1,0 +1,143 @@
+name: Greasy Fork Release Fallback Monitor
+
+on:
+  schedule:
+    - cron: "3-58/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: greasyfork-release-fallback-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Detect unannounced Greasy Fork version
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read live and announced versions
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          META_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js"
+          STATE_FILE=".github/greasyfork-version.txt"
+
+          LIVE_VERSION="$(
+            curl --fail --silent --show-error --location --compressed --max-time 30 \
+              --retry 3 --retry-delay 5 --header 'Cache-Control: no-cache' \
+              "${META_URL}?cache_bust=$(date +%s%N)" |
+            sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' |
+            head -n 1 |
+            xargs
+          )"
+          ANNOUNCED_VERSION="$(tr -d '\r\n ' < "$STATE_FILE" 2>/dev/null || true)"
+
+          echo "live=$LIVE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "announced=$ANNOUNCED_VERSION" >> "$GITHUB_OUTPUT"
+          if [[ -n "$ANNOUNCED_VERSION" && "$LIVE_VERSION" != "$ANNOUNCED_VERSION" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read unannounced changelog entries
+        id: changelog
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.live }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.announced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/scripts/fetch_greasyfork_changelog.sh
+          test -f greasyfork-changelog.txt
+
+      - name: Reconfirm version is still unannounced
+        id: pending
+        if: steps.version.outputs.changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.live }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.announced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --prune
+          REMOTE_STATE="$(git show origin/main:.github/greasyfork-version.txt 2>/dev/null | tr -d '\r\n ' || true)"
+          if [[ "$REMOTE_STATE" == "$PREVIOUS_VERSION" && "$REMOTE_STATE" != "$CURRENT_VERSION" ]]; then
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post fallback release notification
+        if: steps.pending.outputs.pending == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          CURRENT_VERSION: ${{ steps.version.outputs.live }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.announced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DISCORD_WEBHOOK_URL:-}" ]]; then
+            echo "::error::The DISCORD_RELEASE_WEBHOOK repository secret is not configured."
+            exit 1
+          fi
+
+          CHANGELOG="$(cat greasyfork-changelog.txt 2>/dev/null || true)"
+          SCRIPT_URL="https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
+          HISTORY_URL="${SCRIPT_URL}/versions"
+          INSTALL_URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+          TIMESTAMP="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          jq -n \
+            --arg current "$CURRENT_VERSION" \
+            --arg previous "$PREVIOUS_VERSION" \
+            --arg changelog "$CHANGELOG" \
+            --arg script_url "$SCRIPT_URL" \
+            --arg history_url "$HISTORY_URL" \
+            --arg install_url "$INSTALL_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            '{username:"MissionChief Toolkit Releases",allowed_mentions:{parse:[]},embeds:[{title:"MissionChief Map Command Toolkit Updated",description:"A new Toolkit version is live on Greasy Fork.",url:$script_url,color:3447003,fields:[{name:"Previous Version",value:("`"+$previous+"`"),inline:true},{name:"New Version",value:("`"+$current+"`"),inline:true},{name:"What Changed",value:$changelog,inline:false},{name:"Links",value:("[Greasy Fork]("+$script_url+")\n[Version history]("+$history_url+")\n[Install or update]("+$install_url+")"),inline:false}],footer:{text:"MissionChief Map Command Toolkit · fallback monitor"},timestamp:$timestamp}]}' > discord-payload.json
+
+          curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
+            --request POST --header 'Content-Type: application/json' \
+            --data @discord-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
+
+      - name: Record announced version
+        if: steps.pending.outputs.pending == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.live }}
+          PREVIOUS_VERSION: ${{ steps.version.outputs.announced }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STATE_FILE=".github/greasyfork-version.txt"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main --prune
+            git reset --hard origin/main
+            REMOTE_STATE="$(tr -d '\r\n ' < "$STATE_FILE" 2>/dev/null || true)"
+            [[ "$REMOTE_STATE" == "$CURRENT_VERSION" ]] && exit 0
+            [[ "$REMOTE_STATE" != "$PREVIOUS_VERSION" ]] && exit 0
+            printf '%s\n' "$CURRENT_VERSION" > "$STATE_FILE"
+            git add "$STATE_FILE"
+            git commit -m "Track Greasy Fork version ${CURRENT_VERSION}"
+            git push origin HEAD:main && exit 0
+            sleep 5
+          done
+
+          echo "::error::The notification was sent, but the announcement state could not be recorded."
+          exit 1

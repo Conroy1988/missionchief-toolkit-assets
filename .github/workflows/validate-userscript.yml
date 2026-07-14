@@ -1,0 +1,106 @@
+name: Validate Canonical Userscript
+
+on:
+  pull_request:
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "CHANGELOG.md"
+      - ".github/scripts/validate_userscript.py"
+      - ".github/workflows/validate-userscript.yml"
+      - "status/source-baseline.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "CHANGELOG.md"
+      - ".github/scripts/validate_userscript.py"
+      - ".github/workflows/validate-userscript.yml"
+      - "status/source-baseline.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: canonical-userscript-validation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate and build dry-run distribution
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate userscript and build dist
+        run: python3 .github/scripts/validate_userscript.py
+
+      - name: Check JavaScript syntax
+        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Verify distribution files are identical
+        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Upload dry-run distribution artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-dry-run-distribution
+          path: |
+            dist/MissionChief_Map_Command_Toolkit.user.js
+            dist/MissionChief_Map_Command_Toolkit.txt
+            dist/SHA256SUMS.txt
+            dist/release-manifest.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Update dashboard and commit validated dist
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(jq -r '.version' dist/release-manifest.json)"
+          HASH="$(jq -r '.sha256' dist/release-manifest.json)"
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          jq \
+            --arg version "$VERSION" \
+            --arg hash "$HASH" \
+            --arg now "$NOW" \
+            '.currentVersion = $version
+             | .status.validation = "passed"
+             | .status.githubRelease = "not-configured"
+             | .status.greasyForkSync = "legacy-monitor"
+             | .status.backup = "baseline-recorded"
+             | .source = {
+                 canonicalPath: "src/MissionChief_Map_Command_Toolkit.user.js",
+                 validatedSha256: $hash,
+                 state: "validated-baseline"
+               }
+             | .distributionCandidate = {
+                 path: "dist/MissionChief_Map_Command_Toolkit.user.js",
+                 version: $version,
+                 state: "dry-run-built"
+               }
+             | .lastUpdated = $now' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+
+          mv status/release-dashboard.tmp status/release-dashboard.json
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist status/release-dashboard.json
+
+          if git diff --cached --quiet; then
+            echo "Validated distribution is already current."
+            exit 0
+          fi
+
+          git commit -m "Build validated Toolkit ${VERSION} distribution candidate"
+          git push

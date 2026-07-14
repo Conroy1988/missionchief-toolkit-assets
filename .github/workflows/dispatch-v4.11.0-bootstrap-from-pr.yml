@@ -23,7 +23,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          WORKFLOW="bootstrap-v4.11.0-smart-bookmarks.yml"
+          WORKFLOW="bootstrap-v4.11.0-smart-bookmarks-v2.yml"
           BEFORE_ID="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$WORKFLOW" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
           gh workflow run "$WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main
 

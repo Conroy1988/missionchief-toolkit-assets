@@ -1,0 +1,271 @@
+name: Discord Development Status
+
+run-name: Development status · ${{ github.event_name }} · ${{ github.event.action || github.event.workflow_run.name }}
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - main
+  workflow_run:
+    workflows:
+      - Validate Canonical Userscript
+      - Release Readiness Check
+      - Release Toolkit
+    types:
+      - requested
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: discord-development-status-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Post staged development status
+    if: >-
+      github.event_name == 'workflow_run' ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Build notification context
+        id: context
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SHOULD_POST='true'
+          if [[ "$GITHUB_EVENT_NAME" == 'pull_request' ]]; then
+            ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
+            PR_NUMBER="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+            SUBJECT="$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")"
+            TARGET_URL="$(jq -r '.pull_request.html_url' "$GITHUB_EVENT_PATH")"
+            BRANCH="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+            COMMIT_SHA="$(jq -r '.pull_request.head.sha' "$GITHUB_EVENT_PATH")"
+            ACTOR="$(jq -r '.sender.login' "$GITHUB_EVENT_PATH")"
+            ATTEMPT='1'
+            STAGE='Development'
+            SOURCE_LABEL="Pull request #${PR_NUMBER}"
+            DEDUPE_KEY="pr-${PR_NUMBER}-${ACTION}-${COMMIT_SHA}"
+
+            case "$ACTION" in
+              opened|reopened)
+                TITLE='🛠️ Development started'
+                DESCRIPTION='A controlled Toolkit development candidate has entered the review and validation path.'
+                COLOR='3447003'
+                ;;
+              synchronize)
+                TITLE='🔄 Development candidate updated'
+                DESCRIPTION='New commits were pushed to an active Toolkit development candidate.'
+                COLOR='10181046'
+                ;;
+              *)
+                SHOULD_POST='false'
+                ;;
+            esac
+          else
+            ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
+            WORKFLOW_NAME="$(jq -r '.workflow_run.name' "$GITHUB_EVENT_PATH")"
+            SUBJECT="$(jq -r '.workflow_run.display_title // .workflow_run.name' "$GITHUB_EVENT_PATH")"
+            TARGET_URL="$(jq -r '.workflow_run.html_url' "$GITHUB_EVENT_PATH")"
+            BRANCH="$(jq -r '.workflow_run.head_branch // "unknown"' "$GITHUB_EVENT_PATH")"
+            COMMIT_SHA="$(jq -r '.workflow_run.head_sha // "unknown"' "$GITHUB_EVENT_PATH")"
+            ACTOR="$(jq -r '.workflow_run.actor.login // .sender.login // "github-actions"' "$GITHUB_EVENT_PATH")"
+            ATTEMPT="$(jq -r '.workflow_run.run_attempt // 1' "$GITHUB_EVENT_PATH")"
+            CONCLUSION="$(jq -r '.workflow_run.conclusion // "running"' "$GITHUB_EVENT_PATH")"
+            RUN_ID="$(jq -r '.workflow_run.id' "$GITHUB_EVENT_PATH")"
+            SOURCE_LABEL="$WORKFLOW_NAME"
+            DEDUPE_KEY="workflow-${RUN_ID}-${ACTION}-${ATTEMPT}-${CONCLUSION}"
+
+            if [[ "$ACTION" == 'requested' ]]; then
+              case "$WORKFLOW_NAME" in
+                'Release Readiness Check')
+                  TITLE='🧪 Release readiness started'
+                  DESCRIPTION='The candidate is being checked for source integrity, distribution parity, backup access and release prerequisites.'
+                  COLOR='15844367'
+                  STAGE='Readiness'
+                  ;;
+                'Release Toolkit')
+                  TITLE='🚀 Production release pipeline started'
+                  DESCRIPTION='The validated candidate has entered publication, Greasy Fork verification and private-backup processing.'
+                  COLOR='5763719'
+                  STAGE='Production'
+                  ;;
+                *)
+                  SHOULD_POST='false'
+                  ;;
+              esac
+            else
+              if [[ "$CONCLUSION" == 'success' ]]; then
+                case "$WORKFLOW_NAME" in
+                  'Validate Canonical Userscript')
+                    TITLE='✅ Development candidate validated'
+                    DESCRIPTION='Canonical source validation, JavaScript syntax and distribution parity completed successfully.'
+                    COLOR='5763719'
+                    STAGE='Validation'
+                    ;;
+                  'Release Readiness Check')
+                    TITLE='✅ Release readiness passed'
+                    DESCRIPTION='The candidate passed the complete non-publishing release-readiness gate.'
+                    COLOR='5763719'
+                    STAGE='Readiness'
+                    ;;
+                  'Release Toolkit')
+                    TITLE='✅ Production pipeline completed'
+                    DESCRIPTION='Publication, Greasy Fork verification, private backup and the formal release announcement completed successfully.'
+                    COLOR='5763719'
+                    STAGE='Production'
+                    ;;
+                  *)
+                    SHOULD_POST='false'
+                    ;;
+                esac
+              else
+                TITLE='❌ Toolkit pipeline failed'
+                DESCRIPTION="The ${WORKFLOW_NAME} workflow ended with status: ${CONCLUSION}. Open the workflow run for the exact failed checkpoint and logs."
+                COLOR='15548997'
+                STAGE='Failure'
+              fi
+            fi
+          fi
+
+          if [[ "$SHOULD_POST" != 'true' ]]; then
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+            echo "dedupe_key=$DEDUPE_KEY" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          VERSION="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?' <<< "$SUBJECT" | head -n 1 || true)"
+          [[ -n "$VERSION" ]] || VERSION='Not supplied'
+
+          jq -n \
+            --arg title "$TITLE" \
+            --arg description "$DESCRIPTION" \
+            --arg subject "$SUBJECT" \
+            --arg source_label "$SOURCE_LABEL" \
+            --arg stage "$STAGE" \
+            --arg version "$VERSION" \
+            --arg branch "$BRANCH" \
+            --arg short_sha "$SHORT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg attempt "$ATTEMPT" \
+            --arg target_url "$TARGET_URL" \
+            --arg repository "$REPOSITORY" \
+            --arg repository_url "$REPOSITORY_URL" \
+            --arg dedupe_key "$DEDUPE_KEY" \
+            --argjson color "$COLOR" \
+            '{
+              title: $title,
+              description: $description,
+              subject: $subject,
+              sourceLabel: $source_label,
+              stage: $stage,
+              version: $version,
+              branch: $branch,
+              shortSha: $short_sha,
+              actor: $actor,
+              attempt: $attempt,
+              targetUrl: $target_url,
+              repository: $repository,
+              repositoryUrl: $repository_url,
+              dedupeKey: $dedupe_key,
+              color: $color
+            }' > notification-context.json
+
+          echo "should_post=$SHOULD_POST" >> "$GITHUB_OUTPUT"
+          echo "dedupe_key=$DEDUPE_KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Restore duplicate-prevention marker
+        id: dedupe
+        if: steps.context.outputs.should_post == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: .discord-development-marker
+          key: discord-development-${{ steps.context.outputs.dedupe_key }}
+
+      - name: Post staged status to Discord
+        id: post
+        if: steps.context.outputs.should_post == 'true' && steps.dedupe.outputs.cache-hit != 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || {
+            echo "::error::DISCORD_COMMITS_WEBHOOK is not configured."
+            exit 1
+          }
+
+          jq -n \
+            --slurpfile context notification-context.json \
+            '{
+              username: "MissionChief Toolkit Development",
+              allowed_mentions: { parse: [] },
+              embeds: [
+                {
+                  title: $context[0].title,
+                  description: $context[0].description,
+                  url: $context[0].targetUrl,
+                  color: $context[0].color,
+                  fields: [
+                    { name: "Stage", value: ("`" + $context[0].stage + "`"), inline: true },
+                    { name: "Version", value: ("`" + $context[0].version + "`"), inline: true },
+                    { name: "Attempt", value: ("`" + $context[0].attempt + "`"), inline: true },
+                    { name: $context[0].sourceLabel, value: $context[0].subject, inline: false },
+                    { name: "Branch", value: ("`" + $context[0].branch + "`"), inline: true },
+                    { name: "Commit", value: ("`" + $context[0].shortSha + "`"), inline: true },
+                    { name: "Actor", value: ("`" + $context[0].actor + "`"), inline: true },
+                    { name: "Repository", value: ("[" + $context[0].repository + "](" + $context[0].repositoryUrl + ")"), inline: false }
+                  ],
+                  footer: {
+                    text: ("MissionChief Map Command Toolkit · Development · " + $context[0].dedupeKey)
+                  }
+                }
+              ]
+            }' > discord-development-status-payload.json
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 3 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-development-status-payload.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true" > discord-development-response.json
+
+          mkdir -p .discord-development-marker
+          jq -n \
+            --arg key "${{ steps.context.outputs.dedupe_key }}" \
+            --arg posted_at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            '{dedupeKey:$key,postedAt:$posted_at}' \
+            > .discord-development-marker/marker.json
+
+      - name: Save duplicate-prevention marker
+        if: steps.post.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: .discord-development-marker
+          key: discord-development-${{ steps.context.outputs.dedupe_key }}
+
+      - name: Record skipped duplicate
+        if: steps.context.outputs.should_post == 'true' && steps.dedupe.outputs.cache-hit == 'true'
+        run: echo "Discord status already posted for ${{ steps.context.outputs.dedupe_key }}; duplicate suppressed."

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "approvedActionRepositories": [
+    "actions/cache",
+    "actions/checkout",
+    "actions/configure-pages",
+    "actions/deploy-pages",
+    "actions/upload-artifact",
+    "actions/upload-pages-artifact"
+  ],
+  "allowedWritePermissions": {
+    ".github/workflows/asset-health-monitor.yml": ["issues"],
+    ".github/workflows/github-pages.yml": ["id-token", "pages"],
+    ".github/workflows/greasyfork-release-monitor.yml": ["contents"],
+    ".github/workflows/import-canonical-userscript.yml": ["contents"],
+    ".github/workflows/prepare-release-rollback.yml": ["contents", "issues", "pull-requests"],
+    ".github/workflows/reconcile-release-announcement-state.yml": ["contents"],
+    ".github/workflows/release-recovery.yml": ["contents"],
+    ".github/workflows/release-toolkit-dry-run.yml": ["contents"],
+    ".github/workflows/release-toolkit.yml": ["contents"],
+    ".github/workflows/repository-audit.yml": ["contents"],
+    ".github/workflows/sync-repository-labels.yml": ["issues"],
+    ".github/workflows/update-release-dashboard.yml": ["contents"],
+    ".github/workflows/validate-userscript.yml": ["contents"]
+  },
+  "forbiddenTriggers": ["pull_request_target"],
+  "forbiddenFragments": ["permissions: write-all", "secrets: inherit"]
+}

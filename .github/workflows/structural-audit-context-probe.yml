@@ -15,10 +15,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Print candidate finding context
+      - name: Collect candidate finding context
         shell: python {0}
         run: |
           from pathlib import Path
           lines = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8').splitlines()
+          selected = []
           for number in [25937, 25938, 25947, 25948, 26108, 26109, 26110, 26459]:
-              print(f'LINE {number}: {lines[number-1][:500]}')
+              selected.append(f'LINE {number}: {lines[number-1][:1000]}')
+          Path('structural-audit-context.txt').write_text('\n'.join(selected) + '\n', encoding='utf-8')
+      - name: Upload context
+        uses: actions/upload-artifact@v6
+        with:
+          name: structural-audit-context
+          path: structural-audit-context.txt
+          retention-days: 1

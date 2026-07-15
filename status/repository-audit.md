@@ -4,13 +4,13 @@
 
 ## Summary
 
-- Repository files: **143**
+- Repository files: **157**
 - Media files: **28**
-- GitHub Actions workflows: **22**
+- GitHub Actions workflows: **26**
 - Greasy Fork version: **4.11.2**
 - Repository URLs referenced by current script/repository: **25**
 - Missing referenced paths: **0**
-- Possible one-shot workflows: **0**
+- Possible one-shot workflows: **17**
 - Duplicate media groups: **1**
 
 ## Current userscript source
@@ -48,28 +48,32 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 
 ## Workflow inventory
 
-- `.github/workflows/actions-security-audit.yml`
-- `.github/workflows/asset-health-monitor.yml`
-- `.github/workflows/code-integrity-audit.yml`
+- `.github/workflows/actions-security-audit.yml` — review as possible temporary workflow
+- `.github/workflows/asset-health-monitor.yml` — review as possible temporary workflow
+- `.github/workflows/branch-cleanup-audit.yml` — review as possible temporary workflow
+- `.github/workflows/code-integrity-audit.yml` — review as possible temporary workflow
 - `.github/workflows/discord-commit-notifications.yml`
-- `.github/workflows/discord-development-status.yml`
-- `.github/workflows/github-pages.yml`
+- `.github/workflows/discord-development-status.yml` — review as possible temporary workflow
+- `.github/workflows/documentation-drift-check.yml` — review as possible temporary workflow
+- `.github/workflows/github-pages.yml` — review as possible temporary workflow
 - `.github/workflows/greasyfork-release-monitor.yml`
 - `.github/workflows/import-canonical-userscript.yml`
-- `.github/workflows/performance-regression-check.yml`
-- `.github/workflows/prepare-release-rollback.yml`
+- `.github/workflows/pages-production-monitor.yml` — review as possible temporary workflow
+- `.github/workflows/performance-regression-check.yml` — review as possible temporary workflow
+- `.github/workflows/prepare-release-rollback.yml` — review as possible temporary workflow
 - `.github/workflows/reconcile-release-announcement-state.yml`
-- `.github/workflows/release-readiness-check.yml`
+- `.github/workflows/release-planning.yml` — review as possible temporary workflow
+- `.github/workflows/release-readiness-check.yml` — review as possible temporary workflow
 - `.github/workflows/release-recovery-validation.yml`
 - `.github/workflows/release-recovery.yml`
-- `.github/workflows/release-toolkit-dry-run.yml`
-- `.github/workflows/release-toolkit.yml`
-- `.github/workflows/repository-audit.yml`
+- `.github/workflows/release-toolkit-dry-run.yml` — review as possible temporary workflow
+- `.github/workflows/release-toolkit.yml` — review as possible temporary workflow
+- `.github/workflows/repository-audit.yml` — review as possible temporary workflow
 - `.github/workflows/sync-repository-labels.yml`
 - `.github/workflows/update-release-dashboard.yml`
-- `.github/workflows/userscript-structural-audit.yml`
+- `.github/workflows/userscript-structural-audit.yml` — review as possible temporary workflow
 - `.github/workflows/validate-issue-intake.yml`
-- `.github/workflows/validate-userscript.yml`
+- `.github/workflows/validate-userscript.yml` — review as possible temporary workflow
 
 ## Referenced GitHub Actions secrets
 

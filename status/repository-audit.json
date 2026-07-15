@@ -1,6 +1,6 @@
 {
   "repository": "Conroy1988/missionchief-toolkit-assets",
-  "commit": "abc55273f66467a249183d66860723ec7730226d",
+  "commit": "88182cea0f6766166d8b1484941218726d8cf0c7",
   "greasyFork": {
     "scriptFetched": true,
     "fetchError": null,
@@ -8,9 +8,9 @@
     "rawRepositoryReferences": 25
   },
   "inventory": {
-    "files": 143,
+    "files": 157,
     "mediaFiles": 28,
-    "workflows": 22,
+    "workflows": 26,
     "possibleUserscripts": [
       ".github/scripts/audit_userscript_structure.py",
       ".github/scripts/validate_userscript.mjs",
@@ -32,16 +32,16 @@
       ".css": 1,
       ".html": 1,
       ".js": 8,
-      ".json": 21,
-      ".md": 21,
+      ".json": 23,
+      ".md": 26,
       ".mjs": 1,
       ".mp3": 14,
       ".png": 1,
-      ".py": 19,
+      ".py": 22,
       ".sh": 4,
       ".svg": 13,
       ".txt": 10,
-      ".yml": 27,
+      ".yml": 31,
       "[none]": 1
     }
   },
@@ -106,15 +106,19 @@
     "workflows": [
       ".github/workflows/actions-security-audit.yml",
       ".github/workflows/asset-health-monitor.yml",
+      ".github/workflows/branch-cleanup-audit.yml",
       ".github/workflows/code-integrity-audit.yml",
       ".github/workflows/discord-commit-notifications.yml",
       ".github/workflows/discord-development-status.yml",
+      ".github/workflows/documentation-drift-check.yml",
       ".github/workflows/github-pages.yml",
       ".github/workflows/greasyfork-release-monitor.yml",
       ".github/workflows/import-canonical-userscript.yml",
+      ".github/workflows/pages-production-monitor.yml",
       ".github/workflows/performance-regression-check.yml",
       ".github/workflows/prepare-release-rollback.yml",
       ".github/workflows/reconcile-release-announcement-state.yml",
+      ".github/workflows/release-planning.yml",
       ".github/workflows/release-readiness-check.yml",
       ".github/workflows/release-recovery-validation.yml",
       ".github/workflows/release-recovery.yml",
@@ -127,7 +131,25 @@
       ".github/workflows/validate-issue-intake.yml",
       ".github/workflows/validate-userscript.yml"
     ],
-    "possibleOneShotWorkflows": [],
+    "possibleOneShotWorkflows": [
+      ".github/workflows/actions-security-audit.yml",
+      ".github/workflows/asset-health-monitor.yml",
+      ".github/workflows/branch-cleanup-audit.yml",
+      ".github/workflows/code-integrity-audit.yml",
+      ".github/workflows/discord-development-status.yml",
+      ".github/workflows/documentation-drift-check.yml",
+      ".github/workflows/github-pages.yml",
+      ".github/workflows/pages-production-monitor.yml",
+      ".github/workflows/performance-regression-check.yml",
+      ".github/workflows/prepare-release-rollback.yml",
+      ".github/workflows/release-planning.yml",
+      ".github/workflows/release-readiness-check.yml",
+      ".github/workflows/release-toolkit-dry-run.yml",
+      ".github/workflows/release-toolkit.yml",
+      ".github/workflows/repository-audit.yml",
+      ".github/workflows/userscript-structural-audit.yml",
+      ".github/workflows/validate-userscript.yml"
+    ],
     "referencedSecrets": [
       "DISCORD_COMMITS_WEBHOOK",
       "DISCORD_RELEASE_WEBHOOK",

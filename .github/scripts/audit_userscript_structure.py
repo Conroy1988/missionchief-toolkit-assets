@@ -38,6 +38,12 @@ def line(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
+def source_line(text: str, offset: int) -> str:
+    start = text.rfind("\n", 0, offset) + 1
+    end = text.find("\n", offset)
+    return text[start: len(text) if end < 0 else end]
+
+
 def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
     out: list[Finding] = []
     allowed_ids = set(policy.get("allowedDuplicateIds", []))
@@ -50,6 +56,8 @@ def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
     ids: dict[str, list[int]] = {}
     for pattern in ID_PATTERNS:
         for m in pattern.finditer(text):
+            if "includes(" in source_line(text, m.start()):
+                continue
             ids.setdefault(m.group(1), []).append(line(text, m.start()))
     duplicates = {k: sorted(set(v)) for k, v in ids.items() if len(v) > 1}
     for value, lines in sorted(duplicates.items()):
@@ -80,6 +88,8 @@ def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
         out.append(Finding("warning", "shortcut-reuse", f"Keyboard key is handled at multiple source locations: {lines}. Review for conflicting actions.", value))
 
     for m in WEBHOOK.finditer(text):
+        if m.group(0).rstrip("),.;").endswith("/..."):
+            continue
         out.append(Finding("failure", "embedded-webhook", "A live webhook URL appears embedded in the userscript.", f"line {line(text, m.start())}"))
     for code, pattern in TOKENS.items():
         for m in pattern.finditer(text):
@@ -117,13 +127,13 @@ def reports(findings: list[Finding], metrics: dict, json_path: Path, md_path: Pa
 
 
 def self_test() -> None:
-    policy = {"allowedDuplicateIds":[],"allowedUrlHosts":["example.com"],"ignoredSelectors":[]}
+    policy = {"allowedDuplicateIds":[],"allowedUrlHosts":["example.com","discord.com"],"ignoredSelectors":[]}
     bad = '''const a='<div id="dup"></div>';
 const b='<span id="dup"></span>';
 node.querySelector("div["); const hook="https://discord.com/api/webhooks/1/secret"; if(event.key==="v"){} if(e.key==="V"){}'''
     findings, _ = audit(bad, policy)
     assert {"duplicate-dom-id","malformed-selector","embedded-webhook","shortcut-reuse"} <= {f.code for f in findings}
-    good = '''const a='<div id="unique"></div>'; node.querySelector("div[data-id='x']"); const u="https://example.com/a";'''
+    good = '''if(!source.includes('id="unique"')){} const a='<div id="unique"></div>'; node.querySelector("div[data-id='x']"); const u="https://example.com/a"; const p="https://discord.com/api/webhooks/...";'''
     findings, _ = audit(good, policy)
     assert not [f for f in findings if f.severity == "failure"]
     print("Structural auditor self-tests passed.")

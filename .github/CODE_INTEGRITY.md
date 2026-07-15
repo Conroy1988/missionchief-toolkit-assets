@@ -10,6 +10,7 @@ The audit validates:
 - MissionChief UK match/include coverage;
 - newly introduced duplicate static DOM IDs;
 - newly introduced keyboard shortcut collisions;
+- visible shortcut buttons against registered `keydown` handlers;
 - malformed fully static `querySelector`, `querySelectorAll`, `matches` and `closest` selectors;
 - unresolved merge-conflict markers in tracked text files;
 - high-confidence committed secrets such as Discord webhooks, GitHub tokens, cloud keys and private keys;
@@ -31,11 +32,14 @@ Existing legacy duplicates remain visible in the report but do not fail unchange
 
 The auditor evaluates only high-confidence static constructs:
 
-- literal `id="..."`, `.id = "..."` and `setAttribute("id", "...")` assignments;
-- literal key comparisons inside detected `keydown` handlers and explicit `data-hotkey`/`data-shortcut` attributes;
+- literal HTML IDs and direct `.id`/`setAttribute("id", ...)` assignments;
+- ID constants and object properties such as `SCRIPT.panelId` when their literal value can be resolved;
+- template IDs composed solely from resolved ID symbols and static suffixes;
+- visible `makeFloatButton` and `makeActionFloatButton` shortcut declarations;
+- named or inline handlers registered for `keydown`, including explicit shortcut action maps;
 - selector calls whose complete first argument is one static string.
 
-Dynamically assembled selectors and IDs are skipped rather than guessed. Existing performance and asset-health checks continue to cover their own domains.
+Text that merely searches for an ID, such as `source.includes('id="..."')`, is not counted as a DOM assignment. Dynamically assembled selectors, IDs and shortcuts are skipped rather than guessed. Existing performance and asset-health checks continue to cover their own domains.
 
 ## Policy changes
 
@@ -47,8 +51,9 @@ Do not add an allowlist entry merely to make CI green. First verify that the dup
 
 Every workflow run uploads JSON and Markdown reports for 30 days. The reports include:
 
-- current interface-ID inventory;
-- current shortcut-conflict inventory;
+- resolved interface-ID inventory;
+- visible and handler-side shortcut inventory;
+- duplicate/conflict inventory;
 - validated selector count;
 - scanned repository text-file count;
 - runtime URL and same-repository asset statistics;

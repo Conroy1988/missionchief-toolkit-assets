@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "allowedDuplicateIds": [],
+  "ignoredSelectors": [],
+  "allowedUrlHosts": [
+    "missionchief.co.uk",
+    "www.missionchief.co.uk",
+    "github.com",
+    "raw.githubusercontent.com",
+    "greasyfork.org",
+    "update.greasyfork.org",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "unpkg.com",
+    "cdnjs.cloudflare.com",
+    "tile.openstreetmap.org",
+    "a.tile.openstreetmap.org",
+    "b.tile.openstreetmap.org",
+    "c.tile.openstreetmap.org",
+    "basemaps.cartocdn.com",
+    "server.arcgisonline.com"
+  ]
+}

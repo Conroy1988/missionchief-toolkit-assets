@@ -1,0 +1,89 @@
+name: Apply Final Audit Optimisations
+
+on:
+  pull_request:
+    types:
+      - synchronize
+    branches:
+      - main
+    paths:
+      - ".github/scripts/apply_final_audit_optimisations.py"
+      - ".github/workflows/apply-final-audit-optimisations.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Apply final verified optimisations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/apply_final_audit_optimisations.py \
+            src/MissionChief_Map_Command_Toolkit.user.js \
+            dist/MissionChief_Map_Command_Toolkit.user.js \
+            --report final-audit-optimisations.md
+          cmp -s src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Verify postcode normalisation semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const UK_POSTCODE_PATTERN = /\b(?:GIR\s?0AA|(?:(?:[A-PR-UWYZ][0-9][0-9A-HJKSTUW]?|[A-PR-UWYZ][A-HK-Y][0-9][0-9ABEHMNPRV-Y]?)\s?[0-9][ABD-HJLNP-UW-Z]{2}))\b/iu;
+          const normaliseMissionPostcode = value => {
+              const text = String(value || '').toUpperCase().replace(/\s+/g, ' ').trim();
+              const match = text.match(UK_POSTCODE_PATTERN);
+              if (!match?.[0]) return '';
+              const compact = match[0].replace(/\s+/g, '');
+              return compact.length > 3 ? `${compact.slice(0, -3)} ${compact.slice(-3)}` : compact;
+          };
+          const strip = (value, postcode) => {
+              let text = String(value || '').replace(/\s+/g, ' ').trim();
+              const normalisedPostcode = normaliseMissionPostcode(postcode || text);
+              const compactPattern = normalisedPostcode.replace(/\s+/g, '\\s*');
+              text = text.replace(new RegExp(`\\b${compactPattern}\\b`, 'iu'), ' ');
+              return text.replace(UK_POSTCODE_PATTERN, ' ').replace(/\s+/g, ' ').trim();
+          };
+          const cases = [
+              ['Wembley, HA9 0WS', 'HA9 0WS', 'Wembley,'],
+              ['Wembley, HA9     0WS', 'HA9 0WS', 'Wembley,'],
+              ['Edinburgh | EH1 1AA', 'EH1 1AA', 'Edinburgh |'],
+          ];
+          for (const [value, postcode, expected] of cases) {
+              const actual = strip(value, postcode);
+              if (actual !== expected) throw new Error(`${value}: expected ${expected}, received ${actual}`);
+          }
+          NODE
+
+      - name: Commit final source optimisations
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          git commit -m "Apply final verified userscript optimisations"
+          git pull --rebase origin "${{ github.event.pull_request.head.ref }}"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+      - name: Upload optimisation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: final-userscript-audit-optimisations
+          path: final-audit-optimisations.md
+          if-no-files-found: warn
+          retention-days: 30

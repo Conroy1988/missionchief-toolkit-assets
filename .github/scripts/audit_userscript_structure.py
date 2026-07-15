@@ -51,7 +51,7 @@ def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
     for pattern in ID_PATTERNS:
         for m in pattern.finditer(text):
             ids.setdefault(m.group(1), []).append(line(text, m.start()))
-    duplicates = {k: sorted(set(v)) for k, v in ids.items() if len(set(v)) > 1}
+    duplicates = {k: sorted(set(v)) for k, v in ids.items() if len(v) > 1}
     for value, lines in sorted(duplicates.items()):
         if value not in allowed_ids:
             out.append(Finding("failure", "duplicate-dom-id", f"DOM id is defined at multiple source locations: {lines}.", value))
@@ -75,7 +75,7 @@ def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
     keys: dict[str, list[int]] = {}
     for m in KEY.finditer(text):
         keys.setdefault(m.group(1).casefold(), []).append(line(text, m.start()))
-    reused = {k: sorted(set(v)) for k, v in keys.items() if len(set(v)) > 1}
+    reused = {k: sorted(set(v)) for k, v in keys.items() if len(v) > 1}
     for value, lines in sorted(reused.items()):
         out.append(Finding("warning", "shortcut-reuse", f"Keyboard key is handled at multiple source locations: {lines}. Review for conflicting actions.", value))
 
@@ -118,7 +118,9 @@ def reports(findings: list[Finding], metrics: dict, json_path: Path, md_path: Pa
 
 def self_test() -> None:
     policy = {"allowedDuplicateIds":[],"allowedUrlHosts":["example.com"],"ignoredSelectors":[]}
-    bad = '''const a='<div id="dup"></div>'; const b='<span id="dup"></span>';\nnode.querySelector("div["); const hook="https://discord.com/api/webhooks/1/secret"; if(event.key==="v"){} if(e.key==="V"){}'''
+    bad = '''const a='<div id="dup"></div>';
+const b='<span id="dup"></span>';
+node.querySelector("div["); const hook="https://discord.com/api/webhooks/1/secret"; if(event.key==="v"){} if(e.key==="V"){}'''
     findings, _ = audit(bad, policy)
     assert {"duplicate-dom-id","malformed-selector","embedded-webhook","shortcut-reuse"} <= {f.code for f in findings}
     good = '''const a='<div id="unique"></div>'; node.querySelector("div[data-id='x']"); const u="https://example.com/a";'''

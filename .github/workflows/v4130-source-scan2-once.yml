@@ -1,0 +1,67 @@
+name: One-time Hyrule Detailed Source Scan
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/v4130-source-scan2-once.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Generate detailed architecture report
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          lines=Path('src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8').splitlines()
+          specs=[
+            ('CONSTANTS', [r'const UI_THEMES',r'const UI_THEME_ORDER',r'const THEMES =',r'const PAYOUT_TEMPLATE_ORDER',r'const PAYOUT_AUDIO',r'const THEME_ASSETS']),
+            ('THEME_STATE', [r'uiTheme',r'interfaceTheme',r'data-mcms-ui-theme',r'UI_THEME_ORDER']),
+            ('THEME_FUNCTIONS', [r'function .*Theme',r'apply.*Theme',r'set.*Theme',r'update.*Theme']),
+            ('SETTINGS', [r'UI theme',r'Interface theme',r'Theme selector',r'Payout template',r'Payout sound']),
+            ('PAYOUT_FUNCTIONS', [r'function .*Payout',r'show.*Payout',r'render.*Payout',r'PAYOUT_TIER',r'payoutAudio']),
+          ]
+          out=[]; seen=set()
+          for section,patterns in specs:
+            out.append(f'\n===== {section} =====\n')
+            for pattern in patterns:
+              rx=re.compile(pattern,re.I)
+              count=0
+              for i,line in enumerate(lines):
+                if not rx.search(line): continue
+                start=max(0,i-12); end=min(len(lines),i+18)
+                key=(start,end)
+                if key in seen: continue
+                seen.add(key)
+                out.append(f'\n### {pattern} @ {i+1}\n')
+                out.extend(f'{n+1}: {lines[n]}' for n in range(start,end))
+                count+=1
+                if count>=25: break
+          Path('diagnostics').mkdir(exist_ok=True)
+          Path('diagnostics/hyrule-architecture-2.txt').write_text('\n'.join(out),encoding='utf-8')
+          PY
+          git checkout -B feature/hyrule-command-v4130-final
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/hyrule-architecture-2.txt
+          git commit -m "Add temporary detailed Hyrule architecture scan"
+          git push origin feature/hyrule-command-v4130-final
+      - name: Remove scanner
+        shell: bash
+        run: |
+          git checkout -B main origin/main
+          git rm .github/workflows/v4130-source-scan2-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove detailed Hyrule source scanner"
+          git pull --rebase origin main
+          git push origin main

@@ -1,0 +1,38 @@
+name: Code Integrity ID Resolution Fix
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/workflows/code-integrity-id-resolution-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Expand userscript object parser window
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=.github/scripts/check_code_integrity.py
+          if grep -Fq 'max_chars: int = 300_000' "$FILE"; then
+            sed -i 's/max_chars: int = 300_000/max_chars: int = 2_000_000/' "$FILE"
+            python3 -m py_compile "$FILE"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "$FILE"
+            git commit -m "Resolve IDs from the full userscript object graph"
+            git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          else
+            grep -Fq 'max_chars: int = 2_000_000' "$FILE"
+          fi

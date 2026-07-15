@@ -4,8 +4,6 @@ from __future__ import annotations
 import base64
 import json
 import os
-import sys
-import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -29,12 +27,15 @@ TEMPORARY = {
 }
 
 
-def api_request(method: str, url: str, token: str, payload=None):
-    data = None if payload is None else json.dumps(payload).encode("utf-8")
+def create_blob(api: str, token: str, path: Path) -> str:
+    payload = json.dumps({
+        "content": base64.b64encode(path.read_bytes()).decode("ascii"),
+        "encoding": "base64",
+    }).encode("utf-8")
     request = urllib.request.Request(
-        url,
-        data=data,
-        method=method,
+        f"{api}/git/blobs",
+        data=payload,
+        method="POST",
         headers={
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {token}",
@@ -43,20 +44,15 @@ def api_request(method: str, url: str, token: str, payload=None):
             "Content-Type": "application/json",
         },
     )
-    try:
-        with urllib.request.urlopen(request, timeout=60) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as error:
-        body = error.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"{method} {url} -> HTTP {error.code}\n{body}") from error
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return json.load(response)["sha"]
 
 
 def main() -> int:
     token = os.environ["GH_TOKEN"]
     repository = os.environ["REPOSITORY"]
-    parent = os.environ["PARENT_SHA"]
     api = f"https://api.github.com/repos/{repository}"
-    changed: list[Path] = []
+    blobs: dict[str, str] = {}
 
     for path in sorted(Path(".github/workflows").glob("*.y*ml")):
         if path.as_posix() in TEMPORARY:
@@ -65,63 +61,23 @@ def main() -> int:
         updated = text
         for old, new in REPLACEMENTS.items():
             updated = updated.replace(old, new)
-        if updated != text:
-            path.write_text(updated, encoding="utf-8")
-            changed.append(path)
+        if updated == text:
+            continue
+        path.write_text(updated, encoding="utf-8")
+        blobs[path.as_posix()] = create_blob(api, token, path)
 
-    if not changed:
+    if not blobs:
         raise RuntimeError("No permanent workflow references required pinning.")
 
-    commit = api_request("GET", f"{api}/git/commits/{parent}", token)
-    base_tree = commit["tree"]["sha"]
-    entries = []
-    for path in changed:
-        blob = api_request(
-            "POST",
-            f"{api}/git/blobs",
-            token,
-            {
-                "content": base64.b64encode(path.read_bytes()).decode("ascii"),
-                "encoding": "base64",
-            },
-        )
-        entries.append(
-            {"path": path.as_posix(), "mode": "100644", "type": "blob", "sha": blob["sha"]}
-        )
-
-    for raw in sorted(TEMPORARY):
-        entries.append({"path": raw, "mode": "100644", "type": "blob", "sha": None})
-
-    tree = api_request(
-        "POST",
-        f"{api}/git/trees",
-        token,
-        {"base_tree": base_tree, "tree": entries},
+    Path("prepared-workflow-blobs.json").write_text(
+        json.dumps(blobs, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    created = api_request(
-        "POST",
-        f"{api}/git/commits",
-        token,
-        {
-            "message": "Pin GitHub Actions and add supply-chain controls",
-            "tree": tree["sha"],
-            "parents": [parent],
-        },
-    )
-    Path("prepared-commit-sha.txt").write_text(created["sha"] + "\n", encoding="utf-8")
-    Path("prepared-parent-sha.txt").write_text(parent + "\n", encoding="utf-8")
-    Path("prepared-tree-sha.txt").write_text(tree["sha"] + "\n", encoding="utf-8")
     Path("changed-workflows.txt").write_text(
-        "\n".join(path.as_posix() for path in changed) + "\n", encoding="utf-8"
+        "\n".join(sorted(blobs)) + "\n", encoding="utf-8"
     )
-    print(json.dumps({"parent": parent, "tree": tree["sha"], "commit": created["sha"]}, indent=2))
+    print(json.dumps(blobs, indent=2, sort_keys=True))
     return 0
 
 
 if __name__ == "__main__":
-    try:
-        raise SystemExit(main())
-    except Exception as error:
-        Path("prepare-error.txt").write_text(str(error) + "\n", encoding="utf-8")
-        print(error, file=sys.stderr)
-        raise SystemExit(0)
+    raise SystemExit(main())

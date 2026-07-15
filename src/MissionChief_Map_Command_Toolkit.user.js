@@ -1213,6 +1213,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalStartupComplete = false;
     let startupDataPassActive = false;
     let mainMutationObserver = null;
+    let mainMutationObserverFallbackActive = false;
     let settingsPanelActivated = false;
     let opsRefreshTimer = null;
     let payoutFlashTimer = null;
@@ -13776,7 +13777,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             columns += 1;
             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
-        while (estimatedHeight > availableMapHeight && pinCount && pinColumns < pinCount) {
+        while (estimatedHeight > availableMapHeight && pinColumns < pinCount) {
             pinColumns += 1;
             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
@@ -14414,10 +14415,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const overlay = missionOverlayData.get(id) || {};
         const rawMissionType = String(overlay.missionType ?? marker?.mission_type ?? marker?.missionType ?? marker?.options?.mission_type ?? '').toLowerCase();
-        if (/(?:^|[\s_:\-])(alliance|alliance_custom|shared_mission|verband|association)(?:$|[\s_:\-])/i.test(rawMissionType)) return true;
+        if (/(?:^|[\s_:-])(alliance|alliance_custom|shared_mission|verband|association)(?:$|[\s_:-])/i.test(rawMissionType)) return true;
 
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        if (/(?:^|[\s_:\-])(alliance|alliance_custom|alliance_mission|shared_mission|verband|verbandseinsatz|association)(?:$|[\s_:\-])/i.test(signal)) return true;
+        if (/(?:^|[\s_:-])(alliance|alliance_custom|alliance_mission|shared_mission|verband|verbandseinsatz|association)(?:$|[\s_:-])/i.test(signal)) return true;
 
         const allianceId = overlay.allianceId ?? marker?.alliance_id ?? marker?.allianceId ?? marker?.options?.alliance_id;
         const sharedAt = overlay.allianceSharedAt ?? marker?.alliance_shared_at ?? marker?.allianceSharedAt ?? marker?.options?.alliance_shared_at;
@@ -14446,7 +14447,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (eventId !== undefined && eventId !== null && eventId !== '' && String(eventId) !== '0' && String(eventId).toLowerCase() !== 'false') return true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        return /(?:^|[\s_:\-])(event|event_mission|planned|planned_mission|sicherheitswache|security[\s_:\-]?watch|standby|special_event)(?:$|[\s_:\-])/i.test(signal);
+        return /(?:^|[\s_:-])(event|event_mission|planned|planned_mission|sicherheitswache|security[\s_:-]?watch|standby|special_event)(?:$|[\s_:-])/i.test(signal);
     }
 
     function activeDeveloperEventLabel() {
@@ -14542,7 +14543,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (normaliseMissionBoolean(rawSpecial)) explicitSpecial = true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        const signalSpecial = /(?:^|[\s_:\-])(special_event|global_event|seasonal_event|developer_event|world_event)(?:$|[\s_:\-])/i.test(signal);
+        const signalSpecial = /(?:^|[\s_:-])(special_event|global_event|seasonal_event|developer_event|world_event)(?:$|[\s_:-])/i.test(signal);
         const active = Boolean(eventId || explicitSpecial || signalSpecial);
         if (!active) return knownDeveloperEventFallback(marker, id, snapshot);
         const label = normaliseDeveloperEventLabel(eventName || activeDeveloperEventLabel() || 'SPECIAL EVENT');
@@ -18309,8 +18310,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!text) return '';
         const normalisedPostcode = normaliseMissionPostcode(postcode || text);
         if (normalisedPostcode) {
-            const compactPattern = normalisedPostcode.replace(/\s+/g, '\s*');
-            try { text = text.replace(new RegExp(`\b${compactPattern}\b`, 'iu'), ' '); } catch (err) {}
+            const compactPattern = normalisedPostcode.replace(/\s+/g, '\\s*');
+            try { text = text.replace(new RegExp(`\\b${compactPattern}\\b`, 'iu'), ' '); } catch (err) {}
         }
         text = text.replace(UK_POSTCODE_PATTERN, ' ').replace(/\s+/g, ' ').trim();
 
@@ -19469,7 +19470,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function toggleCriticalDrawerExpanded() {
-        state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !Boolean(state.missionAgeWatch?.expanded) };
+        state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !state.missionAgeWatch?.expanded };
         saveState();
         const drawer = document.getElementById(SCRIPT.criticalDrawerId);
         updateCriticalDrawerExpandButton(drawer);
@@ -19621,7 +19622,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 return;
             }
             if (closestEventTarget(event, '[data-critical-advanced-toggle]')) {
-                const next = !Boolean(state.missionAgeWatch?.advancedFiltersOpen);
+                const next = !state.missionAgeWatch?.advancedFiltersOpen;
                 state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
                 saveState();
                 setCriticalAdvancedFiltersOpen(next, drawer);
@@ -19711,8 +19712,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             const conditionButton = closestEventTarget(event, '[data-critical-condition]');
             if (conditionButton) {
                 const condition = String(conditionButton.dataset.criticalCondition || '');
-                if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !Boolean(state.missionAgeWatch?.hasVehiclesOnWay) };
-                if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !Boolean(state.missionAgeWatch?.onlyMyUnits) };
+                if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+                if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
                 saveState();
                 resetCriticalVirtualWindow(drawer);
                 renderCriticalDrawer(null, { updateViewTime: true });
@@ -26535,7 +26536,7 @@ Create the private backup now?`);
                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
             </section>
             <div class="mcms-footer">
-                <span>v4.11.0: Smart Bookmark Labels add compact theme-safe shortcuts, automatic abbreviations, collision protection and manual overrides.</span>
+                <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;
@@ -27411,6 +27412,7 @@ Create the private backup now?`);
         const initiallyInContext = isAllianceBuildingsContext();
         const enabled = state.allianceBuildingsMap !== false;
 
+        let renderTimer = null;
         const renderWhenRelevant = () => {
             if (!isAllianceBuildingsContext()) {
                 document.getElementById(ALLIANCE_BUILDINGS_MAP_NOTICE_ID)?.remove();
@@ -27431,7 +27433,11 @@ Create the private backup now?`);
 
             const pageObserver = runtimeTrackObserver(new MutationObserver(mutations => {
                 if (!mutations.some(mutation => mutation.addedNodes?.length || mutation.removedNodes?.length)) return;
-                runtimeSetTimeout(renderWhenRelevant, 0);
+                runtimeClearTimeout(renderTimer);
+                renderTimer = runtimeSetTimeout(() => {
+                    renderTimer = null;
+                    renderWhenRelevant();
+                }, 0);
             }));
             pageObserver.observe(document.body, { childList: true, subtree: true });
         }
@@ -27475,10 +27481,12 @@ Create the private backup now?`);
         if (missionRoot?.isConnected) roots.add(missionRoot);
 
         if (!roots.size) {
+            mainMutationObserverFallbackActive = true;
             mainMutationObserver.observe(document.body, { childList: true, subtree: true });
             return;
         }
 
+        mainMutationObserverFallbackActive = false;
         for (const root of roots) mainMutationObserver.observe(root, { childList: true, subtree: true });
         mainMutationObserver.observe(document.body, { childList: true, subtree: false });
     }
@@ -27619,6 +27627,9 @@ Create the private backup now?`);
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+                    connectMainMutationObserver();
+                }
                 if (layoutChanged) {
                     refreshSuppression();
                     fitControlToMap();
@@ -27863,7 +27874,7 @@ Create the private backup now?`);
 
         runtimeSetTimeout(() => runAutoNight(true), 180);
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
-        console.debug(`[${SCRIPT.name}] v4.11.1 Performance Bootstrap ready.`);
+        console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
     }
 
     function scheduleBoot() {

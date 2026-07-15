@@ -1,0 +1,116 @@
+name: One-time obsolete branch cleanup
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/branch-cleanup-once.yml]
+permissions:
+  contents: write
+concurrency:
+  group: one-time-obsolete-branch-cleanup
+  cancel-in-progress: false
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete exact audited refs and remove this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.parse, urllib.request
+
+          refs = """
+              agent/discord-development-status 054b0b3bfe95a0b0904f4ad0799210e82f475c34
+              agent/fix-production-bundle-metadata e9ca0c6e0f8212413e54f94c7197a325e151aa50
+              agent/v4.11.1-performance-bootstrap bda37d94e4cc259ece3534701552ba75e50b305f
+              agent/v4.11.2-startup-freeze-hotfix 8d712939413f27cea8e676189d75e14e99d2e4bd
+              audit/full-userscript-optimisation 71d8f87c5b7247a97c6257c0c481577bccab126a
+              chore/asset-health-monitor 26904e2745c98d011764fa52bba44fe2b6160343
+              chore/correct-asset-health-docs d2f031759899d85810d83c63c646d516e7fff0b1
+              chore/expanded-ci-auditing e64cf17a67f9890173d46196b12ffe3bd68f67dc
+              chore/expanded-code-integrity-audit bb5aaa0ff08ff2e12eaa4421a13a37340622a31e
+              chore/operational-roadmap-hardening 501ef9464ac8e1caf852b4e939df39536e87f49d
+              chore/performance-regression-guardrails e179622166a1506c7f579121a700f68379c4de24
+              chore/release-recovery-automation 34f2369a4c8275d01bfacf87f579aeeb9565f0c4
+              chore/remove-obsolete-v4.11.0-workflows 6a573e2561f4e2f0386a952bf522102447f70eb6
+              chore/structured-issue-intake 9a56124fd7c4bf856c6b6b00a6c733bce5fbd0b7
+              diagnostics/v4.11.0-distribution-handoff cea83563028300291bf9351f0e8d254418f08a07
+              diagnostics/v4.11.0-greasyfork-webhook 53f754bd13a03acdc8c8f9be703540cc7f151ff1
+              diagnostics/v4.11.0-greasyfork-webhook-final 7ebfa3b8813c5b4a38527658f30245e5455a3a02
+              diagnostics/v4.11.0-greasyfork-webhook-pr 7ebfa3b8813c5b4a38527658f30245e5455a3a02
+              diagnostics/v4.11.0-greasyfork-webhook-run 7ebfa3b8813c5b4a38527658f30245e5455a3a02
+              diagnostics/v4.11.0-production-release 673e65e35e39f3911d04f4311c7df54e89c25cdd
+              feature/github-pages-documentation-site afb5c8534ae53e0503714413f8a7fe24e8d99236
+              fix/code-integrity-full-id-resolution 830139839c618d63ff762598f61649ae70493211
+              fix/dependabot-discord-secret-guard cd1026e7807f0591bbe71898c5c3e5d433ab2d48
+              fix/greasyfork-stale-reruns 264225a869ec494651890086c8cc149bad1a6a69
+              fix/preserve-release-dashboard-state a48208300f83659ac186ef1d19b9e5e56d1c83d7
+              fix/release-announcement-deduplication 095e11f847f9f5c3e7c24a188b71caf8374f1239
+              live-release-dashboard e2b536c632b721d410d0da9e062a3502b150e7c3
+              release-pipeline-private-backup 7f66e02147d5bf0b1f7a973869ceae6776b17c91
+              release-pipeline-v2-dry-run-release 2d740d658bc56478848bc6d1d4bbac2f5cb605e3
+              release-pipeline-v2-foundation 6350f663dc39dd6f782d7560ef23db7c28212a14
+              release-pipeline-v2-publish b60f6672eb924d63b03b9eba889a365591679d93
+              release-pipeline-v2-validation a9edcc337f241bd654d38e1868b0257a00641f4c
+              release-recovery-checklist ac5486aa677abc0facaee1b47125e3a97ef70c3a
+              release-recreate/v4.11.0-corrected 8368ea866fdb625905da67715a257a4cbc188bb6
+              release-retry/v4.11.0-production 706f20066605441f6ddd20ff17d8e4632c7f2761
+              release-trigger/v4.11.0-smart-bookmarks ca87d83a68226ab3dfd774a747934ddaa6411785
+              release-webhook-safe-source 5ed720642af2204b4be62cd5bd25fc42325786d2
+              security/actions-supply-chain-hardening 2e7ecdc89181061f342adb2555c496aa7caaf31b
+              tmp-007-portrait-upload 55bbb70edce8556f5017c8acd74894cc21111b54
+              trigger/discord-release-redesign 8d4d6e806d81ba428ec4a5a9816dcc28b86e05ae
+              trigger/export-discord-release-redesign 94e42d57d76f5c804e691b91c9fa2060c851691d
+              webhook-retry/v4.11.0-greasyfork f6f6c968646abfaade2af775722129e875221e4d
+          """
+          expected = dict(line.split() for line in refs.splitlines() if line.strip())
+          root = f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}"
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "missionchief-branch-cleanup",
+          }
+
+          def api(method, path, data=None):
+              body = None if data is None else json.dumps(data).encode()
+              request = urllib.request.Request(
+                  f"{root}/{path}", data=body, method=method, headers=headers
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  raw = response.read()
+                  return json.loads(raw) if raw else None
+
+          failures = []
+          for name, audited_sha in expected.items():
+              encoded = urllib.parse.quote(name, safe="")
+              current_sha = api("GET", f"git/ref/heads/{encoded}")["object"]["sha"]
+              if current_sha != audited_sha:
+                  failures.append(f"{name}: changed from audited SHA")
+                  continue
+              api("DELETE", f"git/refs/heads/{encoded}")
+              print(f"Deleted {name}")
+
+          remaining = sorted(
+              branch["name"] for branch in api("GET", "branches?per_page=100")
+              if branch["name"] != "main"
+          )
+          if remaining:
+              failures.append("Remaining: " + ", ".join(remaining))
+
+          path = ".github/workflows/branch-cleanup-once.yml"
+          encoded_path = urllib.parse.quote(path, safe="/")
+          workflow = api("GET", f"contents/{encoded_path}?ref=main")
+          api("DELETE", f"contents/{encoded_path}", {
+              "message": "Remove completed one-time branch cleanup workflow",
+              "sha": workflow["sha"],
+              "branch": "main",
+          })
+          print("Removed one-time workflow")
+
+          if failures:
+              raise SystemExit("\n".join(failures))
+          print("Cleanup complete; main is the only branch.")
+          PY

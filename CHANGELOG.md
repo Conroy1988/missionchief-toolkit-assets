@@ -6,6 +6,24 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.11.3] - 2026-07-15
+
+### Fixed
+- Corrected three Promise executor callbacks so rejection and canvas-conversion control flow is explicit and no discarded return values remain.
+- Removed initial values that were always overwritten before use, without changing the resulting runtime values.
+
+### Changed
+- Removed four functions proven to have no call path: `runtimeUnregisterTask`, `missionWatchType`, `missionWatchTypeLabel`, and `synchronisePersonalBuildingMarkerClasses`.
+- Removed write-only render, payout-media, Discord-finance, and boot-retry state that could never affect Toolkit behaviour.
+- Simplified one mission-marker parsing loop by removing an unused regular-expression match binding.
+
+### Performance
+- Reduced canonical source size and unnecessary state assignments without adding timers, observers, event listeners, DOM queries, CSS, startup work, or network activity.
+- Added a permanent full-userscript audit covering dead-code candidates, complexity, selectors, lifecycle resources, storage, metadata, remote hosts, assets, and AST-backed JavaScript analysis.
+
+### Compatibility
+- Preserved all themes, Desktop, Tablet Mode, iOS Mobile Mode, saved settings, bookmark data, public asset paths, and existing feature behaviour.
+
 ## [4.11.2] - 2026-07-14
 
 ### Fixed

@@ -1,0 +1,139 @@
+name: Apply Reviewed Development Package
+
+on:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: development-package-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply owner-authorized package
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.sender.login == 'Conroy1988' &&
+      github.event.issue.pull_request == null &&
+      startsWith(github.event.comment.body, '/apply-development-package ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Parse and validate command
+        id: command
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          read -r command branch package expected extra <<< "$COMMENT_BODY"
+          [[ "$command" == "/apply-development-package" ]] || { echo "::error::Invalid command."; exit 1; }
+          [[ -n "$branch" && -n "$package" && -n "$expected" && -z "${extra:-}" ]] || {
+            echo "::error::Use: /apply-development-package <branch> <package.py> <expected-head-sha>"
+            exit 1
+          }
+          [[ "$branch" =~ ^(feature|fix|chore)/[A-Za-z0-9._/-]+$ ]] || { echo "::error::Branch is outside the allowed development namespaces."; exit 1; }
+          [[ "$package" =~ ^\.github/development-packages/[A-Za-z0-9._/-]+\.py$ ]] || { echo "::error::Package path is outside .github/development-packages."; exit 1; }
+          [[ "$expected" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Expected head must be a full commit SHA."; exit 1; }
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+          echo "expected=$expected" >> "$GITHUB_OUTPUT"
+
+      - name: Check out authorized branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ steps.command.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Confirm exact authorized branch head
+        shell: bash
+        env:
+          EXPECTED_HEAD: ${{ steps.command.outputs.expected }}
+          PACKAGE_PATH: ${{ steps.command.outputs.package }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test -f "$PACKAGE_PATH"
+          test ! -L "$PACKAGE_PATH"
+
+      - name: Rebase package onto current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git rebase origin/main
+
+      - name: Apply development package
+        shell: bash
+        env:
+          PACKAGE_PATH: ${{ steps.command.outputs.package }}
+        run: |
+          set -euo pipefail
+          python3 "$PACKAGE_PATH"
+          rm -f "$PACKAGE_PATH"
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+
+      - name: Validate canonical userscript
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Commit validated result
+        id: commit
+        shell: bash
+        env:
+          BRANCH: ${{ steps.command.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "::error::Package produced no repository changes."; exit 1; }
+          git commit -m "Apply reviewed development package"
+          git push --force-with-lease origin "HEAD:${BRANCH}"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.command.outputs.branch }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_URL="$(gh pr list --head "$BRANCH" --base main --state open --json url -q '.[0].url // empty')"
+          if [[ -z "$PR_URL" ]]; then
+            TITLE="$(gh issue view "$ISSUE_NUMBER" --json title -q '.title')"
+            PR_URL="$(gh pr create --head "$BRANCH" --base main --title "$TITLE" --body "Automated implementation for #${ISSUE_NUMBER}. The owner-authorized development package was rebased onto current main, applied, removed, and validated before this pull request was opened.\n\nCloses #${ISSUE_NUMBER}")"
+          fi
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Record success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RESULT_SHA: ${{ steps.commit.outputs.sha }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+        shell: bash
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Development package applied and validated automatically.\n\n- Result commit: \`${RESULT_SHA}\`\n- Pull request: ${PR_URL}\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push"
+
+      - name: Record failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        shell: bash
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "The owner-authorized development package stopped at a guarded validation step. No failed gate was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

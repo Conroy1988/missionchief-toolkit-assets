@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-
 import importlib.util
 import sys
 import tempfile
@@ -14,12 +13,7 @@ sys.modules[spec.name] = module
 spec.loader.exec_module(module)
 
 
-def userscript(
-    body: str,
-    *,
-    version: str = "1.0.0",
-    extra_meta: str = "",
-) -> str:
+def userscript(body: str, *, version: str = "1.0.0", extra_meta: str = "") -> str:
     return f"""// ==UserScript==
 // @name MissionChief Map Command Toolkit
 // @version {version}
@@ -39,35 +33,12 @@ def write(path: Path, text: str) -> Path:
 
 def policy() -> dict:
     return {
-        "metadata": {
-            "requiredSingle": [
-                "name",
-                "version",
-                "author",
-                "license",
-                "run-at",
-            ],
-            "contains": {
-                "name": "MissionChief Map Command Toolkit",
-                "author": "Conroy1988",
-                "license": "MIT",
-            },
-            "exact": {"run-at": "document-start"},
-            "requiredHost": "missionchief.co.uk",
-        },
+        "metadata": {"requiredSingle": ["name", "version", "author", "license", "run-at"], "contains": {"name": "MissionChief Map Command Toolkit", "author": "Conroy1988", "license": "MIT"}, "exact": {"run-at": "document-start"}, "requiredHost": "missionchief.co.uk"},
         "duplicateIds": {"failWithoutBaseline": False, "allow": []},
         "shortcuts": {"failWithoutBaseline": False, "allow": []},
-        "repository": {
-            "textExtensions": [".js", ".txt", ".md"],
-            "textFileNames": [],
-            "excludedPrefixes": [],
-            "maxTextFileBytes": 5_000_000,
-        },
+        "repository": {"textExtensions": [".js", ".txt", ".md"], "textFileNames": [], "excludedPrefixes": [], "maxTextFileBytes": 5_000_000},
         "secrets": {"excludedPaths": []},
-        "assets": {
-            "sameRepository": "Conroy1988/missionchief-toolkit-assets",
-            "allowedHttpHosts": ["localhost"],
-        },
+        "assets": {"sameRepository": "Conroy1988/missionchief-toolkit-assets", "allowedHttpHosts": ["localhost"]},
     }
 
 
@@ -75,23 +46,12 @@ def finding_codes(report: dict) -> set[str]:
     return {item["code"] for item in report["findings"]}
 
 
-def run_case(
-    candidate_text: str,
-    base_text: str | None = None,
-    extra_files: dict[str, str] | None = None,
-) -> tuple[dict, int]:
+def run_case(candidate_text: str, base_text: str | None = None, extra_files: dict[str, str] | None = None) -> tuple[dict, int]:
     with tempfile.TemporaryDirectory() as temp:
         root = Path(temp)
         (root / "src").mkdir()
-        candidate = write(
-            root / "src" / "candidate.user.js",
-            candidate_text,
-        )
-        base = (
-            write(root / "src" / "base.user.js", base_text)
-            if base_text is not None
-            else None
-        )
+        candidate = write(root / "src" / "candidate.user.js", candidate_text)
+        base = write(root / "src" / "base.user.js", base_text) if base_text is not None else None
         for name, content in (extra_files or {}).items():
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -99,50 +59,72 @@ def run_case(
         return module.build_report(candidate, base, policy(), root)
 
 
+def full_valid_body() -> str:
+    return """
+const SCRIPT = { panelId: 'mcms-panel' };
+function handleKeyboard(event) {
+  const key = String(event.key || '').toLowerCase();
+  if (key === 'v') { toggleVehicleCodeStatus(); return; }
+}
+runtimeListen(document, 'keydown', handleKeyboard);
+const panel = document.createElement('div');
+panel.id = SCRIPT.panelId;
+const html = `${makeActionFloatButton('open-vehicle-status', 'V', 'Codes', 'Codes')}`;
+document.querySelector('.mission-list');
+"""
+
+
 def test_valid_fixture() -> None:
-    candidate = userscript(
-        "document.addEventListener('keydown', (event) => { "
-        "if (event.key === 'v') openPanel(); });\n"
-        "const el = document.createElement('div'); "
-        "el.id = 'mcms-panel';\n"
-        "document.querySelector('.mission-list');"
-    )
+    candidate = userscript(full_valid_body())
     report, status = run_case(candidate, candidate)
     assert status == 0, report
+    assert report["metrics"]["staticIds"] == 1, report
+    assert report["metrics"]["shortcutBindings"] >= 2, report
+
+
+def test_search_string_is_not_dom_id() -> None:
+    candidate = userscript("const ok = source.includes('id=\"financial-command\"');")
+    report, status = run_case(candidate, candidate)
+    assert status == 0, report
+    assert report["metrics"]["staticIds"] == 0, report
+
+
+def test_resolved_script_id_counts() -> None:
+    candidate = userscript("const SCRIPT = { panelId: 'mcms-panel' }; const el = document.createElement('div'); el.id = SCRIPT.panelId;")
+    report, status = run_case(candidate, candidate)
+    assert status == 0, report
+    assert [item["value"] for item in report["interfaceIds"]] == ["mcms-panel"], report
 
 
 def test_new_duplicate_id() -> None:
-    base = userscript(
-        "const a = document.createElement('div'); "
-        "a.id = 'mcms-panel';"
-    )
-    candidate = userscript(
-        "const a = document.createElement('div'); "
-        "a.id = 'mcms-panel'; "
-        "const b = document.createElement('div'); "
-        "b.id = 'mcms-panel';"
-    )
+    base = userscript("const SCRIPT = { panelId: 'mcms-panel' }; const a = document.createElement('div'); a.id = SCRIPT.panelId;")
+    candidate = userscript("const SCRIPT = { panelId: 'mcms-panel' }; const a = document.createElement('div'); a.id = SCRIPT.panelId; const b = document.createElement('div'); b.id = SCRIPT.panelId;")
     report, status = run_case(candidate, base)
     assert status == 1
-    assert finding_codes(report) & {
-        "new-interface-id",
-        "increased-interface-id",
-    }, report
+    assert finding_codes(report) & {"new-interface-id", "increased-interface-id"}, report
 
 
-def test_new_shortcut_conflict() -> None:
-    base = userscript(
-        "document.addEventListener('keydown', (event) => { "
-        "if (event.key === 'v') openPanel(); });"
-    )
-    candidate = userscript(
-        "document.addEventListener('keydown', (event) => { "
-        "if (event.key === 'v') openPanel(); "
-        "if (event.key === 'v') openOther(); });"
-    )
+def test_named_handler_and_visible_shortcut() -> None:
+    candidate = userscript(full_valid_body())
+    report, status = run_case(candidate, candidate)
+    assert status == 0, report
+    values = [item["value"] for item in report["shortcutBindings"]]
+    assert values.count("v") >= 2, report
+
+
+def test_new_visible_shortcut_conflict() -> None:
+    base = userscript(full_valid_body())
+    candidate = userscript(full_valid_body() + "\nconst second = `${makeActionFloatButton('open-other', 'V', 'Other', 'Other')}`;")
     report, status = run_case(candidate, base)
-    assert status == 1
+    assert status == 1, report
     assert "new-shortcut-conflict" in finding_codes(report), report
+
+
+def test_unhandled_visible_shortcut() -> None:
+    candidate = userscript("const button = `${makeActionFloatButton('open-other', 'X', 'Other', 'Other')}`;")
+    report, status = run_case(candidate, candidate)
+    assert status == 1
+    assert "unhandled-visible-shortcut" in finding_codes(report), report
 
 
 def test_malformed_selector() -> None:
@@ -153,10 +135,7 @@ def test_malformed_selector() -> None:
 
 
 def test_duplicate_metadata() -> None:
-    candidate = userscript(
-        "void 0;",
-        extra_meta="// @version 9.9.9\n",
-    )
+    candidate = userscript("void 0;", extra_meta="// @version 9.9.9\n")
     report, status = run_case(candidate, candidate)
     assert status == 1
     assert "metadata-cardinality" in finding_codes(report), report
@@ -164,53 +143,25 @@ def test_duplicate_metadata() -> None:
 
 def test_merge_marker() -> None:
     candidate = userscript("void 0;")
-    report, status = run_case(
-        candidate,
-        candidate,
-        {
-            "notes.txt": (
-                "<<<<<<< HEAD\n"
-                "left\n"
-                "=======\n"
-                "right\n"
-                ">>>>>>> branch\n"
-            )
-        },
-    )
+    report, status = run_case(candidate, candidate, {"notes.txt": "<<<<<<< HEAD\nleft\n=======\nright\n>>>>>>> branch\n"})
     assert status == 1
     assert "merge-conflict-marker" in finding_codes(report), report
 
 
 def test_secret_detection() -> None:
     candidate = userscript("void 0;")
-    secret = (
-        "https://discord.com/api/"
-        + "webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCDE"
-    )
-    report, status = run_case(
-        candidate,
-        candidate,
-        {"config.txt": secret},
-    )
+    secret = "https://discord.com/api/" + "webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCDE"
+    report, status = run_case(candidate, candidate, {"config.txt": secret})
     assert status == 1
     assert "exposed-secret" in finding_codes(report), report
 
 
 def main() -> None:
-    tests = [
-        test_valid_fixture,
-        test_new_duplicate_id,
-        test_new_shortcut_conflict,
-        test_malformed_selector,
-        test_duplicate_metadata,
-        test_merge_marker,
-        test_secret_detection,
-    ]
+    tests = [test_valid_fixture, test_search_string_is_not_dom_id, test_resolved_script_id_counts, test_new_duplicate_id, test_named_handler_and_visible_shortcut, test_new_visible_shortcut_conflict, test_unhandled_visible_shortcut, test_malformed_selector, test_duplicate_metadata, test_merge_marker, test_secret_detection]
     for test in tests:
         test()
         print(f"PASS {test.__name__}")
     print(f"All {len(tests)} code-integrity tests passed.")
-
 
 if __name__ == "__main__":
     main()

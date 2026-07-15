@@ -26,23 +26,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Prepare detached commit
+      - name: Prepare immutable workflow blobs
         env:
-          GH_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          PARENT_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 .github/scripts/prepare_actions_security_commit.py
 
-      - name: Upload commit result
-        if: always()
+      - name: Upload workflow blob map
         uses: actions/upload-artifact@v6
         with:
-          name: prepared-actions-security-commit-v2
+          name: prepared-actions-security-blobs
           path: |
-            prepared-commit-sha.txt
-            prepared-parent-sha.txt
-            prepared-tree-sha.txt
+            prepared-workflow-blobs.json
             changed-workflows.txt
-            prepare-error.txt
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 1

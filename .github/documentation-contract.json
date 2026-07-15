@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
+    "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
+    "releases": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases",
+    "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/"
+  },
+  "themes": [
+    "Map Command",
+    "Cyberpunk",
+    "Fallout 4",
+    "Umbrella",
+    "Factorio"
+  ],
+  "modes": [
+    "Desktop",
+    "Tablet",
+    "iOS Mobile"
+  ],
+  "shortcuts": [
+    {"key": "1", "action": "Toggle My Missions"},
+    {"key": "2", "action": "Toggle Alliance Missions"},
+    {"key": "3", "action": "Toggle Vehicles"},
+    {"key": "4", "action": "Toggle My Buildings"},
+    {"key": "5", "action": "Toggle Alliance Credits"},
+    {"key": "6", "action": "Toggle Mission Age"},
+    {"key": "V", "action": "Open or close Vehicle Code Status"}
+  ],
+  "requiredSourceTokens": [
+    "Mission Age Watch",
+    "Critical View",
+    "Transport Watcher",
+    "Vehicle Code Status",
+    "Coverage Heat Map",
+    "Smart Bookmark Labels",
+    "Alliance Credits",
+    "Tablet Mode",
+    "iOS Mobile Mode",
+    "Cyberpunk",
+    "Fallout",
+    "Umbrella",
+    "Factorio"
+  ],
+  "installUrls": [
+    "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
+    "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
+  ]
+}

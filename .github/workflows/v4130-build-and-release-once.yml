@@ -1,0 +1,196 @@
+name: One-time Hyrule Command v4.13.0 Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/v4130-build-and-release-once.yml
+
+permissions:
+  actions: write
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: hyrule-command-v4130-build-release
+  cancel-in-progress: false
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Extract preserved Hyrule package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feature/hyrule-command-release
+          git show 93dfbb01fd126293eafd5f4373d6bc3713eddb4f:.github/development-packages/hyrule-command-v4130.py > /tmp/hyrule-command-v4130.py
+          python3 -m py_compile /tmp/hyrule-command-v4130.py
+
+      - name: Apply Hyrule Command package
+        id: apply
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 /tmp/hyrule-command-v4130.py 2>&1 | tee /tmp/hyrule-package.log
+
+      - name: Validate completed v4.13.0 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
+          AUDIO="assets/audio/hyrule-quest-reward.mp3"
+          grep -Eq '^//[[:space:]]*@version[[:space:]]+4\.13\.0[[:space:]]*$' "$SOURCE"
+          grep -Fq "version: '4.13.0'" "$SOURCE"
+          grep -Fq "Hyrule Command" "$SOURCE"
+          test -s "$AUDIO"
+          node --check "$SOURCE"
+          cmp --silent "$SOURCE" dist/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent "$SOURCE" dist/MissionChief_Map_Command_Toolkit.txt
+          mv .github/workflows/v4130-build-and-release-once.yml /tmp/v4130-build-and-release-once.yml
+          python3 .github/scripts/validate_userscript.py
+          mv /tmp/v4130-build-and-release-once.yml .github/workflows/v4130-build-and-release-once.yml
+
+      - name: Commit candidate branch
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="feature/hyrule-command-v4130-final"
+          git checkout -B "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src dist README.md CHANGELOG.md assets
+          git diff --cached --quiet && { echo "::error::Hyrule package produced no release changes."; exit 1; }
+          git commit -m "Add Hyrule Command theme and quest-reward payout"
+          git push --force origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Open implementation pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.candidate.outputs.branch }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_URL="$(gh pr list --head "$BRANCH" --base main --state open --json url -q '.[0].url // empty')"
+          if [[ -z "$PR_URL" ]]; then
+            PR_URL="$(gh pr create --head "$BRANCH" --base main --title "Add Hyrule Command theme and quest-reward payout" --body $'Implements the complete Hyrule Command v4.13.0 theme, quest-reward payout and supplied audio integration.\n\nCloses #52')"
+          fi
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "number=${PR_URL##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for pull-request validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..30}; do
+            COUNT="$(gh pr checks "$PR_NUMBER" --json name 2>/dev/null | jq 'length' || echo 0)"
+            [[ "$COUNT" -gt 0 ]] && break
+            sleep 5
+          done
+          gh pr checks "$PR_NUMBER" --watch --fail-fast
+
+      - name: Merge validated implementation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh pr merge "$PR_NUMBER" --merge --delete-branch
+
+      - name: Remove this dispatcher before release validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B main origin/main
+          git rm .github/workflows/v4130-build-and-release-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove completed Hyrule Command release dispatcher"
+          git push origin main
+
+      - name: Dispatch and await Release Readiness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run release-readiness-check.yml --ref main -f version=4.13.0
+          RUN_ID=""
+          for attempt in {1..60}; do
+            RUN_ID="$(gh run list --workflow release-readiness-check.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$RUN_ID" ]] || exit 1
+          gh issue comment 52 --body "Hyrule Command v4.13.0 Release Readiness started as Actions run \`${RUN_ID}\`."
+          gh run watch "$RUN_ID" --exit-status
+
+      - name: Dispatch and await production release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run release-toolkit.yml --ref main -f version=4.13.0 -f confirmation=RELEASE
+          RUN_ID=""
+          for attempt in {1..60}; do
+            RUN_ID="$(gh run list --workflow release-toolkit.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$RUN_ID" ]] || exit 1
+          gh issue comment 52 --body "Hyrule Command v4.13.0 production release started as Actions run \`${RUN_ID}\`."
+          gh run watch "$RUN_ID" --exit-status
+          gh issue comment 52 --body "Hyrule Command v4.13.0 production release completed. GitHub Release, Greasy Fork verification, private backup and Discord announcement passed."
+
+      - name: Record guarded failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          LOG="$(tail -n 35 /tmp/hyrule-package.log 2>/dev/null || true)"
+          printf -v BODY 'Hyrule Command v4.13.0 build/release stopped at a guarded step. No failed gate was bypassed.\n\nDiagnostics: %s/%s/actions/runs/%s\n\n```text\n%s\n```' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" "$LOG"
+          gh issue comment 52 --body "$BODY"
+
+  cleanup:
+    if: always()
+    needs: build-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Remove stranded dispatcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=.github/workflows/v4130-build-and-release-once.yml
+          [[ -f "$FILE" ]] || exit 0
+          git rm "$FILE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove stranded Hyrule Command release dispatcher"
+          git pull --rebase origin main
+          git push origin main

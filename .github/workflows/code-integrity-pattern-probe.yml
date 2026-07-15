@@ -36,6 +36,8 @@ jobs:
               "direct_property": re.compile(r"\.id\s*="),
               "object_property": re.compile(r"(?<![.\w])id\s*:"),
               "id_constant": re.compile(r"\b[A-Za-z_$][\w$]*(?:_ID|Id|ID)\s*=\s*['\"]"),
+              "id_named_object_value": re.compile(r"\b[A-Za-z_$][\w$]*(?:Id|ID)\s*:\s*['\"]"),
+              "script_definition": re.compile(r"\bSCRIPT\s*=\s*(?:Object\.freeze\s*\()?\s*\{"),
               "set_attribute": re.compile(r"setAttribute\s*\(\s*['\"]id['\"]"),
               "html_attribute": re.compile(r"(?<![.\w])id\s*=\s*['\"]"),
               "create_element": re.compile(r"createElement\s*\("),
@@ -46,12 +48,12 @@ jobs:
           for name, pattern in patterns.items():
               matches = list(pattern.finditer(text))
               output.append(f"## {name}: {len(matches)}")
-              for match in matches[:120]:
+              for match in matches[:160]:
                   line_no = text.count("\n", 0, match.start()) + 1
-                  start = max(0, line_no - 2)
-                  end = min(len(lines), line_no + 1)
+                  start = max(0, line_no - 3)
+                  end = min(len(lines), line_no + 2)
                   sample = " ".join(part.strip() for part in lines[start:end])
-                  output.append(f"{line_no}: {sample[:700]}")
+                  output.append(f"{line_no}: {sample[:1000]}")
               output.append("")
 
           Path("code-integrity-pattern-probe.txt").write_text(

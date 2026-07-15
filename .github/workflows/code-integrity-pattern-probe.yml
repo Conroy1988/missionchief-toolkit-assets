@@ -1,0 +1,68 @@
+name: Code Integrity Pattern Probe
+run-name: Code-integrity pattern probe · PR ${{ github.event.pull_request.number }}
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/workflows/code-integrity-pattern-probe.yml"
+      - ".github/scripts/check_code_integrity.py"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Inspect interface construction patterns
+    if: github.event.pull_request.number == 31
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v7
+
+      - name: Build pattern inventory
+        shell: python {0}
+        run: |
+          import re
+          from pathlib import Path
+
+          source = Path("src/MissionChief_Map_Command_Toolkit.user.js")
+          text = source.read_text(encoding="utf-8")
+          patterns = {
+              "direct_property": re.compile(r"\.id\s*="),
+              "object_property": re.compile(r"(?<![.\w])id\s*:"),
+              "id_constant": re.compile(r"\b[A-Za-z_$][\w$]*(?:_ID|Id|ID)\s*=\s*['\"]"),
+              "set_attribute": re.compile(r"setAttribute\s*\(\s*['\"]id['\"]"),
+              "html_attribute": re.compile(r"(?<![.\w])id\s*=\s*['\"]"),
+              "create_element": re.compile(r"createElement\s*\("),
+          }
+
+          lines = text.splitlines()
+          output = []
+          for name, pattern in patterns.items():
+              matches = list(pattern.finditer(text))
+              output.append(f"## {name}: {len(matches)}")
+              for match in matches[:120]:
+                  line_no = text.count("\n", 0, match.start()) + 1
+                  start = max(0, line_no - 2)
+                  end = min(len(lines), line_no + 1)
+                  sample = " ".join(part.strip() for part in lines[start:end])
+                  output.append(f"{line_no}: {sample[:700]}")
+              output.append("")
+
+          Path("code-integrity-pattern-probe.txt").write_text(
+              "\n".join(output) + "\n",
+              encoding="utf-8",
+          )
+
+      - name: Upload pattern inventory
+        uses: actions/upload-artifact@v6
+        with:
+          name: code-integrity-pattern-probe
+          path: code-integrity-pattern-probe.txt
+          if-no-files-found: error
+          retention-days: 1

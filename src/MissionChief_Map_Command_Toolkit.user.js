@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.11.4
+// @version      4.12.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.11.4',
+        version: '4.12.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1347,6 +1347,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             tabletMode: 'auto',
             mobileMode: 'auto',
             shortcuts: true,
+            autoLoadAllVehicles: false,
             allianceBuildingsMap: true,
             majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
             missionAgeWatch: {
@@ -1442,6 +1443,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
             merged.commandBarOpen = merged.commandBarOpen !== false;
             merged.economyMode = Boolean(merged.economyMode);
+            merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
             merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
             merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
             merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
@@ -21395,6 +21397,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         runtimeClearTimeout(missionSpawnPrimeTimer);
         knownMissionIds.clear();
         if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+        else stopAutoLoadAllVehicles();
         applyRootAttributes();
         renderQuickPlaces();
         renderBookmarks();
@@ -25429,6 +25433,11 @@ Create the private backup now?`);
         if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
         if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
         if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
+        if (feature === 'autoLoadAllVehicles') {
+            state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
+            if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+            else stopAutoLoadAllVehicles();
+        }
         if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
         if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
         if (feature === 'missionLockAudio') {
@@ -25475,6 +25484,7 @@ Create the private backup now?`);
         if (feature === 'buildings') synchronisePersonalBuildingVisibility();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+        if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
         if (feature === 'unitCommitment') {
@@ -26508,6 +26518,7 @@ Create the private backup now?`);
                 <div class="mcms-section-label">Behaviour</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
+                    ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically presses MissionChief’s Load more vehicles control whenever an opened mission limits the vehicle list.')}
                     ${makeToggleButton('autoNight', '◑', 'AutoNight', 'Automatically switch skins by time.')}
                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Map Blocker', 'Blocks the heavy map in the Alliance Buildings menu (Courses menu). ON means blocked. Reload required.')}
                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
@@ -27078,6 +27089,7 @@ Create the private backup now?`);
             coverage: state.coverage.enabled,
             heatmap: state.heatmap.enabled,
             shortcuts: state.shortcuts,
+            autoLoadAllVehicles: state.autoLoadAllVehicles,
             allianceBuildingsMapBlocker: state.allianceBuildingsMap === false,
             majorIncidentFeed: state.majorIncidentFeed.enabled,
             missionLockAudio: state.missionLockAudio,
@@ -27546,6 +27558,267 @@ Create the private backup now?`);
     }
 
 
+    const AUTO_LOAD_ALL_VEHICLES_SELECTOR = 'a.missing_vehicles_load[href*="/missing_vehicles"]';
+    const AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR = '#lightbox_box, #lightbox, .lightbox_content, .modal.show, .modal.in, .modal-content, [role="dialog"], .ui-dialog-content, .ui-dialog';
+    const AUTO_LOAD_ALL_VEHICLES_MAX_REQUESTS = 50;
+    const AUTO_LOAD_ALL_VEHICLES_SETTLE_MS = 180;
+    const AUTO_LOAD_ALL_VEHICLES_TIMEOUT_MS = 6000;
+    const AUTO_LOAD_ALL_VEHICLES_HIDDEN_RETRIES = 24;
+    let autoLoadAllVehiclesObserver = null;
+    let autoLoadAllVehiclesLinkObserver = null;
+    let autoLoadAllVehiclesRootObserver = null;
+    let autoLoadAllVehiclesScanTimer = null;
+    let autoLoadAllVehiclesReleaseTimer = null;
+    let autoLoadAllVehiclesMissionId = null;
+    let autoLoadAllVehiclesMissionRoot = null;
+    let autoLoadAllVehiclesActiveLink = null;
+    let autoLoadAllVehiclesActiveSignature = '';
+    let autoLoadAllVehiclesInFlight = false;
+    let autoLoadAllVehiclesRequestCount = 0;
+    let autoLoadAllVehiclesHiddenRetryCount = 0;
+    const autoLoadAllVehiclesRequestedPages = new Set();
+
+    function autoLoadAllVehiclesLinkInfo(link) {
+        if (!link || link.nodeType !== 1 || !link.matches?.(AUTO_LOAD_ALL_VEHICLES_SELECTOR)) return null;
+        let url;
+        try { url = new URL(link.getAttribute('href') || link.href, location.href); } catch (err) { return null; }
+        if (url.origin !== location.origin) return null;
+        const match = url.pathname.match(/^\/missions\/(\d+)\/missing_vehicles\/?$/u);
+        if (!match) return null;
+        const rawOffset = url.searchParams.get('offset_page');
+        const offsetPage = Number.isFinite(Number(rawOffset)) ? Math.max(0, Number(rawOffset)) : 0;
+        return {
+            missionId: match[1],
+            offsetPage,
+            signature: `${match[1]}:${offsetPage}:${url.pathname}${url.search}`,
+            href: url.href
+        };
+    }
+
+    function autoLoadAllVehiclesElementVisible(element) {
+        if (!element?.isConnected || element.hidden || element.getAttribute?.('aria-hidden') === 'true') return false;
+        if (element.matches?.(':disabled, .disabled, [aria-disabled="true"]')) return false;
+        try {
+            const style = pageWindow.getComputedStyle?.(element);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || style?.pointerEvents === 'none' || Number(style?.opacity) === 0) return false;
+            const rect = element.getBoundingClientRect?.();
+            return !rect || (rect.width > 1 && rect.height > 1);
+        } catch (err) {
+            return true;
+        }
+    }
+
+    function autoLoadAllVehiclesResolveMissionRoot(link) {
+        const selectors = [
+            '#lightbox_box', '#lightbox', '.modal.show', '.modal.in', '[role="dialog"]',
+            '.ui-dialog', '.lightbox_content', '.modal-content', '.ui-dialog-content'
+        ];
+        for (const selector of selectors) {
+            const root = link.closest?.(selector);
+            if (root) return root;
+        }
+        return link.parentElement || document.body;
+    }
+
+    function autoLoadAllVehiclesCandidateLinks() {
+        if (!state.autoLoadAllVehicles) return [];
+        return Array.from(document.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR))
+            .reverse()
+            .map(link => ({ link, info: autoLoadAllVehiclesLinkInfo(link) }))
+            .filter(candidate => Boolean(candidate.info));
+    }
+
+    function clearAutoLoadAllVehiclesReleaseTimer() {
+        runtimeClearTimeout(autoLoadAllVehiclesReleaseTimer);
+        autoLoadAllVehiclesReleaseTimer = null;
+    }
+
+    function disconnectAutoLoadAllVehiclesLinkObserver() {
+        runtimeUntrackObserver(autoLoadAllVehiclesLinkObserver);
+        autoLoadAllVehiclesLinkObserver = null;
+    }
+
+    function disconnectAutoLoadAllVehiclesRootObserver() {
+        runtimeUntrackObserver(autoLoadAllVehiclesRootObserver);
+        autoLoadAllVehiclesRootObserver = null;
+    }
+
+    function releaseAutoLoadAllVehiclesRequest({ schedule = true } = {}) {
+        clearAutoLoadAllVehiclesReleaseTimer();
+        disconnectAutoLoadAllVehiclesLinkObserver();
+        autoLoadAllVehiclesInFlight = false;
+        autoLoadAllVehiclesActiveLink = null;
+        autoLoadAllVehiclesActiveSignature = '';
+        if (schedule && state.autoLoadAllVehicles) scheduleAutoLoadAllVehiclesScan(AUTO_LOAD_ALL_VEHICLES_SETTLE_MS);
+    }
+
+    function resetAutoLoadAllVehiclesMission() {
+        releaseAutoLoadAllVehiclesRequest({ schedule: false });
+        disconnectAutoLoadAllVehiclesRootObserver();
+        autoLoadAllVehiclesMissionId = null;
+        autoLoadAllVehiclesMissionRoot = null;
+        autoLoadAllVehiclesRequestCount = 0;
+        autoLoadAllVehiclesHiddenRetryCount = 0;
+        autoLoadAllVehiclesRequestedPages.clear();
+    }
+
+    function observeAutoLoadAllVehiclesRoot(root) {
+        disconnectAutoLoadAllVehiclesRootObserver();
+        if (!root || root === document.body) return;
+        const observer = runtimeTrackObserver(new MutationObserver(() => {
+            if (!state.autoLoadAllVehicles) return;
+            if (!root.isConnected || !autoLoadAllVehiclesElementVisible(root)) {
+                resetAutoLoadAllVehiclesMission();
+                return;
+            }
+            scheduleAutoLoadAllVehiclesScan(AUTO_LOAD_ALL_VEHICLES_SETTLE_MS);
+        }));
+        observer.observe(root, {
+            attributes: true,
+            attributeFilter: ['class', 'style', 'hidden', 'aria-hidden']
+        });
+        autoLoadAllVehiclesRootObserver = observer;
+    }
+
+    function observeAutoLoadAllVehiclesLink(link) {
+        disconnectAutoLoadAllVehiclesLinkObserver();
+        if (!link) return;
+        const observer = runtimeTrackObserver(new MutationObserver(() => {
+            if (!state.autoLoadAllVehicles) return;
+            const info = autoLoadAllVehiclesLinkInfo(link);
+            const changed = Boolean(info && info.signature !== autoLoadAllVehiclesActiveSignature);
+            if (!link.isConnected || !info || !autoLoadAllVehiclesElementVisible(link) || changed) {
+                releaseAutoLoadAllVehiclesRequest({ schedule: true });
+            }
+        }));
+        observer.observe(link, {
+            attributes: true,
+            attributeFilter: ['href', 'class', 'style', 'hidden', 'aria-hidden', 'aria-disabled']
+        });
+        autoLoadAllVehiclesLinkObserver = observer;
+    }
+
+    function scheduleAutoLoadAllVehiclesScan(delay = 0) {
+        if (!state.autoLoadAllVehicles || runtime.destroyed) return;
+        runtimeClearTimeout(autoLoadAllVehiclesScanTimer);
+        autoLoadAllVehiclesScanTimer = runtimeSetTimeout(() => {
+            autoLoadAllVehiclesScanTimer = null;
+            scanAutoLoadAllVehicles();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanAutoLoadAllVehicles() {
+        if (!state.autoLoadAllVehicles || runtime.destroyed || autoLoadAllVehiclesInFlight) return false;
+        const candidates = autoLoadAllVehiclesCandidateLinks();
+        if (!candidates.length) {
+            autoLoadAllVehiclesHiddenRetryCount = 0;
+            if (autoLoadAllVehiclesMissionRoot && (!autoLoadAllVehiclesMissionRoot.isConnected || !autoLoadAllVehiclesElementVisible(autoLoadAllVehiclesMissionRoot))) {
+                resetAutoLoadAllVehiclesMission();
+            }
+            return false;
+        }
+
+        const visibleCandidates = candidates.filter(candidate => autoLoadAllVehiclesElementVisible(candidate.link));
+        if (!visibleCandidates.length) {
+            if (autoLoadAllVehiclesHiddenRetryCount < AUTO_LOAD_ALL_VEHICLES_HIDDEN_RETRIES) {
+                autoLoadAllVehiclesHiddenRetryCount += 1;
+                scheduleAutoLoadAllVehiclesScan(AUTO_LOAD_ALL_VEHICLES_SETTLE_MS);
+            }
+            return false;
+        }
+        autoLoadAllVehiclesHiddenRetryCount = 0;
+
+        const candidate = visibleCandidates.find(item => item.info.missionId !== autoLoadAllVehiclesMissionId || !autoLoadAllVehiclesRequestedPages.has(item.info.signature)) || visibleCandidates[0];
+        const { link, info } = candidate;
+        const missionRoot = autoLoadAllVehiclesResolveMissionRoot(link);
+        if (info.missionId !== autoLoadAllVehiclesMissionId || missionRoot !== autoLoadAllVehiclesMissionRoot) {
+            resetAutoLoadAllVehiclesMission();
+            autoLoadAllVehiclesMissionId = info.missionId;
+            autoLoadAllVehiclesMissionRoot = missionRoot;
+            observeAutoLoadAllVehiclesRoot(missionRoot);
+        }
+        if (autoLoadAllVehiclesRequestedPages.has(info.signature)) return false;
+        if (autoLoadAllVehiclesRequestCount >= AUTO_LOAD_ALL_VEHICLES_MAX_REQUESTS) {
+            console.warn(`[${SCRIPT.name}] Auto-load all vehicles stopped after ${AUTO_LOAD_ALL_VEHICLES_MAX_REQUESTS} requests for mission ${info.missionId}.`);
+            return false;
+        }
+
+        autoLoadAllVehiclesRequestedPages.add(info.signature);
+        autoLoadAllVehiclesRequestCount += 1;
+        autoLoadAllVehiclesInFlight = true;
+        autoLoadAllVehiclesActiveLink = link;
+        autoLoadAllVehiclesActiveSignature = info.signature;
+        link.dataset.mcmsAutoLoadRequested = 'true';
+        observeAutoLoadAllVehiclesLink(link);
+
+        try {
+            link.click();
+        } catch (err) {
+            autoLoadAllVehiclesRequestedPages.delete(info.signature);
+            releaseAutoLoadAllVehiclesRequest({ schedule: false });
+            console.warn(`[${SCRIPT.name}] Auto-load all vehicles could not activate MissionChief's native control.`, err);
+            return false;
+        }
+
+        clearAutoLoadAllVehiclesReleaseTimer();
+        autoLoadAllVehiclesReleaseTimer = runtimeSetTimeout(() => {
+            autoLoadAllVehiclesReleaseTimer = null;
+            releaseAutoLoadAllVehiclesRequest({ schedule: true });
+        }, AUTO_LOAD_ALL_VEHICLES_TIMEOUT_MS);
+        return true;
+    }
+
+    function autoLoadAllVehiclesMutationRelevant(mutation) {
+        if (mutation.type !== 'childList') return false;
+        const nodes = [...Array.from(mutation.addedNodes || []), ...Array.from(mutation.removedNodes || [])];
+        return nodes.some(node => {
+            if (!node || node.nodeType !== 1) return false;
+            if (autoLoadAllVehiclesMissionRoot && (node === autoLoadAllVehiclesMissionRoot || node.contains?.(autoLoadAllVehiclesMissionRoot))) return true;
+            return Boolean(
+                node.matches?.(AUTO_LOAD_ALL_VEHICLES_SELECTOR) ||
+                node.querySelector?.(AUTO_LOAD_ALL_VEHICLES_SELECTOR) ||
+                node.matches?.(AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR) ||
+                node.querySelector?.(AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR)
+            );
+        });
+    }
+
+    function stopAutoLoadAllVehicles() {
+        runtimeClearTimeout(autoLoadAllVehiclesScanTimer);
+        autoLoadAllVehiclesScanTimer = null;
+        runtimeUntrackObserver(autoLoadAllVehiclesObserver);
+        autoLoadAllVehiclesObserver = null;
+        resetAutoLoadAllVehiclesMission();
+    }
+
+    function installAutoLoadAllVehicles() {
+        if (!state.autoLoadAllVehicles || runtime.destroyed) {
+            stopAutoLoadAllVehicles();
+            return false;
+        }
+        if (!document.body) {
+            runtimeListen(document, 'DOMContentLoaded', installAutoLoadAllVehicles, { once: true });
+            return false;
+        }
+        if (!autoLoadAllVehiclesObserver) {
+            const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+                if (!state.autoLoadAllVehicles) return;
+                if (autoLoadAllVehiclesMissionRoot && !autoLoadAllVehiclesMissionRoot.isConnected) {
+                    resetAutoLoadAllVehiclesMission();
+                }
+                if (autoLoadAllVehiclesActiveLink && !autoLoadAllVehiclesActiveLink.isConnected) {
+                    releaseAutoLoadAllVehiclesRequest({ schedule: false });
+                }
+                if (mutations.some(autoLoadAllVehiclesMutationRelevant)) scheduleAutoLoadAllVehiclesScan(AUTO_LOAD_ALL_VEHICLES_SETTLE_MS);
+            }));
+            observer.observe(document.body, { childList: true, subtree: true });
+            autoLoadAllVehiclesObserver = observer;
+        }
+        scheduleAutoLoadAllVehiclesScan(0);
+        return true;
+    }
+
+
     function boot() {
         if (runtime.destroyed || bootStarted) return;
         bootStarted = true;
@@ -27554,6 +27827,7 @@ Create the private backup now?`);
         applyRootAttributes();
         if (installAllianceBuildingsPageOptimisation()) return;
         createCleanExit();
+        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
         installMissionMarkerAddHook();
         installRadioMessageHook();
         lastObservedCredits = readCurrentCreditTotal();
@@ -27816,6 +28090,7 @@ Create the private backup now?`);
         }, 2200);
 
         runtimeOnCleanup(() => {
+            stopAutoLoadAllVehicles();
             transportSweepRuntime.stopRequested = true;
             document.removeEventListener('mousemove', movePanelDrag, true);
             document.removeEventListener('mouseup', endPanelDrag, true);

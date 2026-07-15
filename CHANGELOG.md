@@ -6,6 +6,22 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.12.0] - 2026-07-15
+
+### Added
+- Added an optional **Auto-load all vehicles** setting that activates MissionChief's native load-more control whenever an opened mission limits the visible vehicle list.
+- Added safe sequential loading for additional hidden vehicle batches without relying on the control's displayed language or count text.
+
+### Reliability
+- Validates same-origin mission and offset-page URLs before activating the native control.
+- Prevents duplicate clicks, bounds each mission to 50 load requests, and stops when MissionChief does not expose a new page.
+- Resets request state when the mission window closes, is replaced, or another mission opens.
+- Uses event-driven DOM observers only while the option is enabled, with bounded settling retries for controls that render hidden before becoming available.
+
+### Compatibility
+- Defaults the new setting to Off and preserves manual use of MissionChief's native control when disabled.
+- Preserves settings import/export, all interface themes, Desktop, Tablet Mode and iOS Mobile Mode.
+
 ## [4.11.4] - 2026-07-15
 
 ### Fixed

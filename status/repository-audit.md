@@ -4,18 +4,18 @@
 
 ## Summary
 
-- Repository files: **94**
+- Repository files: **122**
 - Media files: **28**
-- GitHub Actions workflows: **16**
-- Greasy Fork version: **4.10.4**
+- GitHub Actions workflows: **19**
+- Greasy Fork version: **4.11.2**
 - Repository URLs referenced by current script/repository: **25**
 - Missing referenced paths: **0**
-- Possible one-shot workflows: **7**
+- Possible one-shot workflows: **0**
 - Duplicate media groups: **1**
 
 ## Current userscript source
 
-Greasy Fork was read successfully at version **4.10.4**.
+Greasy Fork was read successfully at version **4.11.2**.
 No canonical `.user.js` file is assumed until a source file is deliberately imported and validated.
 
 ## Referenced public repository paths
@@ -48,21 +48,24 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 
 ## Workflow inventory
 
-- `.github/workflows/bootstrap-v4.11.0-smart-bookmarks-v2.yml` — review as possible temporary workflow
-- `.github/workflows/bootstrap-v4.11.0-smart-bookmarks.yml` — review as possible temporary workflow
-- `.github/workflows/check-v4.11.0-distribution-handoff.yml` — review as possible temporary workflow
-- `.github/workflows/diagnose-v4.11.0-production-release.yml` — review as possible temporary workflow
+- `.github/workflows/asset-health-monitor.yml`
+- `.github/workflows/code-integrity-audit.yml`
 - `.github/workflows/discord-commit-notifications.yml`
-- `.github/workflows/dispatch-v4.11.0-bootstrap-from-pr.yml` — review as possible temporary workflow
+- `.github/workflows/discord-development-status.yml`
 - `.github/workflows/greasyfork-release-monitor.yml`
 - `.github/workflows/import-canonical-userscript.yml`
+- `.github/workflows/performance-regression-check.yml`
+- `.github/workflows/prepare-release-rollback.yml`
+- `.github/workflows/reconcile-release-announcement-state.yml`
 - `.github/workflows/release-readiness-check.yml`
+- `.github/workflows/release-recovery-validation.yml`
+- `.github/workflows/release-recovery.yml`
 - `.github/workflows/release-toolkit-dry-run.yml`
 - `.github/workflows/release-toolkit.yml`
 - `.github/workflows/repository-audit.yml`
-- `.github/workflows/retry-v4.11.0-greasyfork-webhook.yml` — review as possible temporary workflow
-- `.github/workflows/retry-v4.11.0-production-release.yml` — review as possible temporary workflow
+- `.github/workflows/sync-repository-labels.yml`
 - `.github/workflows/update-release-dashboard.yml`
+- `.github/workflows/validate-issue-intake.yml`
 - `.github/workflows/validate-userscript.yml`
 
 ## Referenced GitHub Actions secrets

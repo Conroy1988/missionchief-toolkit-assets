@@ -23,6 +23,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
+          token: ${{ secrets.MIGRATION_REPO_TOKEN }}
 
       - name: Pin permanent workflow actions
         shell: bash

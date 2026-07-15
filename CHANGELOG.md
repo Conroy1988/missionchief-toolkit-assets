@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.11.4] - 2026-07-15
+
+### Fixed
+- Corrected the Toolkit's internal runtime version so startup metrics and runtime diagnostics report the installed userscript version accurately.
+- Added a permanent validation failure when userscript `@version` metadata and internal `SCRIPT.version` do not match.
+
+### Compatibility
+- Preserved all Toolkit features, themes, responsive modes, settings, saved data, startup sequencing and operational behaviour.
+
 ## [4.11.3] - 2026-07-15
 
 ### Fixed

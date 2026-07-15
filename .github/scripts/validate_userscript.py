@@ -27,6 +27,12 @@ REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 CONFLICT_RE = re.compile(r"^(?:<<<<<<< .+|=======|>>>>>>> .+)$", re.MULTILINE)
 RELEASE_TAG_RE = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
+SCRIPT_VERSION_RE = re.compile(
+    r"\bconst\s+SCRIPT\s*=\s*\{\s*"
+    r"name\s*:\s*['\"][^'\"]+['\"]\s*,\s*"
+    r"version\s*:\s*['\"]([^'\"]+)['\"]",
+    re.DOTALL,
+)
 
 
 def fail(message: str) -> None:
@@ -82,6 +88,13 @@ def changelog_has_version(version: str) -> bool:
 
 def is_missionchief_rule(value: str) -> bool:
     return "missionchief.co.uk" in value.casefold()
+
+
+def internal_script_version(text: str) -> str:
+    versions = SCRIPT_VERSION_RE.findall(text)
+    if len(versions) != 1:
+        fail("internal SCRIPT.version must appear exactly once")
+    return versions[0]
 
 
 def latest_release_baseline(output: Path) -> str | None:
@@ -226,6 +239,13 @@ def main() -> int:
     if not VERSION_RE.fullmatch(version):
         fail(f"invalid semantic @version: {version}")
 
+    runtime_version = internal_script_version(text)
+    if runtime_version != version:
+        fail(
+            "userscript @version and internal SCRIPT.version differ: "
+            f"{version} != {runtime_version}"
+        )
+
     matches = meta.get("match", []) + meta.get("include", [])
     missionchief_rules = [value for value in matches if is_missionchief_rule(value)]
     if not missionchief_rules:
@@ -279,6 +299,7 @@ def main() -> int:
         "lines": text.count("\n") + 1,
         "metadata": {
             "name": name,
+            "runtimeVersion": runtime_version,
             "author": author,
             "license": license_name,
             "missionChiefRules": missionchief_rules,

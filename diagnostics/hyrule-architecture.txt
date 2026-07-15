@@ -1,0 +1,2100 @@
+
+===== THEME_NAMES =====
+
+931: 
+932:     const THEME_ASSETS = Object.freeze({
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+---
+932:     const THEME_ASSETS = Object.freeze({
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+---
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+---
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+---
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+---
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+---
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+---
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+---
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+---
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+---
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+---
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+---
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+947:     });
+---
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+947:     });
+948: 
+---
+949:     const UI_THEMES = Object.freeze({
+950:         mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '▦', description: 'The original operational command interface.' }),
+951:         cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),
+952:         fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
+953:         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
+---
+950:         mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '▦', description: 'The original operational command interface.' }),
+951:         cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),
+952:         fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
+953:         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
+954:         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
+---
+951:         cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '⚡', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),
+952:         fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
+953:         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
+954:         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
+955:         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' })
+---
+952:         fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
+953:         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
+954:         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
+955:         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' })
+956:     });
+---
+953:         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
+954:         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
+955:         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' })
+956:     });
+957:     const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007']);
+---
+955:         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' })
+956:     });
+957:     const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007']);
+958: 
+959:     const THEMES = {
+---
+976:         badCompany: { label: 'Bad Company Inspired', kicker: 'PAYOUT RECEIVED', titleCase: false, particleMode: 'embers' },
+977:         scarface: { label: 'Scarface Inspired', kicker: 'EMPIRE PAYOUT CONFIRMED', titleCase: false, particleMode: 'stars' },
+978:         cyberpunk: { label: 'Cyberpunk Inspired', kicker: 'CREDIT TRANSFER CONFIRMED', titleCase: false, particleMode: 'glitch' },
+979:         hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },
+980:         wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },
+---
+978:         cyberpunk: { label: 'Cyberpunk Inspired', kicker: 'CREDIT TRANSFER CONFIRMED', titleCase: false, particleMode: 'glitch' },
+979:         hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },
+980:         wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },
+981:         factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },
+982:         galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },
+---
+979:         hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },
+980:         wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },
+981:         factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },
+982:         galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },
+983:         darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },
+---
+982:         galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },
+983:         darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },
+984:         biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },
+985:         underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },
+986:         pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },
+---
+985:         underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },
+986:         pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },
+987:         jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' }
+988:     };
+989: 
+---
+988:     };
+989: 
+990:     const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];
+991: 
+992:     // Hosted real-audio cues remain lazy-loaded through direct raw GitHub URLs.
+---
+1005:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'
+1006:         }),
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+---
+1006:         }),
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+1010:         }),
+---
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+1010:         }),
+1011:         wasteland: Object.freeze({
+---
+1010:         }),
+1011:         wasteland: Object.freeze({
+1012:             label: 'Fallout Cashout',
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+---
+1011:         wasteland: Object.freeze({
+1012:             label: 'Fallout Cashout',
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+1015:         factorio: Object.freeze({
+---
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+---
+1014:         }),
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+1018:         }),
+---
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+1018:         }),
+1019:         biohazard: Object.freeze({
+---
+1018:         }),
+1019:         biohazard: Object.freeze({
+1020:             label: 'Umbrella Containment Cashout',
+1021:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+1022:         }),
+---
+1019:         biohazard: Object.freeze({
+1020:             label: 'Umbrella Containment Cashout',
+1021:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+1022:         }),
+1023:         jamesBond: Object.freeze({
+---
+1022:         }),
+1023:         jamesBond: Object.freeze({
+1024:             label: '007 Intelligence Cashout',
+1025:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+1026:         })
+---
+1581:                 standard: 'CASHOUT COMPLETE', major: 'EMPIRE EXPANDED', high: 'POWER SECURED', elite: 'THE WORLD IS YOURS'
+1582:             },
+1583:             cyberpunk: {
+1584:                 standard: 'EDdies TRANSFERRED', major: 'DATA HEIST PAID', high: 'MEGACORP JACKPOT', elite: 'NIGHT CITY LEGEND'
+1585:             },
+---
+1590:                 standard: 'CAPS SECURED', major: 'VAULT RESERVES INCREASED', high: 'WASTELAND FORTUNE FOUND', elite: 'JACKPOT OF THE COMMONWEALTH'
+1591:             },
+1592:             factorio: {
+1593:                 standard: 'PRODUCTION TARGET MET', major: 'ASSEMBLY BONUS SECURED', high: 'MEGABASE PAYOUT', elite: 'THE FACTORY MUST GROW'
+1594:             },
+---
+2110:         }
+2111: 
+2112:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-travel-overlay,
+2113:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-dom,
+2114:         html[data-mcms-ui-theme="cyberpunk"] .leaflet-marker-icon.mcms-mission-lock-target {
+---
+2111: 
+2112:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-travel-overlay,
+2113:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-dom,
+2114:         html[data-mcms-ui-theme="cyberpunk"] .leaflet-marker-icon.mcms-mission-lock-target {
+2115:             --mcms-lock-primary:#fcee0a;--mcms-lock-secondary:#00f0ff;--mcms-lock-accent:#ff2a6d;--mcms-lock-surface:rgba(7,12,20,.94);--mcms-lock-grid:rgba(0,240,255,.12);
+---
+2112:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-travel-overlay,
+2113:         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-dom,
+2114:         html[data-mcms-ui-theme="cyberpunk"] .leaflet-marker-icon.mcms-mission-lock-target {
+2115:             --mcms-lock-primary:#fcee0a;--mcms-lock-secondary:#00f0ff;--mcms-lock-accent:#ff2a6d;--mcms-lock-surface:rgba(7,12,20,.94);--mcms-lock-grid:rgba(0,240,255,.12);
+2116:         }
+---
+2115:             --mcms-lock-primary:#fcee0a;--mcms-lock-secondary:#00f0ff;--mcms-lock-accent:#ff2a6d;--mcms-lock-surface:rgba(7,12,20,.94);--mcms-lock-grid:rgba(0,240,255,.12);
+2116:         }
+2117:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-travel-overlay,
+2118:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-dom,
+2119:         html[data-mcms-ui-theme="fallout4"] .leaflet-marker-icon.mcms-mission-lock-target {
+---
+2116:         }
+2117:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-travel-overlay,
+2118:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-dom,
+2119:         html[data-mcms-ui-theme="fallout4"] .leaflet-marker-icon.mcms-mission-lock-target {
+2120:             --mcms-lock-primary:#b8ff6a;--mcms-lock-secondary:#e5ffc2;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(12,28,12,.94);--mcms-lock-grid:rgba(184,255,106,.10);
+---
+2117:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-travel-overlay,
+2118:         html[data-mcms-ui-theme="fallout4"] .mcms-mission-lock-dom,
+2119:         html[data-mcms-ui-theme="fallout4"] .leaflet-marker-icon.mcms-mission-lock-target {
+2120:             --mcms-lock-primary:#b8ff6a;--mcms-lock-secondary:#e5ffc2;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(12,28,12,.94);--mcms-lock-grid:rgba(184,255,106,.10);
+2121:         }
+---
+2120:             --mcms-lock-primary:#b8ff6a;--mcms-lock-secondary:#e5ffc2;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(12,28,12,.94);--mcms-lock-grid:rgba(184,255,106,.10);
+2121:         }
+2122:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-travel-overlay,
+2123:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-dom,
+2124:         html[data-mcms-ui-theme="umbrella"] .leaflet-marker-icon.mcms-mission-lock-target {
+---
+2121:         }
+2122:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-travel-overlay,
+2123:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-dom,
+2124:         html[data-mcms-ui-theme="umbrella"] .leaflet-marker-icon.mcms-mission-lock-target {
+2125:             --mcms-lock-primary:#f23838;--mcms-lock-secondary:#fff;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(15,17,20,.95);--mcms-lock-grid:rgba(242,56,56,.10);
+---
+2122:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-travel-overlay,
+2123:         html[data-mcms-ui-theme="umbrella"] .mcms-mission-lock-dom,
+2124:         html[data-mcms-ui-theme="umbrella"] .leaflet-marker-icon.mcms-mission-lock-target {
+2125:             --mcms-lock-primary:#f23838;--mcms-lock-secondary:#fff;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(15,17,20,.95);--mcms-lock-grid:rgba(242,56,56,.10);
+2126:         }
+---
+2125:             --mcms-lock-primary:#f23838;--mcms-lock-secondary:#fff;--mcms-lock-accent:#ffcf62;--mcms-lock-surface:rgba(15,17,20,.95);--mcms-lock-grid:rgba(242,56,56,.10);
+2126:         }
+2127:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-travel-overlay,
+2128:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-dom,
+2129:         html[data-mcms-ui-theme="factorio"] .leaflet-marker-icon.mcms-mission-lock-target {
+---
+2126:         }
+2127:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-travel-overlay,
+2128:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-dom,
+2129:         html[data-mcms-ui-theme="factorio"] .leaflet-marker-icon.mcms-mission-lock-target {
+2130:             --mcms-lock-primary:#ff9b32;--mcms-lock-secondary:#fff0cf;--mcms-lock-accent:#ffdb59;--mcms-lock-surface:rgba(39,38,32,.95);--mcms-lock-grid:rgba(255,155,50,.10);
+---
+2127:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-travel-overlay,
+2128:         html[data-mcms-ui-theme="factorio"] .mcms-mission-lock-dom,
+2129:         html[data-mcms-ui-theme="factorio"] .leaflet-marker-icon.mcms-mission-lock-target {
+2130:             --mcms-lock-primary:#ff9b32;--mcms-lock-secondary:#fff0cf;--mcms-lock-accent:#ffdb59;--mcms-lock-surface:rgba(39,38,32,.95);--mcms-lock-grid:rgba(255,155,50,.10);
+2131:         }
+---
+3124:         }
+3125: 
+3126:         /* Cyberpunk Inspired */
+3127:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {
+3128:             background:radial-gradient(ellipse at 52% 48%, transparent 8%, rgba(0,12,18,.22) 52%, rgba(0,0,0,.86) 100%), linear-gradient(115deg, rgba(245,226,0,.12), transparent 35%, rgba(0,229,255,.10)) !important;
+---
+3125: 
+3126:         /* Cyberpunk Inspired */
+3127:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {
+3128:             background:radial-gradient(ellipse at 52% 48%, transparent 8%, rgba(0,12,18,.22) 52%, rgba(0,0,0,.86) 100%), linear-gradient(115deg, rgba(245,226,0,.12), transparent 35%, rgba(0,229,255,.10)) !important;
+3129:         }
+---
+3128:             background:radial-gradient(ellipse at 52% 48%, transparent 8%, rgba(0,12,18,.22) 52%, rgba(0,0,0,.86) 100%), linear-gradient(115deg, rgba(245,226,0,.12), transparent 35%, rgba(0,229,255,.10)) !important;
+3129:         }
+3130:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {
+3131:             background:linear-gradient(112deg, rgba(247,229,0,.18) 0 2%, transparent 2% 9%, rgba(247,229,0,.08) 9% 10%, transparent 10% 88%, rgba(0,229,255,.12) 88% 90%, transparent 90%), repeating-linear-gradient(135deg, transparent 0 34px, rgba(247,229,0,.045) 34px 36px, transparent 36px 70px) !important;
+3132:         }
+---
+3131:             background:linear-gradient(112deg, rgba(247,229,0,.18) 0 2%, transparent 2% 9%, rgba(247,229,0,.08) 9% 10%, transparent 10% 88%, rgba(0,229,255,.12) 88% 90%, transparent 90%), repeating-linear-gradient(135deg, transparent 0 34px, rgba(247,229,0,.045) 34px 36px, transparent 36px 70px) !important;
+3132:         }
+3133:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {
+3134:             background:repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 4px), repeating-linear-gradient(90deg, transparent 0 78px, rgba(0,229,255,.055) 78px 80px, transparent 80px 156px) !important;
+3135:             mix-blend-mode:screen !important;
+---
+3135:             mix-blend-mode:screen !important;
+3136:         }
+3137:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {
+3138:             background:radial-gradient(circle at 50% 50%, rgba(0,229,255,.13) 0 2%, transparent 3% 17%, rgba(247,229,0,.10) 18% 18.5%, transparent 19% 35%, rgba(0,229,255,.06) 36% 36.5%, transparent 37%), conic-gradient(from 35deg at 50% 50%, transparent 0 12%, rgba(247,229,0,.07) 12% 13%, transparent 13% 49%, rgba(0,229,255,.06) 49% 50%, transparent 50%) !important;
+3139:         }
+---
+3138:             background:radial-gradient(circle at 50% 50%, rgba(0,229,255,.13) 0 2%, transparent 3% 17%, rgba(247,229,0,.10) 18% 18.5%, transparent 19% 35%, rgba(0,229,255,.06) 36% 36.5%, transparent 37%), conic-gradient(from 35deg at 50% 50%, transparent 0 12%, rgba(247,229,0,.07) 12% 13%, transparent 13% 49%, rgba(0,229,255,.06) 49% 50%, transparent 50%) !important;
+3139:         }
+3140:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {
+3141:             width:min(780px,calc(100% - 22px)) !important; padding:24px 42px 22px !important;
+3142:             border:0 !important; border-left:7px solid #f2df00 !important; border-right:2px solid #00e5ff !important;
+---
+3145:             box-shadow:0 24px 58px rgba(0,0,0,.68),-14px 0 34px rgba(242,223,0,.18),14px 0 34px rgba(0,229,255,.13),inset 0 1px rgba(255,255,255,.05) !important;
+3146:         }
+3147:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:0 !important; height:5px !important; background:linear-gradient(90deg,#f2df00 0 34%,transparent 34% 68%,#00e5ff 68%) !important; }
+3148:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title { color:#f3e800 !important; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif !important; font-size:clamp(34px,5.3vw,63px) !important; letter-spacing:1.5px !important; transform:skewX(-6deg) scaleX(.94) !important; text-shadow:3px 3px 0 #020202,6px 6px 0 rgba(0,229,255,.32),0 0 20px rgba(242,223,0,.18) !important; }
+3149:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-divider { height:3px !important; background:linear-gradient(90deg,transparent,#f2df00 12%,#fff 48%,#00e5ff 82%,transparent) !important; transform:skewX(-18deg) !important; }
+---
+3146:         }
+3147:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:0 !important; height:5px !important; background:linear-gradient(90deg,#f2df00 0 34%,transparent 34% 68%,#00e5ff 68%) !important; }
+3148:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title { color:#f3e800 !important; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif !important; font-size:clamp(34px,5.3vw,63px) !important; letter-spacing:1.5px !important; transform:skewX(-6deg) scaleX(.94) !important; text-shadow:3px 3px 0 #020202,6px 6px 0 rgba(0,229,255,.32),0 0 20px rgba(242,223,0,.18) !important; }
+3149:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-divider { height:3px !important; background:linear-gradient(90deg,transparent,#f2df00 12%,#fff 48%,#00e5ff 82%,transparent) !important; transform:skewX(-18deg) !important; }
+3150:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier { border-radius:0 !important; border-color:#f2df00 !important; color:#f2df00 !important; background:rgba(0,0,0,.66) !important; box-shadow:inset 4px 0 0 #00e5ff !important; }
+---
+3147:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:0 !important; height:5px !important; background:linear-gradient(90deg,#f2df00 0 34%,transparent 34% 68%,#00e5ff 68%) !important; }
+3148:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title { color:#f3e800 !important; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif !important; font-size:clamp(34px,5.3vw,63px) !important; letter-spacing:1.5px !important; transform:skewX(-6deg) scaleX(.94) !important; text-shadow:3px 3px 0 #020202,6px 6px 0 rgba(0,229,255,.32),0 0 20px rgba(242,223,0,.18) !important; }
+3149:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-divider { height:3px !important; background:linear-gradient(90deg,transparent,#f2df00 12%,#fff 48%,#00e5ff 82%,transparent) !important; transform:skewX(-18deg) !important; }
+3150:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier { border-radius:0 !important; border-color:#f2df00 !important; color:#f2df00 !important; background:rgba(0,0,0,.66) !important; box-shadow:inset 4px 0 0 #00e5ff !important; }
+3151:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-source { color:#00e5ff !important; }
+---
+3148:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title { color:#f3e800 !important; font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif !important; font-size:clamp(34px,5.3vw,63px) !important; letter-spacing:1.5px !important; transform:skewX(-6deg) scaleX(.94) !important; text-shadow:3px 3px 0 #020202,6px 6px 0 rgba(0,229,255,.32),0 0 20px rgba(242,223,0,.18) !important; }
+3149:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-divider { height:3px !important; background:linear-gradient(90deg,transparent,#f2df00 12%,#fff 48%,#00e5ff 82%,transparent) !important; transform:skewX(-18deg) !important; }
+3150:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier { border-radius:0 !important; border-color:#f2df00 !important; color:#f2df00 !important; background:rgba(0,0,0,.66) !important; box-shadow:inset 4px 0 0 #00e5ff !important; }
+3151:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-source { color:#00e5ff !important; }
+3152:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
+---
+3149:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-divider { height:3px !important; background:linear-gradient(90deg,transparent,#f2df00 12%,#fff 48%,#00e5ff 82%,transparent) !important; transform:skewX(-18deg) !important; }
+3150:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier { border-radius:0 !important; border-color:#f2df00 !important; color:#f2df00 !important; background:rgba(0,0,0,.66) !important; box-shadow:inset 4px 0 0 #00e5ff !important; }
+3151:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-source { color:#00e5ff !important; }
+3152:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
+3153:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-amount { color:#fff !important; text-shadow:2px 2px 0 #101010,4px 4px 0 rgba(242,223,0,.58),0 0 18px rgba(0,229,255,.44) !important; }
+---
+3150:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier { border-radius:0 !important; border-color:#f2df00 !important; color:#f2df00 !important; background:rgba(0,0,0,.66) !important; box-shadow:inset 4px 0 0 #00e5ff !important; }
+3151:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-source { color:#00e5ff !important; }
+3152:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
+3153:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-amount { color:#fff !important; text-shadow:2px 2px 0 #101010,4px 4px 0 rgba(242,223,0,.58),0 0 18px rgba(0,229,255,.44) !important; }
+3154:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-particle { background:#f2df00 !important; box-shadow:0 0 8px rgba(0,229,255,.8) !important; }
+---
+3151:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-source { color:#00e5ff !important; }
+3152:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
+3153:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-amount { color:#fff !important; text-shadow:2px 2px 0 #101010,4px 4px 0 rgba(242,223,0,.58),0 0 18px rgba(0,229,255,.44) !important; }
+3154:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-particle { background:#f2df00 !important; box-shadow:0 0 8px rgba(0,229,255,.8) !important; }
+3155: 
+---
+3152:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
+3153:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-amount { color:#fff !important; text-shadow:2px 2px 0 #101010,4px 4px 0 rgba(242,223,0,.58),0 0 18px rgba(0,229,255,.44) !important; }
+3154:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-particle { background:#f2df00 !important; box-shadow:0 0 8px rgba(0,229,255,.8) !important; }
+3155: 
+3156:         /* Hellfire Inspired */
+---
+3168:         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-particle { border-radius:999px !important; background:linear-gradient(180deg,#fff2a5,#ff7b18 55%,rgba(170,8,0,0)) !important; box-shadow:0 0 8px #ff8d21,0 0 18px rgba(255,34,0,.75) !important; }
+3169: 
+3170:         /* Fallout Inspired — retro-futurist terminal / vault broadcast */
+3171:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 42%,rgba(122,178,55,.12),rgba(9,18,6,.60) 52%,rgba(0,0,0,.94) 100%),repeating-linear-gradient(0deg,rgba(211,255,132,.027) 0 1px,transparent 1px 4px) !important; }
+3172:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-a { opacity:.86 !important; background:repeating-linear-gradient(0deg,rgba(201,255,116,.055) 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(183,233,90,.13) 20.4% 20.8%,transparent 21.2% 34%,rgba(183,233,90,.09) 34.4% 34.8%,transparent 35.2%) !important; animation:mcms-fallout-scan 5.6s linear infinite !important; }
+---
+3170:         /* Fallout Inspired — retro-futurist terminal / vault broadcast */
+3171:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 42%,rgba(122,178,55,.12),rgba(9,18,6,.60) 52%,rgba(0,0,0,.94) 100%),repeating-linear-gradient(0deg,rgba(211,255,132,.027) 0 1px,transparent 1px 4px) !important; }
+3172:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-a { opacity:.86 !important; background:repeating-linear-gradient(0deg,rgba(201,255,116,.055) 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(183,233,90,.13) 20.4% 20.8%,transparent 21.2% 34%,rgba(183,233,90,.09) 34.4% 34.8%,transparent 35.2%) !important; animation:mcms-fallout-scan 5.6s linear infinite !important; }
+3173:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-b { opacity:.78 !important; background:linear-gradient(90deg,rgba(105,151,44,.12),transparent 18%,transparent 82%,rgba(105,151,44,.12)),repeating-radial-gradient(circle at 42% 38%,rgba(255,244,196,.045) 0 1px,transparent 1px 7px) !important; filter:contrast(155%) sepia(28%) !important; animation:mcms-fallout-flicker 3.8s steps(1,end) infinite !important; }
+3174:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-c { opacity:.72 !important; background:conic-gradient(from 0deg at 50% 50%,rgba(210,242,112,.18) 0 1deg,transparent 1deg 29deg,rgba(210,242,112,.08) 29deg 30deg,transparent 30deg 60deg) !important; mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; -webkit-mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; animation:mcms-fallout-radar 13s linear infinite !important; }
+---
+3171:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 42%,rgba(122,178,55,.12),rgba(9,18,6,.60) 52%,rgba(0,0,0,.94) 100%),repeating-linear-gradient(0deg,rgba(211,255,132,.027) 0 1px,transparent 1px 4px) !important; }
+3172:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-a { opacity:.86 !important; background:repeating-linear-gradient(0deg,rgba(201,255,116,.055) 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(183,233,90,.13) 20.4% 20.8%,transparent 21.2% 34%,rgba(183,233,90,.09) 34.4% 34.8%,transparent 35.2%) !important; animation:mcms-fallout-scan 5.6s linear infinite !important; }
+3173:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-b { opacity:.78 !important; background:linear-gradient(90deg,rgba(105,151,44,.12),transparent 18%,transparent 82%,rgba(105,151,44,.12)),repeating-radial-gradient(circle at 42% 38%,rgba(255,244,196,.045) 0 1px,transparent 1px 7px) !important; filter:contrast(155%) sepia(28%) !important; animation:mcms-fallout-flicker 3.8s steps(1,end) infinite !important; }
+3174:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-c { opacity:.72 !important; background:conic-gradient(from 0deg at 50% 50%,rgba(210,242,112,.18) 0 1deg,transparent 1deg 29deg,rgba(210,242,112,.08) 29deg 30deg,transparent 30deg 60deg) !important; mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; -webkit-mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; animation:mcms-fallout-radar 13s linear infinite !important; }
+3175:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-banner { width:min(760px,calc(100% - 28px)) !important; padding:31px 38px 25px !important; border:2px solid rgba(193,232,101,.82) !important; border-radius:8px !important; background:linear-gradient(180deg,rgba(18,30,12,.985),rgba(4,10,3,.99)),repeating-linear-gradient(0deg,rgba(197,255,116,.03) 0 1px,transparent 1px 4px) !important; box-shadow:0 0 0 3px rgba(3,7,2,.92),0 0 0 6px rgba(123,158,57,.22),0 0 34px rgba(154,211,69,.28),0 28px 68px rgba(0,0,0,.74),inset 0 0 44px rgba(145,193,66,.10) !important; overflow:hidden !important; }
+---
+3172:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-a { opacity:.86 !important; background:repeating-linear-gradient(0deg,rgba(201,255,116,.055) 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(183,233,90,.13) 20.4% 20.8%,transparent 21.2% 34%,rgba(183,233,90,.09) 34.4% 34.8%,transparent 35.2%) !important; animation:mcms-fallout-scan 5.6s linear infinite !important; }
+3173:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-b { opacity:.78 !important; background:linear-gradient(90deg,rgba(105,151,44,.12),transparent 18%,transparent 82%,rgba(105,151,44,.12)),repeating-radial-gradient(circle at 42% 38%,rgba(255,244,196,.045) 0 1px,transparent 1px 7px) !important; filter:contrast(155%) sepia(28%) !important; animation:mcms-fallout-flicker 3.8s steps(1,end) infinite !important; }
+3174:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-c { opacity:.72 !important; background:conic-gradient(from 0deg at 50% 50%,rgba(210,242,112,.18) 0 1deg,transparent 1deg 29deg,rgba(210,242,112,.08) 29deg 30deg,transparent 30deg 60deg) !important; mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; -webkit-mask-image:radial-gradient(circle at center,transparent 0 25%,#000 27% 42%,transparent 65%) !important; animation:mcms-fallout-radar 13s linear infinite !important; }
+3175:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-banner { width:min(760px,calc(100% - 28px)) !important; padding:31px 38px 25px !important; border:2px solid rgba(193,232,101,.82) !important; border-radius:8px !important; background:linear-gradient(180deg,rgba(18,30,12,.985),rgba(4,10,3,.99)),repeating-linear-gradient(0deg,rgba(197,255,116,.03) 0 1px,transparent 1px 4px) !important; box-shadow:0 0 0 3px rgba(3,7,2,.92),0 0 0 6px rgba(123,158,57,.22),0 0 34px rgba(154,211,69,.28),0 28px 68px rgba(0,0,0,.74),inset 0 0 44px rgba(145,193,66,.10) !important; overflow:hidden !important; }
+3176:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-banner::before { content:"VAULT-TEC FINANCIAL TERMINAL // REWARD CLEARANCE" !important; position:absolute !important; left:17px !important; top:11px !important; right:17px !important; color:rgba(214,250,137,.60) !important; font:900 8px/1 "Courier New",Consolas,monospace !important; letter-spacing:1.6px !important; text-align:left !important; border-bottom:1px dashed rgba(176,221,83,.28) !important; padding-bottom:7px !important; }
+---
+3185:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-amount { color:#f0c66c !important; text-shadow:0 0 7px rgba(255,203,93,.88),0 0 24px rgba(178,112,32,.34) !important; }
+3186:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-particle { border-radius:50% !important; background:#d7f996 !important; box-shadow:0 0 5px rgba(202,238,123,.82) !important; opacity:.72 !important; }
+3187:         @keyframes mcms-fallout-scan { 0% { transform:translateY(-2%) } 100% { transform:translateY(2%) } }
+3188:         @keyframes mcms-fallout-radar { from { transform:rotate(0deg) scale(1) } to { transform:rotate(360deg) scale(1.025) } }
+3189:         @keyframes mcms-fallout-flicker { 0%,7%,11%,46%,50%,88%,100% { opacity:.78 } 8%,10%,47%,49%,89% { opacity:.42 } }
+---
+3186:         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-particle { border-radius:50% !important; background:#d7f996 !important; box-shadow:0 0 5px rgba(202,238,123,.82) !important; opacity:.72 !important; }
+3187:         @keyframes mcms-fallout-scan { 0% { transform:translateY(-2%) } 100% { transform:translateY(2%) } }
+3188:         @keyframes mcms-fallout-radar { from { transform:rotate(0deg) scale(1) } to { transform:rotate(360deg) scale(1.025) } }
+3189:         @keyframes mcms-fallout-flicker { 0%,7%,11%,46%,50%,88%,100% { opacity:.78 } 8%,10%,47%,49%,89% { opacity:.42 } }
+3190:         /* Galactic Command */
+---
+3187:         @keyframes mcms-fallout-scan { 0% { transform:translateY(-2%) } 100% { transform:translateY(2%) } }
+3188:         @keyframes mcms-fallout-radar { from { transform:rotate(0deg) scale(1) } to { transform:rotate(360deg) scale(1.025) } }
+3189:         @keyframes mcms-fallout-flicker { 0%,7%,11%,46%,50%,88%,100% { opacity:.78 } 8%,10%,47%,49%,89% { opacity:.42 } }
+3190:         /* Galactic Command */
+3191:         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 50%,rgba(20,119,165,.05),rgba(3,11,30,.36) 58%,rgba(0,2,10,.88)),linear-gradient(180deg,rgba(0,8,26,.34),transparent 40%,rgba(0,3,15,.52)) !important; }
+---
+3218:         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-particle { border-radius:50% !important; background:#d5c39c !important; box-shadow:0 0 5px rgba(220,183,92,.45) !important; }
+3219: 
+3220:         /* Umbrella Containment (legacy template ID: biohazard) */
+3221:         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,transparent 12%,rgba(11,18,20,.28) 55%,rgba(0,0,0,.88)),linear-gradient(180deg,rgba(21,28,30,.26),transparent 48%,rgba(8,13,14,.40)) !important; }
+3222:         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-a { background:repeating-linear-gradient(90deg,transparent 0 59px,rgba(218,234,236,.045) 59px 60px,transparent 60px 120px),repeating-linear-gradient(0deg,transparent 0 39px,rgba(218,234,236,.04) 39px 40px,transparent 40px 80px),linear-gradient(90deg,rgba(207,25,35,.12),transparent 28%,transparent 72%,rgba(46,178,112,.08)) !important; }
+---
+3321:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner::before {content:"MIAMI // EMPIRE ACCOUNT" !important;position:absolute !important;top:10px !important;left:18px !important;color:rgba(215,178,62,.68) !important;font:900 7px/1 serif !important;letter-spacing:2px !important;z-index:2 !important;}
+3322: 
+3323:         /* Cyberpunk — layered megacorp UI, warning rails, chromatic offset and data noise. */
+3324:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}
+3325:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
+---
+3322: 
+3323:         /* Cyberpunk — layered megacorp UI, warning rails, chromatic offset and data noise. */
+3324:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}
+3325:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
+3326:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
+---
+3323:         /* Cyberpunk — layered megacorp UI, warning rails, chromatic offset and data noise. */
+3324:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}
+3325:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
+3326:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
+3327:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}
+---
+3324:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}
+3325:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
+3326:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
+3327:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}
+3328:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}
+---
+3325:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
+3326:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
+3327:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}
+3328:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}
+3329:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before {content:"ARASAKA FINANCIAL NODE // VERIFIED" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}
+---
+3326:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
+3327:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}
+3328:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}
+3329:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before {content:"ARASAKA FINANCIAL NODE // VERIFIED" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}
+3330:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
+---
+3327:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}
+3328:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}
+3329:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before {content:"ARASAKA FINANCIAL NODE // VERIFIED" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}
+3330:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
+3331:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title {font-size:clamp(36px,5.7vw,70px) !important;letter-spacing:1.8px !important;text-shadow:3px 3px 0 #020202,6px 5px 0 rgba(0,229,255,.30),-2px -1px 0 rgba(255,36,116,.32),0 0 22px rgba(242,223,0,.20) !important;}
+---
+3328:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}
+3329:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before {content:"ARASAKA FINANCIAL NODE // VERIFIED" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}
+3330:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
+3331:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title {font-size:clamp(36px,5.7vw,70px) !important;letter-spacing:1.8px !important;text-shadow:3px 3px 0 #020202,6px 5px 0 rgba(0,229,255,.30),-2px -1px 0 rgba(255,36,116,.32),0 0 22px rgba(242,223,0,.20) !important;}
+3332:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier {box-shadow:inset 5px 0 0 #00e5ff,3px 3px 0 rgba(255,38,118,.28) !important;}
+---
+3329:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::before {content:"ARASAKA FINANCIAL NODE // VERIFIED" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}
+3330:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
+3331:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title {font-size:clamp(36px,5.7vw,70px) !important;letter-spacing:1.8px !important;text-shadow:3px 3px 0 #020202,6px 5px 0 rgba(0,229,255,.30),-2px -1px 0 rgba(255,36,116,.32),0 0 22px rgba(242,223,0,.20) !important;}
+3332:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier {box-shadow:inset 5px 0 0 #00e5ff,3px 3px 0 rgba(255,38,118,.28) !important;}
+3333: 
+---
+3330:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
+3331:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title {font-size:clamp(36px,5.7vw,70px) !important;letter-spacing:1.8px !important;text-shadow:3px 3px 0 #020202,6px 5px 0 rgba(0,229,255,.30),-2px -1px 0 rgba(255,36,116,.32),0 0 22px rgba(242,223,0,.20) !important;}
+3332:         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier {box-shadow:inset 5px 0 0 #00e5ff,3px 3px 0 rgba(255,38,118,.28) !important;}
+3333: 
+3334:         /* Hellfire — infernal altar, molten seams and ember-lit reward seal. */
+---
+3402:         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-amount {text-shadow:3px 0 0 #ff5aaa,0 3px 0 #25dfcb,3px 3px 0 #4d2da5,0 0 10px rgba(255,255,255,.22) !important;}
+3403: 
+3404:         /* Factorio — heavy industrial payout terminal, conveyor motion, gears and furnace sparks. */
+3405:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-cinematic {
+3406:             background:
+---
+3403: 
+3404:         /* Factorio — heavy industrial payout terminal, conveyor motion, gears and furnace sparks. */
+3405:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-cinematic {
+3406:             background:
+3407:                 radial-gradient(circle at 50% 48%, transparent 0 14%, rgba(22,18,12,.35) 56%, rgba(3,4,3,.96) 100%),
+---
+3408:                 linear-gradient(135deg, rgba(219,119,36,.11), transparent 42%, rgba(126,168,71,.07)) !important;
+3409:         }
+3410:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-theme-fx-a {
+3411:             background:
+3412:                 repeating-linear-gradient(135deg, rgba(237,143,48,.16) 0 13px, rgba(25,26,23,.06) 13px 26px),
+---
+3415:             -webkit-mask-image: linear-gradient(180deg, transparent 0 6%, #000 15% 85%, transparent 94%) !important;
+3416:         }
+3417:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-theme-fx-b {
+3418:             background:
+3419:                 repeating-linear-gradient(0deg, transparent 0 44px, rgba(191,151,93,.055) 44px 45px, transparent 45px 88px),
+---
+3422:                 radial-gradient(circle at 84% 26%, rgba(138,183,72,.11), transparent 22%) !important;
+3423:         }
+3424:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-theme-fx-c {
+3425:             background:
+3426:                 repeating-conic-gradient(from 0deg at 50% 50%, rgba(223,130,39,.18) 0 5deg, transparent 5deg 20deg),
+---
+3429:             -webkit-mask-image: radial-gradient(circle at center, transparent 0 13%, #000 14% 34%, transparent 55%) !important;
+3430:         }
+3431:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner {
+3432:             width: min(790px, calc(100% - 26px)) !important;
+3433:             padding: 31px 42px 27px !important;
+---
+3452:             overflow: hidden !important;
+3453:         }
+3454:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner::before {
+3455:             content: "AUTOMATED PRODUCTION NETWORK // OUTPUT VERIFIED" !important;
+3456:             position: absolute !important;
+---
+3466:             z-index: 2 !important;
+3467:         }
+3468:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner::after {
+3469:             content: "⚙  ASSEMBLY LINE 01  •  STATUS: OPTIMAL" !important;
+3470:             position: absolute !important;
+---
+3476:             z-index: 2 !important;
+3477:         }
+3478:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-title {
+3479:             color: #f1dfb6 !important;
+3480:             font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif !important;
+---
+3485:             text-shadow: 3px 3px 0 #12130f, 6px 6px 0 rgba(180,91,25,.48), 0 0 18px rgba(239,154,62,.20) !important;
+3486:         }
+3487:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-divider {
+3488:             height: 4px !important;
+3489:             background: repeating-linear-gradient(135deg, #e58b31 0 9px, #262823 9px 18px) !important;
+---
+3491:             box-shadow: 0 0 11px rgba(224,125,36,.26) !important;
+3492:         }
+3493:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-tier {
+3494:             border: 1px solid #f0b360 !important;
+3495:             border-radius: 2px !important;
+---
+3502:             text-shadow: none !important;
+3503:         }
+3504:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission,
+3505:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source,
+3506:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker,
+---
+3503:         }
+3504:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission,
+3505:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source,
+3506:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker,
+3507:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+---
+3504:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission,
+3505:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source,
+3506:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker,
+3507:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+3508:             font-family: "Arial Narrow", "Segoe UI", sans-serif !important;
+---
+3505:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source,
+3506:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker,
+3507:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+3508:             font-family: "Arial Narrow", "Segoe UI", sans-serif !important;
+3509:         }
+---
+3508:             font-family: "Arial Narrow", "Segoe UI", sans-serif !important;
+3509:         }
+3510:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission { color: #d7c7a3 !important; }
+3511:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source { color: #a9d274 !important; letter-spacing: .7px !important; }
+3512:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker { color: #eda14f !important; letter-spacing: 1.2px !important; }
+---
+3509:         }
+3510:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission { color: #d7c7a3 !important; }
+3511:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source { color: #a9d274 !important; letter-spacing: .7px !important; }
+3512:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker { color: #eda14f !important; letter-spacing: 1.2px !important; }
+3513:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+---
+3510:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-mission { color: #d7c7a3 !important; }
+3511:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source { color: #a9d274 !important; letter-spacing: .7px !important; }
+3512:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker { color: #eda14f !important; letter-spacing: 1.2px !important; }
+3513:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+3514:             color: #ffc064 !important;
+---
+3511:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-source { color: #a9d274 !important; letter-spacing: .7px !important; }
+3512:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-kicker { color: #eda14f !important; letter-spacing: 1.2px !important; }
+3513:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-amount {
+3514:             color: #ffc064 !important;
+3515:             text-shadow: 2px 2px 0 #17130e, 0 0 10px rgba(255,174,75,.72), 0 0 26px rgba(202,101,28,.28) !important;
+---
+3515:             text-shadow: 2px 2px 0 #17130e, 0 0 10px rgba(255,174,75,.72), 0 0 26px rgba(202,101,28,.28) !important;
+3516:         }
+3517:         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-theme-particle {
+3518:             border-radius: 1px !important;
+3519:             background: #ffb24d !important;
+---
+3525:             #${SCRIPT.payoutFlashId}[data-template]:not([data-template="wasteland"]) .mcms-payout-banner::after {font-size:6px !important;letter-spacing:.8px !important;}
+3526:             #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-banner,
+3527:             #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner,
+3528:             #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner,
+3529:             #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-banner {padding-left:18px !important;padding-right:18px !important;}
+---
+3526:             #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-banner,
+3527:             #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner,
+3528:             #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner,
+3529:             #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-banner {padding-left:18px !important;padding-right:18px !important;}
+3530:         }
+---
+3540:         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-title.mcms-payout-title-very-long { transform:none !important; }
+3541:         @media (max-width:620px) {
+3542:             #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner,
+3543:             #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-banner,
+3544:             #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-banner,
+---
+4158:         #${SCRIPT.panelId} .mcms-ui-theme-preview span:nth-child(2) { height: 86% !important; background: #d7e8f7 !important; }
+4159:         #${SCRIPT.panelId} .mcms-ui-theme-preview span:nth-child(3) { height: 68% !important; background: #2c5f87 !important; }
+4160:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk {
+4161:             border-radius: 1px !important;
+4162:             border-color: #00f0ff !important;
+---
+4165:             clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+4166:         }
+4167:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span { border-radius: 0 !important; }
+4168:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
+4169:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+---
+4166:         }
+4167:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span { border-radius: 0 !important; }
+4168:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
+4169:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+4170:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+---
+4167:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span { border-radius: 0 !important; }
+4168:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
+4169:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+4170:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+4171:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 {
+---
+4168:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(1) { height: 82% !important; background: #fcee0a !important; }
+4169:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+4170:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+4171:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 {
+4172:             position: relative !important;
+---
+4169:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(2) { height: 48% !important; background: #00f0ff !important; }
+4170:         #${SCRIPT.panelId} .mcms-ui-theme-preview-cyberpunk span:nth-child(3) { height: 68% !important; background: #ff003c !important; }
+4171:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 {
+4172:             position: relative !important;
+4173:             border-radius: 5px !important;
+---
+4178:             box-shadow: inset 0 0 12px rgba(160,255,94,.26), 0 0 8px rgba(123,206,73,.12) !important;
+4179:         }
+4180:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4::after {
+4181:             content: 'STAT' !important;
+4182:             position: absolute !important;
+---
+4188:             opacity: .9 !important;
+4189:         }
+4190:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span {
+4191:             border-radius: 1px 1px 0 0 !important;
+4192:             box-shadow: 0 0 5px currentColor !important;
+---
+4192:             box-shadow: 0 0 5px currentColor !important;
+4193:         }
+4194:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(1) { height: 66% !important; background: #78b94c !important; color: #78b94c !important; }
+4195:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(2) { height: 88% !important; background: #c8ff8b !important; color: #c8ff8b !important; }
+4196:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+---
+4193:         }
+4194:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(1) { height: 66% !important; background: #78b94c !important; color: #78b94c !important; }
+4195:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(2) { height: 88% !important; background: #c8ff8b !important; color: #c8ff8b !important; }
+4196:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+4197:         #${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="fallout4"] { grid-column: auto !important; }
+---
+4194:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(1) { height: 66% !important; background: #78b94c !important; color: #78b94c !important; }
+4195:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(2) { height: 88% !important; background: #c8ff8b !important; color: #c8ff8b !important; }
+4196:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+4197:         #${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="fallout4"] { grid-column: auto !important; }
+4198:         #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella {
+---
+4195:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(2) { height: 88% !important; background: #c8ff8b !important; color: #c8ff8b !important; }
+4196:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+4197:         #${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="fallout4"] { grid-column: auto !important; }
+4198:         #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella {
+4199:             position: relative !important;
+---
+4196:         #${SCRIPT.panelId} .mcms-ui-theme-preview-fallout4 span:nth-child(3) { height: 48% !important; background: #ffcf62 !important; color: #ffcf62 !important; }
+4197:         #${SCRIPT.panelId} .mcms-ui-theme-btn[data-ui-theme="fallout4"] { grid-column: auto !important; }
+4198:         #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella {
+4199:             position: relative !important;
+4200:             border-radius: 2px !important;
+---
+4205:             clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)) !important;
+4206:         }
+4207:         #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella::before {
+4208:             content: '☣' !important;
+4209:             position: absolute !important;
+---
+
+===== THEME_CONTROL =====
+
+17806: 
+17807: 
+17808:     function majorIncidentThemeLabel() {
+17809:         const labels = {
+17810:             mapCommand: 'MAJOR INCIDENTS',
+---
+18242:         const label = feed.querySelector('.mcms-incident-feed-label');
+18243:         const track = feed.querySelector('.mcms-incident-feed-track');
+18244:         if (label) label.textContent = majorIncidentThemeLabel();
+18245:         if (!track) return;
+18246: 
+---
+20435:     }
+20436: 
+20437:     function missionLockOnThemeLabel() {
+20438:         const labels = {
+20439:             mapCommand: 'MISSION LOCKED',
+---
+20585:         const caption = getMissionCaption(activeMarker, missionId) || getMissionCaption(marker, missionId) || 'Mission incident';
+20586:         const shortCaption = caption.length > 38 ? `${caption.slice(0, 35).trim()}…` : caption;
+20587:         const label = missionLockOnThemeLabel();
+20588:         const mapContainer = map?.getContainer?.();
+20589:         if (!mapContainer) return false;
+---
+25273:     }
+25274: 
+25275:     function applyTheme(themeKey, persist = true) {
+25276:         state.theme = normaliseTheme(themeKey);
+25277:         if (persist) saveState();
+---
+25274: 
+25275:     function applyTheme(themeKey, persist = true) {
+25276:         state.theme = normaliseTheme(themeKey);
+25277:         if (persist) saveState();
+25278:         applyRootAttributes();
+---
+26135:     }
+26136: 
+26137:     function buildThemeOptions(selected) {
+26138:         return THEME_ORDER.map(key => `<option value="${key}" ${key === selected ? 'selected' : ''}>${THEMES[key].full}</option>`).join('');
+26139:     }
+---
+26531:                 <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+26532:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+26533:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+26534:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+26535:                 <div class="mcms-section-label">Saved Map Profiles</div>
+---
+26532:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+26533:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+26534:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+26535:                 <div class="mcms-section-label">Saved Map Profiles</div>
+26536:                 <div class="mcms-profile-list" data-profile-list></div>
+---
+26596:             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+26597:             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
+26598:             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
+26599:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+26600:             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
+---
+
+===== PAYOUT =====
+
+496:         panelId: 'mc-map-command-toolkit-panel',
+497:         toastId: 'mc-map-command-toolkit-toast',
+498:         payoutFlashId: 'mc-map-command-toolkit-payout-flash',
+499:         criticalDrawerId: 'mc-map-command-toolkit-critical-drawer',
+500:         vehicleStatusId: 'mc-map-command-toolkit-vehicle-status',
+---
+994:     const PAYOUT_MEDIA_SOUNDS = Object.freeze({
+995:         viceCity: Object.freeze({
+996:             label: 'GTA Vice City Cashout',
+997:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/gta-vice-city-cashout.mp3'
+998:         }),
+---
+995:         viceCity: Object.freeze({
+996:             label: 'GTA Vice City Cashout',
+997:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/gta-vice-city-cashout.mp3'
+998:         }),
+999:         badCompany: Object.freeze({
+---
+998:         }),
+999:         badCompany: Object.freeze({
+1000:             label: 'BF Bad Company Cashout',
+1001:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/bf-bad-company-cashout.mp3'
+1002:         }),
+---
+999:         badCompany: Object.freeze({
+1000:             label: 'BF Bad Company Cashout',
+1001:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/bf-bad-company-cashout.mp3'
+1002:         }),
+1003:         scarface: Object.freeze({
+---
+1002:         }),
+1003:         scarface: Object.freeze({
+1004:             label: 'Scarface Cashout',
+1005:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'
+1006:         }),
+---
+1003:         scarface: Object.freeze({
+1004:             label: 'Scarface Cashout',
+1005:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'
+1006:         }),
+1007:         cyberpunk: Object.freeze({
+---
+1006:         }),
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+1010:         }),
+---
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+1010:         }),
+1011:         wasteland: Object.freeze({
+---
+1010:         }),
+1011:         wasteland: Object.freeze({
+1012:             label: 'Fallout Cashout',
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+---
+1011:         wasteland: Object.freeze({
+1012:             label: 'Fallout Cashout',
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+1015:         factorio: Object.freeze({
+---
+1014:         }),
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+1018:         }),
+---
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+1018:         }),
+1019:         biohazard: Object.freeze({
+---
+1018:         }),
+1019:         biohazard: Object.freeze({
+1020:             label: 'Umbrella Containment Cashout',
+1021:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+1022:         }),
+---
+1019:         biohazard: Object.freeze({
+1020:             label: 'Umbrella Containment Cashout',
+1021:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+1022:         }),
+1023:         jamesBond: Object.freeze({
+---
+1022:         }),
+1023:         jamesBond: Object.freeze({
+1024:             label: '007 Intelligence Cashout',
+1025:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+1026:         })
+---
+1023:         jamesBond: Object.freeze({
+1024:             label: '007 Intelligence Cashout',
+1025:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+1026:         })
+1027:     });
+---
+1217:     let settingsPanelActivated = false;
+1218:     let opsRefreshTimer = null;
+1219:     let payoutFlashTimer = null;
+1220:     let toastFlashTimer = null;
+1221:     let payoutFlashFallbackInterval = null;
+---
+1219:     let payoutFlashTimer = null;
+1220:     let toastFlashTimer = null;
+1221:     let payoutFlashFallbackInterval = null;
+1222:     let payoutFlashAnimations = [];
+1223:     let payoutAmountAnimationFrame = null;
+---
+1220:     let toastFlashTimer = null;
+1221:     let payoutFlashFallbackInterval = null;
+1222:     let payoutFlashAnimations = [];
+1223:     let payoutAmountAnimationFrame = null;
+1224:     let payoutAudioContext = null;
+---
+1222:     let payoutFlashAnimations = [];
+1223:     let payoutAmountAnimationFrame = null;
+1224:     let payoutAudioContext = null;
+1225:     let payoutMediaAudio = null;
+1226:     let payoutMediaTemplate = '';
+---
+1376:             resourceGap: { enabled: false, radiusMi: 25 },
+1377:             transportSweep: { delayMs: 2000, maxPerRun: 25 },
+1378:             payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
+1379:             discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+1380:             financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
+---
+1419:                 majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+1420:                 missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+1421:                 payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+1422:                 discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+1423:                 financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+---
+1474:             merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
+1475:             merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+1476:             merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+1477:             merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+1478:             merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+---
+1475:             merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+1476:             merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+1477:             merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+1478:             merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+1479:             merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+---
+1476:             merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+1477:             merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+1478:             merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+1479:             merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+1480:             merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+---
+1477:             merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+1478:             merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+1479:             merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+1480:             merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+1481:             merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+---
+1478:             merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+1479:             merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+1480:             merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+1481:             merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+1482:             merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+---
+1479:             merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+1480:             merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+1481:             merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+1482:             merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+1483:             merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
+---
+1558:     }
+1559: 
+1560:     function payoutTemplateMeta(key = state?.payoutFlash?.template) {
+1561:         return PAYOUT_TEMPLATES[key] || PAYOUT_TEMPLATES.gta5;
+1562:     }
+---
+1562:     }
+1563: 
+1564:     function buildPayoutTemplateOptions(selected = state?.payoutFlash?.template) {
+1565:         return PAYOUT_TEMPLATE_ORDER.map(key => `<option value="${key}"${key === selected ? ' selected' : ''}>${PAYOUT_TEMPLATES[key].label}</option>`).join('');
+1566:     }
+---
+1566:     }
+1567: 
+1568:     function payoutTitleForTemplate(presentation, template = state?.payoutFlash?.template) {
+1569:         const tier = presentation?.tier || 'standard';
+1570:         const themedTitles = {
+---
+1579:             },
+1580:             scarface: {
+1581:                 standard: 'CASHOUT COMPLETE', major: 'EMPIRE EXPANDED', high: 'POWER SECURED', elite: 'THE WORLD IS YOURS'
+1582:             },
+1583:             cyberpunk: {
+---
+1615:     }
+1616: 
+1617:     function formatPayoutTitleForTemplate(title, template = state?.payoutFlash?.template) {
+1618:         const clean = String(title || '').replace(/\s+/g, ' ').trim();
+1619:         if (!payoutTemplateMeta(template).titleCase) return clean.toUpperCase();
+---
+1617:     function formatPayoutTitleForTemplate(title, template = state?.payoutFlash?.template) {
+1618:         const clean = String(title || '').replace(/\s+/g, ' ').trim();
+1619:         if (!payoutTemplateMeta(template).titleCase) return clean.toUpperCase();
+1620:         return clean.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+1621:     }
+---
+1627:     }
+1628: 
+1629:     function normalisePayoutFlashDuration(value) {
+1630:         const duration = Number(value);
+1631:         if (!Number.isFinite(duration)) return 4000;
+---
+1782: 
+1783:     function removeOldInstances() {
+1784:         document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.criticalDrawerId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.missionInspectorId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+1785:             .forEach(el => el.remove());
+1786: 
+---
+2589:         #${SCRIPT.criticalDrawerId} .mcms-critical-age { color:#bbdefb !important; font-size:8.5px !important; font-weight:950 !important; white-space:nowrap !important; }
+2590: 
+2591:         #${SCRIPT.payoutFlashId} {
+2592:             position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
+2593:             z-index: 625 !important; overflow: hidden !important;
+---
+2595:             isolation: isolate !important;
+2596:         }
+2597:         #${SCRIPT.payoutFlashId}.mcms-payout-active { opacity: 1 !important; }
+2598:         #${SCRIPT.payoutFlashId}, #${SCRIPT.payoutFlashId} * {
+2599:             box-sizing: border-box !important; pointer-events: none !important; user-select: none !important;
+---
+2596:         }
+2597:         #${SCRIPT.payoutFlashId}.mcms-payout-active { opacity: 1 !important; }
+2598:         #${SCRIPT.payoutFlashId}, #${SCRIPT.payoutFlashId} * {
+2599:             box-sizing: border-box !important; pointer-events: none !important; user-select: none !important;
+2600:             font-family: Arial, Helvetica, sans-serif !important;
+---
+2600:             font-family: Arial, Helvetica, sans-serif !important;
+2601:         }
+2602:         #${SCRIPT.payoutFlashId} .mcms-payout-light {
+2603:             position: absolute !important; inset: -12% !important; opacity: 0;
+2604:             will-change: opacity, transform !important; mix-blend-mode: screen !important;
+---
+2604:             will-change: opacity, transform !important; mix-blend-mode: screen !important;
+2605:         }
+2606:         #${SCRIPT.payoutFlashId} .mcms-payout-red {
+2607:             background:
+2608:                 radial-gradient(ellipse at 0% 45%, rgba(255,22,22,.62) 0%, rgba(255,22,22,.30) 25%, rgba(255,22,22,0) 62%),
+---
+2609:                 linear-gradient(90deg, rgba(255,18,18,.34) 0%, rgba(255,18,18,0) 48%) !important;
+2610:         }
+2611:         #${SCRIPT.payoutFlashId} .mcms-payout-blue {
+2612:             background:
+2613:                 radial-gradient(ellipse at 100% 55%, rgba(25,113,255,.68) 0%, rgba(25,113,255,.32) 25%, rgba(25,113,255,0) 62%),
+---
+2614:                 linear-gradient(270deg, rgba(20,103,255,.38) 0%, rgba(20,103,255,0) 48%) !important;
+2615:         }
+2616:         #${SCRIPT.payoutFlashId}.mcms-payout-active .mcms-payout-red {
+2617:             animation: mcmsPayoutRed var(--mcms-payout-duration, 3000ms) ease-in-out both !important;
+2618:         }
+---
+2617:             animation: mcmsPayoutRed var(--mcms-payout-duration, 3000ms) ease-in-out both !important;
+2618:         }
+2619:         #${SCRIPT.payoutFlashId}.mcms-payout-active .mcms-payout-blue {
+2620:             animation: mcmsPayoutBlue var(--mcms-payout-duration, 3000ms) ease-in-out both !important;
+2621:         }
+---
+2620:             animation: mcmsPayoutBlue var(--mcms-payout-duration, 3000ms) ease-in-out both !important;
+2621:         }
+2622:         #${SCRIPT.payoutFlashId} .mcms-payout-cinematic {
+2623:             position: absolute !important; inset: 0 !important; opacity: 0;
+2624:             background:
+---
+2627:             will-change: opacity !important;
+2628:         }
+2629:         #${SCRIPT.payoutFlashId} .mcms-payout-banner {
+2630:             position: absolute !important; left: 50% !important; top: 50% !important;
+2631:             width: min(660px, calc(100% - 34px)) !important; min-width: 280px !important;
+---
+2641:             opacity: 0; transform: translate(-50%, -50%) scale(1.08); filter: blur(7px);
+2642:         }
+2643:         #${SCRIPT.payoutFlashId}.mcms-payout-active .mcms-payout-banner {
+2644:             animation: mcmsPayoutBanner var(--mcms-payout-duration, 3000ms) cubic-bezier(.16,.78,.24,1) both !important;
+2645:         }
+---
+2644:             animation: mcmsPayoutBanner var(--mcms-payout-duration, 3000ms) cubic-bezier(.16,.78,.24,1) both !important;
+2645:         }
+2646:         #${SCRIPT.payoutFlashId} .mcms-payout-title {
+2647:             display: block !important; color: var(--mcms-payout-accent, #f4c84f) !important;
+2648:             font-family: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif !important;
+---
+2652:             transform: scaleX(.94) !important;
+2653:         }
+2654:         #${SCRIPT.payoutFlashId} .mcms-payout-divider {
+2655:             display: block !important; width: min(390px, 78%) !important; height: 1px !important;
+2656:             margin: 11px auto 9px !important;
+---
+2658:             box-shadow: 0 0 8px rgba(244,200,79,.24) !important;
+2659:         }
+2660:         #${SCRIPT.payoutFlashId} .mcms-payout-particles {
+2661:             position:absolute !important; inset:0 !important; opacity:0; transform:scale(1.04);
+2662:             background-image:
+---
+2669:             mix-blend-mode:screen !important; pointer-events:none !important;
+2670:         }
+2671:         #${SCRIPT.payoutFlashId}[data-tier="high"] .mcms-payout-particles,
+2672:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.34; }
+2673:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.52; }
+---
+2670:         }
+2671:         #${SCRIPT.payoutFlashId}[data-tier="high"] .mcms-payout-particles,
+2672:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.34; }
+2673:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.52; }
+2674:         #${SCRIPT.payoutFlashId} .mcms-payout-tier {
+---
+2671:         #${SCRIPT.payoutFlashId}[data-tier="high"] .mcms-payout-particles,
+2672:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.34; }
+2673:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.52; }
+2674:         #${SCRIPT.payoutFlashId} .mcms-payout-tier {
+2675:             display:inline-block !important; margin-bottom:7px !important; padding:3px 8px !important; border-radius:999px !important;
+---
+2672:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.34; }
+2673:         #${SCRIPT.payoutFlashId}[data-tier="elite"] .mcms-payout-particles { opacity:.52; }
+2674:         #${SCRIPT.payoutFlashId} .mcms-payout-tier {
+2675:             display:inline-block !important; margin-bottom:7px !important; padding:3px 8px !important; border-radius:999px !important;
+2676:             border:1px solid var(--mcms-payout-accent-soft, rgba(247,205,83,.42)) !important; background:rgba(0,0,0,.28) !important;
+---
+2678:             letter-spacing:1.6px !important; text-transform:uppercase !important;
+2679:         }
+2680:         #${SCRIPT.payoutFlashId} .mcms-payout-mission {
+2681:             display:block !important; margin-top:8px !important; color:#fff !important;
+2682:             font-size:clamp(12px,2vw,18px) !important; line-height:1.05 !important; font-weight:950 !important;
+---
+2684:             text-shadow:0 2px 8px rgba(0,0,0,.85) !important;
+2685:         }
+2686:         #${SCRIPT.payoutFlashId} .mcms-payout-mission:empty { display:none !important; }
+2687:         #${SCRIPT.payoutFlashId} .mcms-payout-source {
+2688:             display:block !important; margin-top:5px !important; color:var(--mcms-payout-accent, #f4c84f) !important;
+---
+2685:         }
+2686:         #${SCRIPT.payoutFlashId} .mcms-payout-mission:empty { display:none !important; }
+2687:         #${SCRIPT.payoutFlashId} .mcms-payout-source {
+2688:             display:block !important; margin-top:5px !important; color:var(--mcms-payout-accent, #f4c84f) !important;
+2689:             font-size:8px !important; line-height:1 !important; font-weight:950 !important; letter-spacing:2px !important; text-transform:uppercase !important;
+---
+2689:             font-size:8px !important; line-height:1 !important; font-weight:950 !important; letter-spacing:2px !important; text-transform:uppercase !important;
+2690:         }
+2691:         #${SCRIPT.payoutFlashId} .mcms-payout-kicker {
+2692:             display: block !important; color: rgba(255,255,255,.78) !important;
+2693:             font-family: "Arial Narrow", Arial, Helvetica, sans-serif !important;
+---
+2695:             letter-spacing: 3px !important; text-transform: uppercase !important;
+2696:         }
+2697:         #${SCRIPT.payoutFlashId} .mcms-payout-amount {
+2698:             display: block !important; margin-top: 7px !important; color: #fff !important;
+2699:             font-family: "Arial Black", "Arial Narrow Bold", Arial, Helvetica, sans-serif !important;
+---
+2703:         }
+2704: 
+2705:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-sunset,
+2706:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-grid {
+2707:             position: absolute !important; inset: 0 !important; opacity: 0;
+---
+2704: 
+2705:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-sunset,
+2706:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-grid {
+2707:             position: absolute !important; inset: 0 !important; opacity: 0;
+2708:             pointer-events: none !important; will-change: opacity, transform !important;
+---
+2708:             pointer-events: none !important; will-change: opacity, transform !important;
+2709:         }
+2710:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-sunset {
+2711:             background:
+2712:                 radial-gradient(circle at 50% 54%, rgba(255,238,104,.92) 0 5%, rgba(255,132,160,.58) 5.5% 11%, rgba(255,71,180,.24) 12% 25%, transparent 39%),
+---
+2714:             mix-blend-mode: screen !important;
+2715:         }
+2716:         #${SCRIPT.payoutFlashId} .mcms-payout-vc-grid {
+2717:             top: 56% !important;
+2718:             background:
+---
+2724:             -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,.82), transparent 76%) !important;
+2725:         }
+2726:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-cinematic {
+2727:             background:
+2728:                 radial-gradient(ellipse at center, rgba(0,0,0,0) 18%, rgba(20,3,45,.20) 62%, rgba(4,3,20,.58) 100%),
+---
+2729:                 linear-gradient(180deg, rgba(9,3,33,.38), transparent 28%, transparent 72%, rgba(4,5,28,.52)) !important;
+2730:         }
+2731:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner {
+2732:             width: min(720px, calc(100% - 28px)) !important;
+2733:             padding: 25px 38px 23px !important;
+---
+2744:             -webkit-backdrop-filter: blur(5px) saturate(125%) !important;
+2745:         }
+2746:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::before,
+2747:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::after {
+2748:             content: "" !important; position: absolute !important; top: -7px !important; bottom: -7px !important;
+---
+2745:         }
+2746:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::before,
+2747:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::after {
+2748:             content: "" !important; position: absolute !important; top: -7px !important; bottom: -7px !important;
+2749:             width: 2px !important; opacity: .75 !important; pointer-events: none !important;
+---
+2749:             width: 2px !important; opacity: .75 !important; pointer-events: none !important;
+2750:         }
+2751:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::before {
+2752:             left: 9% !important; background: linear-gradient(180deg, transparent, #ff5ed8, transparent) !important;
+2753:             box-shadow: 0 0 13px #ff5ed8 !important;
+---
+2753:             box-shadow: 0 0 13px #ff5ed8 !important;
+2754:         }
+2755:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::after {
+2756:             right: 9% !important; background: linear-gradient(180deg, transparent, #42e9ff, transparent) !important;
+2757:             box-shadow: 0 0 13px #42e9ff !important;
+---
+2757:             box-shadow: 0 0 13px #42e9ff !important;
+2758:         }
+2759:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-title {
+2760:             color: #ff75cf !important;
+2761:             font-family: "Brush Script MT", "Segoe Script", "Lucida Handwriting", cursive !important;
+---
+2771:                 0 0 28px rgba(54,226,255,.42) !important;
+2772:         }
+2773:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-divider {
+2774:             height: 2px !important; margin: 15px auto 11px !important;
+2775:             background: linear-gradient(90deg, transparent, #ff61d1 20%, #fff 48%, #4cecff 78%, transparent) !important;
+---
+2776:             box-shadow: 0 0 9px rgba(255,72,202,.54), 0 0 14px rgba(54,228,255,.42) !important;
+2777:         }
+2778:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-tier {
+2779:             border-color: rgba(255,91,210,.72) !important;
+2780:             background: rgba(19,4,52,.60) !important;
+---
+2782:             box-shadow: 0 0 10px rgba(255,75,203,.22), inset 0 0 8px rgba(69,228,255,.10) !important;
+2783:         }
+2784:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-mission {
+2785:             color: #fff4fb !important; font-style: italic !important;
+2786:             text-shadow: 0 2px 8px #090318, 0 0 10px rgba(255,70,196,.28) !important;
+---
+2786:             text-shadow: 0 2px 8px #090318, 0 0 10px rgba(255,70,196,.28) !important;
+2787:         }
+2788:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-source {
+2789:             color: var(--mcms-payout-accent, #77f2ff) !important;
+2790:             text-shadow: 0 0 9px var(--mcms-payout-glow, rgba(80,234,255,.34)) !important;
+---
+2790:             text-shadow: 0 0 9px var(--mcms-payout-glow, rgba(80,234,255,.34)) !important;
+2791:         }
+2792:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-kicker {
+2793:             color: #ff9bde !important; letter-spacing: 4px !important;
+2794:         }
+---
+2793:             color: #ff9bde !important; letter-spacing: 4px !important;
+2794:         }
+2795:         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-amount {
+2796:             color: #f8ffff !important;
+2797:             font-style: italic !important;
+---
+2801:                 0 0 12px rgba(67,231,255,.56) !important;
+2802:         }
+2803:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-dust,
+2804:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-hud,
+2805:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-embers {
+---
+2802:         }
+2803:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-dust,
+2804:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-hud,
+2805:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-embers {
+2806:             position: absolute !important; inset: 0 !important; opacity: 0;
+---
+2803:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-dust,
+2804:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-hud,
+2805:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-embers {
+2806:             position: absolute !important; inset: 0 !important; opacity: 0;
+2807:             pointer-events: none !important; will-change: opacity, transform, background-position !important;
+---
+2807:             pointer-events: none !important; will-change: opacity, transform, background-position !important;
+2808:         }
+2809:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-dust {
+2810:             background:
+2811:                 radial-gradient(ellipse at 50% 105%, rgba(255,114,15,.42) 0 8%, rgba(135,61,14,.22) 24%, transparent 53%),
+---
+2817:             mix-blend-mode: screen !important;
+2818:         }
+2819:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-hud {
+2820:             background:
+2821:                 linear-gradient(90deg, transparent 0 5.5%, rgba(255,151,28,.30) 5.5% 5.72%, transparent 5.72% 94.28%, rgba(255,151,28,.30) 94.28% 94.5%, transparent 94.5%),
+---
+2826:             -webkit-mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0,0,0,.86) 64%, transparent 100%) !important;
+2827:         }
+2828:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-embers {
+2829:             overflow: hidden !important;
+2830:             mix-blend-mode: screen !important;
+---
+2831:             filter: saturate(125%) contrast(110%) !important;
+2832:         }
+2833:         #${SCRIPT.payoutFlashId} .mcms-payout-bc-ember {
+2834:             position: absolute !important;
+2835:             left: 50%; bottom: -18px;
+---
+2842:             will-change: transform, opacity !important;
+2843:         }
+2844:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-cinematic {
+2845:             background:
+2846:                 radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 10%, rgba(20,24,18,.16) 49%, rgba(2,4,3,.78) 100%),
+---
+2847:                 linear-gradient(180deg, rgba(12,17,11,.52), transparent 25%, transparent 68%, rgba(15,8,3,.72)) !important;
+2848:         }
+2849:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner {
+2850:             width: min(820px, calc(100% - 24px)) !important;
+2851:             padding: 25px 34px 23px !important;
+---
+2869:             -webkit-backdrop-filter: blur(5px) contrast(120%) saturate(88%) !important;
+2870:         }
+2871:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::before,
+2872:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::after {
+2873:             content: "" !important; position: absolute !important; pointer-events: none !important;
+---
+2870:         }
+2871:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::before,
+2872:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::after {
+2873:             content: "" !important; position: absolute !important; pointer-events: none !important;
+2874:         }
+---
+2873:             content: "" !important; position: absolute !important; pointer-events: none !important;
+2874:         }
+2875:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::before {
+2876:             left: 0 !important; right: 0 !important; top: 0 !important; height: 5px !important;
+2877:             background:
+---
+2881:             opacity: .94 !important;
+2882:         }
+2883:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::after {
+2884:             right: 17px !important; bottom: 11px !important; width: 92px !important; height: 10px !important;
+2885:             border-top: 2px solid rgba(255,145,25,.82) !important;
+---
+2888:             filter: drop-shadow(0 0 5px rgba(255,112,10,.24)) !important;
+2889:         }
+2890:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-title {
+2891:             display: block !important;
+2892:             width: 100% !important;
+---
+2911:                 0 0 24px rgba(255,126,17,.15) !important;
+2912:         }
+2913:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-title.mcms-payout-title-long {
+2914:             font-size: clamp(27px, 4.25vw, 49px) !important;
+2915:             letter-spacing: clamp(.3px, .16vw, 1.5px) !important;
+---
+2916:             transform: skewX(-5deg) scaleX(.84) !important;
+2917:         }
+2918:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-title.mcms-payout-title-very-long {
+2919:             font-size: clamp(23px, 3.65vw, 42px) !important;
+2920:             white-space: normal !important;
+---
+2923:             transform: skewX(-4deg) scaleX(.88) !important;
+2924:         }
+2925:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-divider {
+2926:             height: 3px !important; width: min(500px, 76%) !important; margin: 14px auto 10px !important;
+2927:             background:
+---
+2930:             transform: skewX(-18deg) !important;
+2931:         }
+2932:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-tier {
+2933:             border-radius: 1px !important;
+2934:             border-color: rgba(255,145,25,.78) !important;
+---
+2938:             box-shadow: inset 4px 0 0 rgba(255,139,21,.92), 0 0 10px rgba(255,111,9,.10) !important;
+2939:         }
+2940:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-mission {
+2941:             color: #f3f2e9 !important;
+2942:             text-transform: uppercase !important;
+---
+2945:             text-shadow: 0 2px 10px rgba(0,0,0,.96) !important;
+2946:         }
+2947:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-source {
+2948:             color: #ff9421 !important; letter-spacing: 2.7px !important;
+2949:             text-shadow: 0 0 12px rgba(255,112,10,.32) !important;
+---
+2949:             text-shadow: 0 0 12px rgba(255,112,10,.32) !important;
+2950:         }
+2951:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-kicker {
+2952:             color: rgba(225,229,211,.64) !important; letter-spacing: 3.4px !important;
+2953:         }
+---
+2952:             color: rgba(225,229,211,.64) !important; letter-spacing: 3.4px !important;
+2953:         }
+2954:         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-amount {
+2955:             color: #ff9b27 !important;
+2956:             font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif !important;
+---
+2960:         }
+2961:         @media (max-width: 620px) {
+2962:             #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner {
+2963:                 width: calc(100% - 16px) !important;
+2964:                 padding: 21px 16px 19px !important;
+---
+2964:                 padding: 21px 16px 19px !important;
+2965:             }
+2966:             #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-title {
+2967:                 font-size: clamp(25px, 8vw, 39px) !important;
+2968:                 letter-spacing: .5px !important;
+---
+2969:                 transform: skewX(-4deg) scaleX(.84) !important;
+2970:             }
+2971:             #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-title.mcms-payout-title-long {
+2972:                 font-size: clamp(21px, 6.8vw, 33px) !important;
+2973:                 white-space: normal !important;
+---
+2975:             }
+2976:         }
+2977:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-fx,
+2978:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particles {
+2979:             position:absolute !important; inset:0 !important; opacity:0;
+---
+2976:         }
+2977:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-fx,
+2978:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particles {
+2979:             position:absolute !important; inset:0 !important; opacity:0;
+2980:             pointer-events:none !important; overflow:hidden !important;
+---
+2981:             will-change:opacity, transform, background-position, filter !important;
+2982:         }
+2983:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particles { mix-blend-mode:screen !important; }
+2984:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particle {
+2985:             position:absolute !important; opacity:0; pointer-events:none !important;
+---
+2982:         }
+2983:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particles { mix-blend-mode:screen !important; }
+2984:         #${SCRIPT.payoutFlashId} .mcms-payout-theme-particle {
+2985:             position:absolute !important; opacity:0; pointer-events:none !important;
+2986:             will-change:opacity, transform !important;
+---
+2990: 
+2991:         /* Scarface Inspired — original black/ivory/red Miami-crime treatment. */
+2992:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-red {
+2993:             background:
+2994:                 radial-gradient(ellipse at 10% 48%, rgba(154,5,14,.82) 0%, rgba(154,5,14,.36) 27%, transparent 64%),
+---
+2995:                 linear-gradient(90deg, rgba(4,4,4,.76) 0 49.2%, rgba(166,11,20,.22) 49.2% 51%, transparent 51%) !important;
+2996:         }
+2997:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-blue {
+2998:             background:
+2999:                 radial-gradient(ellipse at 90% 52%, rgba(255,244,216,.46) 0%, rgba(219,178,87,.18) 31%, transparent 66%),
+---
+3000:                 linear-gradient(270deg, rgba(241,236,225,.28) 0 45%, rgba(164,12,20,.18) 49% 51%, transparent 55%) !important;
+3001:         }
+3002:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-cinematic {
+3003:             background:
+3004:                 linear-gradient(90deg, rgba(0,0,0,.91) 0 49.35%, rgba(163,12,20,.78) 49.35% 50.65%, rgba(239,234,223,.80) 50.65% 100%),
+---
+3006:             mix-blend-mode:normal !important;
+3007:         }
+3008:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-theme-fx-a {
+3009:             background:
+3010:                 radial-gradient(circle at 50% 71%, rgba(235,193,95,.32) 0 2%, transparent 2.5% 13%, rgba(235,193,95,.16) 13.5% 14%, transparent 14.5%),
+---
+3014:             -webkit-mask-image:linear-gradient(180deg, transparent 0%, #000 15%, #000 88%, transparent 100%) !important;
+3015:         }
+3016:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-theme-fx-b {
+3017:             background:
+3018:                 linear-gradient(108deg, transparent 0 46.8%, rgba(168,12,20,.78) 47% 47.7%, transparent 47.9% 100%),
+---
+3022:             opacity:.55;
+3023:         }
+3024:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-theme-fx-c {
+3025:             left:-22% !important; right:auto !important; width:45% !important;
+3026:             background:linear-gradient(100deg, transparent 0 42%, rgba(168,8,17,.10) 43%, rgba(204,20,29,.84) 48%, rgba(255,225,188,.42) 50%, rgba(152,5,13,.72) 52%, transparent 58% 100%) !important;
+---
+3028:             transform:skewX(-9deg) !important;
+3029:         }
+3030:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner {
+3031:             width:min(790px,calc(100% - 26px)) !important;
+3032:             padding:28px 44px 24px !important;
+---
+3047:             -webkit-backdrop-filter:none !important;
+3048:         }
+3049:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner::before {
+3050:             content:"MIAMI  •  POWER  •  MONEY" !important;
+3051:             position:absolute !important; left:18px !important; top:10px !important;
+---
+3054:             letter-spacing:2.6px !important;
+3055:         }
+3056:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner::after {
+3057:             content:"THE WORLD IS YOURS" !important;
+3058:             position:absolute !important; right:-58px !important; top:50% !important;
+---
+3063:             letter-spacing:2.2px !important;
+3064:         }
+3065:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-title {
+3066:             color:#f1e8d7 !important;
+3067:             font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif !important;
+---
+3072:             text-shadow:3px 3px 0 #120405,6px 6px 0 #8d0b13,0 0 22px rgba(220,179,84,.20) !important;
+3073:         }
+3074:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-title.mcms-payout-title-long {
+3075:             font-size:clamp(31px,5vw,59px) !important; letter-spacing:1.6px !important;
+3076:         }
+---
+3075:             font-size:clamp(31px,5vw,59px) !important; letter-spacing:1.6px !important;
+3076:         }
+3077:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-title.mcms-payout-title-very-long {
+3078:             font-size:clamp(27px,4.4vw,52px) !important; letter-spacing:1px !important;
+3079:         }
+---
+3078:             font-size:clamp(27px,4.4vw,52px) !important; letter-spacing:1px !important;
+3079:         }
+3080:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-divider {
+3081:             height:3px !important; width:min(440px,82%) !important;
+3082:             background:linear-gradient(90deg,transparent,#9f0c15 13%,#d9b259 34%,#fff8e8 50%,#d9b259 66%,#9f0c15 87%,transparent) !important;
+---
+3083:             box-shadow:0 0 11px rgba(173,15,24,.48),0 0 20px rgba(219,181,91,.20) !important;
+3084:         }
+3085:         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-tier {
+3086:             border-radius:0 !important; border:1px solid #cda954 !important;
+3087:             color:#f0d68d !important; background:rgba(15,5,5,.78) !important;
+---
+
+===== ASSETS =====
+
+25: // @connect      discord.com
+26: // @connect      discordapp.com
+27: // @connect      raw.githubusercontent.com
+28: // @run-at       document-start
+29: // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+---
+925:     const HELP_CENTER = Object.freeze({
+926:         guideVersion: '4.11.2',
+927:         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
+928:         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
+929:         requestTimeoutMs: 15000
+---
+926:         guideVersion: '4.11.2',
+927:         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
+928:         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
+929:         requestTimeoutMs: 15000
+930:     });
+---
+930:     });
+931: 
+932:     const THEME_ASSETS = Object.freeze({
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+---
+931: 
+932:     const THEME_ASSETS = Object.freeze({
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+---
+932:     const THEME_ASSETS = Object.freeze({
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+---
+933:         bond007Logo: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/007-logo.svg',
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+---
+934:         bond007CommandSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/mi6-command-seal.svg',
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+---
+935:         bond007Gunbarrel: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gunbarrel-reticle.svg',
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+---
+936:         bond007DossierGrid: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/classified-dossier-grid.svg',
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+---
+937:         bond007Agent: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/agent-silhouette.svg',
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+---
+938:         bond007Portrait: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png',
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+---
+939:         bond007GoldDivider: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/ui/gold-divider.svg',
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+---
+940:         bond007PayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/payout/funds-authorised-seal.svg',
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+---
+941:         umbrellaEmblem: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg',
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+---
+942:         umbrellaContainmentBadge: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/containment-division-badge.svg',
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+---
+943:         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+947:     });
+---
+944:         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
+945:         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
+946:         umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+947:     });
+948: 
+---
+995:         viceCity: Object.freeze({
+996:             label: 'GTA Vice City Cashout',
+997:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/gta-vice-city-cashout.mp3'
+998:         }),
+999:         badCompany: Object.freeze({
+---
+999:         badCompany: Object.freeze({
+1000:             label: 'BF Bad Company Cashout',
+1001:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/bf-bad-company-cashout.mp3'
+1002:         }),
+1003:         scarface: Object.freeze({
+---
+1003:         scarface: Object.freeze({
+1004:             label: 'Scarface Cashout',
+1005:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'
+1006:         }),
+1007:         cyberpunk: Object.freeze({
+---
+1007:         cyberpunk: Object.freeze({
+1008:             label: 'Cyberpunk Cashout',
+1009:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+1010:         }),
+1011:         wasteland: Object.freeze({
+---
+1011:         wasteland: Object.freeze({
+1012:             label: 'Fallout Cashout',
+1013:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+1014:         }),
+1015:         factorio: Object.freeze({
+---
+1015:         factorio: Object.freeze({
+1016:             label: 'Factorio Cashout',
+1017:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+1018:         }),
+1019:         biohazard: Object.freeze({
+---
+1019:         biohazard: Object.freeze({
+1020:             label: 'Umbrella Containment Cashout',
+1021:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+1022:         }),
+1023:         jamesBond: Object.freeze({
+---
+1023:         jamesBond: Object.freeze({
+1024:             label: '007 Intelligence Cashout',
+1025:             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+1026:         })
+1027:     });
+---
+9967:             position:absolute !important;
+9968:             inset:4px !important;
+9969:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+9970:             background-repeat:no-repeat !important;
+9971:             background-position:center !important;
+---
+10082:             width:92px !important;
+10083:             height:31px !important;
+10084:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+10085:             background-repeat:no-repeat !important;
+10086:             background-position:center !important;
+---
+10415:             transform:translateY(-50%) !important;
+10416:             background-color:transparent !important;
+10417:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+10418:             background-repeat:no-repeat !important;
+10419:             background-position:center !important;
+---
+10491:             border-radius:2px !important;
+10492:             background:
+10493:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 20px / 150px auto no-repeat,
+10494:                 linear-gradient(118deg,rgba(245,240,226,.985),rgba(211,203,180,.98)) !important;
+10495:             color:#101214 !important;
+---
+11176: 
+11177:         /*
+11178:          * v4.3.0 Umbrella Containment asset layer.
+11179:          * Hosted artwork is decorative, pointer-free and intentionally excluded
+11180:          * from protected operational state colours.
+---
+11191:             position:absolute !important;
+11192:             inset:4px !important;
+11193:             background:url("${THEME_ASSETS.umbrellaEmblem}") center/contain no-repeat !important;
+11194:             opacity:1 !important;
+11195:             filter:drop-shadow(0 2px 4px rgba(0,0,0,.48)) !important;
+---
+11208:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn {
+11209:             background:
+11210:                 url("${THEME_ASSETS.umbrellaEmblem}") center/74% auto no-repeat,
+11211:                 radial-gradient(circle at 50% 48%,rgba(216,25,63,.13),transparent 72%),
+11212:                 linear-gradient(180deg,#23272f,#0b0e13) !important;
+---
+11217:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+11218:             background:
+11219:                 url("${THEME_ASSETS.umbrellaEmblem}") center/74% auto no-repeat,
+11220:                 linear-gradient(180deg,#fff,#dfe4e8) !important;
+11221:         }
+---
+11224:             background:
+11225:                 linear-gradient(180deg,rgba(6,13,8,.86),rgba(4,9,6,.95)),
+11226:                 url("${THEME_ASSETS.umbrellaFacilitySchematic}") center 92px/96% auto no-repeat,
+11227:                 repeating-linear-gradient(0deg,rgba(255,255,255,.026) 0 1px,transparent 1px 4px),
+11228:                 radial-gradient(ellipse at 50% 18%,rgba(200,16,46,.12),transparent 58%),
+---
+11231:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header {
+11232:             background:
+11233:                 url("${THEME_ASSETS.umbrellaEmblem}") right 92px center/48px auto no-repeat,
+11234:                 repeating-linear-gradient(90deg,rgba(216,25,63,.025) 0 1px,transparent 1px 16px),
+11235:                 linear-gradient(180deg,#262a31,#14171d) !important;
+---
+11257:             height:19px !important;
+11258:             transform:translateY(-50%) !important;
+11259:             background:url("${THEME_ASSETS.umbrellaContainmentBadge}") center/contain no-repeat !important;
+11260:             opacity:.72 !important;
+11261:             pointer-events:none !important;
+---
+11276:             width:118px !important;
+11277:             height:190px !important;
+11278:             background:url("${THEME_ASSETS.umbrellaSpecimenVial}") center bottom/contain no-repeat !important;
+11279:             opacity:.075 !important;
+11280:             pointer-events:none !important;
+---
+11287:             width:178px !important;
+11288:             height:110px !important;
+11289:             background-image:url("${THEME_ASSETS.umbrellaSurveillanceTerminal}") !important;
+11290:             opacity:.065 !important;
+11291:         }
+---
+11311:             height:64px !important;
+11312:             transform:translateY(-50%) !important;
+11313:             background:url("${THEME_ASSETS.umbrellaContainmentBadge}") center/contain no-repeat !important;
+11314:             opacity:.11 !important;
+11315:             pointer-events:none !important;
+---
+11320:             width:116px !important;
+11321:             height:70px !important;
+11322:             background-image:url("${THEME_ASSETS.umbrellaSurveillanceTerminal}") !important;
+11323:             opacity:.095 !important;
+11324:         }
+---
+11340:             height:27px !important;
+11341:             transform:translateY(-50%) !important;
+11342:             background:url("${THEME_ASSETS.umbrellaEmblem}") center/contain no-repeat !important;
+11343:             border:0 !important;
+11344:             box-shadow:none !important;
+---
+11352:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.helpCenterId} .mcms-help-toolbar {
+11353:             background:
+11354:                 url("${THEME_ASSETS.umbrellaFacilitySchematic}") right center/420px auto no-repeat,
+11355:                 linear-gradient(180deg,#252a31,#101319) !important;
+11356:             border-bottom-color:#9e1830 !important;
+---
+11361:             border-radius:50% !important;
+11362:             background:
+11363:                 url("${THEME_ASSETS.umbrellaEmblem}") center/84% auto no-repeat,
+11364:                 #10141a !important;
+11365:             box-shadow:0 0 14px rgba(216,25,63,.23) !important;
+---
+11383:             background:
+11384:                 linear-gradient(180deg,rgba(3,10,8,.42),rgba(3,8,7,.68)),
+11385:                 url("${THEME_ASSETS.umbrellaFacilitySchematic}") center/cover no-repeat,
+11386:                 repeating-linear-gradient(0deg,rgba(91,235,158,.022) 0 1px,transparent 1px 5px) !important;
+11387:         }
+---
+11388:         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-b {
+11389:             background:
+11390:                 url("${THEME_ASSETS.umbrellaEmblem}") center/340px auto no-repeat,
+11391:                 radial-gradient(circle at 50% 50%,rgba(200,16,46,.16),transparent 34%),
+11392:                 repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 29deg,rgba(235,241,244,.025) 29deg 30deg,transparent 30deg 59deg,rgba(204,24,48,.035) 59deg 60deg) !important;
+---
+11395:         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-c {
+11396:             background:
+11397:                 url("${THEME_ASSETS.umbrellaPayoutSeal}") center 82%/min(68%,720px) auto no-repeat,
+11398:                 url("${THEME_ASSETS.umbrellaSurveillanceTerminal}") 8% 18%/min(29%,330px) auto no-repeat,
+11399:                 linear-gradient(135deg,transparent 0 48%,rgba(208,35,47,.055) 48% 48.5%,transparent 48.5% 51.5%,rgba(226,235,238,.045) 51.5% 52%,transparent 52%) !important;
+---
+11396:             background:
+11397:                 url("${THEME_ASSETS.umbrellaPayoutSeal}") center 82%/min(68%,720px) auto no-repeat,
+11398:                 url("${THEME_ASSETS.umbrellaSurveillanceTerminal}") 8% 18%/min(29%,330px) auto no-repeat,
+11399:                 linear-gradient(135deg,transparent 0 48%,rgba(208,35,47,.055) 48% 48.5%,transparent 48.5% 51.5%,rgba(226,235,238,.045) 51.5% 52%,transparent 52%) !important;
+11400:         }
+---
+11433:             inset:0 !important;
+11434:             background:
+11435:                 url("${THEME_ASSETS.umbrellaEmblem}") right 18px center/126px auto no-repeat,
+11436:                 url("${THEME_ASSETS.umbrellaSpecimenVial}") left 18px bottom -52px/88px auto no-repeat !important;
+11437:             opacity:.085 !important;
+---
+11434:             background:
+11435:                 url("${THEME_ASSETS.umbrellaEmblem}") right 18px center/126px auto no-repeat,
+11436:                 url("${THEME_ASSETS.umbrellaSpecimenVial}") left 18px bottom -52px/88px auto no-repeat !important;
+11437:             opacity:.085 !important;
+11438:             z-index:1 !important;
+---
+12286: 
+12287:         /*
+12288:          * v4.10.0 007 Intelligence asset-package overhaul.
+12289:          * Original transparent MI6 artwork hosted in the public Toolkit asset repository.
+12290:          * All operational semantic colours remain controlled by the protected status layer.
+---
+12287:         /*
+12288:          * v4.10.0 007 Intelligence asset-package overhaul.
+12289:          * Original transparent MI6 artwork hosted in the public Toolkit asset repository.
+12290:          * All operational semantic colours remain controlled by the protected status layer.
+12291:          */
+---
+12308:             border:1px solid #d6b65f !important;
+12309:             background:
+12310:                 url("${THEME_ASSETS.bond007CommandSeal}") right 5px center/38px auto no-repeat,
+12311:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12312:                 linear-gradient(145deg,#22262c,#08090b) !important;
+---
+12309:             background:
+12310:                 url("${THEME_ASSETS.bond007CommandSeal}") right 5px center/38px auto no-repeat,
+12311:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12312:                 linear-gradient(145deg,#22262c,#08090b) !important;
+12313:             box-shadow:inset 0 0 0 1px rgba(255,255,255,.06),0 0 12px rgba(214,182,95,.24) !important;
+---
+12315:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-ui-theme-preview-bond007::before {
+12316:             inset:6px 44px 6px 6px !important;
+12317:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+12318:             filter:invert(1) sepia(.24) saturate(.7) brightness(1.25) !important;
+12319:         }
+---
+12329:             border-color:rgba(231,205,127,.78) !important;
+12330:             background:
+12331:                 url("${THEME_ASSETS.bond007Gunbarrel}") right -35px bottom -35px/120px auto no-repeat,
+12332:                 linear-gradient(145deg,rgba(35,39,45,.99),rgba(5,6,8,.995)) !important;
+12333:         }
+---
+12336:             overflow:hidden !important;
+12337:             background:
+12338:                 url("${THEME_ASSETS.bond007CommandSeal}") center/72% auto no-repeat,
+12339:                 linear-gradient(180deg,#292d33,#090a0c) !important;
+12340:             color:transparent !important;
+---
+12356:             border-radius:3px !important;
+12357:             background:
+12358:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12359:                 url("${THEME_ASSETS.bond007Gunbarrel}") right -120px bottom -140px/470px auto no-repeat,
+12360:                 radial-gradient(circle at 90% 10%,rgba(214,182,95,.13),transparent 31%),
+---
+12357:             background:
+12358:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12359:                 url("${THEME_ASSETS.bond007Gunbarrel}") right -120px bottom -140px/470px auto no-repeat,
+12360:                 radial-gradient(circle at 90% 10%,rgba(214,182,95,.13),transparent 31%),
+12361:                 linear-gradient(145deg,#20242a,#07080a 69%) !important;
+---
+12377:             width:62px !important;
+12378:             height:27px !important;
+12379:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+12380:             background-size:contain !important;
+12381:             background-position:center !important;
+---
+12435:             bottom:-1px !important;
+12436:             height:6px !important;
+12437:             background:url("${THEME_ASSETS.bond007GoldDivider}") center/100% 100% no-repeat !important;
+12438:             opacity:.65 !important;
+12439:             pointer-events:none !important;
+---
+12468:             border-radius:1px !important;
+12469:             background:
+12470:                 url("${THEME_ASSETS.bond007CommandSeal}") 9px center/20px auto no-repeat,
+12471:                 linear-gradient(90deg,rgba(244,239,223,.97),rgba(210,201,178,.94)) !important;
+12472:             color:#15171a !important;
+---
+12525:             border-left:4px solid #a71924 !important;
+12526:             background:
+12527:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12528:                 linear-gradient(180deg,#f4efdf,#cfc3a1) !important;
+12529:             color:#111214 !important;
+---
+12589:             width:54px !important;
+12590:             height:34px !important;
+12591:             background:url("${THEME_ASSETS.bond007Agent}") center 10%/contain no-repeat !important;
+12592:             opacity:.44 !important;
+12593:             pointer-events:none !important;
+---
+12600:             border-radius:3px !important;
+12601:             background:
+12602:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12603:                 radial-gradient(circle at 94% 5%,rgba(214,182,95,.10),transparent 30%),
+12604:                 linear-gradient(145deg,#1e2227,#07080a 72%) !important;
+---
+12687:             border-radius:0 !important;
+12688:             background:
+12689:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12690:                 linear-gradient(90deg,#111418,#050607) !important;
+12691:             box-shadow:0 3px 12px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.04) !important;
+---
+12692:         }
+12693:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}::before {
+12694:             background:url("${THEME_ASSETS.bond007GoldDivider}") center/100% 100% no-repeat !important;
+12695:             opacity:.28 !important;
+12696:         }
+---
+12700:             border-right:1px solid #d8b45f !important;
+12701:             background:
+12702:                 url("${THEME_ASSETS.bond007CommandSeal}") 9px center/46px auto no-repeat,
+12703:                 linear-gradient(90deg,#f3ecda,#c9bb92) !important;
+12704:             color:#111214 !important;
+---
+12732:             aspect-ratio:1 !important;
+12733:             transform:translate(-50%,-50%) rotate(-7deg) !important;
+12734:             background:url("${THEME_ASSETS.bond007Gunbarrel}") center/contain no-repeat !important;
+12735:             opacity:.42 !important;
+12736:             animation:mcmsBondAssetBarrel 18s linear infinite !important;
+---
+12734:             background:url("${THEME_ASSETS.bond007Gunbarrel}") center/contain no-repeat !important;
+12735:             opacity:.42 !important;
+12736:             animation:mcmsBondAssetBarrel 18s linear infinite !important;
+12737:         }
+12738:         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
+---
+12742:             width:clamp(185px,23vw,315px) !important;
+12743:             height:min(78%,620px) !important;
+12744:             background:url("${THEME_ASSETS.bond007Portrait}") right bottom/contain no-repeat !important;
+12745:             opacity:.98 !important;
+12746:             filter:drop-shadow(-14px 12px 22px rgba(0,0,0,.72)) !important;
+---
+12750:             inset:0 !important;
+12751:             background:
+12752:                 url("${THEME_ASSETS.bond007DossierGrid}") center/cover no-repeat,
+12753:                 linear-gradient(110deg,rgba(167,25,36,.20),transparent 30% 72%,rgba(214,182,95,.12)) !important;
+12754:             opacity:.44 !important;
+---
+12762:             border-radius:2px !important;
+12763:             background:
+12764:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 28px bottom 28px/132px auto no-repeat,
+12765:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 25px/142px auto no-repeat,
+12766:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(100% - 64px) 13px no-repeat,
+---
+12763:             background:
+12764:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 28px bottom 28px/132px auto no-repeat,
+12765:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 25px/142px auto no-repeat,
+12766:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(100% - 64px) 13px no-repeat,
+12767:                 linear-gradient(118deg,rgba(247,242,228,.99),rgba(211,202,177,.985)) !important;
+---
+12764:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 28px bottom 28px/132px auto no-repeat,
+12765:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 25px/142px auto no-repeat,
+12766:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(100% - 64px) 13px no-repeat,
+12767:                 linear-gradient(118deg,rgba(247,242,228,.99),rgba(211,202,177,.985)) !important;
+12768:             color:#111214 !important;
+---
+12856:         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-particles { display:none !important; }
+12857: 
+12858:         @keyframes mcmsBondAssetBarrel {
+12859:             from { transform:translate(-50%,-50%) rotate(-7deg); }
+12860:             to { transform:translate(-50%,-50%) rotate(353deg); }
+---
+12863:         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header {
+12864:             background:
+12865:                 url("${THEME_ASSETS.bond007CommandSeal}") right 184px center/38px auto no-repeat,
+12866:                 linear-gradient(90deg,rgba(255,255,255,.075),rgba(255,255,255,.012) 55%,rgba(214,182,95,.045)) !important;
+12867:         }
+---
+12872:             width:66px !important;
+12873:             height:25px !important;
+12874:             background-image:url("${THEME_ASSETS.bond007Logo}") !important;
+12875:             background-size:contain !important;
+12876:             background-position:center !important;
+---
+12951:                 padding:44px 18px 23px !important;
+12952:                 background:
+12953:                     url("${THEME_ASSETS.bond007Logo}") right 12px top 15px/78px auto no-repeat,
+12954:                     url("${THEME_ASSETS.bond007GoldDivider}") left 16px top 66px/calc(100% - 32px) 10px no-repeat,
+12955:                     linear-gradient(118deg,rgba(247,242,228,.99),rgba(211,202,177,.985)) !important;
+---
+12952:                 background:
+12953:                     url("${THEME_ASSETS.bond007Logo}") right 12px top 15px/78px auto no-repeat,
+12954:                     url("${THEME_ASSETS.bond007GoldDivider}") left 16px top 66px/calc(100% - 32px) 10px no-repeat,
+12955:                     linear-gradient(118deg,rgba(247,242,228,.99),rgba(211,202,177,.985)) !important;
+12956:             }
+---
+13085:             border-right-color:rgba(227,200,113,.28) !important;
+13086:             background:
+13087:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 112px bottom 25px/112px auto no-repeat,
+13088:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 23px/138px auto no-repeat,
+13089:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(64% - 32px) 13px no-repeat,
+---
+13086:             background:
+13087:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 112px bottom 25px/112px auto no-repeat,
+13088:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 23px/138px auto no-repeat,
+13089:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(64% - 32px) 13px no-repeat,
+13090:                 linear-gradient(90deg,
+---
+13087:                 url("${THEME_ASSETS.bond007PayoutSeal}") right 112px bottom 25px/112px auto no-repeat,
+13088:                 url("${THEME_ASSETS.bond007Logo}") right 24px top 23px/138px auto no-repeat,
+13089:                 url("${THEME_ASSETS.bond007GoldDivider}") left 32px top 77px/calc(64% - 32px) 13px no-repeat,
+13090:                 linear-gradient(90deg,
+13091:                     rgba(247,242,228,.995) 0%,
+---
+13134:                 padding:44px 235px 30px 30px !important;
+13135:                 background:
+13136:                     url("${THEME_ASSETS.bond007PayoutSeal}") right 88px bottom 22px/92px auto no-repeat,
+13137:                     url("${THEME_ASSETS.bond007Logo}") right 17px top 20px/105px auto no-repeat,
+13138:                     url("${THEME_ASSETS.bond007GoldDivider}") left 24px top 73px/calc(65% - 24px) 11px no-repeat,
+---
+13135:                 background:
+13136:                     url("${THEME_ASSETS.bond007PayoutSeal}") right 88px bottom 22px/92px auto no-repeat,
+13137:                     url("${THEME_ASSETS.bond007Logo}") right 17px top 20px/105px auto no-repeat,
+13138:                     url("${THEME_ASSETS.bond007GoldDivider}") left 24px top 73px/calc(65% - 24px) 11px no-repeat,
+13139:                     linear-gradient(90deg,
+---
+13136:                     url("${THEME_ASSETS.bond007PayoutSeal}") right 88px bottom 22px/92px auto no-repeat,
+13137:                     url("${THEME_ASSETS.bond007Logo}") right 17px top 20px/105px auto no-repeat,
+13138:                     url("${THEME_ASSETS.bond007GoldDivider}") left 24px top 73px/calc(65% - 24px) 11px no-repeat,
+13139:                     linear-gradient(90deg,
+13140:                         rgba(247,242,228,.995) 0%,
+---
+13161:                 padding:44px 18px 23px !important;
+13162:                 background:
+13163:                     url("${THEME_ASSETS.bond007Logo}") right 12px top 15px/78px auto no-repeat,
+13164:                     url("${THEME_ASSETS.bond007GoldDivider}") left 16px top 66px/calc(100% - 32px) 10px no-repeat,
+13165:                     linear-gradient(118deg,rgba(247,242,228,.995),rgba(211,202,177,.99)) !important;
+---
+13162:                 background:
+13163:                     url("${THEME_ASSETS.bond007Logo}") right 12px top 15px/78px auto no-repeat,
+13164:                     url("${THEME_ASSETS.bond007GoldDivider}") left 16px top 66px/calc(100% - 32px) 10px no-repeat,
+13165:                     linear-gradient(118deg,rgba(247,242,228,.995),rgba(211,202,177,.99)) !important;
+13166:                 border-right-color:#e3c871 !important;
+---
+22772:     let discordFinanceChartUrl = '';
+22773: 
+22774:     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
+22775:     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
+22776:     const FINANCE_RULE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+---
+22773: 
+22774:     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
+22775:     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
+22776:     const FINANCE_RULE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+22777:     const FINANCE_POLICY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+---
+25916:             );
+25917:         const semanticMarker = '<div class="callout warning"><strong>Protected semantic colours:</strong> clearing, assistance, warning, critical and syncing states retain their operational meaning across every theme.</div>';
+25918:         if (!source.includes('Umbrella Containment asset package:') && source.includes(semanticMarker)) {
+25919:             source = source.replace(
+25920:                 semanticMarker,
+---
+25919:             source = source.replace(
+25920:                 semanticMarker,
+25921:                 '<div class="callout"><strong>Umbrella Containment asset package:</strong> decorative artwork is loaded from the public Toolkit assets repository only while the theme is in use. Missing artwork never blocks the Toolkit, and the graphics do not replace protected operational colours.</div>' + semanticMarker
+25922:             );
+25923:         }
+---
+25926: <div class="head"><span class="num">19</span><div><h2>Discord Financial Command</h2><p class="summary">Maximum-range MissionChief ledger extraction, local historical archiving and GitHub-hosted financial intelligence.</p></div></div>
+25927: <h3>Supreme financial audit</h3><p>The Discord tab can generate an Executive Brief or a complete Executive + Full Audit report. The audit separates operating income, other income, operating expenditure and capital investment so expansion spending does not automatically make healthy operations look unprofitable.</p>
+25928: <div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
+25929: <h3>Player-linked Local Financial Archive</h3><ol class="steps"><li>Keep Local Financial Archive enabled to retain discovered transactions by MissionChief player ID/name.</li><li>Select All Available History or run Deep Scan All Available to extend the archive as far back as MissionChief exposes.</li><li>Use Export Archive and Import Archive to transfer or merge history between your devices without exposing repository credentials.</li><li>Export All also includes the local archive and Discord webhook for complete private recovery.</li><li>GitHub hosts only public rules, audit policy and Toolkit assets; player financial data remains in the browser and private backups.</li></ol>
+25930: <div class="call warn"><strong>Private backup:</strong> Export All includes the saved Discord webhook and local financial history. Store the JSON privately; anyone holding it may be able to post through the webhook and inspect the exported game ledger.</div>
+---
+25927: <h3>Supreme financial audit</h3><p>The Discord tab can generate an Executive Brief or a complete Executive + Full Audit report. The audit separates operating income, other income, operating expenditure and capital investment so expansion spending does not automatically make healthy operations look unprofitable.</p>
+25928: <div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
+25929: <h3>Player-linked Local Financial Archive</h3><ol class="steps"><li>Keep Local Financial Archive enabled to retain discovered transactions by MissionChief player ID/name.</li><li>Select All Available History or run Deep Scan All Available to extend the archive as far back as MissionChief exposes.</li><li>Use Export Archive and Import Archive to transfer or merge history between your devices without exposing repository credentials.</li><li>Export All also includes the local archive and Discord webhook for complete private recovery.</li><li>GitHub hosts only public rules, audit policy and Toolkit assets; player financial data remains in the browser and private backups.</li></ol>
+25930: <div class="call warn"><strong>Private backup:</strong> Export All includes the saved Discord webhook and local financial history. Store the JSON privately; anyone holding it may be able to post through the webhook and inspect the exported game ledger.</div>
+25931: </section>`;
+---
+25996:                     <div class="mcms-help-brand">
+25997:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+25998:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+25999:                     </div>
+26000:                     <div class="mcms-help-actions">
+---
+26004:                     </div>
+26005:                 </div>
+26006:                 <div class="mcms-help-address"><span class="mcms-help-address-lock" aria-hidden="true">●</span><span class="mcms-help-address-text">github.com/Conroy1988/missionchief-toolkit-assets/help/index.html</span><span class="mcms-help-status" data-help-status>Ready</span></div>
+26007:                 <div class="mcms-help-progress" aria-hidden="true"></div>
+26008:                 <div class="mcms-help-content">
+---
+26357:                 <div class="mcms-section-label">Coverage Heatmap</div>
+26358:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+26359:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+26360:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+26361:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+---
+26440:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+26441:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+26442:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+26443:             </section>
+26444:             <section class="mcms-tab-panel" data-panel="discord">
+---

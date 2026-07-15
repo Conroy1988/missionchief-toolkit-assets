@@ -5,7 +5,7 @@
   "sourceOfTruth": "GitHub",
   "distribution": "Greasy Fork",
   "status": {
-    "validation": "repository-audit-complete",
+    "validation": "passed",
     "githubRelease": "published",
     "greasyForkSync": "verified",
     "backup": "private-repository-verified",
@@ -24,7 +24,7 @@
     "referencedPaths": 25,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-14",
+  "lastUpdated": "2026-07-15T04:02:13Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
     "validatedSha256": "b0df1dcf5823a61dbf6760734ee189a0d0370aa40fa279d4ce0954c0803c8e1f",

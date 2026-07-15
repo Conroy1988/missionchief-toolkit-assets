@@ -20,6 +20,6 @@
     ],
     "warnings": []
   },
-  "baselineHashMatch": null,
+  "baselineHashMatch": true,
   "distributionStatus": "dry-run-not-yet-greasyfork-source"
 }

@@ -20,11 +20,19 @@ def userscript_version(source: str) -> str:
     return match.group(1)
 
 
-def audit(root: Path) -> dict[str, Any]:
+def semantic_version(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", value.strip())
+    if not match:
+        raise ValueError(f"Unsupported semantic version: {value!r}")
+    return tuple(int(part) for part in match.groups())
+
+
+def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any]:
     contract = load_json(root / ".github/documentation-contract.json")
     site = load_json(root / "docs/site-data.json")
     dashboard = load_json(root / "status/release-dashboard.json")
     source = (root / "src/MissionChief_Map_Command_Toolkit.user.js").read_text(encoding="utf-8")
+    changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
 
     failures: list[str] = []
     warnings: list[str] = []
@@ -35,9 +43,25 @@ def audit(root: Path) -> dict[str, Any]:
     }
     dashboard_versions.discard("")
     if dashboard_versions != {version}:
-        failures.append(
-            f"Version drift: userscript={version}, dashboard={sorted(dashboard_versions)}"
-        )
+        candidate_is_valid = False
+        if allow_release_candidate and len(dashboard_versions) == 1:
+            published_version = next(iter(dashboard_versions))
+            try:
+                candidate_is_valid = (
+                    semantic_version(version) > semantic_version(published_version)
+                    and re.search(rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$", changelog, re.MULTILINE)
+                    is not None
+                )
+            except ValueError as exc:
+                failures.append(str(exc))
+        if candidate_is_valid:
+            warnings.append(
+                f"Validated pull-request candidate {version} is ahead of published dashboard version {published_version}."
+            )
+        elif not failures:
+            failures.append(
+                f"Version drift: userscript={version}, dashboard={sorted(dashboard_versions)}"
+            )
 
     site_project = site.get("project", {})
     for key, expected in contract.get("project", {}).items():
@@ -146,9 +170,14 @@ def main() -> int:
     parser.add_argument("--root", default=".")
     parser.add_argument("--json-output", default="documentation-drift-report.json")
     parser.add_argument("--markdown-output", default="documentation-drift-report.md")
+    parser.add_argument(
+        "--allow-release-candidate",
+        action="store_true",
+        help="Allow one higher changelog-backed userscript version while the dashboard still records the published release.",
+    )
     args = parser.parse_args()
 
-    report = audit(Path(args.root).resolve())
+    report = audit(Path(args.root).resolve(), allow_release_candidate=args.allow_release_candidate)
     Path(args.json_output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     Path(args.markdown_output).write_text(markdown(report), encoding="utf-8")
     print(markdown(report))

@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Check out latest main
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
           python3 .github/scripts/audit_repository.py
 
       - name: Upload audit reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: missionchief-repository-audit
           path: |

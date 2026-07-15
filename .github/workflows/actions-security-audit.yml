@@ -1,0 +1,51 @@
+name: GitHub Actions Security Audit
+
+run-name: Actions security · ${{ github.event_name }}
+
+on:
+  pull_request:
+    paths:
+      - ".github/actions-security-policy.json"
+      - ".github/dependabot.yml"
+      - ".github/scripts/audit_actions_security.py"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/actions-security-policy.json"
+      - ".github/dependabot.yml"
+      - ".github/scripts/audit_actions_security.py"
+      - ".github/workflows/**"
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Audit action pinning and permissions
+        run: |
+          python3 .github/scripts/audit_actions_security.py
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: github-actions-security-audit
+          path: |
+            actions-security-report.json
+            actions-security-report.md
+          if-no-files-found: error
+          retention-days: 30

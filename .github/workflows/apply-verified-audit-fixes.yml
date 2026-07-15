@@ -30,11 +30,17 @@ jobs:
       - name: Apply assertion-backed safe fixes
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           python3 .github/scripts/apply_verified_audit_fixes.py \
             src/MissionChief_Map_Command_Toolkit.user.js \
             dist/MissionChief_Map_Command_Toolkit.user.js \
-            --report verified-audit-fixes.md
+            --report verified-audit-fixes.md \
+            2>&1 | tee verified-audit-transform.log
+          STATUS=${PIPESTATUS[0]}
+          if [[ "$STATUS" -ne 0 ]]; then
+            cp verified-audit-transform.log verified-audit-fixes.md
+            exit "$STATUS"
+          fi
           node --check src/MissionChief_Map_Command_Toolkit.user.js
           cmp -s src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
 
@@ -58,6 +64,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verified-userscript-audit-fixes
-          path: verified-audit-fixes.md
+          path: |
+            verified-audit-fixes.md
+            verified-audit-transform.log
           if-no-files-found: warn
           retention-days: 30

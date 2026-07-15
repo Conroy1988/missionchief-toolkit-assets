@@ -4,9 +4,9 @@
 
 ## Summary
 
-- Repository files: **122**
+- Repository files: **143**
 - Media files: **28**
-- GitHub Actions workflows: **19**
+- GitHub Actions workflows: **22**
 - Greasy Fork version: **4.11.2**
 - Repository URLs referenced by current script/repository: **25**
 - Missing referenced paths: **0**
@@ -48,10 +48,12 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 
 ## Workflow inventory
 
+- `.github/workflows/actions-security-audit.yml`
 - `.github/workflows/asset-health-monitor.yml`
 - `.github/workflows/code-integrity-audit.yml`
 - `.github/workflows/discord-commit-notifications.yml`
 - `.github/workflows/discord-development-status.yml`
+- `.github/workflows/github-pages.yml`
 - `.github/workflows/greasyfork-release-monitor.yml`
 - `.github/workflows/import-canonical-userscript.yml`
 - `.github/workflows/performance-regression-check.yml`
@@ -65,6 +67,7 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 - `.github/workflows/repository-audit.yml`
 - `.github/workflows/sync-repository-labels.yml`
 - `.github/workflows/update-release-dashboard.yml`
+- `.github/workflows/userscript-structural-audit.yml`
 - `.github/workflows/validate-issue-intake.yml`
 - `.github/workflows/validate-userscript.yml`
 

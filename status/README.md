@@ -7,7 +7,7 @@
 | System | Health | State |
 |---|:---:|---|
 | Canonical source | 🟢 | Validated Canonical Source |
-| Validation | 🟢 | Passed |
+| Validation | 🔵 | Repository Audit Complete |
 | GitHub Release | 🟢 | Published |
 | Greasy Fork | 🟢 | Verified |
 | Private backup | 🟢 | Private Repository Verified |
@@ -28,7 +28,7 @@
 - **Discovered media files:** 28
 - **Referenced hosted paths:** 25
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-15T00:33:37Z`
+- **Last dashboard update:** `2026-07-14`
 
 ## Release channels
 

@@ -1,0 +1,132 @@
+name: Code Integrity Audit
+run-name: Code integrity · ${{ github.event_name }}
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-code-integrity-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit Toolkit code and repository integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve comparison baseline
+        id: base
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
+          OUTPUT="/tmp/code-integrity-base.user.js"
+          rm -f "$OUTPUT"
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            git fetch origin "${BASE_REF:-main}" --no-tags
+            git show "origin/${BASE_REF:-main}:${SOURCE}" > "$OUTPUT"
+            echo "ref=origin/${BASE_REF:-main}" >> "$GITHUB_OUTPUT"
+          elif [[ "$EVENT_NAME" == "push" && -n "${BEFORE_SHA:-}" && ! "$BEFORE_SHA" =~ ^0+$ ]] && \
+               git cat-file -e "${BEFORE_SHA}:${SOURCE}" 2>/dev/null; then
+            git show "${BEFORE_SHA}:${SOURCE}" > "$OUTPUT"
+            echo "ref=$BEFORE_SHA" >> "$GITHUB_OUTPUT"
+          else
+            RELEASE_TAG="$(git tag --merged HEAD --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | head -n 1 || true)"
+            if [[ -n "$RELEASE_TAG" ]] && git cat-file -e "${RELEASE_TAG}:${SOURCE}" 2>/dev/null; then
+              git show "${RELEASE_TAG}:${SOURCE}" > "$OUTPUT"
+              echo "ref=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+            elif git cat-file -e "HEAD^:${SOURCE}" 2>/dev/null; then
+              git show "HEAD^:${SOURCE}" > "$OUTPUT"
+              echo "ref=HEAD^" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+          if [[ -s "$OUTPUT" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "Code-integrity comparison baseline prepared."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No comparison baseline is available; current-state checks will still run."
+          fi
+
+      - name: Run auditor self-tests
+        run: python3 .github/scripts/test_code_integrity.py
+
+      - name: Run expanded code-integrity audit
+        id: integrity
+        shell: bash
+        run: |
+          set +e
+          ARGS=(
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js
+            --policy .github/code-integrity-policy.json
+            --json-output code-integrity-report.json
+            --markdown-output code-integrity-report.md
+          )
+          if [[ "${{ steps.base.outputs.available }}" == "true" ]]; then
+            ARGS+=(--base /tmp/code-integrity-base.user.js)
+          fi
+          python3 .github/scripts/check_code_integrity.py "${ARGS[@]}"
+          STATUS=$?
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Run static public-asset audit
+        id: assets
+        shell: bash
+        run: |
+          set +e
+          python3 .github/scripts/check_asset_health.py \
+            --mode static \
+            --json-output code-integrity-assets.json \
+            --markdown-output code-integrity-assets.md
+          STATUS=$?
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish audit summaries
+        if: always()
+        shell: bash
+        run: |
+          test -f code-integrity-report.md
+          test -f code-integrity-assets.md
+          cat code-integrity-report.md >> "$GITHUB_STEP_SUMMARY"
+          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
+          cat code-integrity-assets.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload integrity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-code-integrity
+          path: |
+            code-integrity-report.json
+            code-integrity-report.md
+            code-integrity-assets.json
+            code-integrity-assets.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop on integrity failure
+        if: steps.integrity.outputs.exit_code != '0' || steps.assets.outputs.exit_code != '0'
+        run: |
+          echo "Code-integrity checks failed. Review the workflow summary and diagnostic artifact."
+          exit 1

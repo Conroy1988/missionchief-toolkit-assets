@@ -49,13 +49,29 @@ jobs:
           test "${#content}" = 7600
           test "$(printf '%s' "$content" | sha256sum | awk '{print $1}')" = 497b38e64711e17092cb5796dbcef6e01bbb9774ac7e7a037e952054a37e05be
 
-      - name: Verify package part 04
+      - name: Verify package part 04a
         shell: bash
         run: |
           set -euo pipefail
-          content="$(tr -d '\n' < .github/pages-bootstrap/package.part04)"
-          test "${#content}" = 7600
-          test "$(printf '%s' "$content" | sha256sum | awk '{print $1}')" = 94cc52154675b8ab749c74b5b8bc75e5bfc339863a3ff3c528d52c67fae77bcb
+          content="$(tr -d '\n' < .github/pages-bootstrap/package.part04a)"
+          test "${#content}" = 3800
+          test "$(printf '%s' "$content" | sha256sum | awk '{print $1}')" = 0ed5c1e30f290d5ae37fa8297fa57ec71e417dacc843f067d56fe29814131e35
+
+      - name: Verify package part 04b1
+        shell: bash
+        run: |
+          set -euo pipefail
+          content="$(tr -d '\n' < .github/pages-bootstrap/package.part04b1)"
+          test "${#content}" = 1900
+          test "$(printf '%s' "$content" | sha256sum | awk '{print $1}')" = 72978066826098bf0acd94a77a1fa98d8ca248a4b645d6ae8b7b3a8a86fad4ac
+
+      - name: Verify package part 04b2
+        shell: bash
+        run: |
+          set -euo pipefail
+          content="$(tr -d '\n' < .github/pages-bootstrap/package.part04b2)"
+          test "${#content}" = 1900
+          test "$(printf '%s' "$content" | sha256sum | awk '{print $1}')" = 3dc84dd556e605fab3f88efe266942380555cee198afa6ec126c3c262585c7b4
 
       - name: Verify package part 05
         shell: bash

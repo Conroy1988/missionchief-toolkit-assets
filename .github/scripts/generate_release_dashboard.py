@@ -17,10 +17,17 @@ ICONS = {
     "posted": "🟢",
     "configured": "🟢",
     "secret-configured": "🟢",
+    "validated": "🟢",
+    "validated-canonical-source": "🟢",
+    "private-repository-verified": "🟢",
     "dry-run-ready": "🟡",
     "dry-run-built": "🟡",
     "legacy-monitor": "🟡",
+    "pending-release": "🟡",
     "not-configured": "⚪",
+    "not-published": "⚪",
+    "not-created": "⚪",
+    "not-posted": "⚪",
 }
 
 

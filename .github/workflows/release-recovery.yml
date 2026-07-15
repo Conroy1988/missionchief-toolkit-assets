@@ -1,0 +1,454 @@
+name: Release Recovery
+run-name: Release recovery · ${{ inputs.operation }} · v${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: "Recovery operation"
+        required: true
+        type: choice
+        options:
+          - verify-release
+          - retry-greasyfork
+          - retry-private-backup
+          - retry-discord
+          - rebuild-dashboard
+          - repair-stable-assets
+      version:
+        description: "Toolkit release version without the v prefix"
+        required: true
+        type: string
+      discord_state:
+        description: "Dashboard rebuild only: preserve, posted, or not-posted"
+        required: true
+        default: preserve
+        type: choice
+        options:
+          - preserve
+          - posted
+          - not-posted
+      confirmation:
+        description: "Enter the exact confirmation phrase shown in docs/RELEASE_RECOVERY.md"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: toolkit-production-release
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    name: Execute controlled release recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate operation and confirmation
+        id: safety
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OPERATION: ${{ inputs.operation }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+          DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+            echo "::error::Invalid release version: $RELEASE_VERSION"
+            exit 1
+          }
+
+          case "$OPERATION" in
+            verify-release) EXPECTED="VERIFY ${RELEASE_VERSION}" ;;
+            retry-greasyfork) EXPECTED="RETRY GREASYFORK ${RELEASE_VERSION}" ;;
+            retry-private-backup) EXPECTED="RETRY BACKUP ${RELEASE_VERSION}" ;;
+            retry-discord) EXPECTED="RETRY DISCORD ${RELEASE_VERSION}" ;;
+            rebuild-dashboard) EXPECTED="REBUILD DASHBOARD ${RELEASE_VERSION}" ;;
+            repair-stable-assets) EXPECTED="REPAIR ASSETS ${RELEASE_VERSION}" ;;
+            *) echo "::error::Unsupported recovery operation: $OPERATION"; exit 1 ;;
+          esac
+          [[ "$CONFIRMATION" == "$EXPECTED" ]] || {
+            echo "::error::Confirmation mismatch. Enter exactly: $EXPECTED"
+            exit 1
+          }
+
+          LATEST_TAG="$(gh release view --json tagName --jq '.tagName')"
+          if [[ "$OPERATION" != "verify-release" && "$LATEST_TAG" != "v${RELEASE_VERSION}" ]]; then
+            echo "::error::Write recovery operations may target only the latest GitHub Release (${LATEST_TAG}), not v${RELEASE_VERSION}."
+            exit 1
+          fi
+
+          if [[ "$OPERATION" == "retry-private-backup" || "$OPERATION" == "rebuild-dashboard" ]]; then
+            [[ -n "${MIGRATION_REPO_TOKEN:-}" ]] || { echo "::error::MIGRATION_REPO_TOKEN is not configured."; exit 1; }
+          fi
+          if [[ "$OPERATION" == "retry-discord" ]]; then
+            [[ -n "${DISCORD_RELEASE_WEBHOOK:-}" ]] || { echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."; exit 1; }
+          fi
+
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Safety gate passed for ${OPERATION} on v${RELEASE_VERSION}."
+
+      - name: Verify immutable GitHub Release bundle
+        id: bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          REQUIRE_STABLE_ASSETS: ${{ inputs.operation == 'repair-stable-assets' && 'false' || 'true' }}
+        shell: bash
+        run: bash .github/scripts/download_verified_release_bundle.sh
+
+      - name: Re-emit Greasy Fork release event when required
+        if: inputs.operation == 'retry-greasyfork'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
+            --header 'Cache-Control: no-cache' \
+            "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs || true)"
+
+          if [[ "$LIVE_VERSION" != "$RELEASE_VERSION" ]]; then
+            gh release view "v${RELEASE_VERSION}" --json name,body > /tmp/release-state.json
+            jq -r '.body' /tmp/release-state.json > /tmp/release-notes.md
+            TITLE="$(jq -r '.name' /tmp/release-state.json)"
+            gh release edit "v${RELEASE_VERSION}" --title "$TITLE" --notes-file /tmp/release-notes.md --latest
+            echo "Re-saved v${RELEASE_VERSION} to emit a fresh release update event."
+          else
+            echo "Greasy Fork already reports v${RELEASE_VERSION}; no webhook retry was emitted."
+          fi
+
+          SYNCED=false
+          for attempt in $(seq 1 30); do
+            LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
+              --header 'Cache-Control: no-cache' \
+              "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs || true)"
+            echo "Greasy Fork attempt ${attempt}/30: ${LIVE_VERSION:-unavailable}"
+            [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] && { SYNCED=true; break; }
+            sleep 60
+          done
+          [[ "$SYNCED" == "true" ]] || { echo "::error::Greasy Fork did not synchronize v${RELEASE_VERSION}."; exit 1; }
+
+          python3 .github/scripts/check_asset_health.py \
+            --mode live \
+            --json-output /tmp/recovery-asset-health.json \
+            --markdown-output /tmp/recovery-asset-health.md
+          python3 .github/scripts/check_distribution_body_parity.py \
+            --report /tmp/recovery-asset-health.json \
+            --markdown /tmp/recovery-asset-health.md
+
+      - name: Record Greasy Fork recovery
+        if: inputs.operation == 'retry-greasyfork'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq --arg version "$RELEASE_VERSION" --arg now "$NOW" \
+            'if .latestRelease.version == $version then
+               .status.greasyForkSync="verified" |
+               .latestRelease.greasyForkVerified=true |
+               .lastUpdated=$now
+             else error("dashboard latest release does not match recovery version") end' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+          mv status/release-dashboard.tmp status/release-dashboard.json
+          python3 .github/scripts/generate_release_dashboard.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/release-dashboard.json status/README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Toolkit ${RELEASE_VERSION} Greasy Fork recovery"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Retry private migration backup
+        id: backup
+        if: inputs.operation == 'retry-private-backup'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+          ALLOW_EXISTING_IDENTICAL: "true"
+          UPDATE_CURRENT_POINTER: "true"
+        shell: bash
+        run: bash .github/scripts/backup_release_to_private_repo.sh
+
+      - name: Record private backup recovery
+        if: inputs.operation == 'retry-private-backup'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          BACKUP_COMMIT: ${{ steps.backup.outputs.backup_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          [[ -n "$BACKUP_COMMIT" ]] || { echo "::error::Private backup commit was not recorded."; exit 1; }
+          jq --arg version "$RELEASE_VERSION" --arg backup "$BACKUP_COMMIT" --arg now "$NOW" \
+            'if .latestRelease.version == $version then
+               .status.backup="private-repository-verified" |
+               .latestRelease.privateBackupCommit=$backup |
+               .lastUpdated=$now
+             else error("dashboard latest release does not match recovery version") end' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+          mv status/release-dashboard.tmp status/release-dashboard.json
+          python3 .github/scripts/generate_release_dashboard.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/release-dashboard.json status/README.md
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Toolkit ${RELEASE_VERSION} private backup recovery"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Claim Discord retry without posting
+        id: discord_guard
+        if: inputs.operation == 'retry-discord'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DASHBOARD="status/release-dashboard.json"
+          DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' "$DASHBOARD")"
+          GF_VERIFIED="$(jq -r '.latestRelease.greasyForkVerified // false' "$DASHBOARD")"
+          BACKUP_COMMIT="$(jq -r '.latestRelease.privateBackupCommit // empty' "$DASHBOARD")"
+          DISCORD_POSTED="$(jq -r '.latestRelease.discordPosted // false' "$DASHBOARD")"
+          PENDING="$(jq -r '.recovery.discordAnnouncement.state // empty' "$DASHBOARD")"
+
+          [[ "$DASHBOARD_VERSION" == "$RELEASE_VERSION" ]] || { echo "::error::Dashboard latest version does not match."; exit 1; }
+          [[ "$GF_VERIFIED" == "true" ]] || { echo "::error::Greasy Fork is not verified; Discord retry is blocked."; exit 1; }
+          [[ -n "$BACKUP_COMMIT" ]] || { echo "::error::Private backup is not recorded; Discord retry is blocked."; exit 1; }
+
+          if [[ "$DISCORD_POSTED" == "true" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Discord is already recorded as posted; retry suppressed."
+            exit 0
+          fi
+          [[ -z "$PENDING" ]] || {
+            echo "::error::A previous Discord retry is marked pending. Inspect Discord manually before clearing the ambiguous state; automatic reposting is blocked."
+            exit 1
+          }
+
+          NONCE="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq --arg version "$RELEASE_VERSION" --arg nonce "$NONCE" --arg now "$NOW" \
+            '.recovery.discordAnnouncement={version:$version,state:"pending",nonce:$nonce,startedAt:$now}' \
+            "$DASHBOARD" > status/release-dashboard.tmp
+          mv status/release-dashboard.tmp "$DASHBOARD"
+          python3 .github/scripts/generate_release_dashboard.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DASHBOARD" status/README.md
+          git commit -m "Claim Toolkit ${RELEASE_VERSION} Discord recovery"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "backup_commit=$BACKUP_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "nonce=$NONCE" >> "$GITHUB_OUTPUT"
+
+      - name: Retry verified Discord release announcement
+        if: inputs.operation == 'retry-discord' && steps.discord_guard.outputs.skip != 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_URL: ${{ steps.bundle.outputs.release_url }}
+          BACKUP_COMMIT: ${{ steps.discord_guard.outputs.backup_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode primary \
+            --version "$RELEASE_VERSION" \
+            --changelog "release-bundle/CHANGELOG-v${RELEASE_VERSION}.md" \
+            --output /tmp/discord-release-payload.json \
+            --release-url "$RELEASE_URL" \
+            --script-url "$SCRIPT_URL" \
+            --install-url "$INSTALL_URL" \
+            --sha256 "$HASH" \
+            --backup-commit "$BACKUP_COMMIT"
+          curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
+            --request POST --header "Content-Type: application/json" \
+            --data @/tmp/discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true" \
+            > /tmp/discord-release-response.json
+          jq -e '.id and .channel_id' /tmp/discord-release-response.json >/dev/null
+
+      - name: Finalize Discord recovery state
+        if: inputs.operation == 'retry-discord' && steps.discord_guard.outputs.skip != 'true'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          EXPECTED_NONCE: ${{ steps.discord_guard.outputs.nonce }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          DASHBOARD="status/release-dashboard.json"
+          NONCE="$(jq -r '.recovery.discordAnnouncement.nonce // empty' "$DASHBOARD")"
+          [[ "$NONCE" == "$EXPECTED_NONCE" ]] || { echo "::error::Discord recovery claim changed before finalization."; exit 1; }
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq --arg version "$RELEASE_VERSION" --arg now "$NOW" \
+            'if .latestRelease.version == $version then
+               .status.discordRelease="posted" |
+               .latestRelease.discordPosted=true |
+               .latestRelease.completedAt=(.latestRelease.completedAt // $now) |
+               .lastUpdated=$now |
+               del(.recovery.discordAnnouncement)
+             else error("dashboard latest release does not match recovery version") end' \
+            "$DASHBOARD" > status/release-dashboard.tmp
+          mv status/release-dashboard.tmp "$DASHBOARD"
+          printf '%s\n' "$RELEASE_VERSION" > .github/greasyfork-version.txt
+          python3 .github/scripts/generate_release_dashboard.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$DASHBOARD" status/README.md .github/greasyfork-version.txt
+          git commit -m "Record Toolkit ${RELEASE_VERSION} Discord recovery"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Verify private archive for dashboard rebuild
+        id: rebuild_backup
+        if: inputs.operation == 'rebuild-dashboard'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HASH: ${{ steps.bundle.outputs.release_sha256 }}
+          MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$(mktemp -d)"
+          BASIC_AUTH="$(printf 'x-access-token:%s' "$MIGRATION_REPO_TOKEN" | base64 -w0)"
+          git -c http.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" clone --depth 1 \
+            https://github.com/Conroy1988/missionchief-map-command-toolkit-private.git "$WORK/private"
+          TARGET="$WORK/private/releases/v${RELEASE_VERSION}"
+          [[ -d "$TARGET" ]] || { echo "::error::Private archive for v${RELEASE_VERSION} is missing."; exit 1; }
+          [[ "$(jq -r '.sha256 // empty' "$TARGET/backup-record.json")" == "$RELEASE_HASH" ]] || {
+            echo "::error::Private archive SHA-256 does not match GitHub Release."
+            exit 1
+          }
+          BACKUP_COMMIT="$(git -C "$WORK/private" log -1 --format=%H -- "releases/v${RELEASE_VERSION}")"
+          [[ -n "$BACKUP_COMMIT" ]] || { echo "::error::Could not resolve private backup commit."; exit 1; }
+          echo "backup_commit=$BACKUP_COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild verified release dashboard
+        if: inputs.operation == 'rebuild-dashboard'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HASH: ${{ steps.bundle.outputs.release_sha256 }}
+          RELEASE_URL: ${{ steps.bundle.outputs.release_url }}
+          BACKUP_COMMIT: ${{ steps.rebuild_backup.outputs.backup_commit }}
+          DISCORD_STATE: ${{ inputs.discord_state }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          LIVE_VERSION="$(curl --fail --silent --show-error --location --compressed --max-time 30 \
+            --header 'Cache-Control: no-cache' \
+            "${META_URL}?cache_bust=$(date +%s%N)" | sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' | head -n 1 | xargs)"
+          [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] || { echo "::error::Greasy Fork does not report v${RELEASE_VERSION}."; exit 1; }
+
+          case "$DISCORD_STATE" in
+            posted) DISCORD_POSTED=true ;;
+            not-posted) DISCORD_POSTED=false ;;
+            preserve)
+              [[ "$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)" == "$RELEASE_VERSION" ]] || {
+                echo "::error::Cannot preserve Discord state because the existing dashboard records a different version."
+                exit 1
+              }
+              DISCORD_POSTED="$(jq -r '.latestRelease.discordPosted // false' status/release-dashboard.json)"
+              ;;
+          esac
+
+          NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          jq --arg version "$RELEASE_VERSION" --arg hash "$RELEASE_HASH" --arg releaseUrl "$RELEASE_URL" \
+             --arg backup "$BACKUP_COMMIT" --arg now "$NOW" --argjson discord "$DISCORD_POSTED" \
+            '.currentVersion=$version |
+             .status.validation="passed" |
+             .status.githubRelease="published" |
+             .status.greasyForkSync="verified" |
+             .status.backup="private-repository-verified" |
+             .status.discordRelease=(if $discord then "posted" else "not-posted" end) |
+             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,privateBackupCommit:$backup,discordPosted:$discord,completedAt:$now} |
+             .lastUpdated=$now |
+             del(.recovery.discordAnnouncement)' \
+            status/release-dashboard.json > status/release-dashboard.tmp
+          mv status/release-dashboard.tmp status/release-dashboard.json
+          if [[ "$DISCORD_POSTED" == "true" ]]; then
+            printf '%s\n' "$RELEASE_VERSION" > .github/greasyfork-version.txt
+          fi
+          python3 .github/scripts/generate_release_dashboard.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/release-dashboard.json status/README.md .github/greasyfork-version.txt
+          git commit -m "Rebuild Toolkit ${RELEASE_VERSION} release dashboard"
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+      - name: Repair stable GitHub Release assets
+        if: inputs.operation == 'repair-stable-assets'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HASH: ${{ steps.bundle.outputs.release_sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${RELEASE_VERSION}"
+          cp "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.user.js" /tmp/MissionChief_Map_Command_Toolkit.user.js
+          cp "release-bundle/MissionChief_Map_Command_Toolkit_v${RELEASE_VERSION}.txt" /tmp/MissionChief_Map_Command_Toolkit.txt
+          gh release upload "$TAG" \
+            /tmp/MissionChief_Map_Command_Toolkit.user.js \
+            /tmp/MissionChief_Map_Command_Toolkit.txt \
+            --clobber
+
+          rm -rf /tmp/repaired-release
+          mkdir -p /tmp/repaired-release
+          gh release download "$TAG" --dir /tmp/repaired-release \
+            --pattern 'MissionChief_Map_Command_Toolkit.user.js' \
+            --pattern 'MissionChief_Map_Command_Toolkit.txt'
+          cmp --silent /tmp/repaired-release/MissionChief_Map_Command_Toolkit.user.js \
+            /tmp/repaired-release/MissionChief_Map_Command_Toolkit.txt
+          [[ "$(sha256sum /tmp/repaired-release/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')" == "$RELEASE_HASH" ]] || {
+            echo "::error::Repaired stable release asset has the wrong SHA-256."
+            exit 1
+          }
+
+          gh release view "$TAG" --json name,body > /tmp/release-state.json
+          jq -r '.body' /tmp/release-state.json > /tmp/release-notes.md
+          gh release edit "$TAG" --title "$(jq -r '.name' /tmp/release-state.json)" --notes-file /tmp/release-notes.md --latest
+
+      - name: Write recovery summary
+        if: always()
+        env:
+          OPERATION: ${{ inputs.operation }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_HASH: ${{ steps.bundle.outputs.release_sha256 }}
+        shell: bash
+        run: |
+          {
+            echo "# Toolkit release recovery"
+            echo
+            echo "- Operation: \`${OPERATION}\`"
+            echo "- Version: \`v${RELEASE_VERSION}\`"
+            echo "- Verified SHA-256: \`${RELEASE_HASH:-unavailable}\`"
+            echo "- Production lock: \`toolkit-production-release\`"
+            echo "- No new GitHub Release was created"
+          } >> "$GITHUB_STEP_SUMMARY"

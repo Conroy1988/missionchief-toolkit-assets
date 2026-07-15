@@ -1,0 +1,205 @@
+name: Prepare Release Rollback
+run-name: Prepare rollback · v${{ inputs.source_version }} → v${{ inputs.recovery_version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_version:
+        description: "Previously verified version whose executable implementation should be restored"
+        required: true
+        type: string
+      recovery_version:
+        description: "New version to publish after review; must be higher than the current release"
+        required: true
+        type: string
+      confirmation:
+        description: "Type PREPARE ROLLBACK <source> TO <recovery> exactly"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: toolkit-rollback-preparation
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Restore verified source and open rollback PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate rollback request
+        id: request
+        env:
+          SOURCE_VERSION: ${{ inputs.source_version }}
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_RE='^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$'
+          [[ "$SOURCE_VERSION" =~ $VERSION_RE ]] || { echo "::error::Invalid source version."; exit 1; }
+          [[ "$RECOVERY_VERSION" =~ $VERSION_RE ]] || { echo "::error::Invalid recovery version."; exit 1; }
+          EXPECTED="PREPARE ROLLBACK ${SOURCE_VERSION} TO ${RECOVERY_VERSION}"
+          [[ "$CONFIRMATION" == "$EXPECTED" ]] || {
+            echo "::error::Confirmation mismatch. Enter exactly: $EXPECTED"
+            exit 1
+          }
+          CURRENT_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
+          [[ -n "$CURRENT_VERSION" ]] || { echo "::error::Dashboard has no verified latest release."; exit 1; }
+          [[ "$SOURCE_VERSION" != "$CURRENT_VERSION" ]] || {
+            echo "::error::Source version is already the current release; this is not a rollback."
+            exit 1
+          }
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify rollback generator self-tests
+        run: python3 .github/scripts/prepare_rollback_candidate.py --self-test
+
+      - name: Download and verify source release
+        id: source_bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.source_version }}
+          OUTPUT_DIR: rollback-source
+          REQUIRE_STABLE_ASSETS: "true"
+        shell: bash
+        run: bash .github/scripts/download_verified_release_bundle.sh
+
+      - name: Generate monotonic rollback candidate
+        env:
+          SOURCE_VERSION: ${{ inputs.source_version }}
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          CURRENT_VERSION: ${{ steps.request.outputs.current_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/prepare_rollback_candidate.py \
+            --source "rollback-source/MissionChief_Map_Command_Toolkit_v${SOURCE_VERSION}.user.js" \
+            --output src/MissionChief_Map_Command_Toolkit.user.js \
+            --changelog CHANGELOG.md \
+            --source-version "$SOURCE_VERSION" \
+            --recovery-version "$RECOVERY_VERSION" \
+            --current-version "$CURRENT_VERSION" \
+            > rollback-candidate.json
+
+      - name: Validate rollback candidate
+        env:
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          SOURCE_VERSION: ${{ inputs.source_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          [[ "$(jq -r '.version' dist/release-manifest.json)" == "$RECOVERY_VERSION" ]]
+          python3 .github/scripts/check_performance_budget.py \
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
+            --base "rollback-source/MissionChief_Map_Command_Toolkit_v${SOURCE_VERSION}.user.js" \
+            --policy .github/performance-budget.json \
+            --json-output rollback-performance.json \
+            --markdown-output rollback-performance.md
+
+      - name: Open rollback review pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_VERSION: ${{ inputs.source_version }}
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          CURRENT_VERSION: ${{ steps.request.outputs.current_version }}
+          SOURCE_HASH: ${{ steps.source_bundle.outputs.release_sha256 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          CANDIDATE_HASH="$(sha256sum src/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
+          BRANCH="recovery/rollback-v${SOURCE_VERSION}-to-v${RECOVERY_VERSION}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add \
+            src/MissionChief_Map_Command_Toolkit.user.js \
+            dist/MissionChief_Map_Command_Toolkit.user.js \
+            dist/MissionChief_Map_Command_Toolkit.txt \
+            dist/SHA256SUMS.txt \
+            dist/release-manifest.json \
+            CHANGELOG.md
+          git commit -m "Prepare Toolkit v${RECOVERY_VERSION} rollback to v${SOURCE_VERSION} implementation"
+          git push origin "$BRANCH"
+
+          {
+            echo "## Emergency rollback candidate"
+            echo
+            echo "This PR restores the verified executable implementation from **v${SOURCE_VERSION}** and republishes it under the monotonic recovery version **v${RECOVERY_VERSION}**."
+            echo
+            echo "### Integrity"
+            echo
+            echo "- Current public version when prepared: \`v${CURRENT_VERSION}\`"
+            echo "- Restored source release: \`v${SOURCE_VERSION}\`"
+            echo "- Restored source SHA-256: \`${SOURCE_HASH}\`"
+            echo "- Recovery candidate SHA-256: \`${CANDIDATE_HASH}\`"
+            echo "- JavaScript syntax: passed"
+            echo "- Distribution \`.user.js\` / \`.txt\` parity: passed"
+            echo "- Static performance budget: passed"
+            echo
+            echo "### Safety"
+            echo
+            echo "- This PR does **not** publish a GitHub Release."
+            echo "- This PR does **not** change Greasy Fork."
+            echo "- This PR does **not** post to Discord."
+            echo "- After review and merge, run **Release Readiness Check** and the normal **Release Toolkit** workflow for v${RECOVERY_VERSION}."
+          } > /tmp/rollback-pr.md
+
+          PR_URL="$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "[Recovery] Toolkit v${RECOVERY_VERSION} rollback to v${SOURCE_VERSION} implementation" \
+            --body-file /tmp/rollback-pr.md)"
+          PR_NUMBER="${PR_URL##*/}"
+          gh pr edit "$PR_NUMBER" \
+            --add-label 'area: release pipeline' \
+            --add-label 'priority: critical' \
+            --add-label 'confirmed'
+          echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "candidate_hash=$CANDIDATE_HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload rollback diagnostics
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-rollback-v${{ inputs.recovery_version }}
+          path: |
+            rollback-candidate.json
+            rollback-performance.json
+            rollback-performance.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Write rollback preparation summary
+        env:
+          PR_URL: ${{ steps.pr.outputs.url }}
+          CANDIDATE_HASH: ${{ steps.pr.outputs.candidate_hash }}
+        shell: bash
+        run: |
+          {
+            echo "# Toolkit rollback candidate prepared"
+            echo
+            echo "- Restored implementation: \`v${{ inputs.source_version }}\`"
+            echo "- Recovery version: \`v${{ inputs.recovery_version }}\`"
+            echo "- Candidate SHA-256: \`${CANDIDATE_HASH}\`"
+            echo "- Review PR: ${PR_URL}"
+            echo "- Public release: not created"
+            echo "- Greasy Fork: unchanged"
+            echo "- Discord: unchanged"
+          } >> "$GITHUB_STEP_SUMMARY"

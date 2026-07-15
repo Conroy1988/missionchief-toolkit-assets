@@ -1,0 +1,90 @@
+name: Validate Release Recovery
+
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/download_verified_release_bundle.sh"
+      - ".github/scripts/backup_release_to_private_repo.sh"
+      - ".github/scripts/prepare_rollback_candidate.py"
+      - ".github/workflows/release-recovery.yml"
+      - ".github/workflows/prepare-release-rollback.yml"
+      - ".github/workflows/release-recovery-validation.yml"
+      - "docs/RELEASE_RECOVERY.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-release-recovery-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate recovery scripts and workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate shell syntax
+        run: |
+          bash -n .github/scripts/download_verified_release_bundle.sh
+          bash -n .github/scripts/backup_release_to_private_repo.sh
+
+      - name: Run rollback generator self-tests
+        run: python3 .github/scripts/prepare_rollback_candidate.py --self-test
+
+      - name: Parse direct recovery workflow YAML
+        shell: ruby {0}
+        run: |
+          require "yaml"
+          YAML.parse_file(".github/workflows/release-recovery.yml")
+          puts "Parsed direct recovery workflow"
+
+      - name: Parse rollback workflow YAML
+        shell: ruby {0}
+        run: |
+          require "yaml"
+          YAML.parse_file(".github/workflows/prepare-release-rollback.yml")
+          puts "Parsed rollback workflow"
+
+      - name: Parse validator workflow YAML
+        shell: ruby {0}
+        run: |
+          require "yaml"
+          YAML.parse_file(".github/workflows/release-recovery-validation.yml")
+          puts "Parsed recovery validator workflow"
+
+      - name: Validate documented confirmation phrases
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            'VERIFY <version>'
+            'RETRY GREASYFORK <version>'
+            'RETRY BACKUP <version>'
+            'RETRY DISCORD <version>'
+            'REBUILD DASHBOARD <version>'
+            'REPAIR ASSETS <version>'
+            'PREPARE ROLLBACK <source> TO <recovery>'
+          )
+          for phrase in "${required[@]}"; do
+            grep -Fq "$phrase" docs/RELEASE_RECOVERY.md || {
+              echo "::error::Recovery documentation is missing confirmation phrase: $phrase"
+              exit 1
+            }
+          done
+
+      - name: Validate recovery safety invariants
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'group: toolkit-production-release' .github/workflows/release-recovery.yml
+          grep -Fq 'Discord retry is marked pending' .github/workflows/release-recovery.yml
+          grep -Fq 'latest GitHub Release' .github/workflows/release-recovery.yml
+          grep -Fq 'This PR does **not** publish a GitHub Release.' .github/workflows/prepare-release-rollback.yml
+          grep -Fq 'ALLOW_EXISTING_IDENTICAL' .github/scripts/backup_release_to_private_repo.sh
+          echo "Recovery safety invariants are present."

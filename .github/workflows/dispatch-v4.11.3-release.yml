@@ -1,0 +1,118 @@
+name: Dispatch Toolkit v4.11.3 Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/dispatch-v4.11.3-release.yml"
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dispatch-toolkit-v4-11-3-release
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Verify readiness then launch production release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      VERSION: "4.11.3"
+
+    steps:
+      - name: Dispatch release readiness
+        id: readiness_dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "started_at=$STARTED_AT" >> "$GITHUB_OUTPUT"
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPOSITORY}/actions/workflows/release-readiness-check.yml/dispatches" \
+            -f ref=main \
+            -f 'inputs[version]'="$VERSION"
+          echo "Release readiness dispatched for v${VERSION}."
+
+      - name: Wait for release readiness
+        id: readiness
+        env:
+          STARTED_AT: ${{ steps.readiness_dispatch.outputs.started_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID=""
+          for attempt in $(seq 1 60); do
+            RUN_ID="$(gh api "/repos/${REPOSITORY}/actions/workflows/release-readiness-check.yml/runs?event=workflow_dispatch&branch=main&per_page=20" \
+              --jq ".workflow_runs | map(select(.created_at >= \"${STARTED_AT}\")) | sort_by(.created_at) | last | .id // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 5
+          done
+          [[ -n "$RUN_ID" ]] || { echo "::error::Could not locate the dispatched readiness run."; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Readiness run: ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          for attempt in $(seq 1 180); do
+            STATUS="$(gh api "/repos/${REPOSITORY}/actions/runs/${RUN_ID}" --jq '.status')"
+            CONCLUSION="$(gh api "/repos/${REPOSITORY}/actions/runs/${RUN_ID}" --jq '.conclusion // ""')"
+            echo "Readiness status: ${STATUS}${CONCLUSION:+ / ${CONCLUSION}}"
+            if [[ "$STATUS" == "completed" ]]; then
+              [[ "$CONCLUSION" == "success" ]] || { echo "::error::Release readiness concluded ${CONCLUSION}."; exit 1; }
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Release readiness timed out."
+          exit 1
+
+      - name: Dispatch production release
+        id: release_dispatch
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "started_at=$STARTED_AT" >> "$GITHUB_OUTPUT"
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPOSITORY}/actions/workflows/release-toolkit.yml/dispatches" \
+            -f ref=main \
+            -f 'inputs[version]'="$VERSION" \
+            -f 'inputs[confirmation]'=RELEASE
+          echo "Production release dispatched for v${VERSION}."
+
+      - name: Wait for verified production release
+        env:
+          STARTED_AT: ${{ steps.release_dispatch.outputs.started_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID=""
+          for attempt in $(seq 1 60); do
+            RUN_ID="$(gh api "/repos/${REPOSITORY}/actions/workflows/release-toolkit.yml/runs?event=workflow_dispatch&branch=main&per_page=20" \
+              --jq ".workflow_runs | map(select(.created_at >= \"${STARTED_AT}\")) | sort_by(.created_at) | last | .id // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 5
+          done
+          [[ -n "$RUN_ID" ]] || { echo "::error::Could not locate the dispatched production release run."; exit 1; }
+          echo "Release run: ${GITHUB_SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          for attempt in $(seq 1 330); do
+            STATUS="$(gh api "/repos/${REPOSITORY}/actions/runs/${RUN_ID}" --jq '.status')"
+            CONCLUSION="$(gh api "/repos/${REPOSITORY}/actions/runs/${RUN_ID}" --jq '.conclusion // ""')"
+            echo "Release status: ${STATUS}${CONCLUSION:+ / ${CONCLUSION}}"
+            if [[ "$STATUS" == "completed" ]]; then
+              [[ "$CONCLUSION" == "success" ]] || { echo "::error::Production release concluded ${CONCLUSION}."; exit 1; }
+              echo "Toolkit v${VERSION} completed the verified production release pipeline."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Production release timed out."
+          exit 1

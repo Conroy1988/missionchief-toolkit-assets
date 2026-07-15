@@ -1,0 +1,49 @@
+name: Bump Audit Candidate Version
+
+on:
+  pull_request:
+    types:
+      - synchronize
+    branches:
+      - main
+    paths:
+      - ".github/workflows/bump-audit-candidate-version.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out audit branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Set v4.11.3 candidate version
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js; do
+            COUNT="$(grep -c '^// @version      4\.11\.2$' "$path")"
+            test "$COUNT" = 1
+            sed -i 's/^\/\/ @version      4\.11\.2$/\/\/ @version      4.11.3/' "$path"
+          done
+          cmp -s src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Commit candidate version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          git commit -m "Set audited Toolkit candidate to v4.11.3"
+          git pull --rebase origin "${{ github.event.pull_request.head.ref }}"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

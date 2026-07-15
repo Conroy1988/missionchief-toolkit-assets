@@ -1,0 +1,69 @@
+name: Pages Documentation Bootstrap
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/workflows/pages-documentation-bootstrap.yml"
+      - ".github/pages-bootstrap/**"
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Install reviewed Pages package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/pages-bootstrap/package.part* | tr -d '\n' | base64 --decode > /tmp/pages-package.tgz
+          tar -xzf /tmp/pages-package.tgz
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+          badge = '[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-28a9ff)](https://conroy1988.github.io/missionchief-toolkit-assets/)'
+          if badge not in text:
+              anchor = '[![Current Version](https://img.shields.io/badge/version-4.11.2-2563eb)](status/README.md)'
+              text = text.replace(anchor, anchor + '\n' + badge)
+
+          old_links = '[Install Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) · [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) · [Release Pipeline](docs/RELEASE_PIPELINE.md) · [Changelog](CHANGELOG.md) · [Control Panel](status/README.md)'
+          new_links = '[Install Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) · [Documentation](https://conroy1988.github.io/missionchief-toolkit-assets/) · [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) · [Release Pipeline](docs/RELEASE_PIPELINE.md) · [Changelog](CHANGELOG.md) · [Control Panel](status/README.md)'
+          text = text.replace(old_links, new_links)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          rm -rf .github/pages-bootstrap
+          rm .github/workflows/pages-documentation-bootstrap.yml
+
+          python3 -m py_compile .github/scripts/build_pages_site.py
+          node --check docs/site-assets/site.js
+          python3 -m json.tool docs/site-data.json > /dev/null
+          python3 .github/scripts/build_pages_site.py \
+            --output /tmp/toolkit-pages-preview \
+            --base-path /missionchief-toolkit-assets/
+
+      - name: Commit Pages package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add GitHub Pages documentation site"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

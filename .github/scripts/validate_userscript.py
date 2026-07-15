@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -16,10 +19,14 @@ USER_JS = DIST / "MissionChief_Map_Command_Toolkit.user.js"
 TXT = DIST / "MissionChief_Map_Command_Toolkit.txt"
 SUMS = DIST / "SHA256SUMS.txt"
 MANIFEST = DIST / "release-manifest.json"
+INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
+INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
+ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 CONFLICT_RE = re.compile(r"^(?:<<<<<<< .+|=======|>>>>>>> .+)$", re.MULTILINE)
+RELEASE_TAG_RE = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 
 
 def fail(message: str) -> None:
@@ -77,6 +84,117 @@ def is_missionchief_rule(value: str) -> bool:
     return "missionchief.co.uk" in value.casefold()
 
 
+def latest_release_baseline(output: Path) -> str | None:
+    source_path = SOURCE.relative_to(ROOT).as_posix()
+    try:
+        tags = subprocess.run(
+            ["git", "tag", "--merged", "HEAD", "--sort=-version:refname"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+    for tag in tags:
+        if not RELEASE_TAG_RE.fullmatch(tag.strip()):
+            continue
+        object_name = f"{tag}:{source_path}"
+        exists = subprocess.run(
+            ["git", "cat-file", "-e", object_name],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if exists.returncode != 0:
+            continue
+        try:
+            payload = subprocess.run(
+                ["git", "show", object_name],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        output.write_bytes(payload)
+        return tag
+    return None
+
+
+def run_integrity_gate() -> None:
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR]
+    missing = [path.relative_to(ROOT) for path in required if not path.exists()]
+    if missing:
+        fail(
+            "integrity tooling is incomplete: "
+            + ", ".join(str(path) for path in missing)
+        )
+
+    with tempfile.TemporaryDirectory(prefix="mcms-integrity-") as temp:
+        baseline_path = Path(temp) / "release-baseline.user.js"
+        baseline_ref = latest_release_baseline(baseline_path)
+        integrity_json = Path(temp) / "code-integrity-report.json"
+        integrity_markdown = Path(temp) / "code-integrity-report.md"
+        asset_json = Path(temp) / "asset-health-report.json"
+        asset_markdown = Path(temp) / "asset-health-report.md"
+
+        command = [
+            sys.executable,
+            str(INTEGRITY_AUDITOR),
+            "--candidate",
+            str(SOURCE),
+            "--policy",
+            str(INTEGRITY_POLICY),
+            "--json-output",
+            str(integrity_json),
+            "--markdown-output",
+            str(integrity_markdown),
+        ]
+        if baseline_ref and baseline_path.exists():
+            command.extend(["--base", str(baseline_path)])
+            print(f"Code-integrity release baseline: {baseline_ref}")
+        else:
+            print(
+                "Code-integrity release baseline unavailable; "
+                "current-state checks will still run."
+            )
+
+        integrity = subprocess.run(command, cwd=ROOT)
+        if integrity.returncode != 0:
+            if integrity_markdown.exists():
+                print(integrity_markdown.read_text(encoding="utf-8"))
+            fail("expanded code-integrity audit failed")
+
+        assets = subprocess.run(
+            [
+                sys.executable,
+                str(ASSET_AUDITOR),
+                "--mode",
+                "static",
+                "--json-output",
+                str(asset_json),
+                "--markdown-output",
+                str(asset_markdown),
+            ],
+            cwd=ROOT,
+        )
+        if assets.returncode != 0:
+            if asset_markdown.exists():
+                print(asset_markdown.read_text(encoding="utf-8"))
+            fail("static public-asset integrity audit failed")
+
+        report = json.loads(integrity_json.read_text(encoding="utf-8"))
+        metrics = report.get("metrics", {})
+        print(
+            "Code integrity passed: "
+            f"{metrics.get('staticSelectors', 0)} static selectors, "
+            f"{metrics.get('shortcutBindings', 0)} shortcut bindings, "
+            f"{metrics.get('repositoryTextFiles', 0)} repository text files."
+        )
+
+
 def main() -> int:
     if not SOURCE.exists():
         fail(f"canonical source is missing: {SOURCE.relative_to(ROOT)}")
@@ -124,6 +242,8 @@ def main() -> int:
             baseline_match = baseline.get("sha256") == source_hash
             if not baseline_match:
                 fail("source changed without a version bump from the imported baseline")
+
+    run_integrity_gate()
 
     DIST.mkdir(parents=True, exist_ok=True)
     USER_JS.write_bytes(raw)
@@ -178,6 +298,8 @@ def main() -> int:
                 "lines": manifest["lines"],
                 "baselineHashMatch": baseline_match,
                 "metadataWarnings": metadata_warnings,
+                "codeIntegrity": "passed",
+                "staticAssetIntegrity": "passed",
             },
             indent=2,
         )

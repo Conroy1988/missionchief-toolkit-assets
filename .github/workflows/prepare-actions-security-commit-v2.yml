@@ -28,7 +28,7 @@ jobs:
 
       - name: Prepare detached commit
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           PARENT_SHA: ${{ github.event.pull_request.head.sha }}
         run: python3 .github/scripts/prepare_actions_security_commit.py

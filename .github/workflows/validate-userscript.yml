@@ -98,27 +98,53 @@ jobs:
             --arg now "$NOW" \
             '.currentVersion = $version
              | .status.validation = "passed"
-             | .status.githubRelease = "not-configured"
-             | .status.greasyForkSync = "legacy-monitor"
-             | .status.backup = "baseline-recorded"
+             | .status.githubRelease = (
+                 if .latestRelease.version == $version and ((.latestRelease.githubRelease // "") | length) > 0
+                 then "published"
+                 else (.status.githubRelease // "not-configured")
+                 end
+               )
+             | .status.greasyForkSync = (
+                 if .latestRelease.version == $version and .latestRelease.greasyForkVerified == true
+                 then "verified"
+                 else (.status.greasyForkSync // "legacy-monitor")
+                 end
+               )
+             | .status.backup = (
+                 if .latestRelease.version == $version and ((.latestRelease.privateBackupCommit // "") | length) > 0
+                 then "private-repository-verified"
+                 else (.status.backup // "baseline-recorded")
+                 end
+               )
+             | .status.discordRelease = (
+                 if .latestRelease.version == $version and .latestRelease.discordPosted == true
+                 then "posted"
+                 else (.status.discordRelease // "not-configured")
+                 end
+               )
              | .source = {
                  canonicalPath: "src/MissionChief_Map_Command_Toolkit.user.js",
                  validatedSha256: $hash,
-                 state: "validated-baseline"
+                 state: "validated-canonical-source"
                }
              | .distributionCandidate = {
                  path: "dist/MissionChief_Map_Command_Toolkit.user.js",
                  version: $version,
-                 state: "dry-run-built"
+                 state: "validated"
                }
+             | if .latestRelease.version == $version and .latestRelease.greasyForkVerified == true
+               then del(.pendingRelease)
+               else .
+               end
              | .lastUpdated = $now' \
             status/release-dashboard.json > status/release-dashboard.tmp
 
           mv status/release-dashboard.tmp status/release-dashboard.json
+          python3 .github/scripts/generate_release_dashboard.py
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist status/release-dashboard.json
+          git add dist status/release-dashboard.json status/README.md
 
           if git diff --cached --quiet; then
             echo "Validated distribution is already current."
@@ -126,4 +152,5 @@ jobs:
           fi
 
           git commit -m "Build validated Toolkit ${VERSION} distribution candidate"
-          git push
+          git pull --rebase origin main
+          git push origin HEAD:main

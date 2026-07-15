@@ -21,25 +21,36 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
-      - name: Print workflow and action inventory
+      - name: Build workflow and action inventory
         shell: bash
         run: |
           set -euo pipefail
-          echo '=== WORKFLOW FILES ==='
-          find .github/workflows -maxdepth 1 -type f -print | sort
-          echo '=== ACTION REFERENCES ==='
-          grep -RInE '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+' .github/workflows | sort || true
-          echo '=== TOP-LEVEL PERMISSIONS ==='
-          python3 - <<'PY'
+          {
+            echo '=== WORKFLOW FILES ==='
+            find .github/workflows -maxdepth 1 -type f -print | sort
+            echo '=== ACTION REFERENCES ==='
+            grep -RInE '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+' .github/workflows | sort || true
+            echo '=== PERMISSIONS BLOCKS ==='
+            python3 - <<'PY'
           from pathlib import Path
           for path in sorted(Path('.github/workflows').glob('*.y*ml')):
               lines = path.read_text(encoding='utf-8').splitlines()
               print(f'--- {path}')
               for index, line in enumerate(lines, 1):
-                  if line.startswith('permissions:') or line.startswith('  permissions:'):
+                  if line.startswith('permissions:') or line.startswith('  permissions:') or line.startswith('    permissions:'):
                       print(f'{index}: {line}')
-                      for follow in lines[index:index+8]:
-                          if follow and not follow.startswith(' '):
+                      indent = len(line) - len(line.lstrip())
+                      for follow in lines[index:index+10]:
+                          if follow.strip() and len(follow) - len(follow.lstrip()) <= indent:
                               break
                           print(f'    {follow}')
           PY
+          } > actions-security-inventory.txt
+
+      - name: Upload inventory
+        uses: actions/upload-artifact@v6
+        with:
+          name: actions-security-inventory
+          path: actions-security-inventory.txt
+          if-no-files-found: error
+          retention-days: 3

@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:20"
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    labels:
+      - enhancement
+      - "area: release pipeline"
+      - "priority: normal"
+    commit-message:
+      prefix: chore(actions)
+    groups:
+      official-github-actions:
+        patterns:
+          - "actions/*"

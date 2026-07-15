@@ -25,13 +25,46 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Install reviewed Pages package
+      - name: Verify staged package integrity
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/pages-bootstrap/package.part* | tr -d '\n' | base64 --decode > /tmp/pages-package.tgz
-          tar -xzf /tmp/pages-package.tgz
+          EXPECTED_LENGTHS=(3800 3800 7600 7600 5556)
+          EXPECTED_HASHES=(
+            086877e36f4d12b1b3adc1843fac3abfe055a55b5d80ca1813ba7c0815b02a9d
+            4007c3301c995a0818cc8b4b386b76631dbb6ade1c02b2634dd6dd6794bf6d25
+            497b38e64711e17092cb5796dbcef6e01bbb9774ac7e7a037e952054a37e05be
+            94cc52154675b8ab749c74b5b8bc75e5bfc339863a3ff3c528d52c67fae77bcb
+            fa34a0a25828577b5a972034442e81f8ad58e1fb1139ea06e80c4e1c5b0e5979
+          )
 
+          for index in 1 2 3 4 5; do
+            file=".github/pages-bootstrap/package.part0${index}"
+            content="$(tr -d '\n' < "$file")"
+            length="${#content}"
+            hash="$(printf '%s' "$content" | sha256sum | awk '{print $1}')"
+            expected_index=$((index - 1))
+            echo "${file}: ${length} bytes, ${hash}"
+            test "$length" = "${EXPECTED_LENGTHS[$expected_index]}"
+            test "$hash" = "${EXPECTED_HASHES[$expected_index]}"
+          done
+
+          cat .github/pages-bootstrap/package.part* | tr -d '\n' > /tmp/pages-package.b64
+          test "$(wc -c < /tmp/pages-package.b64)" = "28356"
+          test "$(sha256sum /tmp/pages-package.b64 | awk '{print $1}')" = "fe6208069b2f5db001a64b4178e7513cc7567c9027b1682d9ec64e4f968852c7"
+          base64 --decode /tmp/pages-package.b64 > /tmp/pages-package.tgz
+          test "$(sha256sum /tmp/pages-package.tgz | awk '{print $1}')" = "ed66383b9c2101f84938dcd48f09449b9170623b177200da720e0f2a0ab691ee"
+          gzip -t /tmp/pages-package.tgz
+          tar -tzf /tmp/pages-package.tgz
+
+      - name: Extract reviewed Pages package
+        shell: bash
+        run: tar -xzf /tmp/pages-package.tgz
+
+      - name: Update repository navigation and remove bootstrap files
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
 
@@ -51,12 +84,23 @@ jobs:
           rm -rf .github/pages-bootstrap
           rm .github/workflows/pages-documentation-bootstrap.yml
 
+      - name: Validate generated documentation site
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 -m py_compile .github/scripts/build_pages_site.py
           node --check docs/site-assets/site.js
           python3 -m json.tool docs/site-data.json > /dev/null
           python3 .github/scripts/build_pages_site.py \
             --output /tmp/toolkit-pages-preview \
             --base-path /missionchief-toolkit-assets/
+          test "$(find /tmp/toolkit-pages-preview -type f | wc -l)" -ge 13
+          test -s /tmp/toolkit-pages-preview/index.html
+          test -s /tmp/toolkit-pages-preview/features/index.html
+          test -s /tmp/toolkit-pages-preview/themes/index.html
+          test -s /tmp/toolkit-pages-preview/docs/index.html
+          test -s /tmp/toolkit-pages-preview/changelog/index.html
+          test -s /tmp/toolkit-pages-preview/status/index.html
 
       - name: Commit Pages package
         shell: bash

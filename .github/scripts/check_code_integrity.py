@@ -163,7 +163,7 @@ def validate_metadata(text: str, policy: dict) -> tuple[dict[str, list[str]], li
     return meta, findings
 
 
-def _find_matching_brace(text: str, open_pos: int, max_chars: int = 300_000) -> int | None:
+def _find_matching_brace(text: str, open_pos: int, max_chars: int = 2_000_000) -> int | None:
     depth = 0
     quote: str | None = None
     escaped = line_comment = block_comment = False

@@ -1,8 +1,14 @@
 name: Prepare Release Plan
 
-run-name: Release plan · ${{ inputs.release_level }} · ${{ inputs.proposed_version || 'recommended' }}
+run-name: Release plan · ${{ inputs.release_level || 'auto' }} · ${{ inputs.proposed_version || 'recommended' }}
 
 on:
+  pull_request:
+    paths:
+      - ".github/scripts/prepare_release_plan.py"
+      - ".github/workflows/release-planning.yml"
+      - "status/release-dashboard.json"
+      - "CHANGELOG.md"
   workflow_dispatch:
     inputs:
       release_level:
@@ -29,7 +35,7 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: toolkit-release-plan
+  group: toolkit-release-plan-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'operator' }}
   cancel-in-progress: true
 
 jobs:
@@ -38,10 +44,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Check out latest main
+      - name: Check out planning source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -57,17 +63,21 @@ jobs:
 
       - name: Prepare advisory release plan
         shell: bash
+        env:
+          RELEASE_LEVEL: ${{ inputs.release_level || 'auto' }}
+          PROPOSED_VERSION: ${{ inputs.proposed_version || '' }}
+          SINCE: ${{ inputs.since || '' }}
         run: |
           set -euo pipefail
           ARGS=(
             --pull-requests merged-pull-requests.json
-            --release-level '${{ inputs.release_level }}'
+            --release-level "$RELEASE_LEVEL"
           )
-          if [[ -n '${{ inputs.proposed_version }}' ]]; then
-            ARGS+=(--proposed-version '${{ inputs.proposed_version }}')
+          if [[ -n "$PROPOSED_VERSION" ]]; then
+            ARGS+=(--proposed-version "$PROPOSED_VERSION")
           fi
-          if [[ -n '${{ inputs.since }}' ]]; then
-            ARGS+=(--since '${{ inputs.since }}')
+          if [[ -n "$SINCE" ]]; then
+            ARGS+=(--since "$SINCE")
           fi
           python3 .github/scripts/prepare_release_plan.py "${ARGS[@]}"
 

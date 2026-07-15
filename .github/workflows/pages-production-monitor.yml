@@ -3,6 +3,12 @@ name: GitHub Pages Production Monitor
 run-name: Pages production health · ${{ github.event_name }}
 
 on:
+  pull_request:
+    paths:
+      - ".github/pages-monitor-policy.json"
+      - ".github/scripts/check_pages_live.py"
+      - ".github/workflows/pages-production-monitor.yml"
+      - "status/release-dashboard.json"
   workflow_run:
     workflows:
       - GitHub Pages Documentation
@@ -17,8 +23,8 @@ permissions:
   issues: write
 
 concurrency:
-  group: toolkit-pages-production-monitor
-  cancel-in-progress: false
+  group: toolkit-pages-production-monitor-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   monitor:
@@ -26,10 +32,10 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Check out latest main
+      - name: Check out monitored source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
 
       - name: Check live GitHub Pages deployment
@@ -58,7 +64,7 @@ jobs:
           retention-days: 30
 
       - name: Reconcile persistent incident
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}

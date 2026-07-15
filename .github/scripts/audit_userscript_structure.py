@@ -88,7 +88,7 @@ def audit(text: str, policy: dict) -> tuple[list[Finding], dict]:
         out.append(Finding("warning", "shortcut-reuse", f"Keyboard key is handled at multiple source locations: {lines}. Review for conflicting actions.", value))
 
     for m in WEBHOOK.finditer(text):
-        if m.group(0).rstrip("),.;").endswith("/..."):
+        if m.group(0).rstrip("),;").endswith("/..."):
             continue
         out.append(Finding("failure", "embedded-webhook", "A live webhook URL appears embedded in the userscript.", f"line {line(text, m.start())}"))
     for code, pattern in TOKENS.items():

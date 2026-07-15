@@ -1,0 +1,61 @@
+name: One-time Hyrule Source Scan
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/v4130-source-scan-once.yml]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Extract theme and payout architecture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          p=Path('src/MissionChief_Map_Command_Toolkit.user.js')
+          lines=p.read_text(encoding='utf-8').splitlines()
+          patterns=[
+            r'Cyberpunk', r'Umbrella', r'Factorio', r'Fallout', r'007',
+            r'themeSelect', r'themeOptions', r'applyTheme', r'interfaceTheme',
+            r'payoutTemplates', r'payoutTemplate', r'cashout', r'PAYOUT',
+            r'completion history', r'Completion History', r'audioAssets', r'ASSET'
+          ]
+          hits=[]
+          seen=set()
+          for pat in patterns:
+            rx=re.compile(pat,re.I)
+            for i,line in enumerate(lines):
+              if rx.search(line):
+                key=(max(0,i-3),min(len(lines),i+4))
+                if key in seen: continue
+                seen.add(key)
+                block='\n'.join(f'{n+1}: {lines[n]}' for n in range(*key))
+                hits.append(f'### {pat} @ {i+1}\n```js\n{block}\n```')
+                if len(hits)>=80: break
+            if len(hits)>=80: break
+          body='Toolkit theme/payout architecture scan\n\n'+'\n\n'.join(hits)
+          if len(body)>62000: body=body[:62000]+'\n\n[truncated]'
+          subprocess.run(['gh','issue','comment','52','--body',body],check=True)
+          PY
+      - name: Remove scanner
+        shell: bash
+        run: |
+          git rm .github/workflows/v4130-source-scan-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Remove Hyrule source scanner"
+          git pull --rebase origin main
+          git push origin main

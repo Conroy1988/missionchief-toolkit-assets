@@ -1,0 +1,48 @@
+name: Prepare Actions Security Commit v2
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/workflows/prepare-actions-security-commit-v2.yml"
+      - ".github/scripts/prepare_actions_security_commit.py"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prepare detached commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PARENT_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/prepare_actions_security_commit.py
+
+      - name: Upload commit result
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: prepared-actions-security-commit-v2
+          path: |
+            prepared-commit-sha.txt
+            prepared-parent-sha.txt
+            prepared-tree-sha.txt
+            changed-workflows.txt
+            prepare-error.txt
+          if-no-files-found: warn
+          retention-days: 1

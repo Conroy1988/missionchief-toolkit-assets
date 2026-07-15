@@ -1,0 +1,130 @@
+name: GitHub Pages Documentation
+
+run-name: Documentation site · ${{ github.event_name }}
+
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/build_pages_site.py"
+      - ".github/workflows/github-pages.yml"
+      - ".github/release-settings.json"
+      - "docs/site-data.json"
+      - "docs/site-assets/**"
+      - "docs/SITE.md"
+      - "docs/media/**"
+      - "status/release-dashboard.json"
+      - "CHANGELOG.md"
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/scripts/build_pages_site.py"
+      - ".github/workflows/github-pages.yml"
+      - ".github/release-settings.json"
+      - "docs/site-data.json"
+      - "docs/site-assets/**"
+      - "docs/SITE.md"
+      - "docs/media/**"
+      - "status/release-dashboard.json"
+      - "CHANGELOG.md"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Build and validate documentation site
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate source syntax
+        run: |
+          python3 -m py_compile .github/scripts/build_pages_site.py
+          node --check docs/site-assets/site.js
+          python3 -m json.tool docs/site-data.json > /dev/null
+
+      - name: Build static documentation
+        run: |
+          python3 .github/scripts/build_pages_site.py \
+            --output _site \
+            --base-path /missionchief-toolkit-assets/ \
+            | tee pages-build-report.json
+
+      - name: Enforce static-site limits
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE_COUNT="$(find _site -type f | wc -l | xargs)"
+          TOTAL_BYTES="$(du -sb _site | awk '{print $1}')"
+          test "$FILE_COUNT" -ge 10
+          test "$FILE_COUNT" -le 250
+          test "$TOTAL_BYTES" -le 25000000
+          test -s _site/index.html
+          test -s _site/docs/index.html
+          test -s _site/themes/index.html
+          echo "Pages output: ${FILE_COUNT} files, ${TOTAL_BYTES} bytes."
+
+      - name: Upload validated site preview
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-pages-preview
+          path: |
+            _site/
+            pages-build-report.json
+          if-no-files-found: error
+          retention-days: 14
+
+  deploy:
+    name: Deploy verified site to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build deployment site
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_PATH="${PAGES_BASE_PATH:-/missionchief-toolkit-assets}"
+          python3 .github/scripts/build_pages_site.py \
+            --output _site \
+            --base-path "$BASE_PATH"
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -6,13 +6,14 @@
 
 [![Greasy Fork](https://img.shields.io/badge/Install-Greasy%20Fork-670000?logo=tampermonkey&logoColor=white)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
 [![Current Version](https://img.shields.io/badge/version-4.11.2-2563eb)](status/README.md)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-28a9ff)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Validation](https://img.shields.io/badge/validation-passed-16a34a)](../../actions/workflows/validate-userscript.yml)
 [![Release Readiness](https://img.shields.io/badge/release%20readiness-passed-16a34a)](../../actions/workflows/release-readiness-check.yml)
 [![Release Pipeline](https://img.shields.io/badge/release%20pipeline-v2%20ready-7c3aed)](docs/RELEASE_PIPELINE.md)
 [![Platform](https://img.shields.io/badge/MissionChief-UK-0f766e)](https://www.missionchief.co.uk/)
 [![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence)
 
-[Install Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) · [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) · [Release Pipeline](docs/RELEASE_PIPELINE.md) · [Changelog](CHANGELOG.md) · [Control Panel](status/README.md)
+[Install Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js) · [Documentation](https://conroy1988.github.io/missionchief-toolkit-assets/) · [Greasy Fork](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) · [Release Pipeline](docs/RELEASE_PIPELINE.md) · [Changelog](CHANGELOG.md) · [Control Panel](status/README.md)
 
 </div>
 

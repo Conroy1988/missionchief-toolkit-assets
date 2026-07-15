@@ -41,6 +41,11 @@ jobs:
               "set_attribute": re.compile(r"setAttribute\s*\(\s*['\"]id['\"]"),
               "html_attribute": re.compile(r"(?<![.\w])id\s*=\s*['\"]"),
               "create_element": re.compile(r"createElement\s*\("),
+              "keydown_listener": re.compile(r"addEventListener\s*\(\s*['\"]keydown['\"]"),
+              "key_comparison": re.compile(r"\.[Kk]ey\s*(?:===|==)"),
+              "code_comparison": re.compile(r"\.code\s*(?:===|==)"),
+              "shortcut_word": re.compile(r"\b(?:shortcut|hotkey|keybind|keyMap|keyBindings)\b", re.I),
+              "key_object_value": re.compile(r"\b(?:key|code|shortcut|hotkey)\s*:\s*['\"]", re.I),
           }
 
           lines = text.splitlines()
@@ -48,12 +53,12 @@ jobs:
           for name, pattern in patterns.items():
               matches = list(pattern.finditer(text))
               output.append(f"## {name}: {len(matches)}")
-              for match in matches[:160]:
+              for match in matches[:200]:
                   line_no = text.count("\n", 0, match.start()) + 1
-                  start = max(0, line_no - 3)
-                  end = min(len(lines), line_no + 2)
+                  start = max(0, line_no - 4)
+                  end = min(len(lines), line_no + 3)
                   sample = " ".join(part.strip() for part in lines[start:end])
-                  output.append(f"{line_no}: {sample[:1000]}")
+                  output.append(f"{line_no}: {sample[:1400]}")
               output.append("")
 
           Path("code-integrity-pattern-probe.txt").write_text(

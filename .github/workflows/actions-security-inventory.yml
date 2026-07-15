@@ -15,42 +15,139 @@ jobs:
   inventory:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Build workflow and action inventory
+      - name: Build pinned workflow package
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          {
-            echo '=== WORKFLOW FILES ==='
-            find .github/workflows -maxdepth 1 -type f -print | sort
-            echo '=== ACTION REFERENCES ==='
-            grep -RInE '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+' .github/workflows | sort || true
-            echo '=== PERMISSIONS BLOCKS ==='
-            python3 - <<'PY'
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import shutil
+          import subprocess
+          import urllib.request
           from pathlib import Path
-          for path in sorted(Path('.github/workflows').glob('*.y*ml')):
-              lines = path.read_text(encoding='utf-8').splitlines()
-              print(f'--- {path}')
-              for index, line in enumerate(lines, 1):
-                  if line.startswith('permissions:') or line.startswith('  permissions:') or line.startswith('    permissions:'):
-                      print(f'{index}: {line}')
-                      indent = len(line) - len(line.lstrip())
-                      for follow in lines[index:index+10]:
-                          if follow.strip() and len(follow) - len(follow.lstrip()) <= indent:
-                              break
-                          print(f'    {follow}')
-          PY
-          } > actions-security-inventory.txt
 
-      - name: Upload inventory
+          root = Path('.github/workflows')
+          output = Path('actions-security-package')
+          pinned_root = output / 'workflows'
+          pinned_root.mkdir(parents=True, exist_ok=True)
+
+          pattern = re.compile(r'(?P<prefix>\buses:\s*)(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)@(?P<ref>[^\s#]+)(?P<suffix>.*)$')
+          token = os.environ['GH_TOKEN']
+          resolved = {}
+          references = []
+          permissions = []
+          blobs = {}
+
+          def resolve(repo, ref):
+              key = (repo, ref)
+              if key in resolved:
+                  return resolved[key]
+              request = urllib.request.Request(
+                  f'https://api.github.com/repos/{repo}/commits/{ref}',
+                  headers={
+                      'Accept': 'application/vnd.github+json',
+                      'Authorization': f'Bearer {token}',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                      'User-Agent': 'missionchief-toolkit-actions-audit',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  payload = json.load(response)
+              sha = payload['sha']
+              if not re.fullmatch(r'[0-9a-f]{40}', sha):
+                  raise SystemExit(f'Invalid commit SHA for {repo}@{ref}: {sha}')
+              resolved[key] = sha
+              return sha
+
+          for path in sorted(root.glob('*.y*ml')):
+              relative = path.as_posix()
+              text = path.read_text(encoding='utf-8')
+              lines = text.splitlines(keepends=True)
+              rewritten = []
+              for line_no, line in enumerate(lines, 1):
+                  match = pattern.search(line.rstrip('\n'))
+                  if not match:
+                      rewritten.append(line)
+                      continue
+                  repo = match.group('repo')
+                  ref = match.group('ref')
+                  if re.fullmatch(r'[0-9a-f]{40}', ref):
+                      sha = ref
+                      label = 'already pinned'
+                  else:
+                      sha = resolve(repo, ref)
+                      label = ref
+                  newline = '\n' if line.endswith('\n') else ''
+                  before = line.rstrip('\n')
+                  replacement = f"{match.group('prefix')}{repo}@{sha} # {label}"
+                  updated = before[:match.start()] + replacement + newline
+                  rewritten.append(updated)
+                  references.append({
+                      'path': relative,
+                      'line': line_no,
+                      'repository': repo,
+                      'reference': ref,
+                      'commit': sha,
+                  })
+
+              target = pinned_root / path.name
+              target.write_text(''.join(rewritten), encoding='utf-8')
+              blobs[relative] = subprocess.check_output(
+                  ['git', 'rev-parse', f'HEAD:{relative}'], text=True
+              ).strip()
+
+              plain = text.splitlines()
+              for index, line in enumerate(plain, 1):
+                  stripped = line.strip()
+                  if stripped == 'permissions:':
+                      indent = len(line) - len(line.lstrip())
+                      block = []
+                      for follow in plain[index:index + 12]:
+                          follow_indent = len(follow) - len(follow.lstrip())
+                          if follow.strip() and follow_indent <= indent:
+                              break
+                          block.append(follow)
+                      permissions.append({
+                          'path': relative,
+                          'line': index,
+                          'block': block,
+                      })
+
+          report = {
+              'workflow_count': len(list(root.glob('*.y*ml'))),
+              'action_reference_count': len(references),
+              'resolved_actions': [
+                  {'repository': repo, 'reference': ref, 'commit': sha}
+                  for (repo, ref), sha in sorted(resolved.items())
+              ],
+              'references': references,
+              'permissions': permissions,
+              'blobs': blobs,
+          }
+          (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          (output / 'README.txt').write_text(
+              f"Pinned {len(references)} action references across {report['workflow_count']} workflows.\n",
+              encoding='utf-8',
+          )
+          print(json.dumps(report['resolved_actions'], indent=2))
+          PY
+
+      - name: Upload security package
         uses: actions/upload-artifact@v6
         with:
-          name: actions-security-inventory
-          path: actions-security-inventory.txt
+          name: actions-security-package
+          path: actions-security-package/
           if-no-files-found: error
           retention-days: 3

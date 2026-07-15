@@ -445,7 +445,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const armForAllianceNavigation = event => {
             const anchor = event.target?.closest?.('a[href]');
             if (!anchor) return;
-            let path = '';
+            let path;
             try { path = new URL(anchor.href, location.href).pathname; } catch (err) { path = anchor.getAttribute('href') || ''; }
             if (!isAllianceBuildingsPath(path)) return;
             installAllianceBuildingsEarlyStyle();
@@ -702,13 +702,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return String(name);
     }
 
-    function runtimeUnregisterTask(name) {
-        runtimeTasks.delete(String(name));
-        if (!runtimeTasks.size) {
-            runtimeClearTimeout(runtimeTaskTimer);
-            runtimeTaskTimer = null;
-        }
-    }
 
     function runtimeTaskInterval(task) {
         if (!task) return 1000;
@@ -1169,7 +1162,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let coverageRenderSignature = '';
     let heatmapRenderSignature = '';
     let heatmapSourceCache = { key: '', createdAt: 0, points: [] };
-    let operationalRenderSignature = '';
     let majorIncidentFeedRenderSignature = '';
     let majorIncidentFeedRenderTimer = null;
     let majorIncidentFeedLayoutFrame = null;
@@ -1178,7 +1170,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let majorIncidentFeedMotionRevision = 0;
     let majorIncidentFeedResizeObserver = null;
     let majorIncidentFeedObservedElement = null;
-    let discordPreviewRenderSignature = '';
     let missionInspectorLastPosition = '';
     let missionInspectorTooltipCache = { marker: null, createdAt: 0, rect: null };
     const missionLifecycleLastSeen = new Map();
@@ -1232,7 +1223,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let payoutAudioContext = null;
     let payoutMediaAudio = null;
     let payoutMediaTemplate = '';
-    let payoutMediaPrimed = false;
     let payoutMediaGeneration = 0;
     let payoutEventCounter = 0;
     let creditsValueObserver = null;
@@ -1316,7 +1306,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const missionCommitmentIndex = new Map();
     const payoutHistory = loadPayoutHistory();
     const sessionPerformance = loadSessionPerformance();
-    let discordFinancePreview = null;
     let discordFinanceBusy = false;
     let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
     let discordFinanceStatusTone = 'neutral';
@@ -13430,7 +13419,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function getCachedRegistry(globalName, maxAge = MARKER_REGISTRY_CACHE_MS) {
-        let registry = null;
+        let registry;
         try { registry = pageWindow[globalName]; } catch (err) { return []; }
         if (!registry) return [];
         const now = Date.now();
@@ -14178,8 +14167,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!content.includes('missionMarkerAdd')) return 0;
         const matcher = /missionMarkerAdd\s*\(/g;
         let captured = 0;
-        let match;
-        while ((match = matcher.exec(content))) {
+        while (matcher.exec(content)) {
             let cursor = matcher.lastIndex;
             while (/\s/.test(content[cursor] || '')) cursor += 1;
             if (content[cursor] !== '{') continue;
@@ -14572,9 +14560,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return 'personal';
     }
 
-    function missionWatchType(marker, missionId, snapshot = null) {
-        return missionWatchOwnership(marker, missionId, snapshot);
-    }
 
     function missionWatchCategory(marker, missionId, snapshot = null, specialEvent = null) {
         const explicit = String(snapshot?.category || '').toLowerCase();
@@ -14589,9 +14574,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return type === 'alliance' ? 'ALLIANCE' : 'PERSONAL';
     }
 
-    function missionWatchTypeLabel(type) {
-        return missionWatchOwnershipLabel(type);
-    }
 
     function missionWatchCategoryLabel(category) {
         if (category === 'special') return 'SPECIAL EVENT';
@@ -16754,11 +16736,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         applyMarkerType(icon, 'personal-building');
     }
 
-    function synchronisePersonalBuildingMarkerClasses() {
-        const personalBuildingMarkerIcons = getPersonalBuildingMarkerIcons();
-        for (const icon of personalBuildingMarkerIcons) markPersonalBuildingIcon(icon);
-        return personalBuildingMarkerIcons;
-    }
 
     function markPersonalBuildingLayerIfOwned(layer, personalBuildingIds = getPersonalBuildingIds()) {
         if (!isPersonalBuildingLayer(layer, personalBuildingIds)) return false;
@@ -17121,7 +17098,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         // Scan data properties without invoking arbitrary page getters. MissionChief and
         // extensions expose many globals; reading every accessor was an avoidable hot path.
         for (const root of candidateRoots) {
-            let properties = [];
+            let properties;
             try { properties = Object.getOwnPropertyNames(root); } catch (err) { continue; }
             const prioritised = properties.filter(name => /map|leaflet/i.test(name));
             const fallback = properties.filter(name => !/map|leaflet/i.test(name)).slice(0, 160);
@@ -17907,7 +17884,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (preferred) return preferred;
 
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
-        let node = walker.currentNode;
+        let node;
         let scanned = 0;
         while ((node = walker.nextNode()) && scanned < 2500) {
             scanned += 1;
@@ -19203,7 +19180,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 setInnerHtmlIfChanged(history, html, `history:${payoutHistory.map(entry => entry.id).join('|')}`);
             }
         }
-        operationalRenderSignature = summarySignature;
         // Keep Mission Age Watch independent from the personal-only Ops preview.
         // The drawer rebuilds its full Personal/Event/Alliance dataset only when open.
         if (criticalDrawerVisible) renderCriticalDrawer(null, criticalRenderOptions || {});
@@ -19372,7 +19348,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function elementDockRect(element) {
         if (!element?.isConnected || !isVisible(element)) return null;
-        let rect = null;
+        let rect;
         try { rect = element.getBoundingClientRect(); } catch (err) { return null; }
         if (!rect || rect.width < 280 || rect.height < 180) return null;
         return rect;
@@ -21107,7 +21083,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let top = pointerY + verticalGap;
 
         const now = Date.now();
-        let missionTooltip = null;
+        let missionTooltip;
         if (missionInspectorTooltipCache.marker === missionInspectorMarker && now - missionInspectorTooltipCache.createdAt < 160) {
             missionTooltip = missionInspectorTooltipCache.rect;
         } else {
@@ -21791,7 +21767,6 @@ Create the private backup now?`);
         }
         payoutMediaAudio = null;
         payoutMediaTemplate = '';
-        payoutMediaPrimed = false;
     }
 
     function getPayoutMediaAudio(template) {
@@ -21809,8 +21784,7 @@ Create the private backup now?`);
             audio.src = media.url;
             payoutMediaAudio = audio;
             payoutMediaTemplate = template;
-            payoutMediaPrimed = false;
-        }
+            }
         return payoutMediaAudio;
     }
 
@@ -21830,7 +21804,6 @@ Create the private backup now?`);
                 audio.pause();
                 return false;
             }
-            payoutMediaPrimed = true;
             return true;
         } catch (err) {
             console.warn(`[${SCRIPT.name}] Hosted payout audio was blocked or unavailable; using synthesized fallback.`, err);
@@ -22792,7 +22765,6 @@ Create the private backup now?`);
     const FINANCE_PERIOD_IDS = new Set(['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom']);
     const FINANCE_CHART_FILENAME = 'missionchief-financial-report.png';
     let discordFinanceChartUrl = '';
-    let discordFinanceChartBlobRef = null;
 
     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
@@ -23169,8 +23141,14 @@ Create the private backup now?`);
 
     function financeExternalRequest({ method = 'GET', url, body = null, headers = {}, timeoutMs = FINANCE_FEED_TIMEOUT_MS }) {
         return new Promise((resolve, reject) => {
-            if (runtime.destroyed) return reject(new Error('Toolkit runtime stopped.'));
-            if (typeof GM_xmlhttpRequest !== 'function') return reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+            if (runtime.destroyed) {
+                reject(new Error('Toolkit runtime stopped.'));
+                return;
+            }
+            if (typeof GM_xmlhttpRequest !== 'function') {
+                reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+                return;
+            }
             let request = null;
             let settled = false;
             const finish = (error, response = null) => {
@@ -23384,7 +23362,7 @@ Create the private backup now?`);
     function ruleMatchesFinancialDescription(rule, description) {
         const text = String(description || '');
         const lower = text.toLowerCase();
-        let matched = false;
+        let matched;
         if (rule.match === 'contains') matched = lower.includes(String(rule.pattern).toLowerCase());
         else if (rule.match === 'startsWith') matched = lower.startsWith(String(rule.pattern).toLowerCase());
         else if (rule.match === 'equals') matched = lower === String(rule.pattern).toLowerCase();
@@ -24019,7 +23997,7 @@ Create the private backup now?`);
         let firstPageAnchor = '';
         let overlapFound = false;
         let scanCancelled = false;
-        let scanLimitReached = false;
+        let scanLimitReached;
         let lastProcessedPage = 0;
         const scanOccurrenceCounts = new Map();
 
@@ -25142,7 +25120,9 @@ Create the private backup now?`);
             context.font = '600 12px Arial, sans-serif';
             context.fillText(`${SCRIPT.name} v${SCRIPT.version} · Deterministic local financial audit · projections are estimates`, 54, 648);
 
-            return await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.92));
+            return await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/png', 0.92);
+            });
         } catch (err) {
             return null;
         }
@@ -25220,13 +25200,10 @@ Create the private backup now?`);
             try { URL.revokeObjectURL(discordFinanceChartUrl); } catch (err) {}
         }
         discordFinanceChartUrl = '';
-        discordFinanceChartBlobRef = null;
-        discordPreviewRenderSignature = '';
     }
 
     function invalidateDiscordFinancialPreview() {
         clearDiscordPreviewChartUrl();
-        discordFinancePreview = null;
     }
 
     async function postDiscordFinancialReport() {
@@ -25244,8 +25221,7 @@ Create the private backup now?`);
             const report = await buildFinancialReport();
             await sendDiscordFinancialPayload(webhookUrl, report);
             gmSetValueSafe(SCRIPT.discordLastReportState, report.generatedAt);
-            discordFinancePreview = null;
-            clearDiscordPreviewChartUrl();
+                clearDiscordPreviewChartUrl();
             setDiscordStatus(`Posted successfully at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`, 'good');
             showToast('Discord financial report posted');
         } catch (err) {
@@ -25573,7 +25549,7 @@ Create the private backup now?`);
         if (document.body && document.body.classList.contains('modal-open')) return true;
 
         return SUPPRESSION_SELECTORS.some(selector => {
-            let nodes = [];
+            let nodes;
             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
             return nodes.some(el => {
                 if (!el || el.closest(`#${SCRIPT.controlId}`) || el.closest(`#${SCRIPT.panelId}`)) return false;
@@ -27577,9 +27553,7 @@ Create the private backup now?`);
         observeCreditValue();
 
         let attempts = 0;
-        let bootTimer = null;
         const runBootAttempt = () => {
-            bootTimer = null;
             attempts += 1;
             installMissionMarkerAddHook();
             installRadioMessageHook();
@@ -27596,9 +27570,9 @@ Create the private backup now?`);
             }
             if (attempts >= 90 || runtime.destroyed) return;
             const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
-            bootTimer = runtimeSetTimeout(runBootAttempt, delay);
+            runtimeSetTimeout(runBootAttempt, delay);
         };
-        bootTimer = runtimeSetTimeout(runBootAttempt, 250);
+        runtimeSetTimeout(runBootAttempt, 250);
 
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {

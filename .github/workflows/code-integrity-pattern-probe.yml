@@ -32,6 +32,7 @@ jobs:
 
           source = Path("src/MissionChief_Map_Command_Toolkit.user.js")
           text = source.read_text(encoding="utf-8")
+          lines = text.splitlines()
           patterns = {
               "direct_property": re.compile(r"\.id\s*="),
               "object_property": re.compile(r"(?<![.\w])id\s*:"),
@@ -42,13 +43,14 @@ jobs:
               "html_attribute": re.compile(r"(?<![.\w])id\s*=\s*['\"]"),
               "create_element": re.compile(r"createElement\s*\("),
               "keydown_listener": re.compile(r"addEventListener\s*\(\s*['\"]keydown['\"]"),
+              "handle_keyboard": re.compile(r"\bhandleKeyboard\b"),
+              "make_float_button_call": re.compile(r"\bmake(?:Action)?FloatButton\s*\("),
               "key_comparison": re.compile(r"\.[Kk]ey\s*(?:===|==)"),
               "code_comparison": re.compile(r"\.code\s*(?:===|==)"),
               "shortcut_word": re.compile(r"\b(?:shortcut|hotkey|keybind|keyMap|keyBindings)\b", re.I),
               "key_object_value": re.compile(r"\b(?:key|code|shortcut|hotkey)\s*:\s*['\"]", re.I),
           }
 
-          lines = text.splitlines()
           output = []
           for name, pattern in patterns.items():
               matches = list(pattern.finditer(text))
@@ -58,7 +60,13 @@ jobs:
                   start = max(0, line_no - 4)
                   end = min(len(lines), line_no + 3)
                   sample = " ".join(part.strip() for part in lines[start:end])
-                  output.append(f"{line_no}: {sample[:1400]}")
+                  output.append(f"{line_no}: {sample[:1800]}")
+              output.append("")
+
+          for start, end in ((26090, 26190), (26160, 26320), (27180, 27290)):
+              output.append(f"## exact_source_{start}_{end}")
+              for number in range(start, min(end, len(lines)) + 1):
+                  output.append(f"{number}: {lines[number - 1]}")
               output.append("")
 
           Path("code-integrity-pattern-probe.txt").write_text(

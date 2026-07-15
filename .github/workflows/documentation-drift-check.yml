@@ -12,6 +12,7 @@ on:
       - "docs/site-data.json"
       - "status/release-dashboard.json"
       - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "CHANGELOG.md"
       - "README.md"
   push:
     branches:
@@ -24,6 +25,7 @@ on:
       - "docs/site-data.json"
       - "status/release-dashboard.json"
       - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "CHANGELOG.md"
       - "README.md"
   schedule:
     - cron: "23 4 * * 3"
@@ -49,7 +51,16 @@ jobs:
           persist-credentials: false
 
       - name: Run documentation contract audit
-        run: python3 .github/scripts/check_documentation_drift.py
+        env:
+          ALLOW_RELEASE_CANDIDATE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$ALLOW_RELEASE_CANDIDATE" == "1" ]]; then
+            args+=(--allow-release-candidate)
+          fi
+          python3 .github/scripts/check_documentation_drift.py "${args[@]}"
 
       - name: Publish audit summary
         if: always()

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.11.2
+// @version      4.11.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -445,7 +445,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const armForAllianceNavigation = event => {
             const anchor = event.target?.closest?.('a[href]');
             if (!anchor) return;
-            let path = '';
+            let path;
             try { path = new URL(anchor.href, location.href).pathname; } catch (err) { path = anchor.getAttribute('href') || ''; }
             if (!isAllianceBuildingsPath(path)) return;
             installAllianceBuildingsEarlyStyle();
@@ -702,13 +702,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return String(name);
     }
 
-    function runtimeUnregisterTask(name) {
-        runtimeTasks.delete(String(name));
-        if (!runtimeTasks.size) {
-            runtimeClearTimeout(runtimeTaskTimer);
-            runtimeTaskTimer = null;
-        }
-    }
 
     function runtimeTaskInterval(task) {
         if (!task) return 1000;
@@ -1169,7 +1162,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let coverageRenderSignature = '';
     let heatmapRenderSignature = '';
     let heatmapSourceCache = { key: '', createdAt: 0, points: [] };
-    let operationalRenderSignature = '';
     let majorIncidentFeedRenderSignature = '';
     let majorIncidentFeedRenderTimer = null;
     let majorIncidentFeedLayoutFrame = null;
@@ -1178,7 +1170,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let majorIncidentFeedMotionRevision = 0;
     let majorIncidentFeedResizeObserver = null;
     let majorIncidentFeedObservedElement = null;
-    let discordPreviewRenderSignature = '';
     let missionInspectorLastPosition = '';
     let missionInspectorTooltipCache = { marker: null, createdAt: 0, rect: null };
     const missionLifecycleLastSeen = new Map();
@@ -1222,6 +1213,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let operationalStartupComplete = false;
     let startupDataPassActive = false;
     let mainMutationObserver = null;
+    let mainMutationObserverFallbackActive = false;
     let settingsPanelActivated = false;
     let opsRefreshTimer = null;
     let payoutFlashTimer = null;
@@ -1232,7 +1224,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let payoutAudioContext = null;
     let payoutMediaAudio = null;
     let payoutMediaTemplate = '';
-    let payoutMediaPrimed = false;
     let payoutMediaGeneration = 0;
     let payoutEventCounter = 0;
     let creditsValueObserver = null;
@@ -1316,7 +1307,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const missionCommitmentIndex = new Map();
     const payoutHistory = loadPayoutHistory();
     const sessionPerformance = loadSessionPerformance();
-    let discordFinancePreview = null;
     let discordFinanceBusy = false;
     let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
     let discordFinanceStatusTone = 'neutral';
@@ -13430,7 +13420,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function getCachedRegistry(globalName, maxAge = MARKER_REGISTRY_CACHE_MS) {
-        let registry = null;
+        let registry;
         try { registry = pageWindow[globalName]; } catch (err) { return []; }
         if (!registry) return [];
         const now = Date.now();
@@ -13787,7 +13777,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             columns += 1;
             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
-        while (estimatedHeight > availableMapHeight && pinCount && pinColumns < pinCount) {
+        while (estimatedHeight > availableMapHeight && pinColumns < pinCount) {
             pinColumns += 1;
             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
@@ -14178,8 +14168,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!content.includes('missionMarkerAdd')) return 0;
         const matcher = /missionMarkerAdd\s*\(/g;
         let captured = 0;
-        let match;
-        while ((match = matcher.exec(content))) {
+        while (matcher.exec(content)) {
             let cursor = matcher.lastIndex;
             while (/\s/.test(content[cursor] || '')) cursor += 1;
             if (content[cursor] !== '{') continue;
@@ -14426,10 +14415,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const overlay = missionOverlayData.get(id) || {};
         const rawMissionType = String(overlay.missionType ?? marker?.mission_type ?? marker?.missionType ?? marker?.options?.mission_type ?? '').toLowerCase();
-        if (/(?:^|[\s_:\-])(alliance|alliance_custom|shared_mission|verband|association)(?:$|[\s_:\-])/i.test(rawMissionType)) return true;
+        if (/(?:^|[\s_:-])(alliance|alliance_custom|shared_mission|verband|association)(?:$|[\s_:-])/i.test(rawMissionType)) return true;
 
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        if (/(?:^|[\s_:\-])(alliance|alliance_custom|alliance_mission|shared_mission|verband|verbandseinsatz|association)(?:$|[\s_:\-])/i.test(signal)) return true;
+        if (/(?:^|[\s_:-])(alliance|alliance_custom|alliance_mission|shared_mission|verband|verbandseinsatz|association)(?:$|[\s_:-])/i.test(signal)) return true;
 
         const allianceId = overlay.allianceId ?? marker?.alliance_id ?? marker?.allianceId ?? marker?.options?.alliance_id;
         const sharedAt = overlay.allianceSharedAt ?? marker?.alliance_shared_at ?? marker?.allianceSharedAt ?? marker?.options?.alliance_shared_at;
@@ -14458,7 +14447,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (eventId !== undefined && eventId !== null && eventId !== '' && String(eventId) !== '0' && String(eventId).toLowerCase() !== 'false') return true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        return /(?:^|[\s_:\-])(event|event_mission|planned|planned_mission|sicherheitswache|security[\s_:\-]?watch|standby|special_event)(?:$|[\s_:\-])/i.test(signal);
+        return /(?:^|[\s_:-])(event|event_mission|planned|planned_mission|sicherheitswache|security[\s_:-]?watch|standby|special_event)(?:$|[\s_:-])/i.test(signal);
     }
 
     function activeDeveloperEventLabel() {
@@ -14554,7 +14543,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (normaliseMissionBoolean(rawSpecial)) explicitSpecial = true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
-        const signalSpecial = /(?:^|[\s_:\-])(special_event|global_event|seasonal_event|developer_event|world_event)(?:$|[\s_:\-])/i.test(signal);
+        const signalSpecial = /(?:^|[\s_:-])(special_event|global_event|seasonal_event|developer_event|world_event)(?:$|[\s_:-])/i.test(signal);
         const active = Boolean(eventId || explicitSpecial || signalSpecial);
         if (!active) return knownDeveloperEventFallback(marker, id, snapshot);
         const label = normaliseDeveloperEventLabel(eventName || activeDeveloperEventLabel() || 'SPECIAL EVENT');
@@ -14572,9 +14561,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return 'personal';
     }
 
-    function missionWatchType(marker, missionId, snapshot = null) {
-        return missionWatchOwnership(marker, missionId, snapshot);
-    }
 
     function missionWatchCategory(marker, missionId, snapshot = null, specialEvent = null) {
         const explicit = String(snapshot?.category || '').toLowerCase();
@@ -14589,9 +14575,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return type === 'alliance' ? 'ALLIANCE' : 'PERSONAL';
     }
 
-    function missionWatchTypeLabel(type) {
-        return missionWatchOwnershipLabel(type);
-    }
 
     function missionWatchCategoryLabel(category) {
         if (category === 'special') return 'SPECIAL EVENT';
@@ -16754,11 +16737,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         applyMarkerType(icon, 'personal-building');
     }
 
-    function synchronisePersonalBuildingMarkerClasses() {
-        const personalBuildingMarkerIcons = getPersonalBuildingMarkerIcons();
-        for (const icon of personalBuildingMarkerIcons) markPersonalBuildingIcon(icon);
-        return personalBuildingMarkerIcons;
-    }
 
     function markPersonalBuildingLayerIfOwned(layer, personalBuildingIds = getPersonalBuildingIds()) {
         if (!isPersonalBuildingLayer(layer, personalBuildingIds)) return false;
@@ -17121,7 +17099,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         // Scan data properties without invoking arbitrary page getters. MissionChief and
         // extensions expose many globals; reading every accessor was an avoidable hot path.
         for (const root of candidateRoots) {
-            let properties = [];
+            let properties;
             try { properties = Object.getOwnPropertyNames(root); } catch (err) { continue; }
             const prioritised = properties.filter(name => /map|leaflet/i.test(name));
             const fallback = properties.filter(name => !/map|leaflet/i.test(name)).slice(0, 160);
@@ -17907,7 +17885,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (preferred) return preferred;
 
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
-        let node = walker.currentNode;
+        let node;
         let scanned = 0;
         while ((node = walker.nextNode()) && scanned < 2500) {
             scanned += 1;
@@ -18332,8 +18310,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!text) return '';
         const normalisedPostcode = normaliseMissionPostcode(postcode || text);
         if (normalisedPostcode) {
-            const compactPattern = normalisedPostcode.replace(/\s+/g, '\s*');
-            try { text = text.replace(new RegExp(`\b${compactPattern}\b`, 'iu'), ' '); } catch (err) {}
+            const compactPattern = normalisedPostcode.replace(/\s+/g, '\\s*');
+            try { text = text.replace(new RegExp(`\\b${compactPattern}\\b`, 'iu'), ' '); } catch (err) {}
         }
         text = text.replace(UK_POSTCODE_PATTERN, ' ').replace(/\s+/g, ' ').trim();
 
@@ -19203,7 +19181,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 setInnerHtmlIfChanged(history, html, `history:${payoutHistory.map(entry => entry.id).join('|')}`);
             }
         }
-        operationalRenderSignature = summarySignature;
         // Keep Mission Age Watch independent from the personal-only Ops preview.
         // The drawer rebuilds its full Personal/Event/Alliance dataset only when open.
         if (criticalDrawerVisible) renderCriticalDrawer(null, criticalRenderOptions || {});
@@ -19372,7 +19349,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function elementDockRect(element) {
         if (!element?.isConnected || !isVisible(element)) return null;
-        let rect = null;
+        let rect;
         try { rect = element.getBoundingClientRect(); } catch (err) { return null; }
         if (!rect || rect.width < 280 || rect.height < 180) return null;
         return rect;
@@ -19493,7 +19470,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function toggleCriticalDrawerExpanded() {
-        state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !Boolean(state.missionAgeWatch?.expanded) };
+        state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !state.missionAgeWatch?.expanded };
         saveState();
         const drawer = document.getElementById(SCRIPT.criticalDrawerId);
         updateCriticalDrawerExpandButton(drawer);
@@ -19645,7 +19622,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 return;
             }
             if (closestEventTarget(event, '[data-critical-advanced-toggle]')) {
-                const next = !Boolean(state.missionAgeWatch?.advancedFiltersOpen);
+                const next = !state.missionAgeWatch?.advancedFiltersOpen;
                 state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
                 saveState();
                 setCriticalAdvancedFiltersOpen(next, drawer);
@@ -19735,8 +19712,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             const conditionButton = closestEventTarget(event, '[data-critical-condition]');
             if (conditionButton) {
                 const condition = String(conditionButton.dataset.criticalCondition || '');
-                if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !Boolean(state.missionAgeWatch?.hasVehiclesOnWay) };
-                if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !Boolean(state.missionAgeWatch?.onlyMyUnits) };
+                if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+                if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
                 saveState();
                 resetCriticalVirtualWindow(drawer);
                 renderCriticalDrawer(null, { updateViewTime: true });
@@ -21107,7 +21084,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let top = pointerY + verticalGap;
 
         const now = Date.now();
-        let missionTooltip = null;
+        let missionTooltip;
         if (missionInspectorTooltipCache.marker === missionInspectorMarker && now - missionInspectorTooltipCache.createdAt < 160) {
             missionTooltip = missionInspectorTooltipCache.rect;
         } else {
@@ -21791,7 +21768,6 @@ Create the private backup now?`);
         }
         payoutMediaAudio = null;
         payoutMediaTemplate = '';
-        payoutMediaPrimed = false;
     }
 
     function getPayoutMediaAudio(template) {
@@ -21809,8 +21785,7 @@ Create the private backup now?`);
             audio.src = media.url;
             payoutMediaAudio = audio;
             payoutMediaTemplate = template;
-            payoutMediaPrimed = false;
-        }
+            }
         return payoutMediaAudio;
     }
 
@@ -21830,7 +21805,6 @@ Create the private backup now?`);
                 audio.pause();
                 return false;
             }
-            payoutMediaPrimed = true;
             return true;
         } catch (err) {
             console.warn(`[${SCRIPT.name}] Hosted payout audio was blocked or unavailable; using synthesized fallback.`, err);
@@ -22792,7 +22766,6 @@ Create the private backup now?`);
     const FINANCE_PERIOD_IDS = new Set(['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom']);
     const FINANCE_CHART_FILENAME = 'missionchief-financial-report.png';
     let discordFinanceChartUrl = '';
-    let discordFinanceChartBlobRef = null;
 
     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
@@ -23169,8 +23142,14 @@ Create the private backup now?`);
 
     function financeExternalRequest({ method = 'GET', url, body = null, headers = {}, timeoutMs = FINANCE_FEED_TIMEOUT_MS }) {
         return new Promise((resolve, reject) => {
-            if (runtime.destroyed) return reject(new Error('Toolkit runtime stopped.'));
-            if (typeof GM_xmlhttpRequest !== 'function') return reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+            if (runtime.destroyed) {
+                reject(new Error('Toolkit runtime stopped.'));
+                return;
+            }
+            if (typeof GM_xmlhttpRequest !== 'function') {
+                reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+                return;
+            }
             let request = null;
             let settled = false;
             const finish = (error, response = null) => {
@@ -23384,7 +23363,7 @@ Create the private backup now?`);
     function ruleMatchesFinancialDescription(rule, description) {
         const text = String(description || '');
         const lower = text.toLowerCase();
-        let matched = false;
+        let matched;
         if (rule.match === 'contains') matched = lower.includes(String(rule.pattern).toLowerCase());
         else if (rule.match === 'startsWith') matched = lower.startsWith(String(rule.pattern).toLowerCase());
         else if (rule.match === 'equals') matched = lower === String(rule.pattern).toLowerCase();
@@ -24019,7 +23998,7 @@ Create the private backup now?`);
         let firstPageAnchor = '';
         let overlapFound = false;
         let scanCancelled = false;
-        let scanLimitReached = false;
+        let scanLimitReached;
         let lastProcessedPage = 0;
         const scanOccurrenceCounts = new Map();
 
@@ -25142,7 +25121,9 @@ Create the private backup now?`);
             context.font = '600 12px Arial, sans-serif';
             context.fillText(`${SCRIPT.name} v${SCRIPT.version} · Deterministic local financial audit · projections are estimates`, 54, 648);
 
-            return await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.92));
+            return await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/png', 0.92);
+            });
         } catch (err) {
             return null;
         }
@@ -25220,13 +25201,10 @@ Create the private backup now?`);
             try { URL.revokeObjectURL(discordFinanceChartUrl); } catch (err) {}
         }
         discordFinanceChartUrl = '';
-        discordFinanceChartBlobRef = null;
-        discordPreviewRenderSignature = '';
     }
 
     function invalidateDiscordFinancialPreview() {
         clearDiscordPreviewChartUrl();
-        discordFinancePreview = null;
     }
 
     async function postDiscordFinancialReport() {
@@ -25244,8 +25222,7 @@ Create the private backup now?`);
             const report = await buildFinancialReport();
             await sendDiscordFinancialPayload(webhookUrl, report);
             gmSetValueSafe(SCRIPT.discordLastReportState, report.generatedAt);
-            discordFinancePreview = null;
-            clearDiscordPreviewChartUrl();
+                clearDiscordPreviewChartUrl();
             setDiscordStatus(`Posted successfully at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`, 'good');
             showToast('Discord financial report posted');
         } catch (err) {
@@ -25573,7 +25550,7 @@ Create the private backup now?`);
         if (document.body && document.body.classList.contains('modal-open')) return true;
 
         return SUPPRESSION_SELECTORS.some(selector => {
-            let nodes = [];
+            let nodes;
             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
             return nodes.some(el => {
                 if (!el || el.closest(`#${SCRIPT.controlId}`) || el.closest(`#${SCRIPT.panelId}`)) return false;
@@ -26559,7 +26536,7 @@ Create the private backup now?`);
                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
             </section>
             <div class="mcms-footer">
-                <span>v4.11.0: Smart Bookmark Labels add compact theme-safe shortcuts, automatic abbreviations, collision protection and manual overrides.</span>
+                <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;
@@ -27435,6 +27412,7 @@ Create the private backup now?`);
         const initiallyInContext = isAllianceBuildingsContext();
         const enabled = state.allianceBuildingsMap !== false;
 
+        let renderTimer = null;
         const renderWhenRelevant = () => {
             if (!isAllianceBuildingsContext()) {
                 document.getElementById(ALLIANCE_BUILDINGS_MAP_NOTICE_ID)?.remove();
@@ -27455,7 +27433,11 @@ Create the private backup now?`);
 
             const pageObserver = runtimeTrackObserver(new MutationObserver(mutations => {
                 if (!mutations.some(mutation => mutation.addedNodes?.length || mutation.removedNodes?.length)) return;
-                runtimeSetTimeout(renderWhenRelevant, 0);
+                runtimeClearTimeout(renderTimer);
+                renderTimer = runtimeSetTimeout(() => {
+                    renderTimer = null;
+                    renderWhenRelevant();
+                }, 0);
             }));
             pageObserver.observe(document.body, { childList: true, subtree: true });
         }
@@ -27499,10 +27481,12 @@ Create the private backup now?`);
         if (missionRoot?.isConnected) roots.add(missionRoot);
 
         if (!roots.size) {
+            mainMutationObserverFallbackActive = true;
             mainMutationObserver.observe(document.body, { childList: true, subtree: true });
             return;
         }
 
+        mainMutationObserverFallbackActive = false;
         for (const root of roots) mainMutationObserver.observe(root, { childList: true, subtree: true });
         mainMutationObserver.observe(document.body, { childList: true, subtree: false });
     }
@@ -27577,9 +27561,7 @@ Create the private backup now?`);
         observeCreditValue();
 
         let attempts = 0;
-        let bootTimer = null;
         const runBootAttempt = () => {
-            bootTimer = null;
             attempts += 1;
             installMissionMarkerAddHook();
             installRadioMessageHook();
@@ -27596,9 +27578,9 @@ Create the private backup now?`);
             }
             if (attempts >= 90 || runtime.destroyed) return;
             const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
-            bootTimer = runtimeSetTimeout(runBootAttempt, delay);
+            runtimeSetTimeout(runBootAttempt, delay);
         };
-        bootTimer = runtimeSetTimeout(runBootAttempt, 250);
+        runtimeSetTimeout(runBootAttempt, 250);
 
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {
@@ -27645,6 +27627,9 @@ Create the private backup now?`);
                 const mapElement = getLargestLeafletMap();
                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+                    connectMainMutationObserver();
+                }
                 if (layoutChanged) {
                     refreshSuppression();
                     fitControlToMap();
@@ -27889,7 +27874,7 @@ Create the private backup now?`);
 
         runtimeSetTimeout(() => runAutoNight(true), 180);
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
-        console.debug(`[${SCRIPT.name}] v4.11.1 Performance Bootstrap ready.`);
+        console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
     }
 
     function scheduleBoot() {

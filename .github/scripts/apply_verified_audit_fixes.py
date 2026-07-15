@@ -119,7 +119,11 @@ def transform(text: str) -> tuple[str, list[str]]:
         ("        let missionTooltip = null;\n", "        let missionTooltip;\n", "remove overwritten tooltip initializer"),
         ("        let matched = false;\n", "        let matched;\n", "remove overwritten rule-match initializer"),
         ("        let scanLimitReached = false;\n", "        let scanLimitReached;\n", "remove overwritten scan-limit initializer"),
-        ("            let nodes = [];\n", "            let nodes;\n", "remove overwritten suppression-node initializer"),
+        (
+            "        return SUPPRESSION_SELECTORS.some(selector => {\n            let nodes = [];\n            try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }\n",
+            "        return SUPPRESSION_SELECTORS.some(selector => {\n            let nodes;\n            try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }\n",
+            "remove overwritten suppression-node initializer",
+        ),
     ]
 
     for item in replacements:

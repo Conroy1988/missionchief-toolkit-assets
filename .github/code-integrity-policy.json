@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "requiredSingle": [
+      "name",
+      "version",
+      "author",
+      "license",
+      "run-at"
+    ],
+    "contains": {
+      "name": "MissionChief Map Command Toolkit",
+      "author": "Conroy1988",
+      "license": "MIT"
+    },
+    "exact": {
+      "run-at": "document-start"
+    },
+    "requiredHost": "missionchief.co.uk"
+  },
+  "duplicateIds": {
+    "failWithoutBaseline": false,
+    "allow": []
+  },
+  "shortcuts": {
+    "failWithoutBaseline": false,
+    "allow": []
+  },
+  "repository": {
+    "textExtensions": [
+      ".css",
+      ".html",
+      ".ini",
+      ".js",
+      ".json",
+      ".md",
+      ".py",
+      ".sh",
+      ".toml",
+      ".txt",
+      ".yaml",
+      ".yml"
+    ],
+    "textFileNames": [
+      ".env.example",
+      "Dockerfile"
+    ],
+    "excludedPrefixes": [
+      ".git",
+      "release-bundle"
+    ],
+    "maxTextFileBytes": 5000000
+  },
+  "secrets": {
+    "excludedPaths": [
+      ".github/scripts/test_code_integrity.py"
+    ]
+  },
+  "assets": {
+    "sameRepository": "Conroy1988/missionchief-toolkit-assets",
+    "allowedHttpHosts": [
+      "127.0.0.1",
+      "localhost"
+    ]
+  }
+}

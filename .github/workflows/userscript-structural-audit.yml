@@ -1,0 +1,71 @@
+name: Audit Userscript Structure
+
+on:
+  pull_request:
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/userscript-audit-policy.json"
+      - ".github/scripts/audit_userscript_structure.py"
+      - ".github/workflows/userscript-structural-audit.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/userscript-audit-policy.json"
+      - ".github/scripts/audit_userscript_structure.py"
+      - ".github/workflows/userscript-structural-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: userscript-structural-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit IDs, selectors, shortcuts and secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run auditor self-tests
+        run: python3 .github/scripts/audit_userscript_structure.py --self-test
+
+      - name: Audit canonical userscript
+        id: audit
+        shell: bash
+        run: |
+          set +e
+          python3 .github/scripts/audit_userscript_structure.py \
+            --json-output userscript-audit.json \
+            --markdown-output userscript-audit.md
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish audit summary
+        if: always()
+        run: cat userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit diagnostics
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: missionchief-toolkit-structural-audit
+          path: |
+            userscript-audit.json
+            userscript-audit.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop on structural failure
+        if: steps.audit.outputs.exit_code != '0'
+        run: |
+          echo "Userscript structural audit failed. Review the workflow summary and diagnostic artifact."
+          exit 1

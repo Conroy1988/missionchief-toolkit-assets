@@ -1,0 +1,45 @@
+name: Actions Security Inventory
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths:
+      - ".github/workflows/actions-security-inventory.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Print workflow and action inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== WORKFLOW FILES ==='
+          find .github/workflows -maxdepth 1 -type f -print | sort
+          echo '=== ACTION REFERENCES ==='
+          grep -RInE '^[[:space:]]*uses:[[:space:]]*[^#[:space:]]+' .github/workflows | sort || true
+          echo '=== TOP-LEVEL PERMISSIONS ==='
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in sorted(Path('.github/workflows').glob('*.y*ml')):
+              lines = path.read_text(encoding='utf-8').splitlines()
+              print(f'--- {path}')
+              for index, line in enumerate(lines, 1):
+                  if line.startswith('permissions:') or line.startswith('  permissions:'):
+                      print(f'{index}: {line}')
+                      for follow in lines[index:index+8]:
+                          if follow and not follow.startswith(' '):
+                              break
+                          print(f'    {follow}')
+          PY

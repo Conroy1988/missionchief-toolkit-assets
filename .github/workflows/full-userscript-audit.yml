@@ -13,6 +13,7 @@ on:
       - ".github/scripts/full_userscript_audit.py"
       - ".github/scripts/refine_full_userscript_audit.py"
       - ".github/scripts/summarise_eslint_audit.py"
+      - ".github/scripts/extract_userscript_audit_evidence.py"
       - ".github/workflows/full-userscript-audit.yml"
   workflow_dispatch:
 
@@ -94,6 +95,15 @@ jobs:
           echo "summary_exit_code=$SUMMARY_STATUS" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Extract exact source evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/extract_userscript_audit_evidence.py \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --eslint eslint-userscript-audit.json \
+            --output userscript-audit-evidence.md
+
       - name: Run established code-integrity audit
         id: integrity
         shell: bash
@@ -163,6 +173,7 @@ jobs:
             eslint-userscript-raw.json
             eslint-userscript-audit.json
             eslint-userscript-audit.md
+            userscript-audit-evidence.md
             full-audit-code-integrity.json
             full-audit-code-integrity.md
             full-audit-performance.json

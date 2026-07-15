@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "baseUrl": "https://conroy1988.github.io/missionchief-toolkit-assets/",
+  "timeoutSeconds": 25,
+  "routes": [
+    {"path": "", "contentType": "text/html", "requiredText": ["MissionChief Map Command Toolkit"]},
+    {"path": "features/", "contentType": "text/html", "requiredText": ["Features", "Mission Age Watch"]},
+    {"path": "themes/", "contentType": "text/html", "requiredText": ["Themes", "Cyberpunk", "Factorio"]},
+    {"path": "docs/", "contentType": "text/html", "requiredText": ["Documentation", "Installation"]},
+    {"path": "changelog/", "contentType": "text/html", "requiredText": ["Changelog"]},
+    {"path": "status/", "contentType": "text/html", "requiredText": ["Status"]},
+    {"path": "assets/site.css", "contentType": "text/css", "minimumBytes": 1000},
+    {"path": "assets/site.js", "contentType": "javascript", "minimumBytes": 500}
+  ]
+}

@@ -1,0 +1,67 @@
+name: Documentation Drift Check
+
+run-name: Documentation drift · ${{ github.event_name }}
+
+on:
+  pull_request:
+    paths:
+      - ".github/documentation-contract.json"
+      - ".github/scripts/check_documentation_drift.py"
+      - ".github/workflows/documentation-drift-check.yml"
+      - ".github/release-settings.json"
+      - "docs/site-data.json"
+      - "status/release-dashboard.json"
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/documentation-contract.json"
+      - ".github/scripts/check_documentation_drift.py"
+      - ".github/workflows/documentation-drift-check.yml"
+      - ".github/release-settings.json"
+      - "docs/site-data.json"
+      - "status/release-dashboard.json"
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "README.md"
+  schedule:
+    - cron: "23 4 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-drift-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  audit:
+    name: Compare documentation with canonical Toolkit state
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
+      - name: Run documentation contract audit
+        run: python3 .github/scripts/check_documentation_drift.py
+
+      - name: Publish audit summary
+        if: always()
+        run: cat documentation-drift-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload documentation diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: documentation-drift-audit
+          path: |
+            documentation-drift-report.json
+            documentation-drift-report.md
+          if-no-files-found: error
+          retention-days: 30

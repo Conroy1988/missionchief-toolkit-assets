@@ -1,0 +1,96 @@
+name: Branch Cleanup Audit
+
+run-name: Branch cleanup candidates
+
+on:
+  schedule:
+    - cron: "11 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Inventory safely removable branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
+          gh pr list --state open --limit 500 --json headRefName > /tmp/open-prs.json
+          jq -r '.[].headRefName' /tmp/open-prs.json | sort -u > /tmp/open-heads.txt
+
+          : > /tmp/candidates.txt
+          : > /tmp/protected.txt
+          while IFS= read -r ref; do
+            branch="${ref#origin/}"
+            [[ "$branch" == "main" || "$branch" == "HEAD" ]] && continue
+            if grep -Fxq "$branch" /tmp/open-heads.txt; then
+              echo "$branch — open pull request" >> /tmp/protected.txt
+              continue
+            fi
+            if git merge-base --is-ancestor "origin/$branch" origin/main; then
+              echo "$branch" >> /tmp/candidates.txt
+            else
+              echo "$branch — not fully merged" >> /tmp/protected.txt
+            fi
+          done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sort)
+
+          sort -u -o /tmp/candidates.txt /tmp/candidates.txt
+          sort -u -o /tmp/protected.txt /tmp/protected.txt
+          jq -n \
+            --rawfile candidates /tmp/candidates.txt \
+            --rawfile protected /tmp/protected.txt \
+            '{
+              generatedAt: (now | todateiso8601),
+              mode: "read-only",
+              candidates: ($candidates | split("\n") | map(select(length > 0))),
+              protectedOrUnmerged: ($protected | split("\n") | map(select(length > 0)))
+            }' > branch-cleanup-report.json
+
+          {
+            echo '# Branch Cleanup Audit'
+            echo
+            echo '> This workflow is read-only and deletes nothing.'
+            echo
+            echo '## Fully merged candidates'
+            if [[ -s /tmp/candidates.txt ]]; then
+              sed 's/^/- `/' /tmp/candidates.txt | sed 's/$/`/'
+            else
+              echo '- None'
+            fi
+            echo
+            echo '## Preserved branches'
+            if [[ -s /tmp/protected.txt ]]; then
+              sed 's/^/- /' /tmp/protected.txt
+            else
+              echo '- None'
+            fi
+          } > branch-cleanup-report.md
+
+      - name: Publish branch audit summary
+        run: cat branch-cleanup-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload branch audit
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: branch-cleanup-audit
+          path: |
+            branch-cleanup-report.json
+            branch-cleanup-report.md
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,560 @@
+{
+  "project": {
+    "name": "MissionChief Map Command Toolkit",
+    "shortName": "Map Command Toolkit",
+    "tagline": "Operational map command, monitoring and presentation suite for MissionChief.",
+    "description": "A configurable userscript that turns the MissionChief map into an operational command centre with mission intelligence, fleet monitoring, map utilities, responsive layouts, themed interfaces and verified release automation.",
+    "author": "Conroy1988",
+    "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
+    "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
+    "releases": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases",
+    "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/"
+  },
+  "navigation": [
+    {
+      "label": "Home",
+      "path": ""
+    },
+    {
+      "label": "Features",
+      "path": "features/"
+    },
+    {
+      "label": "Themes",
+      "path": "themes/"
+    },
+    {
+      "label": "Documentation",
+      "path": "docs/"
+    },
+    {
+      "label": "Changelog",
+      "path": "changelog/"
+    },
+    {
+      "label": "Status",
+      "path": "status/"
+    }
+  ],
+  "featureCategories": [
+    {
+      "name": "Mission command",
+      "description": "Prioritise incidents, understand mission state and act without losing map context.",
+      "features": [
+        {
+          "name": "Mission Age Watch",
+          "summary": "Tracks personal missions by age, severity and clearing state with fast mission controls.",
+          "details": [
+            "Time-ordered mission monitoring with configurable severity thresholds",
+            "Refresh, zoom and open-mission controls",
+            "No Vehicles, Vehicles En-route, Needs Assistance and Clearing states",
+            "Responsive positioning for Desktop, Tablet and iOS Mobile Mode"
+          ],
+          "visual": "mission-age",
+          "tags": [
+            "missions",
+            "monitoring",
+            "priority"
+          ]
+        },
+        {
+          "name": "Critical View",
+          "summary": "Surfaces missions that require attention and keeps mission actions focused.",
+          "details": [
+            "Dedicated critical workflow",
+            "Mission-state and unit-awareness integration",
+            "On-demand interface construction to reduce startup cost"
+          ],
+          "visual": "critical",
+          "tags": [
+            "missions",
+            "critical",
+            "workflow"
+          ]
+        },
+        {
+          "name": "Mission Inspector",
+          "summary": "Opens detailed operational context only when it is needed.",
+          "details": [
+            "On-demand construction",
+            "Works alongside Critical View",
+            "Avoids unnecessary startup interface cost"
+          ],
+          "visual": "inspector",
+          "tags": [
+            "missions",
+            "inspection"
+          ]
+        },
+        {
+          "name": "Major Incident Feed",
+          "summary": "A live top-bar feed for major incidents with quick map navigation.",
+          "details": [
+            "Scrolling incident banner",
+            "Postcode and incident context",
+            "Hover pause and click-to-zoom",
+            "Theme-specific presentation"
+          ],
+          "visual": "feed",
+          "tags": [
+            "missions",
+            "feed",
+            "navigation"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fleet and transport",
+      "description": "See vehicle state, transport demand and operational gaps at a glance.",
+      "features": [
+        {
+          "name": "Vehicle Code Status",
+          "summary": "Summarises vehicle status codes and counts in a compact top-right panel.",
+          "details": [
+            "Code number, description and count",
+            "Includes Out of Service",
+            "Persistent toggle and V keyboard shortcut"
+          ],
+          "visual": "vehicle-code",
+          "tags": [
+            "vehicles",
+            "status",
+            "shortcut"
+          ]
+        },
+        {
+          "name": "Transport Watcher",
+          "summary": "Highlights missions that still require transport and provides live counts.",
+          "details": [
+            "Transport-required marker",
+            "Dynamic float placement",
+            "Count summary integrated with operational overlays"
+          ],
+          "visual": "transport",
+          "tags": [
+            "transport",
+            "patients",
+            "vehicles"
+          ]
+        },
+        {
+          "name": "Unit Count and Focus controls",
+          "summary": "Reduces map noise while retaining the operational layers that matter.",
+          "details": [
+            "Unit-count overlays",
+            "Vehicle and building visibility controls",
+            "Focus Mode",
+            "Rapid navigation to active incidents"
+          ],
+          "visual": "focus",
+          "tags": [
+            "vehicles",
+            "map",
+            "focus"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Map operations",
+      "description": "Make the map faster to read, easier to navigate and more useful during busy sessions.",
+      "features": [
+        {
+          "name": "Coverage Heat Map",
+          "summary": "Visualises operational coverage directly on the MissionChief map.",
+          "details": [
+            "Leaflet-based coverage visualisation",
+            "Works with the Toolkit map controls",
+            "Designed for rapid geographic assessment"
+          ],
+          "visual": "coverage",
+          "tags": [
+            "map",
+            "coverage",
+            "leaflet"
+          ]
+        },
+        {
+          "name": "Smart Bookmark Labels",
+          "summary": "Creates compact, readable place labels without losing the full location name.",
+          "details": [
+            "UK-aware place and operational-word abbreviation dictionaries",
+            "Consonant-compression fallback for custom locations",
+            "Duplicate-label numbering",
+            "Manual short-label overrides",
+            "Desktop tooltips and touch long-press previews"
+          ],
+          "visual": "bookmarks",
+          "tags": [
+            "map",
+            "bookmarks",
+            "labels"
+          ]
+        },
+        {
+          "name": "Coverage rings and map overlays",
+          "summary": "Adds operational overlays and presentation options around the core map.",
+          "details": [
+            "Coverage rings",
+            "Day and night map presentation",
+            "Quick jumps and landmark bookmarks",
+            "Alliance Buildings map blocker for performance-sensitive pages"
+          ],
+          "visual": "rings",
+          "tags": [
+            "map",
+            "overlays",
+            "performance"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Finance and presentation",
+      "description": "Make alliance income, mission completion and payout events easy to understand.",
+      "features": [
+        {
+          "name": "Alliance Credits",
+          "summary": "Shows alliance mission values with eligibility-aware colouring and value filters.",
+          "details": [
+            "Compact values such as 11k and 20k",
+            "Green when the user has a unit present, yellow when not",
+            "All, 5k+, 10k+, 15k+ and 20k+ filters"
+          ],
+          "visual": "credits",
+          "tags": [
+            "finance",
+            "alliance",
+            "missions"
+          ]
+        },
+        {
+          "name": "Financial intelligence",
+          "summary": "Summarises income, spending and net position with Discord-ready reporting.",
+          "details": [
+            "Daily, weekly and monthly totals",
+            "Income, spend and net-leftover views",
+            "Single-action report generation"
+          ],
+          "visual": "finance",
+          "tags": [
+            "finance",
+            "reporting",
+            "discord"
+          ]
+        },
+        {
+          "name": "Payout presentations",
+          "summary": "Displays themed mission-completion banners with optional sound and emergency flash.",
+          "details": [
+            "Smooth payout counter",
+            "Mission colour accent",
+            "Configurable display duration",
+            "Emergency flash for high-value payouts",
+            "Completion history"
+          ],
+          "visual": "payout",
+          "tags": [
+            "payout",
+            "themes",
+            "audio"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Responsive operation",
+      "description": "Use the same Toolkit state across desktop, tablet and iOS layouts.",
+      "features": [
+        {
+          "name": "Desktop, Tablet and iOS Mobile Mode",
+          "summary": "Purpose-built layouts for full desktop maps, landscape tablets and Safari on iOS.",
+          "details": [
+            "Responsive map-space calculations",
+            "Tablet layout without an unnecessary menu scrollbar",
+            "Mobile-safe bookmark controls",
+            "Clear persistent ON/OFF states"
+          ],
+          "visual": "modes",
+          "tags": [
+            "desktop",
+            "tablet",
+            "ios"
+          ]
+        },
+        {
+          "name": "Settings import and export",
+          "summary": "Moves Toolkit configuration between devices and operating modes.",
+          "details": [
+            "Cross-mode configuration",
+            "Timestamped exports",
+            "Persistent toolbar and feature state",
+            "Recovery-oriented settings handling"
+          ],
+          "visual": "settings",
+          "tags": [
+            "settings",
+            "backup",
+            "devices"
+          ]
+        }
+      ]
+    }
+  ],
+  "themes": [
+    {
+      "name": "Map Command",
+      "slug": "map-command",
+      "description": "The default operational command-centre skin: restrained, high-contrast and map focused.",
+      "palette": [
+        "#07111f",
+        "#14233a",
+        "#28a9ff",
+        "#77d7ff",
+        "#eaf7ff"
+      ]
+    },
+    {
+      "name": "Cyberpunk",
+      "slug": "cyberpunk",
+      "description": "Neon cyan and warning-yellow telemetry with a dense futuristic control aesthetic.",
+      "palette": [
+        "#09020f",
+        "#1b0630",
+        "#00f0ff",
+        "#fcee09",
+        "#ff2bd6"
+      ]
+    },
+    {
+      "name": "Fallout 4",
+      "slug": "fallout",
+      "description": "Green phosphor terminal styling with worn industrial panels and strong status readouts.",
+      "palette": [
+        "#071008",
+        "#102218",
+        "#76ff70",
+        "#c7ff9b",
+        "#314d35"
+      ]
+    },
+    {
+      "name": "Umbrella",
+      "slug": "umbrella",
+      "description": "Clinical black, white and red containment-system presentation.",
+      "palette": [
+        "#07090d",
+        "#171b22",
+        "#ed1c24",
+        "#f1f3f5",
+        "#818994"
+      ]
+    },
+    {
+      "name": "Factorio",
+      "slug": "factorio",
+      "description": "Heavy industrial controls, amber machinery highlights and mechanical status panels.",
+      "palette": [
+        "#16130f",
+        "#2f2920",
+        "#e79227",
+        "#ffd083",
+        "#91806a"
+      ]
+    }
+  ],
+  "payoutThemes": [
+    "GTA V",
+    "GTA Vice City",
+    "Battlefield Bad Company",
+    "Scarface",
+    "Cyberpunk",
+    "Fallout Inspired",
+    "Biohazard Containment",
+    "Factorio"
+  ],
+  "shortcuts": [
+    {
+      "key": "1",
+      "action": "Toggle My Missions"
+    },
+    {
+      "key": "2",
+      "action": "Toggle Alliance Missions"
+    },
+    {
+      "key": "3",
+      "action": "Toggle Vehicles"
+    },
+    {
+      "key": "4",
+      "action": "Toggle My Buildings"
+    },
+    {
+      "key": "5",
+      "action": "Toggle Alliance Credits"
+    },
+    {
+      "key": "6",
+      "action": "Toggle Mission Age"
+    },
+    {
+      "key": "V",
+      "action": "Open or close Vehicle Code Status"
+    }
+  ],
+  "modes": [
+    {
+      "name": "Desktop",
+      "summary": "Full map workspace with the complete dock and operational panels.",
+      "bestFor": "Large displays, mouse and keyboard operation, multi-panel monitoring."
+    },
+    {
+      "name": "Tablet",
+      "summary": "Landscape-optimised controls that fit the available map area.",
+      "bestFor": "Touch operation, compact map space and readable persistent controls."
+    },
+    {
+      "name": "iOS Mobile",
+      "summary": "Safari and Tampermonkey layout with mobile-safe controls and bookmark previews.",
+      "bestFor": "MissionChief operation from iPhone with minimal map obstruction."
+    }
+  ],
+  "documentation": [
+    {
+      "title": "Installation",
+      "sections": [
+        {
+          "heading": "Install through Greasy Fork",
+          "body": "Install Tampermonkey or a compatible userscript manager, open the Toolkit installation link, review the userscript permissions and confirm installation. Greasy Fork remains the supported update channel."
+        },
+        {
+          "heading": "First launch",
+          "body": "Open MissionChief and use the map command button to open the Toolkit. The core map control and shortcut bar load first; larger panels and operational monitors are constructed only when required."
+        }
+      ]
+    },
+    {
+      "title": "Operating model",
+      "sections": [
+        {
+          "heading": "Persistent controls",
+          "body": "Feature state, theme selection, operating mode and toolbar state are retained. Use settings export before substantial browser or device changes."
+        },
+        {
+          "heading": "Map-first behaviour",
+          "body": "The Toolkit avoids replacing MissionChief workflows. It adds operational summaries, overlays and shortcuts around the existing map and mission interfaces."
+        }
+      ]
+    },
+    {
+      "title": "Mission systems",
+      "sections": [
+        {
+          "heading": "Mission Age Watch",
+          "body": "Use Mission Age Watch to identify ageing personal missions, inspect their current state and zoom or open the mission directly. The list remains time ordered, including missions that are clearing."
+        },
+        {
+          "heading": "Critical View and Mission Inspector",
+          "body": "Critical View concentrates urgent work. Mission Inspector provides deeper context and is built on demand so it does not add unnecessary startup cost."
+        },
+        {
+          "heading": "Transport Watcher",
+          "body": "Transport Watcher identifies transport-required missions and places its indicators alongside other active map overlays."
+        }
+      ]
+    },
+    {
+      "title": "Map and bookmarks",
+      "sections": [
+        {
+          "heading": "Coverage tools",
+          "body": "Coverage Heat Map and coverage rings provide geographic context for resource planning. Keep high-cost overlays disabled when they are not needed."
+        },
+        {
+          "heading": "Smart Bookmark Labels",
+          "body": "Bookmark labels are shortened automatically using UK-aware abbreviations and a fallback compressor. The full name remains available through desktop tooltips or a touch long-press preview. A manual short label can override the generated result."
+        }
+      ]
+    },
+    {
+      "title": "Settings and recovery",
+      "sections": [
+        {
+          "heading": "Import and export",
+          "body": "Use the Toolkit settings export to move configuration between Desktop, Tablet and iOS Mobile Mode. Export files are timestamped for easier recovery."
+        },
+        {
+          "heading": "Reset strategy",
+          "body": "When diagnosing a persistent configuration problem, export settings first, reset only the affected feature where possible, and test with the default Map Command theme before applying a full reset."
+        }
+      ]
+    }
+  ],
+  "troubleshooting": [
+    {
+      "problem": "MissionChief feels slow immediately after page load",
+      "steps": [
+        "Confirm the installed Toolkit version matches the current version shown on this site.",
+        "Allow the idle bootstrap to complete before opening several large panels.",
+        "Temporarily disable high-cost overlays such as coverage visualisation.",
+        "Compare with the Toolkit disabled and include window.__MCMS_STARTUP_METRICS__ in a performance report."
+      ]
+    },
+    {
+      "problem": "A button or panel is missing",
+      "steps": [
+        "Reload MissionChief once.",
+        "Confirm the correct Desktop, Tablet or iOS operating mode is selected.",
+        "Check whether the toolbar is collapsed.",
+        "Open a structured bug report with browser, Tampermonkey and Toolkit versions."
+      ]
+    },
+    {
+      "problem": "Map markers or selectors stopped working after a game update",
+      "steps": [
+        "Reload the page and reproduce the issue with the default theme.",
+        "Capture the browser console error.",
+        "Record the exact feature and mission or map context.",
+        "Submit the structured bug form so the changed MissionChief selector can be audited."
+      ]
+    },
+    {
+      "problem": "Settings did not carry to another device",
+      "steps": [
+        "Export settings from the original device.",
+        "Import the complete timestamped export on the new device.",
+        "Confirm the target operating mode after import.",
+        "Reload MissionChief once after the import."
+      ]
+    }
+  ],
+  "knownIssues": [
+    {
+      "level": "information",
+      "title": "No release-blocking issue is recorded for the current verified release",
+      "body": "The release dashboard currently records validation, Greasy Fork synchronisation, private backup, Discord publication and asset health as verified."
+    },
+    {
+      "level": "watch",
+      "title": "MissionChief interface changes can affect selectors",
+      "body": "The Toolkit now validates static selectors and interface IDs in CI, but a live MissionChief markup change can still require a userscript update."
+    },
+    {
+      "level": "watch",
+      "title": "Large overlays have a deliberate performance cost",
+      "body": "Coverage and monitoring systems should be enabled when operationally useful rather than left active by default on low-power devices."
+    }
+  ],
+  "mediaRoadmap": [
+    "Before-and-after map comparison",
+    "Map Command, Cyberpunk, Fallout, Umbrella and Factorio interface captures",
+    "Mission Age Watch workflow",
+    "Coverage Heat Map",
+    "Smart Bookmark Labels",
+    "Payout presentations",
+    "Tablet and iOS Mobile Mode",
+    "Critical View and Mission Inspector"
+  ]
+}

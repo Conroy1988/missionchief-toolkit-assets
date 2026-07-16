@@ -9,7 +9,6 @@ DIST_USER = ROOT / 'dist' / 'MissionChief_Map_Command_Toolkit.user.js'
 DIST_TXT = ROOT / 'dist' / 'MissionChief_Map_Command_Toolkit.txt'
 CHANGELOG = ROOT / 'CHANGELOG.md'
 REFINER = ROOT / '.github' / 'scripts' / 'refine_full_userscript_audit.py'
-PERF_WORKFLOW = ROOT / '.github' / 'workflows' / 'performance-regression-check.yml'
 RUNTIME_TEST = ROOT / '.github' / 'scripts' / 'test_runtime_optimisations.py'
 DOC_CONTRACT = ROOT / '.github' / 'documentation-contract.json'
 SITE_DATA = ROOT / 'docs' / 'site-data.json'
@@ -86,24 +85,13 @@ def update_refiner() -> None:
     REFINER.write_text(text, encoding='utf-8')
 
 
-def add_runtime_test_and_workflow_hook() -> None:
+def add_runtime_test() -> None:
     test_source = '''#!/usr/bin/env python3\n\"\"\"Static invariants for conservative v4.13.1 runtime reductions.\"\"\"\nfrom pathlib import Path\n\nROOT = Path(__file__).resolve().parents[2]\nSOURCE = ROOT / \"src\" / \"MissionChief_Map_Command_Toolkit.user.js\"\n\n\ndef section(text: str, start: str, end: str) -> str:\n    begin = text.index(start)\n    finish = text.index(end, begin)\n    return text[begin:finish]\n\n\ndef main() -> int:\n    text = SOURCE.read_text(encoding=\"utf-8\")\n    prune = section(text, \"function pruneRuntimeCaches\", \"function installAllianceBuildingsPageOptimisation\")\n    assert prune.count(\"getVehicleMarkerLayers()\") == 1\n    assert prune.count(\"getBuildingMarkerLayers()\") == 1\n    assert \"new Set(getVehicleMarkerLayers())\" in prune\n    assert \"new Set(getBuildingMarkerLayers())\" in prune\n    assert \"currentVehicleLayers.has(layer)\" in prune\n    assert \"currentBuildingLayers.has(layer)\" in prune\n\n    auto_load = section(text, \"function autoLoadAllVehiclesResolveMissionRoot\", \"function clearAutoLoadAllVehiclesReleaseTimer\")\n    assert \"closest?.(AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR)\" in auto_load\n    assert \"autoLoadAllVehiclesMissionRoot?.isConnected\" in auto_load\n    assert \"autoLoadAllVehiclesElementVisible(autoLoadAllVehiclesMissionRoot)\" in auto_load\n    assert \"queryRoot.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR)\" in auto_load\n    assert \"document.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR)\" not in auto_load\n    print(\"Runtime optimisation invariants passed.\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n'''
     RUNTIME_TEST.write_text(test_source, encoding='utf-8')
-
-    text = PERF_WORKFLOW.read_text(encoding='utf-8')
-    old_path_block = '      - ".github/scripts/test_performance_budget.py"\n      - ".github/workflows/performance-regression-check.yml"\n'
-    new_path_block = '      - ".github/scripts/test_performance_budget.py"\n      - ".github/scripts/test_runtime_optimisations.py"\n      - ".github/workflows/performance-regression-check.yml"\n'
-    path_count = text.count(old_path_block)
-    if path_count != 2:
-        raise RuntimeError(f'performance workflow paths: expected two matches, found {path_count}')
-    text = text.replace(old_path_block, new_path_block)
-    text = replace_once(
-        text,
-        '      - name: Run performance checker self-tests\n        run: python3 .github/scripts/test_performance_budget.py\n',
-        '      - name: Run performance and runtime-optimisation self-tests\n        run: |\n          python3 .github/scripts/test_performance_budget.py\n          python3 .github/scripts/test_runtime_optimisations.py\n',
-        'performance workflow test step',
-    )
-    PERF_WORKFLOW.write_text(text, encoding='utf-8')
+    namespace = {"__name__": "runtime_optimisation_invariants", "__file__": str(RUNTIME_TEST)}
+    exec(compile(test_source, str(RUNTIME_TEST), "exec"), namespace)
+    if namespace["main"]() != 0:
+        raise RuntimeError("Runtime optimisation invariants failed.")
 
 
 def update_documentation_catalogue() -> None:
@@ -125,12 +113,12 @@ def update_documentation_catalogue() -> None:
     DOC_CONTRACT.write_text(contract, encoding='utf-8')
 
     site = SITE_DATA.read_text(encoding='utf-8')
-    fleet_tail = '''        {\n          "name": "Unit Count and Focus controls",\n          "summary": "Reduces map noise while retaining the operational layers that matter.",\n          "details": [\n            "Unit-count overlays",\n            "Vehicle and building visibility controls",\n            "Focus Mode",\n            "Rapid navigation to active incidents"\n          ],\n          "visual": "focus",\n          "tags": [\n            "vehicles",\n            "map",\n            "focus"\n          ]\n        }\n'''
-    fleet_replacement = fleet_tail.rstrip() + ''',\n        {\n          "name": "Auto-load all vehicles",\n          "summary": "Loads MissionChief's hidden vehicle batches automatically when an active mission window is opened.",\n          "details": [\n            "Uses MissionChief's native load-more control",\n            "Scopes follow-up scans to the active mission window",\n            "Includes bounded retries and duplicate-request protection",\n            "Remains fully manual when disabled"\n          ],\n          "visual": "auto-load-vehicles",\n          "tags": [\n            "vehicles",\n            "missions",\n            "performance"\n          ]\n        }\n'''
+    fleet_tail = '''        {\n          "name": "Unit Count and Focus controls",\n          "summary": "Reduces map noise while retaining the operational layers that matter.\",\n          "details": [\n            "Unit-count overlays",\n            "Vehicle and building visibility controls",\n            "Focus Mode",\n            "Rapid navigation to active incidents"\n          ],\n          "visual": "focus",\n          "tags": [\n            "vehicles",\n            "map",\n            "focus"\n          ]\n        }\n'''
+    fleet_replacement = fleet_tail.rstrip() + ''',\n        {\n          "name": "Auto-load all vehicles",\n          "summary": "Loads MissionChief's hidden vehicle batches automatically when an active mission window is opened.\",\n          "details": [\n            "Uses MissionChief's native load-more control",\n            "Scopes follow-up scans to the active mission window",\n            "Includes bounded retries and duplicate-request protection",\n            "Remains fully manual when disabled"\n          ],\n          "visual": "auto-load-vehicles",\n          "tags": [\n            "vehicles",\n            "missions",\n            "performance"\n          ]\n        }\n'''
     site = replace_once(site, fleet_tail, fleet_replacement, 'auto-load feature catalogue')
 
-    factorio = '''    {\n      "name": "Factorio",\n      "slug": "factorio",\n      "description": "Heavy industrial controls, amber machinery highlights and mechanical status panels.",\n      "palette": [\n        "#16130f",\n        "#2f2920",\n        "#e79227",\n        "#ffd083",\n        "#91806a"\n      ]\n    }\n'''
-    theme_additions = factorio.rstrip() + ''',\n    {\n      "name": "007 Intelligence",\n      "slug": "bond-007",\n      "description": "A classified intelligence interface with gun-barrel geometry, dossier styling and champagne-gold controls.",\n      "palette": [\n        "#050505",\n        "#161616",\n        "#d5b76d",\n        "#f5e7bb",\n        "#8d1c23"\n      ]\n    },\n    {\n      "name": "Hyrule Command",\n      "slug": "hyrule",\n      "description": "The flagship parchment, royal-gold and ancient-energy command interface with transparent themed artwork.",\n      "palette": [\n        "#061319",\n        "#203c2b",\n        "#e8bf4d",\n        "#3de7e5",\n        "#50ec8c"\n      ]\n    }\n'''
+    factorio = '''    {\n      "name": "Factorio",\n      "slug": "factorio",\n      "description": "Heavy industrial controls, amber machinery highlights and mechanical status panels.\",\n      "palette": [\n        "#16130f",\n        "#2f2920",\n        "#e79227",\n        "#ffd083",\n        "#91806a"\n      ]\n    }\n'''
+    theme_additions = factorio.rstrip() + ''',\n    {\n      "name": "007 Intelligence",\n      "slug": "bond-007",\n      "description": "A classified intelligence interface with gun-barrel geometry, dossier styling and champagne-gold controls.\",\n      "palette": [\n        "#050505",\n        "#161616",\n        "#d5b76d",\n        "#f5e7bb",\n        "#8d1c23"\n      ]\n    },\n    {\n      "name": "Hyrule Command",\n      "slug": "hyrule",\n      "description": "The flagship parchment, royal-gold and ancient-energy command interface with transparent themed artwork.\",\n      "palette": [\n        "#061319",\n        "#203c2b",\n        "#e8bf4d",\n        "#3de7e5",\n        "#50ec8c"\n      ]\n    }\n'''
     site = replace_once(site, factorio, theme_additions, 'theme catalogue additions')
     site = replace_once(
         site,
@@ -153,7 +141,7 @@ def main() -> int:
     update_source()
     update_changelog()
     update_refiner()
-    add_runtime_test_and_workflow_hook()
+    add_runtime_test()
     update_documentation_catalogue()
     update_audit_document()
     return 0

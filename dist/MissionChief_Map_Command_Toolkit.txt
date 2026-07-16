@@ -21062,6 +21062,45 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (needsRetry) runtimeSetTimeout(() => scheduleMissionValueScan(0), 650);
     }
 
+    function ensureMissionValueDocumentStyle(doc) {
+        if (!doc || doc === document) return;
+        const styleId = 'mcms-mission-value-document-style';
+        if (doc.getElementById?.(styleId)) return;
+        const style = doc.createElement?.('style');
+        if (!style) return;
+        style.id = styleId;
+        style.textContent = `
+            .mcms-mission-value-row {
+                display:flex !important;align-items:center !important;justify-content:flex-end !important;
+                width:100% !important;min-height:30px !important;box-sizing:border-box !important;
+                margin:0 0 8px 0 !important;padding:5px 46px 5px 8px !important;clear:both !important;
+                position:relative !important;z-index:2 !important;pointer-events:none !important;
+            }
+            .mcms-mission-value-badge {
+                display:inline-flex !important;align-items:center !important;justify-content:center !important;
+                max-width:min(100%,260px) !important;min-height:25px !important;box-sizing:border-box !important;
+                padding:4px 10px !important;border:1px solid rgba(235,190,64,.72) !important;border-radius:8px !important;
+                background:linear-gradient(145deg,rgba(48,39,13,.96),rgba(19,21,24,.96)) !important;
+                color:#ffe59a !important;box-shadow:0 2px 8px rgba(0,0,0,.34) !important;
+                font:900 11px/1.25 Arial,Helvetica,sans-serif !important;letter-spacing:.15px !important;
+                text-align:right !important;white-space:nowrap !important;overflow:hidden !important;
+                text-overflow:ellipsis !important;pointer-events:none !important;
+            }
+            @media (max-width:520px) {
+                .mcms-mission-value-row { padding-right:40px !important; }
+                .mcms-mission-value-badge { max-width:100% !important;font-size:10px !important; }
+            }
+        `;
+        (doc.head || doc.documentElement)?.appendChild(style);
+    }
+
+    function clearMissionValueDocumentStyles() {
+        for (const context of transportSweepDocumentContexts()) {
+            if (context.doc === document) continue;
+            try { context.doc.getElementById?.('mcms-mission-value-document-style')?.remove(); } catch (err) {}
+        }
+    }
+
     function observeMissionValueFrame(frame) {
         if (!frame || missionValueObservedFrames.has(frame)) return;
         missionValueObservedFrames.add(frame);
@@ -21071,7 +21110,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function observeMissionValueDocument(doc) {
-        if (!doc || missionValueObservedDocuments.has(doc)) return;
+        if (!doc) return;
+        ensureMissionValueDocumentStyle(doc);
+        if (missionValueObservedDocuments.has(doc)) return;
         missionValueObservedDocuments.add(doc);
         let frames = [];
         try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
@@ -21099,6 +21140,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 runtimeClearTimeout(missionValueScanTimer);
                 missionValueScanTimer = null;
                 clearMissionValueIndicators();
+                clearMissionValueDocumentStyles();
             });
         }
         for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);

@@ -1,0 +1,1134 @@
+===== defaultState @ line 1351 =====
+function defaultState() {
+        return {
+            uiTheme: 'mapCommand',
+            theme: getLegacyTheme(),
+            position: getLegacyPosition(),
+            activeTab: 'skins',
+            cleanMode: false,
+            markerFocus: false,
+            missionPulse: false,
+            roadPriority: false,
+            compactDock: false,
+            commandBarOpen: true,
+            economyMode: false,
+            tabletMode: 'auto',
+            mobileMode: 'auto',
+            shortcuts: true,
+            autoLoadAllVehicles: false,
+            allianceBuildingsMap: true,
+            majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
+            missionAgeWatch: {
+                ageFilter: '8h',
+                sortMode: 'age',
+                expanded: false,
+                ownershipFilter: 'personal',
+                categoryFilter: 'all',
+                primaryStatus: 'all',
+                advancedFiltersOpen: false,
+                hasVehiclesOnWay: false,
+                onlyMyUnits: false,
+                valueMode: 'total',
+                distanceOrigin: 'live',
+                lockedOrigin: null
+            },
+            missionLockAudio: true,
+            allianceCredits: false,
+            allianceCreditMinimum: 0,
+            missionAge: false,
+            unitCommitment: false,
+            transportWatcher: true,
+            missionInspector: true,
+            stuckDetector: { enabled: true, thresholdMin: 20 },
+            missionSpawn: { enabled: true },
+            resourceGap: { enabled: false, radiusMi: 25 },
+            transportSweep: { delayMs: 2000, maxPerRun: 25 },
+            payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
+            discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+            financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
+            profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
+            nudge: { x: 0, y: 0 },
+            panelPosition: null,
+            visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+            quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
+            coverage: { enabled: false, radiusMi: 10 },
+            heatmap: { enabled: false, source: 'stations', service: 'all', radiusMi: 10, opacity: 0.30 },
+            autoNight: {
+                enabled: false,
+                nightStart: '19:00',
+                dayStart: '07:00',
+                nightTheme: 'nightshift',
+                dayTheme: 'default',
+                lastBucket: ''
+            },
+            bookmarks: [null, null, null, null, null]
+        };
+    }
+
+===== loadState @ line 1417 =====
+function loadState() {
+        const base = defaultState();
+        const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
+        if (!raw) return base;
+
+        try {
+            const parsed = JSON.parse(raw);
+            const merged = {
+                ...base,
+                ...parsed,
+                nudge: { ...base.nudge, ...(parsed.nudge || {}) },
+                visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+                quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+                coverage: { ...base.coverage, ...(parsed.coverage || {}) },
+                heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
+                stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
+                missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
+                resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+                transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+                majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+                missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+                payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+                discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+                financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+                autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
+                profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
+                bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
+            };
+
+            while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
+            while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
+
+            merged.uiTheme = normaliseUiTheme(merged.uiTheme);
+            merged.theme = normaliseTheme(merged.theme);
+            merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
+            if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
+            merged.activeTab = ['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(merged.activeTab) ? merged.activeTab : 'skins';
+            delete merged.fleetFilter;
+            merged.nudge.x = clamp(merged.nudge.x, -220, 220, 0);
+            merged.nudge.y = clamp(merged.nudge.y, -220, 220, 0);
+            merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
+            merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
+            merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
+            merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
+            merged.commandBarOpen = merged.commandBarOpen !== false;
+            merged.economyMode = Boolean(merged.economyMode);
+            merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+            merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
+            merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
+            merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
+            merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+            merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+            merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+            merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+            merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+            merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+            merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+            merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+            merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+            merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+            const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
+            merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
+                ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
+                : null;
+            merged.missionLockAudio = merged.missionLockAudio !== false;
+            merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
+            merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
+            merged.transportWatcher = merged.transportWatcher !== false;
+            merged.missionInspector = merged.missionInspector !== false;
+            merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
+            merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+            merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
+            merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
+            merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
+            merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
+            merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+            merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+            merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+            merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+            merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+            merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+            merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+            merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+            merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
+            merged.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(merged.discordReport.period) ? merged.discordReport.period : 'today';
+            merged.discordReport.customStart = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customStart || '')) ? String(merged.discordReport.customStart) : localIsoDate(new Date(Date.now() - 6 * 86400000));
+            merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
+            merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
+            merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
+            merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
+            merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
+            merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
+            merged.financialVault.enabled = merged.financialVault.enabled !== false;
+            merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
+            merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
+                ? 'all'
+                : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
+            delete merged.financialVault.autoSync;
+            delete merged.financialVault.benchmarkOptIn;
+            delete merged.financialVault.gatewayUrl;
+            delete merged.discordReport.includeBenchmark;
+            merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
+            merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
+            merged.bookmarks = merged.bookmarks.map(item => item ? {
+                ...item,
+                name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+                shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+                pinned: Boolean(item.pinned)
+            } : null);
+            merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
+
+            if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
+                merged.panelPosition = null;
+            } else {
+                merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
+            }
+
+            delete merged.requiresAttention;
+            return merged;
+        } catch (err) {
+            return base;
+        }
+    }
+
+===== saveState @ line 1541 =====
+function saveState() {
+        try {
+            localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
+            localStorage.setItem(SCRIPT.legacyTheme, state.theme);
+            localStorage.setItem(SCRIPT.legacyPosition, state.position);
+        } catch (err) {}
+    }
+
+===== applyLoadedConfiguration @ line 21917 =====
+function applyLoadedConfiguration() {
+        criticalViewActive = false;
+        criticalViewSnapshot = null;
+        document.querySelectorAll('.mcms-critical-view-hidden').forEach(icon => icon.classList.remove('mcms-critical-view-hidden'));
+        const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+        criticalDrawer?.classList.remove('mcms-open');
+        criticalDrawer?.setAttribute('aria-hidden', 'true');
+        const vehicleStatus = document.getElementById(SCRIPT.vehicleStatusId);
+        vehicleStatus?.classList.remove('mcms-open');
+        vehicleStatus?.setAttribute('aria-hidden', 'true');
+        hideMissionInspector();
+        missionSpawnArmed = false;
+        runtimeClearTimeout(missionSpawnPrimeTimer);
+        knownMissionIds.clear();
+        if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+        else stopAutoLoadAllVehicles();
+        applyRootAttributes();
+        renderQuickPlaces();
+        renderBookmarks();
+        renderProfiles();
+        renderScreenPins();
+        updateUI();
+        synchroniseVehicleMarkerClasses();
+        synchronisePersonalBuildingVisibility();
+        reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+    }
+
+===== exportToolkitConfig @ line 22021 =====
+async function exportToolkitConfig() {
+        try {
+            const privateItems = [];
+            if (getDiscordWebhookUrl()) privateItems.push('your Discord webhook URL and token');
+            if (loadFinanceVaultStore()?.profiles && Object.keys(loadFinanceVaultStore().profiles).length) privateItems.push('your locally stored MissionChief financial history');
+            if (privateItems.length) {
+                const accepted = pageWindow.confirm(`PRIVATE BACKUP WARNING
+
+This export contains ${privateItems.join(', ')}. Anyone with the file may be able to post to your Discord channel or inspect the exported game ledger.
+
+Store it privately and never upload it to a public website or support ticket.
+
+Create the private backup now?`);
+                if (!accepted) {
+                    showToast('Private settings export cancelled');
+                    return;
+                }
+            }
+            const exportedAt = new Date();
+            const filename = settingsBackupFilename(exportedAt);
+            const json = JSON.stringify(buildToolkitSettingsBackup(exportedAt), null, 2);
+            const BlobConstructor = pageWindow.Blob || globalThis.Blob;
+            const FileConstructor = pageWindow.File || globalThis.File;
+            const blob = new BlobConstructor([json], { type: 'application/json' });
+            const shareNavigator = pageWindow.navigator || globalThis.navigator;
+
+            if (activeDeviceLayout === 'mobile' && typeof FileConstructor === 'function' && typeof shareNavigator?.share === 'function') {
+                const file = new FileConstructor([json], filename, { type: 'application/json' });
+                let canShareFile = false;
+                try {
+                    canShareFile = typeof shareNavigator.canShare !== 'function' || shareNavigator.canShare({ files: [file] });
+                } catch (err) {}
+                if (canShareFile) {
+                    try {
+                        await shareNavigator.share({
+                            files: [file],
+                            title: 'MC Map Command private settings backup'
+                        });
+                        showToast('All toolkit settings exported');
+                        return;
+                    } catch (err) {
+                        if (err?.name === 'AbortError') {
+                            showToast('Settings export cancelled');
+                            return;
+                        }
+                    }
+                }
+            }
+
+            downloadToolkitSettingsBlob(blob, filename);
+            showToast('All toolkit settings exported');
+        } catch (err) {
+            showToast('Export failed: settings file could not be created');
+        }
+    }
+
+===== looksLikeToolkitState @ line 22077 =====
+function looksLikeToolkitState(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+        return ['theme', 'position', 'visibility', 'bookmarks', 'profiles', 'payoutFlash', 'tabletMode', 'mobileMode']
+            .some(key => Object.prototype.hasOwnProperty.call(value, key));
+    }
+
+===== extractImportedToolkitState @ line 22083 =====
+function extractImportedToolkitState(parsed) {
+        const candidates = [
+            parsed?.state,
+            parsed?.settings?.state,
+            parsed?.configuration?.state,
+            parsed?.configuration,
+            parsed
+        ];
+        return candidates.find(looksLikeToolkitState) || null;
+    }
+
+===== extractImportedDiscordWebhook @ line 22094 =====
+function extractImportedDiscordWebhook(parsed) {
+        const containers = [
+            parsed?.integrations,
+            parsed?.settings?.integrations,
+            parsed?.configuration?.integrations
+        ];
+        for (const container of containers) {
+            if (!container || typeof container !== 'object') continue;
+            if (Object.prototype.hasOwnProperty.call(container, 'discordWebhook')) {
+                return { present: true, value: String(container.discordWebhook || '') };
+            }
+            if (Object.prototype.hasOwnProperty.call(container, 'discordWebhookUrl')) {
+                return { present: true, value: String(container.discordWebhookUrl || '') };
+            }
+        }
+        return { present: false, value: '' };
+    }
+
+===== extractImportedFinancialVaultCredential @ line 22112 =====
+function extractImportedFinancialVaultCredential(parsed) {
+        const candidates = [
+            parsed?.integrations?.financialArchiveIdentity,
+            parsed?.settings?.integrations?.financialArchiveIdentity,
+            parsed?.configuration?.integrations?.financialArchiveIdentity,
+            parsed?.financialArchiveIdentity,
+            parsed?.integrations?.financialVaultCredential,
+            parsed?.settings?.integrations?.financialVaultCredential,
+            parsed?.configuration?.integrations?.financialVaultCredential,
+            parsed?.financialVaultCredential
+        ];
+        const value = candidates.find(candidate => candidate && typeof candidate === 'object' && !Array.isArray(candidate));
+        return { present: Boolean(value), value: value || null };
+    }
+
+===== extractImportedFinancialVaultStore @ line 22127 =====
+function extractImportedFinancialVaultStore(parsed) {
+        const candidates = [
+            parsed?.financialArchiveStore,
+            parsed?.integrations?.financialArchiveStore,
+            parsed?.settings?.financialArchiveStore,
+            parsed?.configuration?.financialArchiveStore,
+            parsed?.financialVaultStore,
+            parsed?.integrations?.financialVaultStore,
+            parsed?.settings?.financialVaultStore,
+            parsed?.configuration?.financialVaultStore
+        ];
+        const value = candidates.find(candidate => candidate && typeof candidate === 'object' && !Array.isArray(candidate));
+        return { present: Boolean(value), value: value || null };
+    }
+
+===== normaliseImportedFinanceVaultCredential @ line 22142 =====
+function normaliseImportedFinanceVaultCredential(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('The Financial Archive identity is invalid.');
+        const current = financeVaultCredential();
+        return {
+            deviceId: current.deviceId || String(value.deviceId || '') || financeRandomToken(16),
+            playerId: value.playerId === undefined || value.playerId === null || value.playerId === '' ? null : String(value.playerId).slice(0, 64),
+            playerName: financeNormaliseText(value.playerName).slice(0, 120),
+            createdAt: Number(value.createdAt) || Date.now()
+        };
+    }
+
+===== normaliseImportedFinanceVaultStore @ line 22153 =====
+function normaliseImportedFinanceVaultStore(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value) || !value.profiles || typeof value.profiles !== 'object') {
+            throw new Error('The Financial Archive history is invalid.');
+        }
+        const credential = financeVaultCredential();
+        const profiles = {};
+        for (const [rawKey, rawVault] of Object.entries(value.profiles).slice(0, 50)) {
+            if (!rawVault || typeof rawVault !== 'object') continue;
+            const player = {
+                id: rawVault?.player?.id === undefined || rawVault?.player?.id === null || rawVault?.player?.id === '' ? null : String(rawVault.player.id).slice(0, 64),
+                name: financeNormaliseText(rawVault?.player?.name).slice(0, 120)
+            };
+            const key = player.id || player.name ? financePlayerProfileKey(player) : String(rawKey || '').slice(0, 180);
+            if (!key) continue;
+            profiles[key] = normaliseFinanceVault(rawVault, player, credential.deviceId);
+        }
+        return { schema: FINANCE_VAULT_SCHEMA, profiles };
+    }
+
+===== describePrivateImport @ line 22172 =====
+function describePrivateImport(parsed) {
+        const importedWebhook = extractImportedDiscordWebhook(parsed);
+        const importedCredential = extractImportedFinancialVaultCredential(parsed);
+        const importedStore = extractImportedFinancialVaultStore(parsed);
+        const privateItems = [];
+        if (importedWebhook.present && String(importedWebhook.value || '').trim()) privateItems.push('a Discord webhook URL and token');
+        if (importedStore.present && Object.keys(importedStore.value?.profiles || {}).length) privateItems.push('stored MissionChief financial ledger history');
+        return { importedWebhook, importedCredential, importedStore, privateItems };
+    }
+
+===== applyImportedToolkitSettings @ line 22182 =====
+function applyImportedToolkitSettings(parsed) {
+        const importedState = extractImportedToolkitState(parsed);
+        if (!importedState) throw new Error('The file does not contain MissionChief Map Command settings.');
+
+        const { importedWebhook, importedCredential, importedStore } = describePrivateImport(parsed);
+        const normalisedWebhook = importedWebhook.present ? normaliseDiscordWebhookUrl(importedWebhook.value) : '';
+        const normalisedCredential = importedCredential.present ? normaliseImportedFinanceVaultCredential(importedCredential.value) : null;
+        const normalisedVaultStore = importedStore.present ? normaliseImportedFinanceVaultStore(importedStore.value) : null;
+        const previousStateRaw = localStorage.getItem(SCRIPT.storageState);
+        const previousWebhook = getDiscordWebhookUrl();
+        const previousCredentialRaw = gmGetValueSafe(SCRIPT.financeVaultCredentialState, null);
+        const previousVaultRaw = gmGetValueSafe(SCRIPT.financeVaultState, null);
+
+        try {
+            localStorage.setItem(SCRIPT.storageState, JSON.stringify(importedState));
+            state = loadState();
+            saveState();
+            if (importedWebhook.present) saveDiscordWebhookUrl(normalisedWebhook);
+            if (normalisedCredential) saveFinanceVaultCredential(normalisedCredential);
+            if (normalisedVaultStore) saveFinanceVaultStore(normalisedVaultStore);
+            invalidateFinanceVaultMemory();
+            loadCachedFinancialRules();
+            loadCachedFinancialPolicy();
+            applyLoadedConfiguration();
+        } catch (err) {
+            try {
+                if (previousStateRaw === null) localStorage.removeItem(SCRIPT.storageState);
+                else localStorage.setItem(SCRIPT.storageState, previousStateRaw);
+                state = loadState();
+                saveDiscordWebhookUrl(previousWebhook);
+                if (previousCredentialRaw === null) gmDeleteValueSafe(SCRIPT.financeVaultCredentialState);
+                else gmSetValueSafe(SCRIPT.financeVaultCredentialState, previousCredentialRaw);
+                if (previousVaultRaw === null) gmDeleteValueSafe(SCRIPT.financeVaultState);
+                else gmSetValueSafe(SCRIPT.financeVaultState, previousVaultRaw);
+                invalidateFinanceVaultMemory();
+                applyLoadedConfiguration();
+            } catch (rollbackError) {}
+            throw err;
+        }
+
+        return {
+            webhook: importedWebhook.present,
+            credential: importedCredential.present,
+            vaultHistory: importedStore.present
+        };
+    }
+
+===== importToolkitConfigFile @ line 22229 =====
+function importToolkitConfigFile(file) {
+        if (!file) return;
+        if (Number(file.size) > 150 * 1024 * 1024) {
+            showToast('Import failed: settings file is too large');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(String(reader.result || ''));
+                const privateImport = describePrivateImport(parsed);
+                if (privateImport.privateItems.length) {
+                    const accepted = pageWindow.confirm(`PRIVATE BACKUP IMPORT WARNING\n\nThis file contains ${privateImport.privateItems.join(', ')}. Importing it can replace your saved Discord connection, Financial Archive identity or local financial history.\n\nOnly continue if you trust where this backup came from.\n\nImport this private backup now?`);
+                    if (!accepted) {
+                        showToast('Private settings import cancelled');
+                        return;
+                    }
+                }
+                const imported = applyImportedToolkitSettings(parsed);
+                const additions = [imported.webhook && 'webhook', imported.credential && 'archive identity', imported.vaultHistory && 'financial history'].filter(Boolean);
+                showToast(additions.length ? `All toolkit settings imported · ${additions.join(', ')}` : 'Toolkit settings imported · existing private integrations kept');
+            } catch (err) {
+                showToast(`Import failed: ${err?.message || 'invalid settings file'}`);
+            }
+        };
+        reader.onerror = () => showToast('Import failed: file could not be read');
+        reader.readAsText(file);
+    }
+
+===== resetToolkitConfiguration @ line 22258 =====
+function resetToolkitConfiguration() {
+        if (!pageWindow.confirm('Reset all toolkit settings and saved map profiles? Payout history will be kept.')) return;
+        state = defaultState();
+        saveState();
+        applyLoadedConfiguration();
+        showToast('Toolkit settings reset');
+    }
+
+===== applyUiTheme @ line 1562 =====
+function applyUiTheme(key, announce = false) {
+        const nextTheme = normaliseUiTheme(key);
+        const changed = state.uiTheme !== nextTheme;
+        const pairedHyrulePayout = nextTheme === 'hyrule' && state.payoutFlash.template !== 'hyruleQuest';
+        state.uiTheme = nextTheme;
+        if (pairedHyrulePayout) state.payoutFlash.template = 'hyruleQuest';
+        saveState();
+        updateUI();
+        if (announce && changed) {
+            showToast(pairedHyrulePayout
+                ? 'Hyrule Command interface and Quest Reward payout active'
+                : `${UI_THEMES[nextTheme].label} interface active`);
+        }
+    }
+
+===== applyTheme @ line 25830 =====
+function applyTheme(themeKey, persist = true) {
+        state.theme = normaliseTheme(themeKey);
+        if (persist) saveState();
+        applyRootAttributes();
+        updateUI();
+        showToast(THEMES[state.theme].full);
+    }
+
+===== setActiveTab @ line 25838 =====
+function setActiveTab(tab) {
+        if (!['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(tab)) return;
+        state.activeTab = tab;
+        saveState();
+        updateUI();
+        if (!dragState) positionPanelOverlay(true);
+        if (tab === 'ops') refreshPersonalVehicleData(false).finally(() => scheduleOperationalPanelsRender(0, true));
+    }
+
+===== applyPosition @ line 25847 =====
+function applyPosition(position, persist = true) {
+        state.position = POSITIONS[position] ? position : 'bl';
+        if (persist) saveState();
+        updateUI();
+        fitControlToMap();
+    }
+
+===== toggleFeature @ line 25983 =====
+function toggleFeature(feature) {
+        if (feature === 'clean') state.cleanMode = !state.cleanMode;
+        if (feature === 'markerFocus') state.markerFocus = !state.markerFocus;
+        if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
+        if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
+        if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
+        if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+        if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
+        if (feature === 'autoLoadAllVehicles') {
+            state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
+            if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+            else stopAutoLoadAllVehicles();
+        }
+        if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
+        if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
+        if (feature === 'missionLockAudio') {
+            state.missionLockAudio = !state.missionLockAudio;
+            if (state.missionLockAudio) unlockPayoutAudio(true);
+        }
+        if (feature === 'allianceCredits') state.allianceCredits = !state.allianceCredits;
+        if (feature === 'missionAge') state.missionAge = !state.missionAge;
+        if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
+        if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
+        if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+        if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
+        if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
+        if (feature === 'missionSpawn') {
+            missionSpawnArmed = false;
+            runtimeClearTimeout(missionSpawnPrimeTimer);
+            knownMissionIds.clear();
+            if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+        }
+        if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
+        if (feature === 'criticalView') { toggleCriticalView(); return; }
+        if (feature === 'payoutFlash') state.payoutFlash.enabled = !state.payoutFlash.enabled;
+        if (feature === 'payoutSound') {
+            state.payoutFlash.soundEnabled = !state.payoutFlash.soundEnabled;
+            if (state.payoutFlash.soundEnabled) unlockPayoutAudio();
+            else disposePayoutMediaAudio();
+        }
+        if (feature === 'compactDock') state.compactDock = !state.compactDock;
+        if (feature === 'autoNight') {
+            state.autoNight.enabled = !state.autoNight.enabled;
+            state.autoNight.lastBucket = '';
+        }
+        if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+        if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+        if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+        if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+
+        if (state.cleanMode) closePanel();
+
+        if (!criticalViewActive) saveState();
+        applyRootAttributes();
+        updateUI();
+        if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
+        if (feature === 'buildings') synchronisePersonalBuildingVisibility();
+        if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+        reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+        if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+        if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
+        if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+        if (feature === 'unitCommitment') {
+            if (state.unitCommitment) {
+                showToast('Loading unit assignments…');
+                refreshPersonalVehicleData(true).then(ok => {
+                    scheduleUnitCommitmentRefresh(0);
+                    showToast(ok ? 'Unit Count on' : 'Unit Count on · live vehicle data unavailable');
+                });
+            } else showToast('Unit Count off');
+        }
+        if (feature === 'transportWatcher') showToast(state.transportWatcher ? 'Transport Watcher on' : 'Transport Watcher off');
+        if (feature === 'majorIncidentFeed') {
+            if (state.majorIncidentFeed.enabled) {
+                refreshMissionSnapshots();
+                scheduleMajorIncidentFeedRender(0);
+            } else removeMajorIncidentFeed();
+            showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
+        }
+        if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
+        if (feature === 'allianceBuildingsMapBlocker') {
+            if (state.allianceBuildingsMap === false) {
+                installAllianceBuildingsEarlyStyle();
+                installAllianceBuildingsLeafletAssignmentGuard();
+                installAllianceBuildingsContextWatcherEarly();
+            } else {
+                clearAllianceBuildingsEarlyContext();
+            }
+            showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
+            if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
+        }
+        if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
+        if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
+        if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off');
+        if (feature === 'resourceGap') {
+            if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
+            showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
+        }
+        if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
+        if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
+        if (feature === 'autoNight') runAutoNight(true);
+    }
+
+===== makeToggleButton @ line 26696 =====
+function makeToggleButton(key, icon, label, title) {
+        return `
+            <button class="mcms-toggle-btn" type="button" data-toggle="${key}" title="${escapeHtml(title || label)}">
+                <span class="mcms-iconbox">${icon}</span>
+                <span class="mcms-text">
+                    <span class="mcms-label">${escapeHtml(label)}</span>
+                    <span class="mcms-pill">OFF</span>
+                </span>
+            </button>
+        `;
+    }
+
+===== handleAction @ line 27270 =====
+function handleAction(button) {
+        const action = button.dataset.action;
+        if (action === 'place-go') {
+            const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
+            if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
+            return;
+        }
+        if (action === 'quick-pin') { toggleQuickPin(button.dataset.place); return; }
+        if (action === 'bookmark-save') { saveBookmark(Number(button.dataset.slot)); return; }
+        if (action === 'bookmark-label') { editBookmarkLabel(Number(button.dataset.slot)); return; }
+        if (action === 'bookmark-go') { goBookmark(Number(button.dataset.slot)); return; }
+        if (action === 'bookmark-delete') { deleteBookmark(Number(button.dataset.slot)); return; }
+        if (action === 'bookmark-pin') { toggleBookmarkPin(Number(button.dataset.slot)); return; }
+        if (action === 'nudge-left') { nudgeControl(-4, 0); return; }
+        if (action === 'nudge-right') { nudgeControl(4, 0); return; }
+        if (action === 'nudge-up') { nudgeControl(0, -4); return; }
+        if (action === 'nudge-down') { nudgeControl(0, 4); return; }
+        if (action === 'nudge-reset') { resetNudge(); return; }
+        if (action === 'panel-left') { nudgePanel(-24, 0); return; }
+        if (action === 'panel-right') { nudgePanel(24, 0); return; }
+        if (action === 'panel-up') { nudgePanel(0, -24); return; }
+        if (action === 'panel-down') { nudgePanel(0, 24); return; }
+        if (action === 'open-help-center') { openHelpCenter(); return; }
+        if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
+        if (action === 'open-critical-drawer') { toggleCriticalDrawer(); return; }
+        if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
+        if (action === 'fit-critical') { fitCriticalMissions(); return; }
+        if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
+        if (action === 'start-transport-sweep') { startTransportSweep(); return; }
+        if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
+        if (action === 'reset-session') { resetSessionPerformance(); return; }
+        if (action === 'clear-payout-history') { clearPayoutHistory(); return; }
+        if (action === 'critical-go') { focusMissionById(button.dataset.missionId, false); return; }
+        if (action === 'profile-save') { saveMapProfile(Number(button.dataset.slot)); return; }
+        if (action === 'profile-load') { loadMapProfile(Number(button.dataset.slot)); return; }
+        if (action === 'profile-delete') { deleteMapProfile(Number(button.dataset.slot)); return; }
+        if (action === 'export-config') { exportToolkitConfig(); return; }
+        if (action === 'import-config') { document.querySelector(`#${SCRIPT.panelId} [data-import-config-file]`)?.click?.(); return; }
+        if (action === 'reset-config') { resetToolkitConfiguration(); return; }
+        if (action === 'discord-test') { testDiscordWebhook(); return; }
+        if (action === 'discord-generate-post') { postDiscordFinancialReport(); return; }
+        if (action === 'discord-clear') { clearDiscordWebhook(); return; }
+        if (action === 'finance-archive-scan') { scanFinancialArchive(); return; }
+        if (action === 'finance-archive-cancel') { cancelFinancialArchiveScan(); return; }
+        if (action === 'finance-archive-export') { exportFinancialArchive(); return; }
+        if (action === 'finance-archive-import') { document.querySelector(`#${SCRIPT.panelId} [data-import-finance-file]`)?.click?.(); return; }
+        if (action === 'finance-archive-clear') { clearFinancialArchive(); return; }
+        if (action === 'finance-rules-refresh') { refreshFinancialIntelligenceFeeds(true).then(() => { renderFinanceVaultStatus(); showToast('GitHub financial intelligence refreshed'); }); return; }
+        if (action === 'test-payout-flash') {
+            const testAmount = Math.max(1000, Number(document.querySelector(`#${SCRIPT.panelId} [data-setting="payout-test-amount"]`)?.value) || state.payoutFlash.threshold);
+            const triggered = triggerPayoutFlash(testAmount, true, { source: 'personal', caption: 'Emergency Response Test' });
+            showToast(triggered ? 'Emergency flash test' : 'Emergency flash unavailable: map not detected');
+            return;
+        }
+        if (action === 'panel-reset') resetPanelPosition();
+    }
+
+===== handleSettingChange @ line 27327 =====
+function handleSettingChange(target) {
+        const setting = target.dataset.setting;
+        if (!setting) return;
+
+        if (setting === 'mobile-mode' || setting === 'tablet-mode') {
+            const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
+            const previousLayout = activeDeviceLayout;
+            if (setting === 'mobile-mode') {
+                state.mobileMode = nextValue;
+                if (nextValue === 'on') state.tabletMode = 'off';
+            } else {
+                state.tabletMode = nextValue;
+                if (nextValue === 'on') state.mobileMode = 'off';
+            }
+            saveState();
+            applyRootAttributes();
+            refreshTabletModeUi();
+            if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+                clearTabletPanelSizing();
+                clearTabletDockSizing();
+            }
+            fitControlToMap();
+            positionPanelOverlay(true);
+            showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
+            return;
+        }
+
+        if (setting === 'major-incident-minimum') {
+            state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
+            saveState();
+            updateUI();
+            refreshMissionSnapshots();
+            scheduleMajorIncidentFeedRender(0);
+            showToast(`Major Incident Feed: ${formatOperationalCompactCredits(state.majorIncidentFeed.minimumCredits)}+ credits`);
+            return;
+        }
+
+        if (setting === 'coverage-radius') {
+            state.coverage.radiusMi = Number(target.value) || 10;
+            saveState();
+            updateUI();
+            scheduleCoverageRefresh();
+            return;
+        }
+
+        if (setting === 'heatmap-source') state.heatmap.source = target.value === 'vehicles' ? 'vehicles' : 'stations';
+        if (setting === 'heatmap-service') state.heatmap.service = ['all', 'fire', 'ambulance', 'police', 'air', 'water'].includes(target.value) ? target.value : 'all';
+        if (setting === 'heatmap-radius') state.heatmap.radiusMi = Number(target.value) || 10;
+        if (setting === 'heatmap-opacity') state.heatmap.opacity = clamp(target.value, 0.12, 0.55, 0.30);
+        if (setting.startsWith('heatmap-')) {
+            saveState(); updateUI(); scheduleHeatmapRefresh(); return;
+        }
+
+
+        if (setting === 'transport-sweep-delay') {
+            state.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 2000;
+            saveState(); updateUI();
+            showToast(`Transport Sweep delay: ${state.transportSweep.delayMs / 1000}s`);
+            return;
+        }
+        if (setting === 'transport-sweep-max') {
+            state.transportSweep.maxPerRun = Math.round(clamp(target.value, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+            saveState(); updateUI();
+            showToast(`Transport Sweep maximum: ${state.transportSweep.maxPerRun}`);
+            return;
+        }
+
+        if (setting === 'resource-gap-radius') {
+            state.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25;
+            resourceGapAnalysisCache.clear();
+            saveState(); updateUI(); scheduleResourceGapRefresh(0); refreshVisibleMissionInspector();
+            showToast(`Resource Gap radius: ${state.resourceGap.radiusMi}mi`);
+            return;
+        }
+
+        if (setting === 'stuck-threshold') {
+            state.stuckDetector.thresholdMin = Math.round(clamp(target.value, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+            saveState();
+            updateUI();
+            scheduleStuckMissionRefresh(0);
+            showToast(`Stuck missions: ${state.stuckDetector.thresholdMin} minutes`);
+            return;
+        }
+
+        if (setting === 'alliance-credit-minimum') {
+            state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(target.value)) ? Number(target.value) : 0;
+            saveState();
+            updateUI();
+            scheduleAllianceCreditRefresh(0);
+            showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
+            return;
+        }
+
+        if (setting === 'discord-webhook') {
+            try {
+                saveDiscordWebhookUrl(target.value);
+                setDiscordStatus(target.value ? 'Webhook saved securely in Tampermonkey storage.' : 'Webhook removed.', 'good');
+            } catch (err) {
+                setDiscordStatus(err?.message || 'Webhook URL is invalid.', 'bad');
+            }
+            return;
+        }
+        if (setting === 'discord-name') {
+            state.discordReport.webhookName = String(target.value || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-top-categories') {
+            state.discordReport.topCategories = [3, 5, 8].includes(Number(target.value)) ? Number(target.value) : 5;
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-period') {
+            state.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(target.value) ? target.value : 'today';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-custom-start' || setting === 'discord-custom-end') {
+            const key = setting === 'discord-custom-start' ? 'customStart' : 'customEnd';
+            if (/^\d{4}-\d{2}-\d{2}$/u.test(String(target.value || ''))) state.discordReport[key] = String(target.value);
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-comparison') {
+            state.discordReport.includeComparison = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-chart') {
+            state.discordReport.includeChart = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+
+        if (setting === 'discord-report-mode') {
+            state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'discord-risk' || setting === 'discord-forecast') {
+            const key = setting === 'discord-risk' ? 'includeRisk' : 'includeForecast';
+            state.discordReport[key] = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return;
+        }
+        if (setting === 'finance-vault-enabled') {
+            state.financialVault.enabled = String(target.value) !== 'false';
+            saveState(); updateUI();
+            setFinanceVaultStatus(state.financialVault.enabled ? 'Local Financial Archive enabled.' : 'Local Financial Archive disabled; reports will scan MissionChief directly without retaining history.', 'neutral');
+            return;
+        }
+        if (setting === 'finance-vault-retention') {
+            state.financialVault.retentionDays = String(target.value) === 'all' ? 'all' : ([90, 180, 365, 730, 1825].includes(Number(target.value)) ? Number(target.value) : 'all');
+            saveState(); updateUI(); renderFinanceVaultStatus();
+            return;
+        }
+        if (setting === 'finance-rule-feed') {
+            state.financialVault.ruleFeedEnabled = String(target.value) !== 'false';
+            saveState();
+            refreshFinancialIntelligenceFeeds(true).then(() => { updateUI(); renderFinanceVaultStatus(); });
+            return;
+        }
+
+        if (setting === 'payout-template') {
+            state.payoutFlash.template = PAYOUT_TEMPLATES[target.value] ? target.value : 'gta5';
+            disposePayoutMediaAudio();
+            saveState();
+            updateUI();
+            const hostedCue = PAYOUT_MEDIA_SOUNDS[state.payoutFlash.template];
+            showToast(hostedCue
+                ? `${payoutTemplateMeta(state.payoutFlash.template).label} · ${hostedCue.label} ready`
+                : `${payoutTemplateMeta(state.payoutFlash.template).label} payout template`);
+            return;
+        }
+        if (setting === 'payout-threshold') {
+            state.payoutFlash.threshold = Math.round(clamp(target.value, 1000, 1000000000, 10000));
+            saveState();
+            updateUI();
+            showToast(`Payout flash: ${state.payoutFlash.threshold.toLocaleString()}+`);
+            return;
+        }
+        if (setting === 'payout-duration') {
+            state.payoutFlash.durationMs = normalisePayoutFlashDuration(Number(target.value) * 1000);
+            saveState();
+            updateUI();
+            showToast(`Payout flash: ${state.payoutFlash.durationMs / 1000} seconds`);
+            return;
+        }
+        if (setting === 'payout-volume') {
+            state.payoutFlash.soundVolume = clamp(target.value, 0, 1, 0.35);
+            if (payoutMediaAudio && !payoutMediaAudio.paused) payoutMediaAudio.volume = state.payoutFlash.soundVolume;
+            saveState();
+            updateUI();
+            return;
+        }
+        if (setting === 'payout-test-amount') return;
+
+        if (setting === 'auto-night-start') state.autoNight.nightStart = target.value || '19:00';
+        if (setting === 'auto-day-start') state.autoNight.dayStart = target.value || '07:00';
+        if (setting === 'auto-night-theme') state.autoNight.nightTheme = normaliseTheme(target.value);
+        if (setting === 'auto-day-theme') state.autoNight.dayTheme = normaliseTheme(target.value);
+
+        if (setting.startsWith('auto-')) {
+            state.autoNight.lastBucket = '';
+            saveState();
+            runAutoNight(true);
+            updateUI();
+        }
+    }
+
+===== updateUI @ line 27544 =====
+function updateUI() {
+        applyRootAttributes();
+        if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+        else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+
+        const control = document.getElementById(SCRIPT.controlId);
+        const panel = document.getElementById(SCRIPT.panelId);
+
+        if (control) {
+            for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
+            control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
+            control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+            const controlToggleValues = {
+                allianceMissions: state.visibility.allianceMissions,
+                myMissions: state.visibility.myMissions,
+                vehicles: state.visibility.vehicles,
+                buildings: state.visibility.buildings,
+                allianceCredits: state.allianceCredits,
+                missionAge: state.missionAge,
+                transportWatcher: state.transportWatcher,
+                unitCommitment: state.unitCommitment,
+                criticalView: criticalViewActive
+            };
+            control.querySelectorAll('[data-toggle]').forEach(btn => {
+                const on = Boolean(controlToggleValues[btn.dataset.toggle]);
+                btn.classList.toggle('mcms-on', on);
+                btn.setAttribute('aria-pressed', String(on));
+                btn.dataset.mcmsState = on ? 'on' : 'off';
+            });
+
+            const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
+            if (vehicleStatusButton) {
+                const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
+                vehicleStatusButton.classList.toggle('mcms-on', open);
+                vehicleStatusButton.setAttribute('aria-pressed', String(open));
+                vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
+            }
+
+            const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
+            if (missionAgeWatchButton) {
+                const open = Boolean(document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open'));
+                missionAgeWatchButton.classList.toggle('mcms-on', open);
+                missionAgeWatchButton.setAttribute('aria-pressed', String(open));
+                missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
+            }
+
+            const economyButton = control.querySelector('.mcms-economy-btn');
+            if (economyButton) {
+                const on = Boolean(state.economyMode);
+                const label = on ? 'Disable Economy Mode' : 'Enable Economy Mode';
+                economyButton.classList.toggle('mcms-on', on);
+                economyButton.setAttribute('aria-pressed', String(on));
+                economyButton.setAttribute('aria-label', label);
+                economyButton.title = label;
+                economyButton.dataset.mcmsState = on ? 'on' : 'off';
+            }
+
+            const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+            if (dockToggleButton) {
+                const open = state.commandBarOpen !== false;
+                const label = open ? 'Collapse command bar' : 'Expand command bar';
+                dockToggleButton.classList.toggle('mcms-open', open);
+                dockToggleButton.setAttribute('aria-expanded', String(open));
+                dockToggleButton.setAttribute('aria-label', label);
+                dockToggleButton.title = label;
+                const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
+                if (icon) icon.textContent = open ? '▴' : '▾';
+            }
+        }
+
+        if (!panel) return;
+
+        refreshTabletModeUi(panel);
+        panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
+            const active = btn.dataset.tab === state.activeTab;
+            btn.classList.toggle('mcms-active', active);
+            btn.setAttribute('aria-selected', String(active));
+            btn.tabIndex = active ? 0 : -1;
+        });
+        panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+            const active = tabPanel.dataset.panel === state.activeTab;
+            tabPanel.classList.toggle('mcms-active', active);
+            tabPanel.hidden = !active;
+        });
+        const panelOpen = panel.classList.contains('mcms-open');
+        panel.setAttribute('aria-hidden', String(!panelOpen));
+        control?.querySelector('.mcms-menu-btn')?.setAttribute('aria-expanded', String(panelOpen));
+        panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
+            const active = btn.dataset.uiTheme === state.uiTheme;
+            btn.classList.toggle('mcms-active', active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
+        panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
+        panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
+
+        const toggleValues = {
+            clean: state.cleanMode,
+            markerFocus: state.markerFocus,
+            missionPulse: state.missionPulse,
+            roadPriority: state.roadPriority,
+            coverage: state.coverage.enabled,
+            heatmap: state.heatmap.enabled,
+            shortcuts: state.shortcuts,
+            autoLoadAllVehicles: state.autoLoadAllVehicles,
+            allianceBuildingsMapBlocker: state.allianceBuildingsMap === false,
+            majorIncidentFeed: state.majorIncidentFeed.enabled,
+            missionLockAudio: state.missionLockAudio,
+            autoNight: state.autoNight.enabled,
+            payoutFlash: state.payoutFlash.enabled,
+            payoutSound: state.payoutFlash.soundEnabled,
+            missionInspector: state.missionInspector,
+            stuckDetector: state.stuckDetector.enabled,
+            missionSpawn: state.missionSpawn.enabled,
+            resourceGap: state.resourceGap.enabled,
+            allianceMissions: state.visibility.allianceMissions,
+            myMissions: state.visibility.myMissions,
+            vehicles: state.visibility.vehicles,
+            buildings: state.visibility.buildings,
+            allianceCredits: state.allianceCredits,
+            missionAge: state.missionAge,
+            transportWatcher: state.transportWatcher,
+            unitCommitment: state.unitCommitment,
+            criticalView: criticalViewActive
+        };
+
+        panel.querySelectorAll('[data-toggle]').forEach(btn => {
+            const key = btn.dataset.toggle;
+            const on = Boolean(toggleValues[key]);
+            btn.classList.toggle('mcms-on', on);
+            const pill = btn.querySelector('.mcms-pill');
+            if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : key === 'heatmap' ? (on ? `${state.heatmap.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
+        });
+
+        const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
+        if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
+        const radius = panel.querySelector('[data-setting="coverage-radius"]');
+        if (radius) radius.value = String(state.coverage.radiusMi);
+        const heatmapSource = panel.querySelector('[data-setting="heatmap-source"]');
+        if (heatmapSource) heatmapSource.value = state.heatmap.source;
+        const heatmapService = panel.querySelector('[data-setting="heatmap-service"]');
+        if (heatmapService) heatmapService.value = state.heatmap.service;
+        const heatmapRadius = panel.querySelector('[data-setting="heatmap-radius"]');
+        if (heatmapRadius) heatmapRadius.value = String(state.heatmap.radiusMi);
+        const heatmapOpacity = panel.querySelector('[data-setting="heatmap-opacity"]');
+        if (heatmapOpacity) heatmapOpacity.value = String(state.heatmap.opacity);
+        const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
+        if (allianceCreditMinimum) allianceCreditMinimum.value = String(state.allianceCreditMinimum);
+        const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
+        if (transportSweepDelay) transportSweepDelay.value = String(state.transportSweep.delayMs);
+        const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
+        if (transportSweepMax) transportSweepMax.value = String(state.transportSweep.maxPerRun);
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'resources') renderTransportSweepPanel();
+        const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
+        if (payoutTemplate) payoutTemplate.value = state.payoutFlash.template;
+        const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) resourceGapRadius.value = String(state.resourceGap.radiusMi);
+        const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
+        if (stuckThreshold) stuckThreshold.value = String(state.stuckDetector.thresholdMin);
+        const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
+        if (payoutThreshold) payoutThreshold.value = String(state.payoutFlash.threshold);
+        const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
+        if (payoutDuration) payoutDuration.value = String(state.payoutFlash.durationMs / 1000);
+        const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
+        if (payoutVolume) payoutVolume.value = String(state.payoutFlash.soundVolume);
+        const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
+        if (discordWebhook && document.activeElement !== discordWebhook) discordWebhook.value = getDiscordWebhookUrl();
+        const discordName = panel.querySelector('[data-setting="discord-name"]');
+        if (discordName && document.activeElement !== discordName) discordName.value = state.discordReport.webhookName;
+        const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
+        if (discordTopCategories) discordTopCategories.value = String(state.discordReport.topCategories);
+        const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
+        if (discordPeriod) discordPeriod.value = state.discordReport.period;
+        const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
+        if (discordCustomStart && document.activeElement !== discordCustomStart) discordCustomStart.value = state.discordReport.customStart;
+        const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
+        if (discordCustomEnd && document.activeElement !== discordCustomEnd) discordCustomEnd.value = state.discordReport.customEnd;
+        const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
+        if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+        const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+        if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+        const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
+        if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+        const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
+        if (discordRisk) discordRisk.value = String(state.discordReport.includeRisk);
+        const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
+        if (discordForecast) discordForecast.value = String(state.discordReport.includeForecast);
+        const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
+        if (financeVaultEnabled) financeVaultEnabled.value = String(state.financialVault.enabled);
+        const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
+        if (financeVaultRetention) financeVaultRetention.value = String(state.financialVault.retentionDays);
+        const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
+        if (financeRuleFeed) financeRuleFeed.value = String(state.financialVault.ruleFeedEnabled);
+        setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'discord') renderFinanceVaultStatus();
+        const nightStart = panel.querySelector('[data-setting="auto-night-start"]');
+        if (nightStart) nightStart.value = state.autoNight.nightStart;
+        const dayStart = panel.querySelector('[data-setting="auto-day-start"]');
+        if (dayStart) dayStart.value = state.autoNight.dayStart;
+        const nightTheme = panel.querySelector('[data-setting="auto-night-theme"]');
+        if (nightTheme) nightTheme.value = state.autoNight.nightTheme;
+        const dayTheme = panel.querySelector('[data-setting="auto-day-theme"]');
+        if (dayTheme) dayTheme.value = state.autoNight.dayTheme;
+        const economyStatus = panel.querySelector('.mcms-economy-status');
+        if (economyStatus) economyStatus.textContent = state.economyMode
+            ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
+            : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+        const nudge = panel.querySelector('.mcms-nudge-value');
+        if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+        if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+        if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+    }

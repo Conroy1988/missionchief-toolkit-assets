@@ -15,6 +15,8 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURES = ROOT / ".github" / "fixtures" / "desktop-panel-layout-contract.json"
 
 
+# Geometry stays pure so viewport/map intersections and saved-position clamping
+# can be verified without constructing MissionChief or Leaflet DOM state.
 def extract_function(source: str, masked: str, name: str) -> str:
     matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", masked))
     if len(matches) != 1:

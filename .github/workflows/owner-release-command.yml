@@ -15,12 +15,12 @@ concurrency:
 
 jobs:
   release:
-    name: Dispatch verified Toolkit release
+    name: Prepare and dispatch verified Toolkit release
     if: >-
       github.event.issue.pull_request == null &&
       startsWith(github.event.comment.body, '/release-toolkit ')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
 
     steps:
       - name: Authorize owner command
@@ -49,7 +49,7 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Verify requested version is release-ready
+      - name: Verify requested version is a validated candidate
         env:
           VERSION: ${{ steps.command.outputs.version }}
         shell: bash
@@ -59,9 +59,42 @@ jobs:
           grep -Eq "^//[[:space:]]*@version[[:space:]]+${VERSION//./\.}[[:space:]]*$" "$SOURCE"
           test "$(jq -r '.currentVersion' status/release-dashboard.json)" = "$VERSION"
           test "$(jq -r '.status.validation' status/release-dashboard.json)" = "passed"
-          test "$(jq -r '.status.releaseReadiness' status/release-dashboard.json)" = "passed"
           test "$(jq -r '.distributionCandidate.version' status/release-dashboard.json)" = "$VERSION"
           test "$(jq -r '.distributionCandidate.state' status/release-dashboard.json)" = "validated"
+
+      - name: Ensure readiness belongs to the requested version
+        id: readiness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.command.outputs.version }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RECORDED_VERSION="$(jq -r '.releaseReadiness.version // empty' status/release-dashboard.json)"
+          RECORDED_STATE="$(jq -r '.releaseReadiness.state // empty' status/release-dashboard.json)"
+          SUMMARY_STATE="$(jq -r '.status.releaseReadiness // empty' status/release-dashboard.json)"
+
+          if [[ "$RECORDED_VERSION" == "$VERSION" && "$RECORDED_STATE" == "passed" && "$SUMMARY_STATE" == "passed" ]]; then
+            echo "Current-version release readiness is already recorded."
+            echo "run_id=already-verified" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh issue comment "$ISSUE_NUMBER" --body "Release readiness for Toolkit v${VERSION} is being validated automatically before production dispatch."
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run release-readiness-check.yml --ref main -f version="$VERSION"
+
+          RUN_ID=""
+          for attempt in {1..60}; do
+            RUN_ID="$(gh run list --workflow release-readiness-check.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$RUN_ID" ]] || { echo "::error::The newly dispatched release-readiness run was not found."; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} release readiness is running as Actions run \`${RUN_ID}\`."
+          gh run watch "$RUN_ID" --exit-status
 
       - name: Dispatch production release
         id: dispatch
@@ -88,12 +121,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.command.outputs.version }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          READINESS_RUN_ID: ${{ steps.readiness.outputs.run_id }}
           RUN_ID: ${{ steps.dispatch.outputs.run_id }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Production release v${VERSION} has been authorized and dispatched as Actions run \`${RUN_ID}\`. The permanent production workflow now owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation."
+          gh issue comment "$ISSUE_NUMBER" --body "Production release v${VERSION} has been authorized after current-version readiness and dispatched as Actions run \`${RUN_ID}\`. Readiness reference: \`${READINESS_RUN_ID}\`. The permanent production workflow now owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation."
 
-      - name: Record dispatch failure
+      - name: Record guarded failure
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -101,4 +135,4 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION:-unknown} release dispatch stopped at a guarded check. No publication safeguard was bypassed. Command diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION:-unknown} release preparation stopped at a guarded check. No publication safeguard was bypassed. Command diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

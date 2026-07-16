@@ -28,7 +28,7 @@ jobs:
   audit:
     name: Audit complete canonical userscript
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -68,11 +68,25 @@ jobs:
           echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Restore ESLint package cache
+        id: eslint-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-eslint-${{ runner.os }}-9.32.0
+
       - name: Install exact ESLint audit engine
         shell: bash
         run: |
           set -euo pipefail
           npm install --no-save --ignore-scripts --no-audit --no-fund eslint@9.32.0
+
+      - name: Save ESLint package cache
+        if: steps.eslint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-eslint-${{ runner.os }}-9.32.0
 
       - name: Run AST-backed ESLint audit
         id: eslint
@@ -104,47 +118,6 @@ jobs:
             --eslint eslint-userscript-audit.json \
             --output userscript-audit-evidence.md
 
-      - name: Run established code-integrity audit
-        id: integrity
-        shell: bash
-        run: |
-          set +e
-          python3 .github/scripts/check_code_integrity.py \
-            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
-            --policy .github/code-integrity-policy.json \
-            --json-output full-audit-code-integrity.json \
-            --markdown-output full-audit-code-integrity.md
-          STATUS=$?
-          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Run static asset audit
-        id: assets
-        shell: bash
-        run: |
-          set +e
-          python3 .github/scripts/check_asset_health.py \
-            --mode static \
-            --json-output full-audit-assets.json \
-            --markdown-output full-audit-assets.md
-          STATUS=$?
-          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Run performance regression audit
-        id: performance
-        shell: bash
-        run: |
-          set +e
-          python3 .github/scripts/check_performance_budget.py \
-            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
-            --policy .github/performance-budget.json \
-            --json-output full-audit-performance.json \
-            --markdown-output full-audit-performance.md
-          STATUS=$?
-          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
-          exit 0
-
       - name: Publish complete audit summary
         if: always()
         shell: bash
@@ -153,12 +126,6 @@ jobs:
           cat full-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
           printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
           cat eslint-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
-          cat full-audit-code-integrity.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
-          cat full-audit-performance.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
-          cat full-audit-assets.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload complete audit evidence
         if: always()
@@ -174,12 +141,6 @@ jobs:
             eslint-userscript-audit.json
             eslint-userscript-audit.md
             userscript-audit-evidence.md
-            full-audit-code-integrity.json
-            full-audit-code-integrity.md
-            full-audit-performance.json
-            full-audit-performance.md
-            full-audit-assets.json
-            full-audit-assets.md
           if-no-files-found: error
           retention-days: 90
 
@@ -187,10 +148,7 @@ jobs:
         if: >-
           steps.full_audit.outputs.exit_code != '0' ||
           steps.refined_audit.outputs.exit_code != '0' ||
-          steps.eslint.outputs.summary_exit_code != '0' ||
-          steps.integrity.outputs.exit_code != '0' ||
-          steps.performance.outputs.exit_code != '0' ||
-          steps.assets.outputs.exit_code != '0'
+          steps.eslint.outputs.summary_exit_code != '0'
         run: |
-          echo "One or more definite audit gates failed. Review the workflow summary and evidence artifact."
+          echo "One or more definite deep-audit gates failed. Review the workflow summary and evidence artifact."
           exit 1

@@ -4,18 +4,18 @@
 
 ## Summary
 
-- Repository files: **157**
-- Media files: **28**
-- GitHub Actions workflows: **26**
-- Greasy Fork version: **4.11.2**
-- Repository URLs referenced by current script/repository: **25**
+- Repository files: **177**
+- Media files: **37**
+- GitHub Actions workflows: **29**
+- Greasy Fork version: **4.13.1**
+- Repository URLs referenced by current script/repository: **33**
 - Missing referenced paths: **0**
-- Possible one-shot workflows: **17**
+- Possible one-shot workflows: **18**
 - Duplicate media groups: **1**
 
 ## Current userscript source
 
-Greasy Fork was read successfully at version **4.11.2**.
+Greasy Fork was read successfully at version **4.13.1**.
 No canonical `.user.js` file is assumed until a source file is deliberately imported and validated.
 
 ## Referenced public repository paths
@@ -30,6 +30,14 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 - `help/index.html` — ✅ present
 - `james-bond-cashout.mp3` — ✅ present
 - `scarface-cashout.mp3` — ✅ present
+- `themes/hyrule/audio/hyrule-quest-reward.mp3` — ✅ present
+- `themes/hyrule/payout/quest-complete-seal.svg` — ✅ present
+- `themes/hyrule/payout/rupee-burst.svg` — ✅ present
+- `themes/hyrule/ui/ancient-eye-rune.svg` — ✅ present
+- `themes/hyrule/ui/hyrule-command-crest.svg` — ✅ present
+- `themes/hyrule/ui/master-sword-shield-silhouette.svg` — ✅ present
+- `themes/hyrule/ui/parchment-command-map.svg` — ✅ present
+- `themes/hyrule/ui/zonai-energy-ring.svg` — ✅ present
 - `themes/james-bond/007-logo.svg` — ✅ present
 - `themes/james-bond/payout/daniel-craig-007-portrait.png` — ✅ present
 - `themes/james-bond/payout/funds-authorised-seal.svg` — ✅ present
@@ -49,15 +57,18 @@ No canonical `.user.js` file is assumed until a source file is deliberately impo
 ## Workflow inventory
 
 - `.github/workflows/actions-security-audit.yml` — review as possible temporary workflow
+- `.github/workflows/apply-development-package.yml`
 - `.github/workflows/asset-health-monitor.yml` — review as possible temporary workflow
 - `.github/workflows/branch-cleanup-audit.yml` — review as possible temporary workflow
 - `.github/workflows/code-integrity-audit.yml` — review as possible temporary workflow
 - `.github/workflows/discord-commit-notifications.yml`
 - `.github/workflows/discord-development-status.yml` — review as possible temporary workflow
 - `.github/workflows/documentation-drift-check.yml` — review as possible temporary workflow
+- `.github/workflows/full-userscript-audit.yml` — review as possible temporary workflow
 - `.github/workflows/github-pages.yml` — review as possible temporary workflow
 - `.github/workflows/greasyfork-release-monitor.yml`
 - `.github/workflows/import-canonical-userscript.yml`
+- `.github/workflows/owner-release-command.yml`
 - `.github/workflows/pages-production-monitor.yml` — review as possible temporary workflow
 - `.github/workflows/performance-regression-check.yml` — review as possible temporary workflow
 - `.github/workflows/prepare-release-rollback.yml` — review as possible temporary workflow

@@ -33,7 +33,7 @@
     "myMissions", "payoutFlash", "payoutSound", "resourceGap", "roadPriority", "shortcuts",
     "stuckDetector", "transportWatcher", "unitCommitment", "vehicles"
   ],
-  "routeOnlyToggles": ["compactDock", "criticalView"],
+  "routeOnlyToggles": ["compactDock"],
   "toggleStatePaths": {
     "allianceBuildingsMapBlocker": "allianceBuildingsMap", "allianceCredits": "allianceCredits",
     "allianceMissions": "visibility.allianceMissions", "autoLoadAllVehicles": "autoLoadAllVehicles",

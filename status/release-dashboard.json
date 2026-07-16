@@ -1,16 +1,16 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 2,
-  "currentVersion": "4.13.0",
+  "currentVersion": "4.13.1",
   "sourceOfTruth": "GitHub",
   "distribution": "Greasy Fork",
   "status": {
     "validation": "passed",
-    "githubRelease": "published",
-    "greasyForkSync": "verified",
-    "backup": "private-repository-verified",
+    "githubRelease": "not-published",
+    "greasyForkSync": "pending-release",
+    "backup": "not-created",
     "discordDevelopment": "configured",
-    "discordRelease": "posted",
+    "discordRelease": "not-posted",
     "assetAudit": "passed",
     "releaseReadiness": "passed"
   },
@@ -24,15 +24,15 @@
     "referencedPaths": 25,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-16T00:54:54Z",
+  "lastUpdated": "2026-07-16T02:27:12Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "7766664a4981f7985a4903f65a395bf0d00cc03472b5b45d18b5d1abf8712367",
+    "validatedSha256": "dede1999c8121c7bc73d644711d8b1258e3598db5118aad9da6b0731e038f69c",
     "state": "validated-canonical-source"
   },
   "distributionCandidate": {
     "path": "dist/MissionChief_Map_Command_Toolkit.user.js",
-    "version": "4.13.0",
+    "version": "4.13.1",
     "state": "validated"
   },
   "releaseDryRun": {

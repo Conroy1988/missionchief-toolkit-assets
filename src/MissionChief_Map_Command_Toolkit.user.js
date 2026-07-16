@@ -14599,7 +14599,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
     }
 
-    function normaliseMissionOverlayRecord(item, existing = {}) {
+    function normaliseMissionOverlayRecord(item, existing) {
         const credits = parseCreditValue(item.average_credits ?? item.averageCredits ?? item.average_credit);
         const createdAt = parseMissionTimestamp(item.created_at ?? item.createdAt ?? item.date_created ?? item.dateCreated);
         const allianceSharedAt = parseMissionTimestamp(item.alliance_shared_at ?? item.allianceSharedAt ?? item.shared_at ?? item.sharedAt);

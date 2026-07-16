@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 700" fill="none">
+ <defs>
+  <radialGradient id="g"><stop stop-color="#E5FFFB"/><stop offset=".25" stop-color="#49F6F3"/><stop offset=".68" stop-color="#1BA9D1"/><stop offset="1" stop-color="#092E54"/></radialGradient>
+  <filter id="gl"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ </defs>
+ <g stroke="#5BFFF4" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)">
+  <path d="M74 349c73-102 162-154 276-154s203 52 276 154c-73 102-162 154-276 154S147 451 74 349Z" stroke-width="24"/>
+  <circle cx="350" cy="349" r="92" fill="url(#g)" stroke-width="20"/>
+  <circle cx="350" cy="349" r="26" fill="#F4FFFE" stroke-width="10"/>
+  <path d="M350 195V92M248 223l-67-81M452 223l67-81M224 349H92M476 349h132M252 463l-78 80M448 463l78 80M350 503v108" stroke-width="18"/>
+  <path d="M142 349c39-45 82-78 130-99M558 349c-39-45-82-78-130-99" stroke-width="10" opacity=".65"/>
+ </g>
+</svg>

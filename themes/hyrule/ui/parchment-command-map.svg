@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+ <defs>
+  <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".008" numOctaves="3" seed="17" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="9"/></filter>
+  <linearGradient id="ink" x1="0" y1="0" x2="1600" y2="1000"><stop stop-color="#E9D39C" stop-opacity=".30"/><stop offset=".45" stop-color="#78603D" stop-opacity=".15"/><stop offset="1" stop-color="#101B16" stop-opacity=".28"/></linearGradient>
+ </defs>
+ <rect width="1600" height="1000" fill="url(#ink)" opacity=".45"/>
+ <g filter="url(#rough)" stroke="#F0D990" stroke-opacity=".23" stroke-width="3">
+  <path d="M-60 211c146-91 292-110 439-57s246 39 379-42 252-68 394 13 280 77 448-11"/>
+  <path d="M-40 302c129-66 267-69 414-8s266 61 397 0 249-62 399-2 287 58 472-16"/>
+  <path d="M-80 401c166-85 301-71 421-11s247 78 397 5 268-69 409-3 286 61 493-26"/>
+  <path d="M-40 521c154-72 293-73 417-8s246 76 384 8 265-75 418-7 282 64 461-17"/>
+  <path d="M-30 652c153-88 291-92 430-18s259 79 401 4 257-86 402-13 270 70 425-9"/>
+  <path d="M-55 781c170-88 321-78 451-4s252 91 393 18 263-91 420-24 288 76 431-4"/>
+  <path d="M205-40c-65 153-58 286 21 401s86 242 17 382-76 260-15 389"/>
+  <path d="M489-20c-72 134-66 262 12 381s86 248 20 389-73 262-11 400"/>
+  <path d="M792-55c-73 151-64 283 24 396s94 242 24 385-72 278 2 422"/>
+  <path d="M1091-30c-66 144-61 272 18 384s91 242 31 380-67 274 11 412"/>
+  <path d="M1386-25c-62 138-56 264 17 378s86 244 31 379-61 265 10 397"/>
+ </g>
+ <g fill="#69FCE8" fill-opacity=".18" stroke="#74FFF4" stroke-opacity=".35">
+  <circle cx="284" cy="330" r="15"/><circle cx="552" cy="612" r="12"/><circle cx="865" cy="233" r="17"/><circle cx="1205" cy="521" r="13"/><circle cx="1366" cy="760" r="16"/>
+ </g>
+</svg>

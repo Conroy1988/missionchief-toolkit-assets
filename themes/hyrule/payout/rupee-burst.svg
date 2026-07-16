@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" fill="none">
+ <defs>
+  <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#E9FFD7"/><stop offset=".34" stop-color="#67FA8C"/><stop offset=".72" stop-color="#13A96B"/><stop offset="1" stop-color="#075743"/></linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#E6FFFF"/><stop offset=".35" stop-color="#5CF8F2"/><stop offset=".72" stop-color="#1B92D3"/><stop offset="1" stop-color="#16487D"/></linearGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF1E7"/><stop offset=".35" stop-color="#FF836E"/><stop offset=".72" stop-color="#C62D4B"/><stop offset="1" stop-color="#691E3A"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF9B7"/><stop offset=".35" stop-color="#FFD65A"/><stop offset=".72" stop-color="#C88319"/><stop offset="1" stop-color="#5F330D"/></linearGradient>
+  <filter id="gl"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ </defs>
+ <g filter="url(#gl)">
+  <path d="M158 207 206 161l48 46-48 142-48-142Z" fill="url(#green)" stroke="#DFFFF0" stroke-width="7" transform="rotate(-22 206 255)"/>
+  <path d="M316 600 364 554l48 46-48 142-48-142Z" fill="url(#blue)" stroke="#E9FFFF" stroke-width="7" transform="rotate(18 364 648)"/>
+  <path d="M535 116 583 70l48 46-48 142-48-142Z" fill="url(#red)" stroke="#FFF1EA" stroke-width="7" transform="rotate(9 583 164)"/>
+  <path d="M755 660 803 614l48 46-48 142-48-142Z" fill="url(#green)" stroke="#DFFFF0" stroke-width="7" transform="rotate(-14 803 708)"/>
+  <path d="M973 122 1021 76l48 46-48 142-48-142Z" fill="url(#blue)" stroke="#E9FFFF" stroke-width="7" transform="rotate(21 1021 170)"/>
+  <path d="M1170 518 1218 472l48 46-48 142-48-142Z" fill="url(#gold)" stroke="#FFF7BE" stroke-width="7" transform="rotate(-19 1218 566)"/>
+  <path d="M670 302 735 240l65 62-65 190-65-190Z" fill="url(#gold)" stroke="#FFF8C7" stroke-width="10"/>
+ </g>
+ <g fill="#FFF3A4">
+  <circle cx="700" cy="110" r="5"/><circle cx="674" cy="176" r="4"/><circle cx="736" cy="569" r="6"/><circle cx="892" cy="364" r="5"/><circle cx="497" cy="430" r="4"/><circle cx="1099" cy="331" r="6"/><circle cx="260" cy="452" r="5"/>
+ </g>
+</svg>

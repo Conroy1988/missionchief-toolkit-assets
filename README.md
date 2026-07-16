@@ -5,7 +5,7 @@
 **Operational map command, monitoring and presentation suite for MissionChief UK**
 
 [![Greasy Fork](https://img.shields.io/badge/Install-Greasy%20Fork-670000?logo=tampermonkey&logoColor=white)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
-[![Current Version](https://img.shields.io/badge/version-4.11.2-2563eb)](status/README.md)
+[![Current Version](https://img.shields.io/badge/version-4.13.0-2563eb)](status/README.md)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-28a9ff)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Validation](https://img.shields.io/badge/validation-passed-16a34a)](../../actions/workflows/validate-userscript.yml)
 [![Release Readiness](https://img.shields.io/badge/release%20readiness-passed-16a34a)](../../actions/workflows/release-readiness-check.yml)
@@ -30,7 +30,7 @@ GitHub is the canonical source of truth. Greasy Fork remains the supported publi
 | Component | State |
 |---|---|
 | Canonical source | ✅ GitHub |
-| Current validated version | `4.11.2` |
+| Current validated version | `4.13.0` |
 | Validation | ✅ Passed |
 | Release readiness | ✅ Passed |
 | Asset dependency audit | ✅ Passed |
@@ -64,6 +64,7 @@ Machine-readable state: [`status/release-dashboard.json`](status/release-dashboa
 - Unit-count overlays
 - Focus and visibility controls
 - Rapid map navigation to active incidents
+- Automatic loading for MissionChief vehicle-list batches
 
 ### Map operations
 
@@ -80,6 +81,7 @@ Machine-readable state: [`status/release-dashboard.json`](status/release-dashboa
 - Hosted audio and visual assets
 - Emergency flash effects and completion history
 - Persistent UI state and cross-device settings export/import
+- Hyrule Command flagship interface and Hyrule Quest Reward payout
 
 ## Install
 

@@ -1,0 +1,74 @@
+{
+  "fixedNow": 1784203200000,
+  "tabs": ["discord", "ops", "payouts", "places", "resources", "settings", "skins", "tools"],
+  "actions": [
+    "clear-payout-history", "discord-clear", "discord-generate-post", "discord-test", "export-config",
+    "finance-archive-cancel", "finance-archive-clear", "finance-archive-export", "finance-archive-import",
+    "finance-archive-scan", "finance-rules-refresh", "fit-critical", "import-config", "nudge-down",
+    "nudge-left", "nudge-reset", "nudge-right", "nudge-up", "open-critical-drawer", "open-help-center",
+    "open-vehicle-status", "panel-down", "panel-left", "panel-reset", "panel-right", "panel-up",
+    "reset-config", "reset-session", "scan-transport-sweep", "start-transport-sweep",
+    "stop-transport-sweep", "test-payout-flash"
+  ],
+  "dynamicActions": [
+    "bookmark-delete", "bookmark-go", "bookmark-label", "bookmark-pin", "bookmark-save", "critical-go",
+    "place-go", "profile-delete", "profile-load", "profile-save", "quick-pin", "toggle-economy"
+  ],
+  "settings": [
+    "alliance-credit-minimum", "auto-day-start", "auto-day-theme", "auto-night-start", "auto-night-theme",
+    "coverage-radius", "discord-chart", "discord-comparison", "discord-custom-end", "discord-custom-start",
+    "discord-forecast", "discord-name", "discord-period", "discord-report-mode", "discord-risk",
+    "discord-top-categories", "discord-webhook", "finance-rule-feed", "finance-vault-enabled",
+    "finance-vault-retention", "heatmap-opacity", "heatmap-radius", "heatmap-service", "heatmap-source",
+    "major-incident-minimum", "mobile-mode", "payout-duration", "payout-template", "payout-test-amount",
+    "payout-threshold", "payout-volume", "resource-gap-radius", "stuck-threshold", "tablet-mode",
+    "transport-sweep-delay", "transport-sweep-max"
+  ],
+  "intentionalNoopSettings": ["payout-test-amount"],
+  "settingFamilies": ["auto-", "heatmap-"],
+  "toggleRoutes": [
+    "allianceBuildingsMapBlocker", "allianceCredits", "allianceMissions", "autoLoadAllVehicles", "autoNight",
+    "buildings", "clean", "compactDock", "coverage", "criticalView", "heatmap", "majorIncidentFeed",
+    "markerFocus", "missionAge", "missionInspector", "missionLockAudio", "missionPulse", "missionSpawn",
+    "myMissions", "payoutFlash", "payoutSound", "resourceGap", "roadPriority", "shortcuts",
+    "stuckDetector", "transportWatcher", "unitCommitment", "vehicles"
+  ],
+  "routeOnlyToggles": ["criticalView"],
+  "toggleStatePaths": {
+    "allianceBuildingsMapBlocker": "allianceBuildingsMap", "allianceCredits": "allianceCredits",
+    "allianceMissions": "visibility.allianceMissions", "autoLoadAllVehicles": "autoLoadAllVehicles",
+    "autoNight": "autoNight.enabled", "buildings": "visibility.buildings", "clean": "cleanMode",
+    "compactDock": "compactDock", "coverage": "coverage.enabled", "heatmap": "heatmap.enabled",
+    "majorIncidentFeed": "majorIncidentFeed.enabled", "markerFocus": "markerFocus", "missionAge": "missionAge",
+    "missionInspector": "missionInspector", "missionLockAudio": "missionLockAudio", "missionPulse": "missionPulse",
+    "missionSpawn": "missionSpawn.enabled", "myMissions": "visibility.myMissions",
+    "payoutFlash": "payoutFlash.enabled", "payoutSound": "payoutFlash.soundEnabled",
+    "resourceGap": "resourceGap.enabled", "roadPriority": "roadPriority", "shortcuts": "shortcuts",
+    "stuckDetector": "stuckDetector.enabled", "transportWatcher": "transportWatcher",
+    "unitCommitment": "unitCommitment", "vehicles": "visibility.vehicles"
+  },
+  "legacyMigration": {
+    "uiTheme": "invalid", "theme": "invalid", "position": "invalid", "activeTab": "fleet",
+    "fleetFilter": "old", "requiresAttention": true, "nudge": {"x": 999, "y": -999},
+    "visibility": {"vehicles": false}, "coverage": {"radiusMi": "25"},
+    "heatmap": {"radiusMi": "invalid", "opacity": 9}, "allianceCreditMinimum": 12345,
+    "autoLoadAllVehicles": true, "allianceBuildingsMap": false,
+    "majorIncidentFeed": {"enabled": false, "minimumCredits": 999},
+    "tabletMode": "invalid", "mobileMode": "invalid",
+    "stuckDetector": {"enabled": false, "thresholdMin": 999},
+    "resourceGap": {"enabled": true, "radiusMi": 999},
+    "transportSweep": {"delayMs": 999, "maxPerRun": 999},
+    "payoutFlash": {"threshold": 0, "durationMs": 999999, "template": "invalid", "soundVolume": 9},
+    "discordReport": {"webhookName": " ", "topCategories": 7, "period": "invalid", "reportMode": "invalid"},
+    "financialVault": {"retentionDays": 123, "autoSync": true, "benchmarkOptIn": true, "gatewayUrl": "old"},
+    "profiles": [{"name": "One"}, "invalid", null, {"name": "Four"}, {"name": "Extra"}],
+    "bookmarks": [{"name": " Edinburgh Operations ", "shortLabel": "ed", "pinned": 1}],
+    "panelPosition": {"left": "12", "top": "34"}
+  },
+  "modernState": {
+    "uiTheme": "hyrule", "theme": "nightshift", "position": "tr", "activeTab": "discord",
+    "mobileMode": "on", "tabletMode": "off", "visibility": {"vehicles": false},
+    "payoutFlash": {"template": "hyruleQuest", "threshold": 50000},
+    "discordReport": {"period": "last30", "reportMode": "executive"}
+  }
+}

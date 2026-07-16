@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Verify Mission Value defaults, routing, formatting and cross-document safety."""
 from __future__ import annotations
 
 import re

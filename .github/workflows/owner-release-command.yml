@@ -20,7 +20,7 @@ jobs:
       github.event.issue.pull_request == null &&
       startsWith(github.event.comment.body, '/release-toolkit ')
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 5
 
     steps:
       - name: Authorize owner command
@@ -46,7 +46,8 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Verify requested version is release-ready
         env:
@@ -55,27 +56,18 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
-          grep -Eq "^//[[:space:]]*@version[[:space:]]+${VERSION//./\\.}[[:space:]]*$" "$SOURCE"
+          grep -Eq "^//[[:space:]]*@version[[:space:]]+${VERSION//./\.}[[:space:]]*$" "$SOURCE"
           test "$(jq -r '.currentVersion' status/release-dashboard.json)" = "$VERSION"
           test "$(jq -r '.status.validation' status/release-dashboard.json)" = "passed"
           test "$(jq -r '.status.releaseReadiness' status/release-dashboard.json)" = "passed"
           test "$(jq -r '.distributionCandidate.version' status/release-dashboard.json)" = "$VERSION"
           test "$(jq -r '.distributionCandidate.state' status/release-dashboard.json)" = "validated"
 
-      - name: Record release dispatch
+      - name: Dispatch production release
+        id: dispatch
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.command.outputs.version }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
-        shell: bash
-        run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Production release v${VERSION} has been authorized. The permanent release workflow is now running with all GitHub Release, Greasy Fork, private-backup and Discord safeguards enabled."
-
-      - name: Dispatch and await production release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.command.outputs.version }}
-          ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
           set -euo pipefail
@@ -83,18 +75,25 @@ jobs:
           gh workflow run release-toolkit.yml --ref main -f version="$VERSION" -f confirmation=RELEASE
 
           RUN_ID=""
-          for attempt in {1..60}; do
-            RUN_ID="$(gh run list --workflow release-toolkit.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+          for attempt in {1..30}; do
+            RUN_ID="$(gh run list --workflow release-toolkit.yml --event workflow_dispatch --branch main --limit 20 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
             [[ -n "$RUN_ID" ]] && break
             sleep 2
           done
           [[ -n "$RUN_ID" ]] || { echo "::error::The newly dispatched production release run was not found."; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
 
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} production release is running as Actions run \`${RUN_ID}\`."
-          gh run watch "$RUN_ID" --exit-status
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} completed the guarded production release workflow successfully."
+      - name: Record release dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.command.outputs.version }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        shell: bash
+        run: |
+          gh issue comment "$ISSUE_NUMBER" --body "Production release v${VERSION} has been authorized and dispatched as Actions run \`${RUN_ID}\`. The permanent production workflow now owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation."
 
-      - name: Record guarded failure
+      - name: Record dispatch failure
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,4 +101,4 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION:-unknown} release stopped at a guarded check. No publication safeguard was bypassed. Command diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION:-unknown} release dispatch stopped at a guarded check. No publication safeguard was bypassed. Command diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

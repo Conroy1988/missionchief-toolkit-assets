@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "published release",
+      "sourceVersion": "4.13.4",
+      "currentVersion": "4.13.4",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": false,
+      "changelogVersion": "4.13.4",
+      "expectedState": "published",
+      "expectedFailure": false
+    },
+    {
+      "name": "guarded source transition on pull request or main push",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.4",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": true,
+      "changelogVersion": "4.13.5",
+      "expectedState": "source-transition",
+      "expectedFailure": false
+    },
+    {
+      "name": "persistent source drift outside guarded transition",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.4",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": false,
+      "changelogVersion": "4.13.5",
+      "expectedState": "invalid",
+      "expectedFailure": true
+    },
+    {
+      "name": "generated release candidate",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.5",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "not-published",
+      "allowSourceTransition": false,
+      "changelogVersion": "4.13.5",
+      "expectedState": "release-candidate",
+      "expectedFailure": false
+    },
+    {
+      "name": "candidate falsely marked published",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.5",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": false,
+      "changelogVersion": "4.13.5",
+      "expectedState": "invalid",
+      "expectedFailure": true
+    },
+    {
+      "name": "candidate missing changelog entry",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.4",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": true,
+      "changelogVersion": "4.13.4",
+      "expectedState": "invalid",
+      "expectedFailure": true
+    },
+    {
+      "name": "contradictory dashboard versions",
+      "sourceVersion": "4.13.5",
+      "currentVersion": "4.13.3",
+      "latestReleaseVersion": "4.13.4",
+      "githubRelease": "published",
+      "allowSourceTransition": true,
+      "changelogVersion": "4.13.5",
+      "expectedState": "invalid",
+      "expectedFailure": true
+    }
+  ]
+}

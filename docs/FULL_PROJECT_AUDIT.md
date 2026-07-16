@@ -4,228 +4,280 @@
 
 Improve development speed, release predictability, runtime efficiency and long-term maintainability without changing established Toolkit behaviour.
 
-This audit is deliberately conservative. A static-analysis candidate is not treated as dead code until its call path, state effect, event registration and reflective use have been checked. Behavioural compatibility takes priority over reducing line count.
+This audit is deliberately conservative. A static-analysis candidate is not treated as dead code until its call path, state effect, event registration, template interpolation, settings compatibility and reflective use have been checked. Behavioural compatibility takes priority over reducing line count.
 
 ## Protected invariants
 
-The following are release-blocking invariants for every optimisation change:
+The following remain release-blocking:
 
-1. The canonical source remains `src/MissionChief_Map_Command_Toolkit.user.js`.
-2. The `.user.js` and `.txt` distribution files remain byte-identical.
+1. Canonical source remains `src/MissionChief_Map_Command_Toolkit.user.js`.
+2. The `.user.js` and `.txt` distributions remain byte-identical.
 3. Userscript metadata version and runtime version remain equal.
 4. Existing localStorage keys and settings import/export payloads remain compatible.
-5. Desktop, Tablet and iOS operating modes retain their current controls and placement rules.
-6. Every existing interface theme and payout template remains selectable.
+5. Desktop, Tablet and iOS modes retain their controls and placement rules.
+6. Every existing interface theme and payout presentation remains selectable.
 7. Public image and audio paths remain stable.
-8. Greasy Fork is not considered released until its live metadata reports the requested version.
+8. Greasy Fork is not considered released until live metadata reports the requested version.
 9. Discord release announcements remain downstream of Greasy Fork verification and private backup.
 10. No code is removed solely because a heuristic reports it as unused.
 
-## Baseline
+## Verified audit baseline
 
-- Audited production line: **v4.13.0**
-- Canonical release SHA-256: `7766664a4981f7985a4903f65a395bf0d00cc03472b5b45d18b5d1abf8712367`
-- Source scale: approximately **1.75 MB** and **28,700 lines**
-- Distribution state: source, `.user.js` and `.txt` validated as byte-identical
-- Release path: GitHub → GitHub Release → Greasy Fork verification → private backup → Discord
+- Audited and released version: **v4.13.1**
+- Canonical SHA-256: `dede1999c8121c7bc73d644711d8b1258e3598db5118aad9da6b0731e038f69c`
+- Source scale: **1,750,881 bytes**, **28,710 lines**
+- Named function-like blocks: **664**
+- Distribution state: canonical source, `.user.js` and `.txt` byte-identical
+- Release state: GitHub Release published, Greasy Fork verified, private backup committed and Discord announcement posted
 
-## Repository and deployment findings
+## Audit evidence
 
-### 1. Deep-audit duplication
+The completed audit combined:
 
-**Finding:** `full-userscript-audit.yml` repeated the code-integrity, static asset and performance checks that already run in dedicated workflows.
+1. full structural inventory;
+2. refined lexical-scope analysis;
+3. AST-backed ESLint analysis;
+4. code-integrity comparison against the released baseline;
+5. static performance budgets;
+6. asset-health and documentation contracts;
+7. direct source review of startup, observers, timers, listeners, network work, settings and cleanup;
+8. targeted invariants for each changed runtime path;
+9. production release-readiness and final publication verification.
 
-**Impact:** The same Python tools were executed multiple times for a single source pull request. This increased queue time, runner use and diagnostic noise without adding an independent implementation.
+The refined v4.13.1 audit completed with:
 
-**Action:** The full audit is now focused on its unique responsibilities:
+- definite failures: **0**;
+- review findings: **8**;
+- dead-code candidates: **1 metadata compatibility candidate**, retained;
+- advisories: **21**.
 
-- complete userscript structural analysis;
-- refined source evidence;
-- AST-backed ESLint analysis.
+## Dead-code conclusion
 
-Code integrity, asset health and performance remain protected by their dedicated workflows.
+No function, branch, binding or CSS block met the complete evidence threshold for safe removal.
 
-### 2. Repeated ESLint installation
+The only remaining automated candidate is the `discordapp.com` userscript `@connect` host. It is intentionally retained because imported settings may contain legacy Discord webhook hosts, including `discordapp.com`, `ptb.discordapp.com` and `canary.discordapp.com`.
 
-**Finding:** The deep audit downloaded the exact ESLint package for every run.
+This is a valid audit result: **no speculative code deletion was performed**.
 
-**Impact:** Avoidable package-install latency on every userscript pull request.
+## Runtime findings and completed reductions
 
-**Action:** Add an npm cache keyed to the pinned ESLint version. The package remains version-pinned and install scripts remain disabled.
+### Economy Mode cache pruning
 
-### 3. Code-integrity workflow scope was too broad
+**Before:** current vehicle and building marker collections were rescanned for every cached hidden layer.
 
-**Finding:** `code-integrity-audit.yml` ran for every pull request and every push to `main`, including documentation-only and media-only changes.
+**Change:** each collection is materialised once per prune pass as a `Set`, then reused through constant-time membership checks.
 
-**Impact:** Unrelated changes consumed a full checkout, baseline resolution, self-test, code audit and asset audit.
+**Result:** less repeated work with identical cache-retention behaviour.
 
-**Action:** Restrict automatic runs to the canonical userscript, integrity policy, integrity checker, checker tests and the workflow itself. Static asset verification remains in the dedicated asset-health workflow.
+### Auto-load all vehicles
 
-### 4. Release command occupied a runner for the entire production release
+**Before:** every follow-up scan queried the whole document and rebuilt a duplicate mission-root selector list.
 
-**Finding:** The owner command dispatched `release-toolkit.yml` and then blocked while watching the production workflow, potentially for most of the 45-minute release timeout.
+**Change:**
 
-**Impact:** Two runners remained active for one release, and the command workflow appeared to be part of the release critical path even though publication was owned by the permanent production workflow.
+- the canonical mission-root selector is reused;
+- once a connected, visible mission window is known, follow-up queries are scoped to that window;
+- document-wide discovery remains available before a mission is identified or after a stale window disappears;
+- bounded retries, duplicate-request protection and native MissionChief clicking remain unchanged.
 
-**Action:** The owner command now:
+**Result:** less DOM work during an active mission without changing dispatch or vehicle-selection behaviour.
 
-1. validates the owner and release-ready dashboard state;
-2. dispatches the permanent production workflow;
-3. resolves and records the production run ID;
-4. exits.
+### Observer and timer review
 
-The production workflow remains solely responsible for publication, verification, backup, Discord and dashboard reconciliation.
+- The Toolkit uses one runtime-owned interval, limited to an active payout animation and cleared through the runtime registry.
+- Global event listeners created through `runtimeListen` are removed during runtime destruction.
+- MutationObservers are registered through the runtime registry and disconnected on replacement or shutdown.
+- Document-wide observers were retained only where they have a bounded or conditional purpose:
+  - alliance-building suppression while that preference is active;
+  - temporary main-observer fallback before stable map/mission roots exist;
+  - Auto-load all vehicles only while the feature is enabled.
+- Payout audio remains lazy: hosted audio uses `preload="none"` and is requested only for a matching payout event.
+- Payout presentation DOM remains on demand.
 
-### 5. Fallback release monitoring is over-frequent
+No confirmed observer, timer or listener leak was found.
 
-**Finding:** The Greasy Fork fallback monitor is scheduled every five minutes even though the primary production workflow performs live Greasy Fork verification and a separate reconciliation workflow updates the announcement tracker after successful releases.
+## High-risk runtime findings deferred with evidence
 
-**Impact:** Up to 288 scheduled runs per day for a fallback path that should normally do no work.
+### Main stylesheet
 
-**Recommendation:** Reduce fallback monitoring to every 15–30 minutes after confirming the primary reconciliation path remains healthy for several releases. Do not remove the fallback until equivalent incident detection is proven.
+`installMainStyles()` spans approximately **12,093 lines** and contributes roughly **821 KB** of generated CSS—nearly half of the userscript.
 
-### 6. Generated state can trigger secondary workflows
+Document-start installation is intentional and avoids a later full-page selector rematch. Splitting it without screenshots and state coverage could introduce unthemed flashes, incomplete theme switching or responsive regressions.
 
-**Finding:** Validation, release and reconciliation workflows legitimately commit generated distribution or status state back to `main`. Some downstream workflows subscribe to those generated files.
+A separate controlled project is tracked in **#63**. It requires a visual matrix across all themes, payout presentations, Desktop, Tablet, iOS, Economy Mode and reduced motion before modularisation.
 
-**Impact:** A single feature merge can create several follow-up runs and documentation deployments.
+### High-complexity operational functions
 
-**Recommendation:** Keep status-driven documentation deployment, but remove generated dashboard paths from workflows that do not use them as an input. Continue suppressing bot-created source rebuild loops.
+The following functions are active, important and not dead code:
 
-### 7. Development package workflow is a fallback, not the standard path
+| Function | Refined audit result |
+|---|---:|
+| `captureMissionMarkerData` | complexity ~135 |
+| `fetchFinancialLedger` | complexity ~123 |
+| `boot` | complexity ~128; ~332 lines |
+| `createPanel` | ~375 lines |
+| `loadState` | complexity ~67 |
+| `toggleFeature` | complexity ~75 |
+| `handleSettingChange` | complexity ~78 |
+| `updateUI` | complexity ~75 |
 
-**Finding:** The reviewed-development-package workflow was introduced to work around large connector payloads. The Hyrule release demonstrated that fragmented package transport is slower and more failure-prone than committing a complete implementation.
+Fixture-first decomposition is tracked in **#64**. These functions must not be split merely to satisfy a complexity threshold.
 
-**Decision:** Retain it temporarily as an explicitly owner-authorised recovery tool. The supported routine path is:
+## Repository and deployment improvements
+
+### Duplicate audit work removed
+
+The Full Userscript Audit previously repeated code-integrity, static asset and performance checks already enforced by dedicated workflows.
+
+It now focuses on its unique structural, refined-source and AST-backed responsibilities. Code integrity, asset health and performance remain independent required gates.
+
+### Pinned ESLint dependency cached
+
+The exact ESLint audit package remains pinned, install scripts remain disabled and the npm package cache is reused between deep-audit runs.
+
+### Workflow triggers narrowed
+
+Code Integrity now runs only for canonical source, integrity policy, integrity tooling and its own workflow. Documentation-only and unrelated media changes no longer consume the full code-integrity path.
+
+### One release command
+
+The owner-only command remains:
 
 ```text
-complete local implementation → focused branch → pull request → targeted gates → merge → readiness → release command
+/release-toolkit X.Y.Z RELEASE
 ```
 
-Remove the package workflow only after the direct implementation path has completed multiple large updates without requiring it.
+It now:
 
-## Documentation and repository presentation findings
+1. verifies the requested version is the current validated candidate;
+2. checks whether release readiness belongs to that exact version;
+3. automatically runs and awaits current-version readiness when required;
+4. dispatches the permanent production workflow;
+5. records readiness and production run IDs;
+6. exits after dispatch.
 
-### 1. README maintenance cost
+The permanent production workflow alone owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation.
 
-**Finding:** The previous README contained a hard-coded current version and primarily read as an operations checklist.
+### Release state reconciled
 
-**Impact:** Every release risked documentation drift, while the repository landing page undersold the Toolkit's visual and operational scope.
+The production workflow now updates together:
 
-**Action:** Replace it with a premium project landing page using:
+- `status/release-dashboard.json`;
+- the detailed current-version readiness record;
+- generated `status/README.md`.
 
-- a custom repository hero;
+This prevents the public control panel from showing a stale pre-release state after a successful release.
+
+### Fallback monitor retained
+
+The Greasy Fork fallback monitor remains scheduled every five minutes. It is intentionally retained while the improved primary command and reconciliation path accumulate more production history.
+
+A future low-risk reduction to a 15–30 minute interval remains appropriate after several more successful releases. The fallback should not be removed until equivalent incident detection is proven.
+
+### Development package workflow retained as recovery only
+
+The reviewed-development-package workflow remains an owner-authorised recovery tool for connector payload limits. It is not the standard feature path.
+
+Supported routine delivery is:
+
+```text
+complete implementation → focused branch → pull request → targeted gates → merge → single release command
+```
+
+## Repository presentation
+
+The README has been rebuilt as a premium project landing page with:
+
+- a custom command-centre hero;
 - dynamic release and Greasy Fork badges;
-- concise installation calls to action;
-- an operational feature matrix;
-- a Hyrule Command asset showcase;
-- a visual release pipeline;
-- direct routes to documentation, support, roadmap and confirmed-bug reporting.
+- direct installation calls to action;
+- feature and operating-mode matrices;
+- Hyrule Command artwork;
+- a visual release flow;
+- community, support, issue and roadmap routes;
+- compatibility and release-integrity principles.
 
-### 2. Public documentation catalogue lag
+The public documentation catalogue now includes:
 
-**Finding:** The documentation contract and site catalogue pre-date Hyrule Command and Auto-load all vehicles.
+- Auto-load all vehicles;
+- 007 Intelligence;
+- Hyrule Command;
+- 007 Intelligence payout;
+- Hyrule Quest Reward.
 
-**Impact:** The public site can pass its internal contract while still omitting current production capabilities.
+## Before-and-after operational outcome
 
-**Required action:** Add Hyrule Command, Hyrule Quest Reward and Auto-load all vehicles to the documentation contract and site data, then rebuild and validate GitHub Pages.
+### Deployment
 
-## Runtime audit methodology
+- fewer duplicate audit executions;
+- fewer irrelevant workflow starts;
+- cached deep-audit dependency installation;
+- one current-version-aware release command;
+- no second runner held for the complete production release;
+- consistent machine-readable and human-readable release state.
 
-The runtime review uses four evidence layers:
+### Runtime
 
-1. **Structural inventory** — function size, complexity, selectors, observers, timers, listeners, storage and generated CSS.
-2. **AST analysis** — ESLint-backed unused bindings and code-quality findings.
-3. **Lifecycle review** — startup, mission-open refresh, settings changes, panel construction, cleanup and mission-switch state.
-4. **Behavioural proof** — source inspection and targeted invariant checks before any removal.
+- less repeated marker-layer work during cache pruning;
+- less document-wide DOM searching during vehicle batch loading;
+- no extra timers or observers introduced;
+- inactive payout media remains lazy;
+- no settings, feature, theme, payout or public asset removed.
 
-### High-risk areas requiring manual proof
+### Quality
 
-- document-wide MutationObservers;
-- recurring intervals below one second;
-- event listeners attached to persistent global objects;
-- theme CSS generators with intentional selector duplication;
-- callback functions referenced indirectly through MissionChief hooks;
-- settings migrations and legacy key aliases;
-- Leaflet guards and alliance-building suppression;
-- payout audio and animation cleanup;
-- mission-window replacement and stale asynchronous requests.
+- full audit: passed;
+- canonical validation: passed;
+- JavaScript syntax: passed;
+- source/distribution parity: passed;
+- code integrity: passed;
+- performance budget and targeted runtime invariants: passed;
+- asset health: passed;
+- documentation drift and Pages build: passed;
+- release readiness: passed;
+- production release v4.13.1: passed.
 
-### Safe optimisation order
-
-1. Stop work earlier when a feature or theme is disabled.
-2. Replace repeated DOM searches only where node lifetime is stable.
-3. Batch mutation-driven refreshes into one queued render.
-4. Disconnect observers and clear timers at existing lifecycle boundaries.
-5. Remove provably unreachable declarations.
-6. Consolidate duplicated pure calculations.
-7. Defer architectural decomposition until regression coverage exists.
-
-## Dead-code removal rule
-
-A candidate may be removed only when all of the following are true:
-
-- its declaration has no direct call sites;
-- it is not registered as an event, observer, timer or MissionChief callback;
-- its name is not used through an object property, string lookup or exported page context;
-- removing it does not change settings migration, CSS output or public metadata;
-- syntax, validation, integrity, performance and full-audit gates pass afterward;
-- the diff is narrow enough to revert independently.
-
-## Delivery phases
+## Completed phases
 
 ### Phase 1 — audit and deployment simplification
 
-- [x] Create a dedicated audit issue and branch
+- [x] Create dedicated audit tracking
 - [x] Remove duplicate deep-audit execution
 - [x] Cache the pinned ESLint dependency
 - [x] Restrict code-integrity automation to relevant changes
-- [x] Make the owner release command asynchronous
 - [x] Rebuild the README as a premium project landing page
-- [ ] Synchronise public documentation with v4.13.0
-- [ ] Run the complete PR audit suite and collect evidence
+- [x] Synchronise public documentation
+- [x] Run and retain complete audit evidence
 
 ### Phase 2 — low-risk runtime reductions
 
-- [ ] Review audit evidence by call path
-- [ ] Reduce unnecessary disabled-feature work
-- [ ] Batch repeated mission-window refresh work
-- [ ] Correct confirmed observer, timer and listener lifecycle gaps
-- [ ] Add targeted invariants for each changed subsystem
+- [x] Review findings by call path
+- [x] Reduce repeated cache-pruning work
+- [x] Scope active mission-window vehicle queries
+- [x] Review observers, timers, listeners and cleanup
+- [x] Add targeted runtime invariants
+- [x] Preserve settings, modes, themes, payouts and assets
 
-### Phase 3 — proven dead-code removal
+### Phase 3 — dead-code decision
 
-- [ ] Remove only evidence-backed dead functions and bindings
-- [ ] Remove stale maintenance markers and commented code
-- [ ] Confirm source/distribution parity and settings compatibility
-- [ ] Publish before/after structural metrics
+- [x] Check direct, indirect, event, observer, timer, hook and template references
+- [x] Retain the only compatibility-sensitive metadata candidate
+- [x] Record that no code currently meets the safe-removal threshold
+- [x] Separate high-risk refactors into fixture-first issues
 
-### Phase 4 — final regression and release readiness
+### Phase 4 — release and reconciliation
 
-- [ ] Validate every theme and operating mode contract
-- [ ] Validate asset paths and public documentation
-- [ ] Run code integrity, performance and full userscript audit
-- [ ] Run release readiness without publishing
-- [ ] Release only after all protected invariants pass
+- [x] Validate every documented theme and operating-mode contract
+- [x] Validate asset paths and public documentation
+- [x] Run integrity, performance and full-userscript audits
+- [x] Run current-version release readiness
+- [x] Release v4.13.1 through GitHub, Greasy Fork, private backup and Discord
+- [x] Reconcile generated release state
 
-## Expected outcome
+## Final decision
 
-- Faster and less noisy pull-request validation
-- Lower GitHub Actions consumption
-- One predictable release-dispatch route
-- Better repository presentation and discoverability
-- Fewer unnecessary runtime operations
-- Smaller, clearer source only where removal is proven safe
-- No loss of features, settings, themes, public assets or release safeguards
+The conservative audit is complete.
 
-## Phase 2 — conservative runtime reductions
+The Toolkit is faster in identified low-risk paths, the deployment process is materially simpler, the release state is more reliable, the repository presentation is substantially improved and no unsupported deletion or behavioural rewrite was introduced.
 
-The first runtime maintenance candidate is deliberately narrow and semantics-preserving:
-
-- marker-layer collections are materialised once per cache-prune pass and reused as sets;
-- the active mission window becomes the query scope for subsequent Auto-load all vehicles scans, with a document fallback before a mission is identified or after a stale window disappears;
-- the canonical mission-root selector is reused rather than reconstructed per link;
-- targeted static invariants protect those reductions from accidental reversal;
-- a single-pass lexical block analysis replaces the previous function-inventory parent heuristic, removing the false duplicate warning for independent local Promise settlement helpers.
-
-No observer, timer, theme, payout template, saved setting or compatibility permission is removed in this phase. The legacy `discordapp.com` connect permission remains because imported settings may still contain legacy Discord webhook hosts.
+Larger optimisations remain deliberately separated into **#63** and **#64**, where they can receive the visual and fixture coverage required to protect the current production behaviour.

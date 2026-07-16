@@ -11,7 +11,9 @@
     "Cyberpunk",
     "Fallout 4",
     "Umbrella",
-    "Factorio"
+    "Factorio",
+    "007 Intelligence",
+    "Hyrule Command"
   ],
   "modes": [
     "Desktop",
@@ -39,7 +41,10 @@
     "Cyberpunk",
     "Fallout",
     "Umbrella",
-    "Factorio"
+    "Factorio",
+    "007 Intelligence",
+    "Hyrule Command",
+    "Auto-load all vehicles"
   ],
   "installUrls": [
     "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",

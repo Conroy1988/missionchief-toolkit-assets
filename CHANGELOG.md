@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.1] - 2026-07-16
+
+### Performance
+- Reduced Economy Mode cache-pruning work by building current vehicle and building layer sets once per prune pass instead of rescanning full marker collections for every cached layer.
+- Scoped **Auto-load all vehicles** link discovery to the connected, visible mission window after a mission is identified, while preserving the document-wide fallback needed for newly opened missions.
+- Reused the canonical mission-window selector for root resolution instead of rebuilding and iterating a duplicate selector list.
+
+### Audit and documentation
+- Corrected the full-audit lexical-scope analysis so identically named local helper functions in different blocks are no longer reported as same-scope duplicates.
+- Added targeted static invariants for the runtime optimisations.
+- Updated the public theme catalogue to include **007 Intelligence** and **Hyrule Command**, plus the Hyrule payout presentation and automatic vehicle loading capability.
+
+### Compatibility
+- Preserved all saved settings, import/export contracts, public asset URLs, themes, payout templates and Desktop, Tablet and iOS behaviour.
+
 ## [4.13.0] - 2026-07-15
 
 ### Added

@@ -217,3 +217,15 @@ A candidate may be removed only when all of the following are true:
 - Fewer unnecessary runtime operations
 - Smaller, clearer source only where removal is proven safe
 - No loss of features, settings, themes, public assets or release safeguards
+
+## Phase 2 — conservative runtime reductions
+
+The first runtime maintenance candidate is deliberately narrow and semantics-preserving:
+
+- marker-layer collections are materialised once per cache-prune pass and reused as sets;
+- the active mission window becomes the query scope for subsequent Auto-load all vehicles scans, with a document fallback before a mission is identified or after a stale window disappears;
+- the canonical mission-root selector is reused rather than reconstructed per link;
+- targeted static invariants protect those reductions from accidental reversal;
+- a single-pass lexical block analysis replaces the previous function-inventory parent heuristic, removing the false duplicate warning for independent local Promise settlement helpers.
+
+No observer, timer, theme, payout template, saved setting or compatibility permission is removed in this phase. The legacy `discordapp.com` connect permission remains because imported settings may still contain legacy Discord webhook hosts.

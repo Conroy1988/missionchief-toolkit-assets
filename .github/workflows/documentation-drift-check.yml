@@ -6,7 +6,9 @@ on:
   pull_request:
     paths:
       - ".github/documentation-contract.json"
+      - ".github/fixtures/documentation-version-states.json"
       - ".github/scripts/check_documentation_drift.py"
+      - ".github/scripts/test_documentation_version_states.py"
       - ".github/workflows/documentation-drift-check.yml"
       - ".github/release-settings.json"
       - "docs/site-data.json"
@@ -19,7 +21,9 @@ on:
       - main
     paths:
       - ".github/documentation-contract.json"
+      - ".github/fixtures/documentation-version-states.json"
       - ".github/scripts/check_documentation_drift.py"
+      - ".github/scripts/test_documentation_version_states.py"
       - ".github/workflows/documentation-drift-check.yml"
       - ".github/release-settings.json"
       - "docs/site-data.json"
@@ -50,9 +54,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Run documentation state fixtures
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/scripts/check_documentation_drift.py \
+            .github/scripts/test_documentation_version_states.py
+          python3 .github/scripts/test_documentation_version_states.py
+
       - name: Run documentation contract audit
         env:
-          ALLOW_RELEASE_CANDIDATE: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          ALLOW_RELEASE_CANDIDATE: ${{ (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && '1' || '0' }}
         shell: bash
         run: |
           set -euo pipefail

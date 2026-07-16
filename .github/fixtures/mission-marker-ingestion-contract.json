@@ -1,0 +1,141 @@
+{
+  "fixedNow": 1784203200000,
+  "currentUserId": "42",
+  "personal": {
+    "payload": {
+      "id": 1001,
+      "average_credits": "12.5k",
+      "created_at": "2026-07-16T08:00:00Z",
+      "user_id": 42,
+      "mission_type": "standard",
+      "filter_id": 5,
+      "date_end_calc": 1784206800,
+      "date_end": 1784210400000,
+      "date_now": 1784203200,
+      "vehicle_state": "3",
+      "missing_text": {
+        "vehicles": ["1 Pump", "1 Aerial"],
+        "patients": 2
+      },
+      "patients_count": "2",
+      "possible_patients_count": "4",
+      "prisoners_count": "1",
+      "possible_prisoners_count": "2",
+      "live_current_value": "75",
+      "caption": "  Warehouse   Fire  "
+    },
+    "expected": {
+      "missionId": "1001",
+      "averageCredits": 12500,
+      "createdAt": 1784188800000,
+      "userId": "42",
+      "missionType": "standard",
+      "filterId": "5",
+      "dateEndCalc": 1784206800000,
+      "dateEnd": 1784210400000,
+      "dateNow": 1784203200000,
+      "vehicleState": 3,
+      "patientsCount": 2,
+      "possiblePatientsCount": 4,
+      "prisonersCount": 1,
+      "possiblePrisonersCount": 2,
+      "liveCurrentValue": 75,
+      "caption": "Warehouse Fire",
+      "ownership": "personal"
+    },
+    "partialUpdate": {
+      "data": {
+        "missionId": 1001,
+        "caption": " Warehouse Fire - Updated ",
+        "liveCurrentValue": 81
+      }
+    }
+  },
+  "alliance": {
+    "payload": {
+      "params": {
+        "mission_id": 2002,
+        "user_id": 99,
+        "alliance_id": 7,
+        "alliance_shared_at": "2026-07-16T08:10:00Z",
+        "mission_type": "alliance_custom",
+        "caption": "Alliance Chemical Fire"
+      }
+    },
+    "expected": {
+      "missionId": "2002",
+      "userId": "99",
+      "allianceId": 7,
+      "allianceSharedAt": 1784189400000,
+      "missionType": "alliance_custom",
+      "ownership": "alliance"
+    }
+  },
+  "event": {
+    "payload": {
+      "mission": {
+        "id": 3003,
+        "user_id": 42,
+        "event_id": 88,
+        "is_event": "yes",
+        "event_name": " Summer   Games ",
+        "special_event": "true",
+        "caption": "Event Standby"
+      }
+    },
+    "expected": {
+      "missionId": "3003",
+      "eventId": "88",
+      "isEvent": true,
+      "eventName": "Summer Games",
+      "isSpecialEvent": true,
+      "ownership": "personal"
+    }
+  },
+  "allianceWithoutOwner": {
+    "payload": {
+      "id": 2100,
+      "alliance_id": "55",
+      "caption": "Shared Mission"
+    },
+    "expectedOwnership": "alliance"
+  },
+  "personalOwnerOverridesAllianceSignal": {
+    "payload": {
+      "id": 1100,
+      "user_id": 42,
+      "alliance_id": 55,
+      "mission_type": "alliance_custom",
+      "caption": "Personal Shared Mission"
+    },
+    "expectedOwnership": "personal"
+  },
+  "ignoredPayloads": [
+    null,
+    false,
+    0,
+    "mission",
+    {},
+    { "id": "" },
+    { "data": { "mission_id": null } }
+  ],
+  "source": {
+    "script": "missionMarkerAdd({\"id\":5005,\"caption\":\"Inline {Alarm}\",\"user_id\":42}); missionMarkerAdd({\"mission_id\":5006,\"alliance_id\":9,\"user_id\":99}); missionMarkerAdd({bad json});",
+    "expectedCaptured": 2,
+    "expectedIds": ["5005", "5006"]
+  },
+  "documentScripts": [
+    "const ignored = true;",
+    "missionMarkerAdd({\"id\":6006,\"caption\":\"Document Mission\",\"user_id\":42});",
+    "missionMarkerAdd({\"id\":6007,\"event_id\":12,\"is_event\":true,\"user_id\":42});"
+  ],
+  "snapshot": {
+    "missionId": "1001",
+    "lat": 55.9533,
+    "lng": -3.1883,
+    "firstNow": 1784203200000,
+    "secondNow": 1784203200500,
+    "updatedNow": 1784203201000,
+    "updatedCaption": "Warehouse Fire - Snapshot Updated"
+  }
+}

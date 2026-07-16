@@ -1,16 +1,17 @@
 <div align="center">
 
-<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit command-centre banner" width="100%">
+<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit operational command suite" width="100%">
 
 # MissionChief Map Command Toolkit
 
-**Turn the MissionChief map into a complete operational command centre.**
+### A complete operational layer for the MissionChief map
 
-Mission intelligence · Fleet awareness · Map utilities · Responsive controls · Cinematic themes · Verified releases
+Mission intelligence · Fleet awareness · Geographic coverage · Financial command · Responsive layouts · Seven interface systems
 
 [![Install from Greasy Fork](https://img.shields.io/badge/INSTALL-GREASY%20FORK-8B0000?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![View releases](https://img.shields.io/badge/VIEW-GITHUB%20RELEASES-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases)
+[![Explore themes](https://img.shields.io/badge/EXPLORE-THEMES-6D28D9?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=release&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork version](https://img.shields.io/greasyfork/v/586018?label=Greasy%20Fork&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -25,18 +26,18 @@ Mission intelligence · Fleet awareness · Map utilities · Responsive controls 
 
 ---
 
-## The command centre MissionChief should have
+## Operational command without leaving the map
 
-MissionChief Map Command Toolkit is a single configurable userscript that adds a serious operational layer to the game map. It keeps missions, vehicles, transport demand, alliance value, geographic coverage and critical incidents readable without forcing the player to jump between disconnected screens.
+MissionChief Map Command Toolkit is a configurable userscript that converts the standard game map into a coordinated command environment. Missions, vehicles, transport demand, alliance value, coverage, financial activity and critical incidents remain visible in one operational context.
 
-The Toolkit is designed for busy accounts and large alliances where the standard map can become difficult to interpret. Every system can be enabled independently, every major panel has responsive behaviour, and settings can be exported between devices.
+It is built for busy accounts and large alliances where the standard map can become difficult to interpret. Every major system can be enabled independently, layouts adapt to desktop, tablet and iOS, and the complete configuration can be exported between devices.
 
 <table>
 <tr>
-<td width="25%" align="center"><strong>🚨 Mission intelligence</strong><br><sub>Age, severity, clearing state, transport demand and rapid incident navigation.</sub></td>
-<td width="25%" align="center"><strong>🚓 Fleet awareness</strong><br><sub>Vehicle codes, availability, hidden vehicle batches and operational focus controls.</sub></td>
-<td width="25%" align="center"><strong>🗺️ Map operations</strong><br><sub>Coverage heat maps, bookmarks, rings, overlays and responsive map-space management.</sub></td>
-<td width="25%" align="center"><strong>✨ Presentation</strong><br><sub>Complete interface themes, payout sequences, audio, alerts and completion history.</sub></td>
+<td width="25%" align="center"><strong>🚨 Mission command</strong><br><sub>Age, state, severity, clearing progress and rapid incident navigation.</sub></td>
+<td width="25%" align="center"><strong>🚓 Fleet awareness</strong><br><sub>Vehicle codes, availability, hidden batches, transport demand and focus controls.</sub></td>
+<td width="25%" align="center"><strong>🗺️ Map intelligence</strong><br><sub>Coverage heat maps, rings, bookmarks, overlays and space-aware placement.</sub></td>
+<td width="25%" align="center"><strong>📊 Financial command</strong><br><sub>Income, spending, operational result and Discord-ready reporting.</sub></td>
 </tr>
 </table>
 
@@ -99,31 +100,25 @@ The Toolkit is designed for busy accounts and large alliances where the standard
 
 </details>
 
-## Hyrule Command — the flagship theme
+## Seven complete interface systems
 
-<table>
-<tr>
-<td width="25%" align="center"><img src="themes/hyrule/ui/hyrule-command-crest.svg" alt="Hyrule Command crest" width="150"><br><strong>Royal command identity</strong></td>
-<td width="25%" align="center"><img src="themes/hyrule/ui/ancient-eye-rune.svg" alt="Ancient eye rune" width="150"><br><strong>Ancient-blue telemetry</strong></td>
-<td width="25%" align="center"><img src="themes/hyrule/ui/zonai-energy-ring.svg" alt="Green energy ring" width="150"><br><strong>Energy-state animation</strong></td>
-<td width="25%" align="center"><img src="themes/hyrule/payout/quest-complete-seal.svg" alt="Quest complete seal" width="150"><br><strong>Quest Reward payout</strong></td>
-</tr>
-</table>
+<img src="docs/media/theme-system-showcase.svg" alt="Seven equal MissionChief Map Command Toolkit interface themes" width="100%">
 
-**Hyrule Command** combines temple stone, royal gold, parchment cartography, ancient-blue illumination and luminous green energy into a complete command interface. It includes its own transparent asset suite and the **Hyrule Quest Reward** mission-completion sequence.
+Themes change the complete visual language of the command interface without changing its operational capabilities. No theme is treated as the primary or flagship option: each is a complete selectable system built around the same controls, saved settings and responsive behaviour.
 
-The Toolkit also includes:
-
-| Theme | Character |
+| Interface theme | Visual direction |
 |---|---|
-| **Map Command** | Restrained, high-contrast operational command interface. |
-| **Cyberpunk** | Neon telemetry, angular panels and warning-yellow signal language. |
-| **Fallout 4** | Phosphor terminal styling and industrial Pip-Boy presentation. |
-| **Umbrella Containment** | Clinical black, white and red containment-system interface. |
-| **Factorio** | Heavy machinery, amber controls and industrial status panels. |
-| **Hyrule Command** | Parchment maps, royal gold, ancient runes and cinematic quest rewards. |
+| **Map Command** | Restrained, high-contrast operational telemetry with cyan map intelligence. |
+| **Cyberpunk** | Neon cyan, warning yellow and magenta with angular futuristic panels. |
+| **Fallout 4** | Green phosphor terminal styling with worn industrial status presentation. |
+| **Umbrella** | Clinical black, white and red containment-system interface. |
+| **Factorio** | Heavy machinery, amber controls and mechanical status panels. |
+| **007 Intelligence** | Classified dossiers, gun-barrel geometry and champagne-gold controls. |
+| **Hyrule Command** | Royal-gold framing, parchment cartography, ancient-blue illumination and green energy. |
 
-Inactive themes do not perform theme-specific runtime work. Economy Mode and reduced-motion preferences keep the interface readable while suppressing non-essential effects.
+Interface themes and payout presentations are independently selectable. The Toolkit also includes GTA V, Vice City, Battlefield Bad Company, Scarface, Cyberpunk, Fallout-inspired, Biohazard Containment, Factorio, 007 Intelligence and Hyrule Quest Reward completion sequences.
+
+Inactive themes do not load their hosted media or run theme-specific animation logic. Their visual rules remain available for immediate theme switching, while Economy Mode and reduced-motion preferences suppress non-essential effects.
 
 ## Install
 
@@ -153,7 +148,7 @@ Inactive themes do not perform theme-specific runtime work. Economy Mode and red
 | Operating mode | Designed for | Behaviour |
 |---|---|---|
 | **Desktop** | Full browser map and large displays | Complete panels, keyboard shortcuts and expanded monitoring. |
-| **Tablet** | Landscape tablet layouts | Space-aware controls without unnecessary panel scrolling. |
+| **Tablet** | Landscape tablet layouts | Space-aware controls without unnecessary page scrolling. |
 | **iOS Mobile** | Safari with a compatible userscript manager | Touch-safe controls, compact panels and long-press bookmark previews. |
 | **Economy Mode** | Performance-sensitive devices or sessions | Static presentation, reduced animation and lower visual overhead. |
 
@@ -182,13 +177,14 @@ flowchart LR
     A[Canonical source] --> B[PR validation]
     B --> C[Deep audit and integrity gates]
     C --> D[Merge to main]
-    D --> E[Release readiness]
-    E --> F[Immutable GitHub Release]
-    F --> G[Greasy Fork synchronisation]
-    G --> H[Live version verification]
-    H --> I[Private release backup]
-    I --> J[Discord release announcement]
-    J --> K[Dashboard and recovery record]
+    D --> E[Owner release command]
+    E --> F[Current-version readiness]
+    F --> G[Immutable GitHub Release]
+    G --> H[Greasy Fork synchronisation]
+    H --> I[Live version verification]
+    I --> J[Private release backup]
+    J --> K[Discord release announcement]
+    K --> L[Dashboard reconciliation]
 ```
 
 A Discord release announcement is sent only after the live Greasy Fork version and the private backup have both been verified.
@@ -217,23 +213,23 @@ Run targeted validation and audit gates
         ↓
 Merge the reviewed candidate
         ↓
-Run release readiness
-        ↓
 /release-toolkit X.Y.Z RELEASE
+        ↓
+Automatic current-version readiness and production dispatch
 ```
 
-The owner-authorised release command dispatches the permanent production workflow. Temporary release workflows and dummy trigger commits are not part of the supported process.
+The owner-authorised release command verifies the current distribution candidate, runs release readiness when required and dispatches the permanent production workflow. Temporary release workflows and dummy trigger commits are not part of the supported process.
 
 ### Repository map
 
 ```text
 src/                Canonical userscript source
- dist/              Byte-identical validated distribution
- themes/            Stable theme-specific visual and audio assets
- docs/               Documentation, media and GitHub Pages source
- status/             Human-readable and machine-readable release state
- .github/scripts/    Validation, audit, build and release tooling
- .github/workflows/  Permanent automation only
+dist/               Byte-identical validated distribution
+themes/             Stable theme-specific visual and audio assets
+docs/               Documentation, media and GitHub Pages source
+status/             Human-readable and machine-readable release state
+.github/scripts/    Validation, audit, build and release tooling
+.github/workflows/  Permanent automation only
 ```
 
 ## Compatibility and safety principles

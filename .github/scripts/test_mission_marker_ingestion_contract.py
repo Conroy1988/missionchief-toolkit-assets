@@ -70,31 +70,30 @@ def extract_function(source: str, masked: str, name: str) -> str:
 def build_harness(source: str, fixtures: dict) -> str:
     masked = audit.mask_non_code(source)
     functions = "\n\n".join(extract_function(source, masked, name) for name in FUNCTION_NAMES)
-    fixture_json = json.dumps(fixtures, ensure_ascii=False)
-    return f'''"use strict";
+    template = r'''"use strict";
 const assert = require("node:assert/strict");
-const fixtures = {fixture_json};
+const fixtures = __FIXTURES__;
 
-function decodeEntities(value) {{
+function decodeEntities(value) {
     return String(value ?? "")
         .replaceAll("&amp;", "&")
-        .replaceAll("&quot;", "\\\"")
+        .replaceAll("&quot;", "\"")
         .replaceAll("&#39;", "'")
         .replaceAll("&lt;", "<")
         .replaceAll("&gt;", ">");
-}}
+}
 
-const document = {{
-    createElement() {{
-        return {{
+const document = {
+    createElement() {
+        return {
             _value: "",
-            set innerHTML(value) {{ this._value = decodeEntities(value); }},
-            get value() {{ return this._value; }}
-        }};
-    }},
-    getElementById() {{ return null; }},
-    querySelectorAll() {{ return []; }}
-}};
+            set innerHTML(value) { this._value = decodeEntities(value); },
+            get value() { return this._value; }
+        };
+    },
+    getElementById() { return null; },
+    querySelectorAll() { return []; }
+};
 
 const missionOverlayData = new Map();
 const missionOverlayVersions = new Map();
@@ -105,68 +104,77 @@ let vehicleDataRevision = 1;
 const MISSION_SNAPSHOT_REUSE_MS = 1000;
 const CRITICAL_OWNERSHIP_KEYS = ["personal", "alliance"];
 
-function currentUserIdCached() {{ return fixtures.currentUserId; }}
-function getStrongMarkerSignal() {{ return {{ classes: "", text: "", hrefs: [], srcs: [] }}; }}
-function classifyMarker() {{ return "unknown"; }}
-function missionDeveloperEventInfo(marker, missionId) {{
-    const overlay = missionOverlayData.get(String(missionId)) || {{}};
+function currentUserIdCached() { return fixtures.currentUserId; }
+function getMissionPanelElement() { return null; }
+function getStrongMarkerSignal() { return { classes: "", text: "", hrefs: [], srcs: [] }; }
+function classifyMarker() { return "unknown"; }
+function missionDeveloperEventInfo(marker, missionId) {
+    const overlay = missionOverlayData.get(String(missionId)) || {};
     return overlay.isSpecialEvent
-        ? {{ active: true, label: String(overlay.eventName || "SPECIAL EVENT").toUpperCase(), eventId: String(overlay.eventId || "") }}
-        : {{ active: false, label: "", eventId: "" }};
-}}
-function missionWatchCategory(marker, missionId, snapshot, specialEvent) {{
+        ? { active: true, label: String(overlay.eventName || "SPECIAL EVENT").toUpperCase(), eventId: String(overlay.eventId || "") }
+        : { active: false, label: "", eventId: "" };
+}
+function missionWatchCategory(marker, missionId, snapshot, specialEvent) {
     if (specialEvent?.active) return "special";
     return missionIsEvent(marker, missionId, snapshot) ? "event" : "standard";
-}}
-function missionPersonalUnitState() {{
-    return {{
+}
+function missionPersonalUnitState() {
+    return {
         hasUnit: false,
-        commitment: {{ total: 0, onScene: 0, onWay: 0, travelling: 0, transporting: 0, awaitingPickup: 0, requestingDispatch: 0, outOfService: 0, available: 0, unknownStatus: 0, known: true, source: "fixture" }}
-    }};
-}}
-function getMissionAddress(marker) {{ return String(marker?.address || "Fixture Address"); }}
-function normaliseMissionPostcode(value) {{ return /[A-Z]{{1,2}}\d[A-Z\d]?\s*\d[A-Z]{{2}}/i.exec(String(value || ""))?.[0]?.toUpperCase() || ""; }}
-function normaliseMissionCity() {{ return "Edinburgh"; }}
-function resolveMissionLiveCurrentValue(marker, missionId, overlay) {{
+        commitment: {
+            total: 0, onScene: 0, onWay: 0, travelling: 0, transporting: 0,
+            awaitingPickup: 0, requestingDispatch: 0, outOfService: 0,
+            available: 0, unknownStatus: 0, known: true, source: "fixture"
+        }
+    };
+}
+function getMissionAddress(marker) { return String(marker?.address || "Fixture Address"); }
+function normaliseMissionPostcode(value) {
+    return /[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/i.exec(String(value || ""))?.[0]?.toUpperCase() || "";
+}
+function normaliseMissionCity() { return "Edinburgh"; }
+function resolveMissionLiveCurrentValue(marker, missionId, overlay) {
     const value = Number(overlay?.liveCurrentValue ?? marker?.live_current_value);
     return Number.isFinite(value) ? value : null;
-}}
-function getMissionCaption(marker, missionId) {{
+}
+function getMissionCaption(marker, missionId) {
     return missionOverlayData.get(String(missionId))?.caption || String(marker?.caption || "");
-}}
-function getMissionAverageCredits(marker, missionId) {{
+}
+function getMissionAverageCredits(marker, missionId) {
     const value = Number(missionOverlayData.get(String(missionId))?.averageCredits ?? marker?.average_credits);
     return Number.isFinite(value) ? value : null;
-}}
-function getMissionCreatedAt(marker, missionId) {{
+}
+function getMissionCreatedAt(marker, missionId) {
     const value = Number(missionOverlayData.get(String(missionId))?.createdAt ?? marker?.created_at);
     return Number.isFinite(value) ? value : null;
-}}
+}
 
-{functions}
+__FUNCTIONS__
 
-function resetState() {{
+function resetState() {
     missionOverlayData.clear();
     missionOverlayVersions.clear();
     missionSnapshotCache.clear();
     missionPanelCache.clear();
     missionRegistryRevision = 1;
     vehicleDataRevision = 1;
-}}
+}
 
-function record(id) {{ return missionOverlayData.get(String(id)); }}
-function assertSubset(actual, expected, label) {{
-    for (const [key, value] of Object.entries(expected)) assert.deepEqual(actual?.[key], value, `${{label}}.${{key}}`);
-}}
+function record(id) { return missionOverlayData.get(String(id)); }
+function assertSubset(actual, expected, label) {
+    for (const [key, value] of Object.entries(expected)) {
+        assert.deepEqual(actual?.[key], value, `${label}.${key}`);
+    }
+}
 
-function testCaptureAndClassification() {{
+function testCaptureAndClassification() {
     resetState();
     const originalNow = Date.now;
     Date.now = () => fixtures.fixedNow;
-    try {{
+    try {
         captureMissionMarkerData(fixtures.personal.payload);
         const personal = record(fixtures.personal.expected.missionId);
-        assertSubset(personal, {{
+        assertSubset(personal, {
             averageCredits: fixtures.personal.expected.averageCredits,
             createdAt: fixtures.personal.expected.createdAt,
             userId: fixtures.personal.expected.userId,
@@ -185,10 +193,10 @@ function testCaptureAndClassification() {{
             liveCurrentValueUpdatedAt: fixtures.fixedNow,
             caption: fixtures.personal.expected.caption,
             missingTextKnown: true
-        }}, "personal");
+        }, "personal");
         assert.equal(personal.missingText, "VEHICLES: 1 Pump, 1 Aerial • PATIENTS: 2");
         assert.equal(missionOverlayVersion("1001"), 1);
-        assert.equal(missionWatchOwnership({{ mission_id: 1001 }}, 1001), fixtures.personal.expected.ownership);
+        assert.equal(missionWatchOwnership({ mission_id: 1001 }, 1001), fixtures.personal.expected.ownership);
 
         captureMissionMarkerData(fixtures.personal.payload);
         assert.equal(missionOverlayVersion("1001"), 1, "identical payload must not invalidate caches");
@@ -197,69 +205,69 @@ function testCaptureAndClassification() {{
         const updated = record("1001");
         assert.equal(updated.caption, "Warehouse Fire - Updated");
         assert.equal(updated.liveCurrentValue, 81);
-        assert.equal(updated.averageCredits, fixtures.personal.expected.averageCredits, "partial updates preserve existing fields");
-        assert.equal(updated.missingText, personal.missingText, "missing requirements survive partial updates");
+        assert.equal(updated.averageCredits, fixtures.personal.expected.averageCredits);
+        assert.equal(updated.missingText, personal.missingText);
         assert.equal(missionOverlayVersion("1001"), 2);
 
         captureMissionMarkerData(fixtures.alliance.payload);
         const alliance = record(fixtures.alliance.expected.missionId);
-        assertSubset(alliance, {{
+        assertSubset(alliance, {
             userId: fixtures.alliance.expected.userId,
             allianceId: fixtures.alliance.expected.allianceId,
             allianceSharedAt: fixtures.alliance.expected.allianceSharedAt,
             missionType: fixtures.alliance.expected.missionType
-        }}, "alliance");
-        assert.equal(missionWatchOwnership({{ mission_id: 2002 }}, 2002), fixtures.alliance.expected.ownership);
+        }, "alliance");
+        assert.equal(missionWatchOwnership({ mission_id: 2002 }, 2002), fixtures.alliance.expected.ownership);
 
         captureMissionMarkerData(fixtures.event.payload);
         const event = record(fixtures.event.expected.missionId);
-        assertSubset(event, {{
+        assertSubset(event, {
             eventId: fixtures.event.expected.eventId,
             isEvent: fixtures.event.expected.isEvent,
             eventName: fixtures.event.expected.eventName,
             isSpecialEvent: fixtures.event.expected.isSpecialEvent
-        }}, "event");
-        assert.equal(missionIsEvent({{ mission_id: 3003 }}, 3003), true);
-        assert.equal(missionWatchOwnership({{ mission_id: 3003 }}, 3003), fixtures.event.expected.ownership);
+        }, "event");
+        assert.equal(missionIsEvent({ mission_id: 3003 }, 3003), true);
+        assert.equal(missionWatchOwnership({ mission_id: 3003 }, 3003), fixtures.event.expected.ownership);
 
         captureMissionMarkerData(fixtures.allianceWithoutOwner.payload);
-        assert.equal(missionWatchOwnership({{ mission_id: 2100 }}, 2100), fixtures.allianceWithoutOwner.expectedOwnership);
+        assert.equal(missionWatchOwnership({ mission_id: 2100 }, 2100), fixtures.allianceWithoutOwner.expectedOwnership);
 
         captureMissionMarkerData(fixtures.personalOwnerOverridesAllianceSignal.payload);
-        assert.equal(missionWatchOwnership({{ mission_id: 1100 }}, 1100), fixtures.personalOwnerOverridesAllianceSignal.expectedOwnership);
+        assert.equal(missionWatchOwnership({ mission_id: 1100 }, 1100), fixtures.personalOwnerOverridesAllianceSignal.expectedOwnership);
 
         const sizeBeforeIgnored = missionOverlayData.size;
         for (const payload of fixtures.ignoredPayloads) captureMissionMarkerData(payload);
-        assert.equal(missionOverlayData.size, sizeBeforeIgnored, "invalid payloads must not create records");
-    }} finally {{
+        assert.equal(missionOverlayData.size, sizeBeforeIgnored);
+    } finally {
         Date.now = originalNow;
-    }}
-}}
+    }
+}
 
-function testInlineAndDocumentCapture() {{
+function testInlineAndDocumentCapture() {
     resetState();
     assert.equal(captureMissionMarkerDataFromSource(fixtures.source.script), fixtures.source.expectedCaptured);
     assert.deepEqual(fixtures.source.expectedIds.map(id => missionOverlayData.has(id)), [true, true]);
-    assert.equal(record("5005").caption, "Inline {{Alarm}}");
-    assert.equal(missionWatchOwnership({{ mission_id: 5006 }}, 5006), "alliance");
+    assert.equal(record("5005").caption, "Inline {Alarm}");
+    assert.equal(missionWatchOwnership({ mission_id: 5006 }, 5006), "alliance");
 
-    const doc = {{ scripts: fixtures.documentScripts.map(textContent => ({{ textContent }})) }};
+    const doc = { scripts: fixtures.documentScripts.map(textContent => ({ textContent })) };
     assert.equal(captureMissionMarkerDataFromDocument(doc), 2);
     assert.equal(record("6006").caption, "Document Mission");
-    assert.equal(missionIsEvent({{ mission_id: 6007 }}, 6007), true);
-}}
+    assert.equal(missionIsEvent({ mission_id: 6007 }, 6007), true);
+}
 
-function testSnapshotCoordinatesAndCacheInvalidation() {{
+function testSnapshotCoordinatesAndCacheInvalidation() {
     resetState();
     const originalNow = Date.now;
     Date.now = () => fixtures.fixedNow;
-    try {{
+    try {
         captureMissionMarkerData(fixtures.personal.payload);
-        const marker = {{
+        const marker = {
             mission_id: fixtures.snapshot.missionId,
             address: "1 Princes Street, Edinburgh EH2 2EQ",
-            getLatLng() {{ return {{ lat: fixtures.snapshot.lat, lng: fixtures.snapshot.lng }}; }}
-        }};
+            getLatLng() { return { lat: fixtures.snapshot.lat, lng: fixtures.snapshot.lng }; }
+        };
         const first = missionSnapshotFromMarker(marker, fixtures.snapshot.firstNow);
         assert.equal(first.missionId, fixtures.snapshot.missionId);
         assert.equal(first.ownership, "personal");
@@ -272,26 +280,27 @@ function testSnapshotCoordinatesAndCacheInvalidation() {{
         assert.equal(first.liveCurrentValue, fixtures.personal.expected.liveCurrentValue);
 
         const second = missionSnapshotFromMarker(marker, fixtures.snapshot.secondNow);
-        assert.equal(second, first, "same marker and unchanged revisions must reuse the cached snapshot");
+        assert.equal(second, first, "unchanged marker data must reuse the cached snapshot");
         assert.equal(second.lastSeen, fixtures.snapshot.secondNow);
 
-        captureMissionMarkerData({{ id: fixtures.snapshot.missionId, caption: fixtures.snapshot.updatedCaption }});
+        captureMissionMarkerData({ id: fixtures.snapshot.missionId, caption: fixtures.snapshot.updatedCaption });
         const third = missionSnapshotFromMarker(marker, fixtures.snapshot.updatedNow);
         assert.notEqual(third, first, "overlay changes must invalidate the snapshot cache");
         assert.equal(third.caption, fixtures.snapshot.updatedCaption);
         assert.equal(third.lat, fixtures.snapshot.lat);
         assert.equal(third.lng, fixtures.snapshot.lng);
-        assert.equal(missionSnapshotFromMarker({{}}, fixtures.snapshot.updatedNow), null);
-    }} finally {{
+        assert.equal(missionSnapshotFromMarker({}, fixtures.snapshot.updatedNow), null);
+    } finally {
         Date.now = originalNow;
-    }}
-}}
+    }
+}
 
 testCaptureAndClassification();
 testInlineAndDocumentCapture();
 testSnapshotCoordinatesAndCacheInvalidation();
 console.log("Mission marker ingestion contract passed: payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.");
 '''
+    return template.replace("__FIXTURES__", json.dumps(fixtures, ensure_ascii=False)).replace("__FUNCTIONS__", functions)
 
 
 def main() -> int:

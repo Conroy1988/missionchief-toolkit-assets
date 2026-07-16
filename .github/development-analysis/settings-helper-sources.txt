@@ -1,0 +1,49 @@
+===== getLegacyTheme =====
+function getLegacyTheme() {
+        return normaliseTheme(localStorage.getItem(SCRIPT.legacyTheme) || 'default');
+    }
+
+===== getLegacyPosition =====
+function getLegacyPosition() {
+        const saved = localStorage.getItem(SCRIPT.legacyPosition);
+        return POSITIONS[saved] ? saved : 'bl';
+    }
+
+===== normaliseUiTheme =====
+function normaliseUiTheme(key) {
+        return UI_THEMES[key] ? key : 'mapCommand';
+    }
+
+===== normaliseTheme =====
+function normaliseTheme(key) {
+        if (THEMES[key]) return key;
+        if (LEGACY_THEME_MAP[key]) return LEGACY_THEME_MAP[key];
+        return 'default';
+    }
+
+===== clamp =====
+function clamp(value, min, max, fallback) {
+        const num = Number(value);
+        if (!Number.isFinite(num)) return fallback;
+        return Math.max(min, Math.min(max, num));
+    }
+
+===== normalisePayoutFlashDuration =====
+function normalisePayoutFlashDuration(value) {
+        const duration = Number(value);
+        if (!Number.isFinite(duration)) return 4000;
+        const rounded = Math.round(duration / PAYOUT_FLASH_STEP_MS) * PAYOUT_FLASH_STEP_MS;
+        return Math.max(PAYOUT_FLASH_MIN_MS, Math.min(PAYOUT_FLASH_MAX_MS, rounded));
+    }
+
+===== sanitiseBookmarkShortLabel =====
+function sanitiseBookmarkShortLabel(value) {
+        return String(value || '')
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/gu, '')
+            .toUpperCase()
+            .replace(/[^A-Z0-9&/+ -]+/gu, ' ')
+            .replace(/\s+/gu, ' ')
+            .trim()
+            .slice(0, SMART_BOOKMARK_LABEL_MAX);
+    }

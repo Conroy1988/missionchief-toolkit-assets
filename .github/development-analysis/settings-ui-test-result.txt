@@ -1,2 +1,0 @@
-exit_code=0
-Settings/UI contract passed: defaults, migrations, import rollback, 28 toggles, 32 actions and 36 settings.

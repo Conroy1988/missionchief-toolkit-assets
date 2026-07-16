@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="450" y1="40" x2="450" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4A8"/><stop offset=".22" stop-color="#E8BE4D"/><stop offset=".58" stop-color="#9E6820"/><stop offset="1" stop-color="#4C2810"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="450" y1="210" x2="450" y2="650" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8EFFF5"/><stop offset=".45" stop-color="#22CDE0"/><stop offset="1" stop-color="#0A4C6A"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="11" result="b"/><feColorMatrix in="b" type="matrix" values="0 0 0 0 .18 0 0 0 0 .95 0 0 0 0 1 0 0 0 .65 0"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="15" flood-color="#000" flood-opacity=".72"/></filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M367 520c-116 4-208-41-287-130 84 25 144 17 199-20-82-17-139-56-181-117 76 25 137 19 192-16-48-25-87-66-117-121 94 52 176 55 246 16l-52 388Z" fill="url(#gold)" stroke="#F9DE77" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M533 520c116 4 208-41 287-130-84 25-144 17-199-20 82-17 139-56 181-117-76 25-137 19-192-16 48-25 87-66 117-121-94 52-176 55-246 16l52 388Z" fill="url(#gold)" stroke="#F9DE77" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M450 61 558 249H342L450 61Z" fill="url(#gold)" stroke="#FFF0A0" stroke-width="11"/>
+    <path d="M342 265 450 453H234l108-188Z" fill="url(#gold)" stroke="#FFF0A0" stroke-width="11"/>
+    <path d="M558 265 666 453H450l108-188Z" fill="url(#gold)" stroke="#FFF0A0" stroke-width="11"/>
+    <path d="M450 211 503 303H397l53-92Z" fill="#071C24" stroke="#22DCE9" stroke-width="8" filter="url(#glow)"/>
+    <path d="M450 457c66 0 120 52 120 116 0 31-13 60-33 82H363c-20-22-33-51-33-82 0-64 54-116 120-116Z" fill="#0C2731" stroke="url(#blue)" stroke-width="10"/>
+    <path d="M450 501c31 0 58 20 69 49-11 29-38 49-69 49s-58-20-69-49c11-29 38-49 69-49Z" stroke="#7DFFF4" stroke-width="10" filter="url(#glow)"/>
+    <circle cx="450" cy="550" r="22" fill="#D8FFF9" stroke="#20D7E5" stroke-width="9" filter="url(#glow)"/>
+    <path d="M450 599v50M407 613l-25 35M493 613l25 35" stroke="#24D6E2" stroke-width="10" stroke-linecap="round" filter="url(#glow)"/>
+  </g>
+</svg>

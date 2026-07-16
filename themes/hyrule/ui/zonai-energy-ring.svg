@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" fill="none">
+ <defs>
+  <linearGradient id="z" x1="130" y1="100" x2="670" y2="700"><stop stop-color="#D8FFC8"/><stop offset=".35" stop-color="#5AF598"/><stop offset=".72" stop-color="#16A873"/><stop offset="1" stop-color="#0B4B47"/></linearGradient>
+  <filter id="gl"><feGaussianBlur stdDeviation="11" result="b"/><feColorMatrix in="b" type="matrix" values="0 0 0 0 .15 0 0 0 0 1 0 0 0 0 .55 0 0 0 .8 0"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ </defs>
+ <g stroke="url(#z)" filter="url(#gl)" stroke-linecap="round" stroke-linejoin="round">
+  <circle cx="400" cy="400" r="300" stroke-width="20" stroke-dasharray="56 18 12 18"/>
+  <circle cx="400" cy="400" r="236" stroke-width="9" stroke-dasharray="4 19" opacity=".9"/>
+  <path d="M400 86 438 153 516 139 504 216 572 255 508 299 533 374 454 371 400 431 346 371 267 374 292 299 228 255 296 216 284 139 362 153 400 86Z" stroke-width="13" opacity=".85"/>
+  <path d="M400 218c-83 0-151 67-151 151 0 61 36 114 88 138M400 218c83 0 151 67 151 151 0 61-36 114-88 138" stroke-width="18"/>
+  <path d="M400 296v207M325 374h150M349 448h102" stroke-width="12"/>
+  <circle cx="400" cy="400" r="35" fill="#D8FFDF" stroke-width="13"/>
+ </g>
+</svg>

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.12.0
+// @version      4.13.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.12.0',
+        version: '4.13.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4112',
+        styleId: 'mc-map-command-toolkit-style-v4130',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -880,6 +880,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V210__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V411__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V420__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4130__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -923,7 +924,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.11.2',
+        guideVersion: '4.13.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -943,7 +944,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         umbrellaFacilitySchematic: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/facility-schematic.svg',
         umbrellaSurveillanceTerminal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/surveillance-terminal.svg',
         umbrellaSpecimenVial: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/ui/specimen-vial.svg',
-        umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg'
+        umbrellaPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/payout/transfer-authorized-seal.svg',
+        hyruleCrest: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/hyrule-command-crest.svg',
+        hyruleEye: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/ancient-eye-rune.svg',
+        hyruleEnergyRing: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/zonai-energy-ring.svg',
+        hyruleSwordShield: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/master-sword-shield-silhouette.svg',
+        hyruleMap: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/parchment-command-map.svg',
+        hyruleQuestSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/quest-complete-seal.svg',
+        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg'
     });
 
     const UI_THEMES = Object.freeze({
@@ -952,9 +960,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '☢', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),
         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
-        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' })
+        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),
+        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '△', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })
     });
-    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007']);
+    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);
 
     const THEMES = {
         default: { full: 'Default', label: 'Default', short: 'STD', icon: '□' },
@@ -984,10 +993,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },
         underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },
         pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },
-        jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' }
+        jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' },
+        hyruleQuest: { label: 'Hyrule Quest Reward', kicker: 'RUPEE REWARD ACQUIRED', titleCase: false, particleMode: 'rupees' }
     };
 
-    const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];
+    const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'hyruleQuest', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];
 
     // Hosted real-audio cues remain lazy-loaded through direct raw GitHub URLs.
     // Hosted payout cues are mapped by template and lazy-loaded only when played.
@@ -1023,6 +1033,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         jamesBond: Object.freeze({
             label: '007 Intelligence Cashout',
             url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+        }),
+        hyruleQuest: Object.freeze({
+            label: 'Hyrule Quest Reward',
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3'
         })
     });
 
@@ -1545,10 +1559,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyUiTheme(key, announce = false) {
         const nextTheme = normaliseUiTheme(key);
         const changed = state.uiTheme !== nextTheme;
+        const pairedHyrulePayout = nextTheme === 'hyrule' && state.payoutFlash.template !== 'hyruleQuest';
         state.uiTheme = nextTheme;
+        if (pairedHyrulePayout) state.payoutFlash.template = 'hyruleQuest';
         saveState();
         updateUI();
-        if (announce && changed) showToast(`${UI_THEMES[nextTheme].label} interface active`);
+        if (announce && changed) {
+            showToast(pairedHyrulePayout
+                ? 'Hyrule Command interface and Quest Reward payout active'
+                : `${UI_THEMES[nextTheme].label} interface active`);
+        }
     }
 
     function normaliseTheme(key) {
@@ -1609,6 +1629,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             },
             jamesBond: {
                 standard: 'MISSION ACCOMPLISHED', major: 'CLASSIFIED BONUS SECURED', high: 'DOUBLE-O PAYDAY', elite: 'TOP SECRET JACKPOT'
+            },
+            hyruleQuest: {
+                standard: 'QUEST COMPLETE', major: "HERO'S REWARD", high: 'TREASURE OF HYRULE', elite: 'LEGENDARY RELIC CLAIMED'
             }
         };
         return themedTitles[template]?.[tier] || presentation?.title || '';
@@ -13391,6 +13414,508 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
 
 
+        /* v4.13.0 Hyrule Command flagship interface */
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule {
+            position:relative !important;
+            border-color:#e9c85b !important;
+            border-radius:8px 8px 5px 5px !important;
+            background:
+                url("${THEME_ASSETS.hyruleEye}") center / 25px 25px no-repeat,
+                linear-gradient(155deg,#243b2d 0 48%,#0d2e3a 49% 72%,#6a4b1e 73% 100%) !important;
+            box-shadow:inset 0 0 0 1px rgba(255,247,171,.25),inset 0 -8px 12px rgba(0,0,0,.42),0 0 11px rgba(92,241,221,.20) !important;
+            overflow:hidden !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule::before {
+            content:'△' !important;
+            position:absolute !important;
+            left:5px !important;
+            top:3px !important;
+            color:#ffe77d !important;
+            font:900 12px/1 Georgia,serif !important;
+            text-shadow:0 0 6px rgba(255,214,69,.75) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule::after {
+            content:'HYRULE' !important;
+            position:absolute !important;
+            right:4px !important;
+            bottom:3px !important;
+            color:#c9fff4 !important;
+            font:900 4.5px/1 "Arial Narrow",sans-serif !important;
+            letter-spacing:.55px !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule span { opacity:0 !important; }
+
+        html[data-mcms-ui-theme="hyrule"] {
+            --mcms-hyrule-forest:#132c22;
+            --mcms-hyrule-forest-2:#203c2b;
+            --mcms-hyrule-night:#061319;
+            --mcms-hyrule-parchment:#dfc88d;
+            --mcms-hyrule-parchment-soft:#f1dfaa;
+            --mcms-hyrule-gold:#e8bf4d;
+            --mcms-hyrule-gold-bright:#fff09a;
+            --mcms-hyrule-blue:#3de7e5;
+            --mcms-hyrule-blue-deep:#168cae;
+            --mcms-hyrule-green:#50ec8c;
+            --mcms-hyrule-green-deep:#167555;
+            --mcms-hyrule-crimson:#e44f59;
+            --mcms-hyrule-amber:#f4a83c;
+            --mcms-hyrule-ink:#0a1110;
+            --mcms-hyrule-shadow:rgba(0,0,0,.72);
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId} {
+            font-family:"Palatino Linotype",Palatino,Georgia,serif !important;
+            color:#f8efd0 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} {
+            filter:drop-shadow(0 10px 15px rgba(0,0,0,.42)) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-shell {
+            position:relative !important;
+            border:1px solid rgba(244,210,101,.86) !important;
+            border-radius:14px !important;
+            background:
+                linear-gradient(180deg,rgba(255,240,164,.08),transparent 24%),
+                linear-gradient(145deg,rgba(20,52,39,.96),rgba(6,22,27,.96) 64%,rgba(54,35,16,.94)) !important;
+            box-shadow:inset 0 0 0 2px rgba(95,63,24,.82),inset 0 1px rgba(255,248,189,.22),0 10px 26px rgba(0,0,0,.46),0 0 18px rgba(42,224,210,.09) !important;
+            overflow:visible !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-shell::before {
+            content:'' !important;
+            position:absolute !important;
+            width:42px !important;
+            height:42px !important;
+            left:-13px !important;
+            top:-15px !important;
+            background:url("${THEME_ASSETS.hyruleCrest}") center/contain no-repeat !important;
+            filter:drop-shadow(0 3px 4px rgba(0,0,0,.64)) !important;
+            pointer-events:none !important;
+            z-index:5 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-menu-btn {
+            border-color:rgba(255,225,111,.92) !important;
+            background:
+                url("${THEME_ASSETS.hyruleEye}") center/64% 64% no-repeat,
+                radial-gradient(circle at 50% 38%,rgba(72,238,229,.24),transparent 60%),
+                linear-gradient(155deg,#1d4636,#091c23 70%) !important;
+            color:#fff3b1 !important;
+            box-shadow:inset 0 0 0 2px rgba(87,54,18,.88),0 0 13px rgba(54,230,220,.25) !important;
+            text-shadow:0 1px 2px #000 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            border-color:#fff3a1 !important;
+            box-shadow:inset 0 0 0 2px rgba(120,74,22,.9),0 0 17px rgba(74,255,236,.48),0 0 7px rgba(255,222,83,.55) !important;
+            transform:translateY(-1px) scale(1.025) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-dock-toggle-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            border:1px solid rgba(223,190,84,.72) !important;
+            border-radius:9px !important;
+            background:
+                linear-gradient(180deg,rgba(251,224,139,.09),transparent 36%),
+                linear-gradient(145deg,rgba(34,64,44,.96),rgba(8,25,29,.96)) !important;
+            color:#f1e7c0 !important;
+            box-shadow:inset 0 0 0 1px rgba(67,43,18,.76),0 4px 9px rgba(0,0,0,.26) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-float-key {
+            border-color:rgba(102,245,227,.58) !important;
+            background:rgba(4,30,34,.74) !important;
+            color:#9ffff1 !important;
+            box-shadow:0 0 7px rgba(50,225,218,.24) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-on {
+            border-color:#8cffe1 !important;
+            background:
+                linear-gradient(135deg,rgba(75,237,136,.42),rgba(20,113,88,.34)),
+                linear-gradient(145deg,#204e37,#0b2830) !important;
+            color:#efffda !important;
+            box-shadow:inset 0 0 0 1px rgba(255,235,126,.30),0 0 13px rgba(66,239,174,.38) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
+            border-color:rgba(80,227,230,.76) !important;
+        }
+
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} {
+            position:fixed !important;
+            border:1px solid rgba(244,208,94,.92) !important;
+            border-radius:16px !important;
+            background:
+                linear-gradient(rgba(7,23,25,.89),rgba(7,23,25,.94)),
+                url("${THEME_ASSETS.hyruleMap}") center/cover no-repeat,
+                linear-gradient(145deg,#1e3a2a,#071b21 68%,#3a2410) !important;
+            box-shadow:inset 0 0 0 3px rgba(87,55,19,.88),inset 0 0 55px rgba(0,0,0,.42),0 18px 50px rgba(0,0,0,.60),0 0 28px rgba(54,224,211,.12) !important;
+            backdrop-filter:blur(12px) saturate(118%) !important;
+            -webkit-backdrop-filter:blur(12px) saturate(118%) !important;
+            overflow-x:hidden !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::before {
+            content:'' !important;
+            position:absolute !important;
+            right:-52px !important;
+            top:72px !important;
+            width:235px !important;
+            height:235px !important;
+            background:url("${THEME_ASSETS.hyruleSwordShield}") center/contain no-repeat !important;
+            opacity:.16 !important;
+            filter:drop-shadow(0 10px 16px rgba(0,0,0,.65)) !important;
+            pointer-events:none !important;
+            z-index:0 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after {
+            content:'' !important;
+            position:absolute !important;
+            left:-68px !important;
+            bottom:45px !important;
+            width:220px !important;
+            height:220px !important;
+            background:url("${THEME_ASSETS.hyruleEnergyRing}") center/contain no-repeat !important;
+            opacity:.13 !important;
+            pointer-events:none !important;
+            animation:mcmsHyruleRuneTurn 26s linear infinite !important;
+            z-index:0 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} > * { position:relative !important; z-index:1 !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::-webkit-scrollbar { width:8px !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background:rgba(5,23,25,.76) !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background:linear-gradient(#f1d068,#8c5b1d) !important; border:2px solid #14281f !important; border-radius:10px !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-header,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId} .mcms-inspector-head,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-head {
+            border-bottom:1px solid rgba(237,197,75,.72) !important;
+            background:
+                url("${THEME_ASSETS.hyruleCrest}") 12px center/44px 36px no-repeat,
+                linear-gradient(90deg,rgba(78,47,15,.94),rgba(21,57,42,.92) 32%,rgba(7,31,36,.92) 72%,rgba(75,46,16,.90)) !important;
+            box-shadow:inset 0 -1px rgba(255,242,163,.15),0 5px 17px rgba(0,0,0,.24) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-header { padding-left:54px !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-title,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-drawer-title,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId} .mcms-inspector-title,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-title {
+            color:#fff0a1 !important;
+            font-family:Georgia,"Palatino Linotype",serif !important;
+            font-weight:900 !important;
+            letter-spacing:.75px !important;
+            text-shadow:0 2px 2px #000,0 0 12px rgba(255,215,79,.28) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-subtitle,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-drawer-subtitle {
+            color:rgba(196,255,240,.72) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-tabs {
+            border-bottom:1px solid rgba(232,193,72,.44) !important;
+            background:linear-gradient(180deg,rgba(19,55,42,.82),rgba(5,24,29,.82)) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-tab-btn {
+            border-color:transparent !important;
+            color:rgba(239,227,184,.70) !important;
+            background:transparent !important;
+            font-family:Georgia,"Palatino Linotype",serif !important;
+            letter-spacing:.25px !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-tab-btn:hover {
+            color:#fff3ad !important;
+            background:rgba(63,177,139,.12) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            color:#fff3a1 !important;
+            background:linear-gradient(180deg,rgba(86,207,163,.19),rgba(14,62,57,.34)) !important;
+            box-shadow:inset 0 -2px #4bf0dd,0 2px 10px rgba(47,226,216,.15) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-section-label {
+            color:#ffe887 !important;
+            border-color:rgba(232,191,68,.44) !important;
+            background:
+                linear-gradient(90deg,rgba(111,74,25,.45),rgba(26,78,57,.28),transparent) !important;
+            text-shadow:0 1px 2px #000 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-section-label::before { color:#62f4dd !important; }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-bookmark-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-pin-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-ui-theme-btn,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} input,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} select,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} textarea {
+            border-color:rgba(213,174,60,.55) !important;
+            background:
+                linear-gradient(180deg,rgba(245,218,133,.055),transparent 35%),
+                linear-gradient(145deg,rgba(31,65,45,.88),rgba(7,26,31,.92)) !important;
+            color:#f6edd0 !important;
+            box-shadow:inset 0 0 0 1px rgba(66,41,16,.72),0 3px 8px rgba(0,0,0,.20) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color:#77f6df !important;
+            background:linear-gradient(145deg,rgba(40,98,66,.96),rgba(8,42,47,.96)) !important;
+            box-shadow:inset 0 0 0 1px rgba(255,231,132,.24),0 0 12px rgba(57,229,214,.23) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-pin-btn.mcms-on,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color:#fff09a !important;
+            background:
+                linear-gradient(135deg,rgba(79,231,133,.34),rgba(29,128,97,.34)),
+                linear-gradient(145deg,#28543a,#0a3038) !important;
+            color:#fff9d7 !important;
+            box-shadow:inset 0 0 0 1px rgba(101,252,229,.45),0 0 14px rgba(66,235,198,.30),0 0 6px rgba(255,213,76,.25) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-pill,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-float-key {
+            border-color:rgba(78,235,220,.55) !important;
+            background:rgba(4,32,37,.68) !important;
+            color:#a8fff2 !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-setting-row,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} .mcms-payout-history-item {
+            border-color:rgba(211,172,60,.34) !important;
+            background:linear-gradient(145deg,rgba(52,71,41,.45),rgba(6,27,31,.65)) !important;
+        }
+
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId},
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId} {
+            border:1px solid rgba(236,196,72,.86) !important;
+            background:
+                linear-gradient(rgba(6,24,28,.92),rgba(6,24,28,.95)),
+                url("${THEME_ASSETS.hyruleMap}") center/cover no-repeat,
+                linear-gradient(145deg,#1d3929,#081a21) !important;
+            box-shadow:inset 0 0 0 2px rgba(79,51,18,.78),0 12px 34px rgba(0,0,0,.52),0 0 20px rgba(51,222,209,.10) !important;
+            backdrop-filter:blur(10px) !important;
+            -webkit-backdrop-filter:blur(10px) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-critical-row,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-critical-summary-card,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-critical-value-card,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId} .mcms-inspector-card,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-row,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId} .mcms-major-feed-item {
+            border-color:rgba(219,181,65,.40) !important;
+            background:linear-gradient(145deg,rgba(38,70,47,.72),rgba(6,28,33,.78)) !important;
+            box-shadow:inset 0 0 0 1px rgba(63,39,14,.52),0 4px 12px rgba(0,0,0,.18) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId} .mcms-critical-row:hover,
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId} .mcms-major-feed-item:hover {
+            border-color:rgba(99,244,221,.72) !important;
+            background:linear-gradient(145deg,rgba(46,96,62,.86),rgba(7,43,47,.86)) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-state-no-scene { color:#ffca67 !important; }
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-state-enroute { color:#62e7ff !important; }
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-state-assistance { color:#ff6f72 !important; text-shadow:0 0 9px rgba(255,67,79,.45) !important; }
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-state-clearing { color:#77f59c !important; text-shadow:0 0 9px rgba(62,232,132,.38) !important; }
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-state-on-scene { color:#ffe77d !important; }
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-age-badge {
+            border-color:rgba(238,197,72,.78) !important;
+            background:linear-gradient(145deg,rgba(28,67,47,.94),rgba(5,28,33,.94)) !important;
+            color:#fff2a8 !important;
+            box-shadow:inset 0 0 0 1px rgba(95,61,20,.68),0 2px 8px rgba(0,0,0,.28) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-age-critical,
+        html[data-mcms-ui-theme="hyrule"] .mcms-critical-assistance {
+            border-color:#ef6067 !important;
+            background:linear-gradient(145deg,rgba(100,27,32,.95),rgba(33,10,18,.95)) !important;
+            color:#ffe8d5 !important;
+            box-shadow:0 0 13px rgba(229,64,76,.42) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-lock-travel-overlay {
+            background:radial-gradient(circle at center,rgba(68,250,223,.10),transparent 58%) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-lock-reticle,
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-lock-bracket,
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-lock-beam {
+            border-color:#65f8e4 !important;
+            color:#65f8e4 !important;
+            filter:drop-shadow(0 0 7px rgba(74,236,224,.70)) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-spawn-ring {
+            border-color:#ffe875 !important;
+            box-shadow:0 0 12px rgba(255,220,79,.62),inset 0 0 10px rgba(68,244,217,.44) !important;
+        }
+        html[data-mcms-ui-theme="hyrule"] .mcms-mission-spawn-label {
+            border-color:#e7c14e !important;
+            background:linear-gradient(145deg,rgba(37,75,49,.97),rgba(5,28,33,.97)) !important;
+            color:#fff0a0 !important;
+        }
+
+        /* Hyrule Quest Reward payout */
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] {
+            background:
+                radial-gradient(circle at 50% 44%,rgba(79,239,196,.10),transparent 35%),
+                radial-gradient(circle at 50% 110%,rgba(255,209,65,.12),transparent 48%),
+                linear-gradient(180deg,rgba(2,12,16,.46),rgba(2,12,16,.72)) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-red {
+            background:radial-gradient(ellipse at 0% 58%,rgba(42,238,158,.60),rgba(26,112,85,.24) 31%,transparent 66%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-blue {
+            background:radial-gradient(ellipse at 100% 46%,rgba(55,225,244,.64),rgba(28,101,140,.25) 31%,transparent 66%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-cinematic {
+            background:
+                linear-gradient(rgba(4,20,22,.42),rgba(4,20,22,.54)),
+                url("${THEME_ASSETS.hyruleMap}") center/cover no-repeat !important;
+            filter:saturate(118%) contrast(106%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a {
+            inset:-12% !important;
+            background:
+                radial-gradient(circle at 50% 50%,transparent 0 23%,rgba(75,255,219,.13) 23.5% 24.2%,transparent 25% 36%,rgba(255,221,83,.11) 36.5% 37.2%,transparent 38%),
+                url("${THEME_ASSETS.hyruleEnergyRing}") center/42vmin 42vmin no-repeat !important;
+            opacity:.75 !important;
+            animation:mcmsHyruleRuneTurn 16s linear infinite !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-b {
+            inset:0 !important;
+            background:
+                url("${THEME_ASSETS.hyruleEye}") 50% 22%/18vmin 18vmin no-repeat,
+                radial-gradient(ellipse at 50% 50%,rgba(81,255,225,.10),transparent 48%) !important;
+            filter:drop-shadow(0 0 18px rgba(59,234,225,.45)) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-c {
+            inset:-4% !important;
+            background:url("${THEME_ASSETS.hyruleRupeeBurst}") center/cover no-repeat !important;
+            filter:drop-shadow(0 0 12px rgba(255,230,112,.35)) !important;
+            opacity:.70 !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner {
+            width:min(760px,88%) !important;
+            min-height:250px !important;
+            padding:39px clamp(28px,7vw,104px) 34px !important;
+            border:2px solid #e7bd48 !important;
+            border-radius:22px 22px 15px 15px !important;
+            background:
+                url("${THEME_ASSETS.hyruleQuestSeal}") left 12px center/134px 134px no-repeat,
+                url("${THEME_ASSETS.hyruleQuestSeal}") right 12px center/134px 134px no-repeat,
+                linear-gradient(180deg,rgba(255,239,172,.10),transparent 28%),
+                linear-gradient(145deg,rgba(32,69,47,.96),rgba(6,26,31,.97) 62%,rgba(63,39,15,.94)) !important;
+            box-shadow:inset 0 0 0 4px rgba(83,50,15,.88),inset 0 0 35px rgba(0,0,0,.34),0 18px 46px rgba(0,0,0,.62),0 0 26px rgba(68,242,213,.18),0 0 11px rgba(255,216,67,.32) !important;
+            clip-path:polygon(4% 0,96% 0,100% 13%,100% 87%,96% 100%,4% 100%,0 87%,0 13%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner::before,
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner::after {
+            content:'' !important;
+            position:absolute !important;
+            top:9px !important;
+            width:72px !important;
+            height:72px !important;
+            background:url("${THEME_ASSETS.hyruleCrest}") center/contain no-repeat !important;
+            opacity:.62 !important;
+            filter:drop-shadow(0 4px 6px rgba(0,0,0,.65)) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner::before { left:50% !important; transform:translateX(-50%) !important; }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner::after { display:none !important; }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-tier {
+            border-color:rgba(105,247,225,.56) !important;
+            background:rgba(4,34,37,.72) !important;
+            color:#a9fff3 !important;
+            letter-spacing:1.8px !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-title {
+            margin-top:6px !important;
+            color:#fff1a0 !important;
+            font-family:Georgia,"Palatino Linotype",serif !important;
+            font-weight:900 !important;
+            letter-spacing:1.1px !important;
+            text-shadow:0 3px 2px rgba(0,0,0,.86),0 0 19px rgba(255,216,67,.36) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-divider {
+            height:8px !important;
+            background:
+                radial-gradient(circle at center,#f9f2bc 0 4px,transparent 5px),
+                linear-gradient(90deg,transparent,#55efe1 18%,#f3d368 50%,#55efe1 82%,transparent) center/100% 2px no-repeat !important;
+            box-shadow:none !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-source {
+            color:#74f4df !important;
+            text-shadow:0 0 10px rgba(69,237,222,.45) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-kicker {
+            color:#dac982 !important;
+            letter-spacing:1.4px !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-amount {
+            color:#fff8c5 !important;
+            font-family:Georgia,"Palatino Linotype",serif !important;
+            text-shadow:0 4px 2px rgba(0,0,0,.88),0 0 14px rgba(255,221,81,.48),0 0 28px rgba(79,240,209,.28) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-particle {
+            border:1px solid rgba(238,255,240,.78) !important;
+            background:linear-gradient(135deg,#edffd8,#54ef91 40%,#159d68 72%,#074f45) !important;
+            box-shadow:0 0 8px rgba(72,247,145,.72),0 0 14px rgba(41,224,213,.32) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-particle:nth-child(3n+2) {
+            background:linear-gradient(135deg,#efffff,#63eee8 40%,#258dd1 72%,#173f78) !important;
+            box-shadow:0 0 8px rgba(79,237,241,.72),0 0 14px rgba(50,145,236,.30) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-particle:nth-child(5n) {
+            background:linear-gradient(135deg,#fff7c5,#ffd85e 42%,#c08018 72%,#65330b) !important;
+            box-shadow:0 0 9px rgba(255,220,92,.82),0 0 15px rgba(255,183,48,.30) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"][data-tier="elite"] .mcms-payout-banner {
+            border-color:#fff4a6 !important;
+            box-shadow:inset 0 0 0 4px rgba(100,60,14,.9),0 18px 50px rgba(0,0,0,.65),0 0 36px rgba(255,222,83,.40),0 0 28px rgba(75,247,221,.28) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"][data-tier="elite"] .mcms-payout-title,
+        #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"][data-tier="elite"] .mcms-payout-amount { color:#fffce1 !important; }
+
+        @keyframes mcmsHyruleRuneTurn { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+        @keyframes mcmsHyrulePulse { 0%,100% { filter:brightness(.9) drop-shadow(0 0 5px rgba(66,229,211,.22)); } 50% { filter:brightness(1.2) drop-shadow(0 0 14px rgba(66,229,211,.58)); } }
+
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::before { width:280px !important; height:280px !important; right:-60px !important; opacity:.13 !important; }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::before { width:170px !important; height:170px !important; right:-45px !important; top:86px !important; opacity:.11 !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner {
+            width:min(94%,620px) !important;
+            min-height:220px !important;
+            padding:36px 24px 28px !important;
+            background:
+                url("${THEME_ASSETS.hyruleQuestSeal}") left 7px bottom 10px/88px 88px no-repeat,
+                url("${THEME_ASSETS.hyruleQuestSeal}") right 7px bottom 10px/88px 88px no-repeat,
+                linear-gradient(145deg,rgba(32,69,47,.97),rgba(6,26,31,.98) 62%,rgba(63,39,15,.95)) !important;
+        }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-title { font-size:clamp(25px,8vw,46px) !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-amount { font-size:clamp(28px,9vw,52px) !important; }
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId} {
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+        html[data-mcms-economy="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-b,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-c,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-particles {
+            animation:none !important;
+            display:none !important;
+        }
+        @media (prefers-reduced-motion:reduce) {
+            html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
+            #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
+        }
+
+
         `);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
     }
@@ -22365,6 +22890,23 @@ Create the private backup now?`);
                 ];
                 const cycle = 1800 + (index % 5) * 260;
                 options = { duration: cycle, iterations: Math.ceil(duration / cycle) + 1, delay: -((index * 149) % cycle), easing: 'ease-in-out', fill: 'both' };
+            } else if (meta.particleMode === 'rupees') {
+                particle.style.setProperty('left', `${4 + seedA * .92}%`);
+                particle.style.setProperty('bottom', '-24px');
+                const size = 7 + (index % 4) * 3;
+                particle.style.setProperty('width', `${size}px`);
+                particle.style.setProperty('height', `${Math.round(size * 1.65)}px`);
+                particle.style.setProperty('border-radius', '2px');
+                const drift = -72 + seedB * 1.55;
+                const rise = 58 + (seedA % 34);
+                frames = [
+                    { opacity: 0, transform: 'translate3d(0,12px,0) rotate(45deg) scale(.2)' },
+                    { opacity: .98, transform: `translate3d(${drift * .10}px,-${rise * .12}vh,0) rotate(135deg) scale(1)`, offset: .12 },
+                    { opacity: .82, transform: `translate3d(${drift * .72}px,-${rise * .74}vh,0) rotate(${index % 2 ? 315 : -135}deg) scale(.82)`, offset: .78 },
+                    { opacity: 0, transform: `translate3d(${drift}px,-${rise}vh,0) rotate(${index % 2 ? 495 : -315}deg) scale(.28)` }
+                ];
+                const cycle = 1500 + (index % 6) * 210;
+                options = { duration: cycle, iterations: Math.ceil(duration / cycle) + 1, delay: -((index * 181) % cycle), easing: 'cubic-bezier(.16,.72,.26,1)', fill: 'both' };
             } else if (meta.particleMode === 'stars') {
                 particle.style.setProperty('left', `${4 + seedA * .92}%`);
                 particle.style.setProperty('top', `${5 + seedB}%`);

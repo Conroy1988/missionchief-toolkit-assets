@@ -6,6 +6,23 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.0] - 2026-07-15
+
+### Added
+- Added **Hyrule Command**, a complete new interface theme combining parchment cartography, royal-gold framing, forest tones, ancient-blue illumination and green energy glyphs.
+- Added transparent Hyrule-inspired crest, eye rune, energy ring, sword-and-shield, command-map, quest-seal and rupee-burst assets.
+- Added the dedicated **Hyrule Quest Reward** payout presentation with tier-specific quest titles, magical rune activation and animated rupee particles.
+- Added the supplied quest-reward cashout cue as a trimmed, normalized and browser-compatible hosted MP3.
+
+### Responsive design
+- Added dedicated Desktop, Tablet Mode and iOS Mobile Mode layout handling for the interface and payout sequence.
+- Added static Economy Mode and reduced-motion fallbacks while preserving the theme's readable reward state.
+
+### Compatibility
+- Preserved every existing interface theme, payout template, map skin, saved setting, settings import/export path and operational feature.
+- Hyrule artwork and payout audio remain lazy and are used only when the matching theme or payout is selected.
+
+
 ## [4.12.0] - 2026-07-15
 
 ### Added

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" fill="none">
+ <defs>
+  <radialGradient id="bg"><stop stop-color="#102D2B" stop-opacity=".88"/><stop offset=".6" stop-color="#061A1D" stop-opacity=".94"/><stop offset="1" stop-color="#02090D" stop-opacity=".18"/></radialGradient>
+  <linearGradient id="gold" x1="160" y1="100" x2="740" y2="800"><stop stop-color="#FFF5A8"/><stop offset=".33" stop-color="#E9BD49"/><stop offset=".68" stop-color="#8F5A1A"/><stop offset="1" stop-color="#3D1E09"/></linearGradient>
+  <filter id="gl"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ </defs>
+ <circle cx="450" cy="450" r="376" fill="url(#bg)" stroke="url(#gold)" stroke-width="19"/>
+ <circle cx="450" cy="450" r="321" stroke="#4CFFF2" stroke-opacity=".65" stroke-width="8" stroke-dasharray="12 22" filter="url(#gl)"/>
+ <path d="M450 121 494 199 584 181 568 271 646 316 569 364 594 451 504 447 450 519 396 447 306 451 331 364 254 316 332 271 316 181 406 199 450 121Z" stroke="url(#gold)" stroke-width="15"/>
+ <path d="M450 257 530 396H370l80-139ZM370 412l80 139H290l80-139ZM530 412l80 139H450l80-139Z" fill="url(#gold)" stroke="#FFF4A5" stroke-width="9"/>
+ <path d="M240 654c132 76 288 76 420 0" stroke="#60FFF0" stroke-width="10" stroke-linecap="round" filter="url(#gl)"/>
+ <path d="M314 699c86 38 186 38 272 0" stroke="url(#gold)" stroke-width="12" stroke-linecap="round"/>
+ <circle cx="450" cy="689" r="14" fill="#EFFFFC" stroke="#35D8D8" stroke-width="8" filter="url(#gl)"/>
+</svg>

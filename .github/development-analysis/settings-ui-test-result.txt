@@ -1,0 +1,11 @@
+exit_code=1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 598, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 577, in main
+    assert_static_routes(source, fixtures)
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 93, in assert_static_routes
+    assert unrendered_routes == sorted(fixtures["routeOnlyToggles"]), f"Unexpected route-only toggles: {unrendered_routes}"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Unexpected route-only toggles: ['compactDock']

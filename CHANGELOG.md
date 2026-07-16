@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.6] - 2026-07-16
+
+### Fixed
+- Corrected the v4.13.5 Desktop Mode regression that restricted the command panel to the Leaflet map rectangle.
+- Desktop now uses the full visible operational workspace: below the top navigation/mission banners and down to the bottom of the browser workspace.
+- Saved and dragged positions are immediately re-clamped so the header, drag controls, help/close controls and tabs cannot remain behind top-page overlays.
+
+### Compatibility
+- Fixed panel chrome and active-tab internal scrolling are preserved.
+- Tablet Mode, iOS Mobile Mode, Economy Mode, all themes, settings and import/export contracts are unchanged.
+
 ## [4.13.5] - 2026-07-16
 
 ### Changed

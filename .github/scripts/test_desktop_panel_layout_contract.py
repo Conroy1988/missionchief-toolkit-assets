@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fixture-backed Desktop panel geometry and static layout contract."""
+# Fixture-backed Desktop operational-workspace geometry and static contract.
 from __future__ import annotations
 
 import json
@@ -15,8 +15,6 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURES = ROOT / ".github" / "fixtures" / "desktop-panel-layout-contract.json"
 
 
-# Geometry stays pure so viewport/map intersections and saved-position clamping
-# can be verified without constructing MissionChief or Leaflet DOM state.
 def extract_function(source: str, masked: str, name: str) -> str:
     matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", masked))
     if len(matches) != 1:
@@ -29,7 +27,7 @@ def extract_function(source: str, masked: str, name: str) -> str:
     return source[start:closing + 1]
 
 
-def assert_static_contract(source: str) -> None:
+def assert_static_contract(source: str, masked: str) -> None:
     required = [
         'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId}.mcms-open',
         'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active',
@@ -39,10 +37,14 @@ def assert_static_contract(source: str) -> None:
         'min-height: 0 !important',
         'html[data-mcms-tablet-active="true"] #${SCRIPT.panelId}',
         'html[data-mcms-mobile-active="true"] #${SCRIPT.panelId}',
-        'observeDesktopPanelMapArea(mapEl)',
+        'collectDesktopWorkspaceObstructions(viewport, mapEl, panel)',
+        'observeDesktopPanelWorkspace(mapEl)',
         'applyDesktopPanelSizing(panel, mapEl)',
         'clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds)',
-        "panel.dataset.mcmsDesktopFit",
+        'document.documentElement',
+        'document.body',
+        'panel.dataset.mcmsDesktopFit',
+        'minimumTopChrome',
     ]
     missing = [fragment for fragment in required if fragment not in source]
     assert not missing, f"Desktop layout contract fragments missing: {missing}"
@@ -58,23 +60,39 @@ def assert_static_contract(source: str) -> None:
     assert "overflow-x: hidden !important" in body
     assert "min-height: 0 !important" in body
 
+    resolver = extract_function(source, masked, "resolveDesktopPanelBounds")
+    assert "const areaBottom = viewportBottom;" in resolver
+    assert "const areaLeft = viewportLeft;" in resolver
+    assert "const areaRight = viewportRight;" in resolver
+    assert "Math.min(viewportBottom, mapRect.bottom)" not in resolver
+    assert "areaBottom = mapRect.bottom" not in resolver
+
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     fixtures = json.loads(FIXTURES.read_text(encoding="utf-8"))
-    assert_static_contract(source)
     masked = audit.mask_non_code(source)
+    assert_static_contract(source, masked)
     functions = "\n\n".join(
         extract_function(source, masked, name)
         for name in ["resolveDesktopPanelBounds", "clampDesktopPanelPoint"]
     )
-    harness = f""""use strict";
+    harness = f"""\"use strict\";
 const assert = require("node:assert/strict");
 const fixtures = {json.dumps(fixtures)};
 function getViewportMetrics() {{ throw new Error("Explicit fixture viewport expected"); }}
 {functions}
 for (const item of fixtures.boundsCases) {{
-  assert.deepEqual(resolveDesktopPanelBounds(item.mapRect, item.viewport, item.margin), item.expected, item.name);
+  assert.deepEqual(
+    resolveDesktopPanelBounds(
+      item.mapRect,
+      item.viewport,
+      item.margin,
+      item.obstructionRects || []
+    ),
+    item.expected,
+    item.name
+  );
 }}
 for (const item of fixtures.clampCases) {{
   assert.deepEqual(
@@ -83,7 +101,7 @@ for (const item of fixtures.clampCases) {{
     item.name
   );
 }}
-console.log(`Desktop panel layout contract passed: ${{fixtures.boundsCases.length}} bounds and ${{fixtures.clampCases.length}} saved-position cases.`);
+console.log(`Desktop operational-workspace contract passed: ${{fixtures.boundsCases.length}} bounds and ${{fixtures.clampCases.length}} saved-position cases.`);
 """
     with tempfile.TemporaryDirectory(prefix="mcms-desktop-layout-") as temp:
         path = Path(temp) / "contract.js"

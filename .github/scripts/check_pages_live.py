@@ -39,7 +39,7 @@ def fetch(url: str, timeout: int) -> tuple[int, str, bytes, str]:
 def audit(root: Path) -> dict[str, Any]:
     policy = load_json(root / ".github/pages-monitor-policy.json")
     dashboard = load_json(root / "status/release-dashboard.json")
-    version = str(dashboard.get("currentVersion") or dashboard.get("latestRelease", {}).get("version") or "")
+    version = str(dashboard.get("latestRelease", {}).get("version") or dashboard.get("currentVersion") or "")
     base_url = str(policy["baseUrl"])
     timeout = int(policy.get("timeoutSeconds", 25))
     failures: list[str] = []

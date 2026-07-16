@@ -102,23 +102,68 @@ It is built for busy accounts and large alliances where the standard map can bec
 
 ## Seven complete interface systems
 
-<img src="docs/media/theme-system-showcase.svg" alt="Seven equal MissionChief Map Command Toolkit interface themes" width="100%">
+**Map Command** is the Toolkit's original operational identity: clean cyan telemetry, restrained contrast and map-first readability. The six additional systems reinterpret the same controls through clearly recognisable visual worlds. None is treated as a flagship; every theme retains the same features, saved settings and responsive behaviour.
 
-Themes change the complete visual language of the command interface without changing its operational capabilities. No theme is treated as the primary or flagship option: each is a complete selectable system built around the same controls, saved settings and responsive behaviour.
+<div align="center">
 
-| Interface theme | Visual direction |
-|---|---|
-| **Map Command** | Restrained, high-contrast operational telemetry with cyan map intelligence. |
-| **Cyberpunk** | Neon cyan, warning yellow and magenta with angular futuristic panels. |
-| **Fallout 4** | Green phosphor terminal styling with worn industrial status presentation. |
-| **Umbrella** | Clinical black, white and red containment-system interface. |
-| **Factorio** | Heavy machinery, amber controls and mechanical status panels. |
-| **007 Intelligence** | Classified dossiers, gun-barrel geometry and champagne-gold controls. |
-| **Hyrule Command** | Royal-gold framing, parchment cartography, ancient-blue illumination and green energy. |
+<img src="docs/media/readme-hero.svg" alt="Map Command original operational interface" width="94%">
+
+<strong>MAP COMMAND</strong><br>
+<sub>The original Toolkit command language — focused, neutral and built around live map intelligence.</sub>
+
+</div>
+
+### Six distinct visual worlds
+
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+<a href="https://en.wikipedia.org/wiki/Cyberpunk_2077"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Cyberpunk_2077_box_art.jpg/250px-Cyberpunk_2077_box_art.jpg" alt="Cyberpunk 2077 reference artwork" height="270"></a><br>
+<strong>CYBERPUNK</strong><br>
+<sub>Neon cyan, warning yellow, magenta accents and angular high-density telemetry.</sub>
+</td>
+<td width="50%" align="center" valign="top">
+<a href="https://en.wikipedia.org/wiki/Fallout_4"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/7/70/Fallout_4_cover_art.jpg/250px-Fallout_4_cover_art.jpg" alt="Fallout 4 reference artwork" height="270"></a><br>
+<strong>FALLOUT 4</strong><br>
+<sub>Green phosphor readouts, aged terminal surfaces and industrial survival-interface styling.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center" valign="top">
+<a href="https://en.wikipedia.org/wiki/Umbrella_Corps"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Umbrella_Corps_cover_art.jpg/250px-Umbrella_Corps_cover_art.jpg" alt="Resident Evil Umbrella reference artwork" height="270"></a><br>
+<strong>UMBRELLA CONTAINMENT</strong><br>
+<sub>Clinical black, white and red with containment alerts, biohazard discipline and corporate control.</sub>
+</td>
+<td width="50%" align="center" valign="top">
+<a href="https://www.factorio.com/"><img src="https://cdn.akamai.steamstatic.com/steam/apps/427520/header.jpg" alt="Factorio official reference artwork" width="94%"></a><br>
+<strong>FACTORIO</strong><br>
+<sub>Industrial machinery, amber controls, production-line logic and mechanical status systems.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center" valign="top">
+<a href="https://en.wikipedia.org/wiki/No_Time_to_Die"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/f/fe/No_Time_to_Die_poster.jpg/250px-No_Time_to_Die_poster.jpg" alt="James Bond 007 reference artwork" height="270"></a><br>
+<strong>007 INTELLIGENCE</strong><br>
+<sub>Classified dossiers, gun-barrel geometry, restrained black surfaces and champagne-gold controls.</sub>
+</td>
+<td width="50%" align="center" valign="top">
+<a href="https://en.wikipedia.org/wiki/The_Legend_of_Zelda:_Tears_of_the_Kingdom"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/f/fb/The_Legend_of_Zelda_Tears_of_the_Kingdom_cover.jpg/250px-The_Legend_of_Zelda_Tears_of_the_Kingdom_cover.jpg" alt="The Legend of Zelda Hyrule reference artwork" height="270"></a><br>
+<strong>HYRULE COMMAND</strong><br>
+<sub>Royal gold, parchment cartography, ancient-blue illumination and luminous green energy.</sub>
+</td>
+</tr>
+</table>
 
 Interface themes and payout presentations are independently selectable. The Toolkit also includes GTA V, Vice City, Battlefield Bad Company, Scarface, Cyberpunk, Fallout-inspired, Biohazard Containment, Factorio, 007 Intelligence and Hyrule Quest Reward completion sequences.
 
 Inactive themes do not load their hosted media or run theme-specific animation logic. Their visual rules remain available for immediate theme switching, while Economy Mode and reduced-motion preferences suppress non-essential effects.
+
+<details>
+<summary><strong>Reference artwork and attribution</strong></summary>
+
+The gallery uses external reference artwork to communicate the visual inspiration behind each optional interface system. **Cyberpunk 2077**, **Fallout**, **Resident Evil / Umbrella**, **Factorio**, **James Bond / 007** and **The Legend of Zelda** remain trademarks and copyrighted properties of their respective owners. Their inclusion does not imply sponsorship, affiliation or endorsement. MissionChief Map Command Toolkit is an independent community userscript and does not redistribute the referenced games or media.
+
+</details>
 
 ## Install
 
@@ -255,7 +300,7 @@ status/             Human-readable and machine-readable release state
 
 MissionChief Map Command Toolkit is maintained by **Conroy1988** and distributed under the [MIT licence](LICENSE).
 
-MissionChief trademarks, game content and referenced third-party material remain the property of their respective owners. This is an independent community userscript and is not an official MissionChief product.
+MissionChief trademarks, game content and all referenced third-party franchises, artwork and material remain the property of their respective owners. This is an independent community userscript and is not an official MissionChief product.
 
 ---
 

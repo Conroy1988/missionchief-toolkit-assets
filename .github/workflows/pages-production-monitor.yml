@@ -9,6 +9,7 @@ on:
       - ".github/fixtures/pages-monitor-version-contract.json"
       - ".github/scripts/check_pages_live.py"
       - ".github/scripts/reconcile_pages_incident.sh"
+      - ".github/scripts/test_pages_monitor_reconciliation_contract.py"
       - ".github/scripts/test_pages_monitor_version_contract.py"
       - ".github/workflows/pages-production-monitor.yml"
       - "status/release-dashboard.json"
@@ -20,6 +21,7 @@ on:
       - ".github/fixtures/pages-monitor-version-contract.json"
       - ".github/scripts/check_pages_live.py"
       - ".github/scripts/reconcile_pages_incident.sh"
+      - ".github/scripts/test_pages_monitor_reconciliation_contract.py"
       - ".github/scripts/test_pages_monitor_version_contract.py"
       - ".github/workflows/pages-production-monitor.yml"
   workflow_run:
@@ -56,7 +58,9 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile .github/scripts/check_pages_live.py
+          python3 -m py_compile .github/scripts/test_pages_monitor_reconciliation_contract.py
           python3 -m py_compile .github/scripts/test_pages_monitor_version_contract.py
+          python3 .github/scripts/test_pages_monitor_reconciliation_contract.py
           python3 .github/scripts/test_pages_monitor_version_contract.py
           bash -n .github/scripts/reconcile_pages_incident.sh
 
@@ -86,7 +90,10 @@ jobs:
           retention-days: 30
 
       - name: Reconcile persistent incident
-        if: always() && github.event_name != 'pull_request'
+        if: >-
+          always() &&
+          github.event_name != 'pull_request' &&
+          (github.event_name != 'workflow_run' || github.event.workflow_run.event != 'pull_request')
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}

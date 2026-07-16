@@ -1,6 +1,49 @@
 {
   "boundsCases": [
     {
+      "name": "reported 1696x1277 desktop uses full operational workspace",
+      "mapRect": {
+        "left": 12,
+        "top": 42,
+        "right": 1112,
+        "bottom": 520
+      },
+      "viewport": {
+        "width": 1696,
+        "height": 1277,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "margin": 12,
+      "obstructionRects": [
+        {
+          "left": 0,
+          "top": 0,
+          "right": 1696,
+          "bottom": 45
+        },
+        {
+          "left": 14,
+          "top": 45,
+          "right": 1110,
+          "bottom": 70
+        },
+        {
+          "left": 1130,
+          "top": 48,
+          "right": 1684,
+          "bottom": 73
+        }
+      ],
+      "expected": {
+        "left": 12,
+        "right": 1684,
+        "top": 85,
+        "bottom": 1265,
+        "maxHeight": 1180
+      }
+    },
+    {
       "name": "standard map below navigation",
       "mapRect": {
         "left": 50,
@@ -15,62 +58,24 @@
         "offsetTop": 0
       },
       "margin": 12,
-      "expected": {
-        "left": 62,
-        "right": 1138,
-        "top": 112,
-        "bottom": 838,
-        "maxHeight": 726
-      }
-    },
-    {
-      "name": "map clipped above viewport",
-      "mapRect": {
-        "left": 0,
-        "top": -50,
-        "right": 1000,
-        "bottom": 700
-      },
-      "viewport": {
-        "width": 1000,
-        "height": 800,
-        "offsetLeft": 0,
-        "offsetTop": 0
-      },
-      "margin": 12,
+      "obstructionRects": [
+        {
+          "left": 0,
+          "top": 0,
+          "right": 1200,
+          "bottom": 60
+        }
+      ],
       "expected": {
         "left": 12,
-        "right": 988,
-        "top": 12,
-        "bottom": 688,
-        "maxHeight": 676
-      }
-    },
-    {
-      "name": "visual viewport offset",
-      "mapRect": {
-        "left": 10,
-        "top": 50,
-        "right": 990,
-        "bottom": 900
-      },
-      "viewport": {
-        "width": 1000,
-        "height": 600,
-        "offsetLeft": 0,
-        "offsetTop": 100
-      },
-      "margin": 12,
-      "expected": {
-        "left": 22,
-        "right": 978,
+        "right": 1188,
         "top": 112,
-        "bottom": 688,
-        "maxHeight": 576
+        "bottom": 888,
+        "maxHeight": 776
       }
     },
     {
-      "name": "short map still remains authoritative",
+      "name": "short map does not restrict lower workspace",
       "mapRect": {
         "left": 100,
         "top": 300,
@@ -84,16 +89,55 @@
         "offsetTop": 0
       },
       "margin": 12,
+      "obstructionRects": [
+        {
+          "left": 0,
+          "top": 0,
+          "right": 1000,
+          "bottom": 70
+        }
+      ],
       "expected": {
-        "left": 112,
-        "right": 888,
+        "left": 12,
+        "right": 988,
         "top": 312,
-        "bottom": 418,
-        "maxHeight": 106
+        "bottom": 788,
+        "maxHeight": 476
       }
     },
     {
-      "name": "invalid map falls back to viewport",
+      "name": "visual viewport offset and top overlay",
+      "mapRect": {
+        "left": 10,
+        "top": 50,
+        "right": 990,
+        "bottom": 900
+      },
+      "viewport": {
+        "width": 1000,
+        "height": 600,
+        "offsetLeft": 0,
+        "offsetTop": 100
+      },
+      "margin": 12,
+      "obstructionRects": [
+        {
+          "left": 0,
+          "top": 90,
+          "right": 1000,
+          "bottom": 140
+        }
+      ],
+      "expected": {
+        "left": 12,
+        "right": 988,
+        "top": 164,
+        "bottom": 688,
+        "maxHeight": 524
+      }
+    },
+    {
+      "name": "invalid map falls back to viewport below navigation",
       "mapRect": {
         "left": 100,
         "top": 100,
@@ -107,58 +151,90 @@
         "offsetTop": 0
       },
       "margin": 12,
+      "obstructionRects": [
+        {
+          "left": 0,
+          "top": 0,
+          "right": 1200,
+          "bottom": 64
+        }
+      ],
       "expected": {
         "left": 12,
         "right": 1188,
-        "top": 12,
+        "top": 76,
         "bottom": 888,
-        "maxHeight": 876
+        "maxHeight": 812
+      }
+    },
+    {
+      "name": "full-height map without overlay uses viewport margins",
+      "mapRect": {
+        "left": 0,
+        "top": 0,
+        "right": 1000,
+        "bottom": 800
+      },
+      "viewport": {
+        "width": 1000,
+        "height": 800,
+        "offsetLeft": 0,
+        "offsetTop": 0
+      },
+      "margin": 12,
+      "obstructionRects": [],
+      "expected": {
+        "left": 12,
+        "right": 988,
+        "top": 64,
+        "bottom": 788,
+        "maxHeight": 724
       }
     }
   ],
   "clampCases": [
     {
-      "name": "saved point above and left",
+      "name": "reported saved point behind banner is corrected",
       "point": {
-        "left": -200,
-        "top": -100
+        "left": 210,
+        "top": 48
       },
       "panel": {
-        "width": 318,
+        "width": 390,
         "height": 500
       },
       "bounds": {
-        "left": 62,
-        "right": 1138,
-        "top": 112,
-        "bottom": 838,
-        "maxHeight": 726
+        "left": 12,
+        "right": 1684,
+        "top": 85,
+        "bottom": 1265,
+        "maxHeight": 1180
       },
       "expected": {
-        "left": 62,
-        "top": 112
+        "left": 210,
+        "top": 85
       }
     },
     {
       "name": "saved point below and right",
       "point": {
-        "left": 1100,
-        "top": 800
+        "left": 1600,
+        "top": 1200
       },
       "panel": {
-        "width": 318,
+        "width": 390,
         "height": 500
       },
       "bounds": {
-        "left": 62,
-        "right": 1138,
-        "top": 112,
-        "bottom": 838,
-        "maxHeight": 726
+        "left": 12,
+        "right": 1684,
+        "top": 85,
+        "bottom": 1265,
+        "maxHeight": 1180
       },
       "expected": {
-        "left": 820,
-        "top": 338
+        "left": 1294,
+        "top": 765
       }
     },
     {
@@ -168,15 +244,15 @@
         "top": 180
       },
       "panel": {
-        "width": 318,
-        "height": 500
+        "width": 390,
+        "height": 700
       },
       "bounds": {
-        "left": 62,
-        "right": 1138,
-        "top": 112,
-        "bottom": 838,
-        "maxHeight": 726
+        "left": 12,
+        "right": 1684,
+        "top": 85,
+        "bottom": 1265,
+        "maxHeight": 1180
       },
       "expected": {
         "left": 300,
@@ -184,25 +260,25 @@
       }
     },
     {
-      "name": "panel larger than short map anchors to map origin",
+      "name": "oversized panel anchors to operational origin",
       "point": {
         "left": 400,
         "top": 350
       },
       "panel": {
-        "width": 900,
-        "height": 500
+        "width": 1900,
+        "height": 1500
       },
       "bounds": {
-        "left": 112,
-        "right": 888,
-        "top": 312,
-        "bottom": 418,
-        "maxHeight": 106
+        "left": 12,
+        "right": 1684,
+        "top": 85,
+        "bottom": 1265,
+        "maxHeight": 1180
       },
       "expected": {
-        "left": 112,
-        "top": 312
+        "left": 12,
+        "top": 85
       }
     }
   ]

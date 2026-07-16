@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.2
+// @version      4.13.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.2',
+        version: '4.13.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4132',
+        styleId: 'mc-map-command-toolkit-style-v4133',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -883,6 +883,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4130__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4131__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4132__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4133__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -926,7 +927,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.2',
+        guideVersion: '4.13.3',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -14598,6 +14599,62 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
     }
 
+    function normaliseMissionOverlayRecord(item, existing = {}) {
+        const credits = parseCreditValue(item.average_credits ?? item.averageCredits ?? item.average_credit);
+        const createdAt = parseMissionTimestamp(item.created_at ?? item.createdAt ?? item.date_created ?? item.dateCreated);
+        const allianceSharedAt = parseMissionTimestamp(item.alliance_shared_at ?? item.allianceSharedAt ?? item.shared_at ?? item.sharedAt);
+        const userId = item.user_id ?? item.userId;
+        const allianceId = item.alliance_id ?? item.allianceId;
+        const missionType = item.mission_type ?? item.missionType;
+        const filterId = item.filter_id ?? item.filterId;
+        const eventId = item.event_id ?? item.eventId;
+        const eventFlag = item.sw ?? item.sicherheitswache ?? item.security_watch ?? item.securityWatch ?? item.is_event ?? item.isEvent ?? item.event;
+        const eventName = item.event_name ?? item.eventName ?? item.event_title ?? item.eventTitle ?? item.event_caption ?? item.eventCaption;
+        const specialEventFlag = item.special_event ?? item.specialEvent ?? item.is_special_event ?? item.isSpecialEvent ?? item.global_event ?? item.globalEvent ?? item.developer_event ?? item.developerEvent;
+        const dateEndCalc = parseMissionTimestamp(item.date_end_calc ?? item.dateEndCalc);
+        const dateEnd = parseMissionTimestamp(item.date_end ?? item.dateEnd);
+        const dateNow = parseMissionTimestamp(item.date_now ?? item.dateNow);
+        const dateNowUpdatedAt = dateNow !== null ? Date.now() : null;
+        const rawVehicleState = item.vehicle_state ?? item.vehicleState;
+        const vehicleState = Number(rawVehicleState);
+        const missingTextKeys = ['missing_text', 'missingText', 'missing_text_short', 'missingTextShort'];
+        const missingTextKnown = missingTextKeys.some(key => Object.prototype.hasOwnProperty.call(item, key));
+        const missingText = item.missing_text ?? item.missingText ?? item.missing_text_short ?? item.missingTextShort ?? '';
+        const normalisedMissingText = normaliseMissingRequirementText(missingText);
+        const patientsCount = Number(item.patients_count ?? item.patientsCount);
+        const possiblePatientsCount = Number(item.possible_patients_count ?? item.possiblePatientsCount);
+        const prisonersCount = Number(item.prisoners_count ?? item.prisonersCount);
+        const possiblePrisonersCount = Number(item.possible_prisoners_count ?? item.possiblePrisonersCount);
+        const liveCurrentValue = Number(item.live_current_value ?? item.liveCurrentValue ?? item.current_value ?? item.currentValue);
+        const liveCurrentValueUpdatedAt = Date.now();
+
+        return {
+            ...existing,
+            ...(credits !== null ? { averageCredits: credits } : {}),
+            ...(createdAt !== null ? { createdAt } : {}),
+            ...(allianceSharedAt !== null ? { allianceSharedAt } : {}),
+            ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
+            ...(allianceId !== undefined ? { allianceId } : {}),
+            ...(missionType !== undefined && missionType !== null ? { missionType: String(missionType) } : {}),
+            ...(filterId !== undefined && filterId !== null ? { filterId: String(filterId) } : {}),
+            ...(eventId !== undefined && eventId !== null ? { eventId: String(eventId) } : {}),
+            ...(eventFlag !== undefined && eventFlag !== null ? { isEvent: normaliseMissionBoolean(eventFlag) } : {}),
+            ...(eventName !== undefined && eventName !== null && String(eventName).trim() ? { eventName: normaliseMissionCaption(eventName) } : {}),
+            ...(specialEventFlag !== undefined && specialEventFlag !== null ? { isSpecialEvent: normaliseMissionBoolean(specialEventFlag) } : {}),
+            ...(dateEndCalc !== null ? { dateEndCalc } : {}),
+            ...(dateEnd !== null ? { dateEnd } : {}),
+            ...(dateNow !== null ? { dateNow, dateNowUpdatedAt } : {}),
+            ...(Number.isFinite(vehicleState) ? { vehicleState } : {}),
+            ...(missingTextKnown ? { missingText: normalisedMissingText, missingTextKnown: true } : {}),
+            ...(Number.isFinite(patientsCount) ? { patientsCount } : {}),
+            ...(Number.isFinite(possiblePatientsCount) ? { possiblePatientsCount } : {}),
+            ...(Number.isFinite(prisonersCount) ? { prisonersCount } : {}),
+            ...(Number.isFinite(possiblePrisonersCount) ? { possiblePrisonersCount } : {}),
+            ...(Number.isFinite(liveCurrentValue) ? { liveCurrentValue, liveCurrentValueUpdatedAt } : {}),
+            ...(item.caption ? { caption: normaliseMissionCaption(item.caption) } : {})
+        };
+    }
+
     function captureMissionMarkerData(payload) {
         if (!payload) return;
         if (Array.isArray(payload)) {
@@ -14612,59 +14669,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (missionId === null) continue;
 
             const existing = missionOverlayData.get(missionId) || {};
-            const credits = parseCreditValue(item.average_credits ?? item.averageCredits ?? item.average_credit);
-            const createdAt = parseMissionTimestamp(item.created_at ?? item.createdAt ?? item.date_created ?? item.dateCreated);
-            const allianceSharedAt = parseMissionTimestamp(item.alliance_shared_at ?? item.allianceSharedAt ?? item.shared_at ?? item.sharedAt);
-            const userId = item.user_id ?? item.userId;
-            const allianceId = item.alliance_id ?? item.allianceId;
-            const missionType = item.mission_type ?? item.missionType;
-            const filterId = item.filter_id ?? item.filterId;
-            const eventId = item.event_id ?? item.eventId;
-            const eventFlag = item.sw ?? item.sicherheitswache ?? item.security_watch ?? item.securityWatch ?? item.is_event ?? item.isEvent ?? item.event;
-            const eventName = item.event_name ?? item.eventName ?? item.event_title ?? item.eventTitle ?? item.event_caption ?? item.eventCaption;
-            const specialEventFlag = item.special_event ?? item.specialEvent ?? item.is_special_event ?? item.isSpecialEvent ?? item.global_event ?? item.globalEvent ?? item.developer_event ?? item.developerEvent;
-            const dateEndCalc = parseMissionTimestamp(item.date_end_calc ?? item.dateEndCalc);
-            const dateEnd = parseMissionTimestamp(item.date_end ?? item.dateEnd);
-            const dateNow = parseMissionTimestamp(item.date_now ?? item.dateNow);
-            const dateNowUpdatedAt = dateNow !== null ? Date.now() : null;
-            const rawVehicleState = item.vehicle_state ?? item.vehicleState;
-            const vehicleState = Number(rawVehicleState);
-            const missingTextKeys = ['missing_text', 'missingText', 'missing_text_short', 'missingTextShort'];
-            const missingTextKnown = missingTextKeys.some(key => Object.prototype.hasOwnProperty.call(item, key));
-            const missingText = item.missing_text ?? item.missingText ?? item.missing_text_short ?? item.missingTextShort ?? '';
-            const normalisedMissingText = normaliseMissingRequirementText(missingText);
-            const patientsCount = Number(item.patients_count ?? item.patientsCount);
-            const possiblePatientsCount = Number(item.possible_patients_count ?? item.possiblePatientsCount);
-            const prisonersCount = Number(item.prisoners_count ?? item.prisonersCount);
-            const possiblePrisonersCount = Number(item.possible_prisoners_count ?? item.possiblePrisonersCount);
-            const liveCurrentValue = Number(item.live_current_value ?? item.liveCurrentValue ?? item.current_value ?? item.currentValue);
-            const liveCurrentValueUpdatedAt = Date.now();
-
-            setMissionOverlayRecord(missionId, {
-                ...existing,
-                ...(credits !== null ? { averageCredits: credits } : {}),
-                ...(createdAt !== null ? { createdAt } : {}),
-                ...(allianceSharedAt !== null ? { allianceSharedAt } : {}),
-                ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
-                ...(allianceId !== undefined ? { allianceId } : {}),
-                ...(missionType !== undefined && missionType !== null ? { missionType: String(missionType) } : {}),
-                ...(filterId !== undefined && filterId !== null ? { filterId: String(filterId) } : {}),
-                ...(eventId !== undefined && eventId !== null ? { eventId: String(eventId) } : {}),
-                ...(eventFlag !== undefined && eventFlag !== null ? { isEvent: normaliseMissionBoolean(eventFlag) } : {}),
-                ...(eventName !== undefined && eventName !== null && String(eventName).trim() ? { eventName: normaliseMissionCaption(eventName) } : {}),
-                ...(specialEventFlag !== undefined && specialEventFlag !== null ? { isSpecialEvent: normaliseMissionBoolean(specialEventFlag) } : {}),
-                ...(dateEndCalc !== null ? { dateEndCalc } : {}),
-                ...(dateEnd !== null ? { dateEnd } : {}),
-                ...(dateNow !== null ? { dateNow, dateNowUpdatedAt } : {}),
-                ...(Number.isFinite(vehicleState) ? { vehicleState } : {}),
-                ...(missingTextKnown ? { missingText: normalisedMissingText, missingTextKnown: true } : {}),
-                ...(Number.isFinite(patientsCount) ? { patientsCount } : {}),
-                ...(Number.isFinite(possiblePatientsCount) ? { possiblePatientsCount } : {}),
-                ...(Number.isFinite(prisonersCount) ? { prisonersCount } : {}),
-                ...(Number.isFinite(possiblePrisonersCount) ? { possiblePrisonersCount } : {}),
-                ...(Number.isFinite(liveCurrentValue) ? { liveCurrentValue, liveCurrentValueUpdatedAt } : {}),
-                ...(item.caption ? { caption: normaliseMissionCaption(item.caption) } : {})
-            });
+            setMissionOverlayRecord(missionId, normaliseMissionOverlayRecord(item, existing));
         }
     }
 

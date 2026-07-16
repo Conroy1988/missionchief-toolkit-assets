@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 760" role="img" aria-labelledby="title desc">
+  <title id="title">MissionChief Map Command Toolkit interface themes</title>
+  <desc id="desc">Seven equal visual theme cards for Map Command, Cyberpunk, Fallout 4, Umbrella, Factorio, 007 Intelligence and Hyrule Command.</desc>
+  <defs>
+    <linearGradient id="background" x1="50" y1="30" x2="1550" y2="730" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#070B12"/>
+      <stop offset=".55" stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#080B12"/>
+    </linearGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M42 0H0V42" fill="none" stroke="#FFFFFF" stroke-opacity=".028"/>
+    </pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity=".62"/>
+    </filter>
+    <filter id="smallGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="760" rx="34" fill="url(#background)"/>
+  <rect width="1600" height="760" rx="34" fill="url(#grid)"/>
+
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="54" y="58" fill="#F5FAFF" font-size="30" font-weight="800">Seven visual identities. One operational core.</text>
+    <text x="55" y="91" fill="#8198AB" font-size="17">Every theme carries the same tools, settings, responsive modes and verified release path.</text>
+
+    <g transform="translate(48 126)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#0A1727" stroke="#28A9FF" stroke-opacity=".62" stroke-width="2"/>
+      <path d="M1 70h358M1 181h358" stroke="#28A9FF" stroke-opacity=".12"/>
+      <g transform="translate(180 102)">
+        <circle r="55" fill="#071421" stroke="#28A9FF" stroke-width="3"/>
+        <circle r="33" fill="none" stroke="#77D7FF" stroke-width="2" stroke-dasharray="5 7"/>
+        <circle r="10" fill="#EAF7FF" stroke="#28A9FF" stroke-width="6" filter="url(#smallGlow)"/>
+        <path d="M0-72v24M0 48v24M-72 0h24M48 0h24" stroke="#77D7FF" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <text x="24" y="203" fill="#EAF7FF" font-size="22" font-weight="800">Map Command</text>
+      <text x="24" y="228" fill="#7EA7C3" font-size="14">Cyan operational telemetry</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#07111F"/><circle cx="24" cy="0" r="8" fill="#14233A"/><circle cx="48" cy="0" r="8" fill="#28A9FF"/><circle cx="72" cy="0" r="8" fill="#77D7FF"/><circle cx="96" cy="0" r="8" fill="#EAF7FF"/></g>
+    </g>
+
+    <g transform="translate(428 126)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#13051D" stroke="#FF2BD6" stroke-opacity=".68" stroke-width="2"/>
+      <path d="m18 31 324 0-38 31H56Z" fill="#FCEE09" opacity=".13"/>
+      <path d="M41 70h278l-39 112H80Z" fill="#0A1F2B" stroke="#00F0FF" stroke-width="2"/>
+      <path d="m84 163 44-55 38 36 52-78 54 44" fill="none" stroke="#00F0FF" stroke-width="5" stroke-linecap="square"/>
+      <path d="M75 91h70M234 145h52" stroke="#FCEE09" stroke-width="7"/>
+      <text x="24" y="203" fill="#FFFFFF" font-size="22" font-weight="800">Cyberpunk</text>
+      <text x="24" y="228" fill="#B98AC7" font-size="14">Neon angular signal language</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#09020F"/><circle cx="24" cy="0" r="8" fill="#1B0630"/><circle cx="48" cy="0" r="8" fill="#00F0FF"/><circle cx="72" cy="0" r="8" fill="#FCEE09"/><circle cx="96" cy="0" r="8" fill="#FF2BD6"/></g>
+    </g>
+
+    <g transform="translate(808 126)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#09130C" stroke="#76FF70" stroke-opacity=".6" stroke-width="2"/>
+      <rect x="34" y="40" width="292" height="137" rx="15" fill="#071008" stroke="#314D35" stroke-width="3"/>
+      <g fill="none" stroke="#76FF70" stroke-width="3" opacity=".86">
+        <path d="M58 74h119M58 101h78M58 128h154"/>
+        <path d="M241 66v83M226 81h30M226 107h30M226 133h30"/>
+      </g>
+      <text x="59" y="160" fill="#C7FF9B" font-size="14" font-weight="700">STATUS: OPERATIONAL</text>
+      <text x="24" y="203" fill="#C7FF9B" font-size="22" font-weight="800">Fallout 4</text>
+      <text x="24" y="228" fill="#729078" font-size="14">Phosphor terminal command</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#071008"/><circle cx="24" cy="0" r="8" fill="#102218"/><circle cx="48" cy="0" r="8" fill="#76FF70"/><circle cx="72" cy="0" r="8" fill="#C7FF9B"/><circle cx="96" cy="0" r="8" fill="#314D35"/></g>
+    </g>
+
+    <g transform="translate(1188 126)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#0B0D12" stroke="#ED1C24" stroke-opacity=".68" stroke-width="2"/>
+      <g transform="translate(180 103)">
+        <circle r="72" fill="#F1F3F5"/>
+        <circle r="68" fill="#07090D"/>
+        <path d="M0 0 0-65A65 65 0 0 1 56-32Z" fill="#ED1C24"/>
+        <path d="M0 0 56-32A65 65 0 0 1 56 32Z" fill="#F1F3F5"/>
+        <path d="M0 0 56 32A65 65 0 0 1 0 65Z" fill="#ED1C24"/>
+        <path d="M0 0 0 65A65 65 0 0 1-56 32Z" fill="#F1F3F5"/>
+        <path d="M0 0-56 32A65 65 0 0 1-56-32Z" fill="#ED1C24"/>
+        <path d="M0 0-56-32A65 65 0 0 1 0-65Z" fill="#F1F3F5"/>
+        <circle r="18" fill="#171B22"/>
+      </g>
+      <text x="24" y="203" fill="#F1F3F5" font-size="22" font-weight="800">Umbrella</text>
+      <text x="24" y="228" fill="#8D929B" font-size="14">Clinical containment interface</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#07090D"/><circle cx="24" cy="0" r="8" fill="#171B22"/><circle cx="48" cy="0" r="8" fill="#ED1C24"/><circle cx="72" cy="0" r="8" fill="#F1F3F5"/><circle cx="96" cy="0" r="8" fill="#818994"/></g>
+    </g>
+
+    <g transform="translate(238 411)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#1B1710" stroke="#E79227" stroke-opacity=".65" stroke-width="2"/>
+      <g transform="translate(180 102)">
+        <circle r="68" fill="#2F2920" stroke="#91806A" stroke-width="4"/>
+        <circle r="43" fill="none" stroke="#E79227" stroke-width="12" stroke-dasharray="18 12"/>
+        <circle r="20" fill="#FFD083" stroke="#6F4A1C" stroke-width="5"/>
+        <path d="M0-89v20M0 69v20M-89 0h20M69 0h20M-63-63l14 14M49 49l14 14M63-63 49-49M-49 49-63 63" stroke="#E79227" stroke-width="10" stroke-linecap="square"/>
+      </g>
+      <text x="24" y="203" fill="#FFD083" font-size="22" font-weight="800">Factorio</text>
+      <text x="24" y="228" fill="#A58D70" font-size="14">Industrial machinery controls</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#16130F"/><circle cx="24" cy="0" r="8" fill="#2F2920"/><circle cx="48" cy="0" r="8" fill="#E79227"/><circle cx="72" cy="0" r="8" fill="#FFD083"/><circle cx="96" cy="0" r="8" fill="#91806A"/></g>
+    </g>
+
+    <g transform="translate(618 411)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#090909" stroke="#D5B76D" stroke-opacity=".68" stroke-width="2"/>
+      <g transform="translate(180 102)" fill="none" stroke="#D5B76D">
+        <circle r="72" stroke-width="3"/>
+        <circle r="54" stroke-width="2" opacity=".7"/>
+        <circle r="36" stroke-width="2" opacity=".5"/>
+        <path d="M-74-52 74 52M-74 52 74-52" stroke-width="2" opacity=".28"/>
+        <path d="M0-72 18-42 0-18-18-42Z" fill="#F5E7BB" stroke="none"/>
+        <rect x="-44" y="10" width="88" height="41" rx="4" fill="#161616" stroke-width="2"/>
+      </g>
+      <text x="146" y="137" fill="#F5E7BB" font-size="12" font-weight="800" letter-spacing="3">CLASSIFIED</text>
+      <text x="24" y="203" fill="#F5E7BB" font-size="22" font-weight="800">007 Intelligence</text>
+      <text x="24" y="228" fill="#95886A" font-size="14">Dossier and gun-barrel styling</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#050505"/><circle cx="24" cy="0" r="8" fill="#161616"/><circle cx="48" cy="0" r="8" fill="#D5B76D"/><circle cx="72" cy="0" r="8" fill="#F5E7BB"/><circle cx="96" cy="0" r="8" fill="#8D1C23"/></g>
+    </g>
+
+    <g transform="translate(998 411)" filter="url(#shadow)">
+      <rect width="360" height="250" rx="26" fill="#0C1B17" stroke="#3DE7E5" stroke-opacity=".62" stroke-width="2"/>
+      <g transform="translate(180 103)">
+        <circle r="70" fill="#203C2B" stroke="#E8BF4D" stroke-width="4"/>
+        <circle r="53" fill="none" stroke="#3DE7E5" stroke-width="2" stroke-dasharray="4 8"/>
+        <path d="M0-47 18-16 52-15 26 7 35 41 0 22-35 41-26 7-52-15-18-16Z" fill="#E8BF4D"/>
+        <circle r="11" fill="#061319" stroke="#50EC8C" stroke-width="5" filter="url(#smallGlow)"/>
+      </g>
+      <text x="24" y="203" fill="#F5EBC4" font-size="22" font-weight="800">Hyrule Command</text>
+      <text x="24" y="228" fill="#79A995" font-size="14">Royal cartography and runes</text>
+      <g transform="translate(245 201)"><circle cx="0" cy="0" r="8" fill="#061319"/><circle cx="24" cy="0" r="8" fill="#203C2B"/><circle cx="48" cy="0" r="8" fill="#E8BF4D"/><circle cx="72" cy="0" r="8" fill="#3DE7E5"/><circle cx="96" cy="0" r="8" fill="#50EC8C"/></g>
+    </g>
+  </g>
+
+  <rect x="1" y="1" width="1598" height="758" rx="33" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="2"/>
+</svg>

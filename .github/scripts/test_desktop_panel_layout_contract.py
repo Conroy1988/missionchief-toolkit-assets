@@ -32,6 +32,7 @@ def assert_static_contract(source: str) -> None:
         'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId}.mcms-open',
         'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active',
         'flex-direction: column !important',
+        'box-sizing: border-box !important',
         'overflow-y: auto !important',
         'min-height: 0 !important',
         'html[data-mcms-tablet-active="true"] #${SCRIPT.panelId}',

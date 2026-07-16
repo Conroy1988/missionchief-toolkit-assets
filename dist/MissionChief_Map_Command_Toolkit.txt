@@ -2345,6 +2345,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.panelId}.mcms-open { display: block !important; }
         html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} {
+            box-sizing: border-box !important;
             max-height: var(--mcms-desktop-panel-max-height, calc(100vh - 24px)) !important;
             overflow: hidden !important;
             overscroll-behavior: contain !important;

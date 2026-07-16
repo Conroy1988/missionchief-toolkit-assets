@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.3
+// @version      4.13.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.3',
+        version: '4.13.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4133',
+        styleId: 'mc-map-command-toolkit-style-v4134',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -884,6 +884,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4131__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4132__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4133__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4134__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -927,7 +928,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.3',
+        guideVersion: '4.13.4',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1414,125 +1415,128 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         };
     }
 
+    function normaliseLoadedState(parsed, base = defaultState()) {
+        const merged = {
+            ...base,
+            ...parsed,
+            nudge: { ...base.nudge, ...(parsed.nudge || {}) },
+            visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+            quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+            coverage: { ...base.coverage, ...(parsed.coverage || {}) },
+            heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
+            stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
+            missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
+            resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+            transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+            majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+            missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+            payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+            discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+            financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+            autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
+            profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
+            bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
+        };
+
+        while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
+        while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
+
+        merged.uiTheme = normaliseUiTheme(merged.uiTheme);
+        merged.theme = normaliseTheme(merged.theme);
+        merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
+        if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
+        merged.activeTab = ['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(merged.activeTab) ? merged.activeTab : 'skins';
+        delete merged.fleetFilter;
+        merged.nudge.x = clamp(merged.nudge.x, -220, 220, 0);
+        merged.nudge.y = clamp(merged.nudge.y, -220, 220, 0);
+        merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
+        merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
+        merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
+        merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
+        merged.commandBarOpen = merged.commandBarOpen !== false;
+        merged.economyMode = Boolean(merged.economyMode);
+        merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+        merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
+        merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
+        merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
+        merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+        merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+        merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+        merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+        merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+        merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+        merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+        merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+        merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+        merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+        const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
+        merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
+            ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
+            : null;
+        merged.missionLockAudio = merged.missionLockAudio !== false;
+        merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
+        merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
+        merged.transportWatcher = merged.transportWatcher !== false;
+        merged.missionInspector = merged.missionInspector !== false;
+        merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
+        merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+        merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
+        merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
+        merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
+        merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
+        merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+        merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+        merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+        merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+        merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+        merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+        merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+        merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+        merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
+        merged.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(merged.discordReport.period) ? merged.discordReport.period : 'today';
+        merged.discordReport.customStart = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customStart || '')) ? String(merged.discordReport.customStart) : localIsoDate(new Date(Date.now() - 6 * 86400000));
+        merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
+        merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
+        merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
+        merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
+        merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
+        merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
+        merged.financialVault.enabled = merged.financialVault.enabled !== false;
+        merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
+        merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
+            ? 'all'
+            : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
+        delete merged.financialVault.autoSync;
+        delete merged.financialVault.benchmarkOptIn;
+        delete merged.financialVault.gatewayUrl;
+        delete merged.discordReport.includeBenchmark;
+        merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
+        merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
+        merged.bookmarks = merged.bookmarks.map(item => item ? {
+            ...item,
+            name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+            shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+            pinned: Boolean(item.pinned)
+        } : null);
+        merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
+
+        if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
+            merged.panelPosition = null;
+        } else {
+            merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
+        }
+
+        delete merged.requiresAttention;
+        return merged;
+    }
+
     function loadState() {
         const base = defaultState();
         const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
         if (!raw) return base;
 
         try {
-            const parsed = JSON.parse(raw);
-            const merged = {
-                ...base,
-                ...parsed,
-                nudge: { ...base.nudge, ...(parsed.nudge || {}) },
-                visibility: { ...base.visibility, ...(parsed.visibility || {}) },
-                quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
-                coverage: { ...base.coverage, ...(parsed.coverage || {}) },
-                heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
-                stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
-                missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
-                resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
-                transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
-                majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
-                missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
-                payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
-                discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
-                financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
-                autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
-                profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
-                bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
-            };
-
-            while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
-            while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
-
-            merged.uiTheme = normaliseUiTheme(merged.uiTheme);
-            merged.theme = normaliseTheme(merged.theme);
-            merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
-            if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
-            merged.activeTab = ['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(merged.activeTab) ? merged.activeTab : 'skins';
-            delete merged.fleetFilter;
-            merged.nudge.x = clamp(merged.nudge.x, -220, 220, 0);
-            merged.nudge.y = clamp(merged.nudge.y, -220, 220, 0);
-            merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
-            merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
-            merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
-            merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
-            merged.commandBarOpen = merged.commandBarOpen !== false;
-            merged.economyMode = Boolean(merged.economyMode);
-            merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
-            merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
-            merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
-            merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
-            merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
-            merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
-            merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
-            merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
-            merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
-            merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
-            merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
-            merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
-            merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
-            merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
-            const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
-            merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
-                ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
-                : null;
-            merged.missionLockAudio = merged.missionLockAudio !== false;
-            merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
-            merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
-            merged.transportWatcher = merged.transportWatcher !== false;
-            merged.missionInspector = merged.missionInspector !== false;
-            merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
-            merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
-            merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
-            merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
-            merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
-            merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
-            merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
-            merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
-            merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
-            merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
-            merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
-            merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
-            merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
-            merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
-            merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
-            merged.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(merged.discordReport.period) ? merged.discordReport.period : 'today';
-            merged.discordReport.customStart = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customStart || '')) ? String(merged.discordReport.customStart) : localIsoDate(new Date(Date.now() - 6 * 86400000));
-            merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
-            merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
-            merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
-            merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
-            merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
-            merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
-            merged.financialVault.enabled = merged.financialVault.enabled !== false;
-            merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
-            merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
-                ? 'all'
-                : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
-            delete merged.financialVault.autoSync;
-            delete merged.financialVault.benchmarkOptIn;
-            delete merged.financialVault.gatewayUrl;
-            delete merged.discordReport.includeBenchmark;
-            merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
-            merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
-            merged.bookmarks = merged.bookmarks.map(item => item ? {
-                ...item,
-                name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
-                shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
-                pinned: Boolean(item.pinned)
-            } : null);
-            merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
-
-            if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
-                merged.panelPosition = null;
-            } else {
-                merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
-            }
-
-            delete merged.requiresAttention;
-            return merged;
+            return normaliseLoadedState(JSON.parse(raw), base);
         } catch (err) {
             return base;
         }

@@ -21,6 +21,7 @@ FIXTURES = ROOT / ".github" / "fixtures" / "settings-ui-contract.json"
 
 FUNCTION_NAMES = [
     "defaultState",
+    "normaliseLoadedState",
     "loadState",
     "saveState",
     "getLegacyTheme",
@@ -322,6 +323,17 @@ function testStateMigration() {{
     resetEnvironment();
     assertDefaultShape(loadState());
 
+    const directInput = JSON.parse(JSON.stringify(fixtures.legacyMigration));
+    const directInputBefore = JSON.stringify(directInput);
+    const directBase = defaultState();
+    const directBaseBefore = JSON.stringify(directBase);
+    const directMigrated = normaliseLoadedState(directInput, directBase);
+    assert.equal(JSON.stringify(directInput), directInputBefore, "normalization must not mutate parsed settings");
+    assert.equal(JSON.stringify(directBase), directBaseBefore, "normalization must not mutate default settings");
+    assert.equal(directMigrated.activeTab, "resources");
+    assert.equal(directMigrated.visibility.buildings, true);
+    assert.equal(directMigrated.payoutFlash.template, "gta5");
+
     localStorage.setItem(SCRIPT.storageState, "{{not-json");
     localStorage.setItem(SCRIPT.oldStorageKeys[0], JSON.stringify(fixtures.modernState));
     assertDefaultShape(loadState());
@@ -329,6 +341,7 @@ function testStateMigration() {{
     resetEnvironment();
     localStorage.setItem(SCRIPT.oldStorageKeys[0], JSON.stringify(fixtures.legacyMigration));
     const migrated = loadState();
+    assert.deepEqual(migrated, directMigrated, "loadState must preserve direct normalization output");
     assert.equal(migrated.uiTheme, "mapCommand");
     assert.equal(migrated.theme, "default");
     assert.equal(migrated.position, "bl");
@@ -566,7 +579,7 @@ async function testSettingContracts() {{
     await testToggleContracts();
     await testActionContracts();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: defaults, migrations, import rollback, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

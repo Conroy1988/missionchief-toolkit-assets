@@ -35,6 +35,7 @@ FUNCTION_NAMES = [
     "parseCreditValue",
     "normaliseMissionBoolean",
     "parseMissionTimestamp",
+    "normaliseMissionOverlayRecord",
     "captureMissionMarkerData",
     "readBalancedObject",
     "captureMissionMarkerDataFromSource",
@@ -167,6 +168,65 @@ function assertSubset(actual, expected, label) {
     }
 }
 
+function testOverlayRecordNormalisation() {
+    resetState();
+    const originalNow = Date.now;
+    Date.now = () => fixtures.fixedNow;
+    try {
+        const existing = {
+            preservedField: "preserved",
+            averageCredits: 321,
+            missingText: "EXISTING REQUIREMENT",
+            missingTextKnown: true
+        };
+        const existingCopy = { ...existing };
+        const normalised = normaliseMissionOverlayRecord(fixtures.personal.payload, existing);
+        assert.deepEqual(existing, existingCopy, "normalisation must not mutate the existing overlay record");
+        assertSubset(normalised, {
+            preservedField: "preserved",
+            averageCredits: fixtures.personal.expected.averageCredits,
+            createdAt: fixtures.personal.expected.createdAt,
+            userId: fixtures.personal.expected.userId,
+            missionType: fixtures.personal.expected.missionType,
+            filterId: fixtures.personal.expected.filterId,
+            dateEndCalc: fixtures.personal.expected.dateEndCalc,
+            dateEnd: fixtures.personal.expected.dateEnd,
+            dateNow: fixtures.personal.expected.dateNow,
+            dateNowUpdatedAt: fixtures.fixedNow,
+            vehicleState: fixtures.personal.expected.vehicleState,
+            patientsCount: fixtures.personal.expected.patientsCount,
+            possiblePatientsCount: fixtures.personal.expected.possiblePatientsCount,
+            prisonersCount: fixtures.personal.expected.prisonersCount,
+            possiblePrisonersCount: fixtures.personal.expected.possiblePrisonersCount,
+            liveCurrentValue: fixtures.personal.expected.liveCurrentValue,
+            liveCurrentValueUpdatedAt: fixtures.fixedNow,
+            caption: fixtures.personal.expected.caption,
+            missingTextKnown: true
+        }, "normalised");
+        assert.equal(normalised.missingText, "VEHICLES: 1 Pump, 1 Aerial • PATIENTS: 2");
+
+        const partial = normaliseMissionOverlayRecord(fixtures.personal.partialUpdate.data, normalised);
+        assert.equal(partial.caption, "Warehouse Fire - Updated");
+        assert.equal(partial.liveCurrentValue, 81);
+        assert.equal(partial.averageCredits, fixtures.personal.expected.averageCredits);
+        assert.equal(partial.missingText, normalised.missingText);
+        assert.equal(partial.preservedField, "preserved");
+
+        const invalidNumbers = normaliseMissionOverlayRecord({
+            average_credits: "not credits",
+            vehicle_state: "not a number",
+            patients_count: "unknown",
+            possible_patients_count: "unknown",
+            prisoners_count: "unknown",
+            possible_prisoners_count: "unknown",
+            live_current_value: "unknown"
+        }, existing);
+        assert.deepEqual(invalidNumbers, existing, "invalid optional values must preserve the existing record");
+    } finally {
+        Date.now = originalNow;
+    }
+}
+
 function testCaptureAndClassification() {
     resetState();
     const originalNow = Date.now;
@@ -295,10 +355,11 @@ function testSnapshotCoordinatesAndCacheInvalidation() {
     }
 }
 
+testOverlayRecordNormalisation();
 testCaptureAndClassification();
 testInlineAndDocumentCapture();
 testSnapshotCoordinatesAndCacheInvalidation();
-console.log("Mission marker ingestion contract passed: payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.");
+console.log("Mission marker ingestion contract passed: direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.");
 '''
     return template.replace("__FIXTURES__", json.dumps(fixtures, ensure_ascii=False)).replace("__FUNCTIONS__", functions)
 

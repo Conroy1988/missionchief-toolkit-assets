@@ -1,0 +1,1206 @@
+### base panel CSS · source lines 2314-2380
+  2314:         }
+  2315:         #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-quick { background: rgba(16,78,138,.86) !important; border-color: rgba(86,169,255,.68) !important; }
+  2316:         #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom { background: rgba(106,80,10,.88) !important; border-color: rgba(255,213,79,.70) !important; }
+  2317: 
+  2318:         #${SCRIPT.panelId} {
+  2319:             display: none !important;
+  2320:             position: fixed !important;
+  2321:             width: 318px !important;
+  2322:             max-width: calc(100vw - 24px) !important;
+  2323:             padding: 9px !important;
+  2324:             border-radius: 14px !important;
+  2325:             border: 1px solid rgba(255,255,255,.18) !important;
+  2326:             background: rgba(10,14,20,.94) !important;
+  2327:             color: #e9eef5 !important;
+  2328:             box-shadow: 0 10px 28px rgba(0,0,0,.46) !important;
+  2329:             backdrop-filter: blur(9px) !important;
+  2330:             max-height: calc(100vh - 24px) !important;
+  2331:             overflow-y: auto !important;
+  2332:             overflow-x: hidden !important;
+  2333:             scrollbar-width: thin !important;
+  2334:             left: 12px;
+  2335:             top: 12px;
+  2336:             right: auto;
+  2337:             bottom: auto;
+  2338:             z-index: 981 !important;
+  2339:             user-select: none !important;
+  2340:             font-size: 11px !important;
+  2341:             line-height: 1.15 !important;
+  2342:         }
+  2343:         #${SCRIPT.panelId}.mcms-open { display: block !important; }
+  2344:         #${SCRIPT.panelId}.mcms-dragging { opacity: .96 !important; cursor: grabbing !important; }
+  2345: 
+  2346:         #${SCRIPT.panelId} .mcms-header {
+  2347:             display: grid !important; grid-template-columns: minmax(0, 1fr) 24px 24px 24px !important; align-items: center !important; gap: 7px !important;
+  2348:             margin: 0 0 8px 0 !important; padding: 0 0 7px 0 !important; border-bottom: 1px solid rgba(255,255,255,.12) !important; overflow: hidden !important;
+  2349:         }
+  2350:         #${SCRIPT.panelId} .mcms-drag-handle {
+  2351:             min-width: 0 !important; cursor: grab !important; touch-action: none !important; user-select: none !important;
+  2352:             border-radius: 9px !important; padding: 4px 6px !important; background: rgba(255,255,255,.055) !important; border: 1px solid rgba(255,255,255,.075) !important;
+  2353:         }
+  2354:         #${SCRIPT.panelId} .mcms-drag-handle:hover { background: rgba(255,255,255,.10) !important; }
+  2355:         #${SCRIPT.panelId}.mcms-dragging .mcms-drag-handle { cursor: grabbing !important; }
+  2356:         #${SCRIPT.panelId} .mcms-title { display: block !important; font-size: 13px !important; line-height: 1.1 !important; font-weight: 900 !important; color: #f2f6ff !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  2357:         #${SCRIPT.panelId} .mcms-subtitle { display: block !important; margin-top: 2px !important; font-size: 9px !important; line-height: 1.15 !important; color: rgba(233,238,245,.64) !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  2358:         #${SCRIPT.panelId} .mcms-close, #${SCRIPT.panelId} .mcms-reset-panel, #${SCRIPT.panelId} .mcms-help-button {
+  2359:             width: 24px !important; height: 24px !important; border: 0 !important; border-radius: 8px !important; background: rgba(255,255,255,.10) !important;
+  2360:             color: rgba(255,255,255,.88) !important; cursor: pointer !important; font-size: 15px !important; line-height: 24px !important; text-align: center !important; padding: 0 !important;
+  2361:         }
+  2362:         #${SCRIPT.panelId} .mcms-close:hover, #${SCRIPT.panelId} .mcms-reset-panel:hover, #${SCRIPT.panelId} .mcms-help-button:hover, #${SCRIPT.panelId} .mcms-help-button:focus-visible { background: rgba(58,174,232,.28) !important; color:#fff !important; }
+  2363:         #${SCRIPT.panelId} .mcms-tabs { display: grid !important; grid-template-columns: repeat(4, minmax(0,1fr)) !important; gap: 5px !important; margin-bottom: 8px !important; }
+  2364:         #${SCRIPT.panelId} .mcms-tab-btn { height: 26px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 8px !important; background: rgba(255,255,255,.06) !important; color: rgba(255,255,255,.78) !important; cursor: pointer !important; font-size: 9px !important; line-height: 1 !important; font-weight: 900 !important; padding: 0 !important; overflow: hidden !important; }
+  2365:         #${SCRIPT.panelId} .mcms-tab-btn.mcms-active, #${SCRIPT.panelId} .mcms-theme-btn.mcms-active, #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on, #${SCRIPT.panelId} .mcms-position-btn.mcms-active, #${SCRIPT.panelId} .mcms-pin-btn.mcms-on { background: rgba(25,118,210,.42) !important; border-color: rgba(120,190,255,.78) !important; color: #fff !important; }
+  2366:         #${SCRIPT.panelId} .mcms-tab-panel { display: none !important; }
+  2367:         #${SCRIPT.panelId} .mcms-tab-panel.mcms-active { display: block !important; }
+  2368:         #${SCRIPT.panelId} .mcms-grid-2 { display: grid !important; grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 7px !important; width: 100% !important; min-width: 0 !important; overflow: hidden !important; }
+  2369:         #${SCRIPT.panelId} .mcms-theme-btn, #${SCRIPT.panelId} .mcms-toggle-btn, #${SCRIPT.panelId} .mcms-place-main {
+  2370:             width: 100% !important; min-width: 0 !important; height: 42px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 10px !important;
+  2371:             background: rgba(255,255,255,.065) !important; color: #eef4ff !important; padding: 6px !important; cursor: pointer !important; text-align: left !important;
+  2372:             display: grid !important; grid-template-columns: 20px minmax(0,1fr) !important; align-items: center !important; gap: 6px !important; overflow: hidden !important;
+  2373:         }
+  2374:         #${SCRIPT.panelId} .mcms-theme-btn:hover, #${SCRIPT.panelId} .mcms-toggle-btn:hover, #${SCRIPT.panelId} .mcms-place-main:hover { background: rgba(255,255,255,.14) !important; border-color: rgba(255,255,255,.30) !important; }
+  2375:         #${SCRIPT.panelId} .mcms-iconbox { width: 20px !important; height: 20px !important; min-width: 20px !important; border-radius: 7px !important; background: rgba(255,255,255,.11) !important; display: flex !important; align-items: center !important; justify-content: center !important; color: rgba(255,255,255,.86) !important; font-size: 10px !important; line-height: 1 !important; font-weight: 900 !important; overflow: hidden !important; }
+  2376:         #${SCRIPT.panelId} .mcms-text { display: block !important; min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; }
+  2377:         #${SCRIPT.panelId} .mcms-label { display: block !important; width: 100% !important; color: #f4f7ff !important; font-size: 10.5px !important; line-height: 1.05 !important; font-weight: 900 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+  2378:         #${SCRIPT.panelId} .mcms-pill { display: inline-block !important; margin-top: 4px !important; max-width: 78px !important; padding: 1px 5px !important; border-radius: 999px !important; background: rgba(255,255,255,.13) !important; color: rgba(255,255,255,.82) !important; font-size: 7.5px !important; line-height: 1.05 !important; font-weight: 900 !important; white-space: nowrap !important; overflow: hidden !important; }
+  2379:         #${SCRIPT.panelId} .mcms-section-label { margin: 9px 0 6px 0 !important; color: rgba(233,238,245,.62) !important; font-size: 9px !important; line-height: 1 !important; font-weight: 900 !important; letter-spacing: .55px !important; text-transform: uppercase !important; }
+  2380:         #${SCRIPT.panelId} .mcms-row { display: grid !important; grid-template-columns: minmax(0,1fr) 100px !important; gap: 7px !important; align-items: center !important; margin-bottom: 7px !important; }
+
+### layout and device functions · source lines 13990-14422
+ 13990:     function currentUserIdCached() {
+ 13991:         const now = Date.now();
+ 13992:         if (cachedUserId !== null || now - cachedUserIdReadAt < 1000) return cachedUserId;
+ 13993:         cachedUserIdReadAt = now;
+ 13994:         try {
+ 13995:             const value = pageWindow.user_id;
+ 13996:             cachedUserId = value === undefined || value === null || value === '' ? null : String(value);
+ 13997:         } catch (err) {
+ 13998:             cachedUserId = null;
+ 13999:         }
+ 14000:         return cachedUserId;
+ 14001:     }
+ 14002: 
+ 14003:     function schedulePanelPosition(useSavedPosition = true, delay = 80) {
+ 14004:         runtimeClearTimeout(panelPositionTimer);
+ 14005:         panelPositionTimer = runtimeSetTimeout(() => positionPanelOverlay(useSavedPosition), Math.max(0, Number(delay) || 0));
+ 14006:     }
+ 14007: 
+ 14008:     function setInnerHtmlIfChanged(element, html, signature = html) {
+ 14009:         if (!element) return false;
+ 14010:         const nextSignature = String(signature);
+ 14011:         if (element.__mcmsRenderSignature === nextSignature) return false;
+ 14012:         element.__mcmsRenderSignature = nextSignature;
+ 14013:         element.innerHTML = html;
+ 14014:         return true;
+ 14015:     }
+ 14016: 
+ 14017:     function invalidateMapElementCache() {
+ 14018:         cachedMapElementCheckedAt = 0;
+ 14019:         if (cachedMapElement && !cachedMapElement.isConnected) cachedMapElement = null;
+ 14020:     }
+ 14021: 
+ 14022:     function getLargestLeafletMap() {
+ 14023:         const now = Date.now();
+ 14024:         if (cachedMapElement?.isConnected && now - cachedMapElementCheckedAt <= MAP_ELEMENT_CACHE_MS) return cachedMapElement;
+ 14025:         if (cachedMapElement?.isConnected && isVisible(cachedMapElement)) {
+ 14026:             cachedMapElementCheckedAt = now;
+ 14027:             return cachedMapElement;
+ 14028:         }
+ 14029:         const candidates = Array.from(document.querySelectorAll('.leaflet-container')).filter(isVisible);
+ 14030:         let largest = null;
+ 14031:         let largestArea = 0;
+ 14032:         for (const candidate of candidates) {
+ 14033:             const rect = candidate.getBoundingClientRect();
+ 14034:             const area = rect.width * rect.height;
+ 14035:             if (area > largestArea) {
+ 14036:                 largest = candidate;
+ 14037:                 largestArea = area;
+ 14038:             }
+ 14039:         }
+ 14040:         cachedMapElement = largest;
+ 14041:         cachedMapElementCheckedAt = now;
+ 14042:         return largest;
+ 14043:     }
+ 14044: 
+ 14045:     function getViewportMetrics() {
+ 14046:         const viewport = pageWindow.visualViewport;
+ 14047:         const width = Math.max(1, Number(viewport?.width) || Number(pageWindow.innerWidth) || Number(document.documentElement.clientWidth) || 1);
+ 14048:         const height = Math.max(1, Number(viewport?.height) || Number(pageWindow.innerHeight) || Number(document.documentElement.clientHeight) || 1);
+ 14049:         const offsetLeft = Number.isFinite(Number(viewport?.offsetLeft)) ? Number(viewport.offsetLeft) : 0;
+ 14050:         const offsetTop = Number.isFinite(Number(viewport?.offsetTop)) ? Number(viewport.offsetTop) : 0;
+ 14051:         return {
+ 14052:             width,
+ 14053:             height,
+ 14054:             offsetLeft,
+ 14055:             offsetTop,
+ 14056:             orientation: width >= height ? 'landscape' : 'portrait'
+ 14057:         };
+ 14058:     }
+ 14059: 
+ 14060:     function hasCoarsePointer() {
+ 14061:         try {
+ 14062:             return Boolean(
+ 14063:                 pageWindow.matchMedia?.('(pointer: coarse)')?.matches ||
+ 14064:                 pageWindow.matchMedia?.('(any-pointer: coarse)')?.matches
+ 14065:             );
+ 14066:         } catch (err) {
+ 14067:             return false;
+ 14068:         }
+ 14069:     }
+ 14070: 
+ 14071:     function getIosBrowserSignals() {
+ 14072:         const nav = pageWindow.navigator || navigator;
+ 14073:         const userAgent = String(nav?.userAgent || '');
+ 14074:         const platform = String(nav?.platform || '');
+ 14075:         const touchPoints = Number(nav?.maxTouchPoints || 0);
+ 14076:         const { width, height } = getViewportMetrics();
+ 14077:         const shortestSide = Math.min(width, height);
+ 14078:         const iosHandheld = /iPhone|iPod/i.test(userAgent) || (/MacIntel/i.test(platform) && touchPoints > 1 && shortestSide < 500);
+ 14079:         const appleWebKit = /AppleWebKit/i.test(userAgent);
+ 14080:         const alternateIosBrowser = /CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|YaBrowser|GSA/i.test(userAgent);
+ 14081:         const safari = appleWebKit && !alternateIosBrowser;
+ 14082:         return { iosHandheld, safari, appleWebKit, touchPoints };
+ 14083:     }
+ 14084: 
+ 14085:     function autoDetectMobileMode() {
+ 14086:         const { width, height } = getViewportMetrics();
+ 14087:         const shortestSide = Math.min(width, height);
+ 14088:         const longestSide = Math.max(width, height);
+ 14089:         const signals = getIosBrowserSignals();
+ 14090:         return signals.iosHandheld && signals.safari && signals.touchPoints > 0 && shortestSide < 500 && longestSide <= 1100;
+ 14091:     }
+ 14092: 
+ 14093:     function autoDetectTabletMode() {
+ 14094:         const { width, height } = getViewportMetrics();
+ 14095:         const shortestSide = Math.min(width, height);
+ 14096:         const longestSide = Math.max(width, height);
+ 14097:         const touchPoints = Number(pageWindow.navigator?.maxTouchPoints || navigator.maxTouchPoints || 0);
+ 14098:         return touchPoints > 0 && hasCoarsePointer() && shortestSide >= 500 && longestSide <= 1600;
+ 14099:     }
+ 14100: 
+ 14101:     function resolveDeviceLayout() {
+ 14102:         if (state.mobileMode === 'on') return 'mobile';
+ 14103:         if (state.tabletMode === 'on') return 'tablet';
+ 14104:         if (state.mobileMode !== 'off' && autoDetectMobileMode()) return 'mobile';
+ 14105:         if (state.tabletMode !== 'off' && autoDetectTabletMode()) return 'tablet';
+ 14106:         return 'desktop';
+ 14107:     }
+ 14108: 
+ 14109:     function resolveTabletMode(layout = activeDeviceLayout) {
+ 14110:         return layout === 'tablet';
+ 14111:     }
+ 14112: 
+ 14113:     function resolveMobileMode(layout = activeDeviceLayout) {
+ 14114:         return layout === 'mobile';
+ 14115:     }
+ 14116: 
+ 14117:     function isTouchLayoutActive() {
+ 14118:         return tabletModeActive || mobileModeActive;
+ 14119:     }
+ 14120: 
+ 14121:     function deviceLayoutStatusText() {
+ 14122:         const { width, height, orientation } = getViewportMetrics();
+ 14123:         const mobileLabel = state.mobileMode === 'auto' ? 'Mobile auto' : state.mobileMode === 'on' ? 'Mobile forced on' : 'Mobile forced off';
+ 14124:         const tabletLabel = state.tabletMode === 'auto' ? 'Tablet auto' : state.tabletMode === 'on' ? 'Tablet forced on' : 'Tablet forced off';
+ 14125:         const activeLabel = activeDeviceLayout === 'mobile' ? 'iOS mobile layout active' : activeDeviceLayout === 'tablet' ? 'tablet layout active' : 'desktop layout active';
+ 14126:         return `${activeLabel} · ${mobileLabel} · ${tabletLabel} · ${Math.round(width)}×${Math.round(height)} ${orientation}`;
+ 14127:     }
+ 14128: 
+ 14129:     function tabletModeStatusText() {
+ 14130:         return deviceLayoutStatusText();
+ 14131:     }
+ 14132: 
+ 14133:     function refreshTabletModeUi(panel = document.getElementById(SCRIPT.panelId)) {
+ 14134:         if (!panel) return;
+ 14135:         panel.classList.toggle('mcms-tablet-active', tabletModeActive);
+ 14136:         panel.classList.toggle('mcms-mobile-active', mobileModeActive);
+ 14137:         const tabletSelect = panel.querySelector('[data-setting="tablet-mode"]');
+ 14138:         const mobileSelect = panel.querySelector('[data-setting="mobile-mode"]');
+ 14139:         if (tabletSelect && document.activeElement !== tabletSelect) tabletSelect.value = state.tabletMode;
+ 14140:         if (mobileSelect && document.activeElement !== mobileSelect) mobileSelect.value = state.mobileMode;
+ 14141:         const status = panel.querySelector('[data-device-layout-status], [data-tablet-status]');
+ 14142:         if (status) status.textContent = tabletModeStatusText();
+ 14143:         const dragHandle = panel.querySelector('.mcms-drag-handle');
+ 14144:         const title = panel.querySelector('.mcms-title');
+ 14145:         const subtitle = panel.querySelector('.mcms-subtitle');
+ 14146:         const touchLayout = isTouchLayoutActive();
+ 14147:         const layoutName = mobileModeActive ? 'MOBILE COMMAND PANEL' : tabletModeActive ? 'TABLET COMMAND PANEL' : '☰ DRAG MENU HERE';
+ 14148:         const layoutHelp = mobileModeActive
+ 14149:             ? 'iPhone Safari layout · swipe vertically · close with ×'
+ 14150:             : tabletModeActive
+ 14151:                 ? 'Touch-optimised layout · scroll vertically · close with ×'
+ 14152:                 : 'Hold left-click on this title area. Position saves.';
+ 14153:         if (dragHandle) dragHandle.title = touchLayout ? `${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel` : 'Hold left-click and drag this bar to move the menu';
+ 14154:         if (title) title.textContent = layoutName;
+ 14155:         if (subtitle) subtitle.textContent = layoutHelp;
+ 14156:     }
+ 14157: 
+ 14158:     function clearTabletDockSizing(control = document.getElementById(SCRIPT.controlId)) {
+ 14159:         if (control) {
+ 14160:             control.style.removeProperty('--mcms-tablet-dock-width');
+ 14161:             control.style.removeProperty('--mcms-tablet-filter-columns');
+ 14162:             control.style.removeProperty('--mcms-tablet-pin-columns');
+ 14163:             control.style.removeProperty('--mcms-tablet-filter-height');
+ 14164:             control.style.removeProperty('--mcms-tablet-pin-height');
+ 14165:             control.style.removeProperty('--mcms-mobile-dock-width');
+ 14166:             control.style.removeProperty('--mcms-mobile-columns');
+ 14167:             control.style.removeProperty('--mcms-mobile-pin-columns');
+ 14168:             control.style.removeProperty('--mcms-mobile-filter-height');
+ 14169:             control.style.removeProperty('--mcms-mobile-pin-height');
+ 14170:             delete control.dataset.mcmsTabletFit;
+ 14171:             delete control.dataset.mcmsMobileFit;
+ 14172:         }
+ 14173:         if (tabletDockResizeObserver && tabletDockObservedMap) {
+ 14174:             try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
+ 14175:             tabletDockObservedMap = null;
+ 14176:         }
+ 14177:     }
+ 14178: 
+ 14179:     function observeTabletMapArea(mapEl) {
+ 14180:         if (!isTouchLayoutActive() || !mapEl) return;
+ 14181:         const ResizeObserverCtor = pageWindow.ResizeObserver;
+ 14182:         if (typeof ResizeObserverCtor !== 'function') return;
+ 14183: 
+ 14184:         if (!tabletDockResizeObserver) {
+ 14185:             tabletDockResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(entries => {
+ 14186:                 if (!isTouchLayoutActive() || runtime.destroyed) return;
+ 14187:                 if (entries.some(entry => entry?.target === tabletDockObservedMap)) fitControlToMap();
+ 14188:             }));
+ 14189:         }
+ 14190: 
+ 14191:         if (tabletDockObservedMap === mapEl) return;
+ 14192:         if (tabletDockObservedMap) {
+ 14193:             try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
+ 14194:         }
+ 14195:         tabletDockObservedMap = mapEl;
+ 14196:         try { tabletDockResizeObserver.observe(mapEl); } catch (err) {}
+ 14197:     }
+ 14198: 
+ 14199:     function estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap) {
+ 14200:         const filterRows = Math.max(1, Math.ceil(filterCount / Math.max(1, filterColumns)));
+ 14201:         const filterBlockHeight = Math.max(48, (filterRows * filterHeight) + (Math.max(0, filterRows - 1) * gap));
+ 14202:         if (!pinCount) return filterBlockHeight;
+ 14203:         const pinRows = Math.max(1, Math.ceil(pinCount / Math.max(1, pinColumns)));
+ 14204:         return filterBlockHeight + gap + (pinRows * pinHeight) + (Math.max(0, pinRows - 1) * gap);
+ 14205:     }
+ 14206: 
+ 14207:     function applyTabletDockLayout(mapEl = getLargestLeafletMap()) {
+ 14208:         const control = document.getElementById(SCRIPT.controlId);
+ 14209:         if (!control || !mapEl || !tabletModeActive) {
+ 14210:             clearTabletDockSizing(control);
+ 14211:             return false;
+ 14212:         }
+ 14213: 
+ 14214:         const rect = mapEl.getBoundingClientRect();
+ 14215:         if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width < 1 || rect.height < 1) return false;
+ 14216: 
+ 14217:         observeTabletMapArea(mapEl);
+ 14218: 
+ 14219:         const margin = rect.width < 700 ? 8 : 10;
+ 14220:         const gap = 5;
+ 14221:         const menuWidth = 52;
+ 14222:         const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
+ 14223:         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+ 14224:         const viewport = getViewportMetrics();
+ 14225:         const mapWidth = Math.min(rect.width, viewport.width);
+ 14226:         const availableMapWidth = Math.max(1, mapWidth - (margin * 2) - nudgeX);
+ 14227:         const dockWidth = Math.max(1, Math.min(960, availableMapWidth));
+ 14228:         const contentWidth = Math.max(1, dockWidth - menuWidth - gap);
+ 14229: 
+ 14230:         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+ 14231:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+ 14232:         const preferredFilterWidth = contentWidth >= 600 ? 92 : 82;
+ 14233:         const preferredPinWidth = contentWidth >= 600 ? 78 : 70;
+ 14234: 
+ 14235:         let filterColumns = Math.max(1, Math.min(filterCount, Math.floor((contentWidth + gap) / (preferredFilterWidth + gap)) || 1));
+ 14236:         let pinColumns = pinCount
+ 14237:             ? Math.max(1, Math.min(pinCount, Math.floor((contentWidth + gap) / (preferredPinWidth + gap)) || 1))
+ 14238:             : 1;
+ 14239:         let filterHeight = 48;
+ 14240:         let pinHeight = 31;
+ 14241:         const availableMapHeight = Math.max(80, rect.height - (margin * 2) - nudgeY);
+ 14242: 
+ 14243:         let estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
+ 14244:         while (estimatedHeight > availableMapHeight && (filterColumns < filterCount || pinColumns < Math.max(1, pinCount))) {
+ 14245:             const filterCandidate = filterColumns < filterCount
+ 14246:                 ? estimateTabletDockHeight(filterCount, filterColumns + 1, pinCount, pinColumns, filterHeight, pinHeight, gap)
+ 14247:                 : Number.POSITIVE_INFINITY;
+ 14248:             const pinCandidate = pinCount && pinColumns < pinCount
+ 14249:                 ? estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns + 1, filterHeight, pinHeight, gap)
+ 14250:                 : Number.POSITIVE_INFINITY;
+ 14251: 
+ 14252:             if (filterCandidate <= pinCandidate) filterColumns += 1;
+ 14253:             else pinColumns += 1;
+ 14254:             estimatedHeight = Math.min(filterCandidate, pinCandidate);
+ 14255:         }
+ 14256: 
+ 14257:         if (estimatedHeight > availableMapHeight) {
+ 14258:             filterHeight = 46;
+ 14259:             pinHeight = 29;
+ 14260:             estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
+ 14261:         }
+ 14262: 
+ 14263:         control.style.setProperty('--mcms-tablet-dock-width', `${Math.floor(dockWidth)}px`);
+ 14264:         control.style.setProperty('--mcms-tablet-filter-columns', String(filterColumns));
+ 14265:         control.style.setProperty('--mcms-tablet-pin-columns', String(pinColumns));
+ 14266:         control.style.setProperty('--mcms-tablet-filter-height', `${filterHeight}px`);
+ 14267:         control.style.setProperty('--mcms-tablet-pin-height', `${pinHeight}px`);
+ 14268:         control.dataset.mcmsTabletFit = `${Math.floor(dockWidth)}:${filterColumns}:${pinColumns}:${Math.round(estimatedHeight)}`;
+ 14269:         return true;
+ 14270:     }
+ 14271: 
+ 14272:     function estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap) {
+ 14273:         const commandRows = Math.max(1, Math.ceil(commandCount / Math.max(1, columns)));
+ 14274:         const commandBlockHeight = (commandRows * commandHeight) + (Math.max(0, commandRows - 1) * gap);
+ 14275:         if (!pinCount) return commandBlockHeight;
+ 14276:         const pinRows = Math.max(1, Math.ceil(pinCount / Math.max(1, pinColumns)));
+ 14277:         return commandBlockHeight + gap + (pinRows * pinHeight) + (Math.max(0, pinRows - 1) * gap);
+ 14278:     }
+ 14279: 
+ 14280:     function applyMobileDockLayout(mapEl = getLargestLeafletMap()) {
+ 14281:         const control = document.getElementById(SCRIPT.controlId);
+ 14282:         if (!control || !mapEl || !mobileModeActive) {
+ 14283:             if (!tabletModeActive) clearTabletDockSizing(control);
+ 14284:             return false;
+ 14285:         }
+ 14286: 
+ 14287:         const rect = mapEl.getBoundingClientRect();
+ 14288:         if (!Number.isFinite(rect.width) || !Number.isFinite(rect.height) || rect.width < 1 || rect.height < 1) return false;
+ 14289:         observeTabletMapArea(mapEl);
+ 14290: 
+ 14291:         const viewport = getViewportMetrics();
+ 14292:         const margin = rect.width < 500 ? 5 : 7;
+ 14293:         const gap = rect.width < 500 ? 4 : 5;
+ 14294:         const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
+ 14295:         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+ 14296:         const mapWidth = Math.min(rect.width, viewport.width);
+ 14297:         const dockWidth = Math.max(1, Math.min(1000, mapWidth - (margin * 2) - nudgeX));
+ 14298:         const commandCount = 1 + Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+ 14299:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+ 14300:         const minCommandWidth = viewport.orientation === 'landscape' ? 68 : 62;
+ 14301:         const maxPortraitColumns = viewport.orientation === 'portrait' ? 5 : commandCount;
+ 14302:         let columns = Math.max(3, Math.min(commandCount, maxPortraitColumns, Math.floor((dockWidth + gap) / (minCommandWidth + gap)) || 3));
+ 14303:         if (viewport.orientation === 'landscape' && dockWidth >= 700) columns = commandCount;
+ 14304:         let pinColumns = pinCount ? Math.max(2, Math.min(pinCount, Math.floor((dockWidth + gap) / (70 + gap)) || 2)) : 1;
+ 14305:         let commandHeight = viewport.orientation === 'landscape' ? 42 : 44;
+ 14306:         let pinHeight = 30;
+ 14307:         const availableMapHeight = Math.max(72, rect.height - (margin * 2) - nudgeY);
+ 14308: 
+ 14309:         let estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+ 14310:         while (estimatedHeight > availableMapHeight && columns < commandCount) {
+ 14311:             columns += 1;
+ 14312:             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+ 14313:         }
+ 14314:         while (estimatedHeight > availableMapHeight && pinColumns < pinCount) {
+ 14315:             pinColumns += 1;
+ 14316:             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+ 14317:         }
+ 14318:         if (estimatedHeight > availableMapHeight) {
+ 14319:             commandHeight = 40;
+ 14320:             pinHeight = 28;
+ 14321:             estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+ 14322:         }
+ 14323: 
+ 14324:         control.style.setProperty('--mcms-mobile-dock-width', `${Math.floor(dockWidth)}px`);
+ 14325:         control.style.setProperty('--mcms-mobile-columns', String(columns));
+ 14326:         control.style.setProperty('--mcms-mobile-pin-columns', String(pinColumns));
+ 14327:         control.style.setProperty('--mcms-mobile-filter-height', `${commandHeight}px`);
+ 14328:         control.style.setProperty('--mcms-mobile-pin-height', `${pinHeight}px`);
+ 14329:         control.dataset.mcmsMobileFit = `${Math.floor(dockWidth)}:${columns}:${pinColumns}:${Math.round(estimatedHeight)}`;
+ 14330:         return true;
+ 14331:     }
+ 14332: 
+ 14333:     function applyTabletPanelPosition() {
+ 14334:         const panel = document.getElementById(SCRIPT.panelId);
+ 14335:         if (!panel || !panel.classList.contains('mcms-open') || !isTouchLayoutActive()) return false;
+ 14336: 
+ 14337:         const viewport = getViewportMetrics();
+ 14338:         const mobile = mobileModeActive;
+ 14339:         const margin = mobile ? 4 : (viewport.width < 700 ? 6 : 10);
+ 14340:         const availableWidth = Math.max(1, viewport.width - (margin * 2));
+ 14341:         const availableHeight = Math.max(mobile ? 160 : 180, viewport.height - (margin * 2));
+ 14342:         const desiredWidth = mobile
+ 14343:             ? availableWidth
+ 14344:             : Math.min(availableWidth, viewport.orientation === 'landscape' ? 760 : 700);
+ 14345:         const heightRatio = mobile
+ 14346:             ? (viewport.orientation === 'landscape' ? 0.94 : 0.88)
+ 14347:             : (viewport.orientation === 'landscape' ? 0.88 : 0.82);
+ 14348:         const maxHeight = Math.min(availableHeight, Math.max(mobile ? 220 : 260, viewport.height * heightRatio));
+ 14349:         const left = Math.round(viewport.offsetLeft + Math.max(margin, (viewport.width - desiredWidth) / 2));
+ 14350: 
+ 14351:         panel.style.setProperty('position', 'fixed', 'important');
+ 14352:         panel.style.setProperty('width', `${Math.round(desiredWidth)}px`, 'important');
+ 14353:         panel.style.setProperty('max-width', `${Math.round(desiredWidth)}px`, 'important');
+ 14354:         panel.style.setProperty('max-height', `${Math.round(maxHeight)}px`, 'important');
+ 14355:         const layoutViewportHeight = Math.max(viewport.height, Number(pageWindow.innerHeight) || Number(document.documentElement.clientHeight) || viewport.height);
+ 14356:         const bottomOffset = Math.round(Math.max(0, layoutViewportHeight - (viewport.offsetTop + viewport.height)) + margin);
+ 14357:         panel.style.setProperty('left', `${left}px`, 'important');
+ 14358:         panel.style.setProperty('right', 'auto', 'important');
+ 14359:         panel.style.setProperty('top', 'auto', 'important');
+ 14360:         panel.style.setProperty('bottom', `${bottomOffset}px`, 'important');
+ 14361:         panel.style.setProperty('transform', 'none', 'important');
+ 14362:         return true;
+ 14363:     }
+ 14364: 
+ 14365:     function clearTabletPanelSizing(panel = document.getElementById(SCRIPT.panelId)) {
+ 14366:         if (!panel) return;
+ 14367:         panel.style.removeProperty('width');
+ 14368:         panel.style.removeProperty('max-width');
+ 14369:     }
+ 14370: 
+ 14371:     function scheduleTabletLayoutRefresh(delay = 40) {
+ 14372:         runtimeClearTimeout(tabletLayoutTimer);
+ 14373:         tabletLayoutTimer = runtimeSetTimeout(() => {
+ 14374:             tabletLayoutTimer = null;
+ 14375:             const previousLayout = activeDeviceLayout;
+ 14376:             applyRootAttributes();
+ 14377:             const panel = document.getElementById(SCRIPT.panelId);
+ 14378:             refreshTabletModeUi(panel);
+ 14379:             if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+ 14380:                 clearTabletPanelSizing(panel);
+ 14381:                 clearTabletDockSizing();
+ 14382:             }
+ 14383:             fitControlToMap();
+ 14384:             if (panel?.classList.contains('mcms-open')) positionPanelOverlay(true);
+ 14385:         }, Math.max(0, Number(delay) || 0));
+ 14386:     }
+ 14387: 
+ 14388:     function applyRootAttributes() {
+ 14389:         const root = document.documentElement;
+ 14390:         root.setAttribute('data-mcms-ui-theme', normaliseUiTheme(state.uiTheme));
+ 14391:         root.setAttribute('data-mc-map-skin', state.theme);
+ 14392:         root.setAttribute('data-mcms-clean', String(Boolean(state.cleanMode)));
+ 14393:         root.setAttribute('data-mcms-marker-focus', String(Boolean(state.markerFocus)));
+ 14394:         root.setAttribute('data-mcms-mission-pulse', String(Boolean(state.missionPulse)));
+ 14395:         root.setAttribute('data-mcms-road-priority', String(Boolean(state.roadPriority)));
+ 14396:         root.setAttribute('data-mcms-compact-dock', String(Boolean(state.compactDock)));
+ 14397:         root.setAttribute('data-mcms-command-bar-open', String(state.commandBarOpen !== false));
+ 14398:         root.setAttribute('data-mcms-economy', String(Boolean(state.economyMode)));
+ 14399:         root.setAttribute('data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
+ 14400:         activeDeviceLayout = resolveDeviceLayout();
+ 14401:         tabletModeActive = resolveTabletMode(activeDeviceLayout);
+ 14402:         mobileModeActive = resolveMobileMode(activeDeviceLayout);
+ 14403:         const tabletViewport = getViewportMetrics();
+ 14404:         root.setAttribute('data-mcms-device-layout', activeDeviceLayout);
+ 14405:         root.setAttribute('data-mcms-tablet-mode', String(state.tabletMode));
+ 14406:         root.setAttribute('data-mcms-tablet-active', String(Boolean(tabletModeActive)));
+ 14407:         root.setAttribute('data-mcms-mobile-mode', String(state.mobileMode));
+ 14408:         root.setAttribute('data-mcms-mobile-active', String(Boolean(mobileModeActive)));
+ 14409:         root.setAttribute('data-mcms-tablet-orientation', tabletViewport.orientation);
+ 14410:         root.setAttribute('data-mcms-mobile-orientation', tabletViewport.orientation);
+ 14411:         root.setAttribute('data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
+ 14412:         root.setAttribute('data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
+ 14413:         root.setAttribute('data-mcms-show-vehicles', String(Boolean(state.visibility.vehicles)));
+ 14414:         root.setAttribute('data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
+ 14415:         root.setAttribute('data-mcms-critical-view', String(Boolean(criticalViewActive)));
+ 14416:     }
+ 14417: 
+ 14418:     function getStrongMarkerSignal(icon) {
+ 14419:         if (!icon) return { hrefs: [], srcs: [], classes: '', text: '' };
+ 14420: 
+ 14421:         const hrefs = [];
+ 14422:         const srcs = [];
+
+### desktop position and drag functions · source lines 26132-26345
+ 26132: 
+ 26133:     function refreshSuppression() {
+ 26134:         const control = document.getElementById(SCRIPT.controlId);
+ 26135:         if (!control) return;
+ 26136:         control.classList.toggle('mcms-hidden-by-menu', shouldSuppressControl());
+ 26137:     }
+ 26138: 
+ 26139:     function fitControlToMap() {
+ 26140:         runtimeClearTimeout(fitTimer);
+ 26141:         fitTimer = runtimeSetTimeout(() => {
+ 26142:             const panel = document.getElementById(SCRIPT.panelId);
+ 26143:             const mapEl = getLargestLeafletMap();
+ 26144:             if (!mapEl) return;
+ 26145:             if (mobileModeActive) applyMobileDockLayout(mapEl);
+ 26146:             else if (tabletModeActive) applyTabletDockLayout(mapEl);
+ 26147:             else clearTabletDockSizing();
+ 26148:             if (!panel) return;
+ 26149:             const rect = mapEl.getBoundingClientRect();
+ 26150:             panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
+ 26151:         }, 60);
+ 26152:     }
+ 26153: 
+ 26154:     function setPanelCssPosition(left, top) {
+ 26155:         const panel = document.getElementById(SCRIPT.panelId);
+ 26156:         if (!panel) return;
+ 26157:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+ 26158:         clearTabletPanelSizing(panel);
+ 26159:         panel.style.setProperty('position', 'fixed', 'important');
+ 26160:         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
+ 26161:         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
+ 26162:         panel.style.setProperty('right', 'auto', 'important');
+ 26163:         panel.style.setProperty('bottom', 'auto', 'important');
+ 26164:         panel.style.setProperty('transform', 'none', 'important');
+ 26165:     }
+ 26166: 
+ 26167:     function clampPanelPosition(left, top) {
+ 26168:         const panel = document.getElementById(SCRIPT.panelId);
+ 26169:         if (!panel) return { left: 12, top: 12 };
+ 26170: 
+ 26171:         const margin = 12;
+ 26172:         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
+ 26173:         const viewportHeight = pageWindow.innerHeight || document.documentElement.clientHeight;
+ 26174: 
+ 26175:         panel.style.setProperty('max-height', '', '');
+ 26176: 
+ 26177:         let panelWidth = panel.offsetWidth || 318;
+ 26178:         let panelHeight = panel.offsetHeight || 500;
+ 26179:         const maxPanelHeight = Math.max(260, viewportHeight - (margin * 2));
+ 26180: 
+ 26181:         if (panelHeight > maxPanelHeight) {
+ 26182:             panel.style.setProperty('max-height', `${maxPanelHeight}px`, 'important');
+ 26183:             panelHeight = maxPanelHeight;
+ 26184:         }
+ 26185: 
+ 26186:         panelWidth = Math.min(panelWidth, viewportWidth - (margin * 2));
+ 26187: 
+ 26188:         return {
+ 26189:             left: Math.round(Math.max(margin, Math.min(left, viewportWidth - panelWidth - margin))),
+ 26190:             top: Math.round(Math.max(margin, Math.min(top, viewportHeight - panelHeight - margin)))
+ 26191:         };
+ 26192:     }
+ 26193: 
+ 26194:     function getDefaultPanelPosition() {
+ 26195:         const control = document.getElementById(SCRIPT.controlId);
+ 26196:         const panel = document.getElementById(SCRIPT.panelId);
+ 26197:         const margin = 12;
+ 26198:         if (!control || !panel) return { left: margin, top: margin };
+ 26199: 
+ 26200:         const controlRect = control.getBoundingClientRect();
+ 26201:         const panelWidth = panel.offsetWidth || 318;
+ 26202:         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
+ 26203:         const spaceRight = viewportWidth - controlRect.right - margin;
+ 26204:         const spaceLeft = controlRect.left - margin;
+ 26205: 
+ 26206:         return {
+ 26207:             left: (spaceRight >= panelWidth || spaceRight >= spaceLeft) ? controlRect.right + margin : controlRect.left - panelWidth - margin,
+ 26208:             top: controlRect.top
+ 26209:         };
+ 26210:     }
+ 26211: 
+ 26212:     function positionPanelOverlay(useSavedPosition = true) {
+ 26213:         if (dragState) return;
+ 26214:         const panel = document.getElementById(SCRIPT.panelId);
+ 26215:         if (!panel || !panel.classList.contains('mcms-open')) return;
+ 26216:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+ 26217:         clearTabletPanelSizing(panel);
+ 26218: 
+ 26219:         let left;
+ 26220:         let top;
+ 26221: 
+ 26222:         if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
+ 26223:             left = Number(state.panelPosition.left);
+ 26224:             top = Number(state.panelPosition.top);
+ 26225:         } else {
+ 26226:             const pos = getDefaultPanelPosition();
+ 26227:             left = pos.left;
+ 26228:             top = pos.top;
+ 26229:         }
+ 26230: 
+ 26231:         const clamped = clampPanelPosition(left, top);
+ 26232:         setPanelCssPosition(clamped.left, clamped.top);
+ 26233:     }
+ 26234: 
+ 26235:     function resetPanelPosition() {
+ 26236:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+ 26237:         state.panelPosition = null;
+ 26238:         saveState();
+ 26239:         positionPanelOverlay(false);
+ 26240:         showToast('Menu position reset');
+ 26241:     }
+ 26242: 
+ 26243:     function nudgePanel(dx, dy) {
+ 26244:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+ 26245:         const panel = document.getElementById(SCRIPT.panelId);
+ 26246:         if (!panel) return;
+ 26247:         const rect = panel.getBoundingClientRect();
+ 26248:         const pos = clampPanelPosition(rect.left + dx, rect.top + dy);
+ 26249:         setPanelCssPosition(pos.left, pos.top);
+ 26250:         state.panelPosition = { left: pos.left, top: pos.top };
+ 26251:         saveState();
+ 26252:         showToast(`Menu ${pos.left}, ${pos.top}`);
+ 26253:     }
+ 26254: 
+ 26255:     function startPanelDrag(event) {
+ 26256:         if (isTouchLayoutActive()) return;
+ 26257:         const isMouse = event.type === 'mousedown';
+ 26258:         const isTouch = event.type === 'touchstart';
+ 26259:         if (isMouse && event.button !== 0) return;
+ 26260:         if (!isMouse && !isTouch) return;
+ 26261: 
+ 26262:         const panel = document.getElementById(SCRIPT.panelId);
+ 26263:         if (!panel || !panel.classList.contains('mcms-open')) return;
+ 26264: 
+ 26265:         const point = isTouch ? event.touches[0] : event;
+ 26266:         if (!point) return;
+ 26267: 
+ 26268:         const rect = panel.getBoundingClientRect();
+ 26269:         dragState = {
+ 26270:             startX: point.clientX,
+ 26271:             startY: point.clientY,
+ 26272:             startLeft: rect.left,
+ 26273:             startTop: rect.top,
+ 26274:             moved: false
+ 26275:         };
+ 26276: 
+ 26277:         panel.classList.add('mcms-dragging');
+ 26278:         document.documentElement.style.cursor = 'grabbing';
+ 26279:         document.body.style.userSelect = 'none';
+ 26280: 
+ 26281:         document.addEventListener('mousemove', movePanelDrag, true);
+ 26282:         document.addEventListener('mouseup', endPanelDrag, true);
+ 26283:         document.addEventListener('touchmove', movePanelDrag, { capture: true, passive: false });
+ 26284:         document.addEventListener('touchend', endPanelDrag, true);
+ 26285:         document.addEventListener('touchcancel', endPanelDrag, true);
+ 26286: 
+ 26287:         event.preventDefault();
+ 26288:         event.stopPropagation();
+ 26289:     }
+ 26290: 
+ 26291:     function movePanelDrag(event) {
+ 26292:         if (!dragState) return;
+ 26293: 
+ 26294:         const isTouch = event.type === 'touchmove';
+ 26295:         const point = isTouch ? event.touches[0] : event;
+ 26296:         if (!point) return;
+ 26297: 
+ 26298:         const dx = point.clientX - dragState.startX;
+ 26299:         const dy = point.clientY - dragState.startY;
+ 26300:         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
+ 26301: 
+ 26302:         const pos = clampPanelPosition(dragState.startLeft + dx, dragState.startTop + dy);
+ 26303:         setPanelCssPosition(pos.left, pos.top);
+ 26304: 
+ 26305:         event.preventDefault();
+ 26306:         event.stopPropagation();
+ 26307:     }
+ 26308: 
+ 26309:     function endPanelDrag(event) {
+ 26310:         if (!dragState) return;
+ 26311: 
+ 26312:         const didMove = Boolean(dragState.moved);
+ 26313:         const panel = document.getElementById(SCRIPT.panelId);
+ 26314: 
+ 26315:         if (panel) {
+ 26316:             panel.classList.remove('mcms-dragging');
+ 26317:             const rect = panel.getBoundingClientRect();
+ 26318:             const pos = clampPanelPosition(rect.left, rect.top);
+ 26319:             setPanelCssPosition(pos.left, pos.top);
+ 26320:             state.panelPosition = { left: pos.left, top: pos.top };
+ 26321:             saveState();
+ 26322:         }
+ 26323: 
+ 26324:         dragState = null;
+ 26325:         document.documentElement.style.cursor = '';
+ 26326:         document.body.style.userSelect = '';
+ 26327: 
+ 26328:         document.removeEventListener('mousemove', movePanelDrag, true);
+ 26329:         document.removeEventListener('mouseup', endPanelDrag, true);
+ 26330:         document.removeEventListener('touchmove', movePanelDrag, true);
+ 26331:         document.removeEventListener('touchend', endPanelDrag, true);
+ 26332:         document.removeEventListener('touchcancel', endPanelDrag, true);
+ 26333: 
+ 26334:         if (didMove) {
+ 26335:             suppressNextOutsideClick = true;
+ 26336:             showToast('Menu position saved');
+ 26337:             runtimeSetTimeout(() => { suppressNextOutsideClick = false; }, 250);
+ 26338:         }
+ 26339: 
+ 26340:         if (event) {
+ 26341:             event.preventDefault();
+ 26342:             event.stopPropagation();
+ 26343:         }
+ 26344:     }
+ 26345: 
+
+### panel DOM construction · source lines 26818-27190
+ 26818:             if (actionButton) handleAction(actionButton);
+ 26819:         });
+ 26820: 
+ 26821:         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+ 26822: 
+ 26823:         mapEl.appendChild(control);
+ 26824:         renderScreenPins();
+ 26825:         updateUI();
+ 26826:     }
+ 26827: 
+ 26828:     function createPanel() {
+ 26829:         const existingPanel = document.getElementById(SCRIPT.panelId);
+ 26830:         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
+ 26831:         const panelStartedAt = startupClock();
+ 26832:         settingsPanelActivated = true;
+ 26833:         const panel = document.createElement('div');
+ 26834:         panel.id = SCRIPT.panelId;
+ 26835:         panel.setAttribute('role', 'dialog');
+ 26836:         panel.setAttribute('aria-modal', 'false');
+ 26837:         panel.setAttribute('aria-hidden', 'true');
+ 26838:         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
+ 26839: 
+ 26840:         const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
+ 26841:             const theme = UI_THEMES[key];
+ 26842:             return `
+ 26843:                 <button class="mcms-ui-theme-btn" type="button" data-ui-theme="${key}" title="${escapeHtml(theme.description)}" aria-pressed="false">
+ 26844:                     <span class="mcms-ui-theme-preview mcms-ui-theme-preview-${key}" aria-hidden="true"><span></span><span></span><span></span></span>
+ 26845:                     <span class="mcms-ui-theme-copy"><strong>${escapeHtml(theme.label)}</strong><small>${escapeHtml(theme.short)}</small></span>
+ 26846:                 </button>
+ 26847:             `;
+ 26848:         }).join('');
+ 26849: 
+ 26850:         const buildThemeButtons = keys => keys.map(key => {
+ 26851:             const theme = THEMES[key];
+ 26852:             return `
+ 26853:                 <button class="mcms-theme-btn" type="button" data-theme="${key}" title="${theme.full}">
+ 26854:                     <span class="mcms-iconbox">${theme.icon}</span>
+ 26855:                     <span class="mcms-text">
+ 26856:                         <span class="mcms-label">${theme.label}</span>
+ 26857:                         <span class="mcms-pill">${theme.short}</span>
+ 26858:                     </span>
+ 26859:                 </button>
+ 26860:             `;
+ 26861:         }).join('');
+ 26862:         const uiThemeButtons = buildUiThemeButtons();
+ 26863:         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
+ 26864:         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
+ 26865: 
+ 26866:         const positionButtons = Object.entries(POSITIONS).map(([key, pos]) => `<button class="mcms-position-btn" type="button" data-position="${key}" title="${pos.label}">${pos.short}</button>`).join('');
+ 26867: 
+ 26868:         panel.innerHTML = `
+ 26869:             <div class="mcms-panel-sticky-stack">
+ 26870:                 <div class="mcms-header">
+ 26871:                     <div class="mcms-drag-handle" title="Hold left-click and drag this bar to move the menu">
+ 26872:                         <span class="mcms-title">☰ DRAG MENU HERE</span>
+ 26873:                         <span class="mcms-subtitle">Hold left-click on this title area. Position saves.</span>
+ 26874:                     </div>
+ 26875:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+ 26876:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+ 26877:                     <button class="mcms-close" type="button" title="Close">×</button>
+ 26878:                 </div>
+ 26879:                 <div class="mcms-tabs">
+ 26880:                     <button class="mcms-tab-btn" type="button" data-tab="skins">Skins</button>
+ 26881:                     <button class="mcms-tab-btn" type="button" data-tab="tools">Tools</button>
+ 26882:                     <button class="mcms-tab-btn" type="button" data-tab="resources">Resources</button>
+ 26883:                     <button class="mcms-tab-btn" type="button" data-tab="ops">Ops</button>
+ 26884:                     <button class="mcms-tab-btn" type="button" data-tab="payouts">Payouts</button>
+ 26885:                     <button class="mcms-tab-btn" type="button" data-tab="discord">Discord</button>
+ 26886:                     <button class="mcms-tab-btn" type="button" data-tab="places">Places</button>
+ 26887:                     <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
+ 26888:                 </div>
+ 26889:             </div>
+ 26890:             <section class="mcms-tab-panel" data-panel="skins">
+ 26891:                 <div class="mcms-section-label">Interface theme</div>
+ 26892:                 <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+ 26893:                 <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
+ 26894:                 <div class="mcms-section-label">Core skins</div>
+ 26895:                 <div class="mcms-grid-2">${coreThemeButtons}</div>
+ 26896:                 <div class="mcms-section-label">Emergency services</div>
+ 26897:                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
+ 26898:                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+ 26899:             </section>
+ 26900:             <section class="mcms-tab-panel" data-panel="tools">
+ 26901:                 <div class="mcms-section-label">Map tools</div>
+ 26902:                 <div class="mcms-grid-2">
+ 26903:                     ${makeToggleButton('clean', '▢', 'Clean', 'Hide map controls for screenshots. Shortcut: C')}
+ 26904:                     ${makeToggleButton('markerFocus', '◉', 'Focus', 'Dim detected buildings/vehicles and keep missions clearer. Shortcut: F')}
+ 26905:                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
+ 26906:                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
+ 26907:                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+ 26908:                     ${makeToggleButton('heatmap', '▦', 'Heatmap', 'Show strong and weak operational coverage across the visible map.')}
+ 26909:                 </div>
+ 26910:                 <div class="mcms-row" style="margin-top:8px">
+ 26911:                     <span class="mcms-row-label">Ring radius</span>
+ 26912:                     <select class="mcms-select" data-setting="coverage-radius">
+ 26913:                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
+ 26914:                     </select>
+ 26915:                 </div>
+ 26916:                 <div class="mcms-section-label">Coverage Heatmap</div>
+ 26917:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+ 26918:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+ 26919:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+ 26920:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+ 26921:                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+ 26922:                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
+ 26923:                 <div class="mcms-grid-2">
+ 26924:                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
+ 26925:                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
+ 26926:                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+ 26927:                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+ 26928:                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
+ 26929:                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+ 26930:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
+ 26931:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
+ 26932:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Temporarily show only personal missions aged 8 hours or more. Shortcut: 9')}
+ 26933:                 </div>
+ 26934:                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
+ 26935:                 <div class="mcms-status">Ready.</div>
+ 26936:             </section>
+ 26937:             <section class="mcms-tab-panel" data-panel="resources">
+ 26938:                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
+ 26939:                 <div class="mcms-grid-2">
+ 26940:                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
+ 26941:                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
+ 26942:                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
+ 26943:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
+ 26944:                 </div>
+ 26945:                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
+ 26946:                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
+ 26947:                 <div data-transport-sweep></div>
+ 26948:                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+ 26949:                 <div class="mcms-section-label">Resource Gap Finder</div>
+ 26950:                 <div class="mcms-grid-2">
+ 26951:                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates in Mission Inspector.')}
+ 26952:                 </div>
+ 26953:                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+ 26954:                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+ 26955:             </section>
+ 26956:             <section class="mcms-tab-panel" data-panel="ops">
+ 26957:                 <div class="mcms-section-label">Mission Intelligence</div>
+ 26958:                 <div class="mcms-grid-2">
+ 26959:                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+ 26960:                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
+ 26961:                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
+ 26962:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
+ 26963:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your own committed unit counts beside missions. Shortcut: 8')}
+ 26964:                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
+ 26965:                         <span class="mcms-iconbox">V</span>
+ 26966:                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
+ 26967:                     </button>
+ 26968:                 </div>
+ 26969:                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+ 26970:                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+ 26971:                 <div class="mcms-section-label">Session Performance</div>
+ 26972:                 <div data-ops-session></div>
+ 26973:                 <div class="mcms-section-label">Mission Age Workflow</div>
+ 26974:                 <div class="mcms-grid-2">
+ 26975:                     <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+ 26976:                     <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="fit-critical">Frame Aged</button>
+ 26977:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Show only personal missions aged 8 hours or more. Shortcut: 9')}
+ 26978:                     ${makeToggleButton('missionAge', '6', 'Mission Age', 'Show personal mission age with 8H amber, 16H orange and 24H red warning stages. Shortcut: 6')}
+ 26979:                 </div>
+ 26980:                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
+ 26981:                 <div class="mcms-ops-list" data-ops-critical-preview></div>
+ 26982:                 <div class="mcms-section-label">Completion History</div>
+ 26983:                 <div class="mcms-ops-list" data-ops-history></div>
+ 26984:                 <div class="mcms-grid-2" style="margin-top:7px !important">
+ 26985:                     <button class="mcms-small-btn" type="button" data-action="reset-session">Reset Session</button>
+ 26986:                     <button class="mcms-small-btn" type="button" data-action="clear-payout-history">Clear History</button>
+ 26987:                 </div>
+ 26988:             </section>
+ 26989:             <section class="mcms-tab-panel" data-panel="payouts">
+ 26990:                 <div class="mcms-section-label">Emergency Payout Flash</div>
+ 26991:                 <div class="mcms-grid-2">
+ 26992:                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
+ 26993:                     ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+ 26994:                 </div>
+ 26995:                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
+ 26996:                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
+ 26997:                 <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+ 26998:                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
+ 26999:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+ 27000:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+ 27001:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+ 27002:             </section>
+ 27003:             <section class="mcms-tab-panel" data-panel="discord">
+ 27004:                 <div class="mcms-section-label">Discord Financial Command</div>
+ 27005:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
+ 27006:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
+ 27007:                 <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+ 27008:                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
+ 27009:                 <div class="mcms-discord-date-grid">
+ 27010:                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
+ 27011:                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
+ 27012:                 </div>
+ 27013:                 <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+ 27014:                 <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+ 27015:                 <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+ 27016:                 <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+ 27017:                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
+ 27018:                 <div class="mcms-grid-2">
+ 27019:                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
+ 27020:                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
+ 27021:                 </div>
+ 27022:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate and Post Supreme Audit</button>
+ 27023:                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+ 27024: 
+ 27025:                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
+ 27026:                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+ 27027:                 <div class="mcms-row"><span class="mcms-row-label">History retention</span><select class="mcms-select" data-setting="finance-vault-retention"><option value="all">All available</option><option value="1825">5 years</option><option value="730">2 years</option><option value="365">1 year</option><option value="180">180 days</option><option value="90">90 days</option></select></div>
+ 27028:                 <div class="mcms-row"><span class="mcms-row-label">GitHub intelligence feeds</span><select class="mcms-select" data-setting="finance-rule-feed"><option value="true">Automatic rules + policy</option><option value="false">Built-in intelligence only</option></select></div>
+ 27029:                 <div class="mcms-grid-2">
+ 27030:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-scan">Deep Scan All Available</button>
+ 27031:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-cancel">Stop Scan</button>
+ 27032:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
+ 27033:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
+ 27034:                 </div>
+ 27035:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh GitHub Financial Intelligence</button>
+ 27036:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear This Player's Local Archive</button>
+ 27037:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
+ 27038:                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
+ 27039:                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
+ 27040:                 <div class="mcms-status mcms-discord-status" data-finance-rule-status data-tone="neutral">Built-in financial intelligence active.</div>
+ 27041:                 <div class="mcms-status">GitHub hosts public transaction-classification rules and audit policy only. The Toolkit never uploads player ledger data, Discord webhooks or repository credentials. The local archive is indexed by MissionChief player ID/name and can be transferred between devices using Export Archive / Import Archive or the complete private Toolkit backup.</div>
+ 27042:                 <div class="mcms-status mcms-finance-private-note">Private backup warning: Export All includes your Discord webhook and locally stored MissionChief financial history. Anyone holding the file may post through the webhook and inspect the exported game ledger.</div>
+ 27043:             </section>
+ 27044:             <section class="mcms-tab-panel" data-panel="places">
+ 27045:                 <div class="mcms-section-label">Quick jumps + screen shortcuts</div>
+ 27046:                 <div class="mcms-quick-list"></div>
+ 27047:                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
+ 27048:                 <div class="mcms-bookmark-list"></div>
+ 27049:             </section>
+ 27050:             <section class="mcms-tab-panel" data-panel="settings">
+ 27051:                 <div class="mcms-section-label">Device layout</div>
+ 27052:                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+ 27053:                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+ 27054:                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
+ 27055:                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+ 27056:                 <div class="mcms-section-label">Dock position</div>
+ 27057:                 <div class="mcms-position-grid">${positionButtons}</div>
+ 27058:                 <div class="mcms-desktop-position-controls">
+ 27059:                     <div class="mcms-section-label">Fine nudge</div>
+ 27060:                     <div class="mcms-nudge-grid">
+ 27061:                         <button class="mcms-small-btn" type="button" data-action="nudge-left">←</button>
+ 27062:                         <button class="mcms-small-btn" type="button" data-action="nudge-up">↑</button>
+ 27063:                         <button class="mcms-small-btn" type="button" data-action="nudge-down">↓</button>
+ 27064:                         <button class="mcms-small-btn" type="button" data-action="nudge-right">→</button>
+ 27065:                         <button class="mcms-small-btn" type="button" data-action="nudge-reset">0</button>
+ 27066:                     </div>
+ 27067:                     <div class="mcms-status mcms-nudge-value">X 0 / Y 0</div>
+ 27068:                     <div class="mcms-section-label">Menu panel</div>
+ 27069:                     <div class="mcms-nudge-grid">
+ 27070:                         <button class="mcms-small-btn" type="button" data-action="panel-left">←</button>
+ 27071:                         <button class="mcms-small-btn" type="button" data-action="panel-up">↑</button>
+ 27072:                         <button class="mcms-small-btn" type="button" data-action="panel-down">↓</button>
+ 27073:                         <button class="mcms-small-btn" type="button" data-action="panel-right">→</button>
+ 27074:                         <button class="mcms-small-btn" type="button" data-action="panel-reset">↺</button>
+ 27075:                     </div>
+ 27076:                 </div>
+ 27077:                 <div class="mcms-section-label">Behaviour</div>
+ 27078:                 <div class="mcms-grid-2">
+ 27079:                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
+ 27080:                     ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically presses MissionChief’s Load more vehicles control whenever an opened mission limits the vehicle list.')}
+ 27081:                     ${makeToggleButton('autoNight', '◑', 'AutoNight', 'Automatically switch skins by time.')}
+ 27082:                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Map Blocker', 'Blocks the heavy map in the Alliance Buildings menu (Courses menu). ON means blocked. Reload required.')}
+ 27083:                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
+ 27084:                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Plays a short synthesized digital tracking cue during mission zoom and target acquisition.')}
+ 27085:                 </div>
+ 27086:                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
+ 27087:                 <div class="mcms-status">The Incident Feed shows qualifying personal and alliance missions in the top status bar. Exceptionally old, stuck or mass-casualty incidents can appear regardless of the credit threshold. Hover pauses the feed; click an item to zoom to it.</div>
+ 27088:                 <div class="mcms-status"><strong>Map Blocker ON</strong> is the performance mode for the Alliance Buildings menu (Courses menu). It removes that page's map, expands the courses list to full width and prevents its heavy marker layer attaching.</div>
+ 27089:                 <div class="mcms-section-label">Auto Night</div>
+ 27090:                 <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+ 27091:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+ 27092:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+ 27093:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+ 27094:                 <div class="mcms-section-label">Saved Map Profiles</div>
+ 27095:                 <div class="mcms-profile-list" data-profile-list></div>
+ 27096:                 <div class="mcms-status">Profiles save your map location, zoom, skin, visibility filters and operational overlays.</div>
+ 27097:                 <div class="mcms-section-label">Economy Mode</div>
+ 27098:                 <div class="mcms-status mcms-economy-status">Use the leaf button beside the map-menu opener. Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+ 27099:                 <div class="mcms-section-label">Settings Backup</div>
+ 27100:                 <div class="mcms-config-actions">
+ 27101:                     <button class="mcms-small-btn" type="button" data-action="export-config" title="Export every toolkit setting, private integration, profile, bookmark and Financial Archive history" aria-label="Export all toolkit settings">Export All</button>
+ 27102:                     <button class="mcms-small-btn" type="button" data-action="import-config" title="Import a current or legacy toolkit settings backup" aria-label="Import all toolkit settings">Import All</button>
+ 27103:                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
+ 27104:                 </div>
+ 27105:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-config-file>
+ 27106:                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
+ 27107:             </section>
+ 27108:             <div class="mcms-footer">
+ 27109:                 <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
+ 27110:                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
+ 27111:             </div>
+ 27112:         `;
+ 27113: 
+ 27114:         const tabList = panel.querySelector('.mcms-tabs');
+ 27115:         if (tabList) tabList.setAttribute('role', 'tablist');
+ 27116:         panel.querySelectorAll('.mcms-tab-btn').forEach(button => {
+ 27117:             const tab = button.dataset.tab;
+ 27118:             button.id = `mcms-tab-${tab}`;
+ 27119:             button.setAttribute('role', 'tab');
+ 27120:             button.setAttribute('aria-controls', `mcms-tabpanel-${tab}`);
+ 27121:             button.setAttribute('aria-selected', 'false');
+ 27122:             button.tabIndex = -1;
+ 27123:         });
+ 27124:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+ 27125:             const tab = tabPanel.dataset.panel;
+ 27126:             tabPanel.id = `mcms-tabpanel-${tab}`;
+ 27127:             tabPanel.setAttribute('role', 'tabpanel');
+ 27128:             tabPanel.setAttribute('aria-labelledby', `mcms-tab-${tab}`);
+ 27129:             tabPanel.hidden = true;
+ 27130:         });
+ 27131: 
+ 27132:         panel.addEventListener('keydown', event => {
+ 27133:             const current = closestEventTarget(event, '.mcms-tab-btn');
+ 27134:             if (!current || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+ 27135:             const buttons = Array.from(panel.querySelectorAll('.mcms-tab-btn'));
+ 27136:             const currentIndex = Math.max(0, buttons.indexOf(current));
+ 27137:             const nextIndex = event.key === 'Home' ? 0
+ 27138:                 : event.key === 'End' ? buttons.length - 1
+ 27139:                 : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+ 27140:             event.preventDefault();
+ 27141:             const nextButton = buttons[nextIndex];
+ 27142:             setActiveTab(nextButton.dataset.tab);
+ 27143:             nextButton.focus({ preventScroll: true });
+ 27144:         });
+ 27145: 
+ 27146:         panel.addEventListener('click', event => {
+ 27147:             const closeButton = closestEventTarget(event, '.mcms-close');
+ 27148:             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
+ 27149:             const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
+ 27150:             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
+ 27151:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+ 27152:             const positionButton = closestEventTarget(event, '.mcms-position-btn');
+ 27153:             const actionButton = closestEventTarget(event, '[data-action]');
+ 27154:             if (closeButton) { closePanel({ restoreFocus: true }); return; }
+ 27155:             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+ 27156:             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
+ 27157:             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
+ 27158:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+ 27159:             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
+ 27160:             if (actionButton) {
+ 27161:                 event.preventDefault();
+ 27162:                 handleAction(actionButton);
+ 27163:                 return;
+ 27164:             }
+ 27165:         });
+ 27166: 
+ 27167:         panel.addEventListener('change', event => handleSettingChange(event.target));
+ 27168: 
+ 27169:         const dragHandle = panel.querySelector('.mcms-drag-handle');
+ 27170:         if (dragHandle) {
+ 27171:             dragHandle.addEventListener('mousedown', startPanelDrag, true);
+ 27172:             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
+ 27173:         }
+ 27174: 
+ 27175:         ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
+ 27176:             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
+ 27177:         });
+ 27178: 
+ 27179:         document.body.appendChild(panel);
+ 27180:         const importInput = panel.querySelector('[data-import-config-file]');
+ 27181:         if (importInput) {
+ 27182:             importInput.addEventListener('change', () => {
+ 27183:                 const file = importInput.files?.[0];
+ 27184:                 if (file) importToolkitConfigFile(file);
+ 27185:                 importInput.value = '';
+ 27186:             });
+ 27187:         }
+ 27188:         const financeImportInput = panel.querySelector('[data-import-finance-file]');
+ 27189:         if (financeImportInput) {
+ 27190:             financeImportInput.addEventListener('change', () => {
+
+### resize listeners · source lines 28490-28530
+ 28490:             }
+ 28491: 
+ 28492:             const control = document.getElementById(SCRIPT.controlId);
+ 28493:             const panel = document.getElementById(SCRIPT.panelId);
+ 28494:             if (!panel || !panel.classList.contains('mcms-open')) return;
+ 28495:             if (control && control.contains(event.target)) return;
+ 28496:             if (panel.contains(event.target)) return;
+ 28497:             closePanel();
+ 28498:         }, true);
+ 28499: 
+ 28500:         runtimeListen(pageWindow, 'resize', () => {
+ 28501:             invalidateMapElementCache();
+ 28502:             applyRootAttributes();
+ 28503:             refreshTabletModeUi();
+ 28504:             scheduleTabletLayoutRefresh(20);
+ 28505:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+ 28506:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+ 28507:             if (dragState) return;
+ 28508:             refreshSuppression();
+ 28509:             fitControlToMap();
+ 28510:             schedulePanelPosition(true, 40);
+ 28511:             scheduleCriticalDrawerDock(30);
+ 28512:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+ 28513:             scheduleMajorIncidentFeedLayout();
+ 28514:         });
+ 28515: 
+ 28516:         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+ 28517:         runtimeListen(pageWindow, 'orientationchange', () => scheduleTabletLayoutRefresh(30));
+ 28518:         if (pageWindow.visualViewport) {
+ 28519:             runtimeListen(pageWindow.visualViewport, 'resize', () => scheduleTabletLayoutRefresh(20));
+ 28520:             runtimeListen(pageWindow.visualViewport, 'scroll', () => {
+ 28521:                 if (isTouchLayoutActive() && document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open')) scheduleTabletLayoutRefresh(20);
+ 28522:             });
+ 28523:         }
+ 28524:         try {
+ 28525:             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
+ 28526:             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
+ 28527:         } catch (err) {}
+ 28528: 
+ 28529:         runtimeListen(pageWindow, 'focus', () => {
+ 28530:             if (dragState) return;
+
+### cleanup · source lines 28645-28710
+ 28645:             scheduleMajorIncidentFeedRender(80);
+ 28646:         });
+ 28647:         runtimeSetTimeout(() => {
+ 28648:             if (document.hidden || !operationalStartupComplete) return;
+ 28649:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+ 28650:         }, 2200);
+ 28651: 
+ 28652:         runtimeOnCleanup(() => {
+ 28653:             stopAutoLoadAllVehicles();
+ 28654:             transportSweepRuntime.stopRequested = true;
+ 28655:             document.removeEventListener('mousemove', movePanelDrag, true);
+ 28656:             document.removeEventListener('mouseup', endPanelDrag, true);
+ 28657:             document.removeEventListener('touchmove', movePanelDrag, true);
+ 28658:             document.removeEventListener('touchend', endPanelDrag, true);
+ 28659:             document.removeEventListener('touchcancel', endPanelDrag, true);
+ 28660:             document.documentElement.style.cursor = '';
+ 28661:             if (document.body) document.body.style.userSelect = '';
+ 28662:             restoreEconomyLayers();
+ 28663:             restoreLeafletEconomyPolicy();
+ 28664:             disposeEconomyCanvasRenderer();
+ 28665:             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+ 28666:             majorIncidentFeedLayoutTimer = null;
+ 28667:             const originalBuildingVisibility = state.visibility.buildings;
+ 28668:             try {
+ 28669:                 state.visibility.buildings = true;
+ 28670:                 synchronisePersonalBuildingVisibility(cachedMap);
+ 28671:             } catch (err) {
+ 28672:                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+ 28673:             } finally {
+ 28674:                 state.visibility.buildings = originalBuildingVisibility;
+ 28675:             }
+ 28676:             try { creditsValueObserver?.disconnect(); } catch (err) {}
+ 28677:             removeMajorIncidentFeed();
+ 28678:             clearMissionLockOnEffect();
+ 28679:             clearAllianceCreditLabels();
+ 28680:             clearMissionAgeLabels();
+ 28681:             clearUnitCommitmentLabels();
+ 28682:             clearTransportWatcherLabels();
+ 28683:             clearResourceGapLabels();
+ 28684:             clearStuckMissionLabels();
+ 28685:             clearCoverageHeatmap();
+ 28686:             if (coverageGroup) {
+ 28687:                 try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+ 28688:                 coverageGroup = null;
+ 28689:             }
+ 28690:             stopPayoutFlashAnimation();
+ 28691:             disposePayoutMediaAudio();
+ 28692:             try { payoutAudioContext?.close?.(); } catch (err) {}
+ 28693:             clearDiscordPreviewChartUrl();
+ 28694:             closeHelpCenter({ restoreFocus: false });
+ 28695:             helpGuideDocumentCache = '';
+ 28696:             helpGuideLoadedAt = 0;
+ 28697:             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+ 28698:             majorIncidentFeedResizeObserver = null;
+ 28699:             majorIncidentFeedObservedElement = null;
+ 28700:             missionSnapshotCache.clear();
+ 28701:             missionPanelCache.clear();
+ 28702:             missionOverlayVersions.clear();
+ 28703:             markerRegistryCache.clear();
+ 28704:             criticalMissionStableCache.clear();
+ 28705:             removeOldInstances();
+ 28706:             const root = document.documentElement;
+ 28707:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+ 28708:         });
+ 28709: 
+ 28710:         runtimeSetTimeout(() => runAutoNight(true), 180);
+

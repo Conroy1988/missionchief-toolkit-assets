@@ -26,6 +26,7 @@ FUNCTION_NAMES = [
     "parseCreditTimestamp",
     "parseCreditsListDocument",
     "financialLedgerAnchor",
+    "normaliseFinancialLedgerEntry",
     "fetchCreditLedgerPage",
     "fetchFinancialLedger",
     "buildFinancialBuckets",
@@ -164,6 +165,27 @@ async function testParserContract() {{
     assert.equal(parseCreditInteger("no amount"), 0);
     assert.equal(parseCreditTimestamp("1784201640"), 1784201640000);
     assert.equal(parseCreditTimestamp("1784201640000"), 1784201640000);
+
+    const normalised = normaliseFinancialLedgerEntry({{
+        timestamp: 1784201640000,
+        amount: 1250,
+        description: "  [Alliance]   Warehouse fire  ",
+        dateLabel: " 16/07/2026   12:34 ",
+        rawTimestamp: " 1784201640000 ",
+        page: 3,
+        row: 0
+    }});
+    assert.deepEqual(normalised, {{
+        timestamp: 1784201640000,
+        amount: 1250,
+        description: "[Alliance] Warehouse fire",
+        dateLabel: "16/07/2026 12:34",
+        rawTimestamp: "1784201640000",
+        page: 3,
+        row: 0,
+        sourceKey: "1784201640000|1250|[alliance] warehouse fire|1784201640000"
+    }});
+    assert.equal(normaliseFinancialLedgerEntry({{ timestamp: Number.NaN, amount: 100 }}), null);
 }}
 
 async function testRetryContract() {{

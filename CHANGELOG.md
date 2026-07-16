@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.2] - 2026-07-16
+
+### Internal reliability
+- Added fixture-backed financial-ledger contracts covering parsing, retries, sequential pagination, archive boundaries, duplicate occurrences, stability restarts, incremental overlap, requested-range fallback and Discord summary inputs.
+- Extracted the deterministic ledger-entry normalization stage into a focused helper while preserving pagination order, retry timing, archive checkpoints, occurrence counting and report calculations.
+
+### Compatibility
+- No settings, themes, payout presentations, public assets or financial-report outputs were changed.
+
 ## [4.13.1] - 2026-07-16
 
 ### Performance

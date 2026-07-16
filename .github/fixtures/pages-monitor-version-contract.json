@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "published release matches live home",
+      "dashboard": {
+        "currentVersion": "4.13.5",
+        "latestRelease": {"version": "4.13.5"}
+      },
+      "homepage": "MissionChief Map Command Toolkit Version 4.13.5 verified release",
+      "expectedVersion": "4.13.5",
+      "expectedStatus": "passed"
+    },
+    {
+      "name": "validated candidate remains ahead of public release",
+      "dashboard": {
+        "currentVersion": "4.13.5",
+        "latestRelease": {"version": "4.13.4"}
+      },
+      "homepage": "MissionChief Map Command Toolkit Version 4.13.4 verified release",
+      "expectedVersion": "4.13.4",
+      "expectedStatus": "passed"
+    },
+    {
+      "name": "published release is genuinely stale on Pages",
+      "dashboard": {
+        "currentVersion": "4.13.5",
+        "latestRelease": {"version": "4.13.5"}
+      },
+      "homepage": "MissionChief Map Command Toolkit Version 4.13.4 verified release",
+      "expectedVersion": "4.13.5",
+      "expectedStatus": "failed"
+    },
+    {
+      "name": "legacy dashboard falls back to current version",
+      "dashboard": {
+        "currentVersion": "4.13.5",
+        "latestRelease": {}
+      },
+      "homepage": "MissionChief Map Command Toolkit Version 4.13.5 verified release",
+      "expectedVersion": "4.13.5",
+      "expectedStatus": "passed"
+    }
+  ]
+}

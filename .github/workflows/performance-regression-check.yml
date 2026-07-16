@@ -7,6 +7,7 @@ on:
       - ".github/performance-budget.json"
       - ".github/scripts/check_performance_budget.py"
       - ".github/scripts/test_performance_budget.py"
+      - ".github/scripts/test_runtime_optimisations.py"
       - ".github/workflows/performance-regression-check.yml"
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - ".github/performance-budget.json"
       - ".github/scripts/check_performance_budget.py"
       - ".github/scripts/test_performance_budget.py"
+      - ".github/scripts/test_runtime_optimisations.py"
       - ".github/workflows/performance-regression-check.yml"
   workflow_dispatch:
 
@@ -37,9 +39,12 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Run performance checker self-tests
-        run: python3 .github/scripts/test_performance_budget.py
+      - name: Run performance and runtime-optimisation self-tests
+        run: |
+          python3 .github/scripts/test_performance_budget.py
+          python3 .github/scripts/test_runtime_optimisations.py
 
       - name: Resolve comparison source
         id: base

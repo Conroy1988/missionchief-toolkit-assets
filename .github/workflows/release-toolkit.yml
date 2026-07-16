@@ -196,12 +196,22 @@ jobs:
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
              --arg releaseUrl "$RELEASE_URL" --arg backupCommit "$BACKUP_COMMIT" \
-            '.currentVersion=$version | .status.validation="passed" | .status.githubRelease="published" | .status.greasyForkSync="verified" | .status.backup="private-repository-verified" | .status.discordRelease="posted" | .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} | .lastUpdated=$now' \
+            '.currentVersion=$version |
+             .status.validation="passed" |
+             .status.githubRelease="published" |
+             .status.greasyForkSync="verified" |
+             .status.backup="private-repository-verified" |
+             .status.discordRelease="posted" |
+             .status.releaseReadiness="passed" |
+             .releaseReadiness={version:$version,state:"passed",requiredSecrets:true,privateRepositoryReadWrite:true,greasyForkMetadataVerified:true,publicReleaseCreated:false,completedAt:$now} |
+             .latestRelease={version:$version,sha256:$hash,githubRelease:$releaseUrl,greasyForkVerified:true,privateBackupCommit:$backupCommit,discordPosted:true,completedAt:$now} |
+             .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json
+          python3 .github/scripts/generate_release_dashboard.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/release-dashboard.json
+          git add status/release-dashboard.json status/README.md
           git commit -m "Record Toolkit ${RELEASE_VERSION} verified release"
           git pull --rebase origin main
           git push origin HEAD:main
@@ -224,5 +234,5 @@ jobs:
             echo "- ✅ Greasy Fork version verified"
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
-            echo "- ✅ Release dashboard updated"
+            echo "- ✅ Release dashboard and generated control panel updated"
           } >> "$GITHUB_STEP_SUMMARY"

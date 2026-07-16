@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.8] - 2026-07-16
+
+### Added
+- Added a compact Mission Value indicator to dynamically opened MissionChief mission windows.
+- Mission Value is enabled by default and can be turned on or off persistently from the Ops section on Desktop, Tablet and iOS.
+- Values reuse the Toolkit's verified live marker, mission snapshot, captured overlay and mission-list data sources; unavailable values remain hidden rather than guessed.
+
+### Compatibility
+- The indicator uses normal document flow with reserved close-control space, preventing overlap with native mission controls.
+- Existing themes, settings import/export, Economy Mode and mission-window behaviour are preserved.
+
 ## [4.13.7] - 2026-07-16
 
 ### Fixed

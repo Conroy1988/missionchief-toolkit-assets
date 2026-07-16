@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.7
+// @version      4.13.8
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.7',
+        version: '4.13.8',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4137',
+        styleId: 'mc-map-command-toolkit-style-v4138',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -888,6 +888,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4135__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4136__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4137__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4138__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -931,7 +932,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.7',
+        guideVersion: '4.13.8',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1347,6 +1348,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let tabletDockObservedMap = null;
     let desktopPanelResizeObserver = null;
     let desktopPanelObservedElements = new Set();
+    let missionValueScanTimer = null;
+    let missionValueFeatureInstalled = false;
+    const missionValueObservedDocuments = new WeakSet();
+    const missionValueObservedFrames = new WeakSet();
+    const missionValueRetryState = new WeakMap();
     let commandBarAnimationTimer = null;
     let commandBarAnimating = false;
     let helpGuideDocumentCache = '';
@@ -1388,6 +1394,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 lockedOrigin: null
             },
             missionLockAudio: true,
+            missionValue: true,
             allianceCredits: false,
             allianceCreditMinimum: 0,
             missionAge: false,
@@ -1479,6 +1486,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
             : null;
         merged.missionLockAudio = merged.missionLockAudio !== false;
+        merged.missionValue = merged.missionValue !== false;
         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
         merged.transportWatcher = merged.transportWatcher !== false;
@@ -4151,6 +4159,47 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong { display:block !important; margin-top:2px !important; color:#fff !important; font-size:11px !important; font-weight:950 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-alert { margin-top:6px !important; padding:6px 7px !important; border-radius:7px !important; border:1px solid rgba(255,181,71,.34) !important; background:rgba(255,143,31,.11) !important; color:#ffd29a !important; font-size:8px !important; font-weight:900 !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-alert.mcms-stuck { border-color:rgba(255,74,64,.48) !important; background:rgba(255,44,36,.14) !important; color:#ffaaa4 !important; }
+
+
+        .mcms-mission-value-row {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            width: 100% !important;
+            min-height: 30px !important;
+            box-sizing: border-box !important;
+            margin: 0 0 8px 0 !important;
+            padding: 5px 46px 5px 8px !important;
+            clear: both !important;
+            position: relative !important;
+            z-index: 2 !important;
+            pointer-events: none !important;
+        }
+        .mcms-mission-value-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            max-width: min(100%, 260px) !important;
+            min-height: 25px !important;
+            box-sizing: border-box !important;
+            padding: 4px 10px !important;
+            border: 1px solid rgba(235,190,64,.72) !important;
+            border-radius: 8px !important;
+            background: linear-gradient(145deg, rgba(48,39,13,.96), rgba(19,21,24,.96)) !important;
+            color: #ffe59a !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,.34) !important;
+            font: 900 11px/1.25 Arial, Helvetica, sans-serif !important;
+            letter-spacing: .15px !important;
+            text-align: right !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            pointer-events: none !important;
+        }
+        @media (max-width: 520px) {
+            .mcms-mission-value-row { padding-right: 40px !important; }
+            .mcms-mission-value-badge { max-width: 100% !important; font-size: 10px !important; }
+        }
 
         .mcms-stuck-mission-icon { pointer-events:none !important; }
         .mcms-stuck-mission-badge { display:inline-flex !important; align-items:center !important; justify-content:center !important; min-width:58px !important; height:17px !important; padding:0 6px !important; border-radius:6px !important; border:1px solid rgba(255,86,72,.72) !important; background:rgba(90,10,8,.88) !important; color:#ffd7d2 !important; font:950 8px/17px Arial,Helvetica,sans-serif !important; letter-spacing:.35px !important; text-shadow:0 1px 2px #000 !important; box-shadow:0 0 10px rgba(255,53,39,.32) !important; white-space:nowrap !important; }
@@ -20836,6 +20885,228 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return { value: null, source: 'unavailable' };
     }
 
+
+    function missionValueCurrencyMeta(hostname = location.hostname) {
+        const host = String(hostname || '').trim().toLowerCase();
+        if (/(?:^|\.)missionchief\.com$/u.test(host)) return { locale: 'en-US', symbol: '$' };
+        if (/(?:^|\.)leitstellenspiel\.de$/u.test(host)) return { locale: 'de-DE', symbol: '€' };
+        if (/(?:^|\.)meldkamerspel\.com$/u.test(host)) return { locale: 'nl-NL', symbol: '€' };
+        return { locale: 'en-GB', symbol: '£' };
+    }
+
+    function formatMissionWindowValue(value, hostname = location.hostname) {
+        const amount = Number(value);
+        if (!Number.isFinite(amount) || amount < 0) return '';
+        const { locale, symbol } = missionValueCurrencyMeta(hostname);
+        return `${symbol}${Math.round(amount).toLocaleString(locale)}`;
+    }
+
+    function missionValueIdFromUrl(value, baseUrl = location.href) {
+        let pathname = String(value || '').trim();
+        if (!pathname) return null;
+        try { pathname = new URL(pathname, baseUrl).pathname; } catch (err) {}
+        const match = pathname.match(/\/missions\/(\d+)(?:\/|$)/u);
+        return match ? normaliseMissionId(match[1]) : null;
+    }
+
+    function missionValueIdFromElement(root) {
+        if (!root) return null;
+        const doc = root.ownerDocument || document;
+        const directNodes = [root];
+        try {
+            directNodes.push(...root.querySelectorAll('[data-mission-id], [data-mission_id], input[name="mission_id"], input[name="mission[id]"]'));
+        } catch (err) {}
+        for (const node of directNodes) {
+            const candidates = [
+                node?.dataset?.missionId,
+                node?.dataset?.mission_id,
+                node?.getAttribute?.('data-mission-id'),
+                node?.getAttribute?.('data-mission_id'),
+                node?.value
+            ];
+            for (const candidate of candidates) {
+                const id = normaliseMissionId(candidate);
+                if (id !== null) return id;
+            }
+            const idMatch = String(node?.id || '').match(/(?:^|_)(?:mission|mission_content|mission_panel)_(\d+)(?:$|_)/u);
+            if (idMatch) return normaliseMissionId(idMatch[1]);
+        }
+
+        let routeNodes = [];
+        try {
+            routeNodes = Array.from(root.querySelectorAll('a[href*="/missions/"], form[action*="/missions/"], [data-url*="/missions/"], [data-href*="/missions/"]'));
+        } catch (err) {}
+        for (const node of routeNodes) {
+            for (const attribute of ['href', 'action', 'data-url', 'data-href']) {
+                const id = missionValueIdFromUrl(node.getAttribute?.(attribute), doc.location?.href || location.href);
+                if (id !== null) return id;
+            }
+        }
+
+        if (doc !== document) {
+            try {
+                const id = missionValueIdFromUrl(doc.location?.href, location.href);
+                if (id !== null) return id;
+            } catch (err) {}
+        }
+        return null;
+    }
+
+    function missionValueMountForRoot(root) {
+        if (!root) return null;
+        const selector = '.lightbox_content, .modal-body, #mission_content, .mission_content, [data-mission-content]';
+        try {
+            if (root.matches?.(selector)) return root;
+            return root.querySelector?.(selector) || root;
+        } catch (err) {
+            return root;
+        }
+    }
+
+    function missionValueWindowCandidates() {
+        const candidates = new Map();
+        const add = root => {
+            if (!root?.isConnected) return;
+            const missionId = missionValueIdFromElement(root);
+            if (missionId === null) return;
+            const mount = missionValueMountForRoot(root);
+            if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
+            if (!candidates.has(mount)) candidates.set(mount, { root, mount, missionId });
+        };
+
+        transportSweepVisibleWindowRoots().forEach(add);
+        for (const context of transportSweepDocumentContexts()) {
+            observeMissionValueDocument(context.doc);
+            if (context.doc !== document) {
+                try {
+                    if (missionValueIdFromUrl(context.doc.location?.href, location.href) !== null) add(context.doc.body);
+                } catch (err) {}
+            }
+        }
+        return Array.from(candidates.values());
+    }
+
+    function removeMissionValueRows(scope = document) {
+        try { scope.querySelectorAll?.('.mcms-mission-value-row').forEach(row => row.remove()); } catch (err) {}
+    }
+
+    function clearMissionValueIndicators() {
+        for (const context of transportSweepDocumentContexts()) removeMissionValueRows(context.doc);
+    }
+
+    function syncMissionValueCandidate(candidate) {
+        const { mount, missionId } = candidate || {};
+        if (!mount?.isConnected || missionId === null) return false;
+        const marker = getMissionMarkerIndex().byId.get(missionId) || getMissionMarkerIndex().byId.get(String(missionId)) || null;
+        const snapshot = liveMissionSnapshots.get(missionId) || liveMissionSnapshots.get(String(missionId)) || missionSnapshotCache.get(missionId) || missionSnapshotCache.get(String(missionId)) || null;
+        const details = criticalMissionValueDetails({ missionId, marker, snapshot });
+        const formatted = formatMissionWindowValue(details.value);
+
+        let rows = [];
+        try { rows = Array.from(mount.querySelectorAll(':scope > .mcms-mission-value-row')); } catch (err) {
+            try { rows = Array.from(mount.children || []).filter(child => child.classList?.contains('mcms-mission-value-row')); } catch (innerErr) {}
+        }
+        const row = rows.shift() || null;
+        rows.forEach(extra => extra.remove());
+        if (!formatted) {
+            row?.remove();
+            return false;
+        }
+
+        const doc = mount.ownerDocument || document;
+        const nextRow = row || doc.createElement('div');
+        if (!row) {
+            nextRow.className = 'mcms-mission-value-row';
+            nextRow.setAttribute('data-mcms-mission-value', 'true');
+            const badge = doc.createElement('span');
+            badge.className = 'mcms-mission-value-badge';
+            nextRow.appendChild(badge);
+            mount.insertBefore(nextRow, mount.firstChild || null);
+        }
+        nextRow.dataset.mcmsMissionId = String(missionId);
+        const badge = nextRow.querySelector('.mcms-mission-value-badge');
+        if (!badge) return false;
+        const text = `Mission Value · ${formatted}`;
+        if (badge.textContent !== text) badge.textContent = text;
+        badge.title = `Mission Value · ${formatted} · ${details.source}`;
+        return true;
+    }
+
+    function scheduleMissionValueScan(delay = 80) {
+        runtimeClearTimeout(missionValueScanTimer);
+        missionValueScanTimer = runtimeSetTimeout(() => {
+            missionValueScanTimer = null;
+            scanMissionValueWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionValueWindows() {
+        if (!state.missionValue) {
+            clearMissionValueIndicators();
+            return;
+        }
+        let needsRetry = false;
+        for (const candidate of missionValueWindowCandidates()) {
+            const rendered = syncMissionValueCandidate(candidate);
+            if (rendered) {
+                missionValueRetryState.delete(candidate.mount);
+                continue;
+            }
+            const previous = missionValueRetryState.get(candidate.mount);
+            const attempts = previous?.missionId === candidate.missionId ? previous.attempts : 0;
+            if (attempts < 3) {
+                missionValueRetryState.set(candidate.mount, { missionId: candidate.missionId, attempts: attempts + 1 });
+                needsRetry = true;
+            }
+        }
+        if (needsRetry) runtimeSetTimeout(() => scheduleMissionValueScan(0), 650);
+    }
+
+    function observeMissionValueFrame(frame) {
+        if (!frame || missionValueObservedFrames.has(frame)) return;
+        missionValueObservedFrames.add(frame);
+        const onLoad = () => scheduleMissionValueScan(40);
+        frame.addEventListener('load', onLoad);
+        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionValueDocument(doc) {
+        if (!doc || missionValueObservedDocuments.has(doc)) return;
+        missionValueObservedDocuments.add(doc);
+        let frames = [];
+        try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
+        frames.forEach(observeMissionValueFrame);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"]';
+        const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+            const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
+                if (node?.nodeType !== 1) return false;
+                if (node.matches?.(activitySelector)) return true;
+                return Boolean(node.querySelector?.(activitySelector));
+            }));
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionValueFrame); } catch (err) {}
+            scheduleMissionValueScan(50);
+        }));
+        observer.observe(root, { childList: true, subtree: true });
+    }
+
+    function installMissionValueWindows() {
+        if (!missionValueFeatureInstalled) {
+            missionValueFeatureInstalled = true;
+            runtimeOnCleanup(() => {
+                runtimeClearTimeout(missionValueScanTimer);
+                missionValueScanTimer = null;
+                clearMissionValueIndicators();
+            });
+        }
+        for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);
+        scheduleMissionValueScan(0);
+        runtimeSetTimeout(() => scheduleMissionValueScan(0), 180);
+        runtimeSetTimeout(() => scheduleMissionValueScan(0), 800);
+    }
+
     function criticalMissionValueForEntry(entry) {
         return criticalMissionValueDetails(entry).value;
     }
@@ -26274,6 +26545,7 @@ Create the private backup now?`);
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+        if (feature === 'missionValue') state.missionValue = !state.missionValue;
         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
         if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
         if (feature === 'missionSpawn') {
@@ -26309,6 +26581,11 @@ Create the private backup now?`);
         if (feature === 'buildings') synchronisePersonalBuildingVisibility();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+        if (feature === 'missionValue') {
+            if (state.missionValue) installMissionValueWindows();
+            else clearMissionValueIndicators();
+            showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off');
+        }
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
@@ -27220,6 +27497,7 @@ Create the private backup now?`);
                 <div class="mcms-section-label">Mission Intelligence</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+                    ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
                     ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
@@ -27919,6 +28197,7 @@ Create the private backup now?`);
             payoutFlash: state.payoutFlash.enabled,
             payoutSound: state.payoutFlash.soundEnabled,
             missionInspector: state.missionInspector,
+            missionValue: state.missionValue,
             stuckDetector: state.stuckDetector.enabled,
             missionSpawn: state.missionSpawn.enabled,
             resourceGap: state.resourceGap.enabled,
@@ -28346,6 +28625,7 @@ Create the private backup now?`);
         scanInlineMissionMarkerData();
         installMissionMarkerAddHook();
         installRadioMessageHook();
+        if (state.missionValue) installMissionValueWindows();
 
         startupDataPassActive = true;
         try {

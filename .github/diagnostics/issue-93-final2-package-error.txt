@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-93-final2-error-diagnostic.py", line 17, in <module>
-    exec(compile(code, str(package), "exec"), namespace, namespace)
-  File "/tmp/issue-93-final2-_4zbjr94/repo/.github/development-packages/issue-93-mission-value-final2.py", line 56, in <module>
-    exec(compile(package_text, str(original_package), "exec"), namespace, namespace)
-  File "/tmp/issue-93-final2-_4zbjr94/repo/.github/development-packages/issue-93-mission-value.py", line 373, in <module>
-  File "/tmp/issue-93-final2-_4zbjr94/repo/.github/development-packages/issue-93-mission-value.py", line 22, in replace_once
-AssertionError: mission value startup: expected one match, found 6

@@ -1,0 +1,315 @@
+{
+  "parser": {
+    "pageNumber": 3,
+    "rows": [
+      {
+        "amount": "1,250 Credits",
+        "description": "  [Alliance]   Warehouse fire  ",
+        "dateLabel": "16/07/2026 12:34",
+        "rawTimestamp": "1784201640000"
+      },
+      {
+        "amount": "(750 Credits)",
+        "description": "Vehicle bought",
+        "dateLabel": "15-07-2026 08:00",
+        "rawTimestamp": ""
+      },
+      {
+        "amount": "0 Credits",
+        "description": "Ignored zero-value row",
+        "dateLabel": "16/07/2026 12:35",
+        "rawTimestamp": "1784201700000"
+      },
+      {
+        "amount": "500 Credits",
+        "description": "",
+        "dateLabel": "16/07/2026 12:36",
+        "rawTimestamp": "1784201760000"
+      },
+      {
+        "amount": "+100 Credits",
+        "description": "Broken timestamp fixture",
+        "dateLabel": "not a date",
+        "rawTimestamp": ""
+      }
+    ],
+    "pagination": [
+      { "text": "1", "href": "/credits?page=1" },
+      { "text": "7", "href": "/credits?page=7" },
+      { "text": "Next", "href": "/credits?page=9" }
+    ],
+    "expected": {
+      "entryCount": 3,
+      "invalidTimestampCount": 1,
+      "lastPage": 9,
+      "amounts": [1250, -750, 100]
+    }
+  },
+  "retry": {
+    "page": 2,
+    "failuresBeforeSuccess": 2,
+    "expectedAttempts": 3,
+    "expectedDelays": 2,
+    "expectedPath": "/credits?page=2"
+  },
+  "ledgerScenarios": [
+    {
+      "name": "requested range stops at the first covered boundary and preserves duplicate occurrences",
+      "requiredStart": "2026-07-16T00:00:00Z",
+      "state": { "financialVault": { "enabled": false } },
+      "pages": {
+        "1": {
+          "lastPage": 3,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-16T12:00:00Z", "amount": 100, "description": "[Alliance] Warehouse fire", "rawTimestamp": "1784203200000", "dateLabel": "16/07/2026 12:00", "page": 1, "row": 0 },
+            { "timestamp": "2026-07-16T12:00:00Z", "amount": 100, "description": "[Alliance] Warehouse fire", "rawTimestamp": "1784203200000", "dateLabel": "16/07/2026 12:00", "page": 1, "row": 1 },
+            { "timestamp": "2026-07-16T06:00:00Z", "amount": -50, "description": "Training course", "rawTimestamp": "1784181600000", "dateLabel": "16/07/2026 06:00", "page": 1, "row": 2 }
+          ]
+        },
+        "2": {
+          "lastPage": 3,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-15T23:30:00Z", "amount": 200, "description": "Patient transport", "rawTimestamp": "1784158200000", "dateLabel": "15/07/2026 23:30", "page": 2, "row": 0 }
+          ]
+        }
+      },
+      "expected": {
+        "pageCalls": [1, 2, 1],
+        "pageCount": 2,
+        "lastPage": 3,
+        "entryCount": 4,
+        "coverageReached": true,
+        "ledgerStable": true,
+        "scanRetries": 0,
+        "complete": true,
+        "duplicateOccurrences": [1, 2],
+        "maxConcurrency": 1
+      }
+    },
+    {
+      "name": "invalid timestamps preserve readable rows but prevent a complete result",
+      "requiredStart": "2026-07-15T00:00:00Z",
+      "state": { "financialVault": { "enabled": false } },
+      "pages": {
+        "1": {
+          "lastPage": 1,
+          "invalidTimestampCount": 1,
+          "entries": [
+            { "timestamp": "2026-07-16T09:00:00Z", "amount": 500, "description": "Completed task", "rawTimestamp": "1784192400000", "dateLabel": "16/07/2026 09:00", "page": 1, "row": 0 },
+            { "timestamp": "invalid", "amount": 100, "description": "Unreadable date", "rawTimestamp": "", "dateLabel": "unknown", "page": 1, "row": 1 }
+          ]
+        }
+      },
+      "expected": {
+        "pageCalls": [1],
+        "pageCount": 1,
+        "lastPage": 1,
+        "entryCount": 1,
+        "invalidTimestampCount": 1,
+        "coverageReached": true,
+        "ledgerStable": true,
+        "complete": false,
+        "maxConcurrency": 1
+      }
+    },
+    {
+      "name": "a changed first-page anchor restarts the requested scan exactly once",
+      "requiredStart": "2026-07-16T00:00:00Z",
+      "state": { "financialVault": { "enabled": false } },
+      "pages": {
+        "1": [
+          {
+            "lastPage": 2,
+            "invalidTimestampCount": 0,
+            "entries": [
+              { "timestamp": "2026-07-16T12:00:00Z", "amount": 100, "description": "Initial activity", "rawTimestamp": "1784203200000", "dateLabel": "16/07/2026 12:00", "page": 1, "row": 0 }
+            ]
+          },
+          {
+            "lastPage": 2,
+            "invalidTimestampCount": 0,
+            "entries": [
+              { "timestamp": "2026-07-16T12:05:00Z", "amount": 150, "description": "New activity", "rawTimestamp": "1784203500000", "dateLabel": "16/07/2026 12:05", "page": 1, "row": 0 }
+            ]
+          },
+          {
+            "lastPage": 2,
+            "invalidTimestampCount": 0,
+            "entries": [
+              { "timestamp": "2026-07-16T12:05:00Z", "amount": 150, "description": "New activity", "rawTimestamp": "1784203500000", "dateLabel": "16/07/2026 12:05", "page": 1, "row": 0 }
+            ]
+          },
+          {
+            "lastPage": 2,
+            "invalidTimestampCount": 0,
+            "entries": [
+              { "timestamp": "2026-07-16T12:05:00Z", "amount": 150, "description": "New activity", "rawTimestamp": "1784203500000", "dateLabel": "16/07/2026 12:05", "page": 1, "row": 0 }
+            ]
+          }
+        ],
+        "2": {
+          "lastPage": 2,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-15T22:00:00Z", "amount": 75, "description": "Older activity", "rawTimestamp": "1784152800000", "dateLabel": "15/07/2026 22:00", "page": 2, "row": 0 }
+          ]
+        }
+      },
+      "expected": {
+        "pageCalls": [1, 2, 1, 1, 2, 1],
+        "pageCount": 2,
+        "lastPage": 2,
+        "entryCount": 2,
+        "coverageReached": true,
+        "ledgerStable": true,
+        "scanRetries": 1,
+        "complete": true,
+        "restartDelay": 80,
+        "maxConcurrency": 1
+      }
+    },
+    {
+      "name": "incremental archive overlap stops after the first page",
+      "requiredStart": "2026-07-01T00:00:00Z",
+      "state": { "financialVault": { "enabled": true } },
+      "vault": {
+        "coverageStartMs": "2026-06-01T00:00:00Z",
+        "coverageEndMs": "2026-07-16T12:00:00Z",
+        "archiveComplete": false,
+        "archiveTruncated": false,
+        "droppedTransactions": 0,
+        "transactions": [],
+        "balanceCheckpoints": []
+      },
+      "vaultKnownFromPage1": true,
+      "pages": {
+        "1": {
+          "lastPage": 20,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-16T11:00:00Z", "amount": 100, "description": "Known one", "rawTimestamp": "1784199600000", "dateLabel": "16/07/2026 11:00", "page": 1, "row": 0 },
+            { "timestamp": "2026-07-16T10:00:00Z", "amount": 200, "description": "Known two", "rawTimestamp": "1784196000000", "dateLabel": "16/07/2026 10:00", "page": 1, "row": 1 },
+            { "timestamp": "2026-07-16T09:00:00Z", "amount": 300, "description": "Known three", "rawTimestamp": "1784192400000", "dateLabel": "16/07/2026 09:00", "page": 1, "row": 2 }
+          ]
+        }
+      },
+      "expected": {
+        "pageCalls": [1],
+        "pageCount": 1,
+        "coverageReached": true,
+        "ledgerStable": true,
+        "complete": true,
+        "ledgerSourceIncludes": "incremental",
+        "maxConcurrency": 1
+      }
+    },
+    {
+      "name": "missing incremental overlap falls back to one complete requested-range scan",
+      "requiredStart": "2026-07-10T00:00:00Z",
+      "incrementalPageCap": 2,
+      "state": { "financialVault": { "enabled": true } },
+      "vault": {
+        "coverageStartMs": "2026-07-01T00:00:00Z",
+        "coverageEndMs": "2026-07-16T12:00:00Z",
+        "archiveComplete": false,
+        "archiveTruncated": false,
+        "droppedTransactions": 0,
+        "transactions": [
+          { "timestamp": "2026-07-01T00:00:00Z", "amount": 1, "description": "Unrelated archived entry", "sourceKey": "unrelated", "occurrence": 1 }
+        ],
+        "balanceCheckpoints": []
+      },
+      "pages": {
+        "1": {
+          "lastPage": 4,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-16T11:00:00Z", "amount": 100, "description": "Recent one", "rawTimestamp": "1784199600000", "dateLabel": "16/07/2026 11:00", "page": 1, "row": 0 }
+          ]
+        },
+        "2": {
+          "lastPage": 4,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-14T11:00:00Z", "amount": 200, "description": "Recent two", "rawTimestamp": "1784026800000", "dateLabel": "14/07/2026 11:00", "page": 2, "row": 0 }
+          ]
+        },
+        "3": {
+          "lastPage": 4,
+          "invalidTimestampCount": 0,
+          "entries": [
+            { "timestamp": "2026-07-09T23:00:00Z", "amount": 300, "description": "Boundary reached", "rawTimestamp": "1783638000000", "dateLabel": "09/07/2026 23:00", "page": 3, "row": 0 }
+          ]
+        }
+      },
+      "expected": {
+        "pageCalls": [1, 2, 1, 2, 3, 1],
+        "pageCount": 3,
+        "coverageReached": true,
+        "ledgerStable": true,
+        "complete": true,
+        "ledgerSourceIncludes": "requested-range",
+        "maxConcurrency": 1
+      }
+    }
+  ],
+  "summary": {
+    "period": {
+      "start": "2026-07-16T00:00:00Z",
+      "end": "2026-07-17T00:00:00Z"
+    },
+    "transactions": [
+      { "timestamp": "2026-07-16T01:00:00Z", "amount": 1000, "description": "Alliance mission", "classification": { "key": "alliance", "label": "Alliance Missions", "accountingGroup": "operatingIncome", "missionType": "alliance", "confidence": 0.99, "ruleId": "fixture-alliance" } },
+      { "timestamp": "2026-07-16T02:00:00Z", "amount": 500, "description": "Event reward", "classification": { "key": "events", "label": "Event Income", "accountingGroup": "otherIncome", "missionType": "", "confidence": 0.8, "ruleId": "fixture-event" } },
+      { "timestamp": "2026-07-16T03:00:00Z", "amount": -200, "description": "Training", "classification": { "key": "training", "label": "Training", "accountingGroup": "operatingExpense", "missionType": "", "confidence": 0.95, "ruleId": "fixture-training" } },
+      { "timestamp": "2026-07-16T04:00:00Z", "amount": -300, "description": "Vehicle bought", "classification": { "key": "vehicles", "label": "Vehicles", "accountingGroup": "capitalInvestment", "missionType": "", "confidence": 0.99, "ruleId": "fixture-vehicle" } },
+      { "timestamp": "2026-07-16T05:00:00Z", "amount": 250, "description": "Patient transport", "classification": { "key": "transport", "label": "Transport", "accountingGroup": "operatingIncome", "missionType": "transport", "confidence": 0.98, "ruleId": "fixture-transport" } },
+      { "timestamp": "2026-07-16T06:00:00Z", "amount": -50, "description": "Miscellaneous fee", "classification": { "key": "unclassifiedSpending", "label": "Unclassified Spending", "accountingGroup": "operatingExpense", "missionType": "", "confidence": 0.25, "ruleId": "fallback-spending" } }
+    ],
+    "expected": {
+      "income": 1750,
+      "spending": 550,
+      "operatingIncome": 1250,
+      "otherIncome": 500,
+      "operatingExpense": 250,
+      "capitalInvestment": 300,
+      "operatingResult": 1500,
+      "net": 1200,
+      "incomeCount": 3,
+      "spendingCount": 3,
+      "missionCount": 2,
+      "missionIncome": 1250,
+      "averageMissionReward": 625,
+      "medianMissionReward": 625,
+      "largestReward": 1000,
+      "smallestReward": 250,
+      "largestSpend": 300,
+      "allianceIncome": 1000,
+      "transportIncome": 250,
+      "unclassifiedCount": 1,
+      "unclassifiedAmount": 50
+    },
+    "discordRequiredKeys": [
+      "income",
+      "operatingExpense",
+      "capitalInvestment",
+      "operatingResult",
+      "net",
+      "operatingMarginPercent",
+      "missionCount",
+      "activeHours",
+      "activeIncomePerHour",
+      "incomePerHour",
+      "averageMissionReward",
+      "medianMissionReward",
+      "allianceIncomePercent",
+      "personalIncomePercent",
+      "incomeCategories",
+      "operatingExpenseCategories",
+      "capitalCategories",
+      "topPayouts"
+    ]
+  }
+}

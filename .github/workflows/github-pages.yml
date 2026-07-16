@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - ".github/scripts/build_pages_site.py"
+      - ".github/scripts/test_pages_release_deploy_contract.py"
       - ".github/workflows/github-pages.yml"
       - ".github/release-settings.json"
       - "docs/site-data.json"
@@ -20,6 +21,7 @@ on:
       - main
     paths:
       - ".github/scripts/build_pages_site.py"
+      - ".github/scripts/test_pages_release_deploy_contract.py"
       - ".github/workflows/github-pages.yml"
       - ".github/release-settings.json"
       - "docs/site-data.json"
@@ -29,6 +31,9 @@ on:
       - "status/release-dashboard.json"
       - "CHANGELOG.md"
       - "README.md"
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 permissions:
@@ -47,10 +52,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event_name == 'release' && 'main' || github.sha }}
+          persist-credentials: false
 
       - name: Validate source syntax
         run: |
           python3 -m py_compile .github/scripts/build_pages_site.py
+          python3 -m py_compile .github/scripts/test_pages_release_deploy_contract.py
+          python3 .github/scripts/test_pages_release_deploy_contract.py
           node --check docs/site-assets/site.js
           python3 -m json.tool docs/site-data.json > /dev/null
 
@@ -90,7 +100,7 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     permissions:
       contents: read
@@ -104,6 +114,33 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event_name == 'release' && 'main' || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Wait for verified release dashboard
+        if: github.event_name == 'release'
+        env:
+          EXPECTED_TAG: ${{ github.event.release.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_VERSION="${EXPECTED_TAG#v}"
+          for ATTEMPT in $(seq 1 40); do
+            git fetch --no-tags --depth=1 origin main
+            git reset --hard origin/main
+            DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
+            RELEASE_STATE="$(jq -r '.status.githubRelease // empty' status/release-dashboard.json)"
+            if [[ "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" ]]; then
+              echo "Verified release dashboard reached ${EXPECTED_VERSION} on attempt ${ATTEMPT}."
+              exit 0
+            fi
+            echo "Waiting for verified release ${EXPECTED_VERSION}; dashboard=${DASHBOARD_VERSION:-missing}, state=${RELEASE_STATE:-missing}."
+            sleep 15
+          done
+          echo "::error::Release dashboard did not verify ${EXPECTED_VERSION} within 10 minutes."
+          exit 1
 
       - name: Configure GitHub Pages
         id: pages

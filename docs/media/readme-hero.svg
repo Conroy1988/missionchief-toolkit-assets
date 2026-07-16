@@ -1,132 +1,149 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 680" role="img" aria-labelledby="title desc">
-  <title id="title">MissionChief Map Command Toolkit</title>
-  <desc id="desc">A cinematic operational command-centre banner with map intelligence, emergency markers and Hyrule Command accents.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 640" role="img" aria-labelledby="title desc">
+  <title id="title">MissionChief Map Command Toolkit operational suite</title>
+  <desc id="desc">A multi-system command dashboard showing mission intelligence, fleet awareness, map coverage, finance and seven equal interface themes.</desc>
   <defs>
-    <linearGradient id="bg" x1="80" y1="40" x2="1510" y2="650" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#050A12"/>
-      <stop offset=".48" stop-color="#0A1727"/>
-      <stop offset="1" stop-color="#06100F"/>
-    </linearGradient>
-    <radialGradient id="blueGlow" cx="0" cy="0" r="1" gradientTransform="translate(1210 205) rotate(145) scale(520 390)" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#27DBFF" stop-opacity=".28"/>
-      <stop offset="1" stop-color="#27DBFF" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="greenGlow" cx="0" cy="0" r="1" gradientTransform="translate(1280 545) rotate(-150) scale(430 260)" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#63FFB0" stop-opacity=".21"/>
-      <stop offset="1" stop-color="#63FFB0" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#FFF0A0"/>
-      <stop offset=".38" stop-color="#E7B84D"/>
-      <stop offset="1" stop-color="#7C4815"/>
-    </linearGradient>
-    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#8EFFF5"/>
-      <stop offset=".48" stop-color="#28BFE8"/>
-      <stop offset="1" stop-color="#176B96"/>
+    <linearGradient id="bg" x1="70" y1="30" x2="1510" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#050911"/>
+      <stop offset=".48" stop-color="#091525"/>
+      <stop offset="1" stop-color="#090D16"/>
     </linearGradient>
     <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#0C1D30" stop-opacity=".94"/>
-      <stop offset="1" stop-color="#07111D" stop-opacity=".86"/>
+      <stop stop-color="#0D1A2A" stop-opacity=".98"/>
+      <stop offset="1" stop-color="#07101B" stop-opacity=".93"/>
     </linearGradient>
-    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
-      <path d="M48 0H0V48" fill="none" stroke="#4ED6FF" stroke-opacity=".055" stroke-width="1"/>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#78F1FF"/>
+      <stop offset=".5" stop-color="#20BCEB"/>
+      <stop offset="1" stop-color="#166C9B"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#38D9FF"/>
+      <stop offset=".52" stop-color="#6BF5B2"/>
+      <stop offset="1" stop-color="#FFD166"/>
+    </linearGradient>
+    <pattern id="grid" width="52" height="52" patternUnits="userSpaceOnUse">
+      <path d="M52 0H0V52" fill="none" stroke="#63DFFF" stroke-opacity=".05"/>
     </pattern>
-    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
-      <feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#000" flood-opacity=".65"/>
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000" flood-opacity=".62"/>
     </filter>
-    <clipPath id="mapClip"><rect x="920" y="80" width="590" height="520" rx="42"/></clipPath>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="mapClip"><rect x="910" y="55" width="625" height="456" rx="34"/></clipPath>
   </defs>
 
-  <rect width="1600" height="680" rx="32" fill="url(#bg)"/>
-  <rect width="1600" height="680" rx="32" fill="url(#grid)"/>
-  <rect width="1600" height="680" rx="32" fill="url(#blueGlow)"/>
-  <rect width="1600" height="680" rx="32" fill="url(#greenGlow)"/>
+  <rect width="1600" height="640" rx="34" fill="url(#bg)"/>
+  <rect width="1600" height="640" rx="34" fill="url(#grid)"/>
+  <circle cx="1380" cy="80" r="300" fill="#15D7FF" opacity=".07"/>
+  <circle cx="1230" cy="590" r="340" fill="#55F0A7" opacity=".045"/>
 
-  <g opacity=".24" fill="none" stroke="#5AD7FF" stroke-width="2">
-    <path d="M-60 480C100 380 180 520 330 434s250-206 430-92 270 65 438-35 270-92 475 22"/>
-    <path d="M-20 540C120 438 245 600 388 498s222-160 390-78 300 104 445-4 244-89 430 4"/>
-    <path d="M30 601c150-96 250 44 398-41s254-143 408-51 274 79 411-12 230-70 367 2"/>
-  </g>
+  <g transform="translate(58 52)" filter="url(#shadow)">
+    <rect width="810" height="459" rx="34" fill="url(#panel)" stroke="#4BD7F7" stroke-opacity=".28" stroke-width="2"/>
+    <path d="M34 1h235l24 24h473" fill="none" stroke="#67E4FF" stroke-opacity=".48" stroke-width="3"/>
+    <path d="M1 358V87l31-31" fill="none" stroke="#67E4FF" stroke-opacity=".18" stroke-width="3"/>
 
-  <g transform="translate(84 74)">
-    <rect width="744" height="532" rx="38" fill="url(#panel)" stroke="#2CBDEB" stroke-opacity=".38" stroke-width="2" filter="url(#shadow)"/>
-    <path d="M38 1h232l24 24h410" fill="none" stroke="#70E7FF" stroke-opacity=".45" stroke-width="3"/>
-    <path d="M1 406V94L34 61" fill="none" stroke="#70E7FF" stroke-opacity=".22" stroke-width="3"/>
-
-    <g transform="translate(46 44)">
-      <circle cx="26" cy="26" r="25" fill="#0A2835" stroke="#43E4F5" stroke-width="2"/>
-      <path d="M26 9 35 25H17L26 9Zm-9 19h18l-9 16-9-16Z" fill="url(#cyan)" filter="url(#softGlow)"/>
-      <text x="70" y="22" fill="#74E7FF" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="4">MISSIONCHIEF</text>
-      <text x="70" y="49" fill="#AFC7D8" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="2">MAP COMMAND TOOLKIT</text>
+    <g transform="translate(42 35)">
+      <circle cx="24" cy="24" r="23" fill="#092B3A" stroke="#42DDF5" stroke-width="2"/>
+      <path d="M24 8 33 23H15L24 8Zm-9 18h18l-9 15-9-15Z" fill="url(#cyan)"/>
+      <text x="65" y="19" fill="#7BEAFF" font-family="Segoe UI,Arial,sans-serif" font-size="17" font-weight="800" letter-spacing="3.8">MISSIONCHIEF</text>
+      <text x="65" y="44" fill="#91A9BC" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="2.2">MAP COMMAND TOOLKIT</text>
     </g>
 
-    <text x="46" y="170" fill="#F4FBFF" font-family="Segoe UI,Arial,sans-serif" font-size="65" font-weight="800" letter-spacing="-2">Command the map.</text>
-    <text x="46" y="236" fill="url(#cyan)" font-family="Segoe UI,Arial,sans-serif" font-size="65" font-weight="800" letter-spacing="-2">See the whole incident.</text>
-    <text x="49" y="291" fill="#A9C1D4" font-family="Segoe UI,Arial,sans-serif" font-size="22">Operational intelligence, fleet awareness, responsive controls</text>
-    <text x="49" y="324" fill="#A9C1D4" font-family="Segoe UI,Arial,sans-serif" font-size="22">and cinematic mission presentation — in one userscript.</text>
+    <text x="43" y="142" fill="#F4FAFF" font-family="Segoe UI,Arial,sans-serif" font-size="58" font-weight="800" letter-spacing="-2">One map. Every operational layer.</text>
+    <text x="45" y="190" fill="#A4BACE" font-family="Segoe UI,Arial,sans-serif" font-size="21">Mission control, live fleet state, geographic coverage, finance</text>
+    <text x="45" y="221" fill="#A4BACE" font-family="Segoe UI,Arial,sans-serif" font-size="21">and cinematic presentation — coordinated in one userscript.</text>
 
-    <g transform="translate(48 370)">
-      <g><rect width="147" height="50" rx="14" fill="#0E2B3E" stroke="#30CFF5" stroke-opacity=".62"/><circle cx="25" cy="25" r="7" fill="#50E4FF"/><text x="43" y="31" fill="#DDF8FF" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="700">MISSION INTEL</text></g>
-      <g transform="translate(162)"><rect width="144" height="50" rx="14" fill="#102A23" stroke="#5AF2AE" stroke-opacity=".58"/><circle cx="25" cy="25" r="7" fill="#65FFB2"/><text x="43" y="31" fill="#E5FFF2" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="700">FLEET STATUS</text></g>
-      <g transform="translate(321)"><rect width="126" height="50" rx="14" fill="#2A2112" stroke="#E9B94E" stroke-opacity=".64"/><circle cx="25" cy="25" r="7" fill="#FFD56E"/><text x="43" y="31" fill="#FFF4D7" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="700">THEMES</text></g>
-      <g transform="translate(462)"><rect width="168" height="50" rx="14" fill="#21152C" stroke="#C486FF" stroke-opacity=".62"/><circle cx="25" cy="25" r="7" fill="#CE8BFF"/><text x="43" y="31" fill="#F5E8FF" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="700">VERIFIED RELEASES</text></g>
+    <g transform="translate(43 258)">
+      <g>
+        <rect width="168" height="115" rx="20" fill="#0B2130" stroke="#35CEF1" stroke-opacity=".48"/>
+        <circle cx="29" cy="28" r="9" fill="#4DE2FF"/>
+        <text x="49" y="34" fill="#CFF8FF" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="800">MISSIONS</text>
+        <text x="20" y="71" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="800">24 ACTIVE</text>
+        <text x="20" y="96" fill="#78A0B9" font-family="Segoe UI,Arial,sans-serif" font-size="13">age · state · priority</text>
+      </g>
+      <g transform="translate(184)">
+        <rect width="168" height="115" rx="20" fill="#0B251F" stroke="#5AE9A5" stroke-opacity=".46"/>
+        <circle cx="29" cy="28" r="9" fill="#62F4B0"/>
+        <text x="49" y="34" fill="#D9FFEB" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="800">FLEET</text>
+        <text x="20" y="71" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="800">318 UNITS</text>
+        <text x="20" y="96" fill="#79AA94" font-family="Segoe UI,Arial,sans-serif" font-size="13">codes · demand · focus</text>
+      </g>
+      <g transform="translate(368)">
+        <rect width="168" height="115" rx="20" fill="#261F0E" stroke="#F3C74F" stroke-opacity=".48"/>
+        <circle cx="29" cy="28" r="9" fill="#FFD166"/>
+        <text x="49" y="34" fill="#FFF2C4" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="800">FINANCE</text>
+        <text x="20" y="71" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="800">+3.43M</text>
+        <text x="20" y="96" fill="#B7A46C" font-family="Segoe UI,Arial,sans-serif" font-size="13">income · spend · reports</text>
+      </g>
+      <g transform="translate(552)">
+        <rect width="168" height="115" rx="20" fill="#21152C" stroke="#C989FF" stroke-opacity=".48"/>
+        <circle cx="29" cy="28" r="9" fill="#CF8BFF"/>
+        <text x="49" y="34" fill="#F4E5FF" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="800">COVERAGE</text>
+        <text x="20" y="71" fill="#FFFFFF" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="800">LIVE MAP</text>
+        <text x="20" y="96" fill="#9C82B1" font-family="Segoe UI,Arial,sans-serif" font-size="13">heat · rings · bookmarks</text>
+      </g>
     </g>
 
-    <text x="49" y="487" fill="#6C879B" font-family="Segoe UI,Arial,sans-serif" font-size="15" letter-spacing="1.4">DESKTOP · TABLET · iOS · GREASY FORK</text>
+    <text x="45" y="421" fill="#637D91" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.4">DESKTOP · TABLET · iOS · ECONOMY MODE · VERIFIED DELIVERY</text>
   </g>
 
   <g clip-path="url(#mapClip)" filter="url(#shadow)">
-    <rect x="920" y="80" width="590" height="520" rx="42" fill="#08131F" stroke="#35CFF5" stroke-opacity=".35" stroke-width="2"/>
-    <path d="M950 232c81-63 144-38 211-85 70-49 123-10 184-42 49-26 108-13 177 27v482H902V356c44-25 74-63 48-124Z" fill="#0E2330"/>
-    <g opacity=".34" fill="none" stroke="#3CBAD5" stroke-width="2">
-      <path d="M889 168c126-61 179 19 281-35 109-58 207-45 377 23"/>
-      <path d="M883 218c119-45 189 26 290-22 105-50 208-44 382 31"/>
-      <path d="M879 279c133-34 177 30 293-9 112-38 220-22 387 52"/>
-      <path d="M886 349c104-30 188 31 288 1 117-35 219-11 377 45"/>
-      <path d="M900 425c114-30 194 25 296 3 111-25 214-1 347 45"/>
-      <path d="M925 501c106-18 178 19 275 8 108-13 199 8 317 48"/>
+    <rect x="910" y="55" width="625" height="456" rx="34" fill="#07111C" stroke="#3BCDEC" stroke-opacity=".29" stroke-width="2"/>
+    <path d="M890 170c115-47 182 21 284-28 109-53 232-40 390 34v360H890Z" fill="#0D2130"/>
+    <g fill="none" stroke="#42BFD8" stroke-width="2" opacity=".3">
+      <path d="M880 145c131-61 194 16 297-35 110-55 230-41 398 29"/>
+      <path d="M878 201c135-48 200 24 303-20 114-48 237-34 398 42"/>
+      <path d="M879 268c145-36 203 32 311-7 120-42 231-18 389 55"/>
+      <path d="M890 345c122-28 206 36 312 6 113-32 219-7 362 50"/>
+      <path d="M900 425c125-24 205 27 311 10 118-20 210 7 339 57"/>
     </g>
-    <g opacity=".45" fill="none" stroke="#52F5B3" stroke-width="3" stroke-dasharray="9 9">
-      <path d="M978 518c87-111 151-85 211-183 53-86 119-95 231-166"/>
+    <path d="M954 446c95-111 166-79 229-169 61-87 138-92 265-156" fill="none" stroke="#61F0AD" stroke-width="3" stroke-dasharray="9 10" opacity=".52"/>
+
+    <g transform="translate(1010 176)">
+      <circle r="38" fill="#092A39" stroke="#48DFF7" stroke-width="3"/>
+      <circle r="13" fill="#E0FFFF" stroke="#36DDF4" stroke-width="6" filter="url(#glow)"/>
+      <path d="M0-59v19M0 40v19M-59 0h19M40 0h19" stroke="#55E6F7" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(1287 156)">
+      <circle r="44" fill="#241018" stroke="#FF5875" stroke-width="3"/>
+      <path d="M0-22 19 19H-19L0-22Z" fill="#FF7088"/>
+      <rect x="-3" y="27" width="6" height="11" rx="3" fill="#FFD7DF"/>
+    </g>
+    <g transform="translate(1428 314)">
+      <circle r="34" fill="#11291F" stroke="#63EEA9" stroke-width="3"/>
+      <path d="m-13 2 8 8 19-24" fill="none" stroke="#B8FFD7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
 
-    <g transform="translate(1115 130)" filter="url(#softGlow)">
-      <path d="M90 0 137 82H43L90 0Z" fill="url(#gold)" stroke="#FFF2A3" stroke-width="5"/>
-      <path d="M43 91 90 173H-4L43 91Z" fill="url(#gold)" stroke="#FFF2A3" stroke-width="5"/>
-      <path d="M137 91 184 173H90l47-82Z" fill="url(#gold)" stroke="#FFF2A3" stroke-width="5"/>
+    <g transform="translate(950 80)">
+      <rect width="203" height="63" rx="17" fill="#0A1927" stroke="#31C7EA" stroke-opacity=".45"/>
+      <text x="18" y="25" fill="#69E6FF" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="800" letter-spacing="1.8">LIVE OPERATIONS</text>
+      <text x="18" y="49" fill="#F1FAFF" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="800">MAP SYNCHRONISED</text>
     </g>
 
-    <g transform="translate(1034 370)">
-      <circle r="36" fill="#0B2634" stroke="#51E9FF" stroke-width="3"/>
-      <circle r="12" fill="#D9FFFF" stroke="#35DCF3" stroke-width="6" filter="url(#softGlow)"/>
-      <path d="M0-55v18M0 37v18M-55 0h18M37 0h18" stroke="#52E8F8" stroke-width="4" stroke-linecap="round"/>
-    </g>
-    <g transform="translate(1367 422)">
-      <circle r="43" fill="#241016" stroke="#FF5571" stroke-width="3"/>
-      <path d="M0-20 18 18H-18L0-20Z" fill="#FF7087" filter="url(#softGlow)"/>
-      <rect x="-3" y="25" width="6" height="11" rx="3" fill="#FFD7DE"/>
-    </g>
-    <g transform="translate(1215 515)">
-      <circle r="32" fill="#10291F" stroke="#62F4AA" stroke-width="3"/>
-      <path d="m-12 2 8 8 18-23" fill="none" stroke="#B4FFD5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    </g>
-
-    <g transform="translate(968 103)">
-      <rect width="158" height="56" rx="15" fill="#0B1A28" fill-opacity=".93" stroke="#2DC6E9" stroke-opacity=".55"/>
-      <text x="18" y="23" fill="#6FE8FF" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.7">LIVE INCIDENTS</text>
-      <text x="18" y="45" fill="#F2FBFF" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="800">24 ACTIVE</text>
-    </g>
-    <g transform="translate(1305 519)">
-      <rect width="169" height="55" rx="15" fill="#101F19" fill-opacity=".94" stroke="#62E8A7" stroke-opacity=".55"/>
-      <text x="17" y="22" fill="#7EF4B8" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">RELEASE HEALTH</text>
-      <text x="17" y="43" fill="#ECFFF5" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="800">VERIFIED</text>
+    <g transform="translate(1022 372)">
+      <rect width="435" height="92" rx="20" fill="#091522" fill-opacity=".95" stroke="#4BD7F7" stroke-opacity=".25"/>
+      <text x="20" y="27" fill="#7D9BB0" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="800" letter-spacing="1.4">OPERATIONAL TREND</text>
+      <path d="M22 70 81 59 133 63 185 39 244 49 305 25 365 34 411 17" fill="none" stroke="url(#line)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#E9FFFF">
+        <circle cx="81" cy="59" r="4"/><circle cx="185" cy="39" r="4"/><circle cx="305" cy="25" r="4"/><circle cx="411" cy="17" r="4"/>
+      </g>
     </g>
   </g>
 
-  <rect x="1" y="1" width="1598" height="678" rx="31" fill="none" stroke="#82E9FF" stroke-opacity=".16" stroke-width="2"/>
+  <g transform="translate(58 545)">
+    <text x="0" y="22" fill="#6C859A" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="800" letter-spacing="1.5">SEVEN COMPLETE INTERFACE SYSTEMS</text>
+    <g transform="translate(0 38)" font-family="Segoe UI,Arial,sans-serif" font-size="12" font-weight="800">
+      <g><rect width="198" height="35" rx="11" fill="#0B2235" stroke="#28A9FF"/><text x="18" y="23" fill="#C9F2FF">MAP COMMAND</text></g>
+      <g transform="translate(211)"><rect width="177" height="35" rx="11" fill="#23072E" stroke="#FF2BD6"/><text x="18" y="23" fill="#7EFAFF">CYBERPUNK</text></g>
+      <g transform="translate(401)"><rect width="166" height="35" rx="11" fill="#102218" stroke="#76FF70"/><text x="18" y="23" fill="#C7FF9B">FALLOUT 4</text></g>
+      <g transform="translate(580)"><rect width="166" height="35" rx="11" fill="#171B22" stroke="#ED1C24"/><text x="18" y="23" fill="#F1F3F5">UMBRELLA</text></g>
+      <g transform="translate(759)"><rect width="154" height="35" rx="11" fill="#2F2920" stroke="#E79227"/><text x="18" y="23" fill="#FFD083">FACTORIO</text></g>
+      <g transform="translate(926)"><rect width="210" height="35" rx="11" fill="#161616" stroke="#D5B76D"/><text x="18" y="23" fill="#F5E7BB">007 INTELLIGENCE</text></g>
+      <g transform="translate(1149)"><rect width="210" height="35" rx="11" fill="#163025" stroke="#3DE7E5"/><text x="18" y="23" fill="#E8BF4D">HYRULE COMMAND</text></g>
+    </g>
+  </g>
+
+  <rect x="1" y="1" width="1598" height="638" rx="33" fill="none" stroke="#82E9FF" stroke-opacity=".14" stroke-width="2"/>
 </svg>

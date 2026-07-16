@@ -45,13 +45,13 @@
     "completedAt": "2026-07-14T16:05:00Z"
   },
   "releaseReadiness": {
-    "version": "4.10.4",
+    "version": "4.13.1",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "greasyForkMetadataVerified": true,
     "publicReleaseCreated": false,
-    "completedAt": "2026-07-14T18:13:26Z"
+    "completedAt": "2026-07-16T02:32:51Z"
   },
   "latestRelease": {
     "version": "4.13.1",

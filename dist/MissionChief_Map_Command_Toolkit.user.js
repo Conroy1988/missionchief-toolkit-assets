@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.4
+// @version      4.13.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.4',
+        version: '4.13.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4134',
+        styleId: 'mc-map-command-toolkit-style-v4135',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -885,6 +885,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4132__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4133__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4134__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4135__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -928,7 +929,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.4',
+        guideVersion: '4.13.5',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1342,6 +1343,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let tabletLayoutTimer = null;
     let tabletDockResizeObserver = null;
     let tabletDockObservedMap = null;
+    let desktopPanelResizeObserver = null;
+    let desktopPanelObservedMap = null;
     let commandBarAnimationTimer = null;
     let commandBarAnimating = false;
     let helpGuideDocumentCache = '';
@@ -2341,6 +2344,29 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             line-height: 1.15 !important;
         }
         #${SCRIPT.panelId}.mcms-open { display: block !important; }
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} {
+            max-height: var(--mcms-desktop-panel-max-height, calc(100vh - 24px)) !important;
+            overflow: hidden !important;
+            overscroll-behavior: contain !important;
+        }
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId}.mcms-open {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-header,
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tabs,
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-footer {
+            flex: 0 0 auto !important;
+        }
+        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            overscroll-behavior: contain !important;
+            scrollbar-width: thin !important;
+            padding-right: 2px !important;
+        }
         #${SCRIPT.panelId}.mcms-dragging { opacity: .96 !important; cursor: grabbing !important; }
 
         #${SCRIPT.panelId} .mcms-header {
@@ -14068,6 +14094,110 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
     }
 
+    function resolveDesktopPanelBounds(mapRect, viewport = getViewportMetrics(), margin = 12) {
+        const finite = value => typeof value === 'number' && Number.isFinite(value);
+        const viewportLeft = finite(viewport?.offsetLeft) ? viewport.offsetLeft : 0;
+        const viewportTop = finite(viewport?.offsetTop) ? viewport.offsetTop : 0;
+        const viewportWidth = Math.max(1, finite(viewport?.width) ? viewport.width : 1);
+        const viewportHeight = Math.max(1, finite(viewport?.height) ? viewport.height : 1);
+        const viewportRight = viewportLeft + viewportWidth;
+        const viewportBottom = viewportTop + viewportHeight;
+        const safeMargin = Math.max(0, finite(margin) ? margin : 12);
+
+        const mapValid = mapRect
+            && finite(mapRect.left)
+            && finite(mapRect.right)
+            && finite(mapRect.top)
+            && finite(mapRect.bottom)
+            && mapRect.right > mapRect.left
+            && mapRect.bottom > mapRect.top;
+        const visibleLeft = mapValid ? Math.max(viewportLeft, mapRect.left) : viewportLeft;
+        const visibleRight = mapValid ? Math.min(viewportRight, mapRect.right) : viewportRight;
+        const visibleTop = mapValid ? Math.max(viewportTop, mapRect.top) : viewportTop;
+        const visibleBottom = mapValid ? Math.min(viewportBottom, mapRect.bottom) : viewportBottom;
+        const usableMap = visibleRight > visibleLeft + 1 && visibleBottom > visibleTop + 1;
+        const areaLeft = usableMap ? visibleLeft : viewportLeft;
+        const areaRight = usableMap ? visibleRight : viewportRight;
+        const areaTop = usableMap ? visibleTop : viewportTop;
+        const areaBottom = usableMap ? visibleBottom : viewportBottom;
+        const left = Math.min(areaRight, areaLeft + safeMargin);
+        const right = Math.max(left, areaRight - safeMargin);
+        const top = Math.min(areaBottom, areaTop + safeMargin);
+        const bottom = Math.max(top, areaBottom - safeMargin);
+
+        return {
+            left: Math.round(left),
+            right: Math.round(right),
+            top: Math.round(top),
+            bottom: Math.round(bottom),
+            maxHeight: Math.max(1, Math.floor(bottom - top))
+        };
+    }
+
+    function clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds) {
+        const safeBounds = bounds || resolveDesktopPanelBounds(null);
+        const availableWidth = Math.max(1, safeBounds.right - safeBounds.left);
+        const availableHeight = Math.max(1, safeBounds.bottom - safeBounds.top);
+        const width = Math.min(availableWidth, Math.max(1, Number(panelWidth) || 318));
+        const height = Math.min(availableHeight, Math.max(1, Number(panelHeight) || availableHeight));
+        const desiredLeft = Number.isFinite(Number(left)) ? Number(left) : safeBounds.left;
+        const desiredTop = Number.isFinite(Number(top)) ? Number(top) : safeBounds.top;
+        return {
+            left: Math.round(Math.max(safeBounds.left, Math.min(desiredLeft, safeBounds.right - width))),
+            top: Math.round(Math.max(safeBounds.top, Math.min(desiredTop, safeBounds.bottom - height)))
+        };
+    }
+
+    function stopDesktopPanelMapObservation() {
+        if (desktopPanelResizeObserver && desktopPanelObservedMap) {
+            try { desktopPanelResizeObserver.unobserve(desktopPanelObservedMap); } catch (err) {}
+        }
+        desktopPanelObservedMap = null;
+    }
+
+    function clearDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId)) {
+        if (panel) {
+            panel.style.removeProperty('--mcms-desktop-panel-max-height');
+            panel.style.removeProperty('max-height');
+            delete panel.dataset.mcmsDesktopFit;
+        }
+        stopDesktopPanelMapObservation();
+    }
+
+    function observeDesktopPanelMapArea(mapEl) {
+        if (activeDeviceLayout !== 'desktop' || !mapEl) {
+            stopDesktopPanelMapObservation();
+            return;
+        }
+        const ResizeObserverCtor = pageWindow.ResizeObserver;
+        if (typeof ResizeObserverCtor !== 'function') return;
+        if (!desktopPanelResizeObserver) {
+            desktopPanelResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(entries => {
+                if (runtime.destroyed || activeDeviceLayout !== 'desktop') return;
+                if (!entries.some(entry => entry?.target === desktopPanelObservedMap)) return;
+                const panel = document.getElementById(SCRIPT.panelId);
+                if (!panel) return;
+                applyDesktopPanelSizing(panel, desktopPanelObservedMap);
+                if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
+            }));
+        }
+        if (desktopPanelObservedMap === mapEl) return;
+        stopDesktopPanelMapObservation();
+        desktopPanelObservedMap = mapEl;
+        try { desktopPanelResizeObserver.observe(mapEl); } catch (err) {}
+    }
+
+    function applyDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId), mapEl = getLargestLeafletMap()) {
+        if (!panel || activeDeviceLayout !== 'desktop' || isTouchLayoutActive()) return null;
+        let mapRect = null;
+        try { mapRect = mapEl?.getBoundingClientRect?.() || null; } catch (err) {}
+        const bounds = resolveDesktopPanelBounds(mapRect);
+        panel.style.setProperty('--mcms-desktop-panel-max-height', `${bounds.maxHeight}px`);
+        panel.style.setProperty('max-height', `${bounds.maxHeight}px`, 'important');
+        panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${bounds.maxHeight}`;
+        return bounds;
+    }
+
     function getIosBrowserSignals() {
         const nav = pageWindow.navigator || navigator;
         const userAgent = String(nav?.userAgent || '');
@@ -14333,6 +14463,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyTabletPanelPosition() {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open') || !isTouchLayoutActive()) return false;
+        clearDesktopPanelSizing(panel);
 
         const viewport = getViewportMetrics();
         const mobile = mobileModeActive;
@@ -26141,10 +26272,21 @@ Create the private backup now?`);
         fitTimer = runtimeSetTimeout(() => {
             const panel = document.getElementById(SCRIPT.panelId);
             const mapEl = getLargestLeafletMap();
-            if (!mapEl) return;
-            if (mobileModeActive) applyMobileDockLayout(mapEl);
-            else if (tabletModeActive) applyTabletDockLayout(mapEl);
-            else clearTabletDockSizing();
+            if (!mapEl) {
+                if (!isTouchLayoutActive()) clearDesktopPanelSizing(panel);
+                return;
+            }
+            if (mobileModeActive) {
+                clearDesktopPanelSizing(panel);
+                applyMobileDockLayout(mapEl);
+            } else if (tabletModeActive) {
+                clearDesktopPanelSizing(panel);
+                applyTabletDockLayout(mapEl);
+            } else {
+                clearTabletDockSizing();
+                observeDesktopPanelMapArea(mapEl);
+                applyDesktopPanelSizing(panel, mapEl);
+            }
             if (!panel) return;
             const rect = mapEl.getBoundingClientRect();
             panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
@@ -26167,28 +26309,11 @@ Create the private backup now?`);
     function clampPanelPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return { left: 12, top: 12 };
-
-        const margin = 12;
-        const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
-        const viewportHeight = pageWindow.innerHeight || document.documentElement.clientHeight;
-
-        panel.style.setProperty('max-height', '', '');
-
-        let panelWidth = panel.offsetWidth || 318;
-        let panelHeight = panel.offsetHeight || 500;
-        const maxPanelHeight = Math.max(260, viewportHeight - (margin * 2));
-
-        if (panelHeight > maxPanelHeight) {
-            panel.style.setProperty('max-height', `${maxPanelHeight}px`, 'important');
-            panelHeight = maxPanelHeight;
-        }
-
-        panelWidth = Math.min(panelWidth, viewportWidth - (margin * 2));
-
-        return {
-            left: Math.round(Math.max(margin, Math.min(left, viewportWidth - panelWidth - margin))),
-            top: Math.round(Math.max(margin, Math.min(top, viewportHeight - panelHeight - margin)))
-        };
+        const mapEl = getLargestLeafletMap();
+        const bounds = applyDesktopPanelSizing(panel, mapEl) || resolveDesktopPanelBounds(null);
+        const panelWidth = Math.min(panel.offsetWidth || 318, Math.max(1, bounds.right - bounds.left));
+        const panelHeight = Math.min(panel.offsetHeight || 500, bounds.maxHeight);
+        return clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds);
     }
 
     function getDefaultPanelPosition() {
@@ -28694,6 +28819,9 @@ Create the private backup now?`);
             closeHelpCenter({ restoreFocus: false });
             helpGuideDocumentCache = '';
             helpGuideLoadedAt = 0;
+            stopDesktopPanelMapObservation();
+            runtimeUntrackObserver(desktopPanelResizeObserver);
+            desktopPanelResizeObserver = null;
             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
             majorIncidentFeedResizeObserver = null;
             majorIncidentFeedObservedElement = null;

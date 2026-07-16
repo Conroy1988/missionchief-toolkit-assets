@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.9] - 2026-07-16
+
+### Fixed
+- Moved the Mission Value indicator clear of MissionChief's upper-right mission-window controls.
+- The indicator now measures the visible close/action icon cluster and dynamically reserves enough right-side clearance, with a conservative fallback when game markup differs.
+
+### Compatibility
+- Mission Value remains enabled by default and retains its existing persistent toggle, currency formatting, verified value sources and iframe support.
+- Native MissionChief controls remain untouched and fully clickable.
+
 ## [4.13.8] - 2026-07-16
 
 ### Added

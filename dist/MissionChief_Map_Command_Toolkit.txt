@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.8
+// @version      4.13.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.8',
+        version: '4.13.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4138',
+        styleId: 'mc-map-command-toolkit-style-v4139',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -889,6 +889,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4136__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4137__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4138__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4139__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -932,7 +933,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.8',
+        guideVersion: '4.13.9',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -20994,6 +20995,61 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         for (const context of transportSweepDocumentContexts()) removeMissionValueRows(context.doc);
     }
 
+
+    function missionValueVisibleControlRect(element) {
+        if (!element?.isConnected || element.closest?.('.mcms-mission-value-row')) return null;
+        try {
+            const view = element.ownerDocument?.defaultView || pageWindow;
+            const style = view?.getComputedStyle?.(element);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return null;
+        } catch (err) {}
+        try {
+            const rect = element.getBoundingClientRect?.();
+            if (!rect || rect.width <= 2 || rect.height <= 2 || rect.width > 96 || rect.height > 64) return null;
+            return rect;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function missionValueRightControlOffset(candidate) {
+        const { root, mount } = candidate || {};
+        const fallback = 72;
+        if (!root?.querySelectorAll || !mount?.getBoundingClientRect) return fallback;
+
+        let mountRect = null;
+        try { mountRect = mount.getBoundingClientRect(); } catch (err) {}
+        if (!mountRect || mountRect.width <= 0) return fallback;
+
+        const topBandBottom = mountRect.top + Math.min(58, Math.max(40, mountRect.height * 0.14));
+        const rightBandWidth = Math.min(160, Math.max(92, mountRect.width * 0.10));
+        const rightBandStart = mountRect.right - rightBandWidth;
+        const selector = 'button, a, [role="button"], [onclick], [data-dismiss], [aria-label], [title], .close, .lightbox-close, .glyphicon, .fa, .fas, .far, svg';
+        let controls = [];
+        try { controls = Array.from(root.querySelectorAll(selector)); } catch (err) {}
+
+        let leftEdge = null;
+        for (const control of controls) {
+            const rect = missionValueVisibleControlRect(control);
+            if (!rect) continue;
+            if (rect.bottom < mountRect.top - 2 || rect.top > topBandBottom) continue;
+            if (rect.right < rightBandStart || rect.left >= mountRect.right + 2) continue;
+            leftEdge = leftEdge === null ? rect.left : Math.min(leftEdge, rect.left);
+        }
+
+        if (leftEdge === null) return fallback;
+        const measured = Math.ceil(mountRect.right - leftEdge + 16);
+        const maximum = Math.max(fallback, Math.floor(mountRect.width * 0.42));
+        return Math.max(fallback, Math.min(maximum, measured));
+    }
+
+    function positionMissionValueRow(candidate, row) {
+        if (!row) return;
+        const offset = missionValueRightControlOffset(candidate);
+        row.style.setProperty('padding-right', `${offset}px`, 'important');
+        row.dataset.mcmsRightOffset = String(offset);
+    }
+
     function syncMissionValueCandidate(candidate) {
         const { mount, missionId } = candidate || {};
         if (!mount?.isConnected || missionId === null) return false;
@@ -21029,6 +21085,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const text = `Mission Value · ${formatted}`;
         if (badge.textContent !== text) badge.textContent = text;
         badge.title = `Mission Value · ${formatted} · ${details.source}`;
+        positionMissionValueRow(candidate, nextRow);
         return true;
     }
 

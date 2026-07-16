@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Fixture-backed Desktop operational-workspace geometry and static contract.
+# Fixture-backed Desktop operational-workspace geometry, including the reported production layout.
 from __future__ import annotations
 
 import json

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.1
+// @version      4.13.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.1',
+        version: '4.13.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4131',
+        styleId: 'mc-map-command-toolkit-style-v4132',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -882,6 +882,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V420__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4130__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4131__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4132__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -925,7 +926,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.1',
+        guideVersion: '4.13.2',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -24516,6 +24517,16 @@ Create the private backup now?`);
         };
     }
 
+    function normaliseFinancialLedgerEntry(entry) {
+        if (!Number.isFinite(entry?.timestamp)) return null;
+        const amount = Math.round(Number(entry.amount) || 0);
+        const description = financeNormaliseText(entry.description);
+        const dateLabel = financeNormaliseText(entry.dateLabel);
+        const rawTimestamp = financeNormaliseText(entry.rawTimestamp);
+        const sourceKey = `${entry.timestamp}|${amount}|${description.toLowerCase()}|${rawTimestamp || dateLabel}`;
+        return { ...entry, amount, description, dateLabel, rawTimestamp, sourceKey };
+    }
+
     async function fetchFinancialLedger(requiredStartMs, attempt = 0, forceFull = false, exhaustive = false) {
         const account = await fetchCreditAccount();
         const player = financePlayerIdentity(account);
@@ -24556,18 +24567,14 @@ Create the private backup now?`);
             let pageOverlap = 0;
             let pageOldest = Infinity;
             for (const entry of parsed.entries) {
-                if (!Number.isFinite(entry.timestamp)) continue;
-                const amount = Math.round(Number(entry.amount) || 0);
-                const description = financeNormaliseText(entry.description);
-                const dateLabel = financeNormaliseText(entry.dateLabel);
-                const rawTimestamp = financeNormaliseText(entry.rawTimestamp);
-                const sourceKey = `${entry.timestamp}|${amount}|${description.toLowerCase()}|${rawTimestamp || dateLabel}`;
-                const occurrence = (scanOccurrenceCounts.get(sourceKey) || 0) + 1;
-                scanOccurrenceCounts.set(sourceKey, occurrence);
-                pendingEntries.push({ ...entry, amount, description, dateLabel, rawTimestamp, sourceKey, occurrence });
-                if (entry.timestamp < oldestTimestamp) oldestTimestamp = entry.timestamp;
-                if (entry.timestamp < pageOldest) pageOldest = entry.timestamp;
-                if (canUseIncremental && knownSourceKeys.has(sourceKey)) pageOverlap++;
+                const normalisedEntry = normaliseFinancialLedgerEntry(entry);
+                if (!normalisedEntry) continue;
+                const occurrence = (scanOccurrenceCounts.get(normalisedEntry.sourceKey) || 0) + 1;
+                scanOccurrenceCounts.set(normalisedEntry.sourceKey, occurrence);
+                pendingEntries.push({ ...normalisedEntry, occurrence });
+                if (normalisedEntry.timestamp < oldestTimestamp) oldestTimestamp = normalisedEntry.timestamp;
+                if (normalisedEntry.timestamp < pageOldest) pageOldest = normalisedEntry.timestamp;
+                if (canUseIncremental && knownSourceKeys.has(normalisedEntry.sourceKey)) pageOverlap++;
             }
             reachedStart = Number.isFinite(oldestTimestamp) && oldestTimestamp <= effectiveRequiredStart;
             if (canUseIncremental && pageOverlap >= 3 && Number.isFinite(pageOldest) && pageOldest <= vaultLatestTimestamp) overlapFound = true;

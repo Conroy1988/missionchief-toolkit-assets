@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Fixture-backed Desktop operational-workspace geometry, including the reported production layout.
+# Fixture-backed Desktop geometry plus fixed command-chrome and content-only scrolling contracts.
 from __future__ import annotations
 
 import json
@@ -29,9 +29,12 @@ def extract_function(source: str, masked: str, name: str) -> str:
 
 def assert_static_contract(source: str, masked: str) -> None:
     required = [
-        'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId}.mcms-open',
-        'html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active',
-        'flex-direction: column !important',
+        'html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-open',
+        'html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-panel-sticky-stack',
+        'html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-tab-panel.mcms-active',
+        'grid-template-rows: auto minmax(0, 1fr) !important',
+        'position: sticky !important',
+        'top: 0 !important',
         'box-sizing: border-box !important',
         'overflow-y: auto !important',
         'min-height: 0 !important',
@@ -49,13 +52,36 @@ def assert_static_contract(source: str, masked: str) -> None:
     missing = [fragment for fragment in required if fragment not in source]
     assert not missing, f"Desktop layout contract fragments missing: {missing}"
 
-    desktop_rule = re.search(
-        r'html\[data-mcms-device-layout="desktop"\] #\$\{SCRIPT\.panelId\} \.mcms-tab-panel\.mcms-active \{(?P<body>.*?)\n\s*\}',
+    shell_rule = re.search(
+        r'html\[data-mcms-device-layout="desktop"\] body #\$\{SCRIPT\.panelId\}\.mcms-open \{(?P<body>.*?)\n\s*\}',
         source,
         re.S,
     )
-    assert desktop_rule, "Desktop active-tab scroll rule missing"
+    assert shell_rule, "Desktop fixed-chrome grid shell missing"
+    shell_body = shell_rule.group("body")
+    assert "display: grid !important" in shell_body
+    assert "grid-template-rows: auto minmax(0, 1fr) !important" in shell_body
+
+    chrome_rule = re.search(
+        r'html\[data-mcms-device-layout="desktop"\] body #\$\{SCRIPT\.panelId\} > \.mcms-panel-sticky-stack \{(?P<body>.*?)\n\s*\}',
+        source,
+        re.S,
+    )
+    assert chrome_rule, "Desktop command chrome rule missing"
+    chrome_body = chrome_rule.group("body")
+    assert "grid-row: 1 !important" in chrome_body
+    assert "position: sticky !important" in chrome_body
+    assert "top: 0 !important" in chrome_body
+    assert "z-index: 30 !important" in chrome_body
+
+    desktop_rule = re.search(
+        r'html\[data-mcms-device-layout="desktop"\] body #\$\{SCRIPT\.panelId\} > \.mcms-tab-panel\.mcms-active \{(?P<body>.*?)\n\s*\}',
+        source,
+        re.S,
+    )
+    assert desktop_rule, "Desktop content-only scroll rule missing"
     body = desktop_rule.group("body")
+    assert "height: 100% !important" in body
     assert "overflow-y: auto !important" in body
     assert "overflow-x: hidden !important" in body
     assert "min-height: 0 !important" in body

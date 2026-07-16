@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.6
+// @version      4.13.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.6',
+        version: '4.13.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4136',
+        styleId: 'mc-map-command-toolkit-style-v4137',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -887,6 +887,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4134__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4135__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4136__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4137__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -930,7 +931,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.6',
+        guideVersion: '4.13.7',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -2345,23 +2346,39 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             line-height: 1.15 !important;
         }
         #${SCRIPT.panelId}.mcms-open { display: block !important; }
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} {
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} {
             box-sizing: border-box !important;
             max-height: var(--mcms-desktop-panel-max-height, calc(100vh - 24px)) !important;
             overflow: hidden !important;
             overscroll-behavior: contain !important;
         }
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId}.mcms-open {
-            display: flex !important;
-            flex-direction: column !important;
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId}.mcms-open {
+            display: grid !important;
+            grid-template-rows: auto minmax(0, 1fr) !important;
+            align-content: stretch !important;
         }
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-header,
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tabs,
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-footer {
-            flex: 0 0 auto !important;
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-panel-sticky-stack {
+            grid-row: 1 !important;
+            min-height: 0 !important;
+            flex: none !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 30 !important;
+            overflow: visible !important;
+            transform: none !important;
         }
-        html[data-mcms-device-layout="desktop"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {
-            flex: 1 1 auto !important;
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-panel-sticky-stack .mcms-header,
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-panel-sticky-stack .mcms-tabs {
+            flex: none !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-tab-panel {
+            grid-row: 2 !important;
+            min-height: 0 !important;
+            max-height: 100% !important;
+        }
+        html[data-mcms-device-layout="desktop"] body #${SCRIPT.panelId} > .mcms-tab-panel.mcms-active {
+            display: block !important;
+            height: 100% !important;
             min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;

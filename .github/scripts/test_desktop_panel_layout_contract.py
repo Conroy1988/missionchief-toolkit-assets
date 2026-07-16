@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Fixture-backed Desktop operational-workspace geometry, including the reported production layout.
+# Fixture-backed Desktop geometry plus fixed command-chrome and content-only scrolling contracts.
 from __future__ import annotations
 
 import json

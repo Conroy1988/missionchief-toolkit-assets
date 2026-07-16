@@ -2,7 +2,7 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `4.12.0`
+## Current version: `4.13.0`
 
 | System | Health | State |
 |---|:---:|---|
@@ -17,10 +17,10 @@
 
 ## Release state
 
-- **Latest recorded version:** `4.11.4`
+- **Latest recorded version:** `4.12.0`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `5f2e209bcd890b8a2bee617a6eda84d690b52c589397be7490ce992f55c21336`
+- **Validated SHA-256:** `7766664a4981f7985a4903f65a395bf0d00cc03472b5b45d18b5d1abf8712367`
 - **Distribution candidate:** `dist/MissionChief_Map_Command_Toolkit.user.js`
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 28
 - **Referenced hosted paths:** 25
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-15T19:31:57Z`
+- **Last dashboard update:** `2026-07-16T00:48:15Z`
 
 ## Release channels
 

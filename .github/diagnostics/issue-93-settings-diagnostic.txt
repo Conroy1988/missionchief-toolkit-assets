@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-93-settings-diagnostic.py", line 18, in <module>
+    exec(compile(code, str(temp_package), "exec"), namespace, namespace)
+  File "/tmp/issue93-pfy4bjwx/.github/development-packages/issue-93-settings-contract-fix.py", line 17, in <module>
+    text = replace_once(
+           ^^^^^^^^^^^^^
+  File "/tmp/issue93-pfy4bjwx/.github/development-packages/issue-93-settings-contract-fix.py", line 12, in replace_once
+    raise AssertionError(f"{label}: expected one match, found {count}")
+AssertionError: Mission Value harness stubs: expected one match, found 0

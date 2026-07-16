@@ -153,6 +153,22 @@
             "map",
             "focus"
           ]
+        },
+        {
+          "name": "Auto-load all vehicles",
+          "summary": "Loads MissionChief's hidden vehicle batches automatically when an active mission window is opened.",
+          "details": [
+            "Uses MissionChief's native load-more control",
+            "Scopes follow-up scans to the active mission window",
+            "Includes bounded retries and duplicate-request protection",
+            "Remains fully manual when disabled"
+          ],
+          "visual": "auto-load-vehicles",
+          "tags": [
+            "vehicles",
+            "missions",
+            "performance"
+          ]
         }
       ]
     },
@@ -362,6 +378,30 @@
         "#ffd083",
         "#91806a"
       ]
+    },
+    {
+      "name": "007 Intelligence",
+      "slug": "bond-007",
+      "description": "A classified intelligence interface with gun-barrel geometry, dossier styling and champagne-gold controls.",
+      "palette": [
+        "#050505",
+        "#161616",
+        "#d5b76d",
+        "#f5e7bb",
+        "#8d1c23"
+      ]
+    },
+    {
+      "name": "Hyrule Command",
+      "slug": "hyrule",
+      "description": "The flagship parchment, royal-gold and ancient-energy command interface with transparent themed artwork.",
+      "palette": [
+        "#061319",
+        "#203c2b",
+        "#e8bf4d",
+        "#3de7e5",
+        "#50ec8c"
+      ]
     }
   ],
   "payoutThemes": [
@@ -372,7 +412,9 @@
     "Cyberpunk",
     "Fallout Inspired",
     "Biohazard Containment",
-    "Factorio"
+    "Factorio",
+    "007 Intelligence",
+    "Hyrule Quest Reward"
   ],
   "shortcuts": [
     {

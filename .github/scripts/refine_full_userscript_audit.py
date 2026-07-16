@@ -42,15 +42,24 @@ def excerpt(lines: list[str], line: int | None, radius: int = 4) -> str:
     return "\n".join(f"{number}: {lines[number - 1]}" for number in range(start, end + 1))
 
 
-def lexical_parent(records: list[dict], target: dict) -> tuple[str, int] | None:
-    parents = [
-        item for item in records
-        if item is not target and item["body_start"] <= target["start"] < item["body_end"]
-    ]
-    if not parents:
+def lexical_block_parent(masked_source: str, offset: int) -> tuple[int, int] | None:
+    """Return the nearest enclosing brace block while preserving source offsets.
+
+    Function extraction is deliberately conservative and may not inventory every
+    enclosing function expression. A brace-stack parent therefore provides a more
+    reliable same-scope key for local helper names without treating helpers in two
+    separate Promise callbacks as duplicates.
+    """
+    stack: list[int] = []
+    for index, character in enumerate(masked_source[:offset]):
+        if character == "{":
+            stack.append(index)
+        elif character == "}" and stack:
+            stack.pop()
+    if not stack:
         return None
-    parent = min(parents, key=lambda item: item["body_end"] - item["body_start"])
-    return parent["name"], parent["line"]
+    opening = stack[-1]
+    return opening, base.line_number(masked_source, opening)
 
 
 def finding_key(item: dict) -> tuple:
@@ -59,12 +68,13 @@ def finding_key(item: dict) -> tuple:
 
 def refine(raw: dict, source_text: str) -> dict:
     source_lines = source_text.splitlines()
+    masked_source = base.mask_non_code(source_text)
     records = [item for item in raw["details"]["functionInventory"] if item["name"] not in RESERVED]
 
     for item in records:
         body = source_text[item["body_start"]:item["body_end"]]
         item["complexity"] = corrected_complexity(base.mask_non_code(body))
-        item["parent"] = lexical_parent(records, item)
+        item["parent"] = lexical_block_parent(masked_source, item["start"])
 
     findings: list[dict] = []
     empty_catches: list[int] = []
@@ -88,7 +98,7 @@ def refine(raw: dict, source_text: str) -> dict:
     for (parent, name), duplicates in sorted(by_scope.items(), key=lambda item: (str(item[0][0]), item[0][1])):
         if len(duplicates) < 2:
             continue
-        scope = "top-level Toolkit scope" if parent is None else f"{parent[0]} at line {parent[1]}"
+        scope = "top-level Toolkit scope" if parent is None else f"lexical block beginning at line {parent[1]}"
         findings.append({
             "severity": "review",
             "code": "duplicate-function-name-same-scope",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.0
+// @version      4.13.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.0',
+        version: '4.13.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4130',
+        styleId: 'mc-map-command-toolkit-style-v4131',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -881,6 +881,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V411__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V420__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4130__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4131__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -924,7 +925,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.0',
+        guideVersion: '4.13.1',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -27953,8 +27954,14 @@ Create the private backup now?`);
             const ordered = Array.from(resourceGapAnalysisCache.entries()).sort((a, b) => Number(a[1]?.createdAt || 0) - Number(b[1]?.createdAt || 0));
             for (const [key] of ordered.slice(0, resourceGapAnalysisCache.size - 180)) resourceGapAnalysisCache.delete(key);
         }
-        for (const layer of Array.from(economyHiddenVehicleLayers)) if (!layer || (!layer._map && !getVehicleMarkerLayers().includes(layer))) economyHiddenVehicleLayers.delete(layer);
-        for (const layer of Array.from(economyHiddenBuildingLayers)) if (!layer || (!layer._map && !getBuildingMarkerLayers().includes(layer))) economyHiddenBuildingLayers.delete(layer);
+        const currentVehicleLayers = new Set(getVehicleMarkerLayers());
+        const currentBuildingLayers = new Set(getBuildingMarkerLayers());
+        for (const layer of Array.from(economyHiddenVehicleLayers)) {
+            if (!layer || (!layer._map && !currentVehicleLayers.has(layer))) economyHiddenVehicleLayers.delete(layer);
+        }
+        for (const layer of Array.from(economyHiddenBuildingLayers)) {
+            if (!layer || (!layer._map && !currentBuildingLayers.has(layer))) economyHiddenBuildingLayers.delete(layer);
+        }
         if (!state.resourceGap.enabled) {
             resourceGapAnalysisCache.clear();
             resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [], byToken: new Map() };
@@ -28151,20 +28158,15 @@ Create the private backup now?`);
     }
 
     function autoLoadAllVehiclesResolveMissionRoot(link) {
-        const selectors = [
-            '#lightbox_box', '#lightbox', '.modal.show', '.modal.in', '[role="dialog"]',
-            '.ui-dialog', '.lightbox_content', '.modal-content', '.ui-dialog-content'
-        ];
-        for (const selector of selectors) {
-            const root = link.closest?.(selector);
-            if (root) return root;
-        }
-        return link.parentElement || document.body;
+        return link.closest?.(AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR) || link.parentElement || document.body;
     }
 
     function autoLoadAllVehiclesCandidateLinks() {
         if (!state.autoLoadAllVehicles) return [];
-        return Array.from(document.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR))
+        const queryRoot = autoLoadAllVehiclesMissionRoot?.isConnected && autoLoadAllVehiclesElementVisible(autoLoadAllVehiclesMissionRoot)
+            ? autoLoadAllVehiclesMissionRoot
+            : document;
+        return Array.from(queryRoot.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR))
             .reverse()
             .map(link => ({ link, info: autoLoadAllVehiclesLinkInfo(link) }))
             .filter(candidate => Boolean(candidate.info));

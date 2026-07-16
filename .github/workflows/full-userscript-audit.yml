@@ -13,6 +13,7 @@ on:
       - ".github/fixtures/financial-ledger-contract.json"
       - ".github/fixtures/mission-marker-ingestion-contract.json"
       - ".github/fixtures/settings-ui-contract.json"
+      - ".github/fixtures/desktop-panel-layout-contract.json"
       - ".github/scripts/full_userscript_audit.py"
       - ".github/scripts/refine_full_userscript_audit.py"
       - ".github/scripts/summarise_eslint_audit.py"
@@ -20,6 +21,7 @@ on:
       - ".github/scripts/test_financial_ledger_contract.py"
       - ".github/scripts/test_mission_marker_ingestion_contract.py"
       - ".github/scripts/test_settings_ui_contract.py"
+      - ".github/scripts/test_desktop_panel_layout_contract.py"
       - ".github/workflows/full-userscript-audit.yml"
   workflow_dispatch:
 
@@ -54,6 +56,9 @@ jobs:
 
       - name: Run settings migration and UI routing contract fixtures
         run: python3 .github/scripts/test_settings_ui_contract.py
+
+      - name: Run Desktop panel layout contract fixtures
+        run: python3 .github/scripts/test_desktop_panel_layout_contract.py
 
       - name: Run full static audit
         id: full_audit

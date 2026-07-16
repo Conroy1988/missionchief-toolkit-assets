@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.5] - 2026-07-16
+
+### Changed
+- Constrained the Desktop Mode command menu to the visible MissionChief map area instead of the full browser viewport.
+- Kept the Desktop header, tab rail and footer accessible while only the active tab content scrolls internally.
+- Added map-resize observation and saved-position clamping so shorter windows and changing map layouts remain usable.
+
+### Compatibility
+- Desktop retains its compact draggable layout and saved coordinates.
+- Tablet Mode, iOS Mobile Mode, Economy Mode, all interface themes, settings and import/export contracts are unchanged.
+
 ## [4.13.4] - 2026-07-16
 
 ### Internal reliability

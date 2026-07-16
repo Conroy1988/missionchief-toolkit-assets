@@ -27,6 +27,81 @@ def semantic_version(value: str) -> tuple[int, int, int]:
     return tuple(int(part) for part in match.groups())
 
 
+def changelog_contains_version(changelog: str, version: str) -> bool:
+    return (
+        re.search(
+            rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$",
+            changelog,
+            re.MULTILINE,
+        )
+        is not None
+    )
+
+
+def evaluate_version_state(
+    source_version: str,
+    dashboard: dict[str, Any],
+    changelog: str,
+    *,
+    allow_source_transition: bool = False,
+) -> tuple[str, list[str], list[str]]:
+    """Classify the published, candidate and guarded source-transition states."""
+    failures: list[str] = []
+    warnings: list[str] = []
+
+    current_version = str(dashboard.get("currentVersion", "")).strip()
+    latest_version = str(dashboard.get("latestRelease", {}).get("version", "")).strip()
+    github_release_state = str(dashboard.get("status", {}).get("githubRelease", "")).strip()
+
+    if not current_version or not latest_version:
+        failures.append(
+            "Version drift: release dashboard must record both currentVersion and latestRelease.version"
+        )
+        return "invalid", failures, warnings
+
+    try:
+        source_semver = semantic_version(source_version)
+        current_semver = semantic_version(current_version)
+        latest_semver = semantic_version(latest_version)
+    except ValueError as exc:
+        failures.append(str(exc))
+        return "invalid", failures, warnings
+
+    has_changelog = changelog_contains_version(changelog, source_version)
+
+    if source_version == current_version == latest_version:
+        return "published", failures, warnings
+
+    if (
+        source_version == current_version
+        and source_semver > latest_semver
+        and has_changelog
+        and github_release_state != "published"
+    ):
+        warnings.append(
+            f"Validated release candidate {source_version} is ahead of published release {latest_version}."
+        )
+        return "release-candidate", failures, warnings
+
+    if (
+        allow_source_transition
+        and source_semver > current_semver
+        and current_version == latest_version
+        and has_changelog
+    ):
+        warnings.append(
+            f"Validated guarded source transition {source_version} is ahead of dashboard version {current_version}."
+        )
+        return "source-transition", failures, warnings
+
+    failures.append(
+        "Version drift: "
+        f"userscript={source_version}, currentVersion={current_version}, "
+        f"latestRelease={latest_version}, githubRelease={github_release_state or 'unknown'}"
+    )
+    return "invalid", failures, warnings
+
+
 def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any]:
     contract = load_json(root / ".github/documentation-contract.json")
     site = load_json(root / "docs/site-data.json")
@@ -37,31 +112,15 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
     failures: list[str] = []
     warnings: list[str] = []
     version = userscript_version(source)
-    dashboard_versions = {
-        str(dashboard.get("currentVersion", "")),
-        str(dashboard.get("latestRelease", {}).get("version", "")),
-    }
-    dashboard_versions.discard("")
-    if dashboard_versions != {version}:
-        candidate_is_valid = False
-        if allow_release_candidate and len(dashboard_versions) == 1:
-            published_version = next(iter(dashboard_versions))
-            try:
-                candidate_is_valid = (
-                    semantic_version(version) > semantic_version(published_version)
-                    and re.search(rf"^## \[{re.escape(version)}\](?:\s+-\s+\d{{4}}-\d{{2}}-\d{{2}})?\s*$", changelog, re.MULTILINE)
-                    is not None
-                )
-            except ValueError as exc:
-                failures.append(str(exc))
-        if candidate_is_valid:
-            warnings.append(
-                f"Validated pull-request candidate {version} is ahead of published dashboard version {published_version}."
-            )
-        elif not failures:
-            failures.append(
-                f"Version drift: userscript={version}, dashboard={sorted(dashboard_versions)}"
-            )
+
+    version_state, version_failures, version_warnings = evaluate_version_state(
+        version,
+        dashboard,
+        changelog,
+        allow_source_transition=allow_release_candidate,
+    )
+    failures.extend(version_failures)
+    warnings.extend(version_warnings)
 
     site_project = site.get("project", {})
     for key, expected in contract.get("project", {}).items():
@@ -132,9 +191,10 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
         warnings.append("Visual media roadmap is unusually small")
 
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "failed" if failures else "passed",
         "userscriptVersion": version,
+        "versionState": version_state,
         "documentedThemes": themes,
         "documentedModes": modes,
         "documentedShortcuts": shortcuts,
@@ -152,6 +212,7 @@ def markdown(report: dict[str, Any]) -> str:
         f"{icon} **Status:** {report['status'].upper()}",
         "",
         f"- Toolkit version: **{report['userscriptVersion']}**",
+        f"- Version state: **{report['versionState']}**",
         f"- Features: **{report['featureCount']}**",
         f"- Themes: **{len(report['documentedThemes'])}**",
         f"- Modes: **{len(report['documentedModes'])}**",
@@ -173,7 +234,10 @@ def main() -> int:
     parser.add_argument(
         "--allow-release-candidate",
         action="store_true",
-        help="Allow one higher changelog-backed userscript version while the dashboard still records the published release.",
+        help=(
+            "Allow the brief changelog-backed source transition before the release dashboard "
+            "records the candidate version."
+        ),
     )
     args = parser.parse_args()
 

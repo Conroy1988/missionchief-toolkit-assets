@@ -33,70 +33,115 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          read -r command branch package expected extra <<< "$COMMENT_BODY"
-          [[ "$command" == "/apply-development-package" ]] || { echo "::error::Invalid command."; exit 1; }
-          [[ -n "$branch" && -n "$package" && -n "$expected" && -z "${extra:-}" ]] || {
-            echo "::error::Use: /apply-development-package <branch> <package.py> <expected-head-sha>"
-            exit 1
+
+          reject() {
+            echo "accepted=false" >> "$GITHUB_OUTPUT"
+            echo "reason=$1" >> "$GITHUB_OUTPUT"
           }
-          [[ "$branch" =~ ^(feature|fix|chore)/[A-Za-z0-9._/-]+$ ]] || { echo "::error::Branch is outside the allowed development namespaces."; exit 1; }
-          [[ "$package" =~ ^\.github/development-packages/[A-Za-z0-9._/-]+\.py$ ]] || { echo "::error::Package path is outside .github/development-packages."; exit 1; }
-          [[ "$expected" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Expected head must be a full commit SHA."; exit 1; }
+
+          read -r command branch package expected extra <<< "$COMMENT_BODY"
+          if [[ "$command" != "/apply-development-package" ]]; then
+            reject "The command name is invalid."
+            exit 0
+          fi
+          if [[ -z "$branch" || -z "$package" || -z "$expected" || -n "${extra:-}" ]]; then
+            reject "Use: /apply-development-package <branch> <package.py> <expected-head-sha>"
+            exit 0
+          fi
+          if [[ ! "$branch" =~ ^(feature|fix|chore)/[A-Za-z0-9._/-]+$ ]]; then
+            reject "Branch is outside the allowed feature/, fix/ and chore/ namespaces."
+            exit 0
+          fi
+          if [[ ! "$package" =~ ^\.github/development-packages/[A-Za-z0-9._/-]+\.py$ ]]; then
+            reject "Package path is outside .github/development-packages."
+            exit 0
+          fi
+          if [[ ! "$expected" =~ ^[0-9a-f]{40}$ ]]; then
+            reject "Expected head must be a full 40-character lowercase commit SHA."
+            exit 0
+          fi
+
+          echo "accepted=true" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "package=$package" >> "$GITHUB_OUTPUT"
           echo "expected=$expected" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "check-out-authorized-branch" > "$RUNNER_TEMP/development-package-stage"
+
+      - name: Record rejected command
+        if: steps.command.outputs.accepted != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REJECTION_REASON: ${{ steps.command.outputs.reason }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body "Development package command rejected safely: ${REJECTION_REASON}\n\nNo branch was checked out, changed or pushed."
 
       - name: Check out authorized branch
+        if: steps.command.outputs.accepted == 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ steps.command.outputs.branch }}
           fetch-depth: 0
 
       - name: Confirm exact authorized branch head
+        if: steps.command.outputs.accepted == 'true'
         shell: bash
         env:
           EXPECTED_HEAD: ${{ steps.command.outputs.expected }}
           PACKAGE_PATH: ${{ steps.command.outputs.package }}
         run: |
           set -euo pipefail
+          printf '%s\n' "confirm-authorized-head" > "$RUNNER_TEMP/development-package-stage"
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
           test -f "$PACKAGE_PATH"
           test ! -L "$PACKAGE_PATH"
 
       - name: Rebase package onto current main
+        if: steps.command.outputs.accepted == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "rebase-onto-current-main" > "$RUNNER_TEMP/development-package-stage"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git rebase origin/main
 
       - name: Apply development package
+        if: steps.command.outputs.accepted == 'true'
         shell: bash
         env:
           PACKAGE_PATH: ${{ steps.command.outputs.package }}
         run: |
           set -euo pipefail
+          printf '%s\n' "apply-development-package" > "$RUNNER_TEMP/development-package-stage"
           python3 "$PACKAGE_PATH"
           rm -f "$PACKAGE_PATH"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
       - name: Validate canonical userscript
+        if: steps.command.outputs.accepted == 'true'
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "validate-canonical-userscript" > "$RUNNER_TEMP/development-package-stage"
           python3 .github/scripts/validate_userscript.py
           node --check src/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
       - name: Commit validated result
+        if: steps.command.outputs.accepted == 'true'
         id: commit
         shell: bash
         env:
           BRANCH: ${{ steps.command.outputs.branch }}
         run: |
           set -euo pipefail
+          printf '%s\n' "commit-and-push-validated-result" > "$RUNNER_TEMP/development-package-stage"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -106,36 +151,88 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Open or update pull request
+        if: steps.command.outputs.accepted == 'true'
         id: pr
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN || github.token }}
           BRANCH: ${{ steps.command.outputs.branch }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
           set -euo pipefail
-          PR_URL="$(gh pr list --head "$BRANCH" --base main --state open --json url -q '.[0].url // empty')"
+          printf '%s\n' "open-or-update-pull-request" > "$RUNNER_TEMP/development-package-stage"
+
+          PR_URL="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$BRANCH" \
+            --base main \
+            --state open \
+            --json url \
+            -q '.[0].url // empty')"
+
+          CREATED=false
           if [[ -z "$PR_URL" ]]; then
-            TITLE="$(gh issue view "$ISSUE_NUMBER" --json title -q '.title')"
-            PR_URL="$(gh pr create --head "$BRANCH" --base main --title "$TITLE" --body "Automated implementation for #${ISSUE_NUMBER}. The owner-authorized development package was rebased onto current main, applied, removed, and validated before this pull request was opened.\n\nCloses #${ISSUE_NUMBER}")"
+            TITLE="$(gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json title -q '.title')"
+            BODY_FILE="$(mktemp)"
+            printf '%s\n\n%s\n' \
+              "Automated implementation for #${ISSUE_NUMBER}. The owner-authorized development package was rebased onto current main, applied, removed, and validated before this pull request was opened." \
+              "Closes #${ISSUE_NUMBER}" \
+              > "$BODY_FILE"
+            if ! gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --head "$BRANCH" \
+              --base main \
+              --title "$TITLE" \
+              --body-file "$BODY_FILE" \
+              > /tmp/development-package-pr-url.txt \
+              2> /tmp/development-package-pr-error.txt; then
+              cat /tmp/development-package-pr-error.txt >&2
+              if grep -qi "not permitted to create or approve pull requests" /tmp/development-package-pr-error.txt; then
+                echo "::error::Automatic PR creation is disabled for GITHUB_TOKEN. Enable Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests, or configure a least-privilege DEVELOPMENT_PR_TOKEN secret."
+              else
+                echo "::error::The validated branch was pushed, but GitHub could not create its pull request."
+              fi
+              exit 1
+            fi
+            PR_URL="$(cat /tmp/development-package-pr-url.txt)"
+            CREATED=true
           fi
+
           echo "url=$PR_URL" >> "$GITHUB_OUTPUT"
+          echo "created=$CREATED" >> "$GITHUB_OUTPUT"
 
       - name: Record success
+        if: steps.command.outputs.accepted == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESULT_SHA: ${{ steps.commit.outputs.sha }}
           PR_URL: ${{ steps.pr.outputs.url }}
+          PR_CREATED: ${{ steps.pr.outputs.created }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Development package applied and validated automatically.\n\n- Result commit: \`${RESULT_SHA}\`\n- Pull request: ${PR_URL}\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push"
+          set -euo pipefail
+          printf '%s\n' "record-success" > "$RUNNER_TEMP/development-package-stage"
+          ACTION="updated"
+          [[ "$PR_CREATED" == "true" ]] && ACTION="opened"
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body "Development package applied and validated automatically.\n\n- Result commit: \`${RESULT_SHA}\`\n- Pull request ${ACTION}: ${PR_URL}\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push"
 
-      - name: Record failure
-        if: failure()
+      - name: Record exact failure
+        if: failure() && steps.command.outputs.accepted == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          RESULT_SHA: ${{ steps.commit.outputs.sha }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "The owner-authorized development package stopped at a guarded validation step. No failed gate was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          set -euo pipefail
+          STAGE="$(cat "$RUNNER_TEMP/development-package-stage" 2>/dev/null || echo unknown)"
+          RESULT_NOTE=""
+          if [[ -n "${RESULT_SHA:-}" ]]; then
+            RESULT_NOTE="\n- Validated branch commit already pushed: \`${RESULT_SHA}\`"
+          fi
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body "The owner-authorized development package stopped during **${STAGE}**. No failed gate was bypassed.${RESULT_NOTE}\n- Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

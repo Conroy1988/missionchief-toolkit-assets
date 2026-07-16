@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.13.7] - 2026-07-16
+
+### Fixed
+- Rebuilt the Desktop panel shell as a two-row command layout so the title controls and eight-section menu rail remain permanently visible.
+- Restricted vertical scrolling to the selected section content, preventing the command chrome from moving away or appearing detached on long Ops and Settings pages.
+- Added a static regression contract for the fixed command-chrome row and content-only scroll region.
+
+### Compatibility
+- The v4.13.6 full operational-workspace sizing and saved-position clamping are preserved.
+- Tablet Mode, iOS Mobile Mode, Economy Mode, all themes, settings and import/export contracts are unchanged.
+
 ## [4.13.6] - 2026-07-16
 
 ### Fixed

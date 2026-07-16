@@ -2,17 +2,17 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `4.13.1`
+## Current version: `4.13.2`
 
 | System | Health | State |
 |---|:---:|---|
 | Canonical source | 🟢 | Validated Canonical Source |
 | Validation | 🟢 | Passed |
-| GitHub Release | 🟢 | Published |
-| Greasy Fork | 🟢 | Verified |
-| Private backup | 🟢 | Private Repository Verified |
+| GitHub Release | ⚪ | Not Published |
+| Greasy Fork | 🟡 | Pending Release |
+| Private backup | ⚪ | Not Created |
 | Discord development | 🟢 | Configured |
-| Discord releases | 🟢 | Posted |
+| Discord releases | ⚪ | Not Posted |
 | Asset audit | 🟢 | Passed |
 
 ## Release state
@@ -20,15 +20,15 @@
 - **Latest recorded version:** `4.13.1`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `dede1999c8121c7bc73d644711d8b1258e3598db5118aad9da6b0731e038f69c`
+- **Validated SHA-256:** `6c010815ebbc5c68a7707a226c500f11823fd37e28983dd9283c4ed34b3e4753`
 - **Distribution candidate:** `dist/MissionChief_Map_Command_Toolkit.user.js`
 
 ## Repository health
 
-- **Discovered media files:** 28
-- **Referenced hosted paths:** 25
+- **Discovered media files:** 37
+- **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-16T02:32:51Z`
+- **Last dashboard update:** `2026-07-16T08:43:51Z`
 
 ## Release channels
 

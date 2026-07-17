@@ -1,4 +1,5 @@
 {
+  "canonicalAudioCount": 9,
   "canonicalAudioPaths": [
     "assets/audio/payout-presets/bf-bad-company-cashout.mp3",
     "assets/audio/payout-presets/gta-vice-city-cashout.mp3",
@@ -26,6 +27,7 @@
   "issue": 117,
   "legacyAliases": {},
   "legacyRootPathsRetained": false,
+  "removedRootAudioCount": 7,
   "runtimeIdsPreserved": [
     "mapCommand",
     "cyberpunk",

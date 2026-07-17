@@ -6,6 +6,7 @@ on:
       - chore/transport-sweep-discovery
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
@@ -14,47 +15,25 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Capture transport-sweep source context
+      - name: Capture failed package log tail
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          source = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          output = Path('.github/diagnostics/transport-sweep-source.txt')
-          lines = source.read_text(encoding='utf-8').splitlines()
-          patterns = [
-              re.compile(r'transportSweep', re.I),
-              re.compile(r'transport watcher', re.I),
-              re.compile(r'transport watch', re.I),
-              re.compile(r'patient transport', re.I),
-              re.compile(r'needs transport', re.I),
-          ]
-          hits = [index for index, line in enumerate(lines) if any(pattern.search(line) for pattern in patterns)]
-          merged = []
-          for hit in hits:
-              start = max(0, hit - 35)
-              end = min(len(lines), hit + 90)
-              if merged and start <= merged[-1][1] + 10:
-                  merged[-1] = (merged[-1][0], max(merged[-1][1], end))
-              else:
-                  merged.append((start, end))
-
-          chunks = [f'Found {len(hits)} matching lines across {len(merged)} source ranges.']
-          for start, end in merged:
-              chunks.append(f'\n===== LINES {start + 1}-{end} =====')
-              chunks.extend(f'{number + 1:05d}: {lines[number]}' for number in range(start, end))
-          output.parent.mkdir(parents=True, exist_ok=True)
-          output.write_text('\n'.join(chunks) + '\n', encoding='utf-8')
-          PY
+          set -euo pipefail
+          mkdir -p .github/diagnostics
+          gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/actions/jobs/87777764256/logs" \
+            > /tmp/issue94-job.log
+          tail -n 120 /tmp/issue94-job.log > .github/diagnostics/issue-94-package-error.txt
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/diagnostics/transport-sweep-source.txt
+          git add .github/diagnostics/issue-94-package-error.txt
           if git diff --cached --quiet; then
-            echo "Discovery output already current."
+            echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture transport sweep source [skip ci]"
+          git commit -m "Capture Issue 94 package traceback [skip ci]"
           git push origin HEAD:chore/transport-sweep-discovery

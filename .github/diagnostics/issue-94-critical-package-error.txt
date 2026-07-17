@@ -1,0 +1,140 @@
+2026-07-17T01:33:19.3540115Z  * [new branch]      revert-accidental-test-file -> origin/revert-accidental-test-file
+2026-07-17T01:33:19.3542708Z  * [new branch]      revert-accidental-test-file-2 -> origin/revert-accidental-test-file-2
+2026-07-17T01:33:19.3545170Z  * [new branch]      temp       -> origin/temp
+2026-07-17T01:33:19.3547879Z  * [new branch]      test/financial-ledger-fixtures -> origin/test/financial-ledger-fixtures
+2026-07-17T01:33:19.3550905Z  * [new branch]      test/mission-marker-ingestion-fixtures -> origin/test/mission-marker-ingestion-fixtures
+2026-07-17T01:33:19.3553786Z  * [new branch]      test/settings-ui-contracts -> origin/test/settings-ui-contracts
+2026-07-17T01:33:19.3556079Z  * [new tag]         v3.4.2     -> v3.4.2
+2026-07-17T01:33:19.3557358Z  * [new tag]         v3.5.1     -> v3.5.1
+2026-07-17T01:33:19.3558917Z  * [new tag]         v3.7.1     -> v3.7.1
+2026-07-17T01:33:19.3560440Z  * [new tag]         v4.11.0    -> v4.11.0
+2026-07-17T01:33:19.3561846Z  * [new tag]         v4.11.1    -> v4.11.1
+2026-07-17T01:33:19.3563248Z  * [new tag]         v4.11.2    -> v4.11.2
+2026-07-17T01:33:19.3564996Z  * [new tag]         v4.11.3    -> v4.11.3
+2026-07-17T01:33:19.3566730Z  * [new tag]         v4.11.4    -> v4.11.4
+2026-07-17T01:33:19.3568065Z  * [new tag]         v4.12.0    -> v4.12.0
+2026-07-17T01:33:19.3569413Z  * [new tag]         v4.13.0    -> v4.13.0
+2026-07-17T01:33:19.3570715Z  * [new tag]         v4.13.1    -> v4.13.1
+2026-07-17T01:33:19.3572015Z  * [new tag]         v4.13.2    -> v4.13.2
+2026-07-17T01:33:19.3573314Z  * [new tag]         v4.13.3    -> v4.13.3
+2026-07-17T01:33:19.3575095Z  * [new tag]         v4.13.4    -> v4.13.4
+2026-07-17T01:33:19.3576405Z  * [new tag]         v4.13.5    -> v4.13.5
+2026-07-17T01:33:19.3577688Z  * [new tag]         v4.13.6    -> v4.13.6
+2026-07-17T01:33:19.3578967Z  * [new tag]         v4.13.7    -> v4.13.7
+2026-07-17T01:33:19.3580245Z  * [new tag]         v4.13.8    -> v4.13.8
+2026-07-17T01:33:19.3581567Z  * [new tag]         v4.13.9    -> v4.13.9
+2026-07-17T01:33:19.3582845Z  * [new tag]         v4.14.0    -> v4.14.0
+2026-07-17T01:33:19.3586611Z ##[endgroup]
+2026-07-17T01:33:19.3588257Z ##[group]Determining the checkout info
+2026-07-17T01:33:19.3590137Z [command]/usr/bin/git branch --list --remote origin/fix/issue-94-multi-ambulance-loop
+2026-07-17T01:33:19.3592118Z   origin/fix/issue-94-multi-ambulance-loop
+2026-07-17T01:33:19.3595575Z ##[endgroup]
+2026-07-17T01:33:19.3596666Z [command]/usr/bin/git sparse-checkout disable
+2026-07-17T01:33:19.3599709Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-07-17T01:33:19.3603511Z ##[group]Checking out the ref
+2026-07-17T01:33:19.3606518Z [command]/usr/bin/git checkout --progress --force -B fix/issue-94-multi-ambulance-loop refs/remotes/origin/fix/issue-94-multi-ambulance-loop
+2026-07-17T01:33:19.4015078Z Switched to a new branch 'fix/issue-94-multi-ambulance-loop'
+2026-07-17T01:33:19.4019814Z branch 'fix/issue-94-multi-ambulance-loop' set up to track 'origin/fix/issue-94-multi-ambulance-loop'.
+2026-07-17T01:33:19.4031658Z ##[endgroup]
+2026-07-17T01:33:19.4083908Z [command]/usr/bin/git log -1 --format=%H
+2026-07-17T01:33:19.4119095Z 02ce53aedda00f360f8cb504059f22371261c322
+2026-07-17T01:33:19.4313224Z ##[group]Run set -euo pipefail
+2026-07-17T01:33:19.4314738Z [36;1mset -euo pipefail[0m
+2026-07-17T01:33:19.4316522Z [36;1mprintf '%s\n' "confirm-authorized-head" > "$RUNNER_TEMP/development-package-stage"[0m
+2026-07-17T01:33:19.4318665Z [36;1mtest "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"[0m
+2026-07-17T01:33:19.4320072Z [36;1mtest -f "$PACKAGE_PATH"[0m
+2026-07-17T01:33:19.4321251Z [36;1mtest ! -L "$PACKAGE_PATH"[0m
+2026-07-17T01:33:19.4383056Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-17T01:33:19.4384899Z env:
+2026-07-17T01:33:19.4385979Z   EXPECTED_HEAD: 02ce53aedda00f360f8cb504059f22371261c322
+2026-07-17T01:33:19.4387925Z   PACKAGE_PATH: .github/development-packages/issue-94-multi-ambulance-loop.py
+2026-07-17T01:33:19.4389667Z ##[endgroup]
+2026-07-17T01:33:19.4579806Z ##[group]Run set -euo pipefail
+2026-07-17T01:33:19.4580965Z [36;1mset -euo pipefail[0m
+2026-07-17T01:33:19.4582680Z [36;1mprintf '%s\n' "rebase-onto-current-main" > "$RUNNER_TEMP/development-package-stage"[0m
+2026-07-17T01:33:19.4585013Z [36;1mgit config user.name "github-actions[bot]"[0m
+2026-07-17T01:33:19.4586901Z [36;1mgit config user.email "41898282+github-actions[bot]@users.noreply.github.com"[0m
+2026-07-17T01:33:19.4588712Z [36;1mgit fetch origin main[0m
+2026-07-17T01:33:19.4589802Z [36;1mgit rebase origin/main[0m
+2026-07-17T01:33:19.4652561Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-17T01:33:19.4653956Z ##[endgroup]
+2026-07-17T01:33:19.8340135Z From https://github.com/Conroy1988/missionchief-toolkit-assets
+2026-07-17T01:33:19.8340703Z  * branch            main       -> FETCH_HEAD
+2026-07-17T01:33:19.8941451Z Current branch fix/issue-94-multi-ambulance-loop is up to date.
+2026-07-17T01:33:19.9003777Z ##[group]Run set -euo pipefail
+2026-07-17T01:33:19.9004440Z [36;1mset -euo pipefail[0m
+2026-07-17T01:33:19.9004996Z [36;1mprintf '%s\n' "apply-development-package" > "$RUNNER_TEMP/development-package-stage"[0m
+2026-07-17T01:33:19.9005523Z [36;1mpython3 "$PACKAGE_PATH"[0m
+2026-07-17T01:33:19.9005837Z [36;1mrm -f "$PACKAGE_PATH"[0m
+2026-07-17T01:33:19.9006296Z [36;1mfind .github/development-packages -type d -empty -delete 2>/dev/null || true[0m
+2026-07-17T01:33:19.9066639Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-17T01:33:19.9067041Z env:
+2026-07-17T01:33:19.9067439Z   PACKAGE_PATH: .github/development-packages/issue-94-multi-ambulance-loop.py
+2026-07-17T01:33:19.9067926Z ##[endgroup]
+2026-07-17T01:33:20.2358736Z Traceback (most recent call last):
+2026-07-17T01:33:20.2360664Z   File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-94-multi-ambulance-loop.py", line 70, in <module>
+2026-07-17T01:33:20.2362058Z     source = regex_replace_once(
+2026-07-17T01:33:20.2362511Z              ^^^^^^^^^^^^^^^^^^^
+2026-07-17T01:33:20.2363868Z   File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-94-multi-ambulance-loop.py", line 24, in regex_replace_once
+2026-07-17T01:33:20.2365848Z     updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+2026-07-17T01:33:20.2366847Z                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-17T01:33:20.2367521Z   File "/usr/lib/python3.12/re/__init__.py", line 197, in subn
+2026-07-17T01:33:20.2368532Z     return _compile(pattern, flags).subn(repl, string, count)
+2026-07-17T01:33:20.2369125Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-17T01:33:20.2369919Z   File "/usr/lib/python3.12/re/__init__.py", line 334, in _compile_template
+2026-07-17T01:33:20.2370763Z     return _sre.template(pattern, _parser.parse_template(repl, pattern))
+2026-07-17T01:33:20.2371437Z                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-17T01:33:20.2372095Z   File "/usr/lib/python3.12/re/_parser.py", line 1075, in parse_template
+2026-07-17T01:33:20.2374448Z     raise s.error('bad escape %s' % this, len(this)) from None
+2026-07-17T01:33:20.2375449Z re.error: bad escape \s at position 1759 (line 24, column 44)
+2026-07-17T01:33:20.2519981Z ##[error]Process completed with exit code 1.
+2026-07-17T01:33:20.2621625Z ##[group]Run set -euo pipefail
+2026-07-17T01:33:20.2622031Z [36;1mset -euo pipefail[0m
+2026-07-17T01:33:20.2622530Z [36;1mSTAGE="$(cat "$RUNNER_TEMP/development-package-stage" 2>/dev/null || echo unknown)"[0m
+2026-07-17T01:33:20.2623060Z [36;1mRESULT_NOTE=""[0m
+2026-07-17T01:33:20.2623379Z [36;1mif [[ -n "${RESULT_SHA:-}" ]]; then[0m
+2026-07-17T01:33:20.2623867Z [36;1m  RESULT_NOTE="\n- Validated branch commit already pushed: \`${RESULT_SHA}\`"[0m
+2026-07-17T01:33:20.2624693Z [36;1mfi[0m
+2026-07-17T01:33:20.2624985Z [36;1mgh issue comment "$ISSUE_NUMBER" \[0m
+2026-07-17T01:33:20.2625357Z [36;1m  --repo "$GITHUB_REPOSITORY" \[0m
+2026-07-17T01:33:20.2626322Z [36;1m  --body "The owner-authorized development package stopped during **${STAGE}**. No failed gate was bypassed.${RESULT_NOTE}\n- Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"[0m
+2026-07-17T01:33:20.2688906Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-07-17T01:33:20.2689371Z env:
+2026-07-17T01:33:20.2692285Z   GH_TOKEN: ***
+2026-07-17T01:33:20.2692559Z   ISSUE_NUMBER: 94
+2026-07-17T01:33:20.2692825Z   RESULT_SHA: 
+2026-07-17T01:33:20.2693066Z ##[endgroup]
+2026-07-17T01:33:21.1095255Z https://github.com/Conroy1988/missionchief-toolkit-assets/issues/94#issuecomment-4998124126
+2026-07-17T01:33:21.1215742Z Post job cleanup.
+2026-07-17T01:33:21.2067652Z [command]/usr/bin/git version
+2026-07-17T01:33:21.2109302Z git version 2.54.0
+2026-07-17T01:33:21.2148288Z Temporarily overriding HOME='/home/runner/work/_temp/ec3cbe3d-343d-414c-8c48-4acd575dd9b1' before making global git config changes
+2026-07-17T01:33:21.2150184Z Adding repository directory to the temporary git global config as a safe directory
+2026-07-17T01:33:21.2153732Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets
+2026-07-17T01:33:21.2193176Z Removing SSH command configuration
+2026-07-17T01:33:21.2200023Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-07-17T01:33:21.2235966Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-07-17T01:33:21.2523834Z Removing HTTP extra header
+2026-07-17T01:33:21.2525213Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-07-17T01:33:21.2546898Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-07-17T01:33:21.2815574Z Removing includeIf entries pointing to credentials config files
+2026-07-17T01:33:21.2822298Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-07-17T01:33:21.2857442Z includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git.path
+2026-07-17T01:33:21.2859097Z includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git/worktrees/*.path
+2026-07-17T01:33:21.2860812Z includeif.gitdir:/github/workspace/.git.path
+2026-07-17T01:33:21.2861826Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-07-17T01:33:21.2867574Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git.path
+2026-07-17T01:33:21.2894417Z /home/runner/work/_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.2905892Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git.path /home/runner/work/_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.2947237Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git/worktrees/*.path
+2026-07-17T01:33:21.2976755Z /home/runner/work/_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.2985738Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.3021949Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-07-17T01:33:21.3059142Z /github/runner_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.3066812Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.3103625Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-07-17T01:33:21.3132615Z /github/runner_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.3139436Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config
+2026-07-17T01:33:21.3176505Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-07-17T01:33:21.3403288Z Removing credentials config '/home/runner/work/_temp/git-credentials-74c69fa2-fdc7-4d24-b394-1b84502d5484.config'
+2026-07-17T01:33:21.3546185Z Cleaning up orphan processes

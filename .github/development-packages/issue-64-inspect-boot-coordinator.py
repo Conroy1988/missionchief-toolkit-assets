@@ -15,11 +15,12 @@ SOURCE_PATH = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 REPORT_PATH = ROOT / ".github" / "reports" / "issue-64-boot-coordinator-inspection.md"
 
 
-def extract_function(source: str, masked: str, name: str, start_at: int = 0) -> tuple[int, int, str]:
+def extract_function(source: str, masked: str, name: str) -> tuple[int, int, str]:
     pattern = re.compile(rf"\b(?:async\s+)?function\s+{re.escape(name)}\s*\(")
-    match = pattern.search(masked, start_at)
-    if match is None:
-        raise AssertionError(f"Function {name!r} not found")
+    matches = list(pattern.finditer(masked))
+    if len(matches) != 1:
+        raise AssertionError(f"Expected one declaration for {name!r}, found {len(matches)}")
+    match = matches[0]
     parameter_open = masked.find("(", match.start())
     depth = 0
     parameter_close = None
@@ -56,16 +57,7 @@ def main() -> int:
     masked = audit.mask_non_code(source)
 
     boot_start, boot_end, boot_text = extract_function(source, masked, "boot")
-    schedule_start, schedule_end, schedule_text = extract_function(source, masked, "scheduleBoot", boot_end)
-
-    boot_masked = masked[boot_start:boot_end]
-    nested_start_local, nested_end_local, nested_text = extract_function(
-        source[boot_start:boot_end],
-        boot_masked,
-        "runBootAttempt",
-    )
-    nested_start = boot_start + nested_start_local
-    nested_end = boot_start + nested_end_local
+    schedule_start, schedule_end, schedule_text = extract_function(source, masked, "scheduleBoot")
 
     bootstrap_start = source.rfind("if (document.readyState === 'loading')")
     bootstrap_end = source.rfind("})();")
@@ -80,7 +72,6 @@ def main() -> int:
         "No Toolkit runtime or distribution file is changed by this inspection.",
         "",
         fenced("`boot()`", source, boot_start, boot_end, boot_text),
-        fenced("Nested `runBootAttempt()`", source, nested_start, nested_end, nested_text),
         fenced("`scheduleBoot()`", source, schedule_start, schedule_end, schedule_text),
         fenced("Document-start bootstrap tail", source, bootstrap_start, bootstrap_end, bootstrap_text),
     ]

@@ -14,6 +14,7 @@ on:
       - ".github/fixtures/mission-marker-ingestion-contract.json"
       - ".github/fixtures/settings-ui-contract.json"
       - ".github/fixtures/desktop-panel-layout-contract.json"
+      - ".github/fixtures/transport-sweep-lssm-contract.json"
       - ".github/scripts/full_userscript_audit.py"
       - ".github/scripts/refine_full_userscript_audit.py"
       - ".github/scripts/summarise_eslint_audit.py"
@@ -24,6 +25,7 @@ on:
       - ".github/scripts/test_settings_ui_contract.py"
       - ".github/scripts/test_desktop_panel_layout_contract.py"
       - ".github/scripts/test_mission_value_contract.py"
+      - ".github/scripts/test_transport_sweep_lssm_contract.py"
       - ".github/workflows/full-userscript-audit.yml"
   workflow_dispatch:
 

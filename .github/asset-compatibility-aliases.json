@@ -1,55 +1,5 @@
 {
-  "aliases": [
-    {
-      "bytes": 58845,
-      "canonicalPath": "assets/audio/payout-presets/bf-bad-company-cashout.mp3",
-      "legacyPath": "bf-bad-company-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "dbc91ade0209b4b31242c6e19efc56e73284ddfe47b18437af3b33f1573c4470"
-    },
-    {
-      "bytes": 129985,
-      "canonicalPath": "themes/cyberpunk/audio/cyberpunk-cashout.mp3",
-      "legacyPath": "cyberpunk-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "50ea8b6e812709823bc748790c417849783dc3e31a1668ba2280730ce39cc8b1"
-    },
-    {
-      "bytes": 170200,
-      "canonicalPath": "themes/factorio/audio/factorio-cashout.mp3",
-      "legacyPath": "factorio-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "dc0a34bd465554635ad050bb5c19b4f942d9bba7732928cdfd52ffc86488babe"
-    },
-    {
-      "bytes": 45741,
-      "canonicalPath": "themes/fallout/audio/fallout-cashout.mp3",
-      "legacyPath": "fallout-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "bbc568951a571a4b3be3e946c876d8a199aec39d8d263004b10408ebae544b0f"
-    },
-    {
-      "bytes": 83106,
-      "canonicalPath": "assets/audio/payout-presets/gta-vice-city-cashout.mp3",
-      "legacyPath": "gta-vice-city-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "7b96892eee4650142be3b5455d98825375fc2500db44e3147bfce3b8d7915597"
-    },
-    {
-      "bytes": 94653,
-      "canonicalPath": "themes/james-bond/audio/james-bond-cashout.mp3",
-      "legacyPath": "james-bond-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "989e9854d786668f999cd6a58ed98c2dc8273499acf0690a3a7aa6487ccef027"
-    },
-    {
-      "bytes": 26877,
-      "canonicalPath": "assets/audio/payout-presets/scarface-cashout.mp3",
-      "legacyPath": "scarface-cashout.mp3",
-      "reason": "Preserve public raw GitHub URLs used by earlier Toolkit releases.",
-      "sha256": "55d970d0286d5b777a52aaad0164a99c1cf0951a46dfdf186b0faaf70937a988"
-    }
-  ],
+  "aliases": [],
   "canonicalAudioPaths": [
     "assets/audio/payout-presets/bf-bad-company-cashout.mp3",
     "assets/audio/payout-presets/gta-vice-city-cashout.mp3",
@@ -62,7 +12,7 @@
     "themes/umbrella/audio/umbrella-containment-cashout.mp3"
   ],
   "canonicalSource": "src/MissionChief_Map_Command_Toolkit.user.js",
-  "revision": "2026-07-17-theme-audio-migration",
+  "revision": "2026-07-17-canonical-audio-only",
   "schemaVersion": 1,
   "stableRef": "main"
 }

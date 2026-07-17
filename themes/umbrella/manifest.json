@@ -12,19 +12,16 @@
     "gitBlobSha1": "0cd598dde95bea6c107a1c17751472c07bdda818",
     "migrationCommit": "6516e7fad8063e0278c9ac384396a61cea27268f"
   },
-  "displayName": "Umbrella Containment",
-  "generated": "2026-07-17",
-  "legacyCompatibility": {
-    "canonicalAudio": "audio/umbrella-containment-cashout.mp3",
-    "historicalRootAudioRemoved": "biohazzard-cashout.mp3",
-    "legacyRootRetained": false,
+  "compatibility": {
     "settingIds": [
       "umbrella",
       "biohazard"
     ]
   },
-  "notes": "Canonical Umbrella interface asset package. The former unreferenced root duplicate was removed by Issue #115; the structured audio path remains authoritative.",
-  "packageVersion": "1.1.0",
+  "displayName": "Umbrella Containment",
+  "generated": "2026-07-17",
+  "notes": "Canonical Umbrella Containment interface asset package.",
+  "packageVersion": "1.1.1",
   "theme": "umbrella",
   "toolkitVersion": "4.14.7"
 }

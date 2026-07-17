@@ -46,17 +46,16 @@ Thresholds, content types, monitored hosts and explicit endpoints are controlled
 
 Change the policy only when the asset contract genuinely changes. Do not weaken a failing check merely to make CI green; first confirm whether the public path, release hash, file type or endpoint is wrong.
 
-## Repository audio and compatibility-alias contract
+## Canonical repository audio contract
 
-The canonical payout-audio inventory is declared in `.github/asset-compatibility-aliases.json`.
+The canonical payout-audio inventory is declared in `.github/asset-compatibility-aliases.json`. Its `aliases` collection is intentionally empty because historical root paths are no longer supported.
 
-The permanent validation enforces that:
+Permanent validation enforces that:
 
-- every canonical payout-audio path exists and is referenced by the canonical userscript;
-- current source code does not reference a root-level legacy alias;
-- every declared root alias exists and is byte-identical to its canonical target;
-- only declared legacy/canonical pairs may contain duplicate audio bytes;
-- undeclared `.mp3`, `.wav` or `.ogg` files fail as orphaned media;
-- missing aliases, missing canonical targets, hash mismatches and unexpected source paths fail validation.
+- every canonical payout-audio path exists and is referenced by the current canonical userscript;
+- all repository audio is declared in the canonical inventory;
+- root-level audio is rejected as undeclared media;
+- duplicate audio payloads are rejected;
+- missing, orphaned, unreferenced or unexpected `.mp3`, `.wav` and `.ogg` files fail validation.
 
-The seven root-level MP3 files remain visible solely because older installed and published Toolkit versions load those exact raw GitHub URLs. New development must use the structured canonical paths under `themes/` or `assets/audio/payout-presets/`.
+Archived userscripts and historical audit snapshots are excluded from live dependency discovery. Users must update to the current Toolkit release, which uses only structured paths under `themes/` and `assets/audio/payout-presets/`.

@@ -1,7 +1,7 @@
 {
   "displayName": "Shared payout presentation audio",
   "generated": "2026-07-17",
-  "notes": "These sounds belong to payout presentation presets rather than Toolkit interface systems. Root copies remain public compatibility aliases.",
+  "notes": "These sounds belong to payout presentation presets rather than Toolkit interface systems. The structured paths are canonical.",
   "package": "payout-presets",
   "presets": {
     "badCompany": "bf-bad-company-cashout.mp3",

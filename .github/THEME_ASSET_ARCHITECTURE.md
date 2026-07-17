@@ -34,16 +34,16 @@ All seven interface systems have a canonical namespace. No system is designated 
 
 Map Command currently has no hosted audio but retains its canonical theme namespace.
 
-## Legacy compatibility aliases
+## Canonical-only audio policy
 
-The root-level MP3 files are not canonical development locations. They remain public compatibility endpoints for historical Toolkit versions.
+The repository supports only the structured canonical paths listed above. Historical root-level MP3 copies were removed by Issue #120 after the support policy changed to require users to update to the current Toolkit release.
 
-`.github/asset-compatibility-aliases.json` is the authoritative root-to-canonical mapping. Validation requires each pair to remain byte-identical and rejects all undeclared duplicate or orphaned audio.
+The canonical audio inventory remains machine-validated. Root-level audio, missing canonical files, source references outside the inventory, orphaned media and duplicate payloads are rejected.
 
 ## Development rules
 
 - Add interface-owned assets beneath the matching `themes/<slug>/` package.
 - Add cross-theme payout presentation assets beneath `assets/audio/payout-presets/`.
-- Never reference a root compatibility alias from current source code.
+- Reference only canonical structured paths from current source code.
 - Never rename persisted runtime IDs as part of repository organisation.
-- Update the alias manifest and tests before changing any public compatibility endpoint.
+- Update the canonical audio inventory and deterministic tests whenever audio assets change.

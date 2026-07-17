@@ -11,7 +11,7 @@ anchor = 'SOURCE.write_text(source, encoding="utf-8")\n'
 if package.count(anchor) != 1:
     raise SystemExit(f"capacity package write anchor: expected one, found {package.count(anchor)}")
 
-parser_hardening = r'''
+parser_hardening = r"""
 source = replace_region(
     source,
     "function missionRequirementsFindDefinitionMatch(",
@@ -60,7 +60,7 @@ source = replace_region(
     "source-ordered requirement parser",
 )
 
-'''
+"""
 package = package.replace(anchor, parser_hardening + anchor, 1)
 exec(compile(package, str(ORIGINAL), "exec"), {"__name__": "__main__", "__file__": str(ORIGINAL)})
 if ORIGINAL.exists():

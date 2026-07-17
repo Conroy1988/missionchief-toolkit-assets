@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import re
 import subprocess
 from pathlib import Path
 
@@ -16,13 +15,6 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     if count != 1:
         raise RuntimeError(f"{label}: expected one match, found {count}")
     return text.replace(old, new, 1)
-
-
-def regex_replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
-    updated, count = re.subn(pattern, lambda _match: replacement, text, count=1, flags=re.S)
-    if count != 1:
-        raise RuntimeError(f"{label}: expected one regex match, found {count}")
-    return updated
 
 
 source = SOURCE.read_text(encoding="utf-8")
@@ -233,12 +225,19 @@ new_vehicle = '''    async function openTransportSweepVehicle(candidate) {
 '''
 source = replace_once(source, old_vehicle, new_vehicle, "vehicle fallback window lifecycle")
 
-source = regex_replace_once(
-    source,
-    r"(    async function processTransportSweepMission\(item, remainingAllowance\) \{[\s\S]*?)(        if \(clearedHere === 0 && !transportSweepRuntime\.stopRequested\) transportSweepRuntime\.skipped \+= 1;\n        return clearedHere;\n    \})",
-    r"\1        await closeTransportSweepWindows('finishing the mission');\n\n\2",
-    "mission completion window close",
-)
+old_tail = '''        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
+        return clearedHere;
+    }
+
+    async function startTransportSweep'''
+new_tail = '''        await closeTransportSweepWindows('finishing the mission');
+
+        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
+        return clearedHere;
+    }
+
+    async function startTransportSweep'''
+source = replace_once(source, old_tail, new_tail, "mission completion window close")
 SOURCE.write_text(source, encoding="utf-8")
 
 changelog = CHANGELOG.read_text(encoding="utf-8")

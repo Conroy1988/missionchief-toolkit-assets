@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.2
+// @version      4.14.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.2',
+        version: '4.14.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4142',
+        styleId: 'mc-map-command-toolkit-style-v4143',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -893,6 +893,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4140__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4141__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4142__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4143__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -936,7 +937,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.2',
+        guideVersion: '4.14.3',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1326,6 +1327,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         vehicleButtonBaseline: new Set(),
         ownVehicleIds: new Set(),
         missionWindowRoot: null,
+        activeWindowRoot: null,
         lastCandidateStats: null,
         log: []
     };
@@ -16954,6 +16956,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return visible.filter(root => !visible.some(other => other !== root && other.contains?.(root)));
     }
 
+    function transportSweepOwnedWindowRoot(root) {
+        if (!root?.isConnected) return null;
+        const direct = root.closest?.('#lightbox_box, #lightbox, .modal.show, .modal.in, [role="dialog"], .ui-dialog');
+        if (direct) return direct;
+        return transportSweepTopLevelWindowRoots().find(candidate => candidate === root || candidate.contains?.(root)) || root;
+    }
+
     function transportSweepWindowCloseControl(root) {
         if (!root?.querySelectorAll) return null;
         const selectors = [
@@ -16970,47 +16979,45 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     async function closeTransportSweepWindows(reason = 'navigation') {
+        const target = transportSweepRuntime.activeWindowRoot;
         transportSweepRuntime.missionWindowRoot = null;
-        for (let pass = 0; pass < 12 && !transportSweepRuntime.stopRequested; pass += 1) {
-            const roots = transportSweepTopLevelWindowRoots();
-            if (!roots.length) return true;
-            const target = roots[roots.length - 1];
-            const beforeCount = roots.length;
-            let requested = false;
+        if (!target || !target.isConnected || !transportSweepElementVisible(target)) {
+            transportSweepRuntime.activeWindowRoot = null;
+            return true;
+        }
 
-            if (typeof pageWindow.lightboxClose === 'function') {
+        const waitUntilClosed = timeoutMs => transportSweepWaitFor(
+            () => !target.isConnected || !transportSweepElementVisible(target) ? true : null,
+            timeoutMs,
+            100
+        );
+
+        let closed = false;
+        if (typeof pageWindow.lightboxClose === 'function') {
+            try {
+                pageWindow.lightboxClose();
+                closed = Boolean(await waitUntilClosed(1200));
+            } catch (err) {}
+        }
+
+        if (!closed) {
+            const closeControl = transportSweepWindowCloseControl(target);
+            if (closeControl) {
                 try {
-                    pageWindow.lightboxClose();
-                    requested = true;
+                    closeControl.click();
+                    closed = Boolean(await waitUntilClosed(1600));
                 } catch (err) {}
             }
-
-            if (!requested) {
-                const closeControl = transportSweepWindowCloseControl(target);
-                if (closeControl) {
-                    try {
-                        closeControl.click();
-                        requested = true;
-                    } catch (err) {}
-                }
-            }
-
-            if (!requested) {
-                transportSweepLog(`Could not close the active MissionChief window before ${reason}`, 'error');
-                return false;
-            }
-
-            const closed = await transportSweepWaitFor(() => {
-                const remaining = transportSweepTopLevelWindowRoots();
-                return !target.isConnected || !transportSweepElementVisible(target) || remaining.length < beforeCount ? true : null;
-            }, 2600, 100);
-            if (!closed) {
-                transportSweepLog(`MissionChief did not close the active window before ${reason}`, 'error');
-                return false;
-            }
-            await transportSweepSleep(80);
         }
-        return transportSweepTopLevelWindowRoots().length === 0;
+
+        if (!closed) {
+            transportSweepLog(`MissionChief did not close the sweep-owned window before ${reason}`, 'error');
+            return false;
+        }
+
+        transportSweepRuntime.activeWindowRoot = null;
+        await transportSweepSleep(80);
+        return true;
     }
 
     async function openTransportSweepPath(path, mode) {
@@ -17018,6 +17025,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
         const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle');
         if (!closed || transportSweepRuntime.stopRequested) return false;
+
+        const beforeRoots = transportSweepVisibleWindowRoots();
+        const beforeRootText = new Map(beforeRoots.map(root => [root, String(root.textContent || '').trim()]));
 
         if (mode === 'mission') {
             transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
@@ -17030,24 +17040,39 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 if (root) {
                     const anchors = transportSweepVehicleAnchorsWithin(root);
                     const afterText = String(root.textContent || '').trim();
-                    if (anchors.length || afterText) {
+                    const changed = !beforeRootText.has(root) || afterText !== beforeRootText.get(root);
+                    if (anchors.length || (afterText && changed)) {
                         transportSweepRuntime.missionWindowRoot = root;
+                        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(root);
                         return { root, anchors };
                     }
                 }
                 const newAnchor = transportSweepVisibleVehicleAnchors().find(anchor => !transportSweepRuntime.missionAnchorBaseline.has(anchor));
                 if (newAnchor) {
-                    transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.ownerDocument?.body || newAnchor.parentElement;
+                    transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.parentElement;
+                    transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(transportSweepRuntime.missionWindowRoot);
                     return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
                 }
                 return null;
             }, 4200, 120);
-            return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.missionWindowRoot);
+            return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
         }
 
         pageWindow.lightboxOpen(path);
-        await transportSweepSleep(900);
-        return !transportSweepRuntime.stopRequested;
+        const vehicleWindow = await transportSweepWaitFor(() => {
+            const button = findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline);
+            if (button) {
+                const root = button.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || button.parentElement;
+                return { root };
+            }
+            const root = transportSweepVisibleWindowRoots().find(candidate => {
+                const text = String(candidate.textContent || '').trim();
+                return !beforeRootText.has(candidate) || text !== beforeRootText.get(candidate);
+            });
+            return root ? { root } : null;
+        }, 4200, 120);
+        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(vehicleWindow?.root);
+        return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
     }
 
     async function openTransportSweepVehicle(candidate) {
@@ -17238,6 +17263,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         transportSweepRuntime.missionAnchorBaseline = new Set();
         transportSweepRuntime.vehicleButtonBaseline = new Set();
         transportSweepRuntime.missionWindowRoot = null;
+        transportSweepRuntime.activeWindowRoot = null;
         transportSweepRuntime.lastCandidateStats = null;
         transportSweepRuntime.log = [];
         renderTransportSweepPanel();
@@ -17253,6 +17279,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             transportSweepRuntime.errors += 1;
             transportSweepLog(`Sweep stopped by error: ${err?.message || 'unknown error'}`, 'error');
         } finally {
+            await closeTransportSweepWindows('finishing the sweep');
             const wasStopped = transportSweepRuntime.stopRequested;
             transportSweepRuntime.running = false;
             transportSweepRuntime.stopRequested = false;
@@ -17260,6 +17287,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             transportSweepRuntime.currentVehicleHref = '';
             transportSweepRuntime.missionAnchorBaseline = new Set();
             transportSweepRuntime.vehicleButtonBaseline = new Set();
+            transportSweepRuntime.activeWindowRoot = null;
             buildTransportSweepQueue();
             renderTransportSweepPanel();
             scheduleTransportWatcherRefresh(0);

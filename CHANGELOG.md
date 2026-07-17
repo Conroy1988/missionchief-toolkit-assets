@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.3] - 2026-07-17
+
+### Fixed
+- Restored Patient Transport Sweep mission opening after v4.14.2 incorrectly treated unrelated persistent page dialogs as active MissionChief mission windows.
+- Window cleanup now targets only the exact lightbox opened and owned by the sweep; when no owned window exists, the next mission opens immediately.
+- Restored changed-content baselines so persistent page UI cannot be mistaken for a newly loaded mission or vehicle window.
+
+### Performance and compatibility
+- Retains the v4.14.2 single-window lifecycle without closing or blocking unrelated MissionChief, LSSM or Toolkit interface elements.
+
 ## [4.14.2] - 2026-07-17
 
 ### Fixed

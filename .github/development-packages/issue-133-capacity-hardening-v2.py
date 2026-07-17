@@ -20,7 +20,7 @@ source = replace_region(
         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
         const aliases = Array.from(definition.aliases || []).sort((left, right) => right.length - left.length);
         for (const alias of aliases) {
-            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\\\s+/gu, '\\s+');
+            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\s+/gu, '\\s+');
             const before = new RegExp(`(^|[,;]\\s*)${numberPattern}\\s*x?\\s+(${labelPattern})(?=\\s*(?:[,;]|$))`, 'iu');
             const beforeMatch = before.exec(text);
             if (beforeMatch) return { match: beforeMatch[0], index: beforeMatch.index, missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
@@ -33,9 +33,9 @@ source = replace_region(
 
     function missionRequirementsParseText(rawText, group = 'vehicles') {
         let remaining = String(rawText || '')
-            .replace(/\\r\\n?/gu, '\\n')
-            .replace(/\\n+/gu, '; ')
-            .replace(/\\s+/gu, ' ')
+            .replace(/\r\n?/gu, '\n')
+            .replace(/\n+/gu, '; ')
+            .replace(/\s+/gu, ' ')
             .trim();
         const requirements = [];
         const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => definition.group === group);

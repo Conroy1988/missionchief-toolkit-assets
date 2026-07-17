@@ -1,0 +1,10 @@
+{
+  "returncode": 0,
+  "stdout": "Mission requirements contract passed\nApplied Issue #133 live mission requirements foundation\n",
+  "stderr": "",
+  "generated": {
+    "source": true,
+    "fixture": true,
+    "test": true
+  }
+}

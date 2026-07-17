@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.5] - 2026-07-17
+
+### Changed
+- Audited all command-panel sections and assigned every control one canonical home without changing its internal setting key, shortcut or saved state.
+- Moved Auto Night to Skins, Alliance Map Blocker to Tools, vehicle auto-loading to Resources, operational feed/audio controls to Ops and saved map profiles to Places.
+- Renamed the visible Discord tab to Finance while preserving the stable `discord` tab key for saved settings and imports.
+
+### Fixed
+- Removed duplicate Transport Watcher, Unit Count, Mission Age and Critical View controls from secondary sections.
+- Reworked static, row and action-button labels to wrap safely across Desktop, compact Desktop, Tablet and iOS widths instead of clipping or overlapping.
+
+### Compatibility
+- Section order, theme support, feature behaviour, localStorage/import-export contracts and keyboard shortcuts remain unchanged.
+- Added a fixture-backed section-navigation and narrow-label contract to the permanent userscript preflight.
+
 ## [4.14.4] - 2026-07-17
 
 ### Fixed

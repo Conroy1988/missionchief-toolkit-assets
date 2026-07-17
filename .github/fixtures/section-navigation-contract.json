@@ -1,0 +1,155 @@
+{
+  "tabs": [
+    {
+      "key": "skins",
+      "label": "Skins"
+    },
+    {
+      "key": "tools",
+      "label": "Tools"
+    },
+    {
+      "key": "resources",
+      "label": "Resources"
+    },
+    {
+      "key": "ops",
+      "label": "Ops"
+    },
+    {
+      "key": "payouts",
+      "label": "Payouts"
+    },
+    {
+      "key": "discord",
+      "label": "Finance"
+    },
+    {
+      "key": "places",
+      "label": "Places"
+    },
+    {
+      "key": "settings",
+      "label": "Settings"
+    }
+  ],
+  "placements": {
+    "skins": [
+      "makeToggleButton('autoNight'",
+      "data-setting=\"auto-night-start\""
+    ],
+    "tools": [
+      "makeToggleButton('allianceBuildingsMapBlocker'",
+      "makeToggleButton('transportWatcher'",
+      "makeToggleButton('unitCommitment'",
+      "makeToggleButton('criticalView'",
+      "makeToggleButton('missionAge'"
+    ],
+    "resources": [
+      "data-action=\"scan-transport-sweep\"",
+      "makeToggleButton('resourceGap'",
+      "makeToggleButton('autoLoadAllVehicles'"
+    ],
+    "ops": [
+      "makeToggleButton('missionInspector'",
+      "makeToggleButton('majorIncidentFeed'",
+      "makeToggleButton('missionLockAudio'",
+      "data-action=\"open-vehicle-status\""
+    ],
+    "payouts": [
+      "makeToggleButton('payoutFlash'",
+      "data-action=\"test-payout-flash\""
+    ],
+    "discord": [
+      "data-setting=\"discord-webhook\"",
+      "data-action=\"finance-archive-scan\""
+    ],
+    "places": [
+      "mcms-quick-list",
+      "mcms-bookmark-list",
+      "data-profile-list"
+    ],
+    "settings": [
+      "makeToggleButton('shortcuts'",
+      "data-device-layout-status",
+      "data-action=\"export-config\""
+    ]
+  },
+  "singlePlacementTokens": [
+    "makeToggleButton('autoNight'",
+    "makeToggleButton('allianceBuildingsMapBlocker'",
+    "makeToggleButton('autoLoadAllVehicles'",
+    "makeToggleButton('majorIncidentFeed'",
+    "makeToggleButton('missionLockAudio'",
+    "makeToggleButton('transportWatcher'",
+    "makeToggleButton('unitCommitment'",
+    "makeToggleButton('criticalView'",
+    "makeToggleButton('missionAge'",
+    "data-profile-list"
+  ],
+  "themes": [
+    "Map Command",
+    "Cyberpunk",
+    "Fallout 4",
+    "Umbrella",
+    "Factorio",
+    "007 Intelligence",
+    "Hyrule Command"
+  ],
+  "narrowLabelCases": [
+    {
+      "label": "Auto-load all vehicles",
+      "width": 126,
+      "icon": 18,
+      "gap": 5,
+      "padding": 10,
+      "font": 10,
+      "maxLines": 2
+    },
+    {
+      "label": "Alliance Map Blocker",
+      "width": 126,
+      "icon": 20,
+      "gap": 6,
+      "padding": 12,
+      "font": 10.5,
+      "maxLines": 2
+    },
+    {
+      "label": "Open Mission Drawer (W)",
+      "width": 136,
+      "icon": 0,
+      "gap": 0,
+      "padding": 12,
+      "font": 9,
+      "maxLines": 2
+    },
+    {
+      "label": "Deep Scan All Available",
+      "width": 136,
+      "icon": 0,
+      "gap": 0,
+      "padding": 12,
+      "font": 9,
+      "maxLines": 2
+    },
+    {
+      "label": "Refresh Financial Intelligence",
+      "width": 276,
+      "icon": 0,
+      "gap": 0,
+      "padding": 12,
+      "font": 9,
+      "maxLines": 2
+    },
+    {
+      "label": "Generate & Post Audit",
+      "width": 276,
+      "icon": 0,
+      "gap": 0,
+      "padding": 12,
+      "font": 9,
+      "maxLines": 1
+    }
+  ]
+}

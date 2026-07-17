@@ -1,8 +1,15 @@
 {
-  "description": "LSSM direct alliance-patient release and multi-ambulance loop contract",
+  "description": "LSSM direct alliance-patient release, multi-ambulance loop and single-window lifecycle contract",
   "current_player_vehicle_ids": [
     "1111111"
   ],
+  "window_lifecycle": {
+    "maximum_active_missionchief_windows": 1,
+    "close_before_reopen_same_mission": true,
+    "close_before_next_mission": true,
+    "close_before_fallback_vehicle": true,
+    "close_after_mission_processing": true
+  },
   "rows": [
     {
       "name": "alliance ambulance",

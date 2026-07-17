@@ -46,6 +46,10 @@ def main() -> int:
         "Returning to ${item.caption} for remaining alliance ambulances",
         "missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');",
         "if (transportSweepReleaseConfirmationVisible()) return true;",
+        "async function closeTransportSweepWindows(reason = 'navigation')",
+        "const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle')",
+        "const opened = await openTransportSweepPath(candidate.href, 'vehicle')",
+        "await closeTransportSweepWindows('finishing the mission')",
     ]
     processor = re.search(r"async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep", source)
     assert processor, "transport sweep mission processor is missing"
@@ -59,6 +63,15 @@ def main() -> int:
     missing = [item for item in required if item not in source]
     assert not missing, f"Missing LSSM transport sweep contract markers: {missing}"
     assert "lssmSeen ? 8000 : 18000" not in source, "A repeated mission load must not use an eight-second LSSM timeout"
+    vehicle_processor = re.search(r"async function openTransportSweepVehicle\(candidate\) \{([\s\S]*?)\n    \}", source)
+    assert vehicle_processor, "transport sweep vehicle opener is missing"
+    assert "anchor.click()" not in vehicle_processor.group(1), "fallback vehicles must not stack over the mission via an in-window click"
+    assert "pageWindow.lightboxOpen(candidate.href)" not in vehicle_processor.group(1), "fallback vehicles must use the managed single-window opener"
+    opener = re.search(r"async function openTransportSweepPath\(path, mode\) \{([\s\S]*?)\n    \}", source)
+    assert opener, "transport sweep path opener is missing"
+    close_index = opener.group(1).index("await closeTransportSweepWindows")
+    open_index = opener.group(1).index("pageWindow.lightboxOpen(path)")
+    assert close_index < open_index, "the current MissionChief window must close before another opens"
     print("LSSM transport sweep contract passed")
     return 0
 

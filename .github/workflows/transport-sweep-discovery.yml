@@ -6,7 +6,7 @@ on:
       - chore/transport-sweep-discovery
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
@@ -14,17 +14,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          persist-credentials: false
-      - name: Print transport-sweep source context
+      - name: Capture transport-sweep source context
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          lines = path.read_text(encoding='utf-8').splitlines()
+          source = Path('src/MissionChief_Map_Command_Toolkit.user.js')
+          output = Path('.github/diagnostics/transport-sweep-source.txt')
+          lines = source.read_text(encoding='utf-8').splitlines()
           patterns = [
               re.compile(r'transportSweep', re.I),
               re.compile(r'transport watcher', re.I),
@@ -32,11 +31,7 @@ jobs:
               re.compile(r'patient transport', re.I),
               re.compile(r'needs transport', re.I),
           ]
-          hits = []
-          for index, line in enumerate(lines):
-              if any(pattern.search(line) for pattern in patterns):
-                  hits.append(index)
-
+          hits = [index for index, line in enumerate(lines) if any(pattern.search(line) for pattern in patterns)]
           merged = []
           for hit in hits:
               start = max(0, hit - 35)
@@ -46,9 +41,20 @@ jobs:
               else:
                   merged.append((start, end))
 
-          print(f'Found {len(hits)} matching lines across {len(merged)} source ranges.')
+          chunks = [f'Found {len(hits)} matching lines across {len(merged)} source ranges.']
           for start, end in merged:
-              print(f'\n===== LINES {start + 1}-{end} =====')
-              for number in range(start, end):
-                  print(f'{number + 1:05d}: {lines[number]}')
+              chunks.append(f'\n===== LINES {start + 1}-{end} =====')
+              chunks.extend(f'{number + 1:05d}: {lines[number]}' for number in range(start, end))
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text('\n'.join(chunks) + '\n', encoding='utf-8')
           PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/diagnostics/transport-sweep-source.txt
+          if git diff --cached --quiet; then
+            echo "Discovery output already current."
+            exit 0
+          fi
+          git commit -m "Capture transport sweep source [skip ci]"
+          git push origin HEAD:chore/transport-sweep-discovery

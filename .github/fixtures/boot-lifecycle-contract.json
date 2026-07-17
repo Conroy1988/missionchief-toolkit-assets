@@ -8,7 +8,8 @@
     "mediumRetryDelayMs": 700,
     "lateRetryDelayMs": 1400,
     "mapFallbackAttempt": 12,
-    "maxAttempts": 90
+    "maxAttempts": 90,
+    "coordinatorFunction": "startBootAttemptCoordinator"
   },
   "requiredTasks": [
     "vehicle-data-refresh",

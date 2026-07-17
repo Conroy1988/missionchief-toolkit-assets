@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.13.9
+// @version      4.14.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.13.9',
+        version: '4.14.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4139',
+        styleId: 'mc-map-command-toolkit-style-v4140',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -890,6 +890,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4137__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4138__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4139__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4140__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -933,7 +934,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.13.9',
+        guideVersion: '4.14.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -16505,6 +16506,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return match ? match[1] : null;
     }
 
+
+    function transportSweepReleaseVehicleIdFromHref(href) {
+        let pathname = String(href || '').trim();
+        try { pathname = new URL(pathname, document.baseURI || pageWindow.location.href).pathname; } catch (err) {}
+        const match = pathname.match(/^\/vehicles\/(\d+)\/patient\/-1\/?$/);
+        return match ? match[1] : null;
+    }
+
+    function transportSweepOwnerProfileId(row) {
+        if (!row?.querySelector) return null;
+        const ownerLink = row.querySelector('td.hidden-xs a[href*="/profile/"], small.visible-xs a[href*="/profile/"]');
+        const href = String(ownerLink?.getAttribute?.('href') || '');
+        const match = href.match(/\/profile\/(\d+)(?:\/|$)/);
+        return match ? match[1] : null;
+    }
+
     function transportSweepAnchorUsable(anchor) {
         if (!anchor || !anchor.isConnected || anchor.closest?.(`#${SCRIPT.panelId}`)) return false;
         try {
@@ -16785,6 +16802,121 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return result.candidates;
     }
 
+
+    function collectTransportSweepLssmCandidates(excludedVehicleIds = null) {
+        const excluded = excludedVehicleIds instanceof Set ? excludedVehicleIds : new Set();
+        const ownIds = transportSweepOwnVehicleIdSet();
+        const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : null;
+        const anchors = [];
+        const seenAnchors = new Set();
+        const collectFrom = scope => {
+            let matches = [];
+            try { matches = Array.from(scope?.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || []); } catch (err) {}
+            for (const anchor of matches) {
+                if (seenAnchors.has(anchor)) continue;
+                seenAnchors.add(anchor);
+                anchors.push(anchor);
+            }
+        };
+        if (root) collectFrom(root);
+        if (!anchors.length) {
+            for (const context of transportSweepDocumentContexts()) collectFrom(context.doc);
+        }
+
+        const unique = new Map();
+        let rejectedOwn = 0;
+        let rejectedAmbiguousOwner = 0;
+        let rejectedNotFms5 = 0;
+        for (const anchor of anchors) {
+            if (!transportSweepAnchorUsable(anchor)) continue;
+            const actionHref = String(anchor.getAttribute?.('href') || '').trim();
+            const vehicleId = transportSweepReleaseVehicleIdFromHref(actionHref);
+            if (!vehicleId || excluded.has(String(vehicleId))) continue;
+            const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
+            if (!row?.querySelector?.('.building_list_fms_5')) {
+                rejectedNotFms5 += 1;
+                continue;
+            }
+            if (ownIds.has(String(vehicleId))) {
+                rejectedOwn += 1;
+                continue;
+            }
+            const ownerProfileId = transportSweepOwnerProfileId(row);
+            if (!ownerProfileId) {
+                rejectedAmbiguousOwner += 1;
+                continue;
+            }
+            const vehicleLink = Array.from(row.querySelectorAll?.('a[href*="/vehicles/"]') || [])
+                .find(item => transportSweepVehicleIdFromHref(item.getAttribute?.('href')) === String(vehicleId));
+            const ownerLink = row.querySelector('td.hidden-xs a[href*="/profile/"], small.visible-xs a[href*="/profile/"]');
+            const label = String(vehicleLink?.textContent || `Alliance ambulance ${vehicleId}`).trim() || `Alliance ambulance ${vehicleId}`;
+            const owner = String(ownerLink?.textContent || `profile ${ownerProfileId}`).trim() || `profile ${ownerProfileId}`;
+            const normalisedActionHref = `/vehicles/${vehicleId}/patient/-1`;
+            if (!unique.has(normalisedActionHref)) {
+                unique.set(normalisedActionHref, {
+                    actionHref: normalisedActionHref,
+                    vehicleId: String(vehicleId),
+                    ownerProfileId,
+                    owner,
+                    label,
+                    anchor,
+                    row,
+                    source: 'LSSM mission release control'
+                });
+            }
+        }
+
+        const candidates = Array.from(unique.values())
+            .sort((a, b) => a.label.localeCompare(b.label) || Number(a.vehicleId) - Number(b.vehicleId))
+            .slice(0, TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION);
+        transportSweepRuntime.rejectedOwn = rejectedOwn;
+        transportSweepRuntime.lastCandidateStats = {
+            source: 'LSSM mission release controls',
+            totalLinks: anchors.length,
+            candidates: candidates.length,
+            rejectedOwn,
+            rejectedAmbiguousOwner,
+            rejectedNotFms5
+        };
+        return candidates;
+    }
+
+    async function waitForTransportSweepLssmCandidates(excludedVehicleIds = null, timeoutMs = 18000) {
+        const first = await transportSweepWaitFor(() => {
+            const candidates = collectTransportSweepLssmCandidates(excludedVehicleIds);
+            return candidates.length ? candidates : null;
+        }, timeoutMs, 180);
+        if (!first?.length || transportSweepRuntime.stopRequested) return [];
+        await transportSweepSleep(1200);
+        return collectTransportSweepLssmCandidates(excludedVehicleIds);
+    }
+
+    function transportSweepReleaseConfirmationVisible() {
+        const text = transportSweepVisibleWindowRoots()
+            .map(root => String(root.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase())
+            .join(' | ');
+        return /released the patient|patient (?:is not|isn['’]t) transported|patient.*released|patient.*discharged/.test(text);
+    }
+
+    async function activateTransportSweepLssmRelease(candidate) {
+        if (!candidate?.actionHref || transportSweepRuntime.stopRequested) return false;
+        let anchor = candidate.anchor;
+        if (!anchor?.isConnected) {
+            const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : document;
+            anchor = Array.from(root.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || [])
+                .find(item => transportSweepReleaseVehicleIdFromHref(item.getAttribute?.('href')) === String(candidate.vehicleId));
+        }
+        if (!anchor?.isConnected || !transportSweepAnchorUsable(anchor)) return false;
+        const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
+        anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        anchor.click();
+        return Boolean(await transportSweepWaitFor(() => {
+            if (!anchor.isConnected || !transportSweepAnchorUsable(anchor)) return true;
+            if (row && (!row.isConnected || !row.querySelector?.(`a[href="${candidate.actionHref}"]`))) return true;
+            return transportSweepReleaseConfirmationVisible() ? true : null;
+        }, 7000, 140));
+    }
+
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
         const seen = new Set();
@@ -16886,22 +17018,59 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepRuntime.currentMissionId = missionId;
         renderTransportSweepPanel();
 
-        const target = Math.max(1, Math.min(Number(item.count) || 1, remainingAllowance));
         const attemptedVehicleIds = new Set();
         let clearedHere = 0;
+        let lssmSeen = false;
+        let fallbackLogged = false;
         let initialScanLogged = false;
         let missionHadCandidates = false;
 
-        while (!transportSweepRuntime.stopRequested && clearedHere < target && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+        while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
             transportSweepLog(`${attemptedVehicleIds.size ? 'Reopening' : 'Opening'} ${item.caption}`);
             const opened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
             if (!opened || transportSweepRuntime.stopRequested) break;
 
+            const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000);
+            if (transportSweepRuntime.stopRequested) break;
+            const lssmCandidate = lssmCandidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
+            if (lssmCandidate) {
+                lssmSeen = true;
+                missionHadCandidates = true;
+                attemptedVehicleIds.add(String(lssmCandidate.vehicleId));
+                transportSweepRuntime.currentVehicleHref = lssmCandidate.actionHref;
+                renderTransportSweepPanel();
+                transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
+                try {
+                    const cleared = await activateTransportSweepLssmRelease(lssmCandidate);
+                    if (!cleared) throw new Error('LSSM release confirmation timed out');
+                    clearedHere += 1;
+                    transportSweepRuntime.cleared += 1;
+                    transportSweepRuntime.processed += 1;
+                    transportSweepLog(`Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`);
+                } catch (err) {
+                    transportSweepRuntime.errors += 1;
+                    transportSweepLog(`Failed ${lssmCandidate.label}: ${err?.message || 'unknown error'}`, 'error');
+                }
+                if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+                    await transportSweepSleep(state.transportSweep.delayMs);
+                }
+                continue;
+            }
+
+            if (lssmSeen) {
+                transportSweepLog(`No further LSSM alliance release controls remain at ${item.caption}`);
+                break;
+            }
+
+            if (!fallbackLogged) {
+                fallbackLogged = true;
+                transportSweepLog(`LSSM release controls did not appear at ${item.caption}; using the verified vehicle-window fallback`, 'warn');
+            }
             const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';
-                transportSweepLog(`Mission scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
+                transportSweepLog(`Fallback scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
                 if (transportSweepRuntime.rejectedOwn > 0) {
                     transportSweepLog(`Ignored ${transportSweepRuntime.rejectedOwn} of your own FMS 5 vehicle${transportSweepRuntime.rejectedOwn === 1 ? '' : 's'} at ${item.caption}`);
                 }
@@ -16911,30 +17080,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             if (candidates.length) missionHadCandidates = true;
             const candidate = candidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
             if (!candidate) {
-                if (!missionHadCandidates) {
-                    transportSweepLog(`No non-personal FMS 5 patient vehicles were found inside ${item.caption}`, 'warn');
-                } else {
-                    transportSweepLog(`Checked every non-personal FMS 5 patient vehicle at ${item.caption}; none exposed Discharge patient`, 'warn');
-                }
+                if (!missionHadCandidates) transportSweepLog(`No alliance-owned FMS 5 patient vehicles were found inside ${item.caption}`, 'warn');
+                else transportSweepLog(`Checked every alliance-owned FMS 5 patient vehicle at ${item.caption}; none exposed a release control`, 'warn');
                 break;
             }
 
             attemptedVehicleIds.add(String(candidate.vehicleId));
             transportSweepRuntime.currentVehicleHref = candidate.href;
             renderTransportSweepPanel();
-            transportSweepLog(`Checking FMS 5 ${candidate.label} (${candidate.vehicleId}) · ${attemptedVehicleIds.size}/${candidates.length}`);
+            transportSweepLog(`Fallback check: FMS 5 ${candidate.label} (${candidate.vehicleId})`);
 
             const vehicleResult = await openTransportSweepVehicle(candidate);
             if (transportSweepRuntime.stopRequested) break;
-
             const button = vehicleResult?.button || (vehicleResult?.opened ? await transportSweepWaitFor(
                 () => findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline),
                 3200,
                 120
             ) : null);
-
             if (!button) {
-                transportSweepLog(`${candidate.label} is carrying a patient but is not transport-ready; continuing in the same mission`);
+                transportSweepLog(`${candidate.label} is carrying a patient but is not release-ready; continuing in the same mission`);
                 await transportSweepSleep(350);
                 continue;
             }
@@ -16946,7 +17110,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                     return String(button.textContent || '').trim().toLowerCase() !== 'discharge patient' ? true : null;
                 }, 5000, 140);
                 if (!cleared) throw new Error('Discharge confirmation timed out');
-
                 clearedHere += 1;
                 transportSweepRuntime.cleared += 1;
                 transportSweepRuntime.processed += 1;
@@ -16956,14 +17119,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transportSweepLog(`Failed ${candidate.label}: ${err?.message || 'unknown error'}`, 'error');
             }
 
-            if (!transportSweepRuntime.stopRequested && clearedHere < target && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+            if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
                 await transportSweepSleep(state.transportSweep.delayMs);
             }
         }
 
-        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) {
-            transportSweepRuntime.skipped += 1;
-        }
+        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
         return clearedHere;
     }
 
@@ -16983,7 +17144,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepRuntime.ownVehicleIds = new Set(Array.from(personalVehicleApiCache.keys(), id => String(id)));
         const totalRequests = queue.reduce((sum, item) => sum + Math.max(1, Number(item.count) || 1), 0);
         const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
-        const confirmed = pageWindow.confirm(`Transport Sweep will use MissionChief's visible co-admin controls to attempt up to ${planned} patient discharges across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.\n\nYour own vehicle IDs are excluded before any vehicle window is opened. The sweep will inspect each non-personal FMS 5 patient vehicle until MissionChief exposes the enabled “Discharge patient” button. Continue?`);
+        const confirmed = pageWindow.confirm(`Transport Sweep will attempt up to ${planned} alliance-member patient releases across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.
+
+The sweep waits dynamically for LSSM's “Release patient (No reward)” controls and processes one alliance ambulance at a time. Your own verified vehicle IDs are always excluded. If LSSM controls do not appear, the existing vehicle-window route remains available as a fallback. Continue?`);
         if (!confirmed) return;
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;

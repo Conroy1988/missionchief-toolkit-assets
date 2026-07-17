@@ -1,5 +1,5 @@
 {
-  "description": "LSSM direct alliance-patient release row contract",
+  "description": "LSSM direct alliance-patient release and multi-ambulance loop contract",
   "current_player_vehicle_ids": [
     "1111111"
   ],
@@ -17,6 +17,20 @@
       "vehicle_id": "1111111",
       "owner_profile_id": "27301455",
       "eligible": false
+    },
+    {
+      "name": "alliance ambulance 5983836",
+      "html": "<tr id=\"vehicle_row_5983836\"><td><span class=\"building_list_fms building_list_fms_5\">5</span></td><td><a href=\"/vehicles/5983836\" vehicle_type_id=\"5\">Ambulance</a><br>Patient: Example</td><td class=\"hidden-xs\"><a href=\"/profile/450397\">AllianceTwo</a></td><td><a href=\"/vehicles/5983836/patient/-1\">Release patient (No reward)</a></td></tr>",
+      "vehicle_id": "5983836",
+      "owner_profile_id": "450397",
+      "eligible": true
+    },
+    {
+      "name": "alliance ambulance 5983837",
+      "html": "<tr id=\"vehicle_row_5983837\"><td><span class=\"building_list_fms building_list_fms_5\">5</span></td><td><a href=\"/vehicles/5983837\" vehicle_type_id=\"5\">Ambulance</a><br>Patient: Example</td><td class=\"hidden-xs\"><a href=\"/profile/450398\">AllianceThree</a></td><td><a href=\"/vehicles/5983837/patient/-1\">Release patient (No reward)</a></td></tr>",
+      "vehicle_id": "5983837",
+      "owner_profile_id": "450398",
+      "eligible": true
     }
   ]
 }

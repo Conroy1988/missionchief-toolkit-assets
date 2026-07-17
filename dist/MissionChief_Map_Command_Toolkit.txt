@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.0
+// @version      4.14.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.0',
+        version: '4.14.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4140',
+        styleId: 'mc-map-command-toolkit-style-v4141',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -891,6 +891,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4138__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4139__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4140__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4141__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -934,7 +935,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.0',
+        guideVersion: '4.14.1',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -16908,13 +16909,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         if (!anchor?.isConnected || !transportSweepAnchorUsable(anchor)) return false;
         const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
+        const rowId = String(row?.id || `vehicle_row_${candidate.vehicleId}`);
+        const ownerDocument = anchor.ownerDocument || document;
+        const clickedAt = Date.now();
         anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         anchor.click();
         return Boolean(await transportSweepWaitFor(() => {
-            if (!anchor.isConnected || !transportSweepAnchorUsable(anchor)) return true;
-            if (row && (!row.isConnected || !row.querySelector?.(`a[href="${candidate.actionHref}"]`))) return true;
-            return transportSweepReleaseConfirmationVisible() ? true : null;
-        }, 7000, 140));
+            if (transportSweepReleaseConfirmationVisible()) return true;
+            if (Date.now() - clickedAt < 900) return null;
+            const liveRow = ownerDocument.getElementById?.(rowId) || null;
+            if (!liveRow) return null;
+            const liveAction = Array.from(liveRow.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || [])
+                .find(item => transportSweepReleaseVehicleIdFromHref(item.getAttribute?.('href')) === String(candidate.vehicleId));
+            const stillFms5 = Boolean(liveRow.querySelector?.('.building_list_fms_5'));
+            const stillPatient = /\bpatient\s*:/i.test(String(liveRow.textContent || ''));
+            return !liveAction && (!stillFms5 || !stillPatient) ? true : null;
+        }, 10000, 140));
     }
 
     function transportSweepVisibleDischargeButtons() {
@@ -17021,45 +17031,60 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const attemptedVehicleIds = new Set();
         let clearedHere = 0;
         let lssmSeen = false;
+        let fallbackMode = false;
         let fallbackLogged = false;
         let initialScanLogged = false;
         let missionHadCandidates = false;
 
+        transportSweepLog(`Opening ${item.caption}`);
+        let missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+        if (!missionOpen || transportSweepRuntime.stopRequested) {
+            if (!transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
+            return 0;
+        }
+
         while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-            transportSweepLog(`${attemptedVehicleIds.size ? 'Reopening' : 'Opening'} ${item.caption}`);
-            const opened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
-            if (!opened || transportSweepRuntime.stopRequested) break;
+            if (!fallbackMode) {
+                const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000);
+                if (transportSweepRuntime.stopRequested) break;
+                const lssmCandidate = lssmCandidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
+                if (lssmCandidate) {
+                    lssmSeen = true;
+                    missionHadCandidates = true;
+                    attemptedVehicleIds.add(String(lssmCandidate.vehicleId));
+                    transportSweepRuntime.currentVehicleHref = lssmCandidate.actionHref;
+                    renderTransportSweepPanel();
+                    transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
+                    try {
+                        const cleared = await activateTransportSweepLssmRelease(lssmCandidate);
+                        if (!cleared) throw new Error('LSSM release confirmation timed out');
+                        clearedHere += 1;
+                        transportSweepRuntime.cleared += 1;
+                        transportSweepRuntime.processed += 1;
+                        transportSweepLog(`Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`);
+                    } catch (err) {
+                        transportSweepRuntime.errors += 1;
+                        transportSweepLog(`Failed ${lssmCandidate.label}: ${err?.message || 'unknown error'}`, 'error');
+                    }
 
-            const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000);
-            if (transportSweepRuntime.stopRequested) break;
-            const lssmCandidate = lssmCandidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
-            if (lssmCandidate) {
-                lssmSeen = true;
-                missionHadCandidates = true;
-                attemptedVehicleIds.add(String(lssmCandidate.vehicleId));
-                transportSweepRuntime.currentVehicleHref = lssmCandidate.actionHref;
-                renderTransportSweepPanel();
-                transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
-                try {
-                    const cleared = await activateTransportSweepLssmRelease(lssmCandidate);
-                    if (!cleared) throw new Error('LSSM release confirmation timed out');
-                    clearedHere += 1;
-                    transportSweepRuntime.cleared += 1;
-                    transportSweepRuntime.processed += 1;
-                    transportSweepLog(`Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`);
-                } catch (err) {
-                    transportSweepRuntime.errors += 1;
-                    transportSweepLog(`Failed ${lssmCandidate.label}: ${err?.message || 'unknown error'}`, 'error');
+                    if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+                        await transportSweepSleep(state.transportSweep.delayMs);
+                        transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
+                        missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+                        if (!missionOpen) {
+                            transportSweepRuntime.errors += 1;
+                            transportSweepLog(`Could not return to ${item.caption} after releasing ${lssmCandidate.label}`, 'error');
+                            break;
+                        }
+                    }
+                    continue;
                 }
-                if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-                    await transportSweepSleep(state.transportSweep.delayMs);
-                }
-                continue;
-            }
 
-            if (lssmSeen) {
-                transportSweepLog(`No further LSSM alliance release controls remain at ${item.caption}`);
-                break;
+                if (lssmSeen) {
+                    transportSweepLog(`No further LSSM alliance release controls remain at ${item.caption}`);
+                    break;
+                }
+                fallbackMode = true;
             }
 
             if (!fallbackLogged) {
@@ -17097,30 +17122,36 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 3200,
                 120
             ) : null);
-            if (!button) {
-                transportSweepLog(`${candidate.label} is carrying a patient but is not release-ready; continuing in the same mission`);
-                await transportSweepSleep(350);
-                continue;
-            }
 
-            try {
-                button.click();
-                const cleared = await transportSweepWaitFor(() => {
-                    if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
-                    return String(button.textContent || '').trim().toLowerCase() !== 'discharge patient' ? true : null;
-                }, 5000, 140);
-                if (!cleared) throw new Error('Discharge confirmation timed out');
-                clearedHere += 1;
-                transportSweepRuntime.cleared += 1;
-                transportSweepRuntime.processed += 1;
-                transportSweepLog(`Cleared ${candidate.label} at ${item.caption}`);
-            } catch (err) {
-                transportSweepRuntime.errors += 1;
-                transportSweepLog(`Failed ${candidate.label}: ${err?.message || 'unknown error'}`, 'error');
+            if (!button) {
+                transportSweepLog(`${candidate.label} is carrying a patient but is not transport-ready; continuing in the same mission`);
+            } else {
+                try {
+                    button.click();
+                    const cleared = await transportSweepWaitFor(() => {
+                        if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
+                        return String(button.textContent || '').trim().toLowerCase() !== 'discharge patient' ? true : null;
+                    }, 5000, 140);
+                    if (!cleared) throw new Error('Discharge confirmation timed out');
+                    clearedHere += 1;
+                    transportSweepRuntime.cleared += 1;
+                    transportSweepRuntime.processed += 1;
+                    transportSweepLog(`Cleared ${candidate.label} at ${item.caption}`);
+                } catch (err) {
+                    transportSweepRuntime.errors += 1;
+                    transportSweepLog(`Failed ${candidate.label}: ${err?.message || 'unknown error'}`, 'error');
+                }
             }
 
             if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
                 await transportSweepSleep(state.transportSweep.delayMs);
+                transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
+                missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+                if (!missionOpen) {
+                    transportSweepRuntime.errors += 1;
+                    transportSweepLog(`Could not return to ${item.caption} during fallback processing`, 'error');
+                    break;
+                }
             }
         }
 

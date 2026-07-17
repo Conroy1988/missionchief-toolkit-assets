@@ -24,6 +24,10 @@ def main() -> int:
         eligible = bool(fms5 and action.group(1) not in own_ids and owner.group(1))
         assert eligible is row["eligible"], row["name"]
 
+    eligible_rows = [row for row in data["rows"] if row["eligible"]]
+    assert len(eligible_rows) >= 3, "multi-ambulance fixture must contain at least three eligible alliance rows"
+    assert len({row["vehicle_id"] for row in eligible_rows}) == len(eligible_rows), "eligible alliance vehicle IDs must be unique"
+
     source = SOURCE.read_text(encoding="utf-8")
     required = [
         "function transportSweepReleaseVehicleIdFromHref(href)",
@@ -39,7 +43,19 @@ def main() -> int:
         "attemptedVehicleIds.add(String(lssmCandidate.vehicleId))",
         "await collectTransportSweepVehicleCandidatesForMission(missionId)",
         "existing vehicle-window route remains available as a fallback",
+        "Returning to ${item.caption} for remaining alliance ambulances",
+        "missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');",
+        "if (transportSweepReleaseConfirmationVisible()) return true;",
     ]
+    processor = re.search(r"async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep", source)
+    assert processor, "transport sweep mission processor is missing"
+    processor_text = processor.group(1)
+    release_index = processor_text.index("transportSweepRuntime.cleared += 1")
+    return_index = processor_text.index("Returning to ${item.caption} for remaining alliance ambulances", release_index)
+    reopen_index = processor_text.index("missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');", return_index)
+    assert release_index < return_index < reopen_index, "successful releases must explicitly return to the same mission before the next scan"
+    assert "waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000)" in processor_text, "every direct-control scan must allow the full LSSM delay"
+
     missing = [item for item in required if item not in source]
     assert not missing, f"Missing LSSM transport sweep contract markers: {missing}"
     assert "lssmSeen ? 8000 : 18000" not in source, "A repeated mission load must not use an eight-second LSSM timeout"

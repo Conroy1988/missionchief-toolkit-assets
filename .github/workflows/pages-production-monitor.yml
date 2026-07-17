@@ -24,6 +24,7 @@ on:
       - ".github/scripts/test_pages_monitor_reconciliation_contract.py"
       - ".github/scripts/test_pages_monitor_version_contract.py"
       - ".github/workflows/pages-production-monitor.yml"
+      - "status/release-dashboard.json"
   workflow_run:
     workflows:
       - GitHub Pages Documentation

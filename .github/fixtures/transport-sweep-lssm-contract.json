@@ -11,7 +11,11 @@
     "close_before_fallback_vehicle": true,
     "close_after_mission_processing": true,
     "close_only_sweep_owned_window": true,
-    "ignore_unrelated_dialogs": true
+    "ignore_unrelated_dialogs": true,
+    "claim_new_outer_layer_from_dom_delta": true,
+    "prefer_owned_close_control": true,
+    "force_remove_only_new_owned_layers": true,
+    "remove_owned_iframes_and_backdrops": true
   },
   "rows": [
     {

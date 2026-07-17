@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.3
+// @version      4.14.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.3',
+        version: '4.14.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4143',
+        styleId: 'mc-map-command-toolkit-style-v4144',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -894,6 +894,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4141__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4142__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4143__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4144__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -937,7 +938,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.3',
+        guideVersion: '4.14.4',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1328,6 +1329,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ownVehicleIds: new Set(),
         missionWindowRoot: null,
         activeWindowRoot: null,
+        ownedWindowLayers: new Set(),
+        activeWindowCreatedLayer: false,
         lastCandidateStats: null,
         log: []
     };
@@ -16956,11 +16959,76 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return visible.filter(root => !visible.some(other => other !== root && other.contains?.(root)));
     }
 
-    function transportSweepOwnedWindowRoot(root) {
+    const TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR = [
+        '#lightbox', '#lightbox_box', '.lightbox', '[id*="lightbox"]',
+        '.lightbox_overlay', '.lightbox-overlay', '#lightbox_overlay', '#lightbox_backdrop', '.lightbox-backdrop',
+        '.modal.show', '.modal.in', '.modal-backdrop.show', '.modal-backdrop.in',
+        '[role="dialog"]', '.ui-dialog', '.ui-widget-overlay'
+    ].join(', ');
+
+    function transportSweepNativeWindowLayers() {
+        const layers = [];
+        const seen = new Set();
+        for (const context of transportSweepDocumentContexts()) {
+            let matches = [];
+            try { matches = Array.from(context.doc.querySelectorAll(TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR)); } catch (err) {}
+            for (const layer of matches) {
+                if (!layer || seen.has(layer) || !layer.isConnected || layer.closest?.(`#${SCRIPT.panelId}`)) continue;
+                seen.add(layer);
+                layers.push(layer);
+            }
+        }
+        return layers;
+    }
+
+    function transportSweepWindowLayerChain(root) {
+        const chain = [];
+        const seen = new Set();
+        const collect = start => {
+            let node = start;
+            while (node?.nodeType === 1) {
+                if (!seen.has(node) && node.matches?.(TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR)) {
+                    seen.add(node);
+                    chain.push(node);
+                }
+                node = node.parentElement;
+            }
+        };
+        collect(root);
+        try { collect(root?.ownerDocument?.defaultView?.frameElement); } catch (err) {}
+        return chain;
+    }
+
+    function transportSweepOverlayLayer(layer) {
+        if (!layer?.matches) return false;
+        return layer.matches('.modal-backdrop, .ui-widget-overlay, .lightbox_overlay, .lightbox-overlay, #lightbox_overlay, #lightbox_backdrop, .lightbox-backdrop');
+    }
+
+    function transportSweepOutermostLayer(layers) {
+        const candidates = Array.from(layers || []).filter(layer => layer?.isConnected && !transportSweepOverlayLayer(layer));
+        return candidates.find(layer => !candidates.some(other => other !== layer && other.contains?.(layer))) || candidates[0] || null;
+    }
+
+    function transportSweepClaimWindow(root, beforeLayers = null) {
         if (!root?.isConnected) return null;
-        const direct = root.closest?.('#lightbox_box, #lightbox, .modal.show, .modal.in, [role="dialog"], .ui-dialog');
-        if (direct) return direct;
-        return transportSweepTopLevelWindowRoots().find(candidate => candidate === root || candidate.contains?.(root)) || root;
+        const baseline = beforeLayers instanceof Set ? beforeLayers : new Set();
+        const anchor = (() => {
+            try { return root.ownerDocument?.defaultView?.frameElement || root; } catch (err) { return root; }
+        })();
+        const chain = transportSweepWindowLayerChain(root);
+        const created = transportSweepNativeWindowLayers().filter(layer => {
+            if (baseline.has(layer)) return false;
+            if (layer === anchor || layer.contains?.(anchor) || anchor.contains?.(layer)) return true;
+            return layer.ownerDocument === anchor.ownerDocument && transportSweepOverlayLayer(layer);
+        });
+        const owned = new Set([...created, ...chain.filter(layer => !baseline.has(layer))]);
+        for (const layer of owned) {
+            try { layer.dataset.mcmsTransportSweepOwned = '1'; } catch (err) {}
+        }
+        transportSweepRuntime.ownedWindowLayers = owned;
+        transportSweepRuntime.activeWindowCreatedLayer = owned.size > 0;
+        transportSweepRuntime.activeWindowRoot = transportSweepOutermostLayer(owned) || transportSweepOutermostLayer(chain) || root;
+        return transportSweepRuntime.activeWindowRoot;
     }
 
     function transportSweepWindowCloseControl(root) {
@@ -16980,42 +17048,63 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     async function closeTransportSweepWindows(reason = 'navigation') {
         const target = transportSweepRuntime.activeWindowRoot;
+        const ownedLayers = Array.from(transportSweepRuntime.ownedWindowLayers || []).filter(layer => layer?.isConnected);
         transportSweepRuntime.missionWindowRoot = null;
-        if (!target || !target.isConnected || !transportSweepElementVisible(target)) {
+        if ((!target || !target.isConnected || !transportSweepElementVisible(target)) && !ownedLayers.length) {
             transportSweepRuntime.activeWindowRoot = null;
+            transportSweepRuntime.ownedWindowLayers = new Set();
+            transportSweepRuntime.activeWindowCreatedLayer = false;
             return true;
         }
 
         const waitUntilClosed = timeoutMs => transportSweepWaitFor(
-            () => !target.isConnected || !transportSweepElementVisible(target) ? true : null,
+            () => !target?.isConnected || !transportSweepElementVisible(target) ? true : null,
             timeoutMs,
             100
         );
 
-        let closed = false;
-        if (typeof pageWindow.lightboxClose === 'function') {
-            try {
-                pageWindow.lightboxClose();
-                closed = Boolean(await waitUntilClosed(1200));
-            } catch (err) {}
-        }
-
+        let closed = !target?.isConnected || !transportSweepElementVisible(target);
         if (!closed) {
             const closeControl = transportSweepWindowCloseControl(target);
             if (closeControl) {
                 try {
                     closeControl.click();
-                    closed = Boolean(await waitUntilClosed(1600));
+                    closed = Boolean(await waitUntilClosed(1200));
                 } catch (err) {}
             }
         }
 
-        if (!closed) {
-            transportSweepLog(`MissionChief did not close the sweep-owned window before ${reason}`, 'error');
+        if (!closed && typeof pageWindow.lightboxClose === 'function') {
+            try {
+                pageWindow.lightboxClose();
+                closed = Boolean(await waitUntilClosed(1400));
+            } catch (err) {}
+        }
+
+        if (transportSweepRuntime.activeWindowCreatedLayer) {
+            const removable = Array.from(new Set(ownedLayers.filter(layer => layer?.isConnected)));
+            removable.sort((a, b) => a.contains?.(b) ? -1 : b.contains?.(a) ? 1 : 0);
+            for (const layer of removable) {
+                if (!layer?.isConnected) continue;
+                try {
+                    layer.querySelectorAll?.('iframe, frame').forEach(frame => {
+                        try { frame.src = 'about:blank'; } catch (err) {}
+                    });
+                    layer.remove();
+                } catch (err) {}
+            }
+            closed = !target?.isConnected || !transportSweepElementVisible(target);
+        }
+
+        const ownedStillConnected = ownedLayers.some(layer => layer?.isConnected && transportSweepElementVisible(layer));
+        if (!closed || ownedStillConnected) {
+            transportSweepLog(`MissionChief did not remove the sweep-owned window before ${reason}`, 'error');
             return false;
         }
 
         transportSweepRuntime.activeWindowRoot = null;
+        transportSweepRuntime.ownedWindowLayers = new Set();
+        transportSweepRuntime.activeWindowCreatedLayer = false;
         await transportSweepSleep(80);
         return true;
     }
@@ -17028,6 +17117,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const beforeRoots = transportSweepVisibleWindowRoots();
         const beforeRootText = new Map(beforeRoots.map(root => [root, String(root.textContent || '').trim()]));
+        const beforeLayers = new Set(transportSweepNativeWindowLayers());
 
         if (mode === 'mission') {
             transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
@@ -17043,14 +17133,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                     const changed = !beforeRootText.has(root) || afterText !== beforeRootText.get(root);
                     if (anchors.length || (afterText && changed)) {
                         transportSweepRuntime.missionWindowRoot = root;
-                        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(root);
+                        transportSweepClaimWindow(root, beforeLayers);
                         return { root, anchors };
                     }
                 }
                 const newAnchor = transportSweepVisibleVehicleAnchors().find(anchor => !transportSweepRuntime.missionAnchorBaseline.has(anchor));
                 if (newAnchor) {
                     transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.parentElement;
-                    transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(transportSweepRuntime.missionWindowRoot);
+                    transportSweepClaimWindow(transportSweepRuntime.missionWindowRoot, beforeLayers);
                     return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
                 }
                 return null;
@@ -17071,7 +17161,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             });
             return root ? { root } : null;
         }, 4200, 120);
-        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(vehicleWindow?.root);
+        transportSweepClaimWindow(vehicleWindow?.root, beforeLayers);
         return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
     }
 
@@ -17264,6 +17354,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         transportSweepRuntime.vehicleButtonBaseline = new Set();
         transportSweepRuntime.missionWindowRoot = null;
         transportSweepRuntime.activeWindowRoot = null;
+        transportSweepRuntime.ownedWindowLayers = new Set();
+        transportSweepRuntime.activeWindowCreatedLayer = false;
         transportSweepRuntime.lastCandidateStats = null;
         transportSweepRuntime.log = [];
         renderTransportSweepPanel();
@@ -17288,6 +17380,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             transportSweepRuntime.missionAnchorBaseline = new Set();
             transportSweepRuntime.vehicleButtonBaseline = new Set();
             transportSweepRuntime.activeWindowRoot = null;
+            transportSweepRuntime.ownedWindowLayers = new Set();
+            transportSweepRuntime.activeWindowCreatedLayer = false;
             buildTransportSweepQueue();
             renderTransportSweepPanel();
             scheduleTransportWatcherRefresh(0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify LSSM ownership, delayed controls and explicit same-mission multi-ambulance returns."""
+"""Verify LSSM ownership, delayed controls, multi-ambulance returns and DOM-delta window cleanup."""
 from __future__ import annotations
 
 import json
@@ -51,8 +51,15 @@ def main() -> int:
         "const opened = await openTransportSweepPath(candidate.href, 'vehicle')",
         "await closeTransportSweepWindows('finishing the mission')",
         "activeWindowRoot: null",
+        "ownedWindowLayers: new Set()",
+        "activeWindowCreatedLayer: false",
+        "function transportSweepNativeWindowLayers()",
+        "function transportSweepClaimWindow(root, beforeLayers = null)",
+        "const beforeLayers = new Set(transportSweepNativeWindowLayers())",
+        "transportSweepClaimWindow(root, beforeLayers)",
+        "layer.dataset.mcmsTransportSweepOwned = '1'",
+        "layer.remove()",
         "const target = transportSweepRuntime.activeWindowRoot",
-        "transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(root)",
         "const changed = !beforeRootText.has(root) || afterText !== beforeRootText.get(root)",
         "await closeTransportSweepWindows('finishing the sweep')",
     ]
@@ -80,8 +87,13 @@ def main() -> int:
     closer = re.search(r"async function closeTransportSweepWindows\(reason = 'navigation'\) \{([\s\S]*?)\n    \}", source)
     assert closer, "transport sweep closer is missing"
     assert "transportSweepTopLevelWindowRoots()" not in closer.group(1), "cleanup must not scan or close unrelated visible dialogs"
-    assert "if (!target || !target.isConnected" in closer.group(1), "the first mission must open immediately when the sweep owns no window"
     assert "const target = transportSweepRuntime.activeWindowRoot" in closer.group(1), "cleanup must target only the sweep-owned window"
+    assert "transportSweepRuntime.ownedWindowLayers" in closer.group(1), "cleanup must retain the exact DOM-delta layer set"
+    control_index = closer.group(1).index("transportSweepWindowCloseControl(target)")
+    global_index = closer.group(1).index("pageWindow.lightboxClose")
+    assert control_index < global_index, "the owned window close control must be preferred over the global lightbox closer"
+    assert "transportSweepRuntime.activeWindowCreatedLayer" in closer.group(1), "forced teardown must be limited to newly created sweep layers"
+    assert "layer.remove()" in closer.group(1), "newly created owned layers must be removed if MissionChief leaves them connected"
     print("LSSM transport sweep contract passed")
     return 0
 

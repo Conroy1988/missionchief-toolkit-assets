@@ -1,0 +1,2523 @@
+Found 208 matching lines across 12 source ranges.
+
+===== LINES 1275-1590 =====
+01275:     let missionCommitmentIndexDirty = true;
+01276:     let operationalPanelsLastRender = 0;
+01277:     let missionInspectorMarker = null;
+01278:     let missionInspectorPointer = null;
+01279:     let missionLockOnMarker = null;
+01280:     let missionLockOnTravelOverlay = null;
+01281:     let missionLockOnTargetIcon = null;
+01282:     let missionLockOnTimer = null;
+01283:     let missionLockOnMoveEndMap = null;
+01284:     let missionLockOnMoveEndHandler = null;
+01285:     let missionLockOnToken = 0;
+01286:     let missionInspectorRefreshTimer = null;
+01287:     let missionInspectorMoveFrame = null;
+01288:     let missionProgressSaveTimer = null;
+01289:     let stuckMissionGroup = null;
+01290:     let stuckMissionTimer = null;
+01291:     let missionSpawnArmed = false;
+01292:     let missionSpawnPrimeTimer = null;
+01293:     const missionOverlayData = new Map();
+01294:     const missionOverlayVersions = new Map();
+01295:     const missionSnapshotCache = new Map();
+01296:     const missionPanelCache = new Map();
+01297:     let liveMissionSnapshots = new Map();
+01298:     const recentCompletedMissions = [];
+01299:     const missionProgressState = loadMissionProgressState();
+01300:     const knownMissionIds = new Set();
+01301:     const stuckMissionLabels = new Map();
+01302:     const MISSION_OVERLAY_PANE = 'mcmsMissionFloatPane';
+01303:     const allianceCreditLabels = new Map();
+01304:     const missionAgeLabels = new Map();
+01305:     const unitCommitmentLabels = new Map();
+01306:     const transportWatcherLabels = new Map();
+01307:     const resourceGapLabels = new Map();
+01308:     const resourceGapAnalysisCache = new Map();
+01309:     let resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [] };
+01310:     const transportSweepRuntime = {
+01311:         running: false,
+01312:         stopRequested: false,
+01313:         queue: [],
+01314:         scannedAt: 0,
+01315:         currentMissionId: null,
+01316:         currentVehicleHref: '',
+01317:         cleared: 0,
+01318:         skipped: 0,
+01319:         errors: 0,
+01320:         processed: 0,
+01321:         rejectedOwn: 0,
+01322:         missionAnchorBaseline: new Set(),
+01323:         vehicleButtonBaseline: new Set(),
+01324:         ownVehicleIds: new Set(),
+01325:         missionWindowRoot: null,
+01326:         lastCandidateStats: null,
+01327:         log: []
+01328:     };
+01329:     const personalVehicleApiCache = new Map();
+01330:     const missionCommitmentIndex = new Map();
+01331:     const payoutHistory = loadPayoutHistory();
+01332:     const sessionPerformance = loadSessionPerformance();
+01333:     let discordFinanceBusy = false;
+01334:     let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
+01335:     let discordFinanceStatusTone = 'neutral';
+01336:     let financeVaultStatus = 'Local Financial Archive ready.';
+01337:     let financeVaultStatusTone = 'neutral';
+01338:     let financeRuleFeedStatus = 'Built-in financial intelligence active.';
+01339:     let financeRuleFeedStatusTone = 'neutral';
+01340:     let financeArchiveScanBusy = false;
+01341:     let financeArchiveScanCancelled = false;
+01342:     let financeRuleRefreshPromise = null;
+01343:     let financePolicyRefreshPromise = null;
+01344:     let tabletModeActive = false;
+01345:     let mobileModeActive = false;
+01346:     let activeDeviceLayout = 'desktop';
+01347:     let tabletLayoutTimer = null;
+01348:     let tabletDockResizeObserver = null;
+01349:     let tabletDockObservedMap = null;
+01350:     let desktopPanelResizeObserver = null;
+01351:     let desktopPanelObservedElements = new Set();
+01352:     let missionValueScanTimer = null;
+01353:     let missionValueFeatureInstalled = false;
+01354:     const missionValueObservedDocuments = new WeakSet();
+01355:     const missionValueObservedFrames = new WeakSet();
+01356:     const missionValueRetryState = new WeakMap();
+01357:     let commandBarAnimationTimer = null;
+01358:     let commandBarAnimating = false;
+01359:     let helpGuideDocumentCache = '';
+01360:     let helpGuideLoadedAt = 0;
+01361:     let helpGuideLoadPromise = null;
+01362:     let helpCenterReturnFocus = null;
+01363: 
+01364:     function defaultState() {
+01365:         return {
+01366:             uiTheme: 'mapCommand',
+01367:             theme: getLegacyTheme(),
+01368:             position: getLegacyPosition(),
+01369:             activeTab: 'skins',
+01370:             cleanMode: false,
+01371:             markerFocus: false,
+01372:             missionPulse: false,
+01373:             roadPriority: false,
+01374:             compactDock: false,
+01375:             commandBarOpen: true,
+01376:             economyMode: false,
+01377:             tabletMode: 'auto',
+01378:             mobileMode: 'auto',
+01379:             shortcuts: true,
+01380:             autoLoadAllVehicles: false,
+01381:             allianceBuildingsMap: true,
+01382:             majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
+01383:             missionAgeWatch: {
+01384:                 ageFilter: '8h',
+01385:                 sortMode: 'age',
+01386:                 expanded: false,
+01387:                 ownershipFilter: 'personal',
+01388:                 categoryFilter: 'all',
+01389:                 primaryStatus: 'all',
+01390:                 advancedFiltersOpen: false,
+01391:                 hasVehiclesOnWay: false,
+01392:                 onlyMyUnits: false,
+01393:                 valueMode: 'total',
+01394:                 distanceOrigin: 'live',
+01395:                 lockedOrigin: null
+01396:             },
+01397:             missionLockAudio: true,
+01398:             missionValue: true,
+01399:             allianceCredits: false,
+01400:             allianceCreditMinimum: 0,
+01401:             missionAge: false,
+01402:             unitCommitment: false,
+01403:             transportWatcher: true,
+01404:             missionInspector: true,
+01405:             stuckDetector: { enabled: true, thresholdMin: 20 },
+01406:             missionSpawn: { enabled: true },
+01407:             resourceGap: { enabled: false, radiusMi: 25 },
+01408:             transportSweep: { delayMs: 2000, maxPerRun: 25 },
+01409:             payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
+01410:             discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+01411:             financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
+01412:             profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
+01413:             nudge: { x: 0, y: 0 },
+01414:             panelPosition: null,
+01415:             visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+01416:             quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
+01417:             coverage: { enabled: false, radiusMi: 10 },
+01418:             heatmap: { enabled: false, source: 'stations', service: 'all', radiusMi: 10, opacity: 0.30 },
+01419:             autoNight: {
+01420:                 enabled: false,
+01421:                 nightStart: '19:00',
+01422:                 dayStart: '07:00',
+01423:                 nightTheme: 'nightshift',
+01424:                 dayTheme: 'default',
+01425:                 lastBucket: ''
+01426:             },
+01427:             bookmarks: [null, null, null, null, null]
+01428:         };
+01429:     }
+01430: 
+01431:     function normaliseLoadedState(parsed, base = defaultState()) {
+01432:         const merged = {
+01433:             ...base,
+01434:             ...parsed,
+01435:             nudge: { ...base.nudge, ...(parsed.nudge || {}) },
+01436:             visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+01437:             quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+01438:             coverage: { ...base.coverage, ...(parsed.coverage || {}) },
+01439:             heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
+01440:             stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
+01441:             missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
+01442:             resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+01443:             transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+01444:             majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+01445:             missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+01446:             payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+01447:             discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+01448:             financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+01449:             autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
+01450:             profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
+01451:             bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
+01452:         };
+01453: 
+01454:         while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
+01455:         while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
+01456: 
+01457:         merged.uiTheme = normaliseUiTheme(merged.uiTheme);
+01458:         merged.theme = normaliseTheme(merged.theme);
+01459:         merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
+01460:         if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
+01461:         merged.activeTab = ['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(merged.activeTab) ? merged.activeTab : 'skins';
+01462:         delete merged.fleetFilter;
+01463:         merged.nudge.x = clamp(merged.nudge.x, -220, 220, 0);
+01464:         merged.nudge.y = clamp(merged.nudge.y, -220, 220, 0);
+01465:         merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
+01466:         merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
+01467:         merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
+01468:         merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
+01469:         merged.commandBarOpen = merged.commandBarOpen !== false;
+01470:         merged.economyMode = Boolean(merged.economyMode);
+01471:         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+01472:         merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
+01473:         merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
+01474:         merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
+01475:         merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+01476:         merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+01477:         merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+01478:         merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+01479:         merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+01480:         merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+01481:         merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+01482:         merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+01483:         merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+01484:         merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+01485:         const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
+01486:         merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
+01487:             ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
+01488:             : null;
+01489:         merged.missionLockAudio = merged.missionLockAudio !== false;
+01490:         merged.missionValue = merged.missionValue !== false;
+01491:         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
+01492:         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
+01493:         merged.transportWatcher = merged.transportWatcher !== false;
+01494:         merged.missionInspector = merged.missionInspector !== false;
+01495:         merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
+01496:         merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+01497:         merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
+01498:         merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
+01499:         merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
+01500:         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
+01501:         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+01502:         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+01503:         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+01504:         merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+01505:         merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+01506:         merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+01507:         merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+01508:         merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+01509:         merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
+01510:         merged.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(merged.discordReport.period) ? merged.discordReport.period : 'today';
+01511:         merged.discordReport.customStart = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customStart || '')) ? String(merged.discordReport.customStart) : localIsoDate(new Date(Date.now() - 6 * 86400000));
+01512:         merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
+01513:         merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
+01514:         merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
+01515:         merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
+01516:         merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
+01517:         merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
+01518:         merged.financialVault.enabled = merged.financialVault.enabled !== false;
+01519:         merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
+01520:         merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
+01521:             ? 'all'
+01522:             : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
+01523:         delete merged.financialVault.autoSync;
+01524:         delete merged.financialVault.benchmarkOptIn;
+01525:         delete merged.financialVault.gatewayUrl;
+01526:         delete merged.discordReport.includeBenchmark;
+01527:         merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
+01528:         merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
+01529:         merged.bookmarks = merged.bookmarks.map(item => item ? {
+01530:             ...item,
+01531:             name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+01532:             shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+01533:             pinned: Boolean(item.pinned)
+01534:         } : null);
+01535:         merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
+01536: 
+01537:         if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
+01538:             merged.panelPosition = null;
+01539:         } else {
+01540:             merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
+01541:         }
+01542: 
+01543:         delete merged.requiresAttention;
+01544:         return merged;
+01545:     }
+01546: 
+01547:     function loadState() {
+01548:         const base = defaultState();
+01549:         const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
+01550:         if (!raw) return base;
+01551: 
+01552:         try {
+01553:             return normaliseLoadedState(JSON.parse(raw), base);
+01554:         } catch (err) {
+01555:             return base;
+01556:         }
+01557:     }
+01558: 
+01559:     function saveState() {
+01560:         try {
+01561:             localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
+01562:             localStorage.setItem(SCRIPT.legacyTheme, state.theme);
+01563:             localStorage.setItem(SCRIPT.legacyPosition, state.position);
+01564:         } catch (err) {}
+01565:     }
+01566: 
+01567:     function getLegacyTheme() {
+01568:         return normaliseTheme(localStorage.getItem(SCRIPT.legacyTheme) || 'default');
+01569:     }
+01570: 
+01571:     function getLegacyPosition() {
+01572:         const saved = localStorage.getItem(SCRIPT.legacyPosition);
+01573:         return POSITIONS[saved] ? saved : 'bl';
+01574:     }
+01575: 
+01576:     function normaliseUiTheme(key) {
+01577:         return UI_THEMES[key] ? key : 'mapCommand';
+01578:     }
+01579: 
+01580:     function applyUiTheme(key, announce = false) {
+01581:         const nextTheme = normaliseUiTheme(key);
+01582:         const changed = state.uiTheme !== nextTheme;
+01583:         const pairedHyrulePayout = nextTheme === 'hyrule' && state.payoutFlash.template !== 'hyruleQuest';
+01584:         state.uiTheme = nextTheme;
+01585:         if (pairedHyrulePayout) state.payoutFlash.template = 'hyruleQuest';
+01586:         saveState();
+01587:         updateUI();
+01588:         if (announce && changed) {
+01589:             showToast(pairedHyrulePayout
+01590:                 ? 'Hyrule Command interface and Quest Reward payout active'
+
+===== LINES 16191-16315 =====
+16191:     }
+16192: 
+16193:     function transportRequirementFromSnapshot(snapshot) {
+16194:         const raw = normaliseMissingRequirementText(snapshot?.missingText);
+16195:         if (!raw) return null;
+16196:         const text = raw.toLowerCase();
+16197:         const transportRequired = [
+16198:             /\btransport(?:ation)?\b.{0,34}\b(?:needed|required|waiting|pending)\b/i,
+16199:             /\b(?:needs?|requires?|awaiting)\b.{0,34}\btransport(?:ation)?\b/i,
+16200:             /\bmust be transported\b/i,
+16201:             /\btransport is needed\b/i,
+16202:             /\b(?:transport|abtransport|gefangenentransport)\b.{0,34}\b(?:erforderlich|ben[oö]tigt|notwendig)\b/i,
+16203:             /\b(?:muss|müssen)\b.{0,34}\btransportiert werden\b/i,
+16204:             /\b(?:transport|vervoer)\b.{0,34}\b(?:nodig|vereist)\b/i,
+16205:             /\b(?:moet|moeten)\b.{0,34}\b(?:vervoerd|afgevoerd)\b/i
+16206:         ].some(pattern => pattern.test(text));
+16207:         if (!transportRequired) return null;
+16208: 
+16209:         const prisonerTerms = /prison|prisoner|custod|detainee|arrest|cell|jail|gefangen|haft|arrestant|gevangen/i;
+16210:         const patientTerms = /patient|hospital|ambulance|medical|casualt|injur|verletz|krankenhaus|ziekenhuis|gewond/i;
+16211:         const patients = Number(snapshot?.patientsCount) || 0;
+16212:         const prisoners = Number(snapshot?.prisonersCount) || 0;
+16213:         let type = 'general';
+16214:         if (prisonerTerms.test(text) || (prisoners > 0 && patients <= 0)) type = 'prisoner';
+16215:         else if (patientTerms.test(text) || (patients > 0 && prisoners <= 0)) type = 'patient';
+16216: 
+16217:         const explicitCount = raw.match(/\b(\d{1,2})\b/);
+16218:         let count = explicitCount ? Number(explicitCount[1]) : 0;
+16219:         if (!count && type === 'patient' && patients > 1) count = patients;
+16220:         if (!count && type === 'prisoner' && prisoners > 1) count = prisoners;
+16221:         count = Math.min(99, Math.max(0, Math.round(count || 0)));
+16222: 
+16223:         return {
+16224:             type,
+16225:             count,
+16226:             label: type === 'patient' ? 'Patient transport required' : type === 'prisoner' ? 'Prisoner transport required' : 'Transport required'
+16227:         };
+16228:     }
+16229: 
+16230:     function transportWatcherSvg(type) {
+16231:         if (type === 'prisoner') {
+16232:             return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h12.2l3.1 3.3v5.1H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.7 8.5v3.3h3.1M7 11.2v3.2M10 11.2v3.2M13 11.2v3.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
+16233:         }
+16234:         if (type === 'patient') {
+16235:             return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h11.8l3.7 3.5v4.9H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.3 8.5V12H19M8.3 10.2v4.3M6.15 12.35h4.3" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
+16236:         }
+16237:         return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 8.8h11.9l3.7 3.4v4.7H2.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.7 8.8v3.4h3.7M7.4 12.7h5.1M10.8 10.8l2 1.9-2 1.9" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="15.8" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
+16238:     }
+16239: 
+16240:     function renderedMissionFloatWidth(label, selector, fallback) {
+16241:         try {
+16242:             const badge = label?._icon?.querySelector?.(selector);
+16243:             const width = Number(badge?.getBoundingClientRect?.().width);
+16244:             if (Number.isFinite(width) && width > 0) return width;
+16245:         } catch (err) {}
+16246:         return fallback;
+16247:     }
+16248: 
+16249:     function transportWatcherPlacement(map, marker, missionId, requirement) {
+16250:         const personal = isPersonalMissionLayer(marker, missionId);
+16251:         let occupiedWidth = 0;
+16252:         let source = 'marker';
+16253: 
+16254:         if (personal && state.missionAge) {
+16255:             occupiedWidth = renderedMissionFloatWidth(
+16256:                 missionAgeLabels.get(missionId),
+16257:                 '.mcms-mission-age-badge',
+16258:                 52
+16259:             );
+16260:             source = 'mission-age';
+16261:         } else if (!personal && state.allianceCredits) {
+16262:             occupiedWidth = renderedMissionFloatWidth(
+16263:                 allianceCreditLabels.get(missionId),
+16264:                 '.mcms-alliance-credit-badge',
+16265:                 64
+16266:             );
+16267:             source = 'alliance-credit';
+16268:         } else if (state.unitCommitment) {
+16269:             const commitment = personalUnitCommitmentForMission(missionId);
+16270:             if (commitment.total > 0) {
+16271:                 occupiedWidth = renderedMissionFloatWidth(
+16272:                     unitCommitmentLabels.get(missionId),
+16273:                     '.mcms-unit-commitment-badge',
+16274:                     54
+16275:                 );
+16276:                 source = 'unit-count';
+16277:             }
+16278:         }
+16279: 
+16280:         const watcherHalfWidth = 13;
+16281:         const gap = occupiedWidth > 0 ? 6 : 4;
+16282:         const horizontalOffset = occupiedWidth > 0
+16283:             ? Math.ceil((occupiedWidth / 2) + watcherHalfWidth + gap)
+16284:             : 21;
+16285: 
+16286:         let side = 'right';
+16287:         try {
+16288:             const latLng = marker?.getLatLng?.();
+16289:             const point = latLng && map?.latLngToContainerPoint?.(latLng);
+16290:             const size = map?.getSize?.();
+16291:             const countExtra = Number(requirement?.count) > 1 ? 10 : 3;
+16292:             if (point && size && point.x + horizontalOffset + watcherHalfWidth + countExtra > size.x - 4) side = 'left';
+16293:         } catch (err) {}
+16294: 
+16295:         return {
+16296:             side,
+16297:             source,
+16298:             horizontalOffset,
+16299:             iconAnchor: [side === 'right' ? -horizontalOffset : horizontalOffset, 18],
+16300:             signature: `${side}:${source}:${horizontalOffset}`
+16301:         };
+16302:     }
+16303: 
+16304:     function makeTransportWatcherIcon(requirement, placement) {
+16305:         const type = ['patient', 'prisoner'].includes(requirement?.type) ? requirement.type : 'general';
+16306:         const side = placement?.side === 'left' ? 'left' : 'right';
+16307:         const count = Number(requirement?.count) > 1 ? `<span class="mcms-transport-watcher-count">${escapeHtml(requirement.count)}</span>` : '';
+16308:         return pageWindow.L.divIcon({
+16309:             className: 'mcms-transport-watcher-icon',
+16310:             html: `<span class="mcms-transport-watcher-badge mcms-transport-${type} mcms-transport-side-${side}" aria-label="${escapeHtml(requirement?.label || 'Transport required')}" title="${escapeHtml(requirement?.label || 'Transport required')}">${transportWatcherSvg(type)}${count}</span>`,
+16311:             iconSize: [0, 0],
+16312:             iconAnchor: placement?.iconAnchor || [-21, 18]
+16313:         });
+16314:     }
+16315: 
+
+===== LINES 16372-17123 =====
+16372:                 activeIds.add(missionId);
+16373:                 let label = transportWatcherLabels.get(missionId);
+16374:                 if (!label) {
+16375:                     label = pageWindow.L.marker(latLng, {
+16376:                         interactive: false, keyboard: false, bubblingMouseEvents: false,
+16377:                         pane, zIndexOffset: 0, icon: makeTransportWatcherIcon(requirement, placement)
+16378:                     });
+16379:                     label.__mcmsTransportWatcherSignature = signature;
+16380:                     label.__mcmsTransportWatcherLabel = true;
+16381:                     label.addTo(transportWatcherGroup);
+16382:                     transportWatcherLabels.set(missionId, label);
+16383:                 } else {
+16384:                     try { label.setLatLng(latLng); } catch (err) {}
+16385:                     if (label.__mcmsTransportWatcherSignature !== signature) {
+16386:                         label.__mcmsTransportWatcherSignature = signature;
+16387:                         try { label.setIcon(makeTransportWatcherIcon(requirement, placement)); } catch (err) {}
+16388:                     }
+16389:                 }
+16390:             }
+16391: 
+16392:             for (const [missionId, label] of transportWatcherLabels.entries()) {
+16393:                 if (activeIds.has(missionId)) continue;
+16394:                 transportWatcherLabels.delete(missionId);
+16395:                 try { transportWatcherGroup.removeLayer(label); } catch (err) {}
+16396:             }
+16397:         } catch (err) {
+16398:             clearTransportWatcherLabels();
+16399:         }
+16400:     }
+16401: 
+16402:     function scheduleTransportWatcherRefresh(delay = 320) {
+16403:         runtimeClearTimeout(transportWatcherTimer);
+16404:         transportWatcherTimer = runtimeSetTimeout(updateTransportWatcherLabels, state.economyMode ? Math.max(900, delay) : delay);
+16405:     }
+16406: 
+16407:     function transportSweepSleep(ms) {
+16408:         return runtimeDelay(ms);
+16409:     }
+16410: 
+16411:     function transportSweepElementVisible(element) {
+16412:         if (!element || !element.isConnected) return false;
+16413:         try {
+16414:             const view = element.ownerDocument?.defaultView || window;
+16415:             const style = view.getComputedStyle(element);
+16416:             if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+16417:             const rect = element.getBoundingClientRect();
+16418:             return rect.width > 0 && rect.height > 0;
+16419:         } catch (err) {
+16420:             return false;
+16421:         }
+16422:     }
+16423: 
+16424:     async function transportSweepWaitFor(test, timeoutMs = 5000, intervalMs = 120) {
+16425:         const started = Date.now();
+16426:         while (Date.now() - started < timeoutMs) {
+16427:             if (runtime.destroyed || transportSweepRuntime.stopRequested) return null;
+16428:             try {
+16429:                 const value = test();
+16430:                 if (value) return value;
+16431:             } catch (err) {}
+16432:             if (!await transportSweepSleep(intervalMs)) return null;
+16433:         }
+16434:         return null;
+16435:     }
+16436: 
+16437:     function transportSweepLog(message, level = 'info') {
+16438:         const clean = String(message || '').trim();
+16439:         if (!clean) return;
+16440:         transportSweepRuntime.log.unshift({ time: Date.now(), message: clean, level });
+16441:         if (transportSweepRuntime.log.length > 18) transportSweepRuntime.log.length = 18;
+16442:         renderTransportSweepPanel();
+16443:     }
+16444: 
+16445:     function buildTransportSweepQueue() {
+16446:         const now = Date.now();
+16447:         const queue = [];
+16448:         const seen = new Set();
+16449:         for (const marker of getMissionMarkerIndex().markers) {
+16450:             const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+16451:             if (missionId === null || seen.has(missionId)) continue;
+16452:             const personal = isPersonalMissionLayer(marker, missionId);
+16453:             if (personal) continue;
+16454:             const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
+16455:             const requirement = transportRequirementFromSnapshot(snapshot);
+16456:             const patientCount = Math.max(0, Number(snapshot?.patientsCount) || 0);
+16457:             if (!requirement || requirement.type === 'prisoner') continue;
+16458:             if (requirement.type !== 'patient' && patientCount <= 0) continue;
+16459:             const count = Math.max(1, Math.min(99, Number(requirement.count) || patientCount || 1));
+16460:             seen.add(missionId);
+16461:             queue.push({
+16462:                 missionId,
+16463:                 caption: String(snapshot?.caption || `Alliance mission ${missionId}`),
+16464:                 count,
+16465:                 createdAt: Number(snapshot?.createdAt) || 0,
+16466:                 requirement: requirement.label || 'Patient transport required'
+16467:             });
+16468:         }
+16469:         queue.sort((a, b) => (a.createdAt || Number.MAX_SAFE_INTEGER) - (b.createdAt || Number.MAX_SAFE_INTEGER));
+16470:         transportSweepRuntime.queue = queue;
+16471:         transportSweepRuntime.scannedAt = now;
+16472:         renderTransportSweepPanel();
+16473:         return queue;
+16474:     }
+16475: 
+16476:     function renderTransportSweepPanel() {
+16477:         const host = document.querySelector(`#${SCRIPT.panelId} [data-transport-sweep]`);
+16478:         if (!host) return;
+16479:         const runtime = transportSweepRuntime;
+16480:         const queue = runtime.queue || [];
+16481:         const currentId = normaliseMissionId(runtime.currentMissionId);
+16482:         const status = runtime.running ? 'RUNNING' : runtime.stopRequested ? 'STOPPING' : queue.length ? 'READY' : 'IDLE';
+16483:         const list = queue.length ? queue.map((item, index) => {
+16484:             const current = currentId !== null && normaliseMissionId(item.missionId) === currentId;
+16485:             return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.caption}`)}</span><span class="mcms-sweep-meta">Mission ${escapeHtml(item.missionId)} · ${escapeHtml(item.requirement)}</span></div><span class="mcms-sweep-count">${escapeHtml(item.count)} req</span></div>`;
+16486:         }).join('') : `<div class="mcms-empty-state">Scan to find alliance missions currently reporting patient transport requirements.</div>`;
+16487:         const logs = runtime.log.length ? runtime.log.map(entry => {
+16488:             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+16489:             return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
+16490:         }).join('') : '<div>No sweep activity yet.</div>';
+16491:         const html = `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${queue.length}</b><span>Missions</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
+16492:         setInnerHtmlIfChanged(host, html);
+16493:         const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-transport-sweep"]`);
+16494:         const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-transport-sweep"]`);
+16495:         const scan = document.querySelector(`#${SCRIPT.panelId} [data-action="scan-transport-sweep"]`);
+16496:         if (start) start.disabled = runtime.running;
+16497:         if (stop) stop.disabled = !runtime.running;
+16498:         if (scan) scan.disabled = runtime.running;
+16499:     }
+16500: 
+16501:     function transportSweepVehicleIdFromHref(href) {
+16502:         let pathname = String(href || '').trim();
+16503:         try { pathname = new URL(pathname, document.baseURI || pageWindow.location.href).pathname; } catch (err) {}
+16504:         const match = pathname.match(/^\/vehicles\/(\d+)(?:\/|$)/);
+16505:         return match ? match[1] : null;
+16506:     }
+16507: 
+16508:     function transportSweepAnchorUsable(anchor) {
+16509:         if (!anchor || !anchor.isConnected || anchor.closest?.(`#${SCRIPT.panelId}`)) return false;
+16510:         try {
+16511:             const view = anchor.ownerDocument?.defaultView || window;
+16512:             let node = anchor;
+16513:             for (let depth = 0; depth < 7 && node; depth += 1, node = node.parentElement) {
+16514:                 const style = view.getComputedStyle(node);
+16515:                 if (style.display === 'none' || style.visibility === 'hidden') continue;
+16516:                 const rect = node.getBoundingClientRect();
+16517:                 if (rect.width > 0 && rect.height > 0) return true;
+16518:             }
+16519:         } catch (err) {}
+16520:         return false;
+16521:     }
+16522: 
+16523:     function transportSweepDocumentContexts() {
+16524:         const contexts = [];
+16525:         const seenDocuments = new Set();
+16526:         const visit = (doc, label = 'top') => {
+16527:             if (!doc || seenDocuments.has(doc)) return;
+16528:             seenDocuments.add(doc);
+16529:             contexts.push({ doc, label });
+16530:             let frames = [];
+16531:             try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
+16532:             frames.forEach((frame, index) => {
+16533:                 try {
+16534:                     const child = frame.contentDocument || frame.contentWindow?.document;
+16535:                     if (child) visit(child, `${label}/frame${index + 1}`);
+16536:                 } catch (err) {
+16537:                     // Cross-origin frames are intentionally ignored.
+16538:                 }
+16539:             });
+16540:         };
+16541:         visit(document);
+16542:         return contexts;
+16543:     }
+16544: 
+16545:     function transportSweepVehicleAnchorsWithin(root = null, requireUsable = true) {
+16546:         const scope = root && (root.isConnected || root.nodeType === 9) ? root : document;
+16547:         let anchors = [];
+16548:         try { anchors = Array.from(scope.querySelectorAll('a[href*="/vehicles/"]')); } catch (err) {}
+16549:         return anchors.filter(anchor => {
+16550:             if (!transportSweepVehicleIdFromHref(anchor.getAttribute('href'))) return false;
+16551:             return !requireUsable || transportSweepAnchorUsable(anchor);
+16552:         });
+16553:     }
+16554: 
+16555:     function transportSweepVisibleVehicleAnchors() {
+16556:         const anchors = [];
+16557:         const seen = new Set();
+16558:         for (const context of transportSweepDocumentContexts()) {
+16559:             for (const anchor of transportSweepVehicleAnchorsWithin(context.doc, true)) {
+16560:                 if (seen.has(anchor)) continue;
+16561:                 seen.add(anchor);
+16562:                 anchors.push(anchor);
+16563:             }
+16564:         }
+16565:         return anchors;
+16566:     }
+16567: 
+16568:     function transportSweepVisibleWindowRoots() {
+16569:         const selectors = [
+16570:             '#lightbox_box .lightbox_content', '#lightbox_box', '#lightbox', '.lightbox_content',
+16571:             '[id*="lightbox"]', '.lightbox', '.modal.show .modal-content', '.modal.in .modal-content',
+16572:             '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
+16573:         ];
+16574:         const roots = [];
+16575:         const seen = new Set();
+16576:         for (const context of transportSweepDocumentContexts()) {
+16577:             for (const selector of selectors) {
+16578:                 let matches = [];
+16579:                 try { matches = Array.from(context.doc.querySelectorAll(selector)); } catch (err) {}
+16580:                 for (const root of matches) {
+16581:                     if (!root || seen.has(root) || !transportSweepElementVisible(root)) continue;
+16582:                     if (root.closest?.(`#${SCRIPT.panelId}`)) continue;
+16583:                     seen.add(root);
+16584:                     roots.push(root);
+16585:                 }
+16586:             }
+16587:             if (context.doc !== document) {
+16588:                 const body = context.doc.body;
+16589:                 if (body && !seen.has(body) && transportSweepElementVisible(body) && transportSweepVehicleAnchorsWithin(body, true).length) {
+16590:                     seen.add(body);
+16591:                     roots.push(body);
+16592:                 }
+16593:             }
+16594:         }
+16595:         return roots;
+16596:     }
+16597: 
+16598:     function transportSweepRootScore(root, missionId = null) {
+16599:         if (!root || !root.isConnected) return -1;
+16600:         const anchors = transportSweepVehicleAnchorsWithin(root);
+16601:         if (!anchors.length) return -1;
+16602:         let score = anchors.length * 10;
+16603:         const text = String(root.textContent || '').toLowerCase();
+16604:         if (/mission|incident|einsatz|call/.test(text)) score += 15;
+16605:         if (/patient|transport|ambulance|discharge/.test(text)) score += 30;
+16606:         if (missionId !== null) {
+16607:             try {
+16608:                 if (root.querySelector(`a[href*="/missions/${missionId}"]`)) score += 80;
+16609:             } catch (err) {}
+16610:         }
+16611:         const rect = root.getBoundingClientRect();
+16612:         score += Math.min(30, Math.round((rect.width * rect.height) / 50000));
+16613:         return score;
+16614:     }
+16615: 
+16616:     function transportSweepFindMissionWindowRoot(missionId = null) {
+16617:         const roots = transportSweepVisibleWindowRoots();
+16618:         let best = null;
+16619:         let bestScore = -1;
+16620:         for (const root of roots) {
+16621:             const score = transportSweepRootScore(root, missionId);
+16622:             if (score > bestScore) {
+16623:                 best = root;
+16624:                 bestScore = score;
+16625:             }
+16626:         }
+16627:         if (best) return best;
+16628: 
+16629:         // Fallback for MissionChief builds that render lightbox content without a stable wrapper.
+16630:         const baseline = transportSweepRuntime.missionAnchorBaseline;
+16631:         const anchor = transportSweepVisibleVehicleAnchors().find(item => !(baseline instanceof Set) || !baseline.has(item));
+16632:         if (!anchor) return null;
+16633:         return anchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || anchor.ownerDocument?.body || anchor.parentElement;
+16634:     }
+16635: 
+16636:     function transportSweepAnchorBelongsToMissionWindow(anchor) {
+16637:         if (!anchor || !transportSweepAnchorUsable(anchor)) return false;
+16638:         const root = transportSweepRuntime.missionWindowRoot;
+16639:         if (root?.isConnected && root.contains(anchor)) return true;
+16640:         const baseline = transportSweepRuntime.missionAnchorBaseline;
+16641:         if (baseline instanceof Set && !baseline.has(anchor)) return true;
+16642:         return transportSweepVisibleWindowRoots().some(windowRoot => windowRoot.contains(anchor));
+16643:     }
+16644: 
+16645:     function transportSweepOwnVehicleIdSet() {
+16646:         if (transportSweepRuntime.ownVehicleIds instanceof Set && transportSweepRuntime.ownVehicleIds.size) {
+16647:             return new Set(Array.from(transportSweepRuntime.ownVehicleIds, id => String(id)));
+16648:         }
+16649:         const ids = new Set(Array.from(personalVehicleApiCache.keys(), id => String(id)));
+16650:         for (const vehicle of getPersonalVehicleRecords()) {
+16651:             const id = vehicleRecordId(vehicle);
+16652:             if (id !== null) ids.add(String(id));
+16653:         }
+16654:         transportSweepRuntime.ownVehicleIds = ids;
+16655:         return ids;
+16656:     }
+16657: 
+16658:     function collectTransportSweepStaticCandidates(anchors, source = 'mission HTML', preserveAnchors = false) {
+16659:         const unique = new Map();
+16660:         const ownIds = transportSweepOwnVehicleIdSet();
+16661:         let rejectedOwn = 0;
+16662:         let allianceLinks = 0;
+16663:         let rejectedNotFms5 = 0;
+16664:         let rejectedNotPatient = 0;
+16665: 
+16666:         for (const anchor of Array.from(anchors || [])) {
+16667:             const href = String(anchor.getAttribute?.('href') || '').trim();
+16668:             const vehicleId = transportSweepVehicleIdFromHref(href);
+16669:             if (!vehicleId) continue;
+16670: 
+16671:             const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, li, [id^="vehicle_row_"], [class*="vehicle_row"]');
+16672:             const fms5 = row?.querySelector?.('.building_list_fms_5');
+16673:             if (!row || !fms5) {
+16674:                 rejectedNotFms5 += 1;
+16675:                 continue;
+16676:             }
+16677: 
+16678:             if (ownIds.has(String(vehicleId))) {
+16679:                 rejectedOwn += 1;
+16680:                 continue;
+16681:             }
+16682: 
+16683:             allianceLinks += 1;
+16684:             const vehicleTypeId = String(anchor.getAttribute?.('vehicle_type_id') || '');
+16685:             const label = String(anchor.textContent || 'Alliance vehicle').trim() || 'Alliance vehicle';
+16686:             const rowText = String(row.textContent || '').replace(/\s+/g, ' ').trim();
+16687:             const isPatientVehicle = vehicleTypeId === '5' || /ambulance|patient|paramedic|rettungs|krankentransport|rtw\b/i.test(`${label} ${rowText}`);
+16688:             if (!isPatientVehicle) {
+16689:                 rejectedNotPatient += 1;
+16690:                 continue;
+16691:             }
+16692: 
+16693:             const normalisedHref = `/vehicles/${vehicleId}`;
+16694:             const candidate = {
+16695:                 href: normalisedHref,
+16696:                 vehicleId,
+16697:                 label,
+16698:                 vehicleTypeId,
+16699:                 score: 500,
+16700:                 anchor: preserveAnchors ? anchor : null,
+16701:                 row: preserveAnchors ? row : null,
+16702:                 source,
+16703:                 rowText
+16704:             };
+16705:             if (!unique.has(normalisedHref)) unique.set(normalisedHref, candidate);
+16706:         }
+16707: 
+16708:         return {
+16709:             candidates: Array.from(unique.values())
+16710:                 .sort((a, b) => a.label.localeCompare(b.label) || Number(a.vehicleId) - Number(b.vehicleId))
+16711:                 .slice(0, TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION),
+16712:             stats: {
+16713:                 totalLinks: Array.from(anchors || []).length,
+16714:                 allianceLinks,
+16715:                 rejectedOwn,
+16716:                 rejectedNotFms5,
+16717:                 rejectedNotPatient,
+16718:                 candidates: unique.size,
+16719:                 source
+16720:             }
+16721:         };
+16722:     }
+16723: 
+16724:     async function transportSweepFetchMissionCandidates(missionId) {
+16725:         const id = normaliseMissionId(missionId);
+16726:         if (id === null || transportSweepRuntime.stopRequested) return null;
+16727:         const requestModes = [
+16728:             { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } },
+16729:             { headers: { Accept: 'text/html,application/xhtml+xml' } }
+16730:         ];
+16731:         let bestResult = null;
+16732:         for (const mode of requestModes) {
+16733:             if (transportSweepRuntime.stopRequested) return null;
+16734:             try {
+16735:                 const response = await runtimeFetch(`/missions/${id}`, {
+16736:                     method: 'GET',
+16737:                     credentials: 'same-origin',
+16738:                     cache: 'no-store',
+16739:                     headers: mode.headers
+16740:                 });
+16741:                 if (!response.ok) continue;
+16742:                 const html = await response.text();
+16743:                 if (!html || html.length < 100) continue;
+16744:                 const doc = new DOMParser().parseFromString(html, 'text/html');
+16745:                 const anchors = Array.from(doc.querySelectorAll('a[href*="/vehicles/"]'))
+16746:                     .filter(anchor => transportSweepVehicleIdFromHref(anchor.getAttribute('href')));
+16747:                 if (!anchors.length) continue;
+16748:                 const result = { ...collectTransportSweepStaticCandidates(anchors, 'mission HTML'), htmlLength: html.length };
+16749:                 if (!bestResult || result.stats.totalLinks > bestResult.stats.totalLinks) bestResult = result;
+16750:                 if (result.candidates.length) return result;
+16751:             } catch (err) {
+16752:                 // Try the next request mode.
+16753:             }
+16754:         }
+16755:         return bestResult;
+16756:     }
+16757: 
+16758:     async function collectTransportSweepVehicleCandidatesForMission(missionId) {
+16759:         const domCandidates = collectTransportSweepVehicleCandidates();
+16760:         const domStats = { ...(transportSweepRuntime.lastCandidateStats || {}) };
+16761:         if (domCandidates.length) return domCandidates;
+16762: 
+16763:         const fetched = await transportSweepFetchMissionCandidates(missionId);
+16764:         if (fetched) {
+16765:             transportSweepRuntime.rejectedOwn = fetched.stats.rejectedOwn || 0;
+16766:             transportSweepRuntime.lastCandidateStats = fetched.stats;
+16767:             if (fetched.candidates?.length) {
+16768:                 transportSweepLog(`Recovered ${fetched.stats.totalLinks} vehicle links from mission HTML`);
+16769:                 return fetched.candidates;
+16770:             }
+16771:         }
+16772: 
+16773:         if (!fetched) transportSweepRuntime.lastCandidateStats = domStats;
+16774:         return [];
+16775:     }
+16776: 
+16777:     function collectTransportSweepVehicleCandidates() {
+16778:         const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : null;
+16779:         let anchors = root ? transportSweepVehicleAnchorsWithin(root) : [];
+16780:         if (!anchors.length) anchors = transportSweepVisibleVehicleAnchors().filter(anchor => transportSweepAnchorBelongsToMissionWindow(anchor));
+16781: 
+16782:         const result = collectTransportSweepStaticCandidates(anchors, 'mission window', true);
+16783:         transportSweepRuntime.rejectedOwn = result.stats.rejectedOwn || 0;
+16784:         transportSweepRuntime.lastCandidateStats = result.stats;
+16785:         return result.candidates;
+16786:     }
+16787: 
+16788:     function transportSweepVisibleDischargeButtons() {
+16789:         const buttons = [];
+16790:         const seen = new Set();
+16791:         for (const context of transportSweepDocumentContexts()) {
+16792:             let matches = [];
+16793:             try { matches = Array.from(context.doc.querySelectorAll('button')); } catch (err) {}
+16794:             for (const button of matches) {
+16795:                 if (seen.has(button) || !transportSweepElementVisible(button) || button.disabled) continue;
+16796:                 if (String(button.textContent || '').trim().toLowerCase() !== 'discharge patient') continue;
+16797:                 seen.add(button);
+16798:                 buttons.push(button);
+16799:             }
+16800:         }
+16801:         return buttons;
+16802:     }
+16803: 
+16804:     function findVisibleDischargePatientButton(excludedButtons = null) {
+16805:         const excluded = excludedButtons instanceof Set ? excludedButtons : null;
+16806:         return transportSweepVisibleDischargeButtons().find(button => !excluded || !excluded.has(button)) || null;
+16807:     }
+16808: 
+16809:     async function openTransportSweepPath(path, mode) {
+16810:         if (transportSweepRuntime.stopRequested) return false;
+16811:         if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
+16812: 
+16813:         if (mode === 'mission') {
+16814:             transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
+16815:             transportSweepRuntime.rejectedOwn = 0;
+16816:             transportSweepRuntime.missionWindowRoot = null;
+16817:             const beforeWindowText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
+16818:             const missionId = normaliseMissionId(String(path || '').match(/\/missions\/(\d+)/)?.[1]);
+16819:             pageWindow.lightboxOpen(path);
+16820:             await transportSweepWaitFor(() => {
+16821:                 const root = transportSweepFindMissionWindowRoot(missionId);
+16822:                 if (root) {
+16823:                     const anchors = transportSweepVehicleAnchorsWithin(root);
+16824:                     const afterText = String(root.textContent || '').trim();
+16825:                     const changed = afterText && !beforeWindowText.includes(afterText);
+16826:                     if (anchors.length || changed) {
+16827:                         transportSweepRuntime.missionWindowRoot = root;
+16828:                         return { root, anchors };
+16829:                     }
+16830:                 }
+16831:                 const newAnchor = transportSweepVisibleVehicleAnchors().find(anchor => !transportSweepRuntime.missionAnchorBaseline.has(anchor));
+16832:                 if (newAnchor) {
+16833:                     transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.ownerDocument?.body || newAnchor.parentElement;
+16834:                     return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
+16835:                 }
+16836:                 return null;
+16837:             }, 3200, 120);
+16838:             return !transportSweepRuntime.stopRequested;
+16839:         }
+16840: 
+16841:         pageWindow.lightboxOpen(path);
+16842:         await transportSweepSleep(900);
+16843:         return !transportSweepRuntime.stopRequested;
+16844:     }
+16845: 
+16846:     async function openTransportSweepVehicle(candidate) {
+16847:         if (transportSweepRuntime.stopRequested || !candidate?.href) return null;
+16848:         transportSweepRuntime.vehicleButtonBaseline = new Set(transportSweepVisibleDischargeButtons());
+16849:         const beforeRoots = transportSweepVisibleWindowRoots();
+16850:         const beforeText = beforeRoots.map(root => String(root.textContent || '').trim()).join('|');
+16851: 
+16852:         let anchor = candidate.anchor;
+16853:         if (!anchor?.isConnected) {
+16854:             const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : document;
+16855:             anchor = Array.from(root.querySelectorAll?.('a[href*="/vehicles/"]') || []).find(item => transportSweepVehicleIdFromHref(item.getAttribute('href')) === String(candidate.vehicleId));
+16856:         }
+16857: 
+16858:         let usedMissionClick = false;
+16859:         if (anchor?.isConnected) {
+16860:             try {
+16861:                 anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+16862:                 anchor.click();
+16863:                 usedMissionClick = true;
+16864:             } catch (err) {}
+16865:         }
+16866: 
+16867:         if (!usedMissionClick) {
+16868:             if (typeof pageWindow.lightboxOpen !== 'function') return null;
+16869:             pageWindow.lightboxOpen(candidate.href);
+16870:         }
+16871: 
+16872:         const openedAt = Date.now();
+16873:         return await transportSweepWaitFor(() => {
+16874:             const button = findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline);
+16875:             if (button) return { opened: true, button };
+16876:             const afterText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
+16877:             if (afterText && afterText !== beforeText && Date.now() - openedAt > 350) return { opened: true, button: null };
+16878:             return null;
+16879:         }, 7500, 140);
+16880:     }
+16881: 
+16882:     async function processTransportSweepMission(item, remainingAllowance) {
+16883:         const missionId = normaliseMissionId(item?.missionId);
+16884:         if (missionId === null || remainingAllowance <= 0) return 0;
+16885: 
+16886:         transportSweepRuntime.currentMissionId = missionId;
+16887:         renderTransportSweepPanel();
+16888: 
+16889:         const target = Math.max(1, Math.min(Number(item.count) || 1, remainingAllowance));
+16890:         const attemptedVehicleIds = new Set();
+16891:         let clearedHere = 0;
+16892:         let initialScanLogged = false;
+16893:         let missionHadCandidates = false;
+16894: 
+16895:         while (!transportSweepRuntime.stopRequested && clearedHere < target && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+16896:             transportSweepLog(`${attemptedVehicleIds.size ? 'Reopening' : 'Opening'} ${item.caption}`);
+16897:             const opened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+16898:             if (!opened || transportSweepRuntime.stopRequested) break;
+16899: 
+16900:             const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
+16901:             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
+16902:             if (!initialScanLogged) {
+16903:                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';
+16904:                 transportSweepLog(`Mission scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
+16905:                 if (transportSweepRuntime.rejectedOwn > 0) {
+16906:                     transportSweepLog(`Ignored ${transportSweepRuntime.rejectedOwn} of your own FMS 5 vehicle${transportSweepRuntime.rejectedOwn === 1 ? '' : 's'} at ${item.caption}`);
+16907:                 }
+16908:                 initialScanLogged = true;
+16909:             }
+16910: 
+16911:             if (candidates.length) missionHadCandidates = true;
+16912:             const candidate = candidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
+16913:             if (!candidate) {
+16914:                 if (!missionHadCandidates) {
+16915:                     transportSweepLog(`No non-personal FMS 5 patient vehicles were found inside ${item.caption}`, 'warn');
+16916:                 } else {
+16917:                     transportSweepLog(`Checked every non-personal FMS 5 patient vehicle at ${item.caption}; none exposed Discharge patient`, 'warn');
+16918:                 }
+16919:                 break;
+16920:             }
+16921: 
+16922:             attemptedVehicleIds.add(String(candidate.vehicleId));
+16923:             transportSweepRuntime.currentVehicleHref = candidate.href;
+16924:             renderTransportSweepPanel();
+16925:             transportSweepLog(`Checking FMS 5 ${candidate.label} (${candidate.vehicleId}) · ${attemptedVehicleIds.size}/${candidates.length}`);
+16926: 
+16927:             const vehicleResult = await openTransportSweepVehicle(candidate);
+16928:             if (transportSweepRuntime.stopRequested) break;
+16929: 
+16930:             const button = vehicleResult?.button || (vehicleResult?.opened ? await transportSweepWaitFor(
+16931:                 () => findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline),
+16932:                 3200,
+16933:                 120
+16934:             ) : null);
+16935: 
+16936:             if (!button) {
+16937:                 transportSweepLog(`${candidate.label} is carrying a patient but is not transport-ready; continuing in the same mission`);
+16938:                 await transportSweepSleep(350);
+16939:                 continue;
+16940:             }
+16941: 
+16942:             try {
+16943:                 button.click();
+16944:                 const cleared = await transportSweepWaitFor(() => {
+16945:                     if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
+16946:                     return String(button.textContent || '').trim().toLowerCase() !== 'discharge patient' ? true : null;
+16947:                 }, 5000, 140);
+16948:                 if (!cleared) throw new Error('Discharge confirmation timed out');
+16949: 
+16950:                 clearedHere += 1;
+16951:                 transportSweepRuntime.cleared += 1;
+16952:                 transportSweepRuntime.processed += 1;
+16953:                 transportSweepLog(`Cleared ${candidate.label} at ${item.caption}`);
+16954:             } catch (err) {
+16955:                 transportSweepRuntime.errors += 1;
+16956:                 transportSweepLog(`Failed ${candidate.label}: ${err?.message || 'unknown error'}`, 'error');
+16957:             }
+16958: 
+16959:             if (!transportSweepRuntime.stopRequested && clearedHere < target && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
+16960:                 await transportSweepSleep(state.transportSweep.delayMs);
+16961:             }
+16962:         }
+16963: 
+16964:         if (clearedHere === 0 && !transportSweepRuntime.stopRequested) {
+16965:             transportSweepRuntime.skipped += 1;
+16966:         }
+16967:         return clearedHere;
+16968:     }
+16969: 
+16970:     async function startTransportSweep() {
+16971:         if (transportSweepRuntime.running) return;
+16972:         const queue = buildTransportSweepQueue();
+16973:         if (!queue.length) {
+16974:             showToast('No alliance patient transports found');
+16975:             return;
+16976:         }
+16977:         showToast('Verifying your personal vehicle list…');
+16978:         const ownershipReady = await refreshPersonalVehicleData(true);
+16979:         if (!ownershipReady || !vehicleApiReady || personalVehicleApiCache.size === 0) {
+16980:             showToast('Transport Sweep cancelled — your vehicle ownership list could not be verified');
+16981:             return;
+16982:         }
+16983:         transportSweepRuntime.ownVehicleIds = new Set(Array.from(personalVehicleApiCache.keys(), id => String(id)));
+16984:         const totalRequests = queue.reduce((sum, item) => sum + Math.max(1, Number(item.count) || 1), 0);
+16985:         const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
+16986:         const confirmed = pageWindow.confirm(`Transport Sweep will use MissionChief's visible co-admin controls to attempt up to ${planned} patient discharges across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.\n\nYour own vehicle IDs are excluded before any vehicle window is opened. The sweep will inspect each non-personal FMS 5 patient vehicle until MissionChief exposes the enabled “Discharge patient” button. Continue?`);
+16987:         if (!confirmed) return;
+16988:         transportSweepRuntime.running = true;
+16989:         transportSweepRuntime.stopRequested = false;
+16990:         transportSweepRuntime.currentMissionId = null;
+16991:         transportSweepRuntime.currentVehicleHref = '';
+16992:         transportSweepRuntime.cleared = 0;
+16993:         transportSweepRuntime.skipped = 0;
+16994:         transportSweepRuntime.errors = 0;
+16995:         transportSweepRuntime.processed = 0;
+16996:         transportSweepRuntime.rejectedOwn = 0;
+16997:         transportSweepRuntime.missionAnchorBaseline = new Set();
+16998:         transportSweepRuntime.vehicleButtonBaseline = new Set();
+16999:         transportSweepRuntime.missionWindowRoot = null;
+17000:         transportSweepRuntime.lastCandidateStats = null;
+17001:         transportSweepRuntime.log = [];
+17002:         renderTransportSweepPanel();
+17003:         transportSweepLog(`Sweep started: ${queue.length} missions, maximum ${state.transportSweep.maxPerRun} requests`);
+17004:         try {
+17005:             for (const item of queue) {
+17006:                 if (transportSweepRuntime.stopRequested || transportSweepRuntime.cleared >= state.transportSweep.maxPerRun) break;
+17007:                 const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.cleared;
+17008:                 await processTransportSweepMission(item, remaining);
+17009:                 if (!transportSweepRuntime.stopRequested) await transportSweepSleep(state.transportSweep.delayMs);
+17010:             }
+17011:         } catch (err) {
+17012:             transportSweepRuntime.errors += 1;
+17013:             transportSweepLog(`Sweep stopped by error: ${err?.message || 'unknown error'}`, 'error');
+17014:         } finally {
+17015:             const wasStopped = transportSweepRuntime.stopRequested;
+17016:             transportSweepRuntime.running = false;
+17017:             transportSweepRuntime.stopRequested = false;
+17018:             transportSweepRuntime.currentMissionId = null;
+17019:             transportSweepRuntime.currentVehicleHref = '';
+17020:             transportSweepRuntime.missionAnchorBaseline = new Set();
+17021:             transportSweepRuntime.vehicleButtonBaseline = new Set();
+17022:             buildTransportSweepQueue();
+17023:             renderTransportSweepPanel();
+17024:             scheduleTransportWatcherRefresh(0);
+17025:             showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared`);
+17026:             transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`);
+17027:         }
+17028:     }
+17029: 
+17030:     function stopTransportSweep() {
+17031:         if (!transportSweepRuntime.running) return;
+17032:         transportSweepRuntime.stopRequested = true;
+17033:         transportSweepLog('Stop requested — finishing the current action');
+17034:         renderTransportSweepPanel();
+17035:     }
+17036: 
+17037:     function vehicleTargetInfo(vehicle) {
+17038:         if (!vehicle || typeof vehicle !== 'object') return { type: null, id: null };
+17039:         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
+17040:             .filter(item => item && typeof item === 'object');
+17041:         for (const item of containers) {
+17042:             const type = String(item.target_type ?? item.targetType ?? '').toLowerCase();
+17043:             const id = normaliseMissionId(item.target_id ?? item.targetId);
+17044:             if ((type === 'mission' || type === 'building') && id !== null && id !== '0') return { type, id };
+17045:             const missionId = normaliseMissionId(item.mission_id ?? item.missionId);
+17046:             if (missionId !== null && missionId !== '0') return { type: 'mission', id: missionId };
+17047:             const buildingId = normaliseMissionId(item.target_building_id ?? item.targetBuildingId);
+17048:             if (buildingId !== null && buildingId !== '0') return { type: 'building', id: buildingId };
+17049:         }
+17050:         return { type: null, id: null };
+17051:     }
+17052: 
+17053:     function vehicleSearchSignal(vehicle) {
+17054:         if (!vehicle || typeof vehicle !== 'object') return '';
+17055:         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
+17056:             .filter(item => item && typeof item === 'object');
+17057:         const values = [];
+17058:         for (const item of containers) {
+17059:             values.push(item.caption, item.name, item.vehicle_type_caption, item.vehicleTypeCaption, item.vehicle_type_name, item.vehicleTypeName, item.type_caption, item.typeCaption, item.title);
+17060:         }
+17061:         try { values.push(vehicle?._icon?.title, vehicle?._icon?.alt, vehicle?._icon?.getAttribute?.('aria-label')); } catch (err) {}
+17062:         return values.filter(Boolean).join(' ');
+17063:     }
+17064: 
+17065:     function vehicleStatusBucket(vehicle) {
+17066:         const status = vehicleStatusCode(vehicle);
+17067:         if ([1, 2].includes(status)) return 'available';
+17068:         if (status === 3) return 'travelling';
+17069:         if (status === 4) return 'scene';
+17070:         if ([7, 8].includes(status)) return 'transport';
+17071:         return 'other';
+17072:     }
+17073: 
+17074:     function clearResourceGapLabels() {
+17075:         if (resourceGapGroup) {
+17076:             try { resourceGapGroup.clearLayers(); resourceGapGroup.remove(); } catch (err) {}
+17077:         }
+17078:         resourceGapLabels.clear();
+17079:         resourceGapGroup = null;
+17080:     }
+17081: 
+17082:     function splitRequirementItems(value) {
+17083:         return String(value || '').split(/\s*(?:•|;|\n|,(?=\s*\d+\s*(?:x|×)?\b))\s*/).map(item => item.trim()).filter(Boolean);
+17084:     }
+17085: 
+17086:     function parseCountedRequirement(value) {
+17087:         const clean = String(value || '').replace(/^[-–—\s]+/, '').trim();
+17088:         const match = clean.match(/^(\d+)\s*(?:x|×)?\s+(.+)$/i);
+17089:         if (match) return { count: Math.max(1, Number(match[1]) || 1), name: match[2].replace(/[.!]+$/, '').trim() };
+17090:         if (clean) return { count: 1, name: clean.replace(/[.!]+$/, '').trim() };
+17091:         return null;
+17092:     }
+17093: 
+17094:     function resourceRequirementsFromSnapshot(snapshot) {
+17095:         const raw = normaliseMissingRequirementText(snapshot?.missingText);
+17096:         const result = { raw, vehicles: [], personnel: [], other: [] };
+17097:         if (!raw) return result;
+17098:         const labelled = /\b(?:vehicles?|personnel|other)\s*:/i.test(raw);
+17099:         if (labelled) {
+17100:             const sectionPattern = /\b(vehicles?|personnel|other)\s*:\s*([\s\S]*?)(?=\s*•?\s*\b(?:vehicles?|personnel|other)\s*:|$)/gi;
+17101:             let section;
+17102:             while ((section = sectionPattern.exec(raw))) {
+17103:                 const key = /^vehicle/i.test(section[1]) ? 'vehicles' : /^personnel/i.test(section[1]) ? 'personnel' : 'other';
+17104:                 for (const item of splitRequirementItems(section[2])) {
+17105:                     const parsed = parseCountedRequirement(item);
+17106:                     if (parsed && parsed.name) result[key].push(parsed);
+17107:                 }
+17108:             }
+17109:         } else {
+17110:             const transportOnly = transportRequirementFromSnapshot(snapshot);
+17111:             if (!transportOnly && /\b(?:vehicle|engine|unit|carrier|ladder|ambulance|police|car|van|boat|helicopter|support|officer)\b/i.test(raw)) {
+17112:                 for (const item of splitRequirementItems(raw)) {
+17113:                     const parsed = parseCountedRequirement(item.replace(/^missing\s*:?\s*/i, ''));
+17114:                     if (parsed && parsed.name) result.vehicles.push(parsed);
+17115:                 }
+17116:             }
+17117:         }
+17118:         result.vehicles = result.vehicles.filter(item => item.name && !/transport is needed|required transport/i.test(item.name));
+17119:         return result;
+17120:     }
+17121: 
+17122:     function normaliseSearchText(value) {
+17123:         return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, ' ').trim();
+
+===== LINES 17777-17901 =====
+17777:     function scheduleMarkerStateSync(delay = 20, trailing = false) {
+17778:         const timerName = trailing ? 'markerStateTrailingTimer' : 'markerStateSyncTimer';
+17779:         const currentTimer = trailing ? markerStateTrailingTimer : markerStateSyncTimer;
+17780:         runtimeClearTimeout(currentTimer);
+17781:         const callback = () => {
+17782:             if (trailing) markerStateTrailingTimer = null;
+17783:             else markerStateSyncTimer = null;
+17784:             if (runtime.destroyed || document.hidden) return;
+17785:             if (!state.visibility.vehicles || state.markerFocus) synchroniseVehicleMarkerClasses();
+17786:             if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+17787:         };
+17788:         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
+17789:         if (timerName === 'markerStateTrailingTimer') markerStateTrailingTimer = id;
+17790:         else markerStateSyncTimer = id;
+17791:     }
+17792: 
+17793:     function scheduleMarkerClassification() {
+17794:         runtimeClearTimeout(classifyTimer);
+17795:         classifyTimer = runtimeSetTimeout(classifyMarkersNow, state.economyMode ? 420 : 180);
+17796:     }
+17797: 
+17798:     function markerClassificationNeeded() {
+17799:         return Boolean(
+17800:             state.markerFocus || state.missionPulse || criticalViewActive ||
+17801:             !state.visibility.vehicles || !state.visibility.buildings ||
+17802:             !state.visibility.myMissions || !state.visibility.allianceMissions
+17803:         );
+17804:     }
+17805: 
+17806:     function vehicleDataNeeded() {
+17807:         return Boolean(
+17808:             state.unitCommitment || state.allianceCredits || state.resourceGap.enabled ||
+17809:             state.missionInspector || state.stuckDetector.enabled || criticalViewActive ||
+17810:             document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open') ||
+17811:             document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ||
+17812:             transportSweepRuntime.running
+17813:         );
+17814:     }
+17815: 
+17816:     function missionSnapshotsNeeded() {
+17817:         return Boolean(
+17818:             state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
+17819:             state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
+17820:             state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled || criticalViewActive ||
+17821:             operationalUiIsVisible() || missionInspectorMarker
+17822:         );
+17823:     }
+17824: 
+17825:     function isToolkitLeafletLayer(layer) {
+17826:         return Boolean(layer && (
+17827:             layer.__mcmsHeatmapCell || layer.__mcmsHeatmapLayer ||
+17828:             layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer ||
+17829:             layer.__mcmsAllianceCreditLabel || layer.__mcmsAllianceCreditLayer ||
+17830:             layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
+17831:             layer.__mcmsUnitCommitmentLabel || layer.__mcmsUnitCommitmentLayer ||
+17832:             layer.__mcmsTransportWatcherLabel || layer.__mcmsTransportWatcherLayer ||
+17833:             layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
+17834:             layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
+17835:             layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
+17836:             layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
+17837:         ));
+17838:     }
+17839: 
+17840:     let enabledMapRefreshTimer = null;
+17841:     let pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
+17842: 
+17843:     function flushEnabledMapRefreshes() {
+17844:         enabledMapRefreshTimer = null;
+17845:         if (runtime.destroyed) return;
+17846:         const request = pendingEnabledMapRefresh;
+17847:         pendingEnabledMapRefresh = { includeSnapshots: false, positionPanel: false, refreshOperational: false, fullRefresh: false };
+17848: 
+17849:         if (request.fullRefresh && markerClassificationNeeded()) scheduleMarkerClassification();
+17850:         if (state.coverage.enabled) scheduleCoverageRefresh();
+17851:         if (state.heatmap.enabled) scheduleHeatmapRefresh();
+17852:         if (request.fullRefresh && state.allianceCredits) scheduleAllianceCreditRefresh();
+17853:         if (request.fullRefresh && state.missionAge) scheduleMissionAgeRefresh();
+17854:         if (request.fullRefresh && state.unitCommitment) scheduleUnitCommitmentRefresh();
+17855:         if (request.fullRefresh && state.resourceGap.enabled) scheduleResourceGapRefresh();
+17856:         if (request.includeSnapshots && missionSnapshotsNeeded()) {
+17857:             scheduleMissionSnapshotRefresh();
+17858:         } else if (request.fullRefresh) {
+17859:             if (state.transportWatcher) scheduleTransportWatcherRefresh();
+17860:             if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+17861:         }
+17862:         if (request.refreshOperational && operationalUiIsVisible()) scheduleOperationalPanelsRender(800);
+17863:         if (request.positionPanel && !dragState) schedulePanelPosition(true, 60);
+17864:     }
+17865: 
+17866:     function scheduleEnabledMapRefreshes({ includeSnapshots = true, positionPanel = false, refreshOperational = true, mapOnly = false } = {}) {
+17867:         pendingEnabledMapRefresh.includeSnapshots ||= Boolean(includeSnapshots);
+17868:         pendingEnabledMapRefresh.positionPanel ||= Boolean(positionPanel);
+17869:         pendingEnabledMapRefresh.refreshOperational ||= Boolean(refreshOperational);
+17870:         pendingEnabledMapRefresh.fullRefresh ||= !mapOnly;
+17871:         if (state.economyMode && economyMapMoving) return;
+17872:         if (enabledMapRefreshTimer !== null) return;
+17873:         enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, state.economyMode ? 180 : 35);
+17874:     }
+17875: 
+17876:     function reconcileFeatureRefreshes({ includeSnapshots = true, positionPanel = false } = {}) {
+17877:         if (!state.coverage.enabled) clearCoverageRings();
+17878:         if (!state.heatmap.enabled) clearCoverageHeatmap();
+17879:         if (!state.allianceCredits) clearAllianceCreditLabels();
+17880:         if (!state.missionAge) clearMissionAgeLabels();
+17881:         if (!state.unitCommitment) clearUnitCommitmentLabels();
+17882:         if (!state.transportWatcher) clearTransportWatcherLabels();
+17883:         if (!state.stuckDetector.enabled) clearStuckMissionLabels();
+17884:         if (!state.resourceGap.enabled) {
+17885:             clearResourceGapLabels();
+17886:             resourceGapAnalysisCache.clear();
+17887:             resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [], byToken: new Map() };
+17888:         }
+17889:         if (!state.missionInspector) hideMissionInspector();
+17890:         if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(80);
+17891:         else removeMajorIncidentFeed();
+17892:         scheduleEnabledMapRefreshes({ includeSnapshots, positionPanel });
+17893:     }
+17894: 
+17895:     function detachMapEvents(map) {
+17896:         if (!map) return;
+17897:         for (let index = runtime.mapBindings.length - 1; index >= 0; index -= 1) {
+17898:             const binding = runtime.mapBindings[index];
+17899:             if (binding.map !== map) continue;
+17900:             try { binding.map.off(binding.types, binding.handler); } catch (err) {}
+17901:             runtime.mapBindings.splice(index, 1);
+
+===== LINES 20943-21084 =====
+20943:                 if (id !== null) return id;
+20944:             }
+20945:         }
+20946: 
+20947:         if (doc !== document) {
+20948:             try {
+20949:                 const id = missionValueIdFromUrl(doc.location?.href, location.href);
+20950:                 if (id !== null) return id;
+20951:             } catch (err) {}
+20952:         }
+20953:         return null;
+20954:     }
+20955: 
+20956:     function missionValueMountForRoot(root) {
+20957:         if (!root) return null;
+20958:         const selector = '.lightbox_content, .modal-body, #mission_content, .mission_content, [data-mission-content]';
+20959:         try {
+20960:             if (root.matches?.(selector)) return root;
+20961:             return root.querySelector?.(selector) || root;
+20962:         } catch (err) {
+20963:             return root;
+20964:         }
+20965:     }
+20966: 
+20967:     function missionValueWindowCandidates() {
+20968:         const candidates = new Map();
+20969:         const add = root => {
+20970:             if (!root?.isConnected) return;
+20971:             const missionId = missionValueIdFromElement(root);
+20972:             if (missionId === null) return;
+20973:             const mount = missionValueMountForRoot(root);
+20974:             if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
+20975:             if (!candidates.has(mount)) candidates.set(mount, { root, mount, missionId });
+20976:         };
+20977: 
+20978:         transportSweepVisibleWindowRoots().forEach(add);
+20979:         for (const context of transportSweepDocumentContexts()) {
+20980:             observeMissionValueDocument(context.doc);
+20981:             if (context.doc !== document) {
+20982:                 try {
+20983:                     if (missionValueIdFromUrl(context.doc.location?.href, location.href) !== null) add(context.doc.body);
+20984:                 } catch (err) {}
+20985:             }
+20986:         }
+20987:         return Array.from(candidates.values());
+20988:     }
+20989: 
+20990:     function removeMissionValueRows(scope = document) {
+20991:         try { scope.querySelectorAll?.('.mcms-mission-value-row').forEach(row => row.remove()); } catch (err) {}
+20992:     }
+20993: 
+20994:     function clearMissionValueIndicators() {
+20995:         for (const context of transportSweepDocumentContexts()) removeMissionValueRows(context.doc);
+20996:     }
+20997: 
+20998: 
+20999:     function missionValueVisibleControlRect(element) {
+21000:         if (!element?.isConnected || element.closest?.('.mcms-mission-value-row')) return null;
+21001:         try {
+21002:             const view = element.ownerDocument?.defaultView || pageWindow;
+21003:             const style = view?.getComputedStyle?.(element);
+21004:             if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return null;
+21005:         } catch (err) {}
+21006:         try {
+21007:             const rect = element.getBoundingClientRect?.();
+21008:             if (!rect || rect.width <= 2 || rect.height <= 2 || rect.width > 96 || rect.height > 64) return null;
+21009:             return rect;
+21010:         } catch (err) {
+21011:             return null;
+21012:         }
+21013:     }
+21014: 
+21015:     function missionValueRightControlOffset(candidate) {
+21016:         const { root, mount } = candidate || {};
+21017:         const fallback = 72;
+21018:         if (!root?.querySelectorAll || !mount?.getBoundingClientRect) return fallback;
+21019: 
+21020:         let mountRect = null;
+21021:         try { mountRect = mount.getBoundingClientRect(); } catch (err) {}
+21022:         if (!mountRect || mountRect.width <= 0) return fallback;
+21023: 
+21024:         const topBandBottom = mountRect.top + Math.min(58, Math.max(40, mountRect.height * 0.14));
+21025:         const rightBandWidth = Math.min(160, Math.max(92, mountRect.width * 0.10));
+21026:         const rightBandStart = mountRect.right - rightBandWidth;
+21027:         const selector = 'button, a, [role="button"], [onclick], [data-dismiss], [aria-label], [title], .close, .lightbox-close, .glyphicon, .fa, .fas, .far, svg';
+21028:         let controls = [];
+21029:         try { controls = Array.from(root.querySelectorAll(selector)); } catch (err) {}
+21030: 
+21031:         let leftEdge = null;
+21032:         for (const control of controls) {
+21033:             const rect = missionValueVisibleControlRect(control);
+21034:             if (!rect) continue;
+21035:             if (rect.bottom < mountRect.top - 2 || rect.top > topBandBottom) continue;
+21036:             if (rect.right < rightBandStart || rect.left >= mountRect.right + 2) continue;
+21037:             leftEdge = leftEdge === null ? rect.left : Math.min(leftEdge, rect.left);
+21038:         }
+21039: 
+21040:         if (leftEdge === null) return fallback;
+21041:         const measured = Math.ceil(mountRect.right - leftEdge + 16);
+21042:         const maximum = Math.max(fallback, Math.floor(mountRect.width * 0.42));
+21043:         return Math.max(fallback, Math.min(maximum, measured));
+21044:     }
+21045: 
+21046:     function positionMissionValueRow(candidate, row) {
+21047:         if (!row) return;
+21048:         const offset = missionValueRightControlOffset(candidate);
+21049:         row.style.setProperty('padding-right', `${offset}px`, 'important');
+21050:         row.dataset.mcmsRightOffset = String(offset);
+21051:     }
+21052: 
+21053:     function syncMissionValueCandidate(candidate) {
+21054:         const { mount, missionId } = candidate || {};
+21055:         if (!mount?.isConnected || missionId === null) return false;
+21056:         const marker = getMissionMarkerIndex().byId.get(missionId) || getMissionMarkerIndex().byId.get(String(missionId)) || null;
+21057:         const snapshot = liveMissionSnapshots.get(missionId) || liveMissionSnapshots.get(String(missionId)) || missionSnapshotCache.get(missionId) || missionSnapshotCache.get(String(missionId)) || null;
+21058:         const details = criticalMissionValueDetails({ missionId, marker, snapshot });
+21059:         const formatted = formatMissionWindowValue(details.value);
+21060: 
+21061:         let rows = [];
+21062:         try { rows = Array.from(mount.querySelectorAll(':scope > .mcms-mission-value-row')); } catch (err) {
+21063:             try { rows = Array.from(mount.children || []).filter(child => child.classList?.contains('mcms-mission-value-row')); } catch (innerErr) {}
+21064:         }
+21065:         const row = rows.shift() || null;
+21066:         rows.forEach(extra => extra.remove());
+21067:         if (!formatted) {
+21068:             row?.remove();
+21069:             return false;
+21070:         }
+21071: 
+21072:         const doc = mount.ownerDocument || document;
+21073:         const nextRow = row || doc.createElement('div');
+21074:         if (!row) {
+21075:             nextRow.className = 'mcms-mission-value-row';
+21076:             nextRow.setAttribute('data-mcms-mission-value', 'true');
+21077:             const badge = doc.createElement('span');
+21078:             badge.className = 'mcms-mission-value-badge';
+21079:             nextRow.appendChild(badge);
+21080:             mount.insertBefore(nextRow, mount.firstChild || null);
+21081:         }
+21082:         nextRow.dataset.mcmsMissionId = String(missionId);
+21083:         const badge = nextRow.querySelector('.mcms-mission-value-badge');
+21084:         if (!badge) return false;
+
+===== LINES 21120-21292 =====
+21120:     }
+21121: 
+21122:     function ensureMissionValueDocumentStyle(doc) {
+21123:         if (!doc || doc === document) return;
+21124:         const styleId = 'mcms-mission-value-document-style';
+21125:         if (doc.getElementById?.(styleId)) return;
+21126:         const style = doc.createElement?.('style');
+21127:         if (!style) return;
+21128:         style.id = styleId;
+21129:         style.textContent = `
+21130:             .mcms-mission-value-row {
+21131:                 display:flex !important;align-items:center !important;justify-content:flex-end !important;
+21132:                 width:100% !important;min-height:30px !important;box-sizing:border-box !important;
+21133:                 margin:0 0 8px 0 !important;padding:5px 46px 5px 8px !important;clear:both !important;
+21134:                 position:relative !important;z-index:2 !important;pointer-events:none !important;
+21135:             }
+21136:             .mcms-mission-value-badge {
+21137:                 display:inline-flex !important;align-items:center !important;justify-content:center !important;
+21138:                 max-width:min(100%,260px) !important;min-height:25px !important;box-sizing:border-box !important;
+21139:                 padding:4px 10px !important;border:1px solid rgba(235,190,64,.72) !important;border-radius:8px !important;
+21140:                 background:linear-gradient(145deg,rgba(48,39,13,.96),rgba(19,21,24,.96)) !important;
+21141:                 color:#ffe59a !important;box-shadow:0 2px 8px rgba(0,0,0,.34) !important;
+21142:                 font:900 11px/1.25 Arial,Helvetica,sans-serif !important;letter-spacing:.15px !important;
+21143:                 text-align:right !important;white-space:nowrap !important;overflow:hidden !important;
+21144:                 text-overflow:ellipsis !important;pointer-events:none !important;
+21145:             }
+21146:             @media (max-width:520px) {
+21147:                 .mcms-mission-value-row { padding-right:40px !important; }
+21148:                 .mcms-mission-value-badge { max-width:100% !important;font-size:10px !important; }
+21149:             }
+21150:         `;
+21151:         (doc.head || doc.documentElement)?.appendChild(style);
+21152:     }
+21153: 
+21154:     function clearMissionValueDocumentStyles() {
+21155:         for (const context of transportSweepDocumentContexts()) {
+21156:             if (context.doc === document) continue;
+21157:             try { context.doc.getElementById?.('mcms-mission-value-document-style')?.remove(); } catch (err) {}
+21158:         }
+21159:     }
+21160: 
+21161:     function observeMissionValueFrame(frame) {
+21162:         if (!frame || missionValueObservedFrames.has(frame)) return;
+21163:         missionValueObservedFrames.add(frame);
+21164:         const onLoad = () => scheduleMissionValueScan(40);
+21165:         frame.addEventListener('load', onLoad);
+21166:         runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+21167:     }
+21168: 
+21169:     function observeMissionValueDocument(doc) {
+21170:         if (!doc) return;
+21171:         ensureMissionValueDocumentStyle(doc);
+21172:         if (missionValueObservedDocuments.has(doc)) return;
+21173:         missionValueObservedDocuments.add(doc);
+21174:         let frames = [];
+21175:         try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
+21176:         frames.forEach(observeMissionValueFrame);
+21177:         const root = doc.documentElement || doc.body;
+21178:         if (!root) return;
+21179:         const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"]';
+21180:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+21181:             const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
+21182:                 if (node?.nodeType !== 1) return false;
+21183:                 if (node.matches?.(activitySelector)) return true;
+21184:                 return Boolean(node.querySelector?.(activitySelector));
+21185:             }));
+21186:             if (!relevant) return;
+21187:             try { doc.querySelectorAll('iframe, frame').forEach(observeMissionValueFrame); } catch (err) {}
+21188:             scheduleMissionValueScan(50);
+21189:         }));
+21190:         observer.observe(root, { childList: true, subtree: true });
+21191:     }
+21192: 
+21193:     function installMissionValueWindows() {
+21194:         if (!missionValueFeatureInstalled) {
+21195:             missionValueFeatureInstalled = true;
+21196:             runtimeOnCleanup(() => {
+21197:                 runtimeClearTimeout(missionValueScanTimer);
+21198:                 missionValueScanTimer = null;
+21199:                 clearMissionValueIndicators();
+21200:                 clearMissionValueDocumentStyles();
+21201:             });
+21202:         }
+21203:         for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);
+21204:         scheduleMissionValueScan(0);
+21205:         runtimeSetTimeout(() => scheduleMissionValueScan(0), 180);
+21206:         runtimeSetTimeout(() => scheduleMissionValueScan(0), 800);
+21207:     }
+21208: 
+21209:     function criticalMissionValueForEntry(entry) {
+21210:         return criticalMissionValueDetails(entry).value;
+21211:     }
+21212: 
+21213:     function criticalValueEligible(entry) {
+21214:         return selectedCriticalValueMode() === 'total' || Boolean(entry?.eligibleForCredits);
+21215:     }
+21216: 
+21217:     function criticalValueGroup(entries, predicate = () => true) {
+21218:         let total = 0;
+21219:         let known = 0;
+21220:         let unknown = 0;
+21221:         let eligible = 0;
+21222:         const seenMissionIds = new Set();
+21223:         const sources = new Map();
+21224:         for (const entry of entries) {
+21225:             if (!predicate(entry) || !criticalValueEligible(entry)) continue;
+21226:             const missionId = normaliseMissionId(entry?.missionId);
+21227:             if (missionId !== null && seenMissionIds.has(missionId)) continue;
+21228:             if (missionId !== null) seenMissionIds.add(missionId);
+21229:             if (entry?.eligibleForCredits) eligible += 1;
+21230:             const details = criticalMissionValueDetails(entry);
+21231:             const value = details.value;
+21232:             if (value === null || !Number.isFinite(Number(value))) {
+21233:                 unknown += 1;
+21234:                 continue;
+21235:             }
+21236:             total += Math.max(0, Number(value) || 0);
+21237:             known += 1;
+21238:             sources.set(details.source, (sources.get(details.source) || 0) + 1);
+21239:         }
+21240:         return { total: Math.round(total), known, unknown, eligible, count: seenMissionIds.size, sources };
+21241:     }
+21242: 
+21243:     function criticalValueDisplay(group) {
+21244:         if (!group?.known) return 'UNKNOWN';
+21245:         return `≈${formatOperationalCompactCredits(group.total)} CR`;
+21246:     }
+21247: 
+21248:     function criticalValueCoverage(group) {
+21249:         return `${group.known.toLocaleString('en-GB')} / ${(group.known + group.unknown).toLocaleString('en-GB')} valued`;
+21250:     }
+21251: 
+21252:     function criticalValueTitle(label, group) {
+21253:         const knownText = `${group.known.toLocaleString('en-GB')} valued mission${group.known === 1 ? '' : 's'}`;
+21254:         const unknownText = group.unknown ? ` · ${group.unknown.toLocaleString('en-GB')} value${group.unknown === 1 ? '' : 's'} unavailable` : '';
+21255:         return `${label}: approximately ${group.total.toLocaleString('en-GB')} credits from MissionChief average-credit data · ${knownText}${unknownText}`;
+21256:     }
+21257: 
+21258:     function criticalValuesHtml(allEntries, visibleEntries) {
+21259:         const scopedEntries = visibleEntries;
+21260:         const noScene = criticalValueGroup(scopedEntries, entry => Boolean(entry?.units?.known) && Math.max(0, Number(entry?.units?.onScene) || 0) === 0);
+21261:         const assistance = criticalValueGroup(scopedEntries, entry => criticalEntryPrimaryStatus(entry) === 'assistance');
+21262:         const visible = criticalValueGroup(scopedEntries);
+21263:         const mode = selectedCriticalValueMode();
+21264:         const showingText = `${mode === 'eligible' ? 'Eligible' : 'Total'} MissionChief average credits for ${visibleEntries.length.toLocaleString('en-GB')} currently visible mission${visibleEntries.length === 1 ? '' : 's'}`;
+21265:         const valueCard = (className, label, group) => `<div class="mcms-critical-value-card ${className}" title="${escapeHtml(criticalValueTitle(label, group))}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(criticalValueDisplay(group))}</strong><small>${escapeHtml(criticalValueCoverage(group))}</small></div>`;
+21266:         return `
+21267:             <div class="mcms-critical-values-label" title="${escapeHtml(showingText)}"><strong>MISSION</strong><span>VALUE</span></div>
+21268:             <div class="mcms-critical-value-mode" role="group" aria-label="Mission value mode">
+21269:                 <button type="button" data-critical-value-mode="total" class="${mode === 'total' ? 'mcms-filter-active' : ''}" aria-pressed="${mode === 'total'}">TOTAL</button>
+21270:                 <button type="button" data-critical-value-mode="eligible" class="${mode === 'eligible' ? 'mcms-filter-active' : ''}" aria-pressed="${mode === 'eligible'}">ELIGIBLE</button>
+21271:             </div>
+21272:             <div class="mcms-critical-values-grid">
+21273:                 ${valueCard('mcms-value-no-scene', 'No Scene', noScene)}
+21274:                 ${valueCard('mcms-value-assistance', 'Assistance', assistance)}
+21275:                 ${valueCard('mcms-value-all', 'Visible Value', visible)}
+21276:             </div>
+21277:             <span class="mcms-critical-showing">SHOWING ${visibleEntries.length.toLocaleString('en-GB')} OF ${allEntries.length.toLocaleString('en-GB')} MISSIONS</span>`;
+21278:     }
+21279: 
+21280:     function criticalSummaryHtml(allEntries) {
+21281:         const baseForStatus = criticalFilterEntries(allEntries, ['status']);
+21282:         const baseForOnWay = criticalFilterEntries(allEntries, ['onway']);
+21283:         const baseForMyUnits = criticalFilterEntries(allEntries, ['myunits']);
+21284:         const statusCounts = { all: baseForStatus.length, attention: 0, 'no-scene': 0, assistance: 0, clearing: 0, 'on-scene': 0, syncing: 0 };
+21285:         for (const entry of baseForStatus) {
+21286:             const key = criticalEntryPrimaryStatus(entry);
+21287:             if (Object.prototype.hasOwnProperty.call(statusCounts, key)) statusCounts[key] += 1;
+21288:             if (key === 'no-scene' || key === 'assistance') statusCounts.attention += 1;
+21289:         }
+21290:         let onWayMissions = 0;
+21291:         let onWayVehicles = 0;
+21292:         for (const entry of baseForOnWay) {
+
+===== LINES 23944-24068 =====
+23944:         observedCreditsElement = element;
+23945:         processCreditTotal(element.textContent);
+23946:         creditsValueObserver = runtimeTrackObserver(new MutationObserver(() => processCreditTotal(element.textContent)));
+23947:         creditsValueObserver.observe(element, { childList: true, subtree: true, characterData: true });
+23948:         return true;
+23949:     }
+23950: 
+23951: 
+23952:     // --- Discord Financial Command + local archive --------------------------------------------
+23953:     const DISCORD_WEBHOOK_HOSTS = new Set(['discord.com', 'ptb.discord.com', 'canary.discord.com', 'discordapp.com', 'ptb.discordapp.com', 'canary.discordapp.com']);
+23954:     const DISCORD_REQUEST_TIMEOUT_MS = 30000;
+23955:     const DISCORD_MAX_FIELD_LENGTH = 1024;
+23956:     const FINANCE_MAX_LEDGER_PAGES = 5000;
+23957:     const FINANCE_FETCH_YIELD_EVERY = 5;
+23958:     const FINANCE_SESSION_STARTED_AT = Date.now();
+23959:     const FINANCE_PERIOD_IDS = new Set(['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom']);
+23960:     const FINANCE_CHART_FILENAME = 'missionchief-financial-report.png';
+23961:     let discordFinanceChartUrl = '';
+23962: 
+23963:     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
+23964:     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
+23965:     const FINANCE_RULE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+23966:     const FINANCE_POLICY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+23967:     const FINANCE_VAULT_SCHEMA = 2;
+23968:     const FINANCE_VAULT_MAX_TRANSACTIONS = 250000;
+23969:     const FINANCE_VAULT_MAX_CHECKPOINTS = 1000;
+23970:     const FINANCE_INCREMENTAL_MAX_PAGES = 60;
+23971:     const FINANCE_DEEP_SCAN_HARD_PAGE_CAP = 5000;
+23972:     const FINANCE_DEEP_SCAN_HARD_BATCH_CAP = 4;
+23973:     const FINANCE_SCAN_CHECKPOINT_PAGES = 100;
+23974:     const FINANCE_FEED_TIMEOUT_MS = 30000;
+23975:     const FINANCE_ACCOUNTING_GROUPS = new Set(['operatingIncome', 'otherIncome', 'operatingExpense', 'capitalInvestment']);
+23976:     const BUILTIN_FINANCIAL_RULES = Object.freeze([
+23977:         { id: 'income-refund', direction: 'income', match: 'regex', pattern: 'refund|reimburse|cancel(?:ed|led)?', key: 'refunds', label: 'Refunds & Reimbursements', accountingGroup: 'otherIncome', missionType: '', confidence: 0.98 },
+23978:         { id: 'income-alliance-mission', direction: 'income', match: 'regex', pattern: '^\\[alliance\\]', key: 'allianceMissions', label: 'Alliance Missions', accountingGroup: 'operatingIncome', missionType: 'alliance', confidence: 0.99 },
+23979:         { id: 'income-patient', direction: 'income', match: 'regex', pattern: 'patient (?:transport|treatment)|hospital\\s*-\\s*alliance', key: 'patientIncome', label: 'Patient Transport & Treatment', accountingGroup: 'operatingIncome', missionType: 'transport', confidence: 0.98 },
+23980:         { id: 'income-prisoner', direction: 'income', match: 'regex', pattern: 'prisoner.*transport|police\\s*-\\s*alliance', key: 'prisonerIncome', label: 'Prisoner Transport', accountingGroup: 'operatingIncome', missionType: 'transport', confidence: 0.98 },
+23981:         { id: 'income-login', direction: 'income', match: 'contains', pattern: 'daily login reward', key: 'dailyLogin', label: 'Daily Login Rewards', accountingGroup: 'otherIncome', missionType: '', confidence: 0.99 },
+23982:         { id: 'income-task', direction: 'income', match: 'contains', pattern: 'completed task', key: 'taskRewards', label: 'Task Rewards', accountingGroup: 'otherIncome', missionType: 'task', confidence: 0.97 },
+23983:         { id: 'income-event', direction: 'income', match: 'regex', pattern: 'event|bonus|reward', key: 'eventBonus', label: 'Event & Bonus Income', accountingGroup: 'otherIncome', missionType: '', confidence: 0.78 },
+23984:         { id: 'spend-vehicle', direction: 'spending', match: 'regex', pattern: 'vehicle bought|vehicle purchase|bought vehicle', key: 'vehicles', label: 'Vehicle Purchases', accountingGroup: 'capitalInvestment', missionType: '', confidence: 0.99 },
+23985:         { id: 'spend-vehicle-upgrade', direction: 'spending', match: 'regex', pattern: 'vehicle.*upgrad|upgrade.*vehicle|vehicle equipment|equipment for .*vehicle', key: 'vehicleUpgrades', label: 'Vehicle Upgrades & Equipment', accountingGroup: 'capitalInvestment', missionType: '', confidence: 0.94 },
+23986:         { id: 'spend-building', direction: 'spending', match: 'regex', pattern: 'building constructed|station constructed|new building', excludePattern: 'building complex.*upgrad|upgraded to building complex', key: 'buildings', label: 'Buildings & Stations', accountingGroup: 'capitalInvestment', missionType: '', confidence: 0.98 },
+23987:         { id: 'spend-extension', direction: 'spending', match: 'regex', pattern: 'upgrad|extended guard|extension|speciali[sz]ation built|attached building|building complex', key: 'extensions', label: 'Extensions & Building Upgrades', accountingGroup: 'capitalInvestment', missionType: '', confidence: 0.90 },
+23988:         { id: 'spend-training', direction: 'spending', match: 'regex', pattern: 'education|training|school|course|applicant', key: 'training', label: 'Training & Education', accountingGroup: 'operatingExpense', missionType: '', confidence: 0.93 },
+23989:         { id: 'spend-recruitment', direction: 'spending', match: 'regex', pattern: 'recruit|personnel|staff|hire', key: 'recruitment', label: 'Recruitment & Staffing', accountingGroup: 'operatingExpense', missionType: '', confidence: 0.90 },
+23990:         { id: 'spend-alliance', direction: 'spending', match: 'regex', pattern: 'alliance|association|verband|fund|donation|contribution', key: 'allianceSpending', label: 'Alliance Contributions', accountingGroup: 'operatingExpense', missionType: '', confidence: 0.92 }
+23991:     ]);
+23992:     const BUILTIN_FINANCIAL_FALLBACKS = Object.freeze({
+23993:         income: { id: 'fallback-income', key: 'unclassifiedIncome', label: 'Unclassified Positive Income', accountingGroup: 'otherIncome', missionType: '', confidence: 0.35 },
+23994:         spending: { id: 'fallback-spending', key: 'unclassifiedSpending', label: 'Unclassified Spending', accountingGroup: 'operatingExpense', missionType: '', confidence: 0.25 }
+23995:     });
+23996:     const BUILTIN_FINANCIAL_POLICY = Object.freeze({
+23997:         schema: 2,
+23998:         version: 'built-in',
+23999:         risk: {
+24000:             classificationCritical: 80,
+24001:             classificationWarning: 92,
+24002:             capitalIncomeRatio: 150,
+24003:             allianceConcentration: 75,
+24004:             categoryConcentration: 80,
+24005:             volatilityWarning: 120,
+24006:             revenueContraction: -20,
+24007:             drawdownWarning: 30,
+24008:             runwayCriticalDays: 3
+24009:         },
+24010:         scan: { pageCap: 5000, batchSize: 3, retryAttempts: 3, checkpointPages: 100 }
+24011:     });
+24012:     let activeFinancialRules = BUILTIN_FINANCIAL_RULES.map(rule => compileFinancialRule({ ...rule, source: 'built-in' }));
+24013:     let activeFinancialFallbacks = { income: { ...BUILTIN_FINANCIAL_FALLBACKS.income }, spending: { ...BUILTIN_FINANCIAL_FALLBACKS.spending } };
+24014:     let activeFinancialRuleVersion = 'built-in';
+24015:     let activeFinancialPolicy = clonePlainData(BUILTIN_FINANCIAL_POLICY);
+24016:     let activeFinancialPolicyVersion = 'built-in';
+24017:     let financeVaultStoreMemory = null;
+24018:     const financeVaultProfileMemory = new Map();
+24019: 
+24020:     function financeNormaliseText(value) {
+24021:         return String(value || '').normalize('NFKC').replace(/\s+/gu, ' ').trim();
+24022:     }
+24023: 
+24024:     function financeHashString(value) {
+24025:         const text = String(value || '');
+24026:         let first = 0x811c9dc5;
+24027:         let second = 0x9e3779b9;
+24028:         for (let index = 0; index < text.length; index++) {
+24029:             const code = text.charCodeAt(index);
+24030:             first ^= code;
+24031:             first = Math.imul(first, 0x01000193) >>> 0;
+24032:             second ^= code + index;
+24033:             second = Math.imul(second, 0x85ebca6b) >>> 0;
+24034:         }
+24035:         return `${first.toString(36).padStart(7, '0')}${second.toString(36).padStart(7, '0')}`;
+24036:     }
+24037: 
+24038:     function compileFinancialRule(rule) {
+24039:         const compiled = { ...rule };
+24040:         compiled.patternRegex = null;
+24041:         compiled.excludeRegex = null;
+24042:         if (compiled.match === 'regex') {
+24043:             try { compiled.patternRegex = new RegExp(compiled.pattern, 'iu'); } catch (err) {}
+24044:         }
+24045:         if (compiled.excludePattern) {
+24046:             try { compiled.excludeRegex = new RegExp(compiled.excludePattern, 'iu'); } catch (err) {}
+24047:         }
+24048:         return compiled;
+24049:     }
+24050: 
+24051:     function financeRandomToken(byteLength = 24) {
+24052:         const bytes = new Uint8Array(Math.max(16, Number(byteLength) || 24));
+24053:         const cryptoObject = pageWindow.crypto || globalThis.crypto;
+24054:         if (cryptoObject?.getRandomValues) cryptoObject.getRandomValues(bytes);
+24055:         else for (let index = 0; index < bytes.length; index++) bytes[index] = Math.floor(Math.random() * 256);
+24056:         let binary = '';
+24057:         for (const byte of bytes) binary += String.fromCharCode(byte);
+24058:         return btoa(binary).replace(/\+/gu, '-').replace(/\//gu, '_').replace(/=+$/gu, '');
+24059:     }
+24060: 
+24061:     function financePlayerIdentity(account = null) {
+24062:         const id = account?.userId ?? currentUserIdCached();
+24063:         const name = financeNormaliseText(account?.userName || document.querySelector?.('#navbar_profile_link, a[href*="/profile/"]')?.textContent || '');
+24064:         return { id: id === undefined || id === null || id === '' ? null : String(id), name: name.slice(0, 120) };
+24065:     }
+24066: 
+24067:     function financePlayerProfileKey(player) {
+24068:         if (player?.id) return `id:${String(player.id)}`;
+
+===== LINES 26665-26789 =====
+26665:         if (feature === 'autoNight') {
+26666:             state.autoNight.enabled = !state.autoNight.enabled;
+26667:             state.autoNight.lastBucket = '';
+26668:         }
+26669:         if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+26670:         if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+26671:         if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+26672:         if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+26673: 
+26674:         if (state.cleanMode) closePanel();
+26675: 
+26676:         if (!criticalViewActive) saveState();
+26677:         applyRootAttributes();
+26678:         updateUI();
+26679:         if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
+26680:         if (feature === 'buildings') synchronisePersonalBuildingVisibility();
+26681:         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+26682:         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+26683:         if (feature === 'missionValue') {
+26684:             if (state.missionValue) installMissionValueWindows();
+26685:             else clearMissionValueIndicators();
+26686:             showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off');
+26687:         }
+26688:         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+26689:         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
+26690:         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+26691:         if (feature === 'unitCommitment') {
+26692:             if (state.unitCommitment) {
+26693:                 showToast('Loading unit assignments…');
+26694:                 refreshPersonalVehicleData(true).then(ok => {
+26695:                     scheduleUnitCommitmentRefresh(0);
+26696:                     showToast(ok ? 'Unit Count on' : 'Unit Count on · live vehicle data unavailable');
+26697:                 });
+26698:             } else showToast('Unit Count off');
+26699:         }
+26700:         if (feature === 'transportWatcher') showToast(state.transportWatcher ? 'Transport Watcher on' : 'Transport Watcher off');
+26701:         if (feature === 'majorIncidentFeed') {
+26702:             if (state.majorIncidentFeed.enabled) {
+26703:                 refreshMissionSnapshots();
+26704:                 scheduleMajorIncidentFeedRender(0);
+26705:             } else removeMajorIncidentFeed();
+26706:             showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
+26707:         }
+26708:         if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
+26709:         if (feature === 'allianceBuildingsMapBlocker') {
+26710:             if (state.allianceBuildingsMap === false) {
+26711:                 installAllianceBuildingsEarlyStyle();
+26712:                 installAllianceBuildingsLeafletAssignmentGuard();
+26713:                 installAllianceBuildingsContextWatcherEarly();
+26714:             } else {
+26715:                 clearAllianceBuildingsEarlyContext();
+26716:             }
+26717:             showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
+26718:             if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
+26719:         }
+26720:         if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
+26721:         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
+26722:         if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off');
+26723:         if (feature === 'resourceGap') {
+26724:             if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
+26725:             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
+26726:         }
+26727:         if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
+26728:         if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
+26729:         if (feature === 'autoNight') runAutoNight(true);
+26730:     }
+26731: 
+26732:     function runAutoNight(force = false) {
+26733:         if (!state.autoNight.enabled) return;
+26734:         const bucket = isNightNow(state.autoNight.nightStart, state.autoNight.dayStart) ? 'night' : 'day';
+26735:         if (!force && state.autoNight.lastBucket === bucket) return;
+26736:         state.autoNight.lastBucket = bucket;
+26737:         state.theme = bucket === 'night' ? normaliseTheme(state.autoNight.nightTheme) : normaliseTheme(state.autoNight.dayTheme);
+26738:         saveState();
+26739:         applyRootAttributes();
+26740:         updateUI();
+26741:     }
+26742: 
+26743:     function isNightNow(start, end) {
+26744:         const now = new Date();
+26745:         const current = now.getHours() * 60 + now.getMinutes();
+26746:         const startMin = parseTime(start, 19 * 60);
+26747:         const endMin = parseTime(end, 7 * 60);
+26748:         if (startMin === endMin) return false;
+26749:         if (startMin < endMin) return current >= startMin && current < endMin;
+26750:         return current >= startMin || current < endMin;
+26751:     }
+26752: 
+26753:     function parseTime(value, fallback) {
+26754:         const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+26755:         if (!match) return fallback;
+26756:         return clamp(match[1], 0, 23, Math.floor(fallback / 60)) * 60 + clamp(match[2], 0, 59, fallback % 60);
+26757:     }
+26758: 
+26759:     function shouldSuppressControl() {
+26760:         if (state.cleanMode) return false;
+26761:         if (document.body && document.body.classList.contains('modal-open')) return true;
+26762: 
+26763:         return SUPPRESSION_SELECTORS.some(selector => {
+26764:             let nodes;
+26765:             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
+26766:             return nodes.some(el => {
+26767:                 if (!el || el.closest(`#${SCRIPT.controlId}`) || el.closest(`#${SCRIPT.panelId}`)) return false;
+26768:                 if (!isVisible(el)) return false;
+26769:                 const rect = el.getBoundingClientRect();
+26770:                 return (rect.width * rect.height) > 1200;
+26771:             });
+26772:         });
+26773:     }
+26774: 
+26775:     function refreshSuppression() {
+26776:         const control = document.getElementById(SCRIPT.controlId);
+26777:         if (!control) return;
+26778:         control.classList.toggle('mcms-hidden-by-menu', shouldSuppressControl());
+26779:     }
+26780: 
+26781:     function fitControlToMap() {
+26782:         runtimeClearTimeout(fitTimer);
+26783:         fitTimer = runtimeSetTimeout(() => {
+26784:             const panel = document.getElementById(SCRIPT.panelId);
+26785:             const mapEl = getLargestLeafletMap();
+26786:             if (!mapEl) {
+26787:                 if (!isTouchLayoutActive()) {
+26788:                     observeDesktopPanelWorkspace(null);
+26789:                     applyDesktopPanelSizing(panel, null);
+
+===== LINES 27534-27691 =====
+27534:                 <div class="mcms-grid-2">${coreThemeButtons}</div>
+27535:                 <div class="mcms-section-label">Emergency services</div>
+27536:                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
+27537:                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+27538:             </section>
+27539:             <section class="mcms-tab-panel" data-panel="tools">
+27540:                 <div class="mcms-section-label">Map tools</div>
+27541:                 <div class="mcms-grid-2">
+27542:                     ${makeToggleButton('clean', '▢', 'Clean', 'Hide map controls for screenshots. Shortcut: C')}
+27543:                     ${makeToggleButton('markerFocus', '◉', 'Focus', 'Dim detected buildings/vehicles and keep missions clearer. Shortcut: F')}
+27544:                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
+27545:                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
+27546:                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+27547:                     ${makeToggleButton('heatmap', '▦', 'Heatmap', 'Show strong and weak operational coverage across the visible map.')}
+27548:                 </div>
+27549:                 <div class="mcms-row" style="margin-top:8px">
+27550:                     <span class="mcms-row-label">Ring radius</span>
+27551:                     <select class="mcms-select" data-setting="coverage-radius">
+27552:                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
+27553:                     </select>
+27554:                 </div>
+27555:                 <div class="mcms-section-label">Coverage Heatmap</div>
+27556:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+27557:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+27558:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+27559:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+27560:                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+27561:                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
+27562:                 <div class="mcms-grid-2">
+27563:                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
+27564:                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
+27565:                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+27566:                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+27567:                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
+27568:                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+27569:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
+27570:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
+27571:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Temporarily show only personal missions aged 8 hours or more. Shortcut: 9')}
+27572:                 </div>
+27573:                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
+27574:                 <div class="mcms-status">Ready.</div>
+27575:             </section>
+27576:             <section class="mcms-tab-panel" data-panel="resources">
+27577:                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
+27578:                 <div class="mcms-grid-2">
+27579:                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
+27580:                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
+27581:                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
+27582:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
+27583:                 </div>
+27584:                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
+27585:                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
+27586:                 <div data-transport-sweep></div>
+27587:                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+27588:                 <div class="mcms-section-label">Resource Gap Finder</div>
+27589:                 <div class="mcms-grid-2">
+27590:                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates in Mission Inspector.')}
+27591:                 </div>
+27592:                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+27593:                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+27594:             </section>
+27595:             <section class="mcms-tab-panel" data-panel="ops">
+27596:                 <div class="mcms-section-label">Mission Intelligence</div>
+27597:                 <div class="mcms-grid-2">
+27598:                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+27599:                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
+27600:                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
+27601:                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
+27602:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
+27603:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your own committed unit counts beside missions. Shortcut: 8')}
+27604:                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
+27605:                         <span class="mcms-iconbox">V</span>
+27606:                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
+27607:                     </button>
+27608:                 </div>
+27609:                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+27610:                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+27611:                 <div class="mcms-section-label">Session Performance</div>
+27612:                 <div data-ops-session></div>
+27613:                 <div class="mcms-section-label">Mission Age Workflow</div>
+27614:                 <div class="mcms-grid-2">
+27615:                     <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+27616:                     <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="fit-critical">Frame Aged</button>
+27617:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Show only personal missions aged 8 hours or more. Shortcut: 9')}
+27618:                     ${makeToggleButton('missionAge', '6', 'Mission Age', 'Show personal mission age with 8H amber, 16H orange and 24H red warning stages. Shortcut: 6')}
+27619:                 </div>
+27620:                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
+27621:                 <div class="mcms-ops-list" data-ops-critical-preview></div>
+27622:                 <div class="mcms-section-label">Completion History</div>
+27623:                 <div class="mcms-ops-list" data-ops-history></div>
+27624:                 <div class="mcms-grid-2" style="margin-top:7px !important">
+27625:                     <button class="mcms-small-btn" type="button" data-action="reset-session">Reset Session</button>
+27626:                     <button class="mcms-small-btn" type="button" data-action="clear-payout-history">Clear History</button>
+27627:                 </div>
+27628:             </section>
+27629:             <section class="mcms-tab-panel" data-panel="payouts">
+27630:                 <div class="mcms-section-label">Emergency Payout Flash</div>
+27631:                 <div class="mcms-grid-2">
+27632:                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
+27633:                     ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+27634:                 </div>
+27635:                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
+27636:                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
+27637:                 <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+27638:                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
+27639:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+27640:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+27641:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+27642:             </section>
+27643:             <section class="mcms-tab-panel" data-panel="discord">
+27644:                 <div class="mcms-section-label">Discord Financial Command</div>
+27645:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
+27646:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
+27647:                 <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+27648:                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
+27649:                 <div class="mcms-discord-date-grid">
+27650:                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
+27651:                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
+27652:                 </div>
+27653:                 <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+27654:                 <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+27655:                 <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+27656:                 <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+27657:                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
+27658:                 <div class="mcms-grid-2">
+27659:                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
+27660:                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
+27661:                 </div>
+27662:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate and Post Supreme Audit</button>
+27663:                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+27664: 
+27665:                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
+27666:                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+27667:                 <div class="mcms-row"><span class="mcms-row-label">History retention</span><select class="mcms-select" data-setting="finance-vault-retention"><option value="all">All available</option><option value="1825">5 years</option><option value="730">2 years</option><option value="365">1 year</option><option value="180">180 days</option><option value="90">90 days</option></select></div>
+27668:                 <div class="mcms-row"><span class="mcms-row-label">GitHub intelligence feeds</span><select class="mcms-select" data-setting="finance-rule-feed"><option value="true">Automatic rules + policy</option><option value="false">Built-in intelligence only</option></select></div>
+27669:                 <div class="mcms-grid-2">
+27670:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-scan">Deep Scan All Available</button>
+27671:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-cancel">Stop Scan</button>
+27672:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
+27673:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
+27674:                 </div>
+27675:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh GitHub Financial Intelligence</button>
+27676:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear This Player's Local Archive</button>
+27677:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
+27678:                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
+27679:                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
+27680:                 <div class="mcms-status mcms-discord-status" data-finance-rule-status data-tone="neutral">Built-in financial intelligence active.</div>
+27681:                 <div class="mcms-status">GitHub hosts public transaction-classification rules and audit policy only. The Toolkit never uploads player ledger data, Discord webhooks or repository credentials. The local archive is indexed by MissionChief player ID/name and can be transferred between devices using Export Archive / Import Archive or the complete private Toolkit backup.</div>
+27682:                 <div class="mcms-status mcms-finance-private-note">Private backup warning: Export All includes your Discord webhook and locally stored MissionChief financial history. Anyone holding the file may post through the webhook and inspect the exported game ledger.</div>
+27683:             </section>
+27684:             <section class="mcms-tab-panel" data-panel="places">
+27685:                 <div class="mcms-section-label">Quick jumps + screen shortcuts</div>
+27686:                 <div class="mcms-quick-list"></div>
+27687:                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
+27688:                 <div class="mcms-bookmark-list"></div>
+27689:             </section>
+27690:             <section class="mcms-tab-panel" data-panel="settings">
+27691:                 <div class="mcms-section-label">Device layout</div>
+
+===== LINES 27906-28123 =====
+27906:                 ? `data-action="place-go" data-place="${escapeHtml(entry.id)}"`
+27907:                 : `data-action="bookmark-go" data-slot="${entry.index}"`;
+27908:             const className = entry.kind === 'quick' ? 'mcms-pin-quick' : 'mcms-pin-custom';
+27909:             return `<button class="mcms-screen-pin-btn ${className}" type="button" ${action} data-full-label="${escapeHtml(entry.fullName)}" data-smart-label="${escapeHtml(entry.label)}" title="Jump to ${escapeHtml(entry.fullName)}" aria-label="Jump to ${escapeHtml(entry.fullName)}">${escapeHtml(entry.label)}</button>`;
+27910:         }).join('');
+27911:         if (isTouchLayoutActive()) fitControlToMap();
+27912:     }
+27913: 
+27914:     function handleAction(button) {
+27915:         const action = button.dataset.action;
+27916:         if (action === 'place-go') {
+27917:             const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
+27918:             if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
+27919:             return;
+27920:         }
+27921:         if (action === 'quick-pin') { toggleQuickPin(button.dataset.place); return; }
+27922:         if (action === 'bookmark-save') { saveBookmark(Number(button.dataset.slot)); return; }
+27923:         if (action === 'bookmark-label') { editBookmarkLabel(Number(button.dataset.slot)); return; }
+27924:         if (action === 'bookmark-go') { goBookmark(Number(button.dataset.slot)); return; }
+27925:         if (action === 'bookmark-delete') { deleteBookmark(Number(button.dataset.slot)); return; }
+27926:         if (action === 'bookmark-pin') { toggleBookmarkPin(Number(button.dataset.slot)); return; }
+27927:         if (action === 'nudge-left') { nudgeControl(-4, 0); return; }
+27928:         if (action === 'nudge-right') { nudgeControl(4, 0); return; }
+27929:         if (action === 'nudge-up') { nudgeControl(0, -4); return; }
+27930:         if (action === 'nudge-down') { nudgeControl(0, 4); return; }
+27931:         if (action === 'nudge-reset') { resetNudge(); return; }
+27932:         if (action === 'panel-left') { nudgePanel(-24, 0); return; }
+27933:         if (action === 'panel-right') { nudgePanel(24, 0); return; }
+27934:         if (action === 'panel-up') { nudgePanel(0, -24); return; }
+27935:         if (action === 'panel-down') { nudgePanel(0, 24); return; }
+27936:         if (action === 'open-help-center') { openHelpCenter(); return; }
+27937:         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
+27938:         if (action === 'open-critical-drawer') { toggleCriticalDrawer(); return; }
+27939:         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
+27940:         if (action === 'fit-critical') { fitCriticalMissions(); return; }
+27941:         if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
+27942:         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
+27943:         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
+27944:         if (action === 'reset-session') { resetSessionPerformance(); return; }
+27945:         if (action === 'clear-payout-history') { clearPayoutHistory(); return; }
+27946:         if (action === 'critical-go') { focusMissionById(button.dataset.missionId, false); return; }
+27947:         if (action === 'profile-save') { saveMapProfile(Number(button.dataset.slot)); return; }
+27948:         if (action === 'profile-load') { loadMapProfile(Number(button.dataset.slot)); return; }
+27949:         if (action === 'profile-delete') { deleteMapProfile(Number(button.dataset.slot)); return; }
+27950:         if (action === 'export-config') { exportToolkitConfig(); return; }
+27951:         if (action === 'import-config') { document.querySelector(`#${SCRIPT.panelId} [data-import-config-file]`)?.click?.(); return; }
+27952:         if (action === 'reset-config') { resetToolkitConfiguration(); return; }
+27953:         if (action === 'discord-test') { testDiscordWebhook(); return; }
+27954:         if (action === 'discord-generate-post') { postDiscordFinancialReport(); return; }
+27955:         if (action === 'discord-clear') { clearDiscordWebhook(); return; }
+27956:         if (action === 'finance-archive-scan') { scanFinancialArchive(); return; }
+27957:         if (action === 'finance-archive-cancel') { cancelFinancialArchiveScan(); return; }
+27958:         if (action === 'finance-archive-export') { exportFinancialArchive(); return; }
+27959:         if (action === 'finance-archive-import') { document.querySelector(`#${SCRIPT.panelId} [data-import-finance-file]`)?.click?.(); return; }
+27960:         if (action === 'finance-archive-clear') { clearFinancialArchive(); return; }
+27961:         if (action === 'finance-rules-refresh') { refreshFinancialIntelligenceFeeds(true).then(() => { renderFinanceVaultStatus(); showToast('GitHub financial intelligence refreshed'); }); return; }
+27962:         if (action === 'test-payout-flash') {
+27963:             const testAmount = Math.max(1000, Number(document.querySelector(`#${SCRIPT.panelId} [data-setting="payout-test-amount"]`)?.value) || state.payoutFlash.threshold);
+27964:             const triggered = triggerPayoutFlash(testAmount, true, { source: 'personal', caption: 'Emergency Response Test' });
+27965:             showToast(triggered ? 'Emergency flash test' : 'Emergency flash unavailable: map not detected');
+27966:             return;
+27967:         }
+27968:         if (action === 'panel-reset') resetPanelPosition();
+27969:     }
+27970: 
+27971:     function handleSettingChange(target) {
+27972:         const setting = target.dataset.setting;
+27973:         if (!setting) return;
+27974: 
+27975:         if (setting === 'mobile-mode' || setting === 'tablet-mode') {
+27976:             const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
+27977:             const previousLayout = activeDeviceLayout;
+27978:             if (setting === 'mobile-mode') {
+27979:                 state.mobileMode = nextValue;
+27980:                 if (nextValue === 'on') state.tabletMode = 'off';
+27981:             } else {
+27982:                 state.tabletMode = nextValue;
+27983:                 if (nextValue === 'on') state.mobileMode = 'off';
+27984:             }
+27985:             saveState();
+27986:             applyRootAttributes();
+27987:             refreshTabletModeUi();
+27988:             if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+27989:                 clearTabletPanelSizing();
+27990:                 clearTabletDockSizing();
+27991:             }
+27992:             fitControlToMap();
+27993:             positionPanelOverlay(true);
+27994:             showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
+27995:             return;
+27996:         }
+27997: 
+27998:         if (setting === 'major-incident-minimum') {
+27999:             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
+28000:             saveState();
+28001:             updateUI();
+28002:             refreshMissionSnapshots();
+28003:             scheduleMajorIncidentFeedRender(0);
+28004:             showToast(`Major Incident Feed: ${formatOperationalCompactCredits(state.majorIncidentFeed.minimumCredits)}+ credits`);
+28005:             return;
+28006:         }
+28007: 
+28008:         if (setting === 'coverage-radius') {
+28009:             state.coverage.radiusMi = Number(target.value) || 10;
+28010:             saveState();
+28011:             updateUI();
+28012:             scheduleCoverageRefresh();
+28013:             return;
+28014:         }
+28015: 
+28016:         if (setting === 'heatmap-source') state.heatmap.source = target.value === 'vehicles' ? 'vehicles' : 'stations';
+28017:         if (setting === 'heatmap-service') state.heatmap.service = ['all', 'fire', 'ambulance', 'police', 'air', 'water'].includes(target.value) ? target.value : 'all';
+28018:         if (setting === 'heatmap-radius') state.heatmap.radiusMi = Number(target.value) || 10;
+28019:         if (setting === 'heatmap-opacity') state.heatmap.opacity = clamp(target.value, 0.12, 0.55, 0.30);
+28020:         if (setting.startsWith('heatmap-')) {
+28021:             saveState(); updateUI(); scheduleHeatmapRefresh(); return;
+28022:         }
+28023: 
+28024: 
+28025:         if (setting === 'transport-sweep-delay') {
+28026:             state.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 2000;
+28027:             saveState(); updateUI();
+28028:             showToast(`Transport Sweep delay: ${state.transportSweep.delayMs / 1000}s`);
+28029:             return;
+28030:         }
+28031:         if (setting === 'transport-sweep-max') {
+28032:             state.transportSweep.maxPerRun = Math.round(clamp(target.value, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+28033:             saveState(); updateUI();
+28034:             showToast(`Transport Sweep maximum: ${state.transportSweep.maxPerRun}`);
+28035:             return;
+28036:         }
+28037: 
+28038:         if (setting === 'resource-gap-radius') {
+28039:             state.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25;
+28040:             resourceGapAnalysisCache.clear();
+28041:             saveState(); updateUI(); scheduleResourceGapRefresh(0); refreshVisibleMissionInspector();
+28042:             showToast(`Resource Gap radius: ${state.resourceGap.radiusMi}mi`);
+28043:             return;
+28044:         }
+28045: 
+28046:         if (setting === 'stuck-threshold') {
+28047:             state.stuckDetector.thresholdMin = Math.round(clamp(target.value, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+28048:             saveState();
+28049:             updateUI();
+28050:             scheduleStuckMissionRefresh(0);
+28051:             showToast(`Stuck missions: ${state.stuckDetector.thresholdMin} minutes`);
+28052:             return;
+28053:         }
+28054: 
+28055:         if (setting === 'alliance-credit-minimum') {
+28056:             state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(target.value)) ? Number(target.value) : 0;
+28057:             saveState();
+28058:             updateUI();
+28059:             scheduleAllianceCreditRefresh(0);
+28060:             showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
+28061:             return;
+28062:         }
+28063: 
+28064:         if (setting === 'discord-webhook') {
+28065:             try {
+28066:                 saveDiscordWebhookUrl(target.value);
+28067:                 setDiscordStatus(target.value ? 'Webhook saved securely in Tampermonkey storage.' : 'Webhook removed.', 'good');
+28068:             } catch (err) {
+28069:                 setDiscordStatus(err?.message || 'Webhook URL is invalid.', 'bad');
+28070:             }
+28071:             return;
+28072:         }
+28073:         if (setting === 'discord-name') {
+28074:             state.discordReport.webhookName = String(target.value || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+28075:             saveState(); updateUI();
+28076:             return;
+28077:         }
+28078:         if (setting === 'discord-top-categories') {
+28079:             state.discordReport.topCategories = [3, 5, 8].includes(Number(target.value)) ? Number(target.value) : 5;
+28080:             invalidateDiscordFinancialPreview();
+28081:             saveState(); updateUI();
+28082:             return;
+28083:         }
+28084:         if (setting === 'discord-period') {
+28085:             state.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(target.value) ? target.value : 'today';
+28086:             invalidateDiscordFinancialPreview();
+28087:             saveState(); updateUI();
+28088:             return;
+28089:         }
+28090:         if (setting === 'discord-custom-start' || setting === 'discord-custom-end') {
+28091:             const key = setting === 'discord-custom-start' ? 'customStart' : 'customEnd';
+28092:             if (/^\d{4}-\d{2}-\d{2}$/u.test(String(target.value || ''))) state.discordReport[key] = String(target.value);
+28093:             invalidateDiscordFinancialPreview();
+28094:             saveState(); updateUI();
+28095:             return;
+28096:         }
+28097:         if (setting === 'discord-comparison') {
+28098:             state.discordReport.includeComparison = String(target.value) !== 'false';
+28099:             invalidateDiscordFinancialPreview();
+28100:             saveState(); updateUI();
+28101:             return;
+28102:         }
+28103:         if (setting === 'discord-chart') {
+28104:             state.discordReport.includeChart = String(target.value) !== 'false';
+28105:             invalidateDiscordFinancialPreview();
+28106:             saveState(); updateUI();
+28107:             return;
+28108:         }
+28109: 
+28110:         if (setting === 'discord-report-mode') {
+28111:             state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
+28112:             invalidateDiscordFinancialPreview();
+28113:             saveState(); updateUI();
+28114:             return;
+28115:         }
+28116:         if (setting === 'discord-risk' || setting === 'discord-forecast') {
+28117:             const key = setting === 'discord-risk' ? 'includeRisk' : 'includeForecast';
+28118:             state.discordReport[key] = String(target.value) !== 'false';
+28119:             invalidateDiscordFinancialPreview();
+28120:             saveState(); updateUI();
+28121:             return;
+28122:         }
+28123:         if (setting === 'finance-vault-enabled') {
+
+===== LINES 28301-28429 =====
+28301:             missionSpawn: state.missionSpawn.enabled,
+28302:             resourceGap: state.resourceGap.enabled,
+28303:             allianceMissions: state.visibility.allianceMissions,
+28304:             myMissions: state.visibility.myMissions,
+28305:             vehicles: state.visibility.vehicles,
+28306:             buildings: state.visibility.buildings,
+28307:             allianceCredits: state.allianceCredits,
+28308:             missionAge: state.missionAge,
+28309:             transportWatcher: state.transportWatcher,
+28310:             unitCommitment: state.unitCommitment,
+28311:             criticalView: criticalViewActive
+28312:         };
+28313: 
+28314:         panel.querySelectorAll('[data-toggle]').forEach(btn => {
+28315:             const key = btn.dataset.toggle;
+28316:             const on = Boolean(toggleValues[key]);
+28317:             btn.classList.toggle('mcms-on', on);
+28318:             const pill = btn.querySelector('.mcms-pill');
+28319:             if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : key === 'heatmap' ? (on ? `${state.heatmap.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
+28320:         });
+28321: 
+28322:         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
+28323:         if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
+28324:         const radius = panel.querySelector('[data-setting="coverage-radius"]');
+28325:         if (radius) radius.value = String(state.coverage.radiusMi);
+28326:         const heatmapSource = panel.querySelector('[data-setting="heatmap-source"]');
+28327:         if (heatmapSource) heatmapSource.value = state.heatmap.source;
+28328:         const heatmapService = panel.querySelector('[data-setting="heatmap-service"]');
+28329:         if (heatmapService) heatmapService.value = state.heatmap.service;
+28330:         const heatmapRadius = panel.querySelector('[data-setting="heatmap-radius"]');
+28331:         if (heatmapRadius) heatmapRadius.value = String(state.heatmap.radiusMi);
+28332:         const heatmapOpacity = panel.querySelector('[data-setting="heatmap-opacity"]');
+28333:         if (heatmapOpacity) heatmapOpacity.value = String(state.heatmap.opacity);
+28334:         const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
+28335:         if (allianceCreditMinimum) allianceCreditMinimum.value = String(state.allianceCreditMinimum);
+28336:         const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
+28337:         if (transportSweepDelay) transportSweepDelay.value = String(state.transportSweep.delayMs);
+28338:         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
+28339:         if (transportSweepMax) transportSweepMax.value = String(state.transportSweep.maxPerRun);
+28340:         if (panel.classList.contains('mcms-open') && state.activeTab === 'resources') renderTransportSweepPanel();
+28341:         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
+28342:         if (payoutTemplate) payoutTemplate.value = state.payoutFlash.template;
+28343:         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) resourceGapRadius.value = String(state.resourceGap.radiusMi);
+28344:         const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
+28345:         if (stuckThreshold) stuckThreshold.value = String(state.stuckDetector.thresholdMin);
+28346:         const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
+28347:         if (payoutThreshold) payoutThreshold.value = String(state.payoutFlash.threshold);
+28348:         const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
+28349:         if (payoutDuration) payoutDuration.value = String(state.payoutFlash.durationMs / 1000);
+28350:         const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
+28351:         if (payoutVolume) payoutVolume.value = String(state.payoutFlash.soundVolume);
+28352:         const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
+28353:         if (discordWebhook && document.activeElement !== discordWebhook) discordWebhook.value = getDiscordWebhookUrl();
+28354:         const discordName = panel.querySelector('[data-setting="discord-name"]');
+28355:         if (discordName && document.activeElement !== discordName) discordName.value = state.discordReport.webhookName;
+28356:         const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
+28357:         if (discordTopCategories) discordTopCategories.value = String(state.discordReport.topCategories);
+28358:         const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
+28359:         if (discordPeriod) discordPeriod.value = state.discordReport.period;
+28360:         const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
+28361:         if (discordCustomStart && document.activeElement !== discordCustomStart) discordCustomStart.value = state.discordReport.customStart;
+28362:         const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
+28363:         if (discordCustomEnd && document.activeElement !== discordCustomEnd) discordCustomEnd.value = state.discordReport.customEnd;
+28364:         const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
+28365:         if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+28366:         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+28367:         if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+28368:         const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
+28369:         if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+28370:         const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
+28371:         if (discordRisk) discordRisk.value = String(state.discordReport.includeRisk);
+28372:         const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
+28373:         if (discordForecast) discordForecast.value = String(state.discordReport.includeForecast);
+28374:         const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
+28375:         if (financeVaultEnabled) financeVaultEnabled.value = String(state.financialVault.enabled);
+28376:         const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
+28377:         if (financeVaultRetention) financeVaultRetention.value = String(state.financialVault.retentionDays);
+28378:         const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
+28379:         if (financeRuleFeed) financeRuleFeed.value = String(state.financialVault.ruleFeedEnabled);
+28380:         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
+28381:         if (panel.classList.contains('mcms-open') && state.activeTab === 'discord') renderFinanceVaultStatus();
+28382:         const nightStart = panel.querySelector('[data-setting="auto-night-start"]');
+28383:         if (nightStart) nightStart.value = state.autoNight.nightStart;
+28384:         const dayStart = panel.querySelector('[data-setting="auto-day-start"]');
+28385:         if (dayStart) dayStart.value = state.autoNight.dayStart;
+28386:         const nightTheme = panel.querySelector('[data-setting="auto-night-theme"]');
+28387:         if (nightTheme) nightTheme.value = state.autoNight.nightTheme;
+28388:         const dayTheme = panel.querySelector('[data-setting="auto-day-theme"]');
+28389:         if (dayTheme) dayTheme.value = state.autoNight.dayTheme;
+28390:         const economyStatus = panel.querySelector('.mcms-economy-status');
+28391:         if (economyStatus) economyStatus.textContent = state.economyMode
+28392:             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
+28393:             : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+28394:         const nudge = panel.querySelector('.mcms-nudge-value');
+28395:         if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+28396:         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+28397:         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+28398:     }
+28399: 
+28400:     function ensureUi() {
+28401:         const mapEl = getLargestLeafletMap();
+28402:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+28403:         if (mapEl) {
+28404:             createControl(mapEl);
+28405:             const map = findLeafletMapInstance(false);
+28406:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+28407:             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+28408:             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+28409:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+28410:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+28411:         }
+28412:         return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
+28413:     }
+28414: 
+28415:     function mutationBelongsToToolkit(mutation) {
+28416:         const target = mutation.target;
+28417:         const toolkitTarget = Boolean(
+28418:             target &&
+28419:             target.nodeType === 1 &&
+28420:             (
+28421:                 target.id === SCRIPT.controlId ||
+28422:                 target.id === SCRIPT.panelId ||
+28423:                 target.id === SCRIPT.toastId ||
+28424:                 target.id === SCRIPT.payoutFlashId ||
+28425:                 target.id === SCRIPT.criticalDrawerId ||
+28426:                 target.id === SCRIPT.vehicleStatusId ||
+28427:                 target.id === SCRIPT.majorIncidentFeedId ||
+28428:                 target.id === SCRIPT.missionInspectorId ||
+28429:                 target.closest?.(`#${SCRIPT.controlId}`) ||
+
+===== LINES 29261-29370 =====
+29261:             economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
+29262:         });
+29263:         runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
+29264:             if (!state.majorIncidentFeed.enabled) return;
+29265:             recoverMajorIncidentFeed('integrity check');
+29266:         }, {
+29267:             intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
+29268:             economyIntervalMs: 12000,
+29269:             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
+29270:         });
+29271:         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
+29272:             if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+29273:             if (state.economyMode) scheduleEconomyLayerSync(0);
+29274:         }, {
+29275:             intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+29276:             economyIntervalMs: 45 * 1000,
+29277:             economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+29278:         });
+29279:         runtimeListen(document, 'visibilitychange', () => {
+29280:             if (document.hidden) return;
+29281:             runtimeWakeTaskScheduler(0);
+29282:             ensureUi();
+29283:             refreshSuppression();
+29284:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+29285:             if (state.economyMode) scheduleEconomyLayerSync(0);
+29286:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+29287:             scheduleMajorIncidentFeedRender(80);
+29288:         });
+29289:         runtimeSetTimeout(() => {
+29290:             if (document.hidden || !operationalStartupComplete) return;
+29291:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+29292:         }, 2200);
+29293: 
+29294:         runtimeOnCleanup(() => {
+29295:             stopAutoLoadAllVehicles();
+29296:             transportSweepRuntime.stopRequested = true;
+29297:             document.removeEventListener('mousemove', movePanelDrag, true);
+29298:             document.removeEventListener('mouseup', endPanelDrag, true);
+29299:             document.removeEventListener('touchmove', movePanelDrag, true);
+29300:             document.removeEventListener('touchend', endPanelDrag, true);
+29301:             document.removeEventListener('touchcancel', endPanelDrag, true);
+29302:             document.documentElement.style.cursor = '';
+29303:             if (document.body) document.body.style.userSelect = '';
+29304:             restoreEconomyLayers();
+29305:             restoreLeafletEconomyPolicy();
+29306:             disposeEconomyCanvasRenderer();
+29307:             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+29308:             majorIncidentFeedLayoutTimer = null;
+29309:             const originalBuildingVisibility = state.visibility.buildings;
+29310:             try {
+29311:                 state.visibility.buildings = true;
+29312:                 synchronisePersonalBuildingVisibility(cachedMap);
+29313:             } catch (err) {
+29314:                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+29315:             } finally {
+29316:                 state.visibility.buildings = originalBuildingVisibility;
+29317:             }
+29318:             try { creditsValueObserver?.disconnect(); } catch (err) {}
+29319:             removeMajorIncidentFeed();
+29320:             clearMissionLockOnEffect();
+29321:             clearAllianceCreditLabels();
+29322:             clearMissionAgeLabels();
+29323:             clearUnitCommitmentLabels();
+29324:             clearTransportWatcherLabels();
+29325:             clearResourceGapLabels();
+29326:             clearStuckMissionLabels();
+29327:             clearCoverageHeatmap();
+29328:             if (coverageGroup) {
+29329:                 try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+29330:                 coverageGroup = null;
+29331:             }
+29332:             stopPayoutFlashAnimation();
+29333:             disposePayoutMediaAudio();
+29334:             try { payoutAudioContext?.close?.(); } catch (err) {}
+29335:             clearDiscordPreviewChartUrl();
+29336:             closeHelpCenter({ restoreFocus: false });
+29337:             helpGuideDocumentCache = '';
+29338:             helpGuideLoadedAt = 0;
+29339:             stopDesktopPanelWorkspaceObservation();
+29340:             runtimeUntrackObserver(desktopPanelResizeObserver);
+29341:             desktopPanelResizeObserver = null;
+29342:             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+29343:             majorIncidentFeedResizeObserver = null;
+29344:             majorIncidentFeedObservedElement = null;
+29345:             missionSnapshotCache.clear();
+29346:             missionPanelCache.clear();
+29347:             missionOverlayVersions.clear();
+29348:             markerRegistryCache.clear();
+29349:             criticalMissionStableCache.clear();
+29350:             removeOldInstances();
+29351:             const root = document.documentElement;
+29352:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+29353:         });
+29354: 
+29355:         runtimeSetTimeout(() => runAutoNight(true), 180);
+29356:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+29357:         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+29358:     }
+29359: 
+29360:     function scheduleBoot() {
+29361:         if (runtime.destroyed || bootStarted) return;
+29362:         runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+29363:     }
+29364: 
+29365:     if (document.readyState === 'loading') {
+29366:         runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+29367:     } else {
+29368:         scheduleBoot();
+29369:     }
+29370: })();

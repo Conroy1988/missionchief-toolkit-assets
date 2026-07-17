@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-17",
+  "issue": 115,
+  "currentVersion": "4.14.6",
+  "method": {
+    "currentTree": "Exact filename scan across every retained userscript and Toolkit text distribution.",
+    "publishedHistory": "Exact filename scan across userscript, JavaScript and Toolkit text files in every fetched Git tag."
+  },
+  "scannedCurrentSources": [
+    "MissionChief_Map_Command_Toolkit.txt",
+    "MissionChief_Map_Command_Toolkit.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.txt",
+    "dist/MissionChief_Map_Command_Toolkit.user.js",
+    "src/MissionChief_Map_Command_Toolkit.user.js",
+    "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+    "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+    "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+    "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+    "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+    "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+    "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+    "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+  ],
+  "scannedTags": [
+    "v3.4.2",
+    "v3.5.1",
+    "v3.7.1",
+    "v4.11.0",
+    "v4.11.1",
+    "v4.11.2",
+    "v4.11.3",
+    "v4.11.4",
+    "v4.12.0",
+    "v4.13.0",
+    "v4.13.1",
+    "v4.13.2",
+    "v4.13.3",
+    "v4.13.4",
+    "v4.13.5",
+    "v4.13.6",
+    "v4.13.7",
+    "v4.13.8",
+    "v4.13.9",
+    "v4.14.0",
+    "v4.14.1",
+    "v4.14.2",
+    "v4.14.3",
+    "v4.14.4",
+    "v4.14.5",
+    "v4.14.6"
+  ],
+  "retainedAudioPaths": [
+    "bf-bad-company-cashout.mp3",
+    "cyberpunk-cashout.mp3",
+    "factorio-cashout.mp3",
+    "fallout-cashout.mp3",
+    "gta-vice-city-cashout.mp3",
+    "james-bond-cashout.mp3",
+    "scarface-cashout.mp3",
+    "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+    "themes/hyrule/audio/hyrule-quest-reward.mp3"
+  ],
+  "removedCandidates": {
+    "biohazard-containment-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    },
+    "biohazzard-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    },
+    "dark-fantasy-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    },
+    "galactic-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    },
+    "gtav-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    },
+    "hellfire-cashout.mp3": {
+      "currentReferences": [],
+      "tagReferences": [],
+      "referenceCount": 0,
+      "decision": "remove-zero-reference-orphan"
+    }
+  }
+}

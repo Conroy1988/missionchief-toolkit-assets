@@ -35,3 +35,5 @@ jobs:
           fi
           git commit -m "Capture latest Issue 94 automation result [skip ci]"
           git push origin HEAD:chore/transport-sweep-discovery
+
+# Refresh: 2026-07-17 critical multi-ambulance regression

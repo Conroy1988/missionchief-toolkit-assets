@@ -9,6 +9,14 @@ The MissionChief Map Command Toolkit is maintained through reviewed, validated c
 - Keep public reports free of credentials, webhook URLs and private repository details.
 - Separate unrelated fixes into distinct changes where practical.
 
+## Roadmap and issue flow
+
+- Use **Discussions → Feature ideas** for early concepts that still need community or design exploration.
+- Use **GitHub Issues** for confirmed bugs, improvements and actionable technical specifications.
+- Apply the `roadmap` label only to planned product or engineering work that belongs in the public development queue.
+- Use priority labels to express urgency; do not duplicate scheduling state in a separate roadmap document or Project.
+- Link implementation pull requests to their Issue so merged work automatically becomes part of the completed development record.
+
 ## Development expectations
 
 - Preserve the existing Desktop, Tablet and iOS operating modes.

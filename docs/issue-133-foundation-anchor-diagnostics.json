@@ -1,0 +1,61 @@
+{
+  "version_occurrences": 2,
+  "anchors": {
+    "script_panel_id": {
+      "count": 1,
+      "anchor": "        transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',\n"
+    },
+    "lifecycle_state": {
+      "count": 1,
+      "anchor": "    const missionValueRetryState = new WeakMap();\n"
+    },
+    "default_state": {
+      "count": 1,
+      "anchor": "            missionValue: true,\n"
+    },
+    "normalised_state": {
+      "count": 1,
+      "anchor": "        merged.missionValue = merged.missionValue !== false;\n"
+    },
+    "old_instance_cleanup": {
+      "count": 1,
+      "anchor": "#${SCRIPT.missionInspectorId}, #${SCRIPT.helpCenterId}"
+    },
+    "implementation_insertion": {
+      "count": 1,
+      "anchor": "    function criticalMissionValueForEntry(entry) {\n"
+    },
+    "ops_toggle": {
+      "count": 1,
+      "anchor": "                    ${makeToggleButton('missionValue', '\u00a3', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}\n"
+    },
+    "toggle_mutation": {
+      "count": 1,
+      "anchor": "        if (feature === 'missionValue') state.missionValue = !state.missionValue;\n"
+    },
+    "toggle_lifecycle": {
+      "count": 1,
+      "anchor": "        if (feature === 'missionValue') {\n            if (state.missionValue) installMissionValueWindows();\n            else clearMissionValueIndicators();\n            showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off');\n        }\n"
+    },
+    "update_ui_toggle": {
+      "count": 1,
+      "anchor": "            missionValue: state.missionValue,\n"
+    },
+    "mutation_ownership_id": {
+      "count": 1,
+      "anchor": "                target.id === SCRIPT.missionInspectorId ||\n"
+    },
+    "mutation_ownership_ancestor": {
+      "count": 1,
+      "anchor": "                target.closest?.(`#${SCRIPT.missionInspectorId}`)\n"
+    },
+    "boot_installation": {
+      "count": 1,
+      "anchor": "        observeCreditValue();\n\n        startBootAttemptCoordinator(bootPerformanceStartedAt);\n"
+    },
+    "main_mutation_routing": {
+      "count": 1,
+      "anchor": "                if (missionChanged) scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });\n"
+    }
+  }
+}

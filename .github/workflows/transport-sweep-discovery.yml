@@ -6,7 +6,6 @@ on:
       - chore/transport-sweep-discovery
 
 permissions:
-  issues: read
   contents: write
 
 jobs:
@@ -15,25 +14,38 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Capture latest Issue 94 result
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Capture current transport sweep window lifecycle
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
           mkdir -p .github/diagnostics
-          gh api "/repos/${GITHUB_REPOSITORY}/issues/94/comments?per_page=100" \
-            --jq '.[-1] | "author: \(.user.login)\nurl: \(.html_url)\n\n\(.body)"' \
-            > .github/diagnostics/issue-94-latest-comment.txt
+          git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/current-toolkit.user.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          source = Path('/tmp/current-toolkit.user.js').read_text(encoding='utf-8')
+          patterns = [
+              ('openTransportSweepPath', r'    async function openTransportSweepPath\([\s\S]*?\n    \}\n'),
+              ('lightbox helpers', r'    function [A-Za-z0-9_]*(?:Lightbox|lightbox)[A-Za-z0-9_]*\([\s\S]*?\n    \}\n'),
+              ('processTransportSweepMission', r'    async function processTransportSweepMission\([\s\S]*?\n    \}\n\n    async function startTransportSweep'),
+          ]
+          chunks = []
+          for label, pattern in patterns:
+              matches = list(re.finditer(pattern, source))
+              chunks.append(f'===== {label} ({len(matches)} matches) =====')
+              for match in matches[:20]:
+                  chunks.append(match.group(0))
+          Path('.github/diagnostics/transport-sweep-window-lifecycle.txt').write_text('\n\n'.join(chunks), encoding='utf-8')
+          PY
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/diagnostics/issue-94-latest-comment.txt
+          git add .github/diagnostics/transport-sweep-window-lifecycle.txt
           if git diff --cached --quiet; then
             echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture latest Issue 94 automation result [skip ci]"
+          git commit -m "Capture transport sweep window lifecycle [skip ci]"
           git push origin HEAD:chore/transport-sweep-discovery
-
-# Refresh: v4.14.1 release result

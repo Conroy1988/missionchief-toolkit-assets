@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.9
+// @version      4.14.10
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.9',
+        version: '4.14.10',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -29732,21 +29732,7 @@ Create the private backup now?`);
     }
 
 
-    function boot() {
-        if (runtime.destroyed || bootStarted) return;
-        bootStarted = true;
-        bootStartedAt = Date.now();
-        const bootPerformanceStartedAt = startupClock();
-        applyRootAttributes();
-        if (installAllianceBuildingsPageOptimisation()) return;
-        createCleanExit();
-        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
-        installMissionMarkerAddHook();
-        installRadioMessageHook();
-        lastObservedCredits = readCurrentCreditTotal();
-        installCreditsUpdateHook();
-        observeCreditValue();
-
+    function startBootAttemptCoordinator(bootPerformanceStartedAt) {
         let attempts = 0;
         const runBootAttempt = () => {
             attempts += 1;
@@ -29768,6 +29754,24 @@ Create the private backup now?`);
             runtimeSetTimeout(runBootAttempt, delay);
         };
         runtimeSetTimeout(runBootAttempt, 250);
+    }
+
+    function boot() {
+        if (runtime.destroyed || bootStarted) return;
+        bootStarted = true;
+        bootStartedAt = Date.now();
+        const bootPerformanceStartedAt = startupClock();
+        applyRootAttributes();
+        if (installAllianceBuildingsPageOptimisation()) return;
+        createCleanExit();
+        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+        installMissionMarkerAddHook();
+        installRadioMessageHook();
+        lastObservedCredits = readCurrentCreditTotal();
+        installCreditsUpdateHook();
+        observeCreditValue();
+
+        startBootAttemptCoordinator(bootPerformanceStartedAt);
 
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {

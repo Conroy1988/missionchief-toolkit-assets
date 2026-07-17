@@ -21,6 +21,7 @@ FUNCTION_NAMES = [
     "runtimeUntrackObserver",
     "runtimeOnCleanup",
     "runtimeRunWhenIdle",
+    "startBootAttemptCoordinator",
     "boot",
     "scheduleBoot",
 ]
@@ -82,6 +83,11 @@ def main() -> int:
 
     assert fixtures["runtimeKey"] in runtime_block
     assert fixtures["replacementReason"] in runtime_block
+    coordinator_name = fixtures["boot"]["coordinatorFunction"]
+    assert coordinator_name == "startBootAttemptCoordinator"
+    assert "startBootAttemptCoordinator(bootPerformanceStartedAt);" in functions["boot"]
+    assert "const runBootAttempt = () =>" not in functions["boot"]
+    assert "const runBootAttempt = () =>" in functions[coordinator_name]
     for task in fixtures["requiredTasks"]:
         assert f"runtimeRegisterTask('{task}'" in functions["boot"], f"Missing boot task {task}"
     for attribute in fixtures["cleanupRootAttributes"]:
@@ -466,11 +472,27 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         },
         set(object, property, value) { Reflect.set(object, property, value); return true; }
     });
+    target.startBootAttemptCoordinator = compileInSandbox(__BOOT_COORDINATOR_SOURCE__, sandbox);
     target.boot = compileInSandbox(__BOOT_SOURCE__, sandbox);
     return target;
 }
 
 function callCount(env, name) { return env.calls.filter(call => call.name === name).length; }
+
+function testBootAttemptCoordinatorDirectly() {
+    const direct = createBootEnvironment({ mapReadyAfter: 2 });
+    direct.startBootAttemptCoordinator(100);
+    for (let attempt = 0; attempt < 3; attempt += 1) direct.runNamedTimer("runBootAttempt");
+    assert.equal(direct.getMapCalls(), 3);
+    assert.deepEqual(direct.bootTimerDelays, [
+        fixtures.boot.initialDelayMs,
+        fixtures.boot.earlyRetryDelayMs,
+        fixtures.boot.earlyRetryDelayMs
+    ]);
+    assert.equal(callCount(direct, "scheduleDeferredOperationalStartup"), 1);
+    const metric = direct.calls.find(call => call.name === "recordStartupMetric");
+    assert.equal(metric.args[2].bootAttempts, 3);
+}
 
 function testBootLifecycle() {
     const initial = createBootEnvironment();
@@ -579,10 +601,12 @@ function testScheduleAndDocumentStart() {
 
 testRuntimeOwnershipAndTeardown();
 testRuntimeHelpers();
+testBootAttemptCoordinatorDirectly();
 testBootLifecycle();
 testScheduleAndDocumentStart();
-console.log("Boot lifecycle contract passed: runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.");
+console.log("Boot lifecycle contract passed: extracted boot coordinator, runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.");
 '''
+    replacements["__BOOT_COORDINATOR_SOURCE__"] = json.dumps(functions["startBootAttemptCoordinator"])
     replacements["__BOOT_SOURCE__"] = json.dumps(functions["boot"])
     replacements["__SCHEDULE_BOOT_SOURCE__"] = json.dumps(functions["scheduleBoot"])
     replacements["__BOOTSTRAP_SOURCE_STRING__"] = json.dumps(bootstrap_tail)

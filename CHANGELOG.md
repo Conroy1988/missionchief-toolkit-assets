@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.9] - 2026-07-17
+
+### Added
+- Ambulance Transport Sweep now displays a compact persistent live HUD while MissionChief and LSSM mission/vehicle windows are opening, processing and closing.
+- The HUD shows current sweep status, mission progress, confirmed patients cleared, skipped items, errors, processed count and elapsed time.
+- Successful clear totals update immediately after the existing confirmed LSSM or fallback discharge gate succeeds.
+
+### Compatibility
+- The HUD is mounted outside sweep-owned lightbox layers, deduplicated, non-blocking and removed on completion, cancellation or Toolkit runtime teardown.
+- Desktop uses a top-right presentation; Tablet and iOS use a compact safe-area-aware bottom presentation.
+- Manual start, personal-vehicle exclusion, prisoner handling, request sequencing and single-window safeguards remain unchanged.
+- Added fixture-backed regression coverage for HUD ownership, lifecycle, confirmed counting and final-summary dismissal.
+
 ## [4.14.8] - 2026-07-17
 
 ### Fixed

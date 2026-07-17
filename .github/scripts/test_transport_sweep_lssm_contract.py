@@ -94,6 +94,67 @@ def main() -> int:
     assert control_index < global_index, "the owned window close control must be preferred over the global lightbox closer"
     assert "transportSweepRuntime.activeWindowCreatedLayer" in closer.group(1), "forced teardown must be limited to newly created sweep layers"
     assert "layer.remove()" in closer.group(1), "newly created owned layers must be removed if MissionChief leaves them connected"
+    hud = data["hud"]
+    assert f"transportSweepHudId: '{hud['id']}'" in source, "HUD ID must be owned by SCRIPT"
+    required_hud_markers = [
+        "function transportSweepHudElements()",
+        "function ensureTransportSweepHud()",
+        "function removeTransportSweepHud()",
+        "function scheduleTransportSweepHudDismiss(delay = 6500)",
+        "function renderTransportSweepHud()",
+        "runtimeOnCleanup(removeTransportSweepHud);",
+        "document.body || document.documentElement",
+        "pointer-events:none !important",
+        "env(safe-area-inset-bottom)",
+        "Patients cleared",
+    ]
+    missing_hud = [marker for marker in required_hud_markers if marker not in source]
+    assert not missing_hud, f"Missing Transport Sweep HUD contract markers: {missing_hud}"
+    assert source.count("runtimeOnCleanup(removeTransportSweepHud);") == 1, "HUD cleanup must be registered exactly once"
+    assert source.count("transportSweepRuntime.cleared += 1") == 2, "Only the two confirmed direct/fallback release paths may increment cleared"
+
+    renderer = re.search(r"function renderTransportSweepPanel\(\) \{([\s\S]*?)\n    \}", source)
+    assert renderer, "Transport Sweep panel renderer is missing"
+    renderer_text = renderer.group(1)
+    assert renderer_text.index("renderTransportSweepHud();") < renderer_text.index("const host = document.querySelector"), "HUD must render even when the main Toolkit panel is unavailable"
+
+    hud_renderer = re.search(r"function renderTransportSweepHud\(\) \{([\s\S]*?)\n    \}", source)
+    assert hud_renderer, "Transport Sweep HUD renderer is missing"
+    hud_text = hud_renderer.group(1)
+    for stat in hud["required_stats"]:
+        assert stat in hud_text, f"HUD is missing required stat: {stat}"
+    assert "sweep.running || sweep.stopRequested || sweep.hudFinal" in hud_text, "HUD visibility must follow the complete sweep lifecycle"
+    assert "sweep.cleared" in hud_text and "sweep.skipped" in hud_text and "sweep.errors" in hud_text, "HUD totals must come from the canonical runtime counters"
+
+    ensure_hud = re.search(r"function ensureTransportSweepHud\(\) \{([\s\S]*?)\n    \}", source)
+    remove_hud = re.search(r"function removeTransportSweepHud\(\) \{([\s\S]*?)\n    \}", source)
+    assert ensure_hud and remove_hud, "HUD ownership helpers are missing"
+    assert "matches.shift()" in ensure_hud.group(1) and "duplicate.remove()" in ensure_hud.group(1), "HUD creation must deduplicate existing instances"
+    assert "for (const hud of transportSweepHudElements())" in remove_hud.group(1), "HUD teardown must remove every remaining instance"
+
+    start_flow = re.search(r"async function startTransportSweep\(\) \{([\s\S]*?)\n    \}\n\n    function stopTransportSweep", source)
+    assert start_flow, "Transport Sweep start flow is missing"
+    start_text = start_flow.group(1)
+    assert "transportSweepRuntime.startedAt = Date.now()" in start_text
+    assert "transportSweepRuntime.missionTotal = queue.length" in start_text
+    assert "transportSweepRuntime.hudFinal = false" in start_text
+    assert "transportSweepRuntime.missionIndex = missionOffset + 1" in start_text
+    assert "transportSweepRuntime.hudFinal = true" in start_text
+    assert f"scheduleTransportSweepHudDismiss({hud['final_summary_delay_ms']})" in start_text
+
+    direct_click = processor_text.index("const cleared = await activateTransportSweepLssmRelease")
+    direct_increment = processor_text.index("transportSweepRuntime.cleared += 1", direct_click)
+    direct_log = processor_text.index("transportSweepLog(`Released", direct_increment)
+    assert direct_click < direct_increment < direct_log, "Direct LSSM HUD count must update only after confirmed release and then render through the canonical log"
+
+    fallback_click = processor_text.index("button.click()")
+    fallback_confirmation = processor_text.index("const cleared = await transportSweepWaitFor", fallback_click)
+    fallback_increment = processor_text.index("transportSweepRuntime.cleared += 1", fallback_confirmation)
+    fallback_log = processor_text.index("transportSweepLog(`Cleared", fallback_increment)
+    assert fallback_click < fallback_confirmation < fallback_increment < fallback_log, "Fallback HUD count must update only after confirmed discharge and then render through the canonical log"
+
+    assert hud["id"] not in closer.group(1), "MissionChief lightbox cleanup must not target the persistent HUD"
+    assert "removeTransportSweepHud" not in closer.group(1), "Window replacement must not remove the persistent HUD"
     print("LSSM transport sweep contract passed")
     return 0
 

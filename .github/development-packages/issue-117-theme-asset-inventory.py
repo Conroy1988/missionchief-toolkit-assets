@@ -226,9 +226,12 @@ def main() -> None:
         )
 
     root_audio = sorted(
-        item for item in media_inventory
-        if item["classification"] == "legacy-root-audio"
-    , key=lambda item: item["path"])
+        [
+            item for item in media_inventory
+            if item["classification"] == "legacy-root-audio"
+        ],
+        key=lambda item: item["path"],
+    )
     root_paths = {item["path"] for item in root_audio}
     missing_legacy = sorted(set(AUDIO_MIGRATION) - root_paths)
     if missing_legacy:

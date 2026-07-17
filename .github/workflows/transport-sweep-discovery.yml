@@ -6,7 +6,7 @@ on:
       - chore/transport-sweep-discovery
 
 permissions:
-  actions: read
+  issues: read
   contents: write
 
 jobs:
@@ -15,25 +15,25 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Capture critical package log tail
+      - name: Capture latest Issue 94 result
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .github/diagnostics
-          gh api \
-            -H "Accept: application/vnd.github+json" \
-            "/repos/${GITHUB_REPOSITORY}/actions/jobs/87783524731/logs" \
-            > /tmp/issue94-critical-job.log
-          tail -n 140 /tmp/issue94-critical-job.log > .github/diagnostics/issue-94-critical-package-error.txt
+          gh api "/repos/${GITHUB_REPOSITORY}/issues/94/comments?per_page=100" \
+            --jq '.[-1] | "author: \(.user.login)\nurl: \(.html_url)\n\n\(.body)"' \
+            > .github/diagnostics/issue-94-latest-comment.txt
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/diagnostics/issue-94-critical-package-error.txt
+          git add .github/diagnostics/issue-94-latest-comment.txt
           if git diff --cached --quiet; then
             echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture critical Issue 94 package traceback [skip ci]"
+          git commit -m "Capture latest Issue 94 automation result [skip ci]"
           git push origin HEAD:chore/transport-sweep-discovery
+
+# Refresh: corrected critical package result

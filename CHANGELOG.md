@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.15.0] - 2026-07-17
+
+### Added
+- Added a live Mission Requirements matrix inside opened MissionChief windows, mounted in normal document flow above dispatch controls.
+- Missing, en-route, still-needed and selected values now update from the active mission DOM and checked vehicle list without continuous polling.
+- Added responsive Desktop, Tablet and iOS layouts, seven equal interface-theme treatments, covered/partial/unresolved row states and a compact collapse control.
+
+### Safety and compatibility
+- Unknown requirement wording remains visibly unresolved and can never produce a false all-covered state.
+- The Toolkit yields to an active LSSM enhanced-missing-vehicles panel instead of rendering a competing duplicate.
+- Mission-window replacement, same-origin frames, checkbox changes, en-route changes and runtime teardown use bounded observers with one owned panel per mission window.
+- Added fixture-backed release validation for calculation, ownership, layout, coexistence and lifecycle contracts.
+
 ## [4.14.10] - 2026-07-17
 
 ### Changed

@@ -1,0 +1,82 @@
+{
+  "calculationCases": [
+    {
+      "name": "simple uncovered police requirement",
+      "missing": 3,
+      "enRoute": 0,
+      "selected": 1,
+      "stillNeeded": 3,
+      "covered": false
+    },
+    {
+      "name": "en-route reduction and selected coverage",
+      "missing": 3,
+      "enRoute": 1,
+      "selected": 2,
+      "stillNeeded": 2,
+      "covered": true
+    },
+    {
+      "name": "en-route fully covers requirement",
+      "missing": 2,
+      "enRoute": 2,
+      "selected": 0,
+      "stillNeeded": 0,
+      "covered": true
+    },
+    {
+      "name": "over-selection remains covered",
+      "missing": 1,
+      "enRoute": 0,
+      "selected": 4,
+      "stillNeeded": 1,
+      "covered": true
+    }
+  ],
+  "requiredAliases": [
+    "Police cars",
+    "Dog Support Unit (DSU)",
+    "Fire Engines or RIVs",
+    "HazMat Units or CBRN Vehicles",
+    "Coastguard Rescue Helicopters",
+    "EOD Heavy Equipment Vehicles",
+    "Armed Response Personnel (In Armed Vehicles)"
+  ],
+  "requiredVehicleTypes": {
+    "Police cars": [
+      8,
+      12,
+      13,
+      19,
+      24,
+      25,
+      51,
+      52,
+      56,
+      82,
+      116
+    ],
+    "Dog Support Unit (DSU)": [
+      12,
+      53
+    ],
+    "Ambulance": [
+      5
+    ],
+    "HEMS": [
+      9
+    ],
+    "EOD Heavy Equipment Vehicle": [
+      112
+    ]
+  },
+  "layout": {
+    "panelId": "mc-map-command-toolkit-mission-requirements",
+    "normalFlowInsertion": "source.parentNode?.insertBefore(panel, source)",
+    "forbiddenNormalPanelPositioning": [
+      "position:fixed",
+      "position:absolute"
+    ],
+    "mobileBreakpoint": "@media(max-width:767px)"
+  }
+}

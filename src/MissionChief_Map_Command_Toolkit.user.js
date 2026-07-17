@@ -21970,7 +21970,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsParseText(rawText, group = 'vehicles') {
-        let remaining = String(rawText || '').replace(/\s+/gu, ' ').trim();
+        let remaining = String(rawText || '')
+            .replace(/\r\n?/gu, '\n')
+            .replace(/\n+/gu, '; ')
+            .replace(/\s+/gu, ' ')
+            .trim();
         const requirements = [];
         const definitions = MISSION_REQUIREMENT_DEFINITIONS
             .filter(definition => definition.group === group)
@@ -21990,23 +21994,32 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
     }
 
+    function missionRequirementsElementText(element) {
+        if (!element) return '';
+        const rendered = typeof element.innerText === 'string' && element.innerText.trim()
+            ? element.innerText
+            : element.textContent;
+        return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
+    }
+
     function missionRequirementsParseSource(source) {
         if (!source) return { requirements: [], unresolved: [] };
         const requirements = [];
         const unresolved = [];
-        const groupElements = Array.from(source.querySelectorAll?.('[data-requirement-type]') || []);
+        const allGroups = Array.from(source.querySelectorAll?.('[data-requirement-type]') || []);
+        const groupElements = allGroups.filter(element => !allGroups.some(other => other !== element && other.contains?.(element)));
         const parseGroupElement = element => {
             const rawType = String(element.getAttribute('data-requirement-type') || 'vehicles').toLowerCase();
             const group = rawType === 'personnel' || rawType === 'staff' ? 'staff' : rawType === 'other' ? 'other' : 'vehicles';
             const heading = String(element.querySelector?.('b')?.textContent || '').trim();
-            const raw = String(element.textContent || '').replace(heading, ' ').replace(/\s+/gu, ' ').trim();
+            const raw = missionRequirementsElementText(element).replace(heading, ' ').trim();
             const parsed = missionRequirementsParseText(raw, group);
             requirements.push(...parsed.requirements);
             if (parsed.remaining) unresolved.push({ group, text: parsed.remaining });
         };
         if (groupElements.length) groupElements.forEach(parseGroupElement);
         else {
-            const raw = String(source.textContent || '').replace(/\s+/gu, ' ').trim();
+            const raw = missionRequirementsElementText(source);
             const parsed = missionRequirementsParseText(raw, 'vehicles');
             requirements.push(...parsed.requirements);
             if (parsed.remaining) unresolved.push({ group: 'vehicles', text: parsed.remaining });
@@ -22025,20 +22038,40 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsVehicleId(element) {
-        const raw = element?.value ?? element?.getAttribute?.('value') ?? element?.dataset?.vehicleId ?? element?.dataset?.vehicle_id;
-        const value = Number.parseInt(raw, 10);
-        return Number.isFinite(value) && value >= 0 ? value : -1;
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+        for (const scope of scopes) {
+            for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+                const value = Number.parseInt(raw, 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            for (const attribute of attributes) {
+                const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
+            if (idMatch) return Number(idMatch[1]);
+            const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
+            const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+            if (hrefMatch) return Number(hrefMatch[1]);
+        }
+        return -1;
     }
 
     function missionRequirementsEquipmentTypes(element) {
         const values = new Set();
         const add = raw => String(raw || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean).forEach(value => values.add(value));
-        add(element?.dataset?.equipmentTypes);
-        add(element?.getAttribute?.('data-equipment-types'));
-        element?.querySelectorAll?.('[data-equipment-type], [data-equipment-types]').forEach(node => {
-            add(node.getAttribute('data-equipment-type'));
-            add(node.getAttribute('data-equipment-types'));
-        });
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        for (const scope of scopes) {
+            add(scope?.dataset?.equipmentType);
+            add(scope?.dataset?.equipmentTypes);
+            add(scope?.getAttribute?.('data-equipment-type'));
+            add(scope?.getAttribute?.('data-equipment-types'));
+            scope?.querySelectorAll?.('[data-equipment-type], [data-equipment-types]').forEach(node => {
+                add(node.getAttribute('data-equipment-type'));
+                add(node.getAttribute('data-equipment-types'));
+            });
+        }
         return values;
     }
 
@@ -22156,9 +22189,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsLssmActive(candidate, source) {
         if (!source) return false;
         try {
-            if (source.matches?.('.alert-missing-vehicles, [class*="alert-missing-vehicles"]')) return true;
-            if (source.querySelector?.('.alert-missing-vehicles, table.table-striped.table-condensed')) return true;
-            return Boolean(candidate?.root?.querySelector?.('.alert-missing-vehicles[data-raw-html], .alert-missing-vehicles table'));
+            if (source.matches?.('.alert-missing-vehicles')) return true;
+            if (source.querySelector?.('.alert-missing-vehicles')) return true;
+            return Boolean(candidate?.root?.querySelector?.('.alert-missing-vehicles[data-raw-html], .alert-missing-vehicles table, .alert-missing-vehicles .table'));
         } catch (err) {
             return false;
         }
@@ -22178,6 +22211,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsDocumentCss() {
         return `
             #${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}
+            [data-mcms-requirements-source-hidden="1"]{display:none!important}
             #${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}
             #${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}
             #${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}
@@ -22246,17 +22280,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsHideSource(source) {
         if (!source || source.dataset.mcmsRequirementsSourceHidden === '1') return;
         source.dataset.mcmsRequirementsSourceHidden = '1';
-        source.dataset.mcmsRequirementsOriginalDisplay = source.style.display || '';
-        source.style.setProperty('display', 'none', 'important');
     }
 
     function missionRequirementsRestoreSource(source) {
         if (!source || source.dataset.mcmsRequirementsSourceHidden !== '1') return;
-        const original = source.dataset.mcmsRequirementsOriginalDisplay || '';
-        source.style.removeProperty('display');
-        if (original) source.style.display = original;
         delete source.dataset.mcmsRequirementsSourceHidden;
-        delete source.dataset.mcmsRequirementsOriginalDisplay;
     }
 
     function missionRequirementsPanelHtml(rows, unresolved) {
@@ -22271,14 +22299,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             const selectedText = row.selectedKnown ? row.selected.toLocaleString('en-GB') : '?';
             const rowState = !row.selectedKnown ? 'unresolved' : row.covered ? 'covered' : row.partial ? 'partial' : 'open';
             const prefix = row.covered ? '✓ ' : '';
-            return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing">${row.missing.toLocaleString('en-GB')}</td><td data-label="En route">${row.enRoute.toLocaleString('en-GB')}</td><td class="mcms-req-still" data-label="Still needed">${row.stillNeeded.toLocaleString('en-GB')}</td><td data-label="Selected">${escapeHtml(selectedText)}</td></tr>`;
+            return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing on mission">${row.missing.toLocaleString('en-GB')}</td><td data-label="En-route">${row.enRoute.toLocaleString('en-GB')}</td><td class="mcms-req-still" data-label="Still needed">${row.stillNeeded.toLocaleString('en-GB')}</td><td data-label="Selected">${escapeHtml(selectedText)}</td></tr>`;
         }).join('');
         const unknownHtml = unresolved.length
             ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}</div>`
             : '';
         return {
             stateName,
-            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Missing</th><th scope="col">En route</th><th scope="col">Still needed</th><th scope="col">Selected</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
+            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Missing on mission</th><th scope="col">En-route</th><th scope="col">Still needed</th><th scope="col">Selected</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
         };
     }
 
@@ -22335,6 +22363,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }
         if (record) missionRequirementsRemoveRecord(source);
         const doc = source.ownerDocument || document;
+        for (const [otherSource, otherRecord] of Array.from(missionRequirementsRecords.entries())) {
+            if (otherSource !== source && otherRecord?.source?.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+        }
         ensureMissionRequirementsDocumentStyle(doc);
         const panel = doc.createElement('section');
         panel.id = SCRIPT.missionRequirementsPanelId;
@@ -22408,18 +22439,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             return;
         }
         const activeSources = new Set();
+        const activeDocuments = new WeakSet();
         for (const candidate of missionValueWindowCandidates()) {
             const source = missionRequirementsSourceForCandidate(candidate);
             if (!source || !source.isConnected) continue;
+            const doc = source.ownerDocument || document;
+            if (activeDocuments.has(doc)) continue;
             if (missionRequirementsLssmActive(candidate, source)) {
                 missionRequirementsRemoveRecord(source);
+                activeDocuments.add(doc);
                 continue;
             }
-            const raw = String(source.textContent || '').trim();
+            const raw = missionRequirementsElementText(source);
             if (!raw) {
                 missionRequirementsRemoveRecord(source);
                 continue;
             }
+            activeDocuments.add(doc);
             activeSources.add(source);
             missionRequirementsEnsureRecord(candidate, source);
         }
@@ -29550,6 +29586,7 @@ Create the private backup now?`);
 
     function updateUI() {
         applyRootAttributes();
+        if (state.missionRequirements) scheduleMissionRequirementsScan(0);
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
 

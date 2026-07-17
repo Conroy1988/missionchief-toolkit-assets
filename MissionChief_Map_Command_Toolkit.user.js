@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.4
+// @version      4.14.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.4',
+        version: '4.14.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -2423,29 +2423,30 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.panelId} .mcms-close:hover, #${SCRIPT.panelId} .mcms-reset-panel:hover, #${SCRIPT.panelId} .mcms-help-button:hover, #${SCRIPT.panelId} .mcms-help-button:focus-visible { background: rgba(58,174,232,.28) !important; color:#fff !important; }
         #${SCRIPT.panelId} .mcms-tabs { display: grid !important; grid-template-columns: repeat(4, minmax(0,1fr)) !important; gap: 5px !important; margin-bottom: 8px !important; }
-        #${SCRIPT.panelId} .mcms-tab-btn { height: 26px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 8px !important; background: rgba(255,255,255,.06) !important; color: rgba(255,255,255,.78) !important; cursor: pointer !important; font-size: 9px !important; line-height: 1 !important; font-weight: 900 !important; padding: 0 !important; overflow: hidden !important; }
+        #${SCRIPT.panelId} .mcms-tab-btn { height: 26px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 8px !important; background: rgba(255,255,255,.06) !important; color: rgba(255,255,255,.78) !important; cursor: pointer !important; font-size: 9px !important; line-height: 1.1 !important; font-weight: 900 !important; padding: 0 3px !important; overflow: hidden !important; white-space: normal !important; overflow-wrap: anywhere !important; }
         #${SCRIPT.panelId} .mcms-tab-btn.mcms-active, #${SCRIPT.panelId} .mcms-theme-btn.mcms-active, #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on, #${SCRIPT.panelId} .mcms-position-btn.mcms-active, #${SCRIPT.panelId} .mcms-pin-btn.mcms-on { background: rgba(25,118,210,.42) !important; border-color: rgba(120,190,255,.78) !important; color: #fff !important; }
         #${SCRIPT.panelId} .mcms-tab-panel { display: none !important; }
         #${SCRIPT.panelId} .mcms-tab-panel.mcms-active { display: block !important; }
         #${SCRIPT.panelId} .mcms-grid-2 { display: grid !important; grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 7px !important; width: 100% !important; min-width: 0 !important; overflow: hidden !important; }
         #${SCRIPT.panelId} .mcms-theme-btn, #${SCRIPT.panelId} .mcms-toggle-btn, #${SCRIPT.panelId} .mcms-place-main {
-            width: 100% !important; min-width: 0 !important; height: 42px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 10px !important;
+            width: 100% !important; min-width: 0 !important; min-height: 42px !important; height: auto !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 10px !important;
             background: rgba(255,255,255,.065) !important; color: #eef4ff !important; padding: 6px !important; cursor: pointer !important; text-align: left !important;
             display: grid !important; grid-template-columns: 20px minmax(0,1fr) !important; align-items: center !important; gap: 6px !important; overflow: hidden !important;
         }
         #${SCRIPT.panelId} .mcms-theme-btn:hover, #${SCRIPT.panelId} .mcms-toggle-btn:hover, #${SCRIPT.panelId} .mcms-place-main:hover { background: rgba(255,255,255,.14) !important; border-color: rgba(255,255,255,.30) !important; }
         #${SCRIPT.panelId} .mcms-iconbox { width: 20px !important; height: 20px !important; min-width: 20px !important; border-radius: 7px !important; background: rgba(255,255,255,.11) !important; display: flex !important; align-items: center !important; justify-content: center !important; color: rgba(255,255,255,.86) !important; font-size: 10px !important; line-height: 1 !important; font-weight: 900 !important; overflow: hidden !important; }
         #${SCRIPT.panelId} .mcms-text { display: block !important; min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; }
-        #${SCRIPT.panelId} .mcms-label { display: block !important; width: 100% !important; color: #f4f7ff !important; font-size: 10.5px !important; line-height: 1.05 !important; font-weight: 900 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+        #${SCRIPT.panelId} .mcms-label { display: block !important; width: 100% !important; color: #f4f7ff !important; font-size: 10.5px !important; line-height: 1.15 !important; font-weight: 900 !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere !important; }
         #${SCRIPT.panelId} .mcms-pill { display: inline-block !important; margin-top: 4px !important; max-width: 78px !important; padding: 1px 5px !important; border-radius: 999px !important; background: rgba(255,255,255,.13) !important; color: rgba(255,255,255,.82) !important; font-size: 7.5px !important; line-height: 1.05 !important; font-weight: 900 !important; white-space: nowrap !important; overflow: hidden !important; }
-        #${SCRIPT.panelId} .mcms-section-label { margin: 9px 0 6px 0 !important; color: rgba(233,238,245,.62) !important; font-size: 9px !important; line-height: 1 !important; font-weight: 900 !important; letter-spacing: .55px !important; text-transform: uppercase !important; }
+        #${SCRIPT.panelId} .mcms-section-label { margin: 9px 0 6px 0 !important; color: rgba(233,238,245,.62) !important; font-size: 9px !important; line-height: 1.25 !important; font-weight: 900 !important; letter-spacing: .55px !important; text-transform: uppercase !important; white-space: normal !important; overflow-wrap: anywhere !important; }
         #${SCRIPT.panelId} .mcms-row { display: grid !important; grid-template-columns: minmax(0,1fr) 100px !important; gap: 7px !important; align-items: center !important; margin-bottom: 7px !important; }
-        #${SCRIPT.panelId} .mcms-row-label { color: rgba(255,255,255,.82) !important; font-size: 10px !important; font-weight: 800 !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+        #${SCRIPT.panelId} .mcms-row-label { color: rgba(255,255,255,.82) !important; font-size: 10px !important; line-height: 1.2 !important; font-weight: 800 !important; overflow: visible !important; text-overflow: clip !important; white-space: normal !important; overflow-wrap: anywhere !important; }
         #${SCRIPT.panelId} .mcms-input, #${SCRIPT.panelId} .mcms-select { width: 100% !important; height: 27px !important; border: 1px solid rgba(255,255,255,.14) !important; border-radius: 8px !important; background: rgba(255,255,255,.08) !important; color: #fff !important; font-size: 10px !important; font-weight: 800 !important; padding: 0 7px !important; }
         #${SCRIPT.panelId} .mcms-select option { color: #111 !important; }
         #${SCRIPT.panelId} .mcms-position-grid, #${SCRIPT.panelId} .mcms-nudge-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0,1fr)) !important; gap: 6px !important; width: 100% !important; }
         #${SCRIPT.panelId} .mcms-nudge-grid { grid-template-columns: repeat(5, minmax(0,1fr)) !important; }
         #${SCRIPT.panelId} .mcms-position-btn, #${SCRIPT.panelId} .mcms-small-btn, #${SCRIPT.panelId} .mcms-bookmark-btn, #${SCRIPT.panelId} .mcms-pin-btn { width: 100% !important; min-width: 0 !important; height: 28px !important; border: 1px solid rgba(255,255,255,.13) !important; border-radius: 9px !important; background: rgba(255,255,255,.065) !important; color: rgba(255,255,255,.84) !important; cursor: pointer !important; font-size: 9px !important; line-height: 28px !important; font-weight: 900 !important; text-align: center !important; padding: 0 !important; overflow: hidden !important; }
+        #${SCRIPT.panelId} .mcms-small-btn { height: auto !important; min-height: 28px !important; line-height: 1.15 !important; padding: 5px 6px !important; white-space: normal !important; overflow-wrap: anywhere !important; display: flex !important; align-items: center !important; justify-content: center !important; }
         #${SCRIPT.panelId} .mcms-position-btn:hover, #${SCRIPT.panelId} .mcms-small-btn:hover, #${SCRIPT.panelId} .mcms-bookmark-btn:hover, #${SCRIPT.panelId} .mcms-pin-btn:hover { background: rgba(255,255,255,.14) !important; }
         #${SCRIPT.panelId} .mcms-quick-row { display: grid !important; grid-template-columns: minmax(0,1fr) 44px !important; gap: 6px !important; margin-bottom: 6px !important; }
         #${SCRIPT.panelId} .mcms-bookmark-row { display: grid !important; grid-template-columns: minmax(0,1fr) 32px 38px 34px 26px !important; gap: 5px !important; align-items: center !important; margin-bottom: 5px !important; }
@@ -3672,7 +3673,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.toastId}.mcms-flash { opacity: 1 !important; transform: translateY(0) !important; }
         #${SCRIPT.panelId}.mcms-map-small { width: 292px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-grid-2 { gap: 6px !important; }
-        #${SCRIPT.panelId}.mcms-map-small .mcms-theme-btn, #${SCRIPT.panelId}.mcms-map-small .mcms-toggle-btn, #${SCRIPT.panelId}.mcms-map-small .mcms-place-main { height: 40px !important; padding: 5px !important; grid-template-columns: 18px minmax(0,1fr) !important; gap: 5px !important; }
+        #${SCRIPT.panelId}.mcms-map-small .mcms-theme-btn, #${SCRIPT.panelId}.mcms-map-small .mcms-toggle-btn, #${SCRIPT.panelId}.mcms-map-small .mcms-place-main { min-height: 40px !important; height: auto !important; padding: 5px !important; grid-template-columns: 18px minmax(0,1fr) !important; gap: 5px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-iconbox { width: 18px !important; height: 18px !important; min-width: 18px !important; font-size: 9px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-label { font-size: 10px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-footer { display: none !important; }
@@ -3865,6 +3866,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-pin-btn {
             min-height: 44px !important; height: 44px !important; border-radius: 10px !important;
             font-size: 11.5px !important; line-height: 44px !important; padding: 0 8px !important;
+        }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-small-btn {
+            min-height: 44px !important; height: auto !important; line-height: 1.15 !important; padding: 7px 8px !important;
         }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-quick-row { grid-template-columns: minmax(0,1fr) 64px !important; gap: 8px !important; margin-bottom: 8px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row {
@@ -4085,6 +4089,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-small-btn,
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-btn,
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-pin-btn { min-height:44px !important; height:44px !important; line-height:42px !important; border-radius:10px !important; font-size:10px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-small-btn { min-height:44px !important; height:auto !important; line-height:1.15 !important; padding:7px !important; white-space:normal !important; overflow-wrap:anywhere !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-position-grid,
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-nudge-grid { gap:6px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-quick-row { grid-template-columns:minmax(0,1fr) 58px !important; gap:6px !important; }
@@ -4230,7 +4235,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-profile-main strong { color:#edf4fb !important; font-size:9px !important; }
         #${SCRIPT.panelId} .mcms-profile-main span { color:#8393a5 !important; font-size:7px !important; margin-top:2px !important; }
         #${SCRIPT.panelId} .mcms-config-actions { display:grid !important; grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:5px !important; }
-        #${SCRIPT.panelId} .mcms-config-actions .mcms-small-btn { min-width:0 !important; white-space:nowrap !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.panelId} .mcms-config-actions .mcms-small-btn { min-width:0 !important; white-space:normal !important; text-overflow:clip !important; overflow-wrap:anywhere !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-config-actions [data-action="reset-config"] { grid-column:1 / -1 !important; }
         #${SCRIPT.panelId} .mcms-hidden-file { display:none !important; }
@@ -27884,7 +27889,7 @@ Create the private backup now?`);
                     <button class="mcms-tab-btn" type="button" data-tab="resources">Resources</button>
                     <button class="mcms-tab-btn" type="button" data-tab="ops">Ops</button>
                     <button class="mcms-tab-btn" type="button" data-tab="payouts">Payouts</button>
-                    <button class="mcms-tab-btn" type="button" data-tab="discord">Discord</button>
+                    <button class="mcms-tab-btn" type="button" data-tab="discord">Finance</button>
                     <button class="mcms-tab-btn" type="button" data-tab="places">Places</button>
                     <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
                 </div>
@@ -27898,6 +27903,14 @@ Create the private backup now?`);
                 <div class="mcms-section-label">Emergency services</div>
                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+                <div class="mcms-section-label">Automatic day / night</div>
+                <div class="mcms-grid-2">
+                    ${makeToggleButton('autoNight', '◑', 'Auto Night', 'Automatically switch operational map skins at the configured day and night times.')}
+                </div>
+                <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
             </section>
             <section class="mcms-tab-panel" data-panel="tools">
                 <div class="mcms-section-label">Map tools</div>
@@ -27921,6 +27934,11 @@ Create the private backup now?`);
                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+                <div class="mcms-section-label">Map performance</div>
+                <div class="mcms-grid-2">
+                    ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Alliance Map Blocker', 'Blocks the heavy map in the Alliance Buildings/Courses menu. ON means blocked. Reload required.')}
+                </div>
+                <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map, expands the courses list and prevents its heavy marker layer attaching.</div>
                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
@@ -27942,7 +27960,6 @@ Create the private backup now?`);
                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
-                    ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
@@ -27954,6 +27971,11 @@ Create the private backup now?`);
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+                <div class="mcms-section-label">Vehicle loading</div>
+                <div class="mcms-grid-2">
+                    ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically activates MissionChief’s native Load more vehicles control inside an opened mission.')}
+                </div>
+                <div class="mcms-status">Transport Watcher and Unit Count remain under Tools as the canonical map-overlay controls for shortcuts 7 and 8.</div>
             </section>
             <section class="mcms-tab-panel" data-panel="ops">
                 <div class="mcms-section-label">Mission Intelligence</div>
@@ -27962,8 +27984,8 @@ Create the private backup now?`);
                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
-                    ${makeToggleButton('transportWatcher', '7', 'Transport Watch', 'Show amber transport-required badges beside missions. Shortcut: 7')}
-                    ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your own committed unit counts beside missions. Shortcut: 8')}
+                    ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
+                    ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
                         <span class="mcms-iconbox">V</span>
                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
@@ -27975,11 +27997,10 @@ Create the private backup now?`);
                 <div data-ops-session></div>
                 <div class="mcms-section-label">Mission Age Workflow</div>
                 <div class="mcms-grid-2">
-                    <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
-                    <button class="mcms-small-btn" style="height:34px !important;line-height:34px !important" type="button" data-action="fit-critical">Frame Aged</button>
-                    ${makeToggleButton('criticalView', '9', 'Critical View', 'Show only personal missions aged 8 hours or more. Shortcut: 9')}
-                    ${makeToggleButton('missionAge', '6', 'Mission Age', 'Show personal mission age with 8H amber, 16H orange and 24H red warning stages. Shortcut: 6')}
+                    <button class="mcms-small-btn" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+                    <button class="mcms-small-btn" type="button" data-action="fit-critical">Frame Aged</button>
                 </div>
+                <div class="mcms-status">Mission Age and Critical View remain under Tools as the canonical shortcut controls for 6 and 9. Ops provides the mission workflow and dashboard actions.</div>
                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
                 <div class="mcms-ops-list" data-ops-critical-preview></div>
                 <div class="mcms-section-label">Completion History</div>
@@ -28022,7 +28043,7 @@ Create the private backup now?`);
                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
                 </div>
-                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate and Post Supreme Audit</button>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate & Post Audit</button>
                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
 
                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
@@ -28035,8 +28056,8 @@ Create the private backup now?`);
                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
                 </div>
-                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh GitHub Financial Intelligence</button>
-                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear This Player's Local Archive</button>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh Financial Intelligence</button>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear Player Archive</button>
                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
@@ -28049,6 +28070,9 @@ Create the private backup now?`);
                 <div class="mcms-quick-list"></div>
                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
                 <div class="mcms-bookmark-list"></div>
+                <div class="mcms-section-label">Saved Map Profiles</div>
+                <div class="mcms-profile-list" data-profile-list></div>
+                <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
             </section>
             <section class="mcms-tab-panel" data-panel="settings">
                 <div class="mcms-section-label">Device layout</div>
@@ -28077,26 +28101,11 @@ Create the private backup now?`);
                         <button class="mcms-small-btn" type="button" data-action="panel-reset">↺</button>
                     </div>
                 </div>
-                <div class="mcms-section-label">Behaviour</div>
+                <div class="mcms-section-label">Input</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
-                    ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically presses MissionChief’s Load more vehicles control whenever an opened mission limits the vehicle list.')}
-                    ${makeToggleButton('autoNight', '◑', 'AutoNight', 'Automatically switch skins by time.')}
-                    ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Map Blocker', 'Blocks the heavy map in the Alliance Buildings menu (Courses menu). ON means blocked. Reload required.')}
-                    ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
-                    ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Plays a short synthesized digital tracking cue during mission zoom and target acquisition.')}
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
-                <div class="mcms-status">The Incident Feed shows qualifying personal and alliance missions in the top status bar. Exceptionally old, stuck or mass-casualty incidents can appear regardless of the credit threshold. Hover pauses the feed; click an item to zoom to it.</div>
-                <div class="mcms-status"><strong>Map Blocker ON</strong> is the performance mode for the Alliance Buildings menu (Courses menu). It removes that page's map, expands the courses list to full width and prevents its heavy marker layer attaching.</div>
-                <div class="mcms-section-label">Auto Night</div>
-                <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
-                <div class="mcms-section-label">Saved Map Profiles</div>
-                <div class="mcms-profile-list" data-profile-list></div>
-                <div class="mcms-status">Profiles save your map location, zoom, skin, visibility filters and operational overlays.</div>
                 <div class="mcms-section-label">Economy Mode</div>
                 <div class="mcms-status mcms-economy-status">Use the leaf button beside the map-menu opener. Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
                 <div class="mcms-section-label">Settings Backup</div>

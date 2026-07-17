@@ -173,6 +173,11 @@ const context = {
     document: {},
     MutationObserver: FakeMutationObserver,
     runtime: { destroyed: false },
+    missionRequirementsScanTimer: null,
+    missionRequirementsFeatureInstalled: false,
+    missionRequirementsObservedDocuments: new WeakSet(),
+    missionRequirementsObservedFrames: new WeakSet(),
+    missionRequirementsRecords: new Map(),
     runtimeSetTimeout: () => 1,
     runtimeClearTimeout: () => {},
     runtimeRequestAnimationFrame: callback => {

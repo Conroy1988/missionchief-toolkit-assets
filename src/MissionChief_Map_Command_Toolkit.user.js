@@ -22055,6 +22055,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
     }
 
+    function missionRequirementsElementText(element) {
+        if (!element) return '';
+        const rendered = typeof element.innerText === 'string' && element.innerText.trim()
+            ? element.innerText
+            : element.textContent;
+        return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
+    }
+
     function missionRequirementsParseSource(source) {
         if (!source) return { requirements: [], unresolved: [] };
         const requirements = [];

@@ -21945,6 +21945,65 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return Number.isFinite(number) ? Math.max(0, number) : 0;
     }
 
+    function missionRequirementsOptionalNumber(value) {
+        const text = String(value ?? '').trim();
+        if (!/\d/u.test(text)) return null;
+        return missionRequirementsNumber(text);
+    }
+
+    function missionRequirementsCapacity(min = 0, max = min, known = null) {
+        const safeMin = Math.max(0, Number(min) || 0);
+        let safeMax = max === null || max === undefined ? null : Math.max(safeMin, Number(max) || 0);
+        if (safeMax !== null && !Number.isFinite(safeMax)) safeMax = null;
+        const exact = known === true ? true : known === false ? false : safeMax !== null && safeMin === safeMax;
+        return { min: safeMin, max: safeMax, known: exact, value: safeMin };
+    }
+
+    function missionRequirementsCapacityText(capacity) {
+        const value = missionRequirementsCapacity(capacity?.min ?? capacity?.value ?? 0, capacity?.max, capacity?.known);
+        if (value.known || value.max === value.min) return value.min.toLocaleString('en-GB');
+        if (value.max === null) return value.min > 0 ? `${value.min.toLocaleString('en-GB')}+` : '?';
+        return `${value.min.toLocaleString('en-GB')}–${value.max.toLocaleString('en-GB')}`;
+    }
+
+    function missionRequirementsCoverageRow(requirement, selectedCapacity, enRouteCapacity) {
+        const missing = Math.max(0, Number(requirement?.missing) || 0);
+        const selected = missionRequirementsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const enRoute = missionRequirementsCapacity(enRouteCapacity?.min ?? enRouteCapacity?.value ?? 0, enRouteCapacity?.max, enRouteCapacity?.known);
+        const totalMin = selected.min + enRoute.min;
+        const totalMax = selected.max === null || enRoute.max === null ? null : selected.max + enRoute.max;
+        const covered = totalMin >= missing;
+        const definitelyOpen = !covered && totalMax !== null && totalMax < missing;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = enRoute.max === null ? 0 : Math.max(0, missing - enRoute.max);
+        const stillMax = Math.max(0, missing - enRoute.min);
+        const still = missionRequirementsCapacity(stillMin, stillMax, enRoute.known && stillMin === stillMax);
+        const partial = !covered && (selected.min > 0 || enRoute.min > 0 || (selected.max || 0) > 0 || (enRoute.max || 0) > 0);
+        return {
+            ...requirement,
+            selected: selected.min,
+            selectedMin: selected.min,
+            selectedMax: selected.max,
+            selectedKnown: selected.known,
+            selectedText: missionRequirementsCapacityText(selected),
+            enRoute: enRoute.min,
+            enRouteMin: enRoute.min,
+            enRouteMax: enRoute.max,
+            enRouteKnown: enRoute.known,
+            enRouteText: missionRequirementsCapacityText(enRoute),
+            stillNeeded: still.max === null ? still.min : still.max,
+            stillNeededMin: still.min,
+            stillNeededMax: still.max,
+            stillNeededKnown: still.known,
+            stillNeededText: missionRequirementsCapacityText(still),
+            covered,
+            definitelyOpen,
+            uncertain,
+            partial,
+            coverageKnown: covered || definitelyOpen
+        };
+    }
+
     function missionRequirementsCleanRemaining(value) {
         return String(value || '')
             .replace(/\b(?:we\s+need|needed|required)\b\s*:*/giu, ' ')
@@ -21958,13 +22017,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
         const aliases = Array.from(definition.aliases || []).sort((left, right) => right.length - left.length);
         for (const alias of aliases) {
-            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\\\s+/gu, '\\s+');
+            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\s+/gu, '\\s+');
             const before = new RegExp(`(^|[,;]\\s*)${numberPattern}\\s*x?\\s+(${labelPattern})(?=\\s*(?:[,;]|$))`, 'iu');
             const beforeMatch = before.exec(text);
-            if (beforeMatch) return { match: beforeMatch[0], missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
+            if (beforeMatch) return { match: beforeMatch[0], index: beforeMatch.index, missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
             const after = new RegExp(`(^|[,;]\\s*)(${labelPattern})\\s*:\\s*${numberPattern}(?=\\s*(?:[,;]|$))`, 'iu');
             const afterMatch = after.exec(text);
-            if (afterMatch) return { match: afterMatch[0], missing: missionRequirementsNumber(afterMatch[3]), label: afterMatch[2] };
+            if (afterMatch) return { match: afterMatch[0], index: afterMatch.index, missing: missionRequirementsNumber(afterMatch[3]), label: afterMatch[2] };
         }
         return null;
     }
@@ -21976,12 +22035,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             .replace(/\s+/gu, ' ')
             .trim();
         const requirements = [];
-        const definitions = MISSION_REQUIREMENT_DEFINITIONS
-            .filter(definition => definition.group === group)
-            .sort((left, right) => Math.max(...right.aliases.map(alias => alias.length), 0) - Math.max(...left.aliases.map(alias => alias.length), 0));
-        for (const definition of definitions) {
-            const found = missionRequirementsFindDefinitionMatch(remaining, definition);
-            if (!found || found.missing <= 0) continue;
+        const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => definition.group === group);
+        while (remaining) {
+            const matches = definitions
+                .map(definition => ({ definition, found: missionRequirementsFindDefinitionMatch(remaining, definition) }))
+                .filter(candidate => candidate.found && candidate.found.missing > 0)
+                .sort((left, right) => left.found.index - right.found.index || right.found.match.length - left.found.match.length);
+            if (!matches.length) break;
+            const { definition, found } = matches[0];
             requirements.push({
                 key: definition.key,
                 requirement: definition.label || found.label,
@@ -21989,17 +22050,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 group,
                 definition
             });
-            remaining = remaining.replace(found.match, ' ');
+            remaining = `${remaining.slice(0, found.index)} ${remaining.slice(found.index + found.match.length)}`;
         }
         return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
-    }
-
-    function missionRequirementsElementText(element) {
-        if (!element) return '';
-        const rendered = typeof element.innerText === 'string' && element.innerText.trim()
-            ? element.innerText
-            : element.textContent;
-        return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
     }
 
     function missionRequirementsParseSource(source) {
@@ -22077,16 +22130,34 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function missionRequirementsStaffCapacity(element) {
         const row = element?.closest?.('tr') || element;
-        const nodes = [element, row, row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-max-personnel]'), row?.querySelector?.('td:nth-of-type(5)[sortvalue]')].filter(Boolean);
-        const attributes = ['data-personnel-count', 'data-current-personnel', 'data-max-personnel', 'data-personnel', 'data-staff', 'data-crew', 'sortvalue'];
-        for (const node of nodes) {
-            for (const attribute of attributes) {
-                const raw = node.getAttribute?.(attribute);
-                if (raw === null || raw === undefined || raw === '') continue;
-                const value = missionRequirementsNumber(raw);
-                if (value > 0) return value;
+        const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], td:nth-of-type(5)[sortvalue]');
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
             }
         }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const text = String(crewCell?.textContent || '').trim();
+        const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+        if (currentMaximum) {
+            const current = missionRequirementsNumber(currentMaximum[1]);
+            return missionRequirementsCapacity(current, current, true);
+        }
+        const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+        if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+        const visible = missionRequirementsOptionalNumber(text);
+        if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+        const sortValue = missionRequirementsOptionalNumber(crewCell?.getAttribute?.('sortvalue'));
+        if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
         return null;
     }
 
@@ -22126,30 +22197,78 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return units;
     }
 
+    function missionRequirementsMissionTypeId(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
+        for (const scope of scopes) {
+            for (const attribute of attributes) {
+                const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
+            if (node) {
+                for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
+                    const value = Number.parseInt(raw, 10);
+                    if (Number.isFinite(value) && value >= 0) return value;
+                }
+            }
+        }
+        const runtimeValue = Number.parseInt(pageWindow.missionTypeId ?? pageWindow.mission_type_id, 10);
+        return Number.isFinite(runtimeValue) && runtimeValue >= 0 ? runtimeValue : null;
+    }
+
+    function missionRequirementsDefinitionCondition(definition, candidate) {
+        const included = Array.from(definition?.missionTypes || []).map(Number).filter(Number.isFinite);
+        const excluded = Array.from(definition?.excludedMissionTypes || []).map(Number).filter(Number.isFinite);
+        if (!included.length && !excluded.length) return true;
+        const missionTypeId = missionRequirementsMissionTypeId(candidate);
+        if (missionTypeId === null) return null;
+        if (included.length && !included.includes(missionTypeId)) return false;
+        if (excluded.includes(missionTypeId)) return false;
+        return true;
+    }
+
     function missionRequirementsUnitContribution(requirement, unit) {
         const definition = requirement.definition || {};
         const typeEligible = Array.from(definition.types || []).includes(unit.typeId);
         const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase()));
-        if (!typeEligible && !equipmentEligible) return { eligible: false, value: 0, known: true };
+        if (!typeEligible && !equipmentEligible) return { eligible: false, capacity: missionRequirementsCapacity(0, 0, true) };
         if (requirement.group === 'staff') {
-            return unit.staff === null
-                ? { eligible: true, value: 0, known: false }
-                : { eligible: true, value: Math.max(0, unit.staff), known: true };
+            const capacity = unit.staff
+                ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known)
+                : missionRequirementsCapacity(0, null, false);
+            return { eligible: true, capacity };
         }
         const factor = Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1);
-        return { eligible: true, value: Number.isFinite(factor) && factor > 0 ? factor : 1, known: true };
+        const value = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        return { eligible: true, capacity: missionRequirementsCapacity(value, value, true) };
     }
 
     function missionRequirementsAggregate(requirement, units) {
         const contributions = new Map();
-        let known = true;
         for (const unit of units) {
             const contribution = missionRequirementsUnitContribution(requirement, unit);
             if (!contribution.eligible) continue;
-            known = known && contribution.known;
-            contributions.set(unit.contributionKey, Math.max(contributions.get(unit.contributionKey) || 0, contribution.value));
+            const capacity = contribution.capacity;
+            const existing = contributions.get(unit.contributionKey);
+            if (!existing) {
+                contributions.set(unit.contributionKey, capacity);
+                continue;
+            }
+            const pairMin = Math.max(existing.min, capacity.min);
+            const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max);
+            contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin));
         }
-        return { value: Array.from(contributions.values()).reduce((total, value) => total + value, 0), known };
+        let min = 0;
+        let max = 0;
+        let exact = true;
+        for (const capacity of contributions.values()) {
+            min += capacity.min;
+            if (max === null || capacity.max === null) max = null;
+            else max += capacity.max;
+            exact = exact && capacity.known;
+        }
+        return missionRequirementsCapacity(min, max, exact && max !== null && min === max);
     }
 
     function missionRequirementsProgressValue(candidate, bar, metric) {
@@ -22164,25 +22283,33 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
         const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
         return parsed.requirements.map(requirement => {
+            const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
+            if (condition !== true) {
+                const unresolvedRow = missionRequirementsCoverageRow(
+                    requirement,
+                    missionRequirementsCapacity(0, null, false),
+                    missionRequirementsCapacity(0, null, false)
+                );
+                return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
+            }
             let selected;
             let enRoute;
             if (requirement.definition?.bar) {
-                selected = { value: missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected') ?? 0, known: true };
-                enRoute = { value: missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving') ?? 0, known: true };
+                const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
+                const enRouteValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
+                selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true);
+                enRoute = enRouteValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(enRouteValue, enRouteValue, true);
             } else {
                 selected = missionRequirementsAggregate(requirement, selectedUnits);
                 enRoute = missionRequirementsAggregate(requirement, enRouteUnits);
             }
-            const stillNeeded = Math.max(0, requirement.missing - enRoute.value);
-            const covered = selected.known && selected.value >= stillNeeded;
-            const partial = !covered && (selected.value > 0 || enRoute.value > 0);
-            return { ...requirement, selected: selected.value, selectedKnown: selected.known, enRoute: enRoute.value, stillNeeded, covered, partial };
+            return { ...missionRequirementsCoverageRow(requirement, selected, enRoute), conditionKnown: true, conditionMatched: true };
         });
     }
 
     function missionRequirementsOverallState(rows, unresolved) {
-        if (rows.some(row => !row.covered && row.selectedKnown)) return 'danger';
-        if (rows.some(row => !row.selectedKnown) || unresolved.length) return 'warning';
+        if (rows.some(row => row.definitelyOpen)) return 'danger';
+        if (rows.some(row => row.uncertain) || unresolved.length) return 'warning';
         return rows.length ? 'success' : 'warning';
     }
 
@@ -22288,18 +22415,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsPanelHtml(rows, unresolved) {
-        const outstanding = rows.filter(row => !row.covered).length;
+        const definiteOutstanding = rows.filter(row => row.definitelyOpen).length;
+        const uncertain = rows.filter(row => row.uncertain).length + unresolved.length;
         const stateName = missionRequirementsOverallState(rows, unresolved);
         const summary = stateName === 'success'
             ? 'All requirements covered'
-            : stateName === 'warning' && !outstanding
-                ? 'Check unresolved requirement'
-                : `${outstanding} requirement${outstanding === 1 ? '' : 's'} outstanding`;
+            : stateName === 'warning'
+                ? `${uncertain} requirement${uncertain === 1 ? '' : 's'} need confirmation`
+                : `${definiteOutstanding} requirement${definiteOutstanding === 1 ? '' : 's'} outstanding`;
         const rowHtml = rows.map(row => {
-            const selectedText = row.selectedKnown ? row.selected.toLocaleString('en-GB') : '?';
-            const rowState = !row.selectedKnown ? 'unresolved' : row.covered ? 'covered' : row.partial ? 'partial' : 'open';
+            const rowState = row.covered ? 'covered' : row.uncertain ? 'unresolved' : row.partial ? 'partial' : 'open';
             const prefix = row.covered ? '✓ ' : '';
-            return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing on mission">${row.missing.toLocaleString('en-GB')}</td><td data-label="En-route">${row.enRoute.toLocaleString('en-GB')}</td><td class="mcms-req-still" data-label="Still needed">${row.stillNeeded.toLocaleString('en-GB')}</td><td data-label="Selected">${escapeHtml(selectedText)}</td></tr>`;
+            return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing on mission">${row.missing.toLocaleString('en-GB')}</td><td data-label="En-route">${escapeHtml(row.enRouteText)}</td><td class="mcms-req-still" data-label="Still needed">${escapeHtml(row.stillNeededText)}</td><td data-label="Selected">${escapeHtml(row.selectedText)}</td></tr>`;
         }).join('');
         const unknownHtml = unresolved.length
             ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}</div>`

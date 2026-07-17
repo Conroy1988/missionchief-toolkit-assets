@@ -43,6 +43,9 @@ concurrency:
 
 jobs:
   monitor:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -66,11 +69,25 @@ jobs:
 
       - name: Check live GitHub Pages deployment
         id: health
+        env:
+          MAX_ATTEMPTS: ${{ (github.event_name == 'workflow_run' || github.event_name == 'push') && '16' || '1' }}
+          RETRY_SECONDS: "15"
         shell: bash
         run: |
           set +e
-          python3 .github/scripts/check_pages_live.py
-          STATUS=$?
+          STATUS=1
+          for ATTEMPT in $(seq 1 "$MAX_ATTEMPTS"); do
+            python3 .github/scripts/check_pages_live.py
+            STATUS=$?
+            if [[ "$STATUS" -eq 0 ]]; then
+              echo "Live Pages matched the verified release on attempt ${ATTEMPT}."
+              break
+            fi
+            if [[ "$ATTEMPT" -lt "$MAX_ATTEMPTS" ]]; then
+              echo "Pages propagation not complete on attempt ${ATTEMPT}; retrying in ${RETRY_SECONDS}s."
+              sleep "$RETRY_SECONDS"
+            fi
+          done
           echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
           exit 0
 

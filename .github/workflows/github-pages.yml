@@ -40,8 +40,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: toolkit-pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.event_name == 'pull_request' && format('toolkit-pages-pr-{0}', github.event.pull_request.number) || 'toolkit-pages-production' }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -112,17 +112,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Check out repository
+      - name: Check out current production source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: ${{ github.event_name == 'release' && 'main' || github.sha }}
+          ref: main
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Wait for verified release dashboard
-        if: github.event_name == 'release'
+      - name: Resolve verified production source
+        id: production
         env:
-          EXPECTED_TAG: ${{ github.event.release.tag_name }}
+          EXPECTED_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -132,14 +132,21 @@ jobs:
             git reset --hard origin/main
             DASHBOARD_VERSION="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
             RELEASE_STATE="$(jq -r '.status.githubRelease // empty' status/release-dashboard.json)"
-            if [[ "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" ]]; then
-              echo "Verified release dashboard reached ${EXPECTED_VERSION} on attempt ${ATTEMPT}."
+            GREASY_FORK_STATE="$(jq -r '.status.greasyForkSync // empty' status/release-dashboard.json)"
+            if [[ -z "$EXPECTED_VERSION" ]]; then
+              EXPECTED_VERSION="$DASHBOARD_VERSION"
+            fi
+            if [[ -n "$EXPECTED_VERSION" && "$DASHBOARD_VERSION" == "$EXPECTED_VERSION" && "$RELEASE_STATE" == "published" && "$GREASY_FORK_STATE" == "verified" ]]; then
+              SOURCE_SHA="$(git rev-parse HEAD)"
+              echo "release_version=$EXPECTED_VERSION" >> "$GITHUB_OUTPUT"
+              echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+              echo "Deploying verified Toolkit ${EXPECTED_VERSION} from ${SOURCE_SHA}."
               exit 0
             fi
-            echo "Waiting for verified release ${EXPECTED_VERSION}; dashboard=${DASHBOARD_VERSION:-missing}, state=${RELEASE_STATE:-missing}."
+            echo "Waiting for verified production state ${EXPECTED_VERSION:-unknown}; dashboard=${DASHBOARD_VERSION:-missing}, GitHub=${RELEASE_STATE:-missing}, Greasy Fork=${GREASY_FORK_STATE:-missing}."
             sleep 15
           done
-          echo "::error::Release dashboard did not verify ${EXPECTED_VERSION} within 10 minutes."
+          echo "::error::Verified production state ${EXPECTED_VERSION:-unknown} was not available within 10 minutes."
           exit 1
 
       - name: Configure GitHub Pages
@@ -156,6 +163,9 @@ jobs:
           python3 .github/scripts/build_pages_site.py \
             --output _site \
             --base-path "$BASE_PATH"
+          grep -Fq "${{ steps.production.outputs.release_version }}" _site/index.html
+          echo "Pages source: ${{ steps.production.outputs.source_sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pages release: ${{ steps.production.outputs.release_version }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

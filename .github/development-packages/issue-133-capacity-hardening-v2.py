@@ -7,9 +7,9 @@ ROOT = Path.cwd()
 ORIGINAL = ROOT / ".github" / "development-packages" / "issue-133-capacity-hardening.py"
 
 package = ORIGINAL.read_text(encoding="utf-8")
-anchor = 'SOURCE.write_text(source, encoding="utf-8")\n'
-if package.count(anchor) != 1:
-    raise SystemExit(f"capacity package write anchor: expected one, found {package.count(anchor)}")
+write_anchor = 'SOURCE.write_text(source, encoding="utf-8")\n'
+if package.count(write_anchor) != 1:
+    raise SystemExit(f"capacity package write anchor: expected one, found {package.count(write_anchor)}")
 
 parser_hardening = r"""
 source = replace_region(
@@ -61,7 +61,39 @@ source = replace_region(
 )
 
 """
-package = package.replace(anchor, parser_hardening + anchor, 1)
+package = package.replace(write_anchor, parser_hardening + write_anchor, 1)
+
+old_tail = '''SOURCE.write_text(source, encoding="utf-8")
+validation = subprocess.run([sys.executable, str(VALIDATOR)], cwd=ROOT)
+if validation.returncode != 0:
+    raise SystemExit(validation.returncode)
+subprocess.run(["node", "--check", str(SOURCE)], cwd=ROOT, check=True)
+print("Applied Issue #133 range-aware personnel and capacity hardening")
+'''
+new_tail = '''SOURCE.write_text(source, encoding="utf-8")
+runtime_test = ROOT / ".github" / "scripts" / "test_mission_requirements_runtime.js"
+runtime_check = subprocess.run(["node", str(runtime_test)], cwd=ROOT, text=True, capture_output=True)
+if runtime_check.returncode != 0:
+    combined = "\\n".join(part for part in [runtime_check.stdout, runtime_check.stderr] if part)
+    diagnostic = " ".join(combined.strip().split())[-900:] or "unknown runtime fixture failure"
+    diagnostic = diagnostic.replace("**", "").replace("`", "'")
+    stage = Path(__import__("os").environ.get("RUNNER_TEMP", "/tmp")) / "development-package-stage"
+    stage.write_text(f"capacity-runtime-fixture: {diagnostic}", encoding="utf-8")
+    if runtime_check.stdout:
+        print(runtime_check.stdout, end="")
+    if runtime_check.stderr:
+        print(runtime_check.stderr, end="", file=sys.stderr)
+    raise SystemExit(runtime_check.returncode)
+validation = subprocess.run([sys.executable, str(VALIDATOR)], cwd=ROOT)
+if validation.returncode != 0:
+    raise SystemExit(validation.returncode)
+subprocess.run(["node", "--check", str(SOURCE)], cwd=ROOT, check=True)
+print("Applied Issue #133 range-aware personnel and capacity hardening")
+'''
+if package.count(old_tail) != 1:
+    raise SystemExit(f"capacity package validation tail: expected one, found {package.count(old_tail)}")
+package = package.replace(old_tail, new_tail, 1)
+
 exec(compile(package, str(ORIGINAL), "exec"), {"__name__": "__main__", "__file__": str(ORIGINAL)})
 if ORIGINAL.exists():
     ORIGINAL.unlink()

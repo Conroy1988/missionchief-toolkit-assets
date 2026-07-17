@@ -1,5 +1,5 @@
 {
-  "description": "LSSM direct alliance-patient release, multi-ambulance loop and sweep-owned single-window lifecycle contract",
+  "description": "LSSM direct alliance-patient release, multi-ambulance loop and DOM-delta-owned single-window lifecycle contract",
   "current_player_vehicle_ids": [
     "1111111"
   ],
@@ -11,7 +11,12 @@
     "close_before_fallback_vehicle": true,
     "close_after_mission_processing": true,
     "close_only_sweep_owned_window": true,
-    "ignore_unrelated_dialogs": true
+    "ignore_unrelated_dialogs": true,
+    "claim_new_outer_layer_from_dom_delta": true,
+    "prefer_owned_close_control": true,
+    "force_remove_only_new_owned_layers": true,
+    "remove_owned_iframes_and_backdrops": true,
+    "verify_no_owned_layer_remains_visible": true
   },
   "rows": [
     {

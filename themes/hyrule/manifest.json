@@ -1,0 +1,27 @@
+{
+  "assets": {
+    "ancientEyeRune": "ui/ancient-eye-rune.svg",
+    "cashoutAudio": "audio/hyrule-quest-reward.mp3",
+    "commandCrest": "ui/hyrule-command-crest.svg",
+    "commandMap": "ui/parchment-command-map.svg",
+    "energyRing": "ui/zonai-energy-ring.svg",
+    "masterSwordShield": "ui/master-sword-shield-silhouette.svg",
+    "payoutSeal": "payout/quest-complete-seal.svg",
+    "rupeeBurst": "payout/rupee-burst.svg"
+  },
+  "compatibility": {
+    "payoutTemplateIds": [
+      "hyruleQuest"
+    ],
+    "settingIds": [
+      "hyrule"
+    ]
+  },
+  "displayName": "Hyrule Command",
+  "generated": "2026-07-17",
+  "notes": "Canonical Hyrule Command interface asset package. No interface system is designated as flagship.",
+  "packageVersion": "1.0.0",
+  "schemaVersion": 1,
+  "theme": "hyrule",
+  "toolkitVersion": "4.14.7"
+}

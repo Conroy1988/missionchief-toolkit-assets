@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.6
+// @version      4.14.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.6',
+        version: '4.14.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -975,7 +975,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),
-        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '△', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })
+        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '△', description: 'Fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })
     });
     const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);
 
@@ -1018,27 +1018,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const PAYOUT_MEDIA_SOUNDS = Object.freeze({
         viceCity: Object.freeze({
             label: 'GTA Vice City Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/gta-vice-city-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/gta-vice-city-cashout.mp3'
         }),
         badCompany: Object.freeze({
             label: 'BF Bad Company Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/bf-bad-company-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/bf-bad-company-cashout.mp3'
         }),
         scarface: Object.freeze({
             label: 'Scarface Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/scarface-cashout.mp3'
         }),
         cyberpunk: Object.freeze({
             label: 'Cyberpunk Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/cyberpunk/audio/cyberpunk-cashout.mp3'
         }),
         wasteland: Object.freeze({
             label: 'Fallout Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/fallout/audio/fallout-cashout.mp3'
         }),
         factorio: Object.freeze({
             label: 'Factorio Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/factorio/audio/factorio-cashout.mp3'
         }),
         biohazard: Object.freeze({
             label: 'Umbrella Containment Cashout',
@@ -1046,7 +1046,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }),
         jamesBond: Object.freeze({
             label: '007 Intelligence Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'
+            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/audio/james-bond-cashout.mp3'
         }),
         hyruleQuest: Object.freeze({
             label: 'Hyrule Quest Reward',

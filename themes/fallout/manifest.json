@@ -1,0 +1,20 @@
+{
+  "assets": {
+    "cashoutAudio": "audio/fallout-cashout.mp3"
+  },
+  "compatibility": {
+    "payoutTemplateIds": [
+      "wasteland"
+    ],
+    "settingIds": [
+      "fallout4"
+    ]
+  },
+  "displayName": "Fallout 4",
+  "generated": "2026-07-17",
+  "notes": "Canonical Fallout 4 interface asset package.",
+  "packageVersion": "1.0.0",
+  "schemaVersion": 1,
+  "theme": "fallout4",
+  "toolkitVersion": "4.14.7"
+}

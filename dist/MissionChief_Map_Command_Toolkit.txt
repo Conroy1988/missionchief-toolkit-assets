@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.1
+// @version      4.14.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.1',
+        version: '4.14.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4141',
+        styleId: 'mc-map-command-toolkit-style-v4142',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -892,6 +892,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4139__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4140__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4141__ = true;
+    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4142__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V450__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V410__ = true;
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V400__ = true;
@@ -935,7 +936,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.1',
+        guideVersion: '4.14.2',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -16948,15 +16949,80 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return transportSweepVisibleDischargeButtons().find(button => !excluded || !excluded.has(button)) || null;
     }
 
+    function transportSweepTopLevelWindowRoots() {
+        const visible = transportSweepVisibleWindowRoots();
+        return visible.filter(root => !visible.some(other => other !== root && other.contains?.(root)));
+    }
+
+    function transportSweepWindowCloseControl(root) {
+        if (!root?.querySelectorAll) return null;
+        const selectors = [
+            '#lightbox_close', '.lightbox-close', '.lightbox_close',
+            '[data-dismiss="modal"]', '[data-bs-dismiss="modal"]',
+            'button.close', 'a.close', 'button[aria-label="Close"]', 'a[aria-label="Close"]',
+            'button[title="Close"]', 'a[title="Close"]'
+        ];
+        for (const selector of selectors) {
+            const control = Array.from(root.querySelectorAll(selector)).find(transportSweepElementVisible);
+            if (control) return control;
+        }
+        return null;
+    }
+
+    async function closeTransportSweepWindows(reason = 'navigation') {
+        transportSweepRuntime.missionWindowRoot = null;
+        for (let pass = 0; pass < 12 && !transportSweepRuntime.stopRequested; pass += 1) {
+            const roots = transportSweepTopLevelWindowRoots();
+            if (!roots.length) return true;
+            const target = roots[roots.length - 1];
+            const beforeCount = roots.length;
+            let requested = false;
+
+            if (typeof pageWindow.lightboxClose === 'function') {
+                try {
+                    pageWindow.lightboxClose();
+                    requested = true;
+                } catch (err) {}
+            }
+
+            if (!requested) {
+                const closeControl = transportSweepWindowCloseControl(target);
+                if (closeControl) {
+                    try {
+                        closeControl.click();
+                        requested = true;
+                    } catch (err) {}
+                }
+            }
+
+            if (!requested) {
+                transportSweepLog(`Could not close the active MissionChief window before ${reason}`, 'error');
+                return false;
+            }
+
+            const closed = await transportSweepWaitFor(() => {
+                const remaining = transportSweepTopLevelWindowRoots();
+                return !target.isConnected || !transportSweepElementVisible(target) || remaining.length < beforeCount ? true : null;
+            }, 2600, 100);
+            if (!closed) {
+                transportSweepLog(`MissionChief did not close the active window before ${reason}`, 'error');
+                return false;
+            }
+            await transportSweepSleep(80);
+        }
+        return transportSweepTopLevelWindowRoots().length === 0;
+    }
+
     async function openTransportSweepPath(path, mode) {
         if (transportSweepRuntime.stopRequested) return false;
         if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
+        const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle');
+        if (!closed || transportSweepRuntime.stopRequested) return false;
 
         if (mode === 'mission') {
             transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
             transportSweepRuntime.rejectedOwn = 0;
             transportSweepRuntime.missionWindowRoot = null;
-            const beforeWindowText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
             const missionId = normaliseMissionId(String(path || '').match(/\/missions\/(\d+)/)?.[1]);
             pageWindow.lightboxOpen(path);
             await transportSweepWaitFor(() => {
@@ -16964,8 +17030,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 if (root) {
                     const anchors = transportSweepVehicleAnchorsWithin(root);
                     const afterText = String(root.textContent || '').trim();
-                    const changed = afterText && !beforeWindowText.includes(afterText);
-                    if (anchors.length || changed) {
+                    if (anchors.length || afterText) {
                         transportSweepRuntime.missionWindowRoot = root;
                         return { root, anchors };
                     }
@@ -16976,8 +17041,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                     return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
                 }
                 return null;
-            }, 3200, 120);
-            return !transportSweepRuntime.stopRequested;
+            }, 4200, 120);
+            return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.missionWindowRoot);
         }
 
         pageWindow.lightboxOpen(path);
@@ -16988,35 +17053,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     async function openTransportSweepVehicle(candidate) {
         if (transportSweepRuntime.stopRequested || !candidate?.href) return null;
         transportSweepRuntime.vehicleButtonBaseline = new Set(transportSweepVisibleDischargeButtons());
-        const beforeRoots = transportSweepVisibleWindowRoots();
-        const beforeText = beforeRoots.map(root => String(root.textContent || '').trim()).join('|');
-
-        let anchor = candidate.anchor;
-        if (!anchor?.isConnected) {
-            const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : document;
-            anchor = Array.from(root.querySelectorAll?.('a[href*="/vehicles/"]') || []).find(item => transportSweepVehicleIdFromHref(item.getAttribute('href')) === String(candidate.vehicleId));
-        }
-
-        let usedMissionClick = false;
-        if (anchor?.isConnected) {
-            try {
-                anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-                anchor.click();
-                usedMissionClick = true;
-            } catch (err) {}
-        }
-
-        if (!usedMissionClick) {
-            if (typeof pageWindow.lightboxOpen !== 'function') return null;
-            pageWindow.lightboxOpen(candidate.href);
-        }
+        const opened = await openTransportSweepPath(candidate.href, 'vehicle');
+        if (!opened || transportSweepRuntime.stopRequested) return null;
 
         const openedAt = Date.now();
         return await transportSweepWaitFor(() => {
             const button = findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline);
             if (button) return { opened: true, button };
-            const afterText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
-            if (afterText && afterText !== beforeText && Date.now() - openedAt > 350) return { opened: true, button: null };
+            const roots = transportSweepTopLevelWindowRoots();
+            if (roots.length && Date.now() - openedAt > 350) return { opened: true, button: null };
             return null;
         }, 7500, 140);
     }
@@ -17154,6 +17199,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 }
             }
         }
+
+        await closeTransportSweepWindows('finishing the mission');
 
         if (clearedHere === 0 && !transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
         return clearedHere;

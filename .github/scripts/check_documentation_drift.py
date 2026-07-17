@@ -108,6 +108,9 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
     dashboard = load_json(root / "status/release-dashboard.json")
     source = (root / "src/MissionChief_Map_Command_Toolkit.user.js").read_text(encoding="utf-8")
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    help_centre = (root / "help/index.html").read_text(encoding="utf-8")
+    greasy_fork = (root / "docs/greasyfork-description.md").read_text(encoding="utf-8")
 
     failures: list[str] = []
     warnings: list[str] = []
@@ -155,7 +158,13 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
 
     repository_text = "\n".join(
         path.read_text(encoding="utf-8", errors="replace")
-        for path in [root / "README.md", root / "docs/site-data.json", root / ".github/release-settings.json"]
+        for path in [
+            root / "README.md",
+            root / "help/index.html",
+            root / "docs/greasyfork-description.md",
+            root / "docs/site-data.json",
+            root / ".github/release-settings.json",
+        ]
         if path.exists()
     )
     for url in contract.get("installUrls", []):
@@ -186,6 +195,30 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
     if len(feature_names) < 10:
         failures.append("Feature catalogue unexpectedly contains fewer than ten features")
 
+    for required_name in contract.get("requiredFeatureNames", []):
+        if required_name not in feature_names:
+            failures.append(f"Required public feature is absent from the Pages catalogue: {required_name}")
+
+    public_docs = contract.get("publicDocumentation", {})
+    document_contracts = [
+        ("README", readme, public_docs.get("readmeRequiredTokens", []), []),
+        ("Help Centre", help_centre, public_docs.get("helpRequiredTokens", []), public_docs.get("helpForbiddenTokens", [])),
+        ("Greasy Fork description", greasy_fork, public_docs.get("greasyForkRequiredTokens", []), public_docs.get("greasyForkForbiddenTokens", [])),
+    ]
+    for document_name, document_text, required_tokens, forbidden_tokens in document_contracts:
+        document_lower = document_text.lower()
+        for token in required_tokens:
+            if str(token).lower() not in document_lower:
+                failures.append(f"{document_name} is missing required public claim: {token}")
+        for token in forbidden_tokens:
+            if str(token).lower() in document_lower:
+                failures.append(f"{document_name} still contains forbidden stale claim: {token}")
+    if f"v{version}".lower() not in help_centre.lower():
+        failures.append(f"Help Centre does not identify the current Toolkit version v{version}")
+    for theme in contract.get("themes", []):
+        if str(theme).lower() not in help_centre.lower():
+            failures.append(f"Help Centre omits supported interface system: {theme}")
+
     media_roadmap = site.get("mediaRoadmap", [])
     if len(media_roadmap) < 5:
         warnings.append("Visual media roadmap is unusually small")
@@ -199,6 +232,7 @@ def audit(root: Path, *, allow_release_candidate: bool = False) -> dict[str, Any
         "documentedModes": modes,
         "documentedShortcuts": shortcuts,
         "featureCount": len(feature_names),
+        "publicDocumentCount": 3,
         "failures": failures,
         "warnings": warnings,
     }
@@ -217,6 +251,7 @@ def markdown(report: dict[str, Any]) -> str:
         f"- Themes: **{len(report['documentedThemes'])}**",
         f"- Modes: **{len(report['documentedModes'])}**",
         f"- Shortcuts: **{len(report['documentedShortcuts'])}**",
+        f"- Public documentation surfaces checked: **{report['publicDocumentCount']}**",
     ]
     if report["failures"]:
         lines.extend(["", "## Failures", *[f"- {item}" for item in report["failures"]]])

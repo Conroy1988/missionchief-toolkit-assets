@@ -7,8 +7,8 @@ A configurable command-centre enhancement for MissionChief, combining advanced m
 ## Main features
 
 - Advanced map controls and visibility tools
-- Mission Age Watch, Critical View and Mission Inspector
-- Transport alerts and guarded Transport Sweep
+- Mission Age Watch, Mission Value, Critical View and Mission Inspector
+- Patient and prisoner transport alerts plus a manual, guarded Patient Transport Sweep for eligible alliance-member ambulances
 - Resource-gap and vehicle intelligence
 - Smart bookmarks, Map Jump and saved profiles
 - Coverage rings and Coverage Heat Map
@@ -43,7 +43,7 @@ Please include the Toolkit version, browser, userscript manager and reproduction
 - No hardcoded Discord webhook or private credentials
 - Optional Discord webhook details are entered by the user and stored locally
 - Discord communication occurs only when the user tests or posts a report
-- Exported Toolkit settings do not include the Discord webhook
+- Exported Toolkit settings can include the saved Discord webhook and should be stored privately
 - MissionChief information is processed in the browser to provide enabled Toolkit features
 
 ## Compatibility

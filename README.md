@@ -71,12 +71,14 @@ MissionChief can generate an enormous amount of operational information, but the
 
 | Capability | What it changes |
 |---|---|
-| **Mission Age Watch** | Sorts and surfaces personal missions by age, urgency, assistance state and clearing progress. |
+| **Mission Age Watch** | Sorts and surfaces personal and alliance missions by age, ownership, category, urgency, assistance state and clearing progress. |
 | **Critical View** | Creates a concentrated workflow for missions that need immediate action. |
 | **Mission Value** | Displays a correctly formatted mission value inside opened mission windows, with dynamic clearance from native controls. |
 | **Mission Inspector** | Opens deeper mission context only when requested, avoiding unnecessary startup work. |
 | **Major Incident Feed** | Places high-priority incidents in a live command feed with click-to-zoom navigation. |
-| **Transport Watcher** | Identifies missions that still require patient transport and shows current demand. |
+| **Transport Watcher** | Identifies missions that still require patient or prisoner transport and shows current demand. |
+| **Patient Transport Sweep** | Manually processes eligible alliance-member ambulances one at a time, preferring delayed LSSM release controls while excluding the signed-in player's own vehicles. |
+| **Resource Gap** | Compares mission requirements with available personal vehicle context inside the selected radius. |
 
 ### Fleet and map intelligence
 
@@ -97,7 +99,7 @@ MissionChief can generate an enormous amount of operational information, but the
 | **Financial intelligence** | Summarises income, spending and net position with Discord-ready reporting. |
 | **Payout presentations** | Adds configurable cinematic completion sequences without changing mission logic. |
 | **Session performance** | Tracks earned credits, completions, largest payout, aged missions and payout events. |
-| **Settings import/export** | Moves the complete Toolkit configuration between devices. |
+| **Settings import/export** | Moves Toolkit configuration between devices; exports can contain a saved Discord webhook and must be stored privately. |
 | **Economy Mode** | Suppresses non-essential animation and presentation overhead. |
 
 <details>
@@ -108,7 +110,8 @@ MissionChief can generate an enormous amount of operational information, but the
 - Personal and alliance mission visibility controls
 - Mission Age Watch with progress synchronisation
 - Critical mission workflow and clearing-state tracking
-- Patient and transport monitoring
+- Patient and prisoner transport monitoring
+- Manual Patient Transport Sweep with own-vehicle exclusion, sequential alliance processing and a bounded non-LSSM fallback
 - Mission Inspector and rapid map navigation
 - Major Incident Feed with location and incident context
 - Mission Value inside opened mission windows
@@ -118,6 +121,7 @@ MissionChief can generate an enormous amount of operational information, but the
 
 - Vehicle Code Status panel and keyboard shortcut
 - Transport demand counts
+- Resource Gap analysis within a configurable radius
 - Unit-count overlays
 - Focus Mode and visibility controls
 - Automatic loading of MissionChief's limited vehicle-list batches

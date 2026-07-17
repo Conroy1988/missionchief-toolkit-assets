@@ -15,7 +15,7 @@ This roadmap separates verified infrastructure, active Toolkit development and r
 - Structured issue forms and managed labels
 - GitHub Pages documentation site
 - GitHub Actions supply-chain pinning, permission auditing and Dependabot
-- Documentation contract and live Pages monitoring
+- Cross-surface documentation contract and live Pages monitoring
 - Read-only release planning
 
 ## Active Toolkit development
@@ -42,7 +42,7 @@ This roadmap separates verified infrastructure, active Toolkit development and r
 
 - Capture real Desktop, Tablet and iOS screenshots.
 - Record short demonstrations for major workflows and themes.
-- Enable GitHub Discussions and create a public GitHub Project when repository administration permits.
+- Keep GitHub Discussions support routes and the public project roadmap aligned with repository configuration.
 - Add media to the generated Pages gallery using the documented capture manifest.
 
 ## Repository architecture

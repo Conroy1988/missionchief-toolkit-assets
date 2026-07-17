@@ -3,7 +3,7 @@
     "name": "MissionChief Map Command Toolkit",
     "shortName": "Map Command Toolkit",
     "tagline": "Operational map command, monitoring and presentation suite for MissionChief.",
-    "description": "A configurable userscript that turns the MissionChief map into an operational command centre with mission intelligence, fleet monitoring, map utilities, responsive layouts, themed interfaces and verified release automation.",
+    "description": "A configurable userscript that turns the MissionChief map into an operational command centre with mission intelligence, fleet monitoring, guarded transport tools, map utilities, responsive layouts, themed interfaces and verified release automation.",
     "author": "Conroy1988",
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -43,11 +43,11 @@
       "features": [
         {
           "name": "Mission Age Watch",
-          "summary": "Tracks personal missions by age, severity and clearing state with fast mission controls.",
+          "summary": "Tracks personal and alliance missions by age, ownership, category, severity and clearing state with fast mission controls.",
           "details": [
-            "Time-ordered mission monitoring with configurable severity thresholds",
-            "Refresh, zoom and open-mission controls",
-            "No Vehicles, Vehicles En-route, Needs Assistance and Clearing states",
+            "Age, ownership, category, status and additional filters",
+            "Age, closest and furthest sorting with selectable map or saved-location origins",
+            "No Units, Vehicles En-route, Needs Assistance, Stable and Clearing states",
             "Responsive positioning for Desktop, Tablet and iOS Mobile Mode"
           ],
           "visual": "mission-age",
@@ -84,6 +84,22 @@
           "tags": [
             "missions",
             "inspection"
+          ]
+        },
+        {
+          "name": "Mission Value",
+          "summary": "Displays verified mission value inside opened MissionChief mission windows without obstructing native controls.",
+          "details": [
+            "Enabled by default with a persistent Ops toggle",
+            "Uses verified live marker, snapshot, overlay and mission-list sources",
+            "Hides unavailable values rather than guessing",
+            "Measures native close/action controls and reserves safe clearance"
+          ],
+          "visual": "mission-value",
+          "tags": [
+            "missions",
+            "value",
+            "finance"
           ]
         },
         {
@@ -125,9 +141,9 @@
         },
         {
           "name": "Transport Watcher",
-          "summary": "Highlights missions that still require transport and provides live counts.",
+          "summary": "Highlights missions that still require patient or prisoner transport and provides live counts.",
           "details": [
-            "Transport-required marker",
+            "Patient and prisoner transport-required markers",
             "Dynamic float placement",
             "Count summary integrated with operational overlays"
           ],
@@ -136,6 +152,39 @@
             "transport",
             "patients",
             "vehicles"
+          ]
+        },
+        {
+          "name": "Patient Transport Sweep",
+          "summary": "Manually releases eligible alliance-member ambulances sequentially while excluding the signed-in player's own vehicles.",
+          "details": [
+            "Prefers delayed LSSM mission-row release controls",
+            "Processes one verified alliance vehicle at a time and rescans after every release",
+            "Skips ambiguous ownership and blocks duplicate mission/vehicle actions",
+            "Uses a bounded vehicle-window fallback only when LSSM controls do not appear",
+            "Owns and removes the exact MissionChief lightbox layers created by the sweep"
+          ],
+          "visual": "transport-sweep",
+          "tags": [
+            "transport",
+            "alliance",
+            "lssm"
+          ]
+        },
+        {
+          "name": "Resource Gap",
+          "summary": "Compares mission requirements with available personal vehicle context inside a selected radius.",
+          "details": [
+            "Configurable geographic radius",
+            "Mission Inspector requirement breakdown",
+            "Optional map badge",
+            "Uses personal vehicle context rather than assuming alliance availability"
+          ],
+          "visual": "resource-gap",
+          "tags": [
+            "resources",
+            "vehicles",
+            "coverage"
           ]
         },
         {
@@ -300,6 +349,22 @@
           ]
         },
         {
+          "name": "Economy Mode",
+          "summary": "Suppresses non-essential animation and presentation overhead for performance-sensitive devices or sessions.",
+          "details": [
+            "Static presentation where possible",
+            "Reduced non-essential animation",
+            "Works alongside browser reduced-motion preferences",
+            "Does not remove operational controls or state information"
+          ],
+          "visual": "economy-mode",
+          "tags": [
+            "performance",
+            "devices",
+            "accessibility"
+          ]
+        },
+        {
           "name": "Settings import and export",
           "summary": "Moves Toolkit configuration between devices and operating modes.",
           "details": [
@@ -414,6 +479,11 @@
     "Biohazard Containment",
     "Factorio",
     "007 Intelligence",
+    "Hellfire Inspired",
+    "Galactic Command",
+    "Dark Fantasy Inspired",
+    "Underworld Inspired",
+    "Pixel Arcade Inspired",
     "Hyrule Quest Reward"
   ],
   "shortcuts": [
@@ -495,15 +565,40 @@
       "sections": [
         {
           "heading": "Mission Age Watch",
-          "body": "Use Mission Age Watch to identify ageing personal missions, inspect their current state and zoom or open the mission directly. The list remains time ordered, including missions that are clearing."
+          "body": "Use Mission Age Watch to filter and sort personal and alliance missions by age, ownership, category, operational state and selected distance origin, then zoom or open a mission directly."
         },
         {
           "heading": "Critical View and Mission Inspector",
           "body": "Critical View concentrates urgent work. Mission Inspector provides deeper context and is built on demand so it does not add unnecessary startup cost."
         },
         {
+          "heading": "Mission Value",
+          "body": "Mission Value displays a verified value inside opened mission windows, hides unavailable values and dynamically stays clear of MissionChief's native close and action controls."
+        },
+        {
           "heading": "Transport Watcher",
-          "body": "Transport Watcher identifies transport-required missions and places its indicators alongside other active map overlays."
+          "body": "Transport Watcher identifies patient or prisoner transport-required missions and places its indicators alongside other active map overlays."
+        },
+        {
+          "heading": "Patient Transport Sweep",
+          "body": "Patient Transport Sweep is a manual, bounded alliance workflow. It excludes the signed-in player's own vehicles, prefers delayed LSSM release controls, processes one eligible alliance ambulance at a time, rescans after every release and closes only its own MissionChief lightbox layers."
+        }
+      ]
+    },
+    {
+      "title": "Fleet and transport tools",
+      "sections": [
+        {
+          "heading": "Resource Gap",
+          "body": "Resource Gap compares mission requirements with personal vehicle context inside a configurable radius and can expose the breakdown in Mission Inspector."
+        },
+        {
+          "heading": "Auto-load all vehicles",
+          "body": "When enabled, Auto-load all vehicles uses MissionChief's native hidden-vehicle batch control inside the active mission window with bounded retries and duplicate-request protection."
+        },
+        {
+          "heading": "Economy Mode",
+          "body": "Economy Mode reduces non-essential animation and presentation overhead while retaining operational state, controls and safety indicators."
         }
       ]
     },
@@ -525,7 +620,7 @@
       "sections": [
         {
           "heading": "Import and export",
-          "body": "Use the Toolkit settings export to move configuration between Desktop, Tablet and iOS Mobile Mode. Export files are timestamped for easier recovery."
+          "body": "Use the Toolkit settings export to move configuration between Desktop, Tablet and iOS Mobile Mode. Exports are timestamped and can contain the saved Discord webhook, so store them privately."
         },
         {
           "heading": "Reset strategy",
@@ -576,7 +671,7 @@
     {
       "level": "information",
       "title": "No release-blocking issue is recorded for the current verified release",
-      "body": "The release dashboard currently records validation, Greasy Fork synchronisation, private backup, Discord publication and asset health as verified."
+      "body": "The release dashboard records the current release channels and integrity state. Confirmed lower-priority defects and planned work remain visible in the public GitHub issue tracker."
     },
     {
       "level": "watch",
@@ -591,8 +686,10 @@
   ],
   "mediaRoadmap": [
     "Before-and-after map comparison",
-    "Map Command, Cyberpunk, Fallout, Umbrella and Factorio interface captures",
+    "All seven interface systems: Map Command, Cyberpunk, Fallout, Umbrella, Factorio, 007 Intelligence and Hyrule Command",
     "Mission Age Watch workflow",
+    "Mission Value inside a native mission window",
+    "Patient Transport Sweep workflow",
     "Coverage Heat Map",
     "Smart Bookmark Labels",
     "Payout presentations",

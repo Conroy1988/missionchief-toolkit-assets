@@ -1,8 +1,138 @@
 # Issue #64 Boot/Lifecycle inspection
 
-`boot()` starts at canonical source line 29605.
+Source lines: 29951
 
-## Exact boot declaration
+## `createCleanExit()` — line 27950
+
+```javascript
+function createCleanExit() {
+        if (document.getElementById(SCRIPT.cleanExitId)) return;
+        const button = document.createElement('button');
+        button.id = SCRIPT.cleanExitId;
+        button.type = 'button';
+        button.textContent = 'Exit Clean Mode';
+        button.title = 'Exit clean mode. Shortcut: C or Esc.';
+        button.addEventListener('click', () => toggleFeature('clean'));
+        document.body.appendChild(button);
+    }
+```
+
+## `runtimeOnCleanup()` — line 770
+
+```javascript
+function runtimeOnCleanup(callback) {
+        if (typeof callback === 'function') runtime.cleanupCallbacks.push(callback);
+        return callback;
+    }
+```
+
+## `runtimeListen()` — line 653
+
+```javascript
+function runtimeListen(target, type, listener, options) {
+        if (!target?.addEventListener || runtime.destroyed) return listener;
+        target.addEventListener(type, listener, options);
+        runtime.listeners.push({ target, type, listener, options });
+        return listener;
+    }
+```
+
+## `runtimeSetTimeout()` — line 586
+
+```javascript
+function runtimeSetTimeout(callback, delay = 0, ...args) {
+        if (runtime.destroyed) return null;
+        let id = null;
+        id = pageWindow.setTimeout((...callbackArgs) => {
+            runtime.timeouts.delete(id);
+            if (!runtime.destroyed) callback(...callbackArgs);
+        }, delay, ...args);
+        runtime.timeouts.add(id);
+        return id;
+    }
+```
+
+## `runtimeTrackObserver()` — line 660
+
+```javascript
+function runtimeTrackObserver(observer) {
+        if (!observer) return observer;
+        if (runtime.destroyed) {
+            try { observer.disconnect(); } catch (err) {}
+            return observer;
+        }
+        runtime.observers.add(observer);
+        return observer;
+    }
+```
+
+## `runtimeRegisterTask()` — line 686
+
+```javascript
+function runtimeRegisterTask(name, intervalMs, callback, options = {}
+```
+
+## `runtimeWakeTaskScheduler()` — line 681
+
+```javascript
+function runtimeWakeTaskScheduler(delay = 0) {
+        runtimeClearTimeout(runtimeTaskTimer);
+        runtimeTaskTimer = runtimeSetTimeout(runtimeRunScheduledTasks, Math.max(0, Number(delay) || 0));
+    }
+```
+
+## `runtimeRunWhenIdle()` — line 776
+
+```javascript
+function runtimeRunWhenIdle(callback, timeout = STARTUP_IDLE_TIMEOUT_MS) {
+        if (runtime.destroyed || typeof callback !== 'function') return null;
+        const maxWait = Math.max(50, Number(timeout) || STARTUP_IDLE_TIMEOUT_MS);
+        let settled = false;
+        let idleId = null;
+        let fallbackTimer = null;
+
+        const run = deadline => {
+            if (settled || runtime.destroyed) return;
+            settled = true;
+            if (fallbackTimer !== null) runtimeClearTimeout(fallbackTimer);
+            fallbackTimer = null;
+            callback(deadline || { didTimeout: true, timeRemaining: () => 0 });
+        };
+
+        if (typeof pageWindow.requestIdleCallback === 'function') {
+            try {
+                idleId = pageWindow.requestIdleCallback(run, { timeout: maxWait });
+                fallbackTimer = runtimeSetTimeout(() => run(null), maxWait + 120);
+                runtimeOnCleanup(() => {
+                    if (settled || idleId === null || typeof pageWindow.cancelIdleCallback !== 'function') return;
+                    try { pageWindow.cancelIdleCallback(idleId); } catch (err) {}
+                });
+                return idleId;
+            } catch (err) {}
+        }
+
+        fallbackTimer = runtimeSetTimeout(() => run(null), Math.min(350, maxWait));
+        return fallbackTimer;
+    }
+```
+
+## `scheduleDeferredOperationalStartup()` — line 29336
+
+```javascript
+function scheduleDeferredOperationalStartup(delay = STARTUP_OPERATIONAL_DELAY_MS) {
+        if (operationalStartupStarted || runtime.destroyed) return;
+        runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
+            runDeferredOperationalStartup().catch(err => {
+                operationalStartupComplete = true;
+                startupDataPassActive = false;
+                console.debug(`[${SCRIPT.name}] Deferred startup recovered after an operational initialisation error.`, err);
+                connectMainMutationObserver();
+            });
+        }, STARTUP_IDLE_TIMEOUT_MS), Math.max(0, Number(delay) || 0));
+    }
+```
+
+## `boot()` — line 29605
 
 ```javascript
 function boot() {
@@ -342,11 +472,96 @@ function boot() {
     }
 ```
 
-## Bootstrap tail references
+## `scheduleBoot()` — line 29941
 
 ```javascript
+function scheduleBoot() {
         if (runtime.destroyed || bootStarted) return;
         runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+    }
+```
+
+## Final bootstrap tail
+
+```javascript
+            scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+        }, 2200);
+
+        runtimeOnCleanup(() => {
+            stopAutoLoadAllVehicles();
+            transportSweepRuntime.stopRequested = true;
+            document.removeEventListener('mousemove', movePanelDrag, true);
+            document.removeEventListener('mouseup', endPanelDrag, true);
+            document.removeEventListener('touchmove', movePanelDrag, true);
+            document.removeEventListener('touchend', endPanelDrag, true);
+            document.removeEventListener('touchcancel', endPanelDrag, true);
+            document.documentElement.style.cursor = '';
+            if (document.body) document.body.style.userSelect = '';
+            restoreEconomyLayers();
+            restoreLeafletEconomyPolicy();
+            disposeEconomyCanvasRenderer();
+            runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+            majorIncidentFeedLayoutTimer = null;
+            const originalBuildingVisibility = state.visibility.buildings;
+            try {
+                state.visibility.buildings = true;
+                synchronisePersonalBuildingVisibility(cachedMap);
+            } catch (err) {
+                console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+            } finally {
+                state.visibility.buildings = originalBuildingVisibility;
+            }
+            try { creditsValueObserver?.disconnect(); } catch (err) {}
+            removeMajorIncidentFeed();
+            clearMissionLockOnEffect();
+            clearAllianceCreditLabels();
+            clearMissionAgeLabels();
+            clearUnitCommitmentLabels();
+            clearTransportWatcherLabels();
+            clearResourceGapLabels();
+            clearStuckMissionLabels();
+            clearCoverageHeatmap();
+            if (coverageGroup) {
+                try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+                coverageGroup = null;
+            }
+            stopPayoutFlashAnimation();
+            disposePayoutMediaAudio();
+            try { payoutAudioContext?.close?.(); } catch (err) {}
+            clearDiscordPreviewChartUrl();
+            closeHelpCenter({ restoreFocus: false });
+            helpGuideDocumentCache = '';
+            helpGuideLoadedAt = 0;
+            stopDesktopPanelWorkspaceObservation();
+            runtimeUntrackObserver(desktopPanelResizeObserver);
+            desktopPanelResizeObserver = null;
+            runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+            majorIncidentFeedResizeObserver = null;
+            majorIncidentFeedObservedElement = null;
+            missionSnapshotCache.clear();
+            missionPanelCache.clear();
+            missionOverlayVersions.clear();
+            markerRegistryCache.clear();
+            criticalMissionStableCache.clear();
+            removeOldInstances();
+            const root = document.documentElement;
+            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+        });
+
+        runtimeSetTimeout(() => runAutoNight(true), 180);
+        if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+        console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+    }
+
+    function scheduleBoot() {
+        if (runtime.destroyed || bootStarted) return;
+        runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+    }
+
     if (document.readyState === 'loading') {
         runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+    } else {
+        scheduleBoot();
+    }
+})();
 ```

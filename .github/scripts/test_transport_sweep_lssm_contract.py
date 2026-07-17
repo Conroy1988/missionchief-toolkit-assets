@@ -50,6 +50,11 @@ def main() -> int:
         "const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle')",
         "const opened = await openTransportSweepPath(candidate.href, 'vehicle')",
         "await closeTransportSweepWindows('finishing the mission')",
+        "activeWindowRoot: null",
+        "const target = transportSweepRuntime.activeWindowRoot",
+        "transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(root)",
+        "const changed = !beforeRootText.has(root) || afterText !== beforeRootText.get(root)",
+        "await closeTransportSweepWindows('finishing the sweep')",
     ]
     processor = re.search(r"async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep", source)
     assert processor, "transport sweep mission processor is missing"
@@ -72,6 +77,11 @@ def main() -> int:
     close_index = opener.group(1).index("await closeTransportSweepWindows")
     open_index = opener.group(1).index("pageWindow.lightboxOpen(path)")
     assert close_index < open_index, "the current MissionChief window must close before another opens"
+    closer = re.search(r"async function closeTransportSweepWindows\(reason = 'navigation'\) \{([\s\S]*?)\n    \}", source)
+    assert closer, "transport sweep closer is missing"
+    assert "transportSweepTopLevelWindowRoots()" not in closer.group(1), "cleanup must not scan or close unrelated visible dialogs"
+    assert "if (!target || !target.isConnected" in closer.group(1), "the first mission must open immediately when the sweep owns no window"
+    assert "const target = transportSweepRuntime.activeWindowRoot" in closer.group(1), "cleanup must target only the sweep-owned window"
     print("LSSM transport sweep contract passed")
     return 0
 

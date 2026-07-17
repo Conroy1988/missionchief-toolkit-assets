@@ -8,7 +8,9 @@
     "close_before_reopen_same_mission": true,
     "close_before_next_mission": true,
     "close_before_fallback_vehicle": true,
-    "close_after_mission_processing": true
+    "close_after_mission_processing": true,
+    "close_only_sweep_owned_window": true,
+    "ignore_unrelated_dialogs": true
   },
   "rows": [
     {

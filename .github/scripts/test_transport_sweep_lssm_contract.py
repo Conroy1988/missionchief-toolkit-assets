@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the LSSM alliance-patient release contract and source wiring."""
+"""Verify LSSM alliance-patient release ownership, sequencing and delayed-control safety."""
 from __future__ import annotations
 
 import json
@@ -31,6 +31,7 @@ def main() -> int:
         "function transportSweepOwnerProfileId(row)",
         "function collectTransportSweepLssmCandidates(excludedVehicleIds = null)",
         "function waitForTransportSweepLssmCandidates(excludedVehicleIds = null, timeoutMs = 18000)",
+        "waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000)",
         "function activateTransportSweepLssmRelease(candidate)",
         "LSSM mission release controls",
         "rejectedAmbiguousOwner",
@@ -41,6 +42,7 @@ def main() -> int:
     ]
     missing = [item for item in required if item not in source]
     assert not missing, f"Missing LSSM transport sweep contract markers: {missing}"
+    assert "lssmSeen ? 8000 : 18000" not in source, "A repeated mission load must not use an eight-second LSSM timeout"
     print("LSSM transport sweep contract passed")
     return 0
 

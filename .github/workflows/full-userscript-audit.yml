@@ -18,6 +18,7 @@ on:
       - ".github/scripts/refine_full_userscript_audit.py"
       - ".github/scripts/summarise_eslint_audit.py"
       - ".github/scripts/extract_userscript_audit_evidence.py"
+      - ".github/scripts/run_userscript_preflight.sh"
       - ".github/scripts/test_financial_ledger_contract.py"
       - ".github/scripts/test_mission_marker_ingestion_contract.py"
       - ".github/scripts/test_settings_ui_contract.py"
@@ -34,35 +35,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  audit:
-    name: Audit complete canonical userscript
+  contracts:
+    name: Contract and syntax lane
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify JavaScript syntax
-        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+      - name: Run deterministic contract preflight
+        run: bash .github/scripts/run_userscript_preflight.sh --contracts
 
-      - name: Run financial ledger contract fixtures
-        run: python3 .github/scripts/test_financial_ledger_contract.py
+  static-audit:
+    name: Static-analysis lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-      - name: Run mission marker ingestion contract fixtures
-        run: python3 .github/scripts/test_mission_marker_ingestion_contract.py
-
-      - name: Run settings migration and UI routing contract fixtures
-        run: python3 .github/scripts/test_settings_ui_contract.py
-
-      - name: Run Desktop panel layout contract fixtures
-        run: python3 .github/scripts/test_desktop_panel_layout_contract.py
-
-      - name: Run Mission Value contract fixtures
-        run: python3 .github/scripts/test_mission_value_contract.py
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
       - name: Run full static audit
         id: full_audit
@@ -92,6 +88,42 @@ jobs:
           echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
           exit 0
 
+      - name: Publish static audit summary
+        if: always()
+        run: cat full-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload static audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-static-audit
+          path: |
+            full-userscript-audit-raw.json
+            full-userscript-audit-raw.md
+            full-userscript-audit.json
+            full-userscript-audit.md
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Stop on definite static-audit failure
+        if: >-
+          steps.full_audit.outputs.exit_code != '0' ||
+          steps.refined_audit.outputs.exit_code != '0'
+        run: |
+          echo "One or more definite static-audit gates failed. Review the workflow summary and evidence artifact."
+          exit 1
+
+  eslint-audit:
+    name: ESLint lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+
       - name: Restore ESLint package cache
         id: eslint-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -100,10 +132,7 @@ jobs:
           key: toolkit-eslint-${{ runner.os }}-9.32.0
 
       - name: Install exact ESLint audit engine
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm install --no-save --ignore-scripts --no-audit --no-fund eslint@9.32.0
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund eslint@9.32.0
 
       - name: Save ESLint package cache
         if: steps.eslint-cache.outputs.cache-hit != 'true'
@@ -134,33 +163,22 @@ jobs:
           exit 0
 
       - name: Extract exact source evidence
-        shell: bash
         run: |
-          set -euo pipefail
           python3 .github/scripts/extract_userscript_audit_evidence.py \
             --source src/MissionChief_Map_Command_Toolkit.user.js \
             --eslint eslint-userscript-audit.json \
             --output userscript-audit-evidence.md
 
-      - name: Publish complete audit summary
+      - name: Publish ESLint audit summary
         if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat full-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
-          printf '\n---\n\n' >> "$GITHUB_STEP_SUMMARY"
-          cat eslint-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat eslint-userscript-audit.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload complete audit evidence
+      - name: Upload ESLint audit evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: missionchief-toolkit-full-userscript-audit
+          name: missionchief-toolkit-eslint-audit
           path: |
-            full-userscript-audit-raw.json
-            full-userscript-audit-raw.md
-            full-userscript-audit.json
-            full-userscript-audit.md
             eslint-userscript-raw.json
             eslint-userscript-audit.json
             eslint-userscript-audit.md
@@ -168,11 +186,32 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Stop on definite audit failure
-        if: >-
-          steps.full_audit.outputs.exit_code != '0' ||
-          steps.refined_audit.outputs.exit_code != '0' ||
-          steps.eslint.outputs.summary_exit_code != '0'
+      - name: Stop on definite ESLint failure
+        if: steps.eslint.outputs.summary_exit_code != '0'
         run: |
-          echo "One or more definite deep-audit gates failed. Review the workflow summary and evidence artifact."
+          echo "The definite ESLint summary gate failed. Review the workflow summary and evidence artifact."
           exit 1
+
+  audit:
+    name: Audit complete canonical userscript
+    if: always()
+    needs:
+      - contracts
+      - static-audit
+      - eslint-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Aggregate parallel audit lanes
+        env:
+          CONTRACT_RESULT: ${{ needs.contracts.result }}
+          STATIC_RESULT: ${{ needs.static-audit.result }}
+          ESLINT_RESULT: ${{ needs.eslint-audit.result }}
+        run: |
+          set -euo pipefail
+          printf 'Contract lane: %s\nStatic lane: %s\nESLint lane: %s\n' \
+            "$CONTRACT_RESULT" "$STATIC_RESULT" "$ESLINT_RESULT"
+          [[ "$CONTRACT_RESULT" == "success" ]]
+          [[ "$STATIC_RESULT" == "success" ]]
+          [[ "$ESLINT_RESULT" == "success" ]]

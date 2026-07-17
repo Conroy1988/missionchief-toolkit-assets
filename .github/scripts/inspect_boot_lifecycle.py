@@ -27,8 +27,7 @@ def mask_non_code(text: str) -> str:
                 if next_char != "\n": chars[index + 1] = " "
                 index += 2
                 state = "code"
-            else:
-                index += 1
+            else: index += 1
             continue
         if state == "string":
             if char != "\n": chars[index] = " "
@@ -70,31 +69,25 @@ def matching_brace(masked: str, opening: int) -> int | None:
 
 def extract_function(source: str, masked: str, name: str) -> tuple[int, str] | None:
     match = re.search(rf"\b(?:async\s+)?function\s+{re.escape(name)}\s*\(", masked)
-    if not match:
-        return None
+    if not match: return None
     opening = masked.find("{", match.start())
     closing = matching_brace(masked, opening)
-    if opening < 0 or closing is None:
-        raise SystemExit(f"{name}() could not be extracted")
+    if opening < 0 or closing is None: raise SystemExit(f"{name}() could not be extracted")
     return source.count("\n", 0, match.start()) + 1, source[match.start():closing + 1]
 
 
 source = SOURCE.read_text(encoding="utf-8")
 masked = mask_non_code(source)
+source_lines = source.splitlines()
 names = [
-    "createCleanExit",
-    "runtimeOnCleanup",
-    "runtimeListen",
-    "runtimeSetTimeout",
-    "runtimeTrackObserver",
-    "runtimeRegisterTask",
-    "runtimeWakeTaskScheduler",
-    "runtimeRunWhenIdle",
-    "scheduleDeferredOperationalStartup",
-    "boot",
-    "scheduleBoot",
+    "createCleanExit", "runtimeOnCleanup", "runtimeListen", "runtimeSetTimeout",
+    "runtimeTrackObserver", "runtimeRegisterTask", "runtimeWakeTaskScheduler",
+    "runtimeRunWhenIdle", "scheduleDeferredOperationalStartup", "boot", "scheduleBoot",
 ]
-output = ["# Issue #64 Boot/Lifecycle inspection", "", f"Source lines: {len(source.splitlines())}", ""]
+output = ["# Issue #64 Boot/Lifecycle inspection", "", f"Source lines: {len(source_lines)}", ""]
+output.extend(["## Runtime ownership block — canonical lines 480–850", "", "```javascript"])
+output.extend(f"{line_no:05d}: {source_lines[line_no - 1]}" for line_no in range(480, 851))
+output.extend(["```", ""])
 for name in names:
     extracted = extract_function(source, masked, name)
     if not extracted:
@@ -102,7 +95,7 @@ for name in names:
         continue
     line, declaration = extracted
     output.extend([f"## `{name}()` — line {line}", "", "```javascript", declaration, "```", ""])
-output.extend(["## Final bootstrap tail", "", "```javascript", "\n".join(source.splitlines()[-80:]), "```", ""])
+output.extend(["## Final bootstrap tail", "", "```javascript", "\n".join(source_lines[-80:]), "```", ""])
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 OUTPUT.write_text("\n".join(output), encoding="utf-8")
 print(f"Wrote {OUTPUT.relative_to(ROOT)}")

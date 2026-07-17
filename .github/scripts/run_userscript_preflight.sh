@@ -30,6 +30,7 @@ CONTRACTS=(
   .github/scripts/test_mission_marker_ingestion_contract.py
   .github/scripts/test_settings_ui_contract.py
   .github/scripts/test_desktop_panel_layout_contract.py
+  .github/scripts/test_section_navigation_contract.py
   .github/scripts/test_mission_value_contract.py
   .github/scripts/test_transport_sweep_lssm_contract.py
 )

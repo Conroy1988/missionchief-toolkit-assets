@@ -1,0 +1,148 @@
+{
+  "presentations": [
+    {
+      "width": 220,
+      "formatted": "£12,345",
+      "mode": "full",
+      "text": "Mission Value · £12,345"
+    },
+    {
+      "width": 176,
+      "formatted": "£12,345",
+      "mode": "full",
+      "text": "Mission Value · £12,345"
+    },
+    {
+      "width": 175,
+      "formatted": "£12,345",
+      "mode": "short",
+      "text": "Value · £12,345"
+    },
+    {
+      "width": 130,
+      "formatted": "£12,345",
+      "mode": "short",
+      "text": "Value · £12,345"
+    },
+    {
+      "width": 110,
+      "formatted": "£12,345",
+      "mode": "short",
+      "text": "Value · £12,345"
+    },
+    {
+      "width": 109,
+      "formatted": "£12,345",
+      "mode": "value",
+      "text": "£12,345"
+    },
+    {
+      "width": 72,
+      "formatted": "£12,345",
+      "mode": "value",
+      "text": "£12,345"
+    },
+    {
+      "width": 58,
+      "formatted": "£12,345",
+      "mode": "value",
+      "text": "£12,345"
+    },
+    {
+      "width": 57,
+      "formatted": "£12,345",
+      "mode": "fallback",
+      "text": "Mission Value · £12,345"
+    },
+    {
+      "width": 40,
+      "formatted": "£12,345",
+      "mode": "fallback",
+      "text": "Mission Value · £12,345"
+    }
+  ],
+  "candidateScenarios": [
+    {
+      "name": "outer and iframe candidates collapse to the concrete toolbar host",
+      "candidates": [
+        {
+          "key": "outer",
+          "missionId": 42,
+          "mount": "outer-mount",
+          "toolbarSpacer": null
+        },
+        {
+          "key": "iframe",
+          "missionId": 42,
+          "mount": "iframe-body",
+          "toolbarSpacer": "toolbar-a"
+        }
+      ],
+      "expected": [
+        "iframe"
+      ]
+    },
+    {
+      "name": "duplicate roots sharing one toolbar produce one candidate",
+      "candidates": [
+        {
+          "key": "first",
+          "missionId": 43,
+          "mount": "body-a",
+          "toolbarSpacer": "toolbar-b"
+        },
+        {
+          "key": "duplicate",
+          "missionId": 43,
+          "mount": "nested-a",
+          "toolbarSpacer": "toolbar-b"
+        }
+      ],
+      "expected": [
+        "first"
+      ]
+    },
+    {
+      "name": "two visible windows for the same mission retain separate toolbars",
+      "candidates": [
+        {
+          "key": "window-a",
+          "missionId": 44,
+          "mount": "body-b",
+          "toolbarSpacer": "toolbar-c"
+        },
+        {
+          "key": "window-b",
+          "missionId": 44,
+          "mount": "body-c",
+          "toolbarSpacer": "toolbar-d"
+        }
+      ],
+      "expected": [
+        "window-a",
+        "window-b"
+      ]
+    },
+    {
+      "name": "fallback windows without toolbars remain distinct by mount",
+      "candidates": [
+        {
+          "key": "fallback-a",
+          "missionId": 45,
+          "mount": "mount-a",
+          "toolbarSpacer": null
+        },
+        {
+          "key": "fallback-b",
+          "missionId": 45,
+          "mount": "mount-b",
+          "toolbarSpacer": null
+        }
+      ],
+      "expected": [
+        "fallback-a",
+        "fallback-b"
+      ]
+    }
+  ]
+}

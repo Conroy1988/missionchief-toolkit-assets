@@ -1,0 +1,54 @@
+name: Transport Sweep Discovery
+
+on:
+  push:
+    branches:
+      - chore/transport-sweep-discovery
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - name: Print transport-sweep source context
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
+          lines = path.read_text(encoding='utf-8').splitlines()
+          patterns = [
+              re.compile(r'transportSweep', re.I),
+              re.compile(r'transport watcher', re.I),
+              re.compile(r'transport watch', re.I),
+              re.compile(r'patient transport', re.I),
+              re.compile(r'needs transport', re.I),
+          ]
+          hits = []
+          for index, line in enumerate(lines):
+              if any(pattern.search(line) for pattern in patterns):
+                  hits.append(index)
+
+          merged = []
+          for hit in hits:
+              start = max(0, hit - 35)
+              end = min(len(lines), hit + 90)
+              if merged and start <= merged[-1][1] + 10:
+                  merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+              else:
+                  merged.append((start, end))
+
+          print(f'Found {len(hits)} matching lines across {len(merged)} source ranges.')
+          for start, end in merged:
+              print(f'\n===== LINES {start + 1}-{end} =====')
+              for number in range(start, end):
+                  print(f'{number + 1:05d}: {lines[number]}')
+          PY

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.7
+// @version      4.14.8
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.7',
+        version: '4.14.8',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -26709,6 +26709,89 @@ Create the private backup now?`);
         context.fillText(value, x + 24, y + 75);
     }
 
+    function fitFinancialCanvasText(context, value, maxWidth, { weight = 600, size = 15, minSize = 11 } = {}) {
+        const sourceText = String(value ?? '');
+        const widthLimit = Math.max(1, Number(maxWidth) || 1);
+        let fontSize = Math.max(minSize, Number(size) || 15);
+        const applyFont = () => {
+            context.font = `${weight} ${fontSize}px Arial, sans-serif`;
+        };
+        applyFont();
+        while (fontSize > minSize && context.measureText(sourceText).width > widthLimit) {
+            fontSize -= 1;
+            applyFont();
+        }
+        let renderedText = sourceText;
+        let measuredWidth = context.measureText(renderedText).width;
+        if (measuredWidth > widthLimit) {
+            let remaining = sourceText;
+            while (remaining.length > 1) {
+                remaining = remaining.slice(0, -1);
+                const candidate = `${remaining}…`;
+                const candidateWidth = context.measureText(candidate).width;
+                if (candidateWidth <= widthLimit) {
+                    renderedText = candidate;
+                    measuredWidth = candidateWidth;
+                    break;
+                }
+            }
+            if (measuredWidth > widthLimit) {
+                renderedText = '…';
+                measuredWidth = context.measureText(renderedText).width;
+            }
+        }
+        return { text: renderedText, width: Math.min(measuredWidth, widthLimit), fontSize };
+    }
+
+    function financialSnapshotRows(report) {
+        const rawDifference = report?.reconciliationDifference;
+        const hasDifference = rawDifference !== null && rawDifference !== undefined && Number.isFinite(Number(rawDifference));
+        let auditRow;
+        if (hasDifference) {
+            const difference = Number(rawDifference);
+            auditRow = Math.abs(difference) <= 1
+                ? ['Checkpoint audit', 'Reconciled']
+                : ['Checkpoint variance', formatSignedCompactCredits(difference)];
+        } else {
+            auditRow = ['Audit basis', report?.balanceCalculated ? 'Reconstructed' : 'Unavailable'];
+        }
+        return [
+            ['Operating result', formatSignedCompactCredits(report.operatingResult)],
+            ['Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0))],
+            ['Active-hour income', formatSignedCompactCredits(report.activeIncomePerHour || report.incomePerHour)],
+            ['Classification', `${Number(report.classificationConfidence || 0).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`],
+            ['Condition score', `${Number(report.scorecard?.overall || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 })}/100`],
+            auditRow
+        ];
+    }
+
+    function drawFinancialSnapshotRow(context, x, y, width, label, value) {
+        const gap = 14;
+        const valueMaxWidth = Math.min(142, Math.max(96, width * 0.48));
+        const valueLayout = fitFinancialCanvasText(context, value, valueMaxWidth, { weight: 800, size: 15, minSize: 11 });
+        const valueRight = x + width;
+        const valueLeft = valueRight - valueLayout.width;
+        const labelMaxWidth = Math.max(56, valueLeft - gap - x);
+        const labelLayout = fitFinancialCanvasText(context, label, labelMaxWidth, { weight: 600, size: 15, minSize: 11 });
+
+        context.fillStyle = 'rgba(255,255,255,0.58)';
+        context.textAlign = 'left';
+        context.font = `600 ${labelLayout.fontSize}px Arial, sans-serif`;
+        context.fillText(labelLayout.text, x, y);
+
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'right';
+        context.font = `800 ${valueLayout.fontSize}px Arial, sans-serif`;
+        context.fillText(valueLayout.text, valueRight, y);
+        context.textAlign = 'left';
+
+        return {
+            gap,
+            label: { text: labelLayout.text, left: x, right: x + labelLayout.width, width: labelLayout.width, fontSize: labelLayout.fontSize },
+            value: { text: valueLayout.text, left: valueLeft, right: valueRight, width: valueLayout.width, fontSize: valueLayout.fontSize }
+        };
+    }
+
     async function buildFinancialChartBlob(report) {
         try {
             const canvas = document.createElement('canvas');
@@ -26801,24 +26884,10 @@ Create the private backup now?`);
             context.fillStyle = '#ffffff';
             context.font = '800 19px Arial, sans-serif';
             context.fillText('OPERATING SNAPSHOT', detailX + 22, detailY + 32);
-            const lines = [
-                ['Operating result', formatSignedCompactCredits(report.operatingResult)],
-                ['Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0))],
-                ['Active-hour income', formatSignedCompactCredits(report.activeIncomePerHour || report.incomePerHour)],
-                ['Classification', `${Number(report.classificationConfidence || 0).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`],
-                ['Condition score', `${Number(report.scorecard?.overall || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 })}/100`],
-                ['Audit basis', report.reconciliationLabel]
-            ];
+            const lines = financialSnapshotRows(report);
             lines.forEach((line, index) => {
                 const y = detailY + 65 + index * 29;
-                context.fillStyle = 'rgba(255,255,255,0.58)';
-                context.font = '600 15px Arial, sans-serif';
-                context.fillText(line[0], detailX + 22, y);
-                context.fillStyle = '#ffffff';
-                context.font = '800 15px Arial, sans-serif';
-                context.textAlign = 'right';
-                context.fillText(String(line[1]), detailX + detailW - 22, y);
-                context.textAlign = 'left';
+                drawFinancialSnapshotRow(context, detailX + 22, y, detailW - 44, line[0], line[1]);
             });
 
             context.fillStyle = 'rgba(255,255,255,0.42)';

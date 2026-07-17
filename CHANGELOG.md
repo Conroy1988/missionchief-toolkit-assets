@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.8] - 2026-07-17
+
+### Fixed
+- Financial Command Discord graphics now reserve independent label and value columns throughout the Operating Snapshot card.
+- Checkpoint reconciliation now renders as a compact signed variance, reconciled state, reconstructed basis or unavailable state instead of a long sentence that can collide with the row label.
+- Long positive and negative multi-million-credit values are measured, reduced only when required and kept clear of neighbouring text.
+
+### Compatibility
+- Financial calculations, ledger reconciliation, Discord payloads, image dimensions, visual styling and all non-image report content remain unchanged.
+- Added fixture-backed canvas layout coverage for reconciliation states and deliberately oversized labels and values.
+
 ## [4.14.7] - 2026-07-17
 
 ### Changed

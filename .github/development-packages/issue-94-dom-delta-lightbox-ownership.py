@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -19,6 +20,13 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def regex_once(text: str, pattern: str, replacement: str, label: str) -> str:
+    updated, count = re.subn(pattern, lambda _match: replacement, text, count=1, flags=re.S)
+    if count != 1:
+        raise RuntimeError(f"{label}: expected one regex match, found {count}")
+    return updated
+
+
 source = SOURCE.read_text(encoding="utf-8")
 source = replace_once(source, "// @version      4.14.3", "// @version      4.14.4", "metadata version")
 source = replace_once(source, "version: '4.14.3'", "version: '4.14.4'", "runtime version")
@@ -30,23 +38,16 @@ source = replace_once(
     "    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4143__ = true;\n    pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4144__ = true;",
     "compatibility flag",
 )
-source = replace_once(
+source = regex_once(
     source,
-    "        activeWindowRoot: null,\n        lastCandidateStats: null,",
-    "        activeWindowRoot: null,\n        ownedWindowLayers: new Set(),\n        activeWindowCreatedLayer: false,\n        lastCandidateStats: null,",
+    r"(\n\s*activeWindowRoot: null,\n)(\s*lastCandidateStats: null,)",
+    "\n        activeWindowRoot: null,\n        ownedWindowLayers: new Set(),\n        activeWindowCreatedLayer: false,\n        lastCandidateStats: null,",
     "runtime ownership state",
 )
 
-old_owner = '''    function transportSweepOwnedWindowRoot(root) {
-        if (!root?.isConnected) return null;
-        const direct = root.closest?.('#lightbox_box, #lightbox, .modal.show, .modal.in, [role="dialog"], .ui-dialog');
-        if (direct) return direct;
-        return transportSweepTopLevelWindowRoots().find(candidate => candidate === root || candidate.contains?.(root)) || root;
-    }
-'''
-
-new_owner = '''    const TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR = [
+owner_helpers = '''    const TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR = [
         '#lightbox', '#lightbox_box', '.lightbox', '[id*="lightbox"]',
+        '.lightbox_overlay', '.lightbox-overlay', '#lightbox_overlay', '#lightbox_backdrop', '.lightbox-backdrop',
         '.modal.show', '.modal.in', '.modal-backdrop.show', '.modal-backdrop.in',
         '[role="dialog"]', '.ui-dialog', '.ui-widget-overlay'
     ].join(', ');
@@ -86,7 +87,7 @@ new_owner = '''    const TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR = [
 
     function transportSweepOverlayLayer(layer) {
         if (!layer?.matches) return false;
-        return layer.matches('.modal-backdrop, .ui-widget-overlay, .lightbox_overlay, .lightbox-overlay, #lightbox_overlay');
+        return layer.matches('.modal-backdrop, .ui-widget-overlay, .lightbox_overlay, .lightbox-overlay, #lightbox_overlay, #lightbox_backdrop, .lightbox-backdrop');
     }
 
     function transportSweepOutermostLayer(layers) {
@@ -116,52 +117,14 @@ new_owner = '''    const TRANSPORT_SWEEP_NATIVE_LAYER_SELECTOR = [
         return transportSweepRuntime.activeWindowRoot;
     }
 '''
-source = replace_once(source, old_owner, new_owner, "DOM-delta ownership helpers")
+source = regex_once(
+    source,
+    r"    function transportSweepOwnedWindowRoot\(root\) \{[\s\S]*?\n    \}\n",
+    owner_helpers,
+    "DOM-delta ownership helpers",
+)
 
-old_close = '''    async function closeTransportSweepWindows(reason = 'navigation') {
-        const target = transportSweepRuntime.activeWindowRoot;
-        transportSweepRuntime.missionWindowRoot = null;
-        if (!target || !target.isConnected || !transportSweepElementVisible(target)) {
-            transportSweepRuntime.activeWindowRoot = null;
-            return true;
-        }
-
-        const waitUntilClosed = timeoutMs => transportSweepWaitFor(
-            () => !target.isConnected || !transportSweepElementVisible(target) ? true : null,
-            timeoutMs,
-            100
-        );
-
-        let closed = false;
-        if (typeof pageWindow.lightboxClose === 'function') {
-            try {
-                pageWindow.lightboxClose();
-                closed = Boolean(await waitUntilClosed(1200));
-            } catch (err) {}
-        }
-
-        if (!closed) {
-            const closeControl = transportSweepWindowCloseControl(target);
-            if (closeControl) {
-                try {
-                    closeControl.click();
-                    closed = Boolean(await waitUntilClosed(1600));
-                } catch (err) {}
-            }
-        }
-
-        if (!closed) {
-            transportSweepLog(`MissionChief did not close the sweep-owned window before ${reason}`, 'error');
-            return false;
-        }
-
-        transportSweepRuntime.activeWindowRoot = null;
-        await transportSweepSleep(80);
-        return true;
-    }
-'''
-
-new_close = '''    async function closeTransportSweepWindows(reason = 'navigation') {
+closer = '''    async function closeTransportSweepWindows(reason = 'navigation') {
         const target = transportSweepRuntime.activeWindowRoot;
         const ownedLayers = Array.from(transportSweepRuntime.ownedWindowLayers || []).filter(layer => layer?.isConnected);
         transportSweepRuntime.missionWindowRoot = null;
@@ -197,7 +160,7 @@ new_close = '''    async function closeTransportSweepWindows(reason = 'navigatio
         }
 
         if (transportSweepRuntime.activeWindowCreatedLayer) {
-            const removable = Array.from(new Set([...ownedLayers, target].filter(layer => layer?.isConnected)));
+            const removable = Array.from(new Set(ownedLayers.filter(layer => layer?.isConnected)));
             removable.sort((a, b) => a.contains?.(b) ? -1 : b.contains?.(a) ? 1 : 0);
             for (const layer of removable) {
                 if (!layer?.isConnected) continue;
@@ -211,7 +174,8 @@ new_close = '''    async function closeTransportSweepWindows(reason = 'navigatio
             closed = !target?.isConnected || !transportSweepElementVisible(target);
         }
 
-        if (!closed) {
+        const ownedStillConnected = ownedLayers.some(layer => layer?.isConnected && transportSweepElementVisible(layer));
+        if (!closed || ownedStillConnected) {
             transportSweepLog(`MissionChief did not remove the sweep-owned window before ${reason}`, 'error');
             return false;
         }
@@ -223,65 +187,14 @@ new_close = '''    async function closeTransportSweepWindows(reason = 'navigatio
         return true;
     }
 '''
-source = replace_once(source, old_close, new_close, "exact owned-layer close")
+source = regex_once(
+    source,
+    r"    async function closeTransportSweepWindows\(reason = 'navigation'\) \{[\s\S]*?\n    \}\n",
+    closer,
+    "exact owned-layer close",
+)
 
-old_open = '''    async function openTransportSweepPath(path, mode) {
-        if (transportSweepRuntime.stopRequested) return false;
-        if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
-        const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle');
-        if (!closed || transportSweepRuntime.stopRequested) return false;
-
-        const beforeRoots = transportSweepVisibleWindowRoots();
-        const beforeRootText = new Map(beforeRoots.map(root => [root, String(root.textContent || '').trim()]));
-
-        if (mode === 'mission') {
-            transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
-            transportSweepRuntime.rejectedOwn = 0;
-            transportSweepRuntime.missionWindowRoot = null;
-            const missionId = normaliseMissionId(String(path || '').match(/\/missions\/(\d+)/)?.[1]);
-            pageWindow.lightboxOpen(path);
-            await transportSweepWaitFor(() => {
-                const root = transportSweepFindMissionWindowRoot(missionId);
-                if (root) {
-                    const anchors = transportSweepVehicleAnchorsWithin(root);
-                    const afterText = String(root.textContent || '').trim();
-                    const changed = !beforeRootText.has(root) || afterText !== beforeRootText.get(root);
-                    if (anchors.length || (afterText && changed)) {
-                        transportSweepRuntime.missionWindowRoot = root;
-                        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(root);
-                        return { root, anchors };
-                    }
-                }
-                const newAnchor = transportSweepVisibleVehicleAnchors().find(anchor => !transportSweepRuntime.missionAnchorBaseline.has(anchor));
-                if (newAnchor) {
-                    transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.parentElement;
-                    transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(transportSweepRuntime.missionWindowRoot);
-                    return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
-                }
-                return null;
-            }, 4200, 120);
-            return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
-        }
-
-        pageWindow.lightboxOpen(path);
-        const vehicleWindow = await transportSweepWaitFor(() => {
-            const button = findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline);
-            if (button) {
-                const root = button.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || button.parentElement;
-                return { root };
-            }
-            const root = transportSweepVisibleWindowRoots().find(candidate => {
-                const text = String(candidate.textContent || '').trim();
-                return !beforeRootText.has(candidate) || text !== beforeRootText.get(candidate);
-            });
-            return root ? { root } : null;
-        }, 4200, 120);
-        transportSweepRuntime.activeWindowRoot = transportSweepOwnedWindowRoot(vehicleWindow?.root);
-        return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
-    }
-'''
-
-new_open = '''    async function openTransportSweepPath(path, mode) {
+opener = '''    async function openTransportSweepPath(path, mode) {
         if (transportSweepRuntime.stopRequested) return false;
         if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
         const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle');
@@ -337,18 +250,23 @@ new_open = '''    async function openTransportSweepPath(path, mode) {
         return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.activeWindowRoot);
     }
 '''
-source = replace_once(source, old_open, new_open, "DOM-delta open path")
-
-source = replace_once(
+source = regex_once(
     source,
-    "        transportSweepRuntime.activeWindowRoot = null;\n        transportSweepRuntime.lastCandidateStats = null;",
-    "        transportSweepRuntime.activeWindowRoot = null;\n        transportSweepRuntime.ownedWindowLayers = new Set();\n        transportSweepRuntime.activeWindowCreatedLayer = false;\n        transportSweepRuntime.lastCandidateStats = null;",
+    r"    async function openTransportSweepPath\(path, mode\) \{[\s\S]*?\n    \}\n",
+    opener,
+    "DOM-delta open path",
+)
+
+source = regex_once(
+    source,
+    r"(\n\s*transportSweepRuntime\.activeWindowRoot = null;\n)(\s*transportSweepRuntime\.lastCandidateStats = null;)",
+    "\n        transportSweepRuntime.activeWindowRoot = null;\n        transportSweepRuntime.ownedWindowLayers = new Set();\n        transportSweepRuntime.activeWindowCreatedLayer = false;\n        transportSweepRuntime.lastCandidateStats = null;",
     "sweep start ownership reset",
 )
-source = replace_once(
+source = regex_once(
     source,
-    "            transportSweepRuntime.vehicleButtonBaseline = new Set();\n            transportSweepRuntime.activeWindowRoot = null;\n            buildTransportSweepQueue();",
-    "            transportSweepRuntime.vehicleButtonBaseline = new Set();\n            transportSweepRuntime.activeWindowRoot = null;\n            transportSweepRuntime.ownedWindowLayers = new Set();\n            transportSweepRuntime.activeWindowCreatedLayer = false;\n            buildTransportSweepQueue();",
+    r"(\n\s*transportSweepRuntime\.vehicleButtonBaseline = new Set\(\);\n\s*transportSweepRuntime\.activeWindowRoot = null;\n)(\s*buildTransportSweepQueue\(\);)",
+    "\n            transportSweepRuntime.vehicleButtonBaseline = new Set();\n            transportSweepRuntime.activeWindowRoot = null;\n            transportSweepRuntime.ownedWindowLayers = new Set();\n            transportSweepRuntime.activeWindowCreatedLayer = false;\n            buildTransportSweepQueue();",
     "sweep finish ownership reset",
 )
 SOURCE.write_text(source, encoding="utf-8")

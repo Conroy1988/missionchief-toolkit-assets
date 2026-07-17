@@ -1,0 +1,937 @@
+{
+  "displayNames": {
+    "007 Intelligence": {
+      "occurrenceCount": 6,
+      "occurrences": [
+        {
+          "context": "    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });\n    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);\n\n    const THEMES = {\n        default: { full: 'Default', label: 'Default', short: 'STD', icon: '\u25a1' },",
+          "contextEndLine": 983,
+          "contextStartLine": 971,
+          "line": 977,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Default",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Default",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "STD",
+            "TRIFORCE",
+            "bond007",
+            "cyberpunk",
+            "factorio",
+            "fallout4",
+            "hyrule",
+            "mapCommand",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },\n        galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },\n        darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },\n        biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },\n        underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },\n        pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },\n        jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' },\n        hyruleQuest: { label: 'Hyrule Quest Reward', kicker: 'RUPEE REWARD ACQUIRED', titleCase: false, particleMode: 'rupees' }\n    };\n\n    const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'hyruleQuest', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];\n\n    // Hosted real-audio cues remain lazy-loaded through direct raw GitHub URLs.",
+          "contextEndLine": 1016,
+          "contextStartLine": 1004,
+          "line": 1010,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Dark Fantasy Inspired",
+            "Factorio Industrial",
+            "Galactic Command",
+            "Hyrule Quest Reward",
+            "Pixel Arcade Inspired",
+            "Umbrella Containment",
+            "Underworld Inspired"
+          ],
+          "quotedTokens": [
+            "ash",
+            "badCompany",
+            "biohazard",
+            "cyberpunk",
+            "darkFantasy",
+            "embers",
+            "factorio",
+            "galactic",
+            "gta5",
+            "hellfire",
+            "hyruleQuest",
+            "jamesBond",
+            "none",
+            "pixelArcade",
+            "pixels",
+            "rupees",
+            "scarface",
+            "stars",
+            "underworld",
+            "viceCity",
+            "wasteland"
+          ]
+        },
+        {
+          "context": "        }),\n        biohazard: Object.freeze({\n            label: 'Umbrella Containment Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'\n        }),\n        jamesBond: Object.freeze({\n            label: '007 Intelligence Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'\n        }),\n        hyruleQuest: Object.freeze({\n            label: 'Hyrule Quest Reward',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3'\n        })",
+          "contextEndLine": 1054,
+          "contextStartLine": 1042,
+          "line": 1048,
+          "propertyCandidates": [
+            "007 Intelligence Cashout",
+            "Hyrule Quest Reward",
+            "Umbrella Containment Cashout"
+          ],
+          "quotedTokens": []
+        },
+        {
+          "context": "            grid-template-columns:repeat(2,minmax(0,1fr)) !important;\n        }\n        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.criticalDrawerId} .mcms-critical-type-label { grid-column:1 / -1 !important; }\n\n\n        /*\n         * v4.0.0 007 Intelligence / MI6 interface.\n         * Luxury black-tie command styling with hosted custom 007 artwork.\n         * Operational mission-state colours remain governed by the final semantic layers.\n         */\n        #${SCRIPT.panelId} .mcms-ui-theme-preview-bond007 {\n            position:relative !important;\n            border-radius:2px !important;",
+          "contextEndLine": 10119,
+          "contextStartLine": 10107,
+          "line": 10113,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "true"
+          ]
+        },
+        {
+          "context": "            transition:none !important;\n            box-shadow:none !important;\n            filter:none !important;\n        }\n\n        /*\n         * v4.10.0 007 Intelligence asset-package overhaul.\n         * Original transparent MI6 artwork hosted in the public Toolkit asset repository.\n         * All operational semantic colours remain controlled by the protected status layer.\n         */\n        html[data-mcms-ui-theme=\"bond007\"] {\n            --mcms-bond-black:#060709;\n            --mcms-bond-ink:#101215;",
+          "contextEndLine": 12456,
+          "contextStartLine": 12444,
+          "line": 12450,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "bond007"
+          ]
+        },
+        {
+          "context": "            position:static !important;\n            color:#111214 !important;\n            font:950 9px/1 Arial,sans-serif !important;\n            letter-spacing:.65px !important;\n        }\n\n        /* 007 Intelligence payout package. */\n        #${SCRIPT.payoutFlashId}[data-template=\"jamesBond\"] {\n            background:\n                radial-gradient(circle at center,rgba(214,182,95,.06),transparent 45%),\n                rgba(0,0,0,.18) !important;\n        }\n        #${SCRIPT.payoutFlashId}[data-template=\"jamesBond\"] .mcms-payout-theme-fx-a {",
+          "contextEndLine": 12889,
+          "contextStartLine": 12877,
+          "line": 12883,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "jamesBond"
+          ]
+        }
+      ]
+    },
+    "Cyberpunk": {
+      "occurrenceCount": 10,
+      "occurrences": [
+        {
+          "context": "        hyruleQuestSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/quest-complete-seal.svg',\n        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg'\n    });\n\n    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });",
+          "contextEndLine": 979,
+          "contextStartLine": 967,
+          "line": 973,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "TRIFORCE"
+          ]
+        },
+        {
+          "context": "\n    const PAYOUT_TEMPLATES = {\n        gta5: { label: 'GTA V Inspired', kicker: 'PAYOUT RECEIVED', titleCase: false, particleMode: 'none' },\n        viceCity: { label: 'Vice City Inspired', kicker: 'PAYOUT RECEIVED', titleCase: true, particleMode: 'none' },\n        badCompany: { label: 'Bad Company Inspired', kicker: 'PAYOUT RECEIVED', titleCase: false, particleMode: 'embers' },\n        scarface: { label: 'Scarface Inspired', kicker: 'EMPIRE PAYOUT CONFIRMED', titleCase: false, particleMode: 'stars' },\n        cyberpunk: { label: 'Cyberpunk Inspired', kicker: 'CREDIT TRANSFER CONFIRMED', titleCase: false, particleMode: 'glitch' },\n        hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },\n        wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },\n        factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },\n        galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },\n        darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },\n        biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },",
+          "contextEndLine": 1007,
+          "contextStartLine": 995,
+          "line": 1001,
+          "propertyCandidates": [
+            "Bad Company Inspired",
+            "Cyberpunk Inspired",
+            "Dark Fantasy Inspired",
+            "Factorio Industrial",
+            "Fallout Inspired",
+            "GTA V Inspired",
+            "Galactic Command",
+            "Hellfire Inspired",
+            "Scarface Inspired",
+            "Umbrella Containment",
+            "Vice City Inspired"
+          ],
+          "quotedTokens": [
+            "ash",
+            "dust",
+            "embers",
+            "glitch",
+            "none",
+            "stars"
+          ]
+        },
+        {
+          "context": "        }),\n        scarface: Object.freeze({\n            label: 'Scarface Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/scarface-cashout.mp3'\n        }),\n        cyberpunk: Object.freeze({\n            label: 'Cyberpunk Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/cyberpunk-cashout.mp3'\n        }),\n        wasteland: Object.freeze({\n            label: 'Fallout Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'\n        }),",
+          "contextEndLine": 1038,
+          "contextStartLine": 1026,
+          "line": 1032,
+          "propertyCandidates": [
+            "Cyberpunk Cashout",
+            "Fallout Cashout",
+            "Scarface Cashout"
+          ],
+          "quotedTokens": []
+        },
+        {
+          "context": "            #${SCRIPT.payoutFlashId}[data-template=\"scarface\"] .mcms-payout-title {\n                font-size:clamp(29px,8.2vw,47px) !important; letter-spacing:1px !important; transform:skewX(-2deg) scaleX(.88) !important;\n            }\n            #${SCRIPT.payoutFlashId}[data-template=\"scarface\"] .mcms-payout-banner::after { display:none !important; }\n        }\n\n        /* Cyberpunk Inspired */\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-cinematic {\n            background:radial-gradient(ellipse at 52% 48%, transparent 8%, rgba(0,12,18,.22) 52%, rgba(0,0,0,.86) 100%), linear-gradient(115deg, rgba(245,226,0,.12), transparent 35%, rgba(0,229,255,.10)) !important;\n        }\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-theme-fx-a {\n            background:linear-gradient(112deg, rgba(247,229,0,.18) 0 2%, transparent 2% 9%, rgba(247,229,0,.08) 9% 10%, transparent 10% 88%, rgba(0,229,255,.12) 88% 90%, transparent 90%), repeating-linear-gradient(135deg, transparent 0 34px, rgba(247,229,0,.045) 34px 36px, transparent 36px 70px) !important;\n        }",
+          "contextEndLine": 3226,
+          "contextStartLine": 3214,
+          "line": 3220,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "scarface"
+          ]
+        },
+        {
+          "context": "\n        /* Scarface \u2014 sharper Art-Deco palace card, marble contrast and blood-red power line. */\n        #${SCRIPT.payoutFlashId}[data-template=\"scarface\"] .mcms-payout-theme-fx-c {background:linear-gradient(90deg,rgba(255,255,255,.035),transparent 15%,transparent 85%,rgba(255,255,255,.035)),repeating-linear-gradient(45deg,transparent 0 72px,rgba(212,175,55,.035) 73px,transparent 74px) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"scarface\"] .mcms-payout-banner {box-shadow:0 30px 78px rgba(0,0,0,.80),-14px 0 36px rgba(147,0,18,.20),14px 0 34px rgba(211,175,55,.14),inset 0 0 34px rgba(255,255,255,.035) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"scarface\"] .mcms-payout-banner::before {content:\"MIAMI // EMPIRE ACCOUNT\" !important;position:absolute !important;top:10px !important;left:18px !important;color:rgba(215,178,62,.68) !important;font:900 7px/1 serif !important;letter-spacing:2px !important;z-index:2 !important;}\n\n        /* Cyberpunk \u2014 layered megacorp UI, warning rails, chromatic offset and data noise. */\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-theme-fx-c {background:radial-gradient(circle at 18% 25%,rgba(242,223,0,.12),transparent 20%),radial-gradient(circle at 82% 78%,rgba(0,229,255,.13),transparent 23%),linear-gradient(90deg,rgba(0,0,0,.25),transparent 18%,transparent 82%,rgba(0,0,0,.25)) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-banner {width:min(800px,calc(100% - 24px)) !important;padding:28px 42px 24px !important;border:1px solid rgba(242,223,0,.68) !important;border-left:9px solid #f2df00 !important;border-right:4px solid #00e5ff !important;clip-path:polygon(0 0,94% 0,100% 18px,100% 100%,6% 100%,0 calc(100% - 18px)) !important;background:linear-gradient(108deg,rgba(4,5,7,.985),rgba(18,20,23,.97) 52%,rgba(4,6,8,.985)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important;box-shadow:0 30px 74px rgba(0,0,0,.78),-16px 0 38px rgba(242,223,0,.14),16px 0 38px rgba(0,229,255,.15),inset 0 0 34px rgba(0,229,255,.04) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"cyberpunk\"] .mcms-payout-banner::before {content:\"ARASAKA FINANCIAL NODE // VERIFIED\" !important;position:absolute !important;top:10px !important;right:18px !important;height:auto !important;background:none !important;color:rgba(0,229,255,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.6px !important;z-index:2 !important;}",
+          "contextEndLine": 3423,
+          "contextStartLine": 3411,
+          "line": 3417,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "scarface"
+          ]
+        },
+        {
+          "context": "            border-color: var(--mcms-cp-cyan) !important;\n            background: rgba(3,12,18,.95) !important;\n            color: var(--mcms-cp-yellow) !important;\n            box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 16px rgba(0,240,255,.38) !important;\n        }\n\n        /* Cyberpunk readability and contrast pass. */\n        html[data-mcms-ui-theme=\"cyberpunk\"] {\n            --mcms-cp-text: #f7fbfc;\n            --mcms-cp-muted: #b7c9cf;\n            --mcms-cp-soft: #d8e7ea;\n            --mcms-cp-ink: #05070b;\n        }",
+          "contextEndLine": 4869,
+          "contextStartLine": 4857,
+          "line": 4863,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-table-head { min-height:30px !important; font-size:7.5px !important; letter-spacing:.32px !important; }\n        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-code { width:34px !important; height:27px !important; font-size:12px !important; }\n        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-status { font-size:10px !important; white-space:normal !important; overflow:visible !important; text-overflow:clip !important; }\n        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:12px !important; }\n        html[data-mcms-mobile-active=\"true\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:7.5px !important; }\n\n        /* Cyberpunk command terminal. */\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} {\n            --mcms-vcs-bg:linear-gradient(145deg,rgba(7,10,13,.99),rgba(15,18,20,.99));\n            --mcms-vcs-panel:rgba(255,231,0,.035);\n            --mcms-vcs-line:rgba(255,231,0,.28);\n            --mcms-vcs-text:#f7f8f2;\n            --mcms-vcs-muted:#8fd9e8;",
+          "contextEndLine": 8115,
+          "contextStartLine": 8103,
+          "line": 8109,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "true"
+          ]
+        },
+        {
+          "context": "            color:#c4d4df;\n            font-size:9.5px;\n            font-weight:700;\n            letter-spacing:.2px;\n        }\n\n        /* Cyberpunk incident wire. */\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.majorIncidentFeedId} {\n            border-color:#fcee0a !important;\n            border-radius:0 !important;\n            background:#0c1116 !important;\n            color:#e8fdff !important;\n            box-shadow:0 0 0 1px rgba(0,240,255,.32),0 0 17px rgba(252,238,10,.18) !important;",
+          "contextEndLine": 9625,
+          "contextStartLine": 9613,
+          "line": 9619,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk"
+          ]
+        },
+        {
+          "context": "                </div>\n            </section>\n            <section class=\"mcms-tab-panel\" data-panel=\"payouts\">\n                <div class=\"mcms-section-label\">Emergency Payout Flash</div>\n                <div class=\"mcms-grid-2\">\n                    ${makeToggleButton('payoutFlash', '\ud83d\udea8', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}\n                    ${makeToggleButton('payoutSound', '\u266a', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}\n                </div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Banner style</span><select class=\"mcms-select\" data-setting=\"payout-template\">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Minimum payout</span><input class=\"mcms-input\" type=\"number\" min=\"1000\" step=\"1000\" data-setting=\"payout-threshold\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Flash duration (sec)</span><input class=\"mcms-input\" type=\"number\" min=\"2\" max=\"30\" step=\"2\" data-setting=\"payout-duration\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Sound volume</span><input class=\"mcms-input\" type=\"range\" min=\"0\" max=\"1\" step=\"0.05\" data-setting=\"payout-volume\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Test payout tier</span><select class=\"mcms-select\" data-setting=\"payout-test-amount\"><option value=\"10000\">10K Standard</option><option value=\"25000\">25K Major</option><option value=\"50000\">50K High Value</option><option value=\"100000\">100K Elite</option></select></div>",
+          "contextEndLine": 28163,
+          "contextStartLine": 28151,
+          "line": 28157,
+          "propertyCandidates": [
+            "10000",
+            "100000",
+            "25000",
+            "50000"
+          ],
+          "quotedTokens": [
+            "mcms-grid-2",
+            "mcms-input",
+            "mcms-row",
+            "mcms-row-label",
+            "mcms-section-label",
+            "mcms-select",
+            "mcms-tab-panel",
+            "number",
+            "payout-duration",
+            "payout-template",
+            "payout-test-amount",
+            "payout-threshold",
+            "payout-volume",
+            "payoutFlash",
+            "payoutSound",
+            "payouts",
+            "range"
+          ]
+        },
+        {
+          "context": "                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Banner style</span><select class=\"mcms-select\" data-setting=\"payout-template\">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Minimum payout</span><input class=\"mcms-input\" type=\"number\" min=\"1000\" step=\"1000\" data-setting=\"payout-threshold\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Flash duration (sec)</span><input class=\"mcms-input\" type=\"number\" min=\"2\" max=\"30\" step=\"2\" data-setting=\"payout-duration\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Sound volume</span><input class=\"mcms-input\" type=\"range\" min=\"0\" max=\"1\" step=\"0.05\" data-setting=\"payout-volume\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Test payout tier</span><select class=\"mcms-select\" data-setting=\"payout-test-amount\"><option value=\"10000\">10K Standard</option><option value=\"25000\">25K Major</option><option value=\"50000\">50K High Value</option><option value=\"100000\">100K Elite</option></select></div>\n                <button class=\"mcms-small-btn\" style=\"width:100% !important;margin-bottom:8px !important\" type=\"button\" data-action=\"test-payout-flash\">Test Emergency Flash</button>\n                <div class=\"mcms-status\">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>\n            </section>\n            <section class=\"mcms-tab-panel\" data-panel=\"discord\">\n                <div class=\"mcms-section-label\">Discord Financial Command</div>\n                <div class=\"mcms-row mcms-discord-wide\"><span class=\"mcms-row-label\">Webhook URL</span><input class=\"mcms-input\" type=\"password\" autocomplete=\"off\" spellcheck=\"false\" data-setting=\"discord-webhook\" placeholder=\"https://discord.com/api/webhooks/...\"></div>\n                <div class=\"mcms-row mcms-discord-wide\"><span class=\"mcms-row-label\">Webhook name</span><input class=\"mcms-input\" type=\"text\" maxlength=\"80\" data-setting=\"discord-name\" value=\"MissionChief Finance\"></div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Report format</span><select class=\"mcms-select\" data-setting=\"discord-report-mode\"><option value=\"fullAudit\">Executive + Full Audit</option><option value=\"executive\">Executive Brief Only</option></select></div>",
+          "contextEndLine": 28171,
+          "contextStartLine": 28159,
+          "line": 28165,
+          "propertyCandidates": [
+            "10000",
+            "100000",
+            "25000",
+            "50000",
+            "MissionChief Finance",
+            "executive",
+            "fullAudit"
+          ],
+          "quotedTokens": [
+            "button",
+            "discord",
+            "discord-name",
+            "discord-report-mode",
+            "discord-webhook",
+            "executive",
+            "false",
+            "fullAudit",
+            "mcms-input",
+            "mcms-row",
+            "mcms-row-label",
+            "mcms-section-label",
+            "mcms-select",
+            "mcms-small-btn",
+            "mcms-status",
+            "mcms-tab-panel",
+            "number",
+            "off",
+            "password",
+            "payout-duration",
+            "payout-template",
+            "payout-test-amount",
+            "payout-threshold",
+            "payout-volume",
+            "range",
+            "test-payout-flash",
+            "text"
+          ]
+        }
+      ]
+    },
+    "Factorio": {
+      "occurrenceCount": 15,
+      "occurrences": [
+        {
+          "context": "\n    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });\n    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);\n\n    const THEMES = {",
+          "contextEndLine": 982,
+          "contextStartLine": 970,
+          "line": 976,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "TRIFORCE",
+            "bond007",
+            "cyberpunk",
+            "factorio",
+            "fallout4",
+            "hyrule",
+            "mapCommand",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        viceCity: { label: 'Vice City Inspired', kicker: 'PAYOUT RECEIVED', titleCase: true, particleMode: 'none' },\n        badCompany: { label: 'Bad Company Inspired', kicker: 'PAYOUT RECEIVED', titleCase: false, particleMode: 'embers' },\n        scarface: { label: 'Scarface Inspired', kicker: 'EMPIRE PAYOUT CONFIRMED', titleCase: false, particleMode: 'stars' },\n        cyberpunk: { label: 'Cyberpunk Inspired', kicker: 'CREDIT TRANSFER CONFIRMED', titleCase: false, particleMode: 'glitch' },\n        hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },\n        wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },\n        factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },\n        galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },\n        darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },\n        biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },\n        underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },\n        pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },\n        jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' },",
+          "contextEndLine": 1010,
+          "contextStartLine": 998,
+          "line": 1004,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Bad Company Inspired",
+            "Cyberpunk Inspired",
+            "Dark Fantasy Inspired",
+            "Factorio Industrial",
+            "Fallout Inspired",
+            "Galactic Command",
+            "Hellfire Inspired",
+            "Pixel Arcade Inspired",
+            "Scarface Inspired",
+            "Umbrella Containment",
+            "Underworld Inspired",
+            "Vice City Inspired"
+          ],
+          "quotedTokens": [
+            "ash",
+            "dust",
+            "embers",
+            "glitch",
+            "none",
+            "pixels",
+            "stars"
+          ]
+        },
+        {
+          "context": "        }),\n        wasteland: Object.freeze({\n            label: 'Fallout Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/fallout-cashout.mp3'\n        }),\n        factorio: Object.freeze({\n            label: 'Factorio Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'\n        }),\n        biohazard: Object.freeze({\n            label: 'Umbrella Containment Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'\n        }),",
+          "contextEndLine": 1046,
+          "contextStartLine": 1034,
+          "line": 1040,
+          "propertyCandidates": [
+            "Factorio Cashout",
+            "Fallout Cashout",
+            "Umbrella Containment Cashout"
+          ],
+          "quotedTokens": []
+        },
+        {
+          "context": "        #${SCRIPT.payoutFlashId}[data-template=\"pixelArcade\"] .mcms-payout-banner {padding:28px 38px 24px !important;border:4px solid #f4f1ff !important;box-shadow:9px 9px 0 #5f3aca,-9px -9px 0 #22d8c3,0 30px 70px rgba(0,0,0,.76),inset 0 0 0 4px #160a38 !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"pixelArcade\"] .mcms-payout-banner::before {content:\"PLAYER 1 // CREDIT BANK\" !important;position:absolute !important;top:10px !important;left:18px !important;color:#25dfcb !important;font:900 8px/1 \"Courier New\",monospace !important;letter-spacing:1.2px !important;text-shadow:2px 2px 0 #3c287d !important;z-index:2 !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"pixelArcade\"] .mcms-payout-banner::after {content:\"HI-SCORE\" !important;position:absolute !important;top:10px !important;right:18px !important;color:#fff36a !important;font:900 8px/1 \"Courier New\",monospace !important;letter-spacing:1.2px !important;text-shadow:2px 2px 0 #ff5aaa !important;z-index:2 !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"pixelArcade\"] .mcms-payout-title {font-size:clamp(31px,4.8vw,56px) !important;text-shadow:4px 0 0 #ff5aaa,0 4px 0 #25dfcb,4px 4px 0 #38206f,0 0 12px rgba(255,243,106,.18) !important;}\n        #${SCRIPT.payoutFlashId}[data-template=\"pixelArcade\"] .mcms-payout-amount {text-shadow:3px 0 0 #ff5aaa,0 3px 0 #25dfcb,3px 3px 0 #4d2da5,0 0 10px rgba(255,255,255,.22) !important;}\n\n        /* Factorio \u2014 heavy industrial payout terminal, conveyor motion, gears and furnace sparks. */\n        #${SCRIPT.payoutFlashId}[data-template=\"factorio\"] .mcms-payout-cinematic {\n            background:\n                radial-gradient(circle at 50% 48%, transparent 0 14%, rgba(22,18,12,.35) 56%, rgba(3,4,3,.96) 100%),\n                linear-gradient(135deg, rgba(219,119,36,.11), transparent 42%, rgba(126,168,71,.07)) !important;\n        }\n        #${SCRIPT.payoutFlashId}[data-template=\"factorio\"] .mcms-payout-theme-fx-a {",
+          "contextEndLine": 3504,
+          "contextStartLine": 3492,
+          "line": 3498,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "HI-SCORE",
+            "factorio",
+            "pixelArcade"
+          ]
+        },
+        {
+          "context": "            html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.controlId} .mcms-screen-pin-btn,\n            html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.panelId} button {\n                transition: none !important;\n            }\n        }\n\n        /* v3.8.1 Factorio industrial automation interface and readability pass. */\n        html[data-mcms-ui-theme=\"factorio\"] {\n            --mcms-fac-orange: #df842f;\n            --mcms-fac-orange-bright: #f1a14d;\n            --mcms-fac-copper: #b96329;\n            --mcms-fac-brass: #dfbd72;\n            --mcms-fac-green: #a4cc69;",
+          "contextEndLine": 6940,
+          "contextStartLine": 6928,
+          "line": 6934,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "factorio"
+          ]
+        },
+        {
+          "context": "            background:\n                repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 2px, transparent 2px 9px),\n                linear-gradient(145deg, #f0a04a, #c96b26) !important;\n            color: var(--mcms-fac-ink) !important;\n            box-shadow: inset 0 1px rgba(255,255,255,.28), inset 0 -5px 10px rgba(104,42,8,.18), 0 0 12px rgba(225,126,38,.30) !important;\n            text-shadow: none !important;\n            animation: mcmsFactorioMachinePulse 3.8s steps(1,end) infinite !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on *,\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {\n            color: var(--mcms-fac-ink) !important;\n            text-shadow: none !important;\n        }",
+          "contextEndLine": 7046,
+          "contextStartLine": 7034,
+          "line": 7040,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "factorio"
+          ]
+        },
+        {
+          "context": "                linear-gradient(155deg, #393c36, #1c1e1b 58%, #131512) !important;\n            color: var(--mcms-fac-cream) !important;\n            box-shadow: 0 22px 55px rgba(0,0,0,.64), 0 0 0 1px rgba(214,120,38,.30), inset 0 1px rgba(255,255,255,.07), inset 0 -28px 48px rgba(0,0,0,.22) !important;\n            scrollbar-color: #b96a2a #171916 !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId}.mcms-open {\n            animation: mcmsFactorioPanelIn 240ms cubic-bezier(.17,.75,.24,1) both !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId}::-webkit-scrollbar { width: 9px !important; }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background: #171916 !important; border-left: 1px solid #44473f !important; }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background: #b96a2a !important; border: 2px solid #171916 !important; border-radius: 2px !important; }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-header {\n            position: relative !important;",
+          "contextEndLine": 7079,
+          "contextStartLine": 7067,
+          "line": 7073,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "factorio"
+          ]
+        },
+        {
+          "context": "            left: -24% !important;\n            bottom: 0 !important;\n            width: 22% !important;\n            height: 2px !important;\n            background: linear-gradient(90deg, transparent, #ffae56, transparent) !important;\n            box-shadow: 0 0 8px rgba(240,143,48,.72) !important;\n            animation: mcmsFactorioConveyorScan 5.6s linear infinite !important;\n            pointer-events: none !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-drag-handle {\n            color: #bfaa82 !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-title {",
+          "contextEndLine": 7113,
+          "contextStartLine": 7101,
+          "line": 7107,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "factorio"
+          ]
+        },
+        {
+          "context": "            background: linear-gradient(180deg, #f0a04b, #cb6d28) !important;\n            color: var(--mcms-fac-ink) !important;\n            box-shadow: inset 0 1px rgba(255,255,255,.28), inset 0 -4px 8px rgba(96,40,9,.18) !important;\n            text-shadow: none !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {\n            animation: mcmsFactorioRecordIn 190ms ease-out both !important;\n        }\n        html[data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-section-label {\n            position: relative !important;\n            min-height: 25px !important;\n            padding: 7px 10px 6px 28px !important;\n            border: 1px solid #5b5e56 !important;",
+          "contextEndLine": 7174,
+          "contextStartLine": 7162,
+          "line": 7168,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "factorio"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-profile-main span,\n        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-ops-stat-label,\n        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"factorio\"] #${SCRIPT.panelId} .mcms-ops-entry-meta {\n            font-size: 8.5px !important;\n        }\n\n        @keyframes mcmsFactorioPanelIn {\n            0% { opacity: 0; transform: translateY(7px) scale(.987); filter: contrast(1.22) brightness(.78); }\n            45% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: contrast(1.08) brightness(1.05); }\n            100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }\n        }\n        @keyframes mcmsFactorioRecordIn {\n            0% { opacity: .18; transform: translateX(-5px); clip-path: inset(0 100% 0 0); }",
+          "contextEndLine": 7485,
+          "contextStartLine": 7473,
+          "line": 7479,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "factorio",
+            "true"
+          ]
+        },
+        {
+          "context": "\n        @keyframes mcmsFactorioPanelIn {\n            0% { opacity: 0; transform: translateY(7px) scale(.987); filter: contrast(1.22) brightness(.78); }\n            45% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: contrast(1.08) brightness(1.05); }\n            100% { opacity: 1; transform: translateY(0) scale(1); filter: none; }\n        }\n        @keyframes mcmsFactorioRecordIn {\n            0% { opacity: .18; transform: translateX(-5px); clip-path: inset(0 100% 0 0); }\n            58% { opacity: .88; transform: translateX(1px); clip-path: inset(0 0 0 0); }\n            100% { opacity: 1; transform: translateX(0); clip-path: inset(0 0 0 0); }\n        }\n        @keyframes mcmsFactorioConveyorScan {\n            0% { transform: translateX(0); opacity: 0; }",
+          "contextEndLine": 7490,
+          "contextStartLine": 7478,
+          "line": 7484,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "        }\n        @keyframes mcmsFactorioRecordIn {\n            0% { opacity: .18; transform: translateX(-5px); clip-path: inset(0 100% 0 0); }\n            58% { opacity: .88; transform: translateX(1px); clip-path: inset(0 0 0 0); }\n            100% { opacity: 1; transform: translateX(0); clip-path: inset(0 0 0 0); }\n        }\n        @keyframes mcmsFactorioConveyorScan {\n            0% { transform: translateX(0); opacity: 0; }\n            8% { opacity: 1; }\n            58% { opacity: .88; }\n            72%, 100% { transform: translateX(650%); opacity: 0; }\n        }\n        @keyframes mcmsFactorioMachinePulse {",
+          "contextEndLine": 7495,
+          "contextStartLine": 7483,
+          "line": 7489,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        }
+      ]
+    },
+    "Fallout 4": {
+      "occurrenceCount": 4,
+      "occurrences": [
+        {
+          "context": "        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg'\n    });\n\n    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });\n    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);",
+          "contextEndLine": 980,
+          "contextStartLine": 968,
+          "line": 974,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "TRIFORCE",
+            "bond007",
+            "cyberpunk",
+            "factorio",
+            "fallout4",
+            "hyrule",
+            "mapCommand",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.panelId} .mcms-ops-stat-label,\n        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.panelId} .mcms-ops-entry-meta {\n            font-size: 8.5px !important;\n        }\n\n\n        /* Fallout 4 \u2014 high-contrast Pip-Boy / Vault-Tec interface theme. */\n        html[data-mcms-ui-theme=\"fallout4\"] {\n            --mcms-fo-green: #b9ff72;\n            --mcms-fo-green-strong: #d3ff9b;\n            --mcms-fo-green-mid: #79b94f;\n            --mcms-fo-green-dim: #426a35;\n            --mcms-fo-amber: #ffd36a;",
+          "contextEndLine": 5007,
+          "contextStartLine": 4995,
+          "line": 5001,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "fallout4",
+            "true"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-title { color:#ffe600 !important; text-transform:uppercase !important; }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-table,\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-refresh,\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-close { border-radius:1px !important; }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { border-top-color:#00e5ff !important; background:rgba(0,229,255,.08) !important; }\n\n        /* Fallout 4 / Pip-Boy fleet terminal. */\n        html[data-mcms-ui-theme=\"fallout4\"] #${SCRIPT.vehicleStatusId} {\n            --mcms-vcs-bg:linear-gradient(145deg,rgba(11,25,15,.99),rgba(4,13,7,.99));\n            --mcms-vcs-panel:rgba(104,255,128,.035);\n            --mcms-vcs-line:rgba(121,255,144,.25);\n            --mcms-vcs-text:#b9ffc7;\n            --mcms-vcs-muted:#71c987;",
+          "contextEndLine": 8133,
+          "contextStartLine": 8121,
+          "line": 8127,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "fallout4"
+          ]
+        },
+        {
+          "context": "        }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label::before { color:#111 !important; text-shadow:none !important; }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-name { color:#fff !important; }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode { color:#00f0ff !important; }\n        html[data-mcms-ui-theme=\"cyberpunk\"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-level { color:#fcee0a !important; }\n\n        /* Fallout 4 / Pip-Boy incident band. */\n        html[data-mcms-ui-theme=\"fallout4\"] #${SCRIPT.majorIncidentFeedId} {\n            border:1px solid #78d85b !important;\n            border-radius:1px !important;\n            background:\n                radial-gradient(circle at 14% 50%,rgba(151,255,107,.09),transparent 29%),\n                repeating-linear-gradient(90deg,rgba(183,255,145,.025) 0 1px,transparent 1px 5px),",
+          "contextEndLine": 9645,
+          "contextStartLine": 9633,
+          "line": 9639,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "cyberpunk",
+            "fallout4"
+          ]
+        }
+      ]
+    },
+    "Hyrule Command": {
+      "occurrenceCount": 3,
+      "occurrences": [
+        {
+          "context": "        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });\n    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);\n\n    const THEMES = {\n        default: { full: 'Default', label: 'Default', short: 'STD', icon: '\u25a1' },\n        control: { full: 'Control Room', label: 'Control', short: 'CTL', icon: '\u25d0' },",
+          "contextEndLine": 984,
+          "contextStartLine": 972,
+          "line": 978,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Control",
+            "Cyberpunk",
+            "Default",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "CTL",
+            "Control",
+            "Cyberpunk",
+            "DEFAULT",
+            "Default",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "STD",
+            "TRIFORCE",
+            "bond007",
+            "cyberpunk",
+            "factorio",
+            "fallout4",
+            "hyrule",
+            "mapCommand",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        state.uiTheme = nextTheme;\n        if (pairedHyrulePayout) state.payoutFlash.template = 'hyruleQuest';\n        saveState();\n        updateUI();\n        if (announce && changed) {\n            showToast(pairedHyrulePayout\n                ? 'Hyrule Command interface and Quest Reward payout active'\n                : `${UI_THEMES[nextTheme].label} interface active`);\n        }\n    }\n\n    function normaliseTheme(key) {\n        if (THEMES[key]) return key;",
+          "contextEndLine": 1605,
+          "contextStartLine": 1593,
+          "line": 1599,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "hyruleQuest"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-economy=\"true\"] #${SCRIPT.controlId} .mcms-screen-pin-btn {\n            backdrop-filter:none !important;\n            -webkit-backdrop-filter:none !important;\n        }\n\n\n        /* v4.13.0 Hyrule Command flagship interface */\n        #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule {\n            position:relative !important;\n            border-color:#e9c85b !important;\n            border-radius:8px 8px 5px 5px !important;\n            background:\n                url(\"${THEME_ASSETS.hyruleEye}\") center / 25px 25px no-repeat,",
+          "contextEndLine": 13562,
+          "contextStartLine": 13550,
+          "line": 13556,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "true"
+          ]
+        }
+      ]
+    },
+    "Map Command": {
+      "occurrenceCount": 10,
+      "occurrences": [
+        {
+          "context": "// ==UserScript==\n// @name         MissionChief Map Command Toolkit\n// @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit\n// @version      4.14.6\n// @description  MissionChief operational map command centre.\n// @author       Conroy1988\n// @license      MIT\n// @match        *://missionchief.co.uk/*",
+          "contextEndLine": 8,
+          "contextStartLine": 1,
+          "line": 2,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "        installAllianceBuildingsLeafletAssignmentGuard();\n        installAllianceBuildingsContextWatcherEarly();\n    }\n\n\n    const SCRIPT = {\n        name: 'MissionChief Map Command Toolkit',\n        version: '4.14.6',\n        author: 'Conroy1988',\n        controlId: 'mc-map-command-toolkit-control',\n        panelId: 'mc-map-command-toolkit-panel',\n        toastId: 'mc-map-command-toolkit-toast',\n        payoutFlashId: 'mc-map-command-toolkit-payout-flash',",
+          "contextEndLine": 498,
+          "contextStartLine": 486,
+          "line": 492,
+          "propertyCandidates": [
+            "MissionChief Map Command Toolkit",
+            "mc-map-command-toolkit-control",
+            "mc-map-command-toolkit-panel",
+            "mc-map-command-toolkit-payout-flash",
+            "mc-map-command-toolkit-toast"
+          ],
+          "quotedTokens": [
+            "Conroy1988",
+            "mc-map-command-toolkit-control",
+            "mc-map-command-toolkit-panel",
+            "mc-map-command-toolkit-payout-flash",
+            "mc-map-command-toolkit-toast"
+          ]
+        },
+        {
+          "context": "        hyruleMap: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/parchment-command-map.svg',\n        hyruleQuestSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/quest-complete-seal.svg',\n        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg'\n    });\n\n    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })",
+          "contextEndLine": 978,
+          "contextStartLine": 966,
+          "line": 972,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "TRIFORCE"
+          ]
+        },
+        {
+          "context": "        renderProfiles();\n        showToast('Profile deleted');\n    }\n\n    function settingsBackupFilename(date = new Date()) {\n        const pad = value => String(value).padStart(2, '0');\n        return `MC Map Command PRIVATE Backup ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}.json`;\n    }\n\n    function buildToolkitSettingsBackup(exportedAt = new Date()) {\n        const discordWebhook = getDiscordWebhookUrl();\n        const financeIdentity = financeVaultCredential();\n        const financialArchiveStore = loadFinanceVaultStore();",
+          "contextEndLine": 23138,
+          "contextStartLine": 23126,
+          "line": 23132,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "\n    function buildToolkitSettingsBackup(exportedAt = new Date()) {\n        const discordWebhook = getDiscordWebhookUrl();\n        const financeIdentity = financeVaultCredential();\n        const financialArchiveStore = loadFinanceVaultStore();\n        return {\n            format: 'MissionChief Map Command Toolkit Private Settings Backup',\n            schema: 4,\n            version: SCRIPT.version,\n            exportedAt: exportedAt.toISOString(),\n            state: clonePlainData(state),\n            integrations: {\n                discordWebhook,",
+          "contextEndLine": 23146,
+          "contextStartLine": 23134,
+          "line": 23140,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "                    canShareFile = typeof shareNavigator.canShare !== 'function' || shareNavigator.canShare({ files: [file] });\n                } catch (err) {}\n                if (canShareFile) {\n                    try {\n                        await shareNavigator.share({\n                            files: [file],\n                            title: 'MC Map Command private settings backup'\n                        });\n                        showToast('All toolkit settings exported');\n                        return;\n                    } catch (err) {\n                        if (err?.name === 'AbortError') {\n                            showToast('Settings export cancelled');",
+          "contextEndLine": 23211,
+          "contextStartLine": 23199,
+          "line": 23205,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "AbortError",
+            "function"
+          ]
+        },
+        {
+          "context": "        if (importedStore.present && Object.keys(importedStore.value?.profiles || {}).length) privateItems.push('stored MissionChief financial ledger history');\n        return { importedWebhook, importedCredential, importedStore, privateItems };\n    }\n\n    function applyImportedToolkitSettings(parsed) {\n        const importedState = extractImportedToolkitState(parsed);\n        if (!importedState) throw new Error('The file does not contain MissionChief Map Command settings.');\n\n        const { importedWebhook, importedCredential, importedStore } = describePrivateImport(parsed);\n        const normalisedWebhook = importedWebhook.present ? normaliseDiscordWebhookUrl(importedWebhook.value) : '';\n        const normalisedCredential = importedCredential.present ? normaliseImportedFinanceVaultCredential(importedCredential.value) : null;\n        const normalisedVaultStore = importedStore.present ? normaliseImportedFinanceVaultStore(importedStore.value) : null;\n        const previousStateRaw = localStorage.getItem(SCRIPT.storageState);",
+          "contextEndLine": 23338,
+          "contextStartLine": 23326,
+          "line": 23332,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "        const pad = value => String(value).padStart(2, '0');\n        return `MC Financial Archive ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}-${pad(date.getMinutes())}.json`;\n    }\n\n    function buildFinancialArchiveExport(exportedAt = new Date()) {\n        return {\n            format: 'MissionChief Map Command Financial Archive',\n            schema: 2,\n            toolkitVersion: SCRIPT.version,\n            exportedAt: exportedAt.toISOString(),\n            identity: clonePlainData(financeVaultCredential()),\n            store: clonePlainData(loadFinanceVaultStore()),\n            notice: 'Contains locally stored MissionChief game-financial history. It does not contain the Discord webhook.'",
+          "contextEndLine": 25091,
+          "contextStartLine": 25079,
+          "line": 25085,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "                reject(new Error('Toolkit runtime stopped.'));\n                return;\n            }\n\n            const validate = text => {\n                const documentText = String(text || '').trim();\n                if (!/<!doctype html|<html[\\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {\n                    throw new Error('The Help Centre returned an invalid document.');\n                }\n                helpGuideDocumentCache = documentText;\n                helpGuideLoadedAt = Date.now();\n                return documentText;\n            };",
+          "contextEndLine": 27560,
+          "contextStartLine": 27548,
+          "line": 27554,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "                        <button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>\n                    </div>\n                </div>\n                <div class=\"mcms-help-address\"><span class=\"mcms-help-address-lock\" aria-hidden=\"true\">\u25cf</span><span class=\"mcms-help-address-text\">github.com/Conroy1988/missionchief-toolkit-assets/help/index.html</span><span class=\"mcms-help-status\" data-help-status>Ready</span></div>\n                <div class=\"mcms-help-progress\" aria-hidden=\"true\"></div>\n                <div class=\"mcms-help-content\">\n                    <iframe class=\"mcms-help-frame\" title=\"MissionChief Map Command Toolkit searchable guide\" sandbox=\"allow-scripts allow-popups\" referrerpolicy=\"no-referrer\"></iframe>\n                    <div class=\"mcms-help-fallback\">\n                        <div class=\"mcms-help-error-card\">\n                            <strong>Help Centre unavailable</strong>\n                            <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>\n                            <div class=\"mcms-help-error-actions\"><button type=\"button\" data-help-action=\"reload\">Retry</button><button type=\"button\" data-help-action=\"source\">Open GitHub source</button></div>\n                        </div>",
+          "contextEndLine": 27721,
+          "contextStartLine": 27709,
+          "line": 27715,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "button",
+            "close",
+            "mcms-help-address",
+            "mcms-help-address-lock",
+            "mcms-help-address-text",
+            "mcms-help-content",
+            "mcms-help-error-actions",
+            "mcms-help-error-card",
+            "mcms-help-fallback",
+            "mcms-help-frame",
+            "mcms-help-progress",
+            "mcms-help-status",
+            "no-referrer",
+            "reload",
+            "source",
+            "true"
+          ]
+        }
+      ]
+    },
+    "Umbrella": {
+      "occurrenceCount": 35,
+      "occurrences": [
+        {
+          "context": "    });\n\n    const UI_THEMES = Object.freeze({\n        mapCommand: Object.freeze({ label: 'Map Command', short: 'DEFAULT', icon: '\u25a6', description: 'The original operational command interface.' }),\n        cyberpunk: Object.freeze({ label: 'Cyberpunk', short: 'NEON', icon: '\u26a1', description: 'Neon tactical interface with angular panels, signal animations and high-contrast controls.' }),\n        fallout4: Object.freeze({ label: 'Fallout 4', short: 'PIP-BOY', icon: '\u2622', description: 'Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.' }),\n        umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '\u2623', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),\n        factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '\u2699', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),\n        bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '\u25c9', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),\n        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '\u25b3', description: 'Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })\n    });\n    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);\n",
+          "contextEndLine": 981,
+          "contextStartLine": 969,
+          "line": 975,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk",
+            "Factorio",
+            "Fallout 4",
+            "Hyrule Command",
+            "Map Command",
+            "Umbrella Containment"
+          ],
+          "quotedTokens": [
+            "AUTOMATION",
+            "BSL-4",
+            "Cyberpunk",
+            "DEFAULT",
+            "Factorio",
+            "MI6",
+            "NEON",
+            "PIP-BOY",
+            "TRIFORCE",
+            "bond007",
+            "cyberpunk",
+            "factorio",
+            "fallout4",
+            "hyrule",
+            "mapCommand",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        cyberpunk: { label: 'Cyberpunk Inspired', kicker: 'CREDIT TRANSFER CONFIRMED', titleCase: false, particleMode: 'glitch' },\n        hellfire: { label: 'Hellfire Inspired', kicker: 'REWARD CLAIMED', titleCase: false, particleMode: 'embers' },\n        wasteland: { label: 'Fallout Inspired', kicker: 'VAULT-TEC REWARD AUTHORIZED', titleCase: false, particleMode: 'dust' },\n        factorio: { label: 'Factorio Industrial', kicker: 'AUTOMATION REWARD CONFIRMED', titleCase: false, particleMode: 'embers' },\n        galactic: { label: 'Galactic Command', kicker: 'CREDIT ALLOCATION CONFIRMED', titleCase: false, particleMode: 'stars' },\n        darkFantasy: { label: 'Dark Fantasy Inspired', kicker: 'REWARD BESTOWED', titleCase: true, particleMode: 'ash' },\n        biohazard: { label: 'Umbrella Containment', kicker: 'CREDIT TRANSFER AUTHORIZED', titleCase: false, particleMode: 'none' },\n        underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },\n        pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },\n        jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' },\n        hyruleQuest: { label: 'Hyrule Quest Reward', kicker: 'RUPEE REWARD ACQUIRED', titleCase: false, particleMode: 'rupees' }\n    };\n",
+          "contextEndLine": 1013,
+          "contextStartLine": 1001,
+          "line": 1007,
+          "propertyCandidates": [
+            "007 Intelligence",
+            "Cyberpunk Inspired",
+            "Dark Fantasy Inspired",
+            "Factorio Industrial",
+            "Fallout Inspired",
+            "Galactic Command",
+            "Hellfire Inspired",
+            "Hyrule Quest Reward",
+            "Pixel Arcade Inspired",
+            "Umbrella Containment",
+            "Underworld Inspired"
+          ],
+          "quotedTokens": [
+            "ash",
+            "dust",
+            "embers",
+            "glitch",
+            "none",
+            "pixels",
+            "rupees",
+            "stars"
+          ]
+        },
+        {
+          "context": "        }),\n        factorio: Object.freeze({\n            label: 'Factorio Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/factorio-cashout.mp3'\n        }),\n        biohazard: Object.freeze({\n            label: 'Umbrella Containment Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'\n        }),\n        jamesBond: Object.freeze({\n            label: '007 Intelligence Cashout',\n            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/james-bond-cashout.mp3'\n        }),",
+          "contextEndLine": 1050,
+          "contextStartLine": 1038,
+          "line": 1044,
+          "propertyCandidates": [
+            "007 Intelligence Cashout",
+            "Factorio Cashout",
+            "Umbrella Containment Cashout"
+          ],
+          "quotedTokens": []
+        },
+        {
+          "context": "        #${SCRIPT.payoutFlashId}[data-template=\"darkFantasy\"] .mcms-payout-tier { border-color:#b9903c !important; color:#e8c96f !important; background:rgba(16,12,8,.72) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"darkFantasy\"] .mcms-payout-source { color:#e3bf5c !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"darkFantasy\"] .mcms-payout-kicker { color:#a89569 !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"darkFantasy\"] .mcms-payout-amount { color:#fff0b1 !important; font-family:Georgia,\"Times New Roman\",serif !important; text-shadow:0 2px 0 #100a03,0 0 13px rgba(225,181,67,.58) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"darkFantasy\"] .mcms-payout-theme-particle { border-radius:50% !important; background:#d5c39c !important; box-shadow:0 0 5px rgba(220,183,92,.45) !important; }\n\n        /* Umbrella Containment (legacy template ID: biohazard) */\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,transparent 12%,rgba(11,18,20,.28) 55%,rgba(0,0,0,.88)),linear-gradient(180deg,rgba(21,28,30,.26),transparent 48%,rgba(8,13,14,.40)) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-theme-fx-a { background:repeating-linear-gradient(90deg,transparent 0 59px,rgba(218,234,236,.045) 59px 60px,transparent 60px 120px),repeating-linear-gradient(0deg,transparent 0 39px,rgba(218,234,236,.04) 39px 40px,transparent 40px 80px),linear-gradient(90deg,rgba(207,25,35,.12),transparent 28%,transparent 72%,rgba(46,178,112,.08)) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-theme-fx-b { background:repeating-linear-gradient(135deg,rgba(204,20,30,.10) 0 10px,transparent 10px 20px) !important; mask-image:linear-gradient(180deg,#000 0 7%,transparent 7% 90%,#000 90%) !important; -webkit-mask-image:linear-gradient(180deg,#000 0 7%,transparent 7% 90%,#000 90%) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-theme-fx-c { background:linear-gradient(180deg,transparent 0 45%,rgba(83,255,164,.12) 49%,rgba(83,255,164,.22) 50%,rgba(83,255,164,.08) 51%,transparent 55%),radial-gradient(circle at 50% 50%,transparent 0 25%,rgba(235,245,246,.07) 25.5% 26%,transparent 26.5%) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-banner { width:min(790px,calc(100% - 24px)) !important; padding:24px 38px 22px !important; border:1px solid rgba(221,234,235,.38) !important; border-left:8px solid #c81724 !important; border-right:3px solid #43d887 !important; background:linear-gradient(104deg,rgba(8,12,13,.98),rgba(25,32,34,.96) 48%,rgba(7,12,13,.98)),repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0 1px,transparent 1px 5px) !important; clip-path:polygon(0 0,96% 0,100% 14px,100% 100%,4% 100%,0 calc(100% - 14px)) !important; box-shadow:0 24px 58px rgba(0,0,0,.68),-12px 0 30px rgba(200,23,36,.16),12px 0 24px rgba(67,216,135,.10),inset 0 1px rgba(255,255,255,.05) !important; }\n        #${SCRIPT.payoutFlashId}[data-template=\"biohazard\"] .mcms-payout-banner::before { content:\"CONTAINMENT PROTOCOL // SECURE\" !important; position:absolute !important; right:18px !important; top:10px !important; color:rgba(87,229,150,.58) !important; font:900 7px/1 monospace !important; letter-spacing:1.4px !important; }",
+          "contextEndLine": 3320,
+          "contextStartLine": 3308,
+          "line": 3314,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "biohazard",
+            "darkFantasy"
+          ]
+        },
+        {
+          "context": "            html[data-mcms-ui-theme=\"fallout4\"] #${SCRIPT.controlId} .mcms-screen-pin-btn,\n            html[data-mcms-ui-theme=\"fallout4\"] #${SCRIPT.panelId} button {\n                transition: none !important;\n            }\n        }\n\n        /* Umbrella Biohazard Command \u2014 sterile corporate containment interface theme. */\n        html[data-mcms-ui-theme=\"umbrella\"] {\n            --mcms-um-white: #f1f3f6;\n            --mcms-um-white-strong: #ffffff;\n            --mcms-um-red: #c8102e;\n            --mcms-um-red-dark: #670d20;\n            --mcms-um-amber: #ffd24a;",
+          "contextEndLine": 5729,
+          "contextStartLine": 5717,
+          "line": 5723,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "fallout4",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {\n            border-color: var(--mcms-um-white-strong) !important;\n            background: linear-gradient(180deg, var(--mcms-um-white-strong), #e8ebef) !important;\n            color: var(--mcms-um-ink) !important;\n            text-shadow: none !important;\n            box-shadow: inset 4px 0 0 #7b1027, inset 0 0 0 1px rgba(6,16,8,.22), 0 0 14px rgba(216,25,63,.28), 0 4px 10px rgba(0,0,0,.45) !important;\n            animation: mcmsUmbrellaPower 3.4s ease-in-out infinite !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key {\n            border-color: var(--mcms-um-ink) !important;\n            background: #11151b !important;\n            color: var(--mcms-um-white-strong) !important;\n        }",
+          "contextEndLine": 5835,
+          "contextStartLine": 5823,
+          "line": 5829,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "umbrella"
+          ]
+        },
+        {
+          "context": "                0 0 0 1px rgba(216,25,63,.12),\n                0 18px 44px rgba(0,0,0,.68) !important;\n            backdrop-filter: blur(10px) saturate(.82) !important;\n            scrollbar-color: var(--mcms-um-red) #080a0e !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}.mcms-open {\n            animation: mcmsUmbrellaBoot 260ms steps(5,end) both !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}::-webkit-scrollbar { width: 9px !important; }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background: #080a0e !important; border-left: 1px solid #272c35 !important; }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { background: #b81435 !important; border: 2px solid #080a0e !important; border-radius: 3px !important; }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-header {\n            position: relative !important;",
+          "contextEndLine": 5873,
+          "contextStartLine": 5861,
+          "line": 5867,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "umbrella"
+          ]
+        },
+        {
+          "context": "            position: absolute !important;\n            left: -28% !important;\n            top: 0 !important;\n            width: 24% !important;\n            height: 100% !important;\n            background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent) !important;\n            animation: mcmsUmbrellaSweep 6.8s linear infinite !important;\n            pointer-events: none !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-drag-handle {\n            border: 0 !important;\n            border-radius: 0 !important;\n            background: transparent !important;",
+          "contextEndLine": 5910,
+          "contextStartLine": 5898,
+          "line": 5904,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "umbrella"
+          ]
+        },
+        {
+          "context": "            background: var(--mcms-um-white-strong) !important;\n            color: var(--mcms-um-ink) !important;\n            text-shadow: none !important;\n            box-shadow: inset 0 -3px 0 #760e25, 0 0 10px rgba(216,25,63,.18) !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active {\n            animation: mcmsUmbrellaDataIn 190ms steps(4,end) both !important;\n        }\n        html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-section-label {\n            position: relative !important;\n            margin: 11px 0 6px 0 !important;\n            padding: 5px 8px 5px 18px !important;\n            border: 1px solid rgba(118,171,82,.34) !important;",
+          "contextEndLine": 5979,
+          "contextStartLine": 5967,
+          "line": 5973,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-profile-main span,\n        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-stat-label,\n        html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-entry-meta {\n            font-size: 8.5px !important;\n        }\n\n        @keyframes mcmsUmbrellaBoot {\n            0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }\n            35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }\n            62% { opacity: 1; transform: scaleY(1.015) scaleX(.998); filter: brightness(.92) contrast(1.08); }\n            100% { opacity: 1; transform: scale(1); filter: none; }\n        }\n        @keyframes mcmsUmbrellaDataIn {",
+          "contextEndLine": 6413,
+          "contextStartLine": 6401,
+          "line": 6407,
+          "propertyCandidates": [],
+          "quotedTokens": [
+            "true",
+            "umbrella"
+          ]
+        },
+        {
+          "context": "        @keyframes mcmsUmbrellaBoot {\n            0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }\n            35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }\n            62% { opacity: 1; transform: scaleY(1.015) scaleX(.998); filter: brightness(.92) contrast(1.08); }\n            100% { opacity: 1; transform: scale(1); filter: none; }\n        }\n        @keyframes mcmsUmbrellaDataIn {\n            0% { opacity: .18; transform: translateY(3px); filter: brightness(1.5); }\n            55% { opacity: .86; transform: translateY(-1px); filter: brightness(1.12); }\n            100% { opacity: 1; transform: translateY(0); filter: none; }\n        }\n        @keyframes mcmsUmbrellaPower {\n            0%, 100% { filter: brightness(1); }",
+          "contextEndLine": 6419,
+          "contextStartLine": 6407,
+          "line": 6413,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        },
+        {
+          "context": "        }\n        @keyframes mcmsUmbrellaDataIn {\n            0% { opacity: .18; transform: translateY(3px); filter: brightness(1.5); }\n            55% { opacity: .86; transform: translateY(-1px); filter: brightness(1.12); }\n            100% { opacity: 1; transform: translateY(0); filter: none; }\n        }\n        @keyframes mcmsUmbrellaPower {\n            0%, 100% { filter: brightness(1); }\n            48% { filter: brightness(1); }\n            50% { filter: brightness(1.10); }\n            52% { filter: brightness(.97); }\n            54% { filter: brightness(1.05); }\n        }",
+          "contextEndLine": 6424,
+          "contextStartLine": 6412,
+          "line": 6418,
+          "propertyCandidates": [],
+          "quotedTokens": []
+        }
+      ]
+    }
+  },
+  "generatedAt": "2026-07-17",
+  "issue": 117,
+  "schemaVersion": 1,
+  "source": "src/MissionChief_Map_Command_Toolkit.user.js"
+}

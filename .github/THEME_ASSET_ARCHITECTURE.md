@@ -67,6 +67,12 @@ Already-structured audio remains at:
 > [!WARNING]
 > The Hyrule runtime description still says **“Flagship fantasy command interface.”** The migration must remove “Flagship” so no interface system is elevated above the others.
 
+## Phase 1 review conclusion
+
+The inventory is approved as the migration baseline. It confirms a strict separation between persisted runtime IDs and repository asset slugs, and it establishes the root-to-canonical mapping without changing any public endpoint.
+
+Phase 1 does **not** complete Issue #117. The issue remains open until structured copies, the compatibility alias manifest, Asset Health enforcement, userscript migration and the production release are complete.
+
 ## Phase 2 entry gates
 
 The inventory now confirms:

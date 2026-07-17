@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "auditRows": [
+    {
+      "name": "positive multi-million checkpoint variance",
+      "report": {
+        "reconciliationDifference": 987654321,
+        "balanceCalculated": true
+      },
+      "expectedLabel": "Checkpoint variance",
+      "expectedValue": "+£987.7m"
+    },
+    {
+      "name": "negative multi-million checkpoint variance",
+      "report": {
+        "reconciliationDifference": -876543210,
+        "balanceCalculated": true
+      },
+      "expectedLabel": "Checkpoint variance",
+      "expectedValue": "-£876.5m"
+    },
+    {
+      "name": "checkpoint reconciliation",
+      "report": {
+        "reconciliationDifference": 0,
+        "balanceCalculated": true
+      },
+      "expectedLabel": "Checkpoint audit",
+      "expectedValue": "Reconciled"
+    },
+    {
+      "name": "reconstructed audit basis",
+      "report": {
+        "reconciliationDifference": null,
+        "balanceCalculated": true
+      },
+      "expectedLabel": "Audit basis",
+      "expectedValue": "Reconstructed"
+    },
+    {
+      "name": "unavailable audit basis",
+      "report": {
+        "reconciliationDifference": null,
+        "balanceCalculated": false
+      },
+      "expectedLabel": "Audit basis",
+      "expectedValue": "Unavailable"
+    }
+  ],
+  "stressRows": [
+    {
+      "label": "Checkpoint variance",
+      "value": "+£987.7m"
+    },
+    {
+      "label": "Checkpoint variance with an intentionally excessive diagnostic suffix",
+      "value": "-£123,456,789,012,345"
+    }
+  ]
+}

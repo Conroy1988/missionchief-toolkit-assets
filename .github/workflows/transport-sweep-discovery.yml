@@ -47,5 +47,5 @@ jobs:
             echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture transport sweep window lifecycle [skip ci]"
+          git commit -m "Capture transport sweep window lifecycle"
           git push origin HEAD:chore/transport-sweep-discovery

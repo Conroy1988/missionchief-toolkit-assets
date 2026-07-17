@@ -1,4 +1,4 @@
 author: github-actions[bot]
-url: https://github.com/Conroy1988/missionchief-toolkit-assets/issues/94#issuecomment-4998124126
+url: https://github.com/Conroy1988/missionchief-toolkit-assets/issues/94#issuecomment-4998152656
 
-The owner-authorized development package stopped during **apply-development-package**. No failed gate was bypassed.\n- Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/29547723404
+Development package applied and validated automatically.\n\n- Result commit: `4c9218d889c9abdff754a603c8dad45aaa97da6c`\n- Pull request opened: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/104\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push

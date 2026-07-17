@@ -1,0 +1,20 @@
+{
+  "assets": {
+    "cashoutAudio": "audio/factorio-cashout.mp3"
+  },
+  "compatibility": {
+    "payoutTemplateIds": [
+      "factorio"
+    ],
+    "settingIds": [
+      "factorio"
+    ]
+  },
+  "displayName": "Factorio",
+  "generated": "2026-07-17",
+  "notes": "Canonical Factorio interface asset package.",
+  "packageVersion": "1.0.0",
+  "schemaVersion": 1,
+  "theme": "factorio",
+  "toolkitVersion": "4.14.7"
+}

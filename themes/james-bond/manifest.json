@@ -1,33 +1,37 @@
 {
-  "theme": "bond007",
-  "displayName": "007 Intelligence",
-  "packageVersion": "2.1.1",
-  "toolkitVersion": "4.10.2",
-  "generated": "2026-07-14",
   "assets": {
-    "legacy007Logo": "007-logo.svg",
-    "commandSeal": "ui/mi6-command-seal.svg",
-    "gunbarrelReticle": "ui/gunbarrel-reticle.svg",
-    "dossierGrid": "ui/classified-dossier-grid.svg",
-    "agentSilhouette": "ui/agent-silhouette.svg",
     "agentPortrait": "payout/daniel-craig-007-portrait.png",
+    "agentSilhouette": "ui/agent-silhouette.svg",
+    "cashoutAudio": "audio/james-bond-cashout.mp3",
+    "commandSeal": "ui/mi6-command-seal.svg",
+    "dossierGrid": "ui/classified-dossier-grid.svg",
     "goldDivider": "ui/gold-divider.svg",
-    "payoutSeal": "payout/funds-authorised-seal.svg",
-    "cashoutAudio": "../../james-bond-cashout.mp3"
+    "gunbarrelReticle": "ui/gunbarrel-reticle.svg",
+    "legacy007Logo": "007-logo.svg",
+    "payoutSeal": "payout/funds-authorised-seal.svg"
   },
-  "portraitAttribution": {
-    "subject": "Daniel Craig as James Bond",
-    "source": "https://pngimg.com/image/93472",
-    "license": "CC BY-NC 4.0",
-    "use": "Non-commercial fan-made MissionChief userscript theme asset"
-  },
-  "legacyCompatibility": {
-    "settingIds": ["bond007", "jamesBond"],
-    "legacyAudio": "james-bond-cashout.mp3",
-    "legacyRootRetained": true
-  },
+  "displayName": "007 Intelligence",
+  "generated": "2026-07-17",
   "layout": {
     "payoutDossier": "Protected opaque reading field with a translucent portrait reveal zone on desktop and tablet; mobile remains fully opaque."
   },
-  "notes": "Transparent 007 artwork package for the MissionChief Map Command Toolkit. The hosted 007 logo and audio are retained. Operational status colours remain protected."
+  "legacyCompatibility": {
+    "canonicalAudio": "audio/james-bond-cashout.mp3",
+    "legacyAudio": "james-bond-cashout.mp3",
+    "legacyRootRetained": true,
+    "settingIds": [
+      "bond007",
+      "jamesBond"
+    ]
+  },
+  "notes": "Canonical 007 Intelligence asset package. The root audio file remains only as a byte-identical compatibility endpoint. Operational status colours remain protected.",
+  "packageVersion": "2.2.0",
+  "portraitAttribution": {
+    "license": "CC BY-NC 4.0",
+    "source": "https://pngimg.com/image/93472",
+    "subject": "Daniel Craig as James Bond",
+    "use": "Non-commercial fan-made MissionChief userscript theme asset"
+  },
+  "theme": "bond007",
+  "toolkitVersion": "4.14.7"
 }

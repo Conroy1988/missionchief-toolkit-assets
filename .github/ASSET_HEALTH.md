@@ -46,14 +46,17 @@ Thresholds, content types, monitored hosts and explicit endpoints are controlled
 
 Change the policy only when the asset contract genuinely changes. Do not weaken a failing check merely to make CI green; first confirm whether the public path, release hash, file type or endpoint is wrong.
 
-## Repository audio contract
+## Repository audio and compatibility-alias contract
 
-The asset-health self-test also enforces the payout-audio inventory:
+The canonical payout-audio inventory is declared in `.github/asset-compatibility-aliases.json`.
 
-- every retained public payout-audio path must exist and remain referenced by the canonical userscript;
-- newly added `.mp3`, `.wav` or `.ogg` files must be referenced by the canonical userscript;
-- byte-identical audio duplicates are rejected;
-- historical releases are protected by an explicit tag scan before any legacy asset is removed.
+The permanent validation enforces that:
 
-This contract deliberately preserves the active root-level raw GitHub URLs. Repository tidiness must never silently break an installed or previously published Toolkit version.
+- every canonical payout-audio path exists and is referenced by the canonical userscript;
+- current source code does not reference a root-level legacy alias;
+- every declared root alias exists and is byte-identical to its canonical target;
+- only declared legacy/canonical pairs may contain duplicate audio bytes;
+- undeclared `.mp3`, `.wav` or `.ogg` files fail as orphaned media;
+- missing aliases, missing canonical targets, hash mismatches and unexpected source paths fail validation.
 
+The seven root-level MP3 files remain visible solely because older installed and published Toolkit versions load those exact raw GitHub URLs. New development must use the structured canonical paths under `themes/` or `assets/audio/payout-presets/`.

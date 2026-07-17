@@ -1,26 +1,30 @@
 {
-  "theme": "umbrella",
-  "displayName": "Umbrella Containment",
-  "packageVersion": "1.0.0",
-  "toolkitVersion": "4.3.0",
-  "generated": "2026-07-13",
   "assets": {
-    "uiEmblem": "ui/umbrella-containment-emblem.svg",
+    "cashoutAudio": "audio/umbrella-containment-cashout.mp3",
     "containmentBadge": "ui/containment-division-badge.svg",
     "facilitySchematic": "ui/facility-schematic.svg",
-    "surveillanceTerminal": "ui/surveillance-terminal.svg",
-    "specimenVial": "ui/specimen-vial.svg",
     "payoutSeal": "payout/transfer-authorized-seal.svg",
-    "cashoutAudio": "audio/umbrella-containment-cashout.mp3"
-  },
-  "legacyCompatibility": {
-    "settingIds": ["umbrella", "biohazard"],
-    "legacyAudio": "biohazzard-cashout.mp3",
-    "legacyRootRetained": true
+    "specimenVial": "ui/specimen-vial.svg",
+    "surveillanceTerminal": "ui/surveillance-terminal.svg",
+    "uiEmblem": "ui/umbrella-containment-emblem.svg"
   },
   "audio": {
     "gitBlobSha1": "0cd598dde95bea6c107a1c17751472c07bdda818",
     "migrationCommit": "6516e7fad8063e0278c9ac384396a61cea27268f"
   },
-  "notes": "Original transparent artwork created for the MissionChief Map Command Toolkit. Operational status colours remain protected."
+  "displayName": "Umbrella Containment",
+  "generated": "2026-07-17",
+  "legacyCompatibility": {
+    "canonicalAudio": "audio/umbrella-containment-cashout.mp3",
+    "historicalRootAudioRemoved": "biohazzard-cashout.mp3",
+    "legacyRootRetained": false,
+    "settingIds": [
+      "umbrella",
+      "biohazard"
+    ]
+  },
+  "notes": "Canonical Umbrella interface asset package. The former unreferenced root duplicate was removed by Issue #115; the structured audio path remains authoritative.",
+  "packageVersion": "1.1.0",
+  "theme": "umbrella",
+  "toolkitVersion": "4.14.7"
 }

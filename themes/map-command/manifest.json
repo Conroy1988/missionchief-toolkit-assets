@@ -1,0 +1,16 @@
+{
+  "assets": {},
+  "compatibility": {
+    "payoutTemplateIds": [],
+    "settingIds": [
+      "mapCommand"
+    ]
+  },
+  "displayName": "Map Command",
+  "generated": "2026-07-17",
+  "notes": "Canonical asset namespace for the original Map Command interface. The current package has no external media.",
+  "packageVersion": "1.0.0",
+  "schemaVersion": 1,
+  "theme": "mapCommand",
+  "toolkitVersion": "4.14.7"
+}

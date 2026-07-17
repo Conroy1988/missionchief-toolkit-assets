@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.7] - 2026-07-17
+
+### Changed
+- Migrated all current payout-audio mappings to structured canonical paths owned by their interface system or the shared payout-preset package.
+- Added consistent canonical asset namespaces for Map Command, Cyberpunk, Fallout 4 and Factorio, while retaining the existing Umbrella, 007 Intelligence and Hyrule Command packages.
+- Removed the remaining “Flagship” wording from Hyrule Command so all seven interface systems remain equally represented.
+
+### Compatibility
+- Retained all seven root-level audio files as byte-identical public compatibility aliases for older installed and published Toolkit versions.
+- Added a machine-readable alias manifest and validation that fails on missing aliases, hash mismatches, legacy references in the current source, orphaned audio or undeclared duplicates.
+- Existing runtime theme IDs, payout template IDs, settings, fallback audio behaviour and Desktop/Tablet/iOS operation remain unchanged.
+
 ## [4.14.6] - 2026-07-17
 
 ### Changed

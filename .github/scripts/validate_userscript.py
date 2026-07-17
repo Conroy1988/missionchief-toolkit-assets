@@ -22,6 +22,7 @@ MANIFEST = DIST / "release-manifest.json"
 INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
+AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -137,7 +138,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -197,6 +198,13 @@ def run_integrity_gate() -> None:
             if asset_markdown.exists():
                 print(asset_markdown.read_text(encoding="utf-8"))
             fail("static public-asset integrity audit failed")
+
+        audio_aliases = subprocess.run(
+            [sys.executable, str(AUDIO_ALIAS_AUDITOR)],
+            cwd=ROOT,
+        )
+        if audio_aliases.returncode != 0:
+            fail("audio compatibility alias contract failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

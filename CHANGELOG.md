@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.14.6] - 2026-07-17
+
+### Changed
+- Moved Mission Value into MissionChief's native mission action toolbar spacer so it automatically yields space to MissionChief and LSSM action buttons.
+- The toolbar badge now adapts through full, shortened and value-only presentations as the available spacer width changes.
+
+### Fixed
+- Removed legacy header/content Mission Value rows and deduplicated by the concrete mission toolbar host and mission ID across lightbox and same-origin iframe contexts.
+- Narrow or fully occupied toolbars now use one normal-flow fallback row instead of overlapping dispatch, navigation or Requirements controls.
+
+### Compatibility
+- Existing Mission Value settings, currency formatting, verified value sources, import/export behaviour and Desktop/Tablet/iOS feature availability remain unchanged.
+- Added fixture-backed toolbar-width, fallback and cross-document deduplication contracts.
+
 ## [4.14.5] - 2026-07-17
 
 ### Changed

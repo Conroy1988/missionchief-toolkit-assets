@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.5
+// @version      4.14.6
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.5',
+        version: '4.14.6',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -502,7 +502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
-        styleId: 'mc-map-command-toolkit-style-v4144',
+        styleId: 'mc-map-command-toolkit-style-v4146',
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
@@ -1361,6 +1361,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let missionValueFeatureInstalled = false;
     const missionValueObservedDocuments = new WeakSet();
     const missionValueObservedFrames = new WeakSet();
+    const missionValueHostObservers = new Map();
     const missionValueRetryState = new WeakMap();
     let commandBarAnimationTimer = null;
     let commandBarAnimating = false;
@@ -4179,30 +4180,45 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             display: flex !important;
             align-items: center !important;
             justify-content: flex-end !important;
-            width: 100% !important;
-            min-height: 30px !important;
+            min-width: 0 !important;
             box-sizing: border-box !important;
-            margin: 0 0 8px 0 !important;
-            padding: 5px 46px 5px 8px !important;
-            clear: both !important;
             position: relative !important;
             z-index: 2 !important;
             pointer-events: none !important;
+        }
+        #navbar-alarm-spacer > .mcms-mission-value-row,
+        .mcms-mission-value-row[data-mcms-host="toolbar"] {
+            flex: 1 1 auto !important;
+            width: 100% !important;
+            min-height: 32px !important;
+            margin: 0 !important;
+            padding: 0 3px 0 6px !important;
+            clear: none !important;
+            overflow: hidden !important;
+        }
+        .mcms-mission-value-row[data-mcms-host="fallback"] {
+            width: 100% !important;
+            min-height: 30px !important;
+            margin: 0 0 6px 0 !important;
+            padding: 4px 8px !important;
+            clear: both !important;
+            overflow: hidden !important;
         }
         .mcms-mission-value-badge {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            max-width: min(100%, 260px) !important;
-            min-height: 25px !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            min-height: 24px !important;
             box-sizing: border-box !important;
-            padding: 4px 10px !important;
+            padding: 4px 9px !important;
             border: 1px solid rgba(235,190,64,.72) !important;
             border-radius: 8px !important;
             background: linear-gradient(145deg, rgba(48,39,13,.96), rgba(19,21,24,.96)) !important;
             color: #ffe59a !important;
             box-shadow: 0 2px 8px rgba(0,0,0,.34) !important;
-            font: 900 11px/1.25 Arial, Helvetica, sans-serif !important;
+            font: 900 11px/1.2 Arial, Helvetica, sans-serif !important;
             letter-spacing: .15px !important;
             text-align: right !important;
             white-space: nowrap !important;
@@ -4210,9 +4226,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             text-overflow: ellipsis !important;
             pointer-events: none !important;
         }
-        @media (max-width: 520px) {
-            .mcms-mission-value-row { padding-right: 40px !important; }
-            .mcms-mission-value-badge { max-width: 100% !important; font-size: 10px !important; }
+        .mcms-mission-value-row[data-mcms-mode="value"] .mcms-mission-value-badge {
+            padding-left: 7px !important;
+            padding-right: 7px !important;
+        }
+        @media (max-width: 767px) {
+            .mcms-mission-value-row[data-mcms-host="fallback"] {
+                padding: 4px 6px !important;
+            }
+            .mcms-mission-value-badge {
+                font-size: 10px !important;
+            }
         }
 
         .mcms-stuck-mission-icon { pointer-events:none !important; }
@@ -21332,15 +21356,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }
     }
 
-    function missionValueWindowCandidates() {
-        const candidates = new Map();
+        function missionValueWindowCandidates() {
+        const discovered = [];
         const add = root => {
             if (!root?.isConnected) return;
             const missionId = missionValueIdFromElement(root);
             if (missionId === null) return;
             const mount = missionValueMountForRoot(root);
             if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
-            if (!candidates.has(mount)) candidates.set(mount, { root, mount, missionId });
+            const toolbarSpacer = missionValueToolbarSpacer(root, mount);
+            const toolbar = missionValueToolbarBar(toolbarSpacer, root, mount);
+            discovered.push({ root, mount, missionId, toolbarSpacer, toolbar });
         };
 
         transportSweepVisibleWindowRoots().forEach(add);
@@ -21352,7 +21378,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 } catch (err) {}
             }
         }
-        return Array.from(candidates.values());
+        return missionValuePreferredCandidates(discovered);
     }
 
     function removeMissionValueRows(scope = document) {
@@ -21364,97 +21390,212 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
 
-    function missionValueVisibleControlRect(element) {
-        if (!element?.isConnected || element.closest?.('.mcms-mission-value-row')) return null;
+        function missionValueToolbarSpacer(root, mount) {
+        const scopes = [root, mount].filter(Boolean);
+        for (const scope of scopes) {
+            try {
+                if (scope.matches?.('#navbar-alarm-spacer')) return scope;
+                const spacer = scope.querySelector?.('#navbar-alarm-spacer');
+                if (spacer) return spacer;
+            } catch (err) {}
+        }
+        const doc = root?.ownerDocument || mount?.ownerDocument || null;
+        if (!doc || (root !== doc.body && mount !== doc.body)) return null;
         try {
-            const view = element.ownerDocument?.defaultView || pageWindow;
-            const style = view?.getComputedStyle?.(element);
-            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return null;
-        } catch (err) {}
-        try {
-            const rect = element.getBoundingClientRect?.();
-            if (!rect || rect.width <= 2 || rect.height <= 2 || rect.width > 96 || rect.height > 64) return null;
-            return rect;
+            return missionValueIdFromUrl(doc.location?.href, location.href) !== null
+                ? doc.getElementById?.('navbar-alarm-spacer') || null
+                : null;
         } catch (err) {
             return null;
         }
     }
 
-    function missionValueRightControlOffset(candidate) {
-        const { root, mount } = candidate || {};
-        const fallback = 72;
-        if (!root?.querySelectorAll || !mount?.getBoundingClientRect) return fallback;
-
-        let mountRect = null;
-        try { mountRect = mount.getBoundingClientRect(); } catch (err) {}
-        if (!mountRect || mountRect.width <= 0) return fallback;
-
-        const topBandBottom = mountRect.top + Math.min(58, Math.max(40, mountRect.height * 0.14));
-        const rightBandWidth = Math.min(160, Math.max(92, mountRect.width * 0.10));
-        const rightBandStart = mountRect.right - rightBandWidth;
-        const selector = 'button, a, [role="button"], [onclick], [data-dismiss], [aria-label], [title], .close, .lightbox-close, .glyphicon, .fa, .fas, .far, svg';
-        let controls = [];
-        try { controls = Array.from(root.querySelectorAll(selector)); } catch (err) {}
-
-        let leftEdge = null;
-        for (const control of controls) {
-            const rect = missionValueVisibleControlRect(control);
-            if (!rect) continue;
-            if (rect.bottom < mountRect.top - 2 || rect.top > topBandBottom) continue;
-            if (rect.right < rightBandStart || rect.left >= mountRect.right + 2) continue;
-            leftEdge = leftEdge === null ? rect.left : Math.min(leftEdge, rect.left);
+    function missionValueToolbarBar(spacer, root, mount) {
+        if (spacer?.isConnected) {
+            try {
+                return spacer.closest?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || spacer.parentElement || null;
+            } catch (err) {}
         }
-
-        if (leftEdge === null) return fallback;
-        const measured = Math.ceil(mountRect.right - leftEdge + 16);
-        const maximum = Math.max(fallback, Math.floor(mountRect.width * 0.42));
-        return Math.max(fallback, Math.min(maximum, measured));
+        for (const scope of [root, mount]) {
+            try {
+                const bars = Array.from(scope?.querySelectorAll?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || []);
+                const bar = bars.find(candidate => candidate.querySelector?.('#navbar-alarm-spacer'));
+                if (bar) return bar;
+            } catch (err) {}
+        }
+        return null;
     }
 
-    function positionMissionValueRow(candidate, row) {
-        if (!row) return;
-        const offset = missionValueRightControlOffset(candidate);
-        row.style.setProperty('padding-right', `${offset}px`, 'important');
-        row.dataset.mcmsRightOffset = String(offset);
+    function missionValueSpacerVisibleWidth(spacer) {
+        if (!spacer?.isConnected) return 0;
+        try {
+            const view = spacer.ownerDocument?.defaultView || pageWindow;
+            const style = view?.getComputedStyle?.(spacer);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return 0;
+        } catch (err) {}
+        try {
+            const rect = spacer.getBoundingClientRect?.();
+            return rect && rect.width > 0 ? Math.max(0, Math.floor(rect.width)) : 0;
+        } catch (err) {
+            return 0;
+        }
     }
 
-    function syncMissionValueCandidate(candidate) {
-        const { mount, missionId } = candidate || {};
-        if (!mount?.isConnected || missionId === null) return false;
+    function missionValuePresentation(availableWidth, formatted) {
+        const width = Math.max(0, Number(availableWidth) || 0);
+        const value = String(formatted || '');
+        if (width >= 176) return { mode: 'full', text: `Mission Value · ${value}` };
+        if (width >= 110) return { mode: 'short', text: `Value · ${value}` };
+        if (width >= 58) return { mode: 'value', text: value };
+        return { mode: 'fallback', text: `Mission Value · ${value}` };
+    }
+
+    function missionValuePreferredCandidates(candidateList) {
+        const groups = new Map();
+        for (const candidate of Array.from(candidateList || [])) {
+            const missionId = normaliseMissionId(candidate?.missionId);
+            if (missionId === null || !candidate?.mount?.isConnected) continue;
+            if (!groups.has(missionId)) groups.set(missionId, []);
+            groups.get(missionId).push(candidate);
+        }
+        const selected = [];
+        for (const group of groups.values()) {
+            const toolbarCandidates = group.filter(candidate => candidate.toolbarSpacer?.isConnected && candidate.toolbar?.isConnected);
+            const pool = toolbarCandidates.length ? toolbarCandidates : group;
+            const seenHosts = new Set();
+            for (const candidate of pool) {
+                const host = candidate.toolbarSpacer?.isConnected ? candidate.toolbarSpacer : candidate.mount;
+                if (!host || seenHosts.has(host)) continue;
+                seenHosts.add(host);
+                selected.push(candidate);
+            }
+        }
+        return selected;
+    }
+
+    function missionValueCandidateScopes(candidate) {
+        const scopes = new Set([candidate?.root, candidate?.mount, candidate?.toolbarSpacer, candidate?.toolbar].filter(Boolean));
+        const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument || null;
+        try {
+            const frame = doc?.defaultView?.frameElement || null;
+            if (frame) {
+                scopes.add(frame);
+                const frameWindow = frame.closest?.('#lightbox_box, #lightbox, .modal, [role="dialog"], .ui-dialog, .lightbox_content');
+                if (frameWindow) scopes.add(frameWindow);
+            }
+        } catch (err) {}
+        return Array.from(scopes);
+    }
+
+    function missionValueRowsForCandidate(candidate) {
+        const rows = new Set();
+        for (const scope of missionValueCandidateScopes(candidate)) {
+            try {
+                if (scope.matches?.('.mcms-mission-value-row')) rows.add(scope);
+                scope.querySelectorAll?.('.mcms-mission-value-row').forEach(row => rows.add(row));
+            } catch (err) {}
+        }
+        return Array.from(rows);
+    }
+
+    function pruneMissionValueHostObservers(activeSpacers = null) {
+        for (const [spacer, record] of missionValueHostObservers) {
+            const keep = Boolean(spacer?.isConnected && record?.toolbar?.isConnected && (!activeSpacers || activeSpacers.has(spacer)));
+            if (keep) continue;
+            try { record?.resizeObserver?.disconnect?.(); } catch (err) {}
+            try { record?.mutationObserver?.disconnect?.(); } catch (err) {}
+            missionValueHostObservers.delete(spacer);
+        }
+    }
+
+    function observeMissionValueHost(candidate) {
+        const spacer = candidate?.toolbarSpacer;
+        const toolbar = candidate?.toolbar;
+        if (!spacer?.isConnected || !toolbar?.isConnected) return;
+        const existing = missionValueHostObservers.get(spacer);
+        if (existing?.toolbar === toolbar) return;
+        if (existing) {
+            try { existing.resizeObserver?.disconnect?.(); } catch (err) {}
+            try { existing.mutationObserver?.disconnect?.(); } catch (err) {}
+        }
+        const view = spacer.ownerDocument?.defaultView || pageWindow;
+        const ResizeObserverCtor = view?.ResizeObserver || pageWindow.ResizeObserver;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const record = { toolbar, resizeObserver: null, mutationObserver: null };
+        if (typeof ResizeObserverCtor === 'function') {
+            record.resizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => scheduleMissionValueScan(24)));
+            record.resizeObserver.observe(spacer);
+        }
+        if (typeof MutationObserverCtor === 'function') {
+            record.mutationObserver = runtimeTrackObserver(new MutationObserverCtor(() => scheduleMissionValueScan(24)));
+            record.mutationObserver.observe(toolbar, { childList: true, subtree: false });
+        }
+        missionValueHostObservers.set(spacer, record);
+    }
+
+    
+
+    
+
+        function syncMissionValueCandidate(candidate) {
+        const { mount, missionId, toolbarSpacer, toolbar } = candidate || {};
+        if (!mount?.isConnected || missionId === null) return null;
         const marker = getMissionMarkerIndex().byId.get(missionId) || getMissionMarkerIndex().byId.get(String(missionId)) || null;
         const snapshot = liveMissionSnapshots.get(missionId) || liveMissionSnapshots.get(String(missionId)) || missionSnapshotCache.get(missionId) || missionSnapshotCache.get(String(missionId)) || null;
         const details = criticalMissionValueDetails({ missionId, marker, snapshot });
         const formatted = formatMissionWindowValue(details.value);
-
-        let rows = [];
-        try { rows = Array.from(mount.querySelectorAll(':scope > .mcms-mission-value-row')); } catch (err) {
-            try { rows = Array.from(mount.children || []).filter(child => child.classList?.contains('mcms-mission-value-row')); } catch (innerErr) {}
-        }
-        const row = rows.shift() || null;
-        rows.forEach(extra => extra.remove());
+        const existingRows = missionValueRowsForCandidate(candidate);
         if (!formatted) {
-            row?.remove();
-            return false;
+            existingRows.forEach(row => row.remove());
+            return null;
         }
 
-        const doc = mount.ownerDocument || document;
-        const nextRow = row || doc.createElement('div');
-        if (!row) {
-            nextRow.className = 'mcms-mission-value-row';
-            nextRow.setAttribute('data-mcms-mission-value', 'true');
-            const badge = doc.createElement('span');
-            badge.className = 'mcms-mission-value-badge';
-            nextRow.appendChild(badge);
-            mount.insertBefore(nextRow, mount.firstChild || null);
+        observeMissionValueHost(candidate);
+        const availableWidth = missionValueSpacerVisibleWidth(toolbarSpacer);
+        const presentation = missionValuePresentation(availableWidth, formatted);
+        const useToolbar = Boolean(toolbarSpacer?.isConnected && toolbar?.isConnected && presentation.mode !== 'fallback');
+        const targetDocument = (useToolbar ? toolbarSpacer.ownerDocument : mount.ownerDocument) || document;
+        let row = null;
+        if (useToolbar) {
+            row = existingRows.find(candidateRow => candidateRow.parentNode === toolbarSpacer) || null;
+        } else if (toolbar?.parentNode) {
+            row = existingRows.find(candidateRow => candidateRow.parentNode === toolbar.parentNode && candidateRow.previousElementSibling === toolbar) || null;
         }
-        nextRow.dataset.mcmsMissionId = String(missionId);
-        const badge = nextRow.querySelector('.mcms-mission-value-badge');
-        if (!badge) return false;
-        const text = `Mission Value · ${formatted}`;
+        row ||= existingRows.find(candidateRow => candidateRow.ownerDocument === targetDocument) || null;
+        existingRows.forEach(candidateRow => {
+            if (candidateRow !== row) candidateRow.remove();
+        });
+        if (!row) row = targetDocument.createElement('div');
+        row.className = 'mcms-mission-value-row';
+        row.setAttribute('data-mcms-mission-value', 'true');
+        row.dataset.mcmsMissionId = String(missionId);
+        row.dataset.mcmsHost = useToolbar ? 'toolbar' : 'fallback';
+        row.dataset.mcmsMode = useToolbar ? presentation.mode : 'fallback';
+
+        let badges = [];
+        try { badges = Array.from(row.querySelectorAll('.mcms-mission-value-badge')); } catch (err) {}
+        const badge = badges.shift() || targetDocument.createElement('span');
+        badges.forEach(extra => extra.remove());
+        badge.className = 'mcms-mission-value-badge';
+        if (badge.parentNode !== row) row.appendChild(badge);
+
+        if (useToolbar) {
+            if (row.parentNode !== toolbarSpacer) toolbarSpacer.appendChild(row);
+        } else if (toolbar?.parentNode) {
+            if (row.parentNode !== toolbar.parentNode || row.previousElementSibling !== toolbar) {
+                toolbar.parentNode.insertBefore(row, toolbar.nextSibling);
+            }
+        } else if (row.parentNode !== mount || row !== mount.firstElementChild) {
+            mount.insertBefore(row, mount.firstChild || null);
+        }
+
+        const fullLabel = `Mission Value · ${formatted}`;
+        const text = useToolbar ? presentation.text : fullLabel;
         if (badge.textContent !== text) badge.textContent = text;
-        badge.title = `Mission Value · ${formatted} · ${details.source}`;
-        positionMissionValueRow(candidate, nextRow);
-        return true;
+        badge.title = `${fullLabel} · ${details.source}`;
+        badge.setAttribute('aria-label', fullLabel);
+        row.setAttribute('aria-label', fullLabel);
+        return row;
     }
 
     function scheduleMissionValueScan(delay = 80) {
@@ -21465,15 +21606,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }, Math.max(0, Number(delay) || 0));
     }
 
-    function scanMissionValueWindows() {
+        function scanMissionValueWindows() {
         if (!state.missionValue) {
             clearMissionValueIndicators();
+            pruneMissionValueHostObservers(new Set());
             return;
         }
         let needsRetry = false;
+        const activeRows = new Set();
+        const activeSpacers = new Set();
         for (const candidate of missionValueWindowCandidates()) {
-            const rendered = syncMissionValueCandidate(candidate);
-            if (rendered) {
+            if (candidate.toolbarSpacer?.isConnected) activeSpacers.add(candidate.toolbarSpacer);
+            const renderedRow = syncMissionValueCandidate(candidate);
+            if (renderedRow) {
+                activeRows.add(renderedRow);
                 missionValueRetryState.delete(candidate.mount);
                 continue;
             }
@@ -21484,10 +21630,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 needsRetry = true;
             }
         }
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.('.mcms-mission-value-row').forEach(row => {
+                    if (!activeRows.has(row)) row.remove();
+                });
+            } catch (err) {}
+        }
+        pruneMissionValueHostObservers(activeSpacers);
         if (needsRetry) runtimeSetTimeout(() => scheduleMissionValueScan(0), 650);
     }
 
-    function ensureMissionValueDocumentStyle(doc) {
+        function ensureMissionValueDocumentStyle(doc) {
         if (!doc || doc === document) return;
         const styleId = 'mcms-mission-value-document-style';
         if (doc.getElementById?.(styleId)) return;
@@ -21495,26 +21649,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!style) return;
         style.id = styleId;
         style.textContent = `
-            .mcms-mission-value-row {
-                display:flex !important;align-items:center !important;justify-content:flex-end !important;
-                width:100% !important;min-height:30px !important;box-sizing:border-box !important;
-                margin:0 0 8px 0 !important;padding:5px 46px 5px 8px !important;clear:both !important;
-                position:relative !important;z-index:2 !important;pointer-events:none !important;
-            }
-            .mcms-mission-value-badge {
-                display:inline-flex !important;align-items:center !important;justify-content:center !important;
-                max-width:min(100%,260px) !important;min-height:25px !important;box-sizing:border-box !important;
-                padding:4px 10px !important;border:1px solid rgba(235,190,64,.72) !important;border-radius:8px !important;
-                background:linear-gradient(145deg,rgba(48,39,13,.96),rgba(19,21,24,.96)) !important;
-                color:#ffe59a !important;box-shadow:0 2px 8px rgba(0,0,0,.34) !important;
-                font:900 11px/1.25 Arial,Helvetica,sans-serif !important;letter-spacing:.15px !important;
-                text-align:right !important;white-space:nowrap !important;overflow:hidden !important;
-                text-overflow:ellipsis !important;pointer-events:none !important;
-            }
-            @media (max-width:520px) {
-                .mcms-mission-value-row { padding-right:40px !important; }
-                .mcms-mission-value-badge { max-width:100% !important;font-size:10px !important; }
-            }
+            .mcms-mission-value-row{display:flex!important;align-items:center!important;justify-content:flex-end!important;min-width:0!important;box-sizing:border-box!important;position:relative!important;z-index:2!important;pointer-events:none!important}
+            #navbar-alarm-spacer>.mcms-mission-value-row,.mcms-mission-value-row[data-mcms-host="toolbar"]{flex:1 1 auto!important;width:100%!important;min-height:32px!important;margin:0!important;padding:0 3px 0 6px!important;clear:none!important;overflow:hidden!important}
+            .mcms-mission-value-row[data-mcms-host="fallback"]{width:100%!important;min-height:30px!important;margin:0 0 6px 0!important;padding:4px 8px!important;clear:both!important;overflow:hidden!important}
+            .mcms-mission-value-badge{display:inline-flex!important;align-items:center!important;justify-content:center!important;max-width:100%!important;min-width:0!important;min-height:24px!important;box-sizing:border-box!important;padding:4px 9px!important;border:1px solid rgba(235,190,64,.72)!important;border-radius:8px!important;background:linear-gradient(145deg,rgba(48,39,13,.96),rgba(19,21,24,.96))!important;color:#ffe59a!important;box-shadow:0 2px 8px rgba(0,0,0,.34)!important;font:900 11px/1.2 Arial,Helvetica,sans-serif!important;letter-spacing:.15px!important;text-align:right!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;pointer-events:none!important}
+            .mcms-mission-value-row[data-mcms-mode="value"] .mcms-mission-value-badge{padding-left:7px!important;padding-right:7px!important}
+            @media(max-width:767px){.mcms-mission-value-row[data-mcms-host="fallback"]{padding:4px 6px!important}.mcms-mission-value-badge{font-size:10px!important}}
         `;
         (doc.head || doc.documentElement)?.appendChild(style);
     }
@@ -21534,7 +21674,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
     }
 
-    function observeMissionValueDocument(doc) {
+        function observeMissionValueDocument(doc) {
         if (!doc) return;
         ensureMissionValueDocumentStyle(doc);
         if (missionValueObservedDocuments.has(doc)) return;
@@ -21544,7 +21684,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         frames.forEach(observeMissionValueFrame);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"]';
+        const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, [id^="lssmv4-shareAlliancePost_alarm"], .navbar-header';
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
                 if (node?.nodeType !== 1) return false;

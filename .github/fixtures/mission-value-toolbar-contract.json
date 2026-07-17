@@ -7,16 +7,52 @@
       "text": "Mission Value · £12,345"
     },
     {
+      "width": 176,
+      "formatted": "£12,345",
+      "mode": "full",
+      "text": "Mission Value · £12,345"
+    },
+    {
+      "width": 175,
+      "formatted": "£12,345",
+      "mode": "short",
+      "text": "Value · £12,345"
+    },
+    {
       "width": 130,
       "formatted": "£12,345",
       "mode": "short",
       "text": "Value · £12,345"
     },
     {
+      "width": 110,
+      "formatted": "£12,345",
+      "mode": "short",
+      "text": "Value · £12,345"
+    },
+    {
+      "width": 109,
+      "formatted": "£12,345",
+      "mode": "value",
+      "text": "£12,345"
+    },
+    {
       "width": 72,
       "formatted": "£12,345",
       "mode": "value",
       "text": "£12,345"
+    },
+    {
+      "width": 58,
+      "formatted": "£12,345",
+      "mode": "value",
+      "text": "£12,345"
+    },
+    {
+      "width": 57,
+      "formatted": "£12,345",
+      "mode": "fallback",
+      "text": "Mission Value · £12,345"
     },
     {
       "width": 40,

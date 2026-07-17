@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.8
+// @version      4.14.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.8',
+        version: '4.14.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -500,6 +500,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         vehicleStatusId: 'mc-map-command-toolkit-vehicle-status',
         majorIncidentFeedId: 'mc-map-command-toolkit-major-incident-feed',
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
+        transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
         styleId: 'mc-map-command-toolkit-style-v4146',
@@ -1332,6 +1333,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ownedWindowLayers: new Set(),
         activeWindowCreatedLayer: false,
         lastCandidateStats: null,
+        startedAt: 0,
+        missionIndex: 0,
+        missionTotal: 0,
+        currentItem: '',
+        statusMessage: '',
+        statusLevel: 'info',
+        hudFinal: false,
+        hudDismissTimer: null,
         log: []
     };
     const personalVehicleApiCache = new Map();
@@ -2505,6 +2514,28 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-sweep-meta { display:block !important; margin-top:2px !important; color:rgba(255,255,255,.52) !important; font-size:7px !important; font-weight:800 !important; }
         #${SCRIPT.panelId} .mcms-sweep-count { color:#ffc86b !important; font-size:9px !important; font-weight:950 !important; white-space:nowrap !important; }
         #${SCRIPT.panelId} .mcms-sweep-log { max-height:72px !important; overflow-y:auto !important; margin-top:7px !important; padding:6px !important; border-radius:7px !important; background:rgba(0,0,0,.18) !important; color:rgba(255,255,255,.64) !important; font:700 7px/1.35 Arial,Helvetica,sans-serif !important; white-space:normal !important; }
+        #${SCRIPT.transportSweepHudId} { position:fixed !important; top:max(12px,env(safe-area-inset-top)) !important; right:max(12px,env(safe-area-inset-right)) !important; z-index:2147482000 !important; width:min(340px,calc(100vw - 24px)) !important; padding:11px !important; border:1px solid rgba(255,184,72,.72) !important; border-radius:12px !important; background:linear-gradient(145deg,rgba(18,23,31,.97),rgba(34,22,8,.97)) !important; color:#f8fbff !important; box-shadow:0 18px 55px rgba(0,0,0,.55),0 0 0 1px rgba(255,184,72,.08) inset !important; font:800 11px/1.25 Arial,Helvetica,sans-serif !important; pointer-events:none !important; touch-action:none !important; user-select:none !important; backdrop-filter:blur(12px) !important; -webkit-backdrop-filter:blur(12px) !important; }
+        #${SCRIPT.transportSweepHudId}[data-state="complete"] { border-color:rgba(70,229,139,.78) !important; background:linear-gradient(145deg,rgba(12,29,25,.98),rgba(8,47,31,.97)) !important; }
+        #${SCRIPT.transportSweepHudId}[data-state="error"] { border-color:rgba(255,100,108,.82) !important; background:linear-gradient(145deg,rgba(35,17,21,.98),rgba(54,12,18,.97)) !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head span { min-width:0 !important; display:flex !important; align-items:center !important; gap:7px !important; color:#ffe3ad !important; font-size:11px !important; font-weight:950 !important; letter-spacing:.15px !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head i { width:8px !important; height:8px !important; flex:0 0 8px !important; border-radius:50% !important; background:#ffb648 !important; box-shadow:0 0 0 4px rgba(255,182,72,.13),0 0 12px rgba(255,182,72,.58) !important; }
+        #${SCRIPT.transportSweepHudId}[data-state="complete"] .mcms-sweep-hud-head i { background:#46e58b !important; box-shadow:0 0 0 4px rgba(70,229,139,.13),0 0 12px rgba(70,229,139,.58) !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head b { flex:0 0 auto !important; padding:3px 7px !important; border-radius:999px !important; background:rgba(255,255,255,.09) !important; color:rgba(255,255,255,.74) !important; font-size:7px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.45px !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-status { margin-top:9px !important; color:#fff !important; font-size:10px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { margin-top:3px !important; color:rgba(255,255,255,.58) !important; font-size:8px !important; font-weight:750 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:5px !important; margin-top:9px !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats span { min-width:0 !important; padding:7px 4px !important; border-radius:8px !important; background:rgba(255,255,255,.055) !important; text-align:center !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats b { display:block !important; color:#fff !important; font-size:13px !important; line-height:1 !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats small { display:block !important; margin-top:4px !important; color:rgba(255,255,255,.48) !important; font-size:6.4px !important; font-weight:950 !important; text-transform:uppercase !important; letter-spacing:.25px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared { background:rgba(70,229,139,.15) !important; box-shadow:0 0 0 1px rgba(70,229,139,.24) inset !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-cleared b { color:#73f2ab !important; font-size:17px !important; }
+        #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-foot { display:flex !important; justify-content:space-between !important; gap:8px !important; margin-top:8px !important; padding-top:7px !important; border-top:1px solid rgba(255,255,255,.09) !important; color:rgba(255,255,255,.42) !important; font-size:7px !important; font-weight:850 !important; text-transform:uppercase !important; letter-spacing:.25px !important; }
+        @media (max-width:700px) {
+            #${SCRIPT.transportSweepHudId} { top:auto !important; right:max(8px,env(safe-area-inset-right)) !important; bottom:max(8px,env(safe-area-inset-bottom)) !important; left:max(8px,env(safe-area-inset-left)) !important; width:auto !important; padding:9px !important; }
+            #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-current { display:none !important; }
+            #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-stats { gap:3px !important; }
+        }
         #${SCRIPT.panelId} .mcms-heat-legend { display: grid !important; grid-template-columns: repeat(5,minmax(0,1fr)) !important; gap: 3px !important; margin-top: 7px !important; }
         #${SCRIPT.panelId} .mcms-heat-key { padding: 4px 2px !important; border-radius: 6px !important; color: #fff !important; font-size: 7px !important; font-weight: 900 !important; text-align: center !important; text-shadow: 0 1px 2px #000 !important; }
         #${SCRIPT.panelId} .mcms-footer { margin: 9px 0 0 0 !important; padding: 7px 0 0 0 !important; border-top: 1px solid rgba(255,255,255,.10) !important; color: rgba(233,238,245,.58) !important; font-size: 9px !important; line-height: 1.25 !important; overflow: hidden !important; }
@@ -16474,6 +16505,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function transportSweepLog(message, level = 'info') {
         const clean = String(message || '').trim();
         if (!clean) return;
+        transportSweepRuntime.statusMessage = clean;
+        transportSweepRuntime.statusLevel = String(level || 'info');
         transportSweepRuntime.log.unshift({ time: Date.now(), message: clean, level });
         if (transportSweepRuntime.log.length > 18) transportSweepRuntime.log.length = 18;
         renderTransportSweepPanel();
@@ -16510,7 +16543,80 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return queue;
     }
 
+
+    function transportSweepHudElements() {
+        try { return Array.from(document.querySelectorAll(`#${SCRIPT.transportSweepHudId}`)); }
+        catch (err) { return []; }
+    }
+
+    function ensureTransportSweepHud() {
+        const matches = transportSweepHudElements();
+        let hud = matches.shift() || null;
+        for (const duplicate of matches) {
+            try { duplicate.remove(); } catch (err) {}
+        }
+        if (hud?.isConnected) return hud;
+        const mount = document.body || document.documentElement;
+        if (!mount) return null;
+        hud = document.createElement('section');
+        hud.id = SCRIPT.transportSweepHudId;
+        hud.className = 'mcms-transport-sweep-hud';
+        hud.setAttribute('role', 'status');
+        hud.setAttribute('aria-live', 'polite');
+        hud.setAttribute('aria-atomic', 'true');
+        mount.appendChild(hud);
+        return hud;
+    }
+
+    function removeTransportSweepHud() {
+        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
+        transportSweepRuntime.hudDismissTimer = null;
+        for (const hud of transportSweepHudElements()) {
+            try { hud.remove(); } catch (err) {}
+        }
+    }
+
+    function scheduleTransportSweepHudDismiss(delay = 6500) {
+        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
+        transportSweepRuntime.hudDismissTimer = runtimeSetTimeout(() => {
+            transportSweepRuntime.hudDismissTimer = null;
+            transportSweepRuntime.hudFinal = false;
+            removeTransportSweepHud();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function transportSweepHudElapsed() {
+        const startedAt = Number(transportSweepRuntime.startedAt) || 0;
+        if (!startedAt) return '0:00';
+        const totalSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        return `${minutes}:${String(totalSeconds % 60).padStart(2, '0')}`;
+    }
+
+    function renderTransportSweepHud() {
+        const sweep = transportSweepRuntime;
+        const visible = sweep.running || sweep.stopRequested || sweep.hudFinal;
+        if (!visible) {
+            removeTransportSweepHud();
+            return;
+        }
+        const hud = ensureTransportSweepHud();
+        if (!hud) return;
+        const total = Math.max(0, Number(sweep.missionTotal) || Number(sweep.queue?.length) || 0);
+        const index = total ? Math.min(total, Math.max(1, Number(sweep.missionIndex) || 1)) : 0;
+        const phase = sweep.hudFinal ? (sweep.statusLevel === 'error' ? 'Finished with errors' : 'Sweep complete')
+            : sweep.stopRequested ? 'Stopping'
+            : 'Sweep running';
+        const current = String(sweep.currentItem || '').trim();
+        const message = String(sweep.statusMessage || (sweep.running ? 'Preparing patient transport sweep' : phase)).trim();
+        hud.dataset.state = sweep.hudFinal ? (sweep.errors ? 'error' : 'complete') : sweep.stopRequested ? 'stopping' : 'running';
+        hud.innerHTML = `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(phase)}</b></div><div class="mcms-sweep-hud-status">${escapeHtml(message)}</div>${current ? `<div class="mcms-sweep-hud-current">${escapeHtml(current)}</div>` : ''}<div class="mcms-sweep-hud-stats"><span><b>${index}/${total}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${Math.max(0, Number(sweep.cleared) || 0)}</b><small>Patients cleared</small></span><span><b>${Math.max(0, Number(sweep.skipped) || 0)}</b><small>Skipped</small></span><span><b>${Math.max(0, Number(sweep.errors) || 0)}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(transportSweepHudElapsed())} elapsed</span><span>${Math.max(0, Number(sweep.processed) || 0)} processed</span></div>`;
+    }
+
+    runtimeOnCleanup(removeTransportSweepHud);
+
     function renderTransportSweepPanel() {
+        renderTransportSweepHud();
         const host = document.querySelector(`#${SCRIPT.panelId} [data-transport-sweep]`);
         if (!host) return;
         const runtime = transportSweepRuntime;
@@ -17215,6 +17321,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (missionId === null || remainingAllowance <= 0) return 0;
 
         transportSweepRuntime.currentMissionId = missionId;
+        transportSweepRuntime.currentItem = String(item?.caption || `Mission ${missionId}`);
         renderTransportSweepPanel();
 
         const attemptedVehicleIds = new Set();
@@ -17228,7 +17335,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepLog(`Opening ${item.caption}`);
         let missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
         if (!missionOpen || transportSweepRuntime.stopRequested) {
-            if (!transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
+            if (!transportSweepRuntime.stopRequested) {
+                transportSweepRuntime.skipped += 1;
+                transportSweepLog(`Skipped ${item.caption} because its mission window did not become available`, 'warn');
+            }
             return 0;
         }
 
@@ -17242,6 +17352,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                     missionHadCandidates = true;
                     attemptedVehicleIds.add(String(lssmCandidate.vehicleId));
                     transportSweepRuntime.currentVehicleHref = lssmCandidate.actionHref;
+                    transportSweepRuntime.currentItem = `${lssmCandidate.label} · ${lssmCandidate.owner}`;
                     renderTransportSweepPanel();
                     transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
                     try {
@@ -17301,6 +17412,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
             attemptedVehicleIds.add(String(candidate.vehicleId));
             transportSweepRuntime.currentVehicleHref = candidate.href;
+            transportSweepRuntime.currentItem = String(candidate.label || `Vehicle ${candidate.vehicleId}`);
             renderTransportSweepPanel();
             transportSweepLog(`Fallback check: FMS 5 ${candidate.label} (${candidate.vehicleId})`);
 
@@ -17346,7 +17458,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         await closeTransportSweepWindows('finishing the mission');
 
-        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) transportSweepRuntime.skipped += 1;
+        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) {
+            transportSweepRuntime.skipped += 1;
+            renderTransportSweepPanel();
+        }
         return clearedHere;
     }
 
@@ -17386,12 +17501,25 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         transportSweepRuntime.ownedWindowLayers = new Set();
         transportSweepRuntime.activeWindowCreatedLayer = false;
         transportSweepRuntime.lastCandidateStats = null;
+        runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
+        transportSweepRuntime.hudDismissTimer = null;
+        transportSweepRuntime.startedAt = Date.now();
+        transportSweepRuntime.missionIndex = 0;
+        transportSweepRuntime.missionTotal = queue.length;
+        transportSweepRuntime.currentItem = 'Preparing sweep';
+        transportSweepRuntime.statusMessage = 'Preparing patient transport sweep';
+        transportSweepRuntime.statusLevel = 'info';
+        transportSweepRuntime.hudFinal = false;
         transportSweepRuntime.log = [];
         renderTransportSweepPanel();
         transportSweepLog(`Sweep started: ${queue.length} missions, maximum ${state.transportSweep.maxPerRun} requests`);
         try {
-            for (const item of queue) {
+            for (let missionOffset = 0; missionOffset < queue.length; missionOffset += 1) {
+                const item = queue[missionOffset];
                 if (transportSweepRuntime.stopRequested || transportSweepRuntime.cleared >= state.transportSweep.maxPerRun) break;
+                transportSweepRuntime.missionIndex = missionOffset + 1;
+                transportSweepRuntime.currentItem = String(item?.caption || `Mission ${item?.missionId || missionOffset + 1}`);
+                renderTransportSweepPanel();
                 const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.cleared;
                 await processTransportSweepMission(item, remaining);
                 if (!transportSweepRuntime.stopRequested) await transportSweepSleep(state.transportSweep.delayMs);
@@ -17406,16 +17534,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             transportSweepRuntime.stopRequested = false;
             transportSweepRuntime.currentMissionId = null;
             transportSweepRuntime.currentVehicleHref = '';
+            transportSweepRuntime.currentItem = '';
             transportSweepRuntime.missionAnchorBaseline = new Set();
             transportSweepRuntime.vehicleButtonBaseline = new Set();
             transportSweepRuntime.activeWindowRoot = null;
             transportSweepRuntime.ownedWindowLayers = new Set();
             transportSweepRuntime.activeWindowCreatedLayer = false;
+            transportSweepRuntime.hudFinal = true;
             buildTransportSweepQueue();
-            renderTransportSweepPanel();
             scheduleTransportWatcherRefresh(0);
             showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared`);
-            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`);
+            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
+            scheduleTransportSweepHudDismiss(6500);
         }
     }
 

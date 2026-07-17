@@ -31,6 +31,7 @@ CONTRACTS=(
   .github/scripts/test_settings_ui_contract.py
   .github/scripts/test_desktop_panel_layout_contract.py
   .github/scripts/test_mission_value_contract.py
+  .github/scripts/test_transport_sweep_lssm_contract.py
 )
 
 for contract in "${CONTRACTS[@]}"; do

@@ -1,0 +1,22 @@
+{
+  "description": "LSSM direct alliance-patient release row contract",
+  "current_player_vehicle_ids": [
+    "1111111"
+  ],
+  "rows": [
+    {
+      "name": "alliance ambulance",
+      "html": "<tr id=\"vehicle_row_5983835\"><td><span class=\"building_list_fms building_list_fms_5\">5</span></td><td><a href=\"/vehicles/5983835\" vehicle_type_id=\"5\">Ambulance</a><br>Patient: Harrison D.<small class=\"visible-xs\">(<a href=\"/profile/450396\">Turbotam401</a>)</small></td><td class=\"hidden-xs\">Ballingry Ambulance station</td><td>2</td><td class=\"hidden-xs\"><a href=\"/profile/450396\">Turbotam401</a></td><td><div class=\"btn-group\"><a class=\"btn btn-default btn-xs\" href=\"/vehicles/5983835/patient/-1\">Release patient (No reward)</a></div></td></tr>",
+      "vehicle_id": "5983835",
+      "owner_profile_id": "450396",
+      "eligible": true
+    },
+    {
+      "name": "own ambulance",
+      "html": "<tr id=\"vehicle_row_1111111\"><td><span class=\"building_list_fms building_list_fms_5\">5</span></td><td><a href=\"/vehicles/1111111\" vehicle_type_id=\"5\">Ambulance</a><br>Patient: Example</td><td class=\"hidden-xs\"><a href=\"/profile/27301455\">Conroy1988</a></td><td><a href=\"/vehicles/1111111/patient/-1\">Release patient (No reward)</a></td></tr>",
+      "vehicle_id": "1111111",
+      "owner_profile_id": "27301455",
+      "eligible": false
+    }
+  ]
+}

@@ -22,7 +22,23 @@ def extract_function(source: str, masked: str, name: str) -> str:
     if len(matches) != 1:
         raise AssertionError(f"Expected one declaration for {name}, found {len(matches)}")
     start = matches[0].start()
-    opening = masked.find("{", start)
+    parameter_open = masked.find("(", start)
+    if parameter_open < 0:
+        raise AssertionError(f"Parameter list not found for {name}")
+    depth = 0
+    parameter_close = None
+    for index in range(parameter_open, len(masked)):
+        char = masked[index]
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                parameter_close = index
+                break
+    if parameter_close is None:
+        raise AssertionError(f"Parameter list did not close for {name}")
+    opening = masked.find("{", parameter_close + 1)
     closing = audit.matching_brace(masked, opening)
     if opening < 0 or closing is None:
         raise AssertionError(f"Unable to extract {name}")

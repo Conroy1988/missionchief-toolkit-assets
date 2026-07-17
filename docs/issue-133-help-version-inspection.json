@@ -1,0 +1,555 @@
+{
+  "results": [
+    {
+      "path": ".github/development-packages/issue-133-help-version-inspect.py",
+      "matches": [
+        {
+          "line": 9,
+          "text": "TOKENS = (\"Help Centre\", \"Help Center\", \"Guide for Toolkit\", \"guideVersion\", \"4.14.10\")"
+        }
+      ]
+    },
+    {
+      "path": ".github/greasyfork-version.txt",
+      "matches": [
+        {
+          "line": 1,
+          "text": "4.14.10"
+        }
+      ]
+    },
+    {
+      "path": ".github/scripts/check_documentation_drift.py",
+      "matches": [
+        {
+          "line": 205,
+          "text": "(\"Help Centre\", help_centre, public_docs.get(\"helpRequiredTokens\", []), public_docs.get(\"helpForbiddenTokens\", [])),"
+        },
+        {
+          "line": 217,
+          "text": "failures.append(f\"Help Centre does not identify the current Toolkit version v{version}\")"
+        },
+        {
+          "line": 220,
+          "text": "failures.append(f\"Help Centre omits supported interface system: {theme}\")"
+        }
+      ]
+    },
+    {
+      "path": "CHANGELOG.md",
+      "matches": [
+        {
+          "line": 22,
+          "text": "## [4.14.10] - 2026-07-17"
+        },
+        {
+          "line": 359,
+          "text": "- Preserved all existing public image, audio, theme, manifest and Help Centre paths."
+        }
+      ]
+    },
+    {
+      "path": "MissionChief_Map_Command_Toolkit.txt",
+      "matches": [
+        {
+          "line": 4,
+          "text": "// @version      4.14.10"
+        },
+        {
+          "line": 493,
+          "text": "version: '4.14.10',"
+        },
+        {
+          "line": 942,
+          "text": "guideVersion: '4.14.4',"
+        },
+        {
+          "line": 11742,
+          "text": "/* v4.2.0 searchable Help Centre and browser-style guide viewer. */"
+        },
+        {
+          "line": 27754,
+          "text": "throw new Error('The Help Centre returned an invalid document.');"
+        },
+        {
+          "line": 27770,
+          "text": "if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);"
+        },
+        {
+          "line": 27773,
+          "text": "reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));"
+        },
+        {
+          "line": 27782,
+          "text": "ontimeout: () => finish(new Error('The Help Centre request timed out.')),"
+        },
+        {
+          "line": 27783,
+          "text": "onabort: () => finish(new Error('The Help Centre request was cancelled.'))"
+        },
+        {
+          "line": 27787,
+          "text": "finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));"
+        },
+        {
+          "line": 27794,
+          "text": "if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);"
+        },
+        {
+          "line": 27807,
+          "text": ".replace(/Guide for Toolkit v\\d+\\.\\d+\\.\\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 27808,
+          "text": ".replace(/Help Centre for v\\d+\\.\\d+\\.\\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 27896,
+          "text": "overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);"
+        },
+        {
+          "line": 27903,
+          "text": "<span class=\"mcms-help-brand-copy\"><strong>Toolkit Help Centre</strong><small>Searchable guide \u00b7 hosted on the public Toolkit assets repository</small></span>"
+        },
+        {
+          "line": 27908,
+          "text": "<button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>"
+        },
+        {
+          "line": 27917,
+          "text": "<strong>Help Centre unavailable</strong>"
+        },
+        {
+          "line": 27959,
+          "text": "if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} \u00b7 online`;"
+        },
+        {
+          "line": 27985,
+          "text": "if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} \u00b7 cached` : `Guide ${HELP_CENTER.guideVersion}`;"
+        },
+        {
+          "line": 28222,
+          "text": "<button class=\"mcms-help-button\" type=\"button\" data-action=\"open-help-center\" title=\"Open searchable Help Centre\" aria-label=\"Open searchable Help Centre\">?</button>"
+        }
+      ]
+    },
+    {
+      "path": "MissionChief_Map_Command_Toolkit.user.js",
+      "matches": [
+        {
+          "line": 4,
+          "text": "// @version      4.14.10"
+        },
+        {
+          "line": 493,
+          "text": "version: '4.14.10',"
+        },
+        {
+          "line": 942,
+          "text": "guideVersion: '4.14.4',"
+        },
+        {
+          "line": 11742,
+          "text": "/* v4.2.0 searchable Help Centre and browser-style guide viewer. */"
+        },
+        {
+          "line": 27754,
+          "text": "throw new Error('The Help Centre returned an invalid document.');"
+        },
+        {
+          "line": 27770,
+          "text": "if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);"
+        },
+        {
+          "line": 27773,
+          "text": "reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));"
+        },
+        {
+          "line": 27782,
+          "text": "ontimeout: () => finish(new Error('The Help Centre request timed out.')),"
+        },
+        {
+          "line": 27783,
+          "text": "onabort: () => finish(new Error('The Help Centre request was cancelled.'))"
+        },
+        {
+          "line": 27787,
+          "text": "finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));"
+        },
+        {
+          "line": 27794,
+          "text": "if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);"
+        },
+        {
+          "line": 27807,
+          "text": ".replace(/Guide for Toolkit v\\d+\\.\\d+\\.\\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 27808,
+          "text": ".replace(/Help Centre for v\\d+\\.\\d+\\.\\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 27896,
+          "text": "overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);"
+        },
+        {
+          "line": 27903,
+          "text": "<span class=\"mcms-help-brand-copy\"><strong>Toolkit Help Centre</strong><small>Searchable guide \u00b7 hosted on the public Toolkit assets repository</small></span>"
+        },
+        {
+          "line": 27908,
+          "text": "<button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>"
+        },
+        {
+          "line": 27917,
+          "text": "<strong>Help Centre unavailable</strong>"
+        },
+        {
+          "line": 27959,
+          "text": "if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} \u00b7 online`;"
+        },
+        {
+          "line": 27985,
+          "text": "if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} \u00b7 cached` : `Guide ${HELP_CENTER.guideVersion}`;"
+        },
+        {
+          "line": 28222,
+          "text": "<button class=\"mcms-help-button\" type=\"button\" data-action=\"open-help-center\" title=\"Open searchable Help Centre\" aria-label=\"Open searchable Help Centre\">?</button>"
+        }
+      ]
+    },
+    {
+      "path": "dist/MissionChief_Map_Command_Toolkit.txt",
+      "matches": [
+        {
+          "line": 944,
+          "text": "guideVersion: '4.14.4',"
+        },
+        {
+          "line": 11751,
+          "text": "/* v4.2.0 searchable Help Centre and browser-style guide viewer. */"
+        },
+        {
+          "line": 28576,
+          "text": "throw new Error('The Help Centre returned an invalid document.');"
+        },
+        {
+          "line": 28592,
+          "text": "if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);"
+        },
+        {
+          "line": 28595,
+          "text": "reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));"
+        },
+        {
+          "line": 28604,
+          "text": "ontimeout: () => finish(new Error('The Help Centre request timed out.')),"
+        },
+        {
+          "line": 28605,
+          "text": "onabort: () => finish(new Error('The Help Centre request was cancelled.'))"
+        },
+        {
+          "line": 28609,
+          "text": "finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));"
+        },
+        {
+          "line": 28616,
+          "text": "if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);"
+        },
+        {
+          "line": 28629,
+          "text": ".replace(/Guide for Toolkit v\\d+\\.\\d+\\.\\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28630,
+          "text": ".replace(/Help Centre for v\\d+\\.\\d+\\.\\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28718,
+          "text": "overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);"
+        },
+        {
+          "line": 28725,
+          "text": "<span class=\"mcms-help-brand-copy\"><strong>Toolkit Help Centre</strong><small>Searchable guide \u00b7 hosted on the public Toolkit assets repository</small></span>"
+        },
+        {
+          "line": 28730,
+          "text": "<button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>"
+        },
+        {
+          "line": 28739,
+          "text": "<strong>Help Centre unavailable</strong>"
+        },
+        {
+          "line": 28781,
+          "text": "if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} \u00b7 online`;"
+        },
+        {
+          "line": 28807,
+          "text": "if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} \u00b7 cached` : `Guide ${HELP_CENTER.guideVersion}`;"
+        },
+        {
+          "line": 29044,
+          "text": "<button class=\"mcms-help-button\" type=\"button\" data-action=\"open-help-center\" title=\"Open searchable Help Centre\" aria-label=\"Open searchable Help Centre\">?</button>"
+        }
+      ]
+    },
+    {
+      "path": "dist/MissionChief_Map_Command_Toolkit.user.js",
+      "matches": [
+        {
+          "line": 944,
+          "text": "guideVersion: '4.14.4',"
+        },
+        {
+          "line": 11751,
+          "text": "/* v4.2.0 searchable Help Centre and browser-style guide viewer. */"
+        },
+        {
+          "line": 28576,
+          "text": "throw new Error('The Help Centre returned an invalid document.');"
+        },
+        {
+          "line": 28592,
+          "text": "if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);"
+        },
+        {
+          "line": 28595,
+          "text": "reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));"
+        },
+        {
+          "line": 28604,
+          "text": "ontimeout: () => finish(new Error('The Help Centre request timed out.')),"
+        },
+        {
+          "line": 28605,
+          "text": "onabort: () => finish(new Error('The Help Centre request was cancelled.'))"
+        },
+        {
+          "line": 28609,
+          "text": "finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));"
+        },
+        {
+          "line": 28616,
+          "text": "if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);"
+        },
+        {
+          "line": 28629,
+          "text": ".replace(/Guide for Toolkit v\\d+\\.\\d+\\.\\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28630,
+          "text": ".replace(/Help Centre for v\\d+\\.\\d+\\.\\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28718,
+          "text": "overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);"
+        },
+        {
+          "line": 28725,
+          "text": "<span class=\"mcms-help-brand-copy\"><strong>Toolkit Help Centre</strong><small>Searchable guide \u00b7 hosted on the public Toolkit assets repository</small></span>"
+        },
+        {
+          "line": 28730,
+          "text": "<button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>"
+        },
+        {
+          "line": 28739,
+          "text": "<strong>Help Centre unavailable</strong>"
+        },
+        {
+          "line": 28781,
+          "text": "if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} \u00b7 online`;"
+        },
+        {
+          "line": 28807,
+          "text": "if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} \u00b7 cached` : `Guide ${HELP_CENTER.guideVersion}`;"
+        },
+        {
+          "line": 29044,
+          "text": "<button class=\"mcms-help-button\" type=\"button\" data-action=\"open-help-center\" title=\"Open searchable Help Centre\" aria-label=\"Open searchable Help Centre\">?</button>"
+        }
+      ]
+    },
+    {
+      "path": "docs/SITE.md",
+      "matches": [
+        {
+          "line": 22,
+          "text": "| `help/index.html` | Searchable Help Centre loaded by the userscript |"
+        },
+        {
+          "line": 47,
+          "text": "7. Cross-checks the README, Help Centre, Pages catalogue and Greasy Fork description for current version, theme, feature and privacy claims."
+        },
+        {
+          "line": 56,
+          "text": "Feature documentation should describe current public behaviour. The README, Help Centre, Pages catalogue and Greasy Fork description form one public documentation contract and must be updated together when shared claims change. Experimental ideas belong in issues or Discussions rather than the published catalogue."
+        }
+      ]
+    },
+    {
+      "path": "help/README.md",
+      "matches": [
+        {
+          "line": 1,
+          "text": "# MissionChief Map Command Toolkit Help Centre"
+        },
+        {
+          "line": 7,
+          "text": "- The userscript fetches the guide from `raw.githubusercontent.com` and renders it inside a sandboxed browser-style Help Centre."
+        }
+      ]
+    },
+    {
+      "path": "help/index.html",
+      "matches": [
+        {
+          "line": 8,
+          "text": "<title>MissionChief Map Command Toolkit \u2014 Help Centre</title>"
+        },
+        {
+          "line": 14,
+          "text": "<header class=\"top\"><div class=\"topin\"><button class=\"menubtn\" id=\"menubtn\" type=\"button\" aria-label=\"Open guide contents\" aria-expanded=\"false\">\u2630</button><div class=\"brand\"><span class=\"mark\">?</span><span><strong>MissionChief Map Command Toolkit</strong><small>Searchable Help Centre</small></span></div><div class=\"search\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"m20.6 19.2-4.3-4.3a7.3 7.3 0 1 0-1.4 1.4l4.3 4.3 1.4-1.4ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 "
+        },
+        {
+          "line": 29,
+          "text": "<section class=\"section\" id=\"layouts\" data-title=\"Desktop Tablet and iOS Mobile Modes\" data-keywords=\"desktop tablet ipad touch iphone ios safari tampermonkey mobile auto forced responsive\"><div class=\"head\"><span class=\"num\">12</span><div><h2>Desktop, Tablet and iOS Mobile Modes</h2><p class=\"summary\">One feature set with three layout strategies.</p></div></div><div class=\"table\"><table><thead><tr><th>Layout</th><th>Behaviour</th></tr></thead><tbody><tr><td>Desktop</td><td>Draggable floating pa"
+        },
+        {
+          "line": 35,
+          "text": "<section class=\"section\" id=\"help\" data-title=\"Using the Help Centre\" data-keywords=\"question mark search browser reload source close slash clear navigation\"><div class=\"head\"><span class=\"num\">18</span><div><h2>Using the Help Centre</h2><p class=\"summary\">Search and navigate the guide without leaving the map.</p></div></div><ul><li>Click <strong>?</strong> in the command-panel header.</li><li>Search by feature, control, shortcut, symptom or phrase.</li><li>Press <kbd>/</kbd> to focus search and"
+        },
+        {
+          "line": 36,
+          "text": "</main></div><footer>MissionChief Map Command Toolkit \u00b7 Help Centre for v4.14.5 \u00b7 Updated 17 July 2026 \u00b7 Conroy1988</footer>"
+        }
+      ]
+    },
+    {
+      "path": "help/manifest.json",
+      "matches": [
+        {
+          "line": 3,
+          "text": "\"guideVersion\": \"4.6.0\","
+        }
+      ]
+    },
+    {
+      "path": "src/MissionChief_Map_Command_Toolkit.user.js",
+      "matches": [
+        {
+          "line": 944,
+          "text": "guideVersion: '4.14.4',"
+        },
+        {
+          "line": 11751,
+          "text": "/* v4.2.0 searchable Help Centre and browser-style guide viewer. */"
+        },
+        {
+          "line": 28576,
+          "text": "throw new Error('The Help Centre returned an invalid document.');"
+        },
+        {
+          "line": 28592,
+          "text": "if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);"
+        },
+        {
+          "line": 28595,
+          "text": "reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));"
+        },
+        {
+          "line": 28604,
+          "text": "ontimeout: () => finish(new Error('The Help Centre request timed out.')),"
+        },
+        {
+          "line": 28605,
+          "text": "onabort: () => finish(new Error('The Help Centre request was cancelled.'))"
+        },
+        {
+          "line": 28609,
+          "text": "finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));"
+        },
+        {
+          "line": 28616,
+          "text": "if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);"
+        },
+        {
+          "line": 28629,
+          "text": ".replace(/Guide for Toolkit v\\d+\\.\\d+\\.\\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28630,
+          "text": ".replace(/Help Centre for v\\d+\\.\\d+\\.\\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)"
+        },
+        {
+          "line": 28718,
+          "text": "overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);"
+        },
+        {
+          "line": 28725,
+          "text": "<span class=\"mcms-help-brand-copy\"><strong>Toolkit Help Centre</strong><small>Searchable guide \u00b7 hosted on the public Toolkit assets repository</small></span>"
+        },
+        {
+          "line": 28730,
+          "text": "<button class=\"mcms-help-action mcms-help-close\" type=\"button\" data-help-action=\"close\" title=\"Close Help Centre\" aria-label=\"Close Help Centre\">\u00d7</button>"
+        },
+        {
+          "line": 28739,
+          "text": "<strong>Help Centre unavailable</strong>"
+        },
+        {
+          "line": 28781,
+          "text": "if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} \u00b7 online`;"
+        },
+        {
+          "line": 28807,
+          "text": "if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} \u00b7 cached` : `Guide ${HELP_CENTER.guideVersion}`;"
+        },
+        {
+          "line": 29044,
+          "text": "<button class=\"mcms-help-button\" type=\"button\" data-action=\"open-help-center\" title=\"Open searchable Help Centre\" aria-label=\"Open searchable Help Centre\">?</button>"
+        }
+      ]
+    },
+    {
+      "path": "status/README.md",
+      "matches": [
+        {
+          "line": 5,
+          "text": "## Current version: `4.14.10`"
+        },
+        {
+          "line": 20,
+          "text": "- **Latest recorded version:** `4.14.10`"
+        }
+      ]
+    },
+    {
+      "path": "status/release-dashboard.json",
+      "matches": [
+        {
+          "line": 4,
+          "text": "\"currentVersion\": \"4.14.10\","
+        },
+        {
+          "line": 35,
+          "text": "\"version\": \"4.14.10\","
+        },
+        {
+          "line": 48,
+          "text": "\"version\": \"4.14.10\","
+        },
+        {
+          "line": 57,
+          "text": "\"version\": \"4.14.10\","
+        },
+        {
+          "line": 59,
+          "text": "\"githubRelease\": \"https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.14.10\","
+        }
+      ]
+    }
+  ]
+}

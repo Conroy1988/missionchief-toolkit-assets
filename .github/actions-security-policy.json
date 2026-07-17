@@ -20,7 +20,7 @@
     ".github/workflows/reconcile-release-announcement-state.yml": ["contents"],
     ".github/workflows/release-recovery.yml": ["contents"],
     ".github/workflows/release-toolkit-dry-run.yml": ["contents"],
-    ".github/workflows/release-toolkit.yml": ["contents"],
+    ".github/workflows/release-toolkit.yml": ["actions", "contents"],
     ".github/workflows/repository-audit.yml": ["contents"],
     ".github/workflows/sync-repository-labels.yml": ["issues"],
     ".github/workflows/update-release-dashboard.yml": ["contents"],

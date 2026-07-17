@@ -11,9 +11,12 @@
   ],
   "excludedDirectories": [
     ".git",
+    "__pycache__",
     "node_modules",
     "release-bundle",
-    "__pycache__"
+    "status",
+    "toolkit-current",
+    "toolkit-releases"
   ],
   "excludedHosts": [
     "discord.com",
@@ -183,7 +186,7 @@
   "repository": {
     "stableRef": "main"
   },
-  "revision": "2026-07-17-audio-compatibility-aliases",
+  "revision": "2026-07-17-canonical-audio-only",
   "scanFiles": [
     "src/MissionChief_Map_Command_Toolkit.user.js",
     ".github/release-settings.json",

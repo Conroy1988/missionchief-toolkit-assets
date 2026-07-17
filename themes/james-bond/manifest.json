@@ -10,22 +10,19 @@
     "legacy007Logo": "007-logo.svg",
     "payoutSeal": "payout/funds-authorised-seal.svg"
   },
-  "displayName": "007 Intelligence",
-  "generated": "2026-07-17",
-  "layout": {
-    "payoutDossier": "Protected opaque reading field with a translucent portrait reveal zone on desktop and tablet; mobile remains fully opaque."
-  },
-  "legacyCompatibility": {
-    "canonicalAudio": "audio/james-bond-cashout.mp3",
-    "legacyAudio": "james-bond-cashout.mp3",
-    "legacyRootRetained": true,
+  "compatibility": {
     "settingIds": [
       "bond007",
       "jamesBond"
     ]
   },
-  "notes": "Canonical 007 Intelligence asset package. The root audio file remains only as a byte-identical compatibility endpoint. Operational status colours remain protected.",
-  "packageVersion": "2.2.0",
+  "displayName": "007 Intelligence",
+  "generated": "2026-07-17",
+  "layout": {
+    "payoutDossier": "Protected opaque reading field with a translucent portrait reveal zone on desktop and tablet; mobile remains fully opaque."
+  },
+  "notes": "Canonical 007 Intelligence asset package. Operational status colours remain protected.",
+  "packageVersion": "2.2.1",
   "portraitAttribution": {
     "license": "CC BY-NC 4.0",
     "source": "https://pngimg.com/image/93472",

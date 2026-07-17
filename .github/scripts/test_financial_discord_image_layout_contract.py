@@ -108,13 +108,16 @@ for (const item of fixtures.auditRows) {{
     const auditRow = rows[5];
     assert.equal(auditRow[0], item.expectedLabel, item.name);
     assert.equal(auditRow[1], item.expectedValue, item.name);
-    const context = new FakeContext();
-    const layout = drawFinancialSnapshotRow(context, 832, 500, 290, auditRow[0], auditRow[1]);
-    assert.ok(layout.label.right + layout.gap <= layout.value.left + 0.001, `${{item.name}} overlaps`);
-    assert.equal(context.calls.length, 2, item.name);
-    assert.equal(context.calls[0].align, "left", item.name);
-    assert.equal(context.calls[1].align, "right", item.name);
-    assert.ok(layout.value.fontSize >= 11, item.name);
+    for (const [label, value] of rows) {{
+        const context = new FakeContext();
+        const layout = drawFinancialSnapshotRow(context, 832, 500, 290, label, value);
+        assert.ok(layout.label.right + layout.gap <= layout.value.left + 0.001, `${{item.name}} row overlaps: ${{label}}`);
+        assert.equal(context.calls.length, 2, `${{item.name}}: ${{label}}`);
+        assert.equal(context.calls[0].align, "left", `${{item.name}}: ${{label}}`);
+        assert.equal(context.calls[1].align, "right", `${{item.name}}: ${{label}}`);
+        assert.ok(layout.label.fontSize >= 11, `${{item.name}}: ${{label}}`);
+        assert.ok(layout.value.fontSize >= 11, `${{item.name}}: ${{label}}`);
+    }}
 }}
 for (const item of fixtures.stressRows) {{
     const context = new FakeContext();
@@ -123,7 +126,7 @@ for (const item of fixtures.stressRows) {{
     assert.ok(layout.label.width <= 290, item.label);
     assert.ok(layout.value.width <= 142, item.value);
 }}
-console.log(`Financial Discord image layout contract passed: ${{fixtures.auditRows.length}} audit states and ${{fixtures.stressRows.length}} stress rows.`);
+console.log(`Financial Discord image layout contract passed: ${{fixtures.auditRows.length}} audit states, all snapshot rows and ${{fixtures.stressRows.length}} stress rows.`);
 '''
     with tempfile.TemporaryDirectory(prefix="mcms-financial-image-") as temp:
         harness_path = Path(temp) / "financial-image-layout-contract.js"

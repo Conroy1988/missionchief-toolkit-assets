@@ -199,43 +199,56 @@
     "runtimeChanged": false
   },
   "currentSourceAssetReferences": {
-    "sharedAssetPaths": [
-      "assets/blob/main/help/index.html",
-      "assets/help/index.html",
-      "assets/main/bf-bad-company-cashout.mp3",
-      "assets/main/cyberpunk-cashout.mp3",
-      "assets/main/factorio-cashout.mp3",
-      "assets/main/fallout-cashout.mp3",
-      "assets/main/financial-intelligence/v1/classification-rules.json",
-      "assets/main/financial-intelligence/v2/audit-policy.json",
-      "assets/main/gta-vice-city-cashout.mp3",
-      "assets/main/help/index.html",
-      "assets/main/james-bond-cashout.mp3",
-      "assets/main/scarface-cashout.mp3",
-      "assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3",
-      "assets/main/themes/hyrule/payout/quest-complete-seal.svg",
-      "assets/main/themes/hyrule/payout/rupee-burst.svg",
-      "assets/main/themes/hyrule/ui/ancient-eye-rune.svg",
-      "assets/main/themes/hyrule/ui/hyrule-command-crest.svg",
-      "assets/main/themes/hyrule/ui/master-sword-shield-silhouette.svg",
-      "assets/main/themes/hyrule/ui/parchment-command-map.svg",
-      "assets/main/themes/hyrule/ui/zonai-energy-ring.svg",
-      "assets/main/themes/james-bond/007-logo.svg",
-      "assets/main/themes/james-bond/payout/daniel-craig-007-portrait.png",
-      "assets/main/themes/james-bond/payout/funds-authorised-seal.svg",
-      "assets/main/themes/james-bond/ui/agent-silhouette.svg",
-      "assets/main/themes/james-bond/ui/classified-dossier-grid.svg",
-      "assets/main/themes/james-bond/ui/gold-divider.svg",
-      "assets/main/themes/james-bond/ui/gunbarrel-reticle.svg",
-      "assets/main/themes/james-bond/ui/mi6-command-seal.svg",
-      "assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3",
-      "assets/main/themes/umbrella/payout/transfer-authorized-seal.svg",
-      "assets/main/themes/umbrella/ui/containment-division-badge.svg",
-      "assets/main/themes/umbrella/ui/facility-schematic.svg",
-      "assets/main/themes/umbrella/ui/specimen-vial.svg",
-      "assets/main/themes/umbrella/ui/surveillance-terminal.svg",
-      "assets/main/themes/umbrella/ui/umbrella-containment-emblem.svg"
+    "legacyRootAudioPaths": [
+      "bf-bad-company-cashout.mp3",
+      "cyberpunk-cashout.mp3",
+      "factorio-cashout.mp3",
+      "fallout-cashout.mp3",
+      "gta-vice-city-cashout.mp3",
+      "james-bond-cashout.mp3",
+      "scarface-cashout.mp3"
     ],
+    "otherRepositoryPaths": [
+      "financial-intelligence/v1/classification-rules.json",
+      "financial-intelligence/v2/audit-policy.json",
+      "help/index.html"
+    ],
+    "rawRepositoryPaths": [
+      "bf-bad-company-cashout.mp3",
+      "cyberpunk-cashout.mp3",
+      "factorio-cashout.mp3",
+      "fallout-cashout.mp3",
+      "financial-intelligence/v1/classification-rules.json",
+      "financial-intelligence/v2/audit-policy.json",
+      "gta-vice-city-cashout.mp3",
+      "help/index.html",
+      "james-bond-cashout.mp3",
+      "scarface-cashout.mp3",
+      "themes/hyrule/audio/hyrule-quest-reward.mp3",
+      "themes/hyrule/payout/quest-complete-seal.svg",
+      "themes/hyrule/payout/rupee-burst.svg",
+      "themes/hyrule/ui/ancient-eye-rune.svg",
+      "themes/hyrule/ui/hyrule-command-crest.svg",
+      "themes/hyrule/ui/master-sword-shield-silhouette.svg",
+      "themes/hyrule/ui/parchment-command-map.svg",
+      "themes/hyrule/ui/zonai-energy-ring.svg",
+      "themes/james-bond/007-logo.svg",
+      "themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "themes/james-bond/payout/funds-authorised-seal.svg",
+      "themes/james-bond/ui/agent-silhouette.svg",
+      "themes/james-bond/ui/classified-dossier-grid.svg",
+      "themes/james-bond/ui/gold-divider.svg",
+      "themes/james-bond/ui/gunbarrel-reticle.svg",
+      "themes/james-bond/ui/mi6-command-seal.svg",
+      "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "themes/umbrella/payout/transfer-authorized-seal.svg",
+      "themes/umbrella/ui/containment-division-badge.svg",
+      "themes/umbrella/ui/facility-schematic.svg",
+      "themes/umbrella/ui/specimen-vial.svg",
+      "themes/umbrella/ui/surveillance-terminal.svg",
+      "themes/umbrella/ui/umbrella-containment-emblem.svg"
+    ],
+    "sharedAssetPaths": [],
     "themePaths": [
       "themes/hyrule/audio/hyrule-quest-reward.mp3",
       "themes/hyrule/payout/quest-complete-seal.svg",
@@ -1036,8 +1049,16 @@
   ],
   "namingNotes": [
     {
-      "decision": "Retain the stable internal/canonical slug james-bond while keeping 007 Intelligence as the public display name.",
+      "decision": "Do not rename persisted runtime IDs. Use separate kebab-case canonical asset slugs for repository folders.",
+      "subject": "Runtime IDs versus asset slugs"
+    },
+    {
+      "decision": "Retain runtime ID bond007 and canonical folder slug james-bond while keeping 007 Intelligence as the public display name.",
       "subject": "007 Intelligence"
+    },
+    {
+      "decision": "The public system name remains Umbrella; the current runtime selector label is Umbrella Containment.",
+      "subject": "Umbrella"
     },
     {
       "decision": "Bad Company, Vice City and Scarface belong under assets/audio/payout-presets, not under themes/.",
@@ -1046,94 +1067,139 @@
     {
       "decision": "All seven public root paths remain indefinitely as compatibility aliases after the current Toolkit migrates.",
       "subject": "Legacy root audio"
+    },
+    {
+      "decision": "The runtime description currently says Flagship fantasy command interface. Remove Flagship during the migration so all seven systems remain equally represented.",
+      "subject": "Hyrule flagship wording"
     }
   ],
   "phase": 1,
   "schemaVersion": 1,
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
+  "sourceIdentityDefinition": {
+    "definitionEndLine": 980,
+    "definitionStartLine": 971,
+    "runtimeOrder": [
+      "mapCommand",
+      "cyberpunk",
+      "fallout4",
+      "umbrella",
+      "factorio",
+      "bond007",
+      "hyrule"
+    ]
+  },
   "themeSystems": [
     {
       "canonicalDirectory": "themes/map-command",
       "canonicalSlug": "map-command",
       "directoryExists": false,
-      "displayName": "Map Command",
-      "internalId": "map-command",
       "order": 1,
+      "publicName": "Map Command",
+      "runtimeDescription": "The original operational command interface.",
+      "runtimeId": "mapCommand",
+      "runtimeLabel": "Map Command",
+      "runtimeShortLabel": "DEFAULT",
       "sourceEvidence": {
-        "displayNameOccurrences": 10,
-        "internalIdQuotedOccurrences": 0
+        "definitionLine": 971,
+        "runtimeIdQuotedOccurrences": 3,
+        "runtimeLabelOccurrences": 10
       }
     },
     {
       "canonicalDirectory": "themes/cyberpunk",
       "canonicalSlug": "cyberpunk",
       "directoryExists": false,
-      "displayName": "Cyberpunk",
-      "internalId": "cyberpunk",
       "order": 2,
+      "publicName": "Cyberpunk",
+      "runtimeDescription": "Neon tactical interface with angular panels, signal animations and high-contrast controls.",
+      "runtimeId": "cyberpunk",
+      "runtimeLabel": "Cyberpunk",
+      "runtimeShortLabel": "NEON",
       "sourceEvidence": {
-        "displayNameOccurrences": 10,
-        "internalIdQuotedOccurrences": 251
+        "definitionLine": 973,
+        "runtimeIdQuotedOccurrences": 251,
+        "runtimeLabelOccurrences": 10
       }
     },
     {
       "canonicalDirectory": "themes/fallout",
       "canonicalSlug": "fallout",
       "directoryExists": false,
-      "displayName": "Fallout 4",
-      "internalId": "fallout",
       "order": 3,
+      "publicName": "Fallout 4",
+      "runtimeDescription": "Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.",
+      "runtimeId": "fallout4",
+      "runtimeLabel": "Fallout 4",
+      "runtimeShortLabel": "PIP-BOY",
       "sourceEvidence": {
-        "displayNameOccurrences": 4,
-        "internalIdQuotedOccurrences": 0
+        "definitionLine": 974,
+        "runtimeIdQuotedOccurrences": 264,
+        "runtimeLabelOccurrences": 4
       }
     },
     {
       "canonicalDirectory": "themes/umbrella",
       "canonicalSlug": "umbrella",
       "directoryExists": true,
-      "displayName": "Umbrella",
-      "internalId": "umbrella",
       "order": 4,
+      "publicName": "Umbrella",
+      "runtimeDescription": "Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.",
+      "runtimeId": "umbrella",
+      "runtimeLabel": "Umbrella Containment",
+      "runtimeShortLabel": "BSL-4",
       "sourceEvidence": {
-        "displayNameOccurrences": 36,
-        "internalIdQuotedOccurrences": 444
+        "definitionLine": 975,
+        "runtimeIdQuotedOccurrences": 444,
+        "runtimeLabelOccurrences": 12
       }
     },
     {
       "canonicalDirectory": "themes/factorio",
       "canonicalSlug": "factorio",
       "directoryExists": false,
-      "displayName": "Factorio",
-      "internalId": "factorio",
       "order": 5,
+      "publicName": "Factorio",
+      "runtimeDescription": "Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.",
+      "runtimeId": "factorio",
+      "runtimeLabel": "Factorio",
+      "runtimeShortLabel": "AUTOMATION",
       "sourceEvidence": {
-        "displayNameOccurrences": 15,
-        "internalIdQuotedOccurrences": 224
+        "definitionLine": 976,
+        "runtimeIdQuotedOccurrences": 224,
+        "runtimeLabelOccurrences": 15
       }
     },
     {
       "canonicalDirectory": "themes/james-bond",
       "canonicalSlug": "james-bond",
       "directoryExists": true,
-      "displayName": "007 Intelligence",
-      "internalId": "james-bond",
       "order": 6,
+      "publicName": "007 Intelligence",
+      "runtimeDescription": "Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.",
+      "runtimeId": "bond007",
+      "runtimeLabel": "007 Intelligence",
+      "runtimeShortLabel": "MI6",
       "sourceEvidence": {
-        "displayNameOccurrences": 6,
-        "internalIdQuotedOccurrences": 0
+        "definitionLine": 977,
+        "runtimeIdQuotedOccurrences": 310,
+        "runtimeLabelOccurrences": 6
       }
     },
     {
       "canonicalDirectory": "themes/hyrule",
       "canonicalSlug": "hyrule",
       "directoryExists": true,
-      "displayName": "Hyrule Command",
-      "internalId": "hyrule",
       "order": 7,
+      "publicName": "Hyrule Command",
+      "runtimeDescription": "Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.",
+      "runtimeId": "hyrule",
+      "runtimeLabel": "Hyrule Command",
+      "runtimeShortLabel": "TRIFORCE",
       "sourceEvidence": {
-        "displayNameOccurrences": 3,
-        "internalIdQuotedOccurrences": 108
+        "definitionLine": 978,
+        "runtimeIdQuotedOccurrences": 108,
+        "runtimeLabelOccurrences": 3
       }
     }
   ]

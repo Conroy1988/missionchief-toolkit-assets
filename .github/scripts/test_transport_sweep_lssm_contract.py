@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify LSSM alliance-patient release ownership, sequencing and delayed-control safety."""
+"""Verify LSSM ownership, delayed controls and explicit same-mission multi-ambulance returns."""
 from __future__ import annotations
 
 import json

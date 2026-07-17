@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Capture current transport sweep window lifecycle
+      - name: Capture current transport sweep runtime
         shell: bash
         run: |
           set -euo pipefail
@@ -26,22 +26,17 @@ jobs:
           import re
 
           source = Path('/tmp/current-toolkit.user.js').read_text(encoding='utf-8')
-          names = [
-              'transportSweepVisibleWindowRoots',
-              'transportSweepFindMissionWindowRoot',
-              'transportSweepMissionDocuments',
-              'openTransportSweepPath',
-              'openTransportSweepVehicle',
+          patterns = [
+              ('runtime', r'    const transportSweepRuntime = \{[\s\S]*?\n    \};'),
+              ('open path', r'    async function openTransportSweepPath\([\s\S]*?\n    \}\n'),
+              ('close windows', r'    async function closeTransportSweepWindows\([\s\S]*?\n    \}\n'),
+              ('start sweep', r'    async function startTransportSweep\([\s\S]*?\n    \}\n'),
           ]
           chunks = []
-          for name in names:
-              pattern = rf'    (?:async )?function {name}\([\s\S]*?\n    \}}\n'
+          for label, pattern in patterns:
               matches = list(re.finditer(pattern, source))
-              chunks.append(f'===== {name} ({len(matches)} matches) =====')
+              chunks.append(f'===== {label} ({len(matches)} matches) =====')
               chunks.extend(match.group(0) for match in matches[:5])
-          close_mentions = [line for line in source.splitlines() if re.search(r'(lightbox|modal).*(close|remove)|(?:close|remove).*(lightbox|modal)', line, re.I)]
-          chunks.append('===== close mentions =====')
-          chunks.extend(close_mentions[:120])
           Path('.github/diagnostics/transport-sweep-window-lifecycle.txt').write_text('\n\n'.join(chunks), encoding='utf-8')
           PY
 
@@ -49,8 +44,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/diagnostics/transport-sweep-window-lifecycle.txt
           if git diff --cached --quiet; then
-            echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture transport sweep window selectors"
+          git commit -m "Capture current transport sweep runtime"
           git push origin HEAD:chore/transport-sweep-discovery

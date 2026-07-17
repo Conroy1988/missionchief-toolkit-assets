@@ -26,17 +26,22 @@ jobs:
           import re
 
           source = Path('/tmp/current-toolkit.user.js').read_text(encoding='utf-8')
-          patterns = [
-              ('openTransportSweepPath', r'    async function openTransportSweepPath\([\s\S]*?\n    \}\n'),
-              ('lightbox helpers', r'    function [A-Za-z0-9_]*(?:Lightbox|lightbox)[A-Za-z0-9_]*\([\s\S]*?\n    \}\n'),
-              ('processTransportSweepMission', r'    async function processTransportSweepMission\([\s\S]*?\n    \}\n\n    async function startTransportSweep'),
+          names = [
+              'transportSweepVisibleWindowRoots',
+              'transportSweepFindMissionWindowRoot',
+              'transportSweepMissionDocuments',
+              'openTransportSweepPath',
+              'openTransportSweepVehicle',
           ]
           chunks = []
-          for label, pattern in patterns:
+          for name in names:
+              pattern = rf'    (?:async )?function {name}\([\s\S]*?\n    \}}\n'
               matches = list(re.finditer(pattern, source))
-              chunks.append(f'===== {label} ({len(matches)} matches) =====')
-              for match in matches[:20]:
-                  chunks.append(match.group(0))
+              chunks.append(f'===== {name} ({len(matches)} matches) =====')
+              chunks.extend(match.group(0) for match in matches[:5])
+          close_mentions = [line for line in source.splitlines() if re.search(r'(lightbox|modal).*(close|remove)|(?:close|remove).*(lightbox|modal)', line, re.I)]
+          chunks.append('===== close mentions =====')
+          chunks.extend(close_mentions[:120])
           Path('.github/diagnostics/transport-sweep-window-lifecycle.txt').write_text('\n\n'.join(chunks), encoding='utf-8')
           PY
 
@@ -47,5 +52,5 @@ jobs:
             echo "Diagnostic already current."
             exit 0
           fi
-          git commit -m "Capture transport sweep window lifecycle"
+          git commit -m "Capture transport sweep window selectors"
           git push origin HEAD:chore/transport-sweep-discovery

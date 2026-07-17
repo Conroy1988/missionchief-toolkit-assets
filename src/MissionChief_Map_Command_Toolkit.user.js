@@ -17030,7 +17030,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             const opened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
             if (!opened || transportSweepRuntime.stopRequested) break;
 
-            const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, lssmSeen ? 8000 : 18000);
+            const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000);
             if (transportSweepRuntime.stopRequested) break;
             const lssmCandidate = lssmCandidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
             if (lssmCandidate) {

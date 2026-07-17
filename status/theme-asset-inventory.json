@@ -1,0 +1,1206 @@
+{
+  "canonicalAudioMigration": [
+    {
+      "canonicalExists": false,
+      "canonicalPath": "themes/cyberpunk/audio/cyberpunk-cashout.mp3",
+      "classification": "theme-owned",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 129985,
+      "legacyPath": "cyberpunk-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "legacySha256": "50ea8b6e812709823bc748790c417849783dc3e31a1668ba2280730ce39cc8b1"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "themes/fallout/audio/fallout-cashout.mp3",
+      "classification": "theme-owned",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 45741,
+      "legacyPath": "fallout-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "legacySha256": "bbc568951a571a4b3be3e946c876d8a199aec39d8d263004b10408ebae544b0f"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "themes/factorio/audio/factorio-cashout.mp3",
+      "classification": "theme-owned",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 170200,
+      "legacyPath": "factorio-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "legacySha256": "dc0a34bd465554635ad050bb5c19b4f942d9bba7732928cdfd52ffc86488babe"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "themes/james-bond/audio/james-bond-cashout.mp3",
+      "classification": "theme-owned",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 94653,
+      "legacyPath": "james-bond-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "legacySha256": "989e9854d786668f999cd6a58ed98c2dc8273499acf0690a3a7aa6487ccef027"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "assets/audio/payout-presets/bf-bad-company-cashout.mp3",
+      "classification": "shared-payout-preset",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 58845,
+      "legacyPath": "bf-bad-company-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "legacySha256": "dbc91ade0209b4b31242c6e19efc56e73284ddfe47b18437af3b33f1573c4470"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "assets/audio/payout-presets/gta-vice-city-cashout.mp3",
+      "classification": "shared-payout-preset",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 83106,
+      "legacyPath": "gta-vice-city-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "legacySha256": "7b96892eee4650142be3b5455d98825375fc2500db44e3147bfce3b8d7915597"
+    },
+    {
+      "canonicalExists": false,
+      "canonicalPath": "assets/audio/payout-presets/scarface-cashout.mp3",
+      "classification": "shared-payout-preset",
+      "decision": "create-canonical-copy-and-retain-legacy-alias",
+      "legacyBytes": 26877,
+      "legacyPath": "scarface-cashout.mp3",
+      "legacyReferenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "legacySha256": "55d970d0286d5b777a52aaad0164a99c1cf0951a46dfdf186b0faaf70937a988"
+    }
+  ],
+  "canonicalSlugDecision": {
+    "007 Intelligence": "james-bond",
+    "Cyberpunk": "cyberpunk",
+    "Factorio": "factorio",
+    "Fallout 4": "fallout",
+    "Hyrule Command": "hyrule",
+    "Map Command": "map-command",
+    "Umbrella": "umbrella"
+  },
+  "constraints": {
+    "assetsCopied": false,
+    "assetsDeleted": false,
+    "assetsMoved": false,
+    "inventoryOnly": true,
+    "runtimeChanged": false
+  },
+  "currentSourceAssetReferences": {
+    "legacyRootAudioPaths": [
+      "bf-bad-company-cashout.mp3",
+      "cyberpunk-cashout.mp3",
+      "factorio-cashout.mp3",
+      "fallout-cashout.mp3",
+      "gta-vice-city-cashout.mp3",
+      "james-bond-cashout.mp3",
+      "scarface-cashout.mp3"
+    ],
+    "otherRepositoryPaths": [
+      "financial-intelligence/v1/classification-rules.json",
+      "financial-intelligence/v2/audit-policy.json",
+      "help/index.html"
+    ],
+    "rawRepositoryPaths": [
+      "bf-bad-company-cashout.mp3",
+      "cyberpunk-cashout.mp3",
+      "factorio-cashout.mp3",
+      "fallout-cashout.mp3",
+      "financial-intelligence/v1/classification-rules.json",
+      "financial-intelligence/v2/audit-policy.json",
+      "gta-vice-city-cashout.mp3",
+      "help/index.html",
+      "james-bond-cashout.mp3",
+      "scarface-cashout.mp3",
+      "themes/hyrule/audio/hyrule-quest-reward.mp3",
+      "themes/hyrule/payout/quest-complete-seal.svg",
+      "themes/hyrule/payout/rupee-burst.svg",
+      "themes/hyrule/ui/ancient-eye-rune.svg",
+      "themes/hyrule/ui/hyrule-command-crest.svg",
+      "themes/hyrule/ui/master-sword-shield-silhouette.svg",
+      "themes/hyrule/ui/parchment-command-map.svg",
+      "themes/hyrule/ui/zonai-energy-ring.svg",
+      "themes/james-bond/007-logo.svg",
+      "themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "themes/james-bond/payout/funds-authorised-seal.svg",
+      "themes/james-bond/ui/agent-silhouette.svg",
+      "themes/james-bond/ui/classified-dossier-grid.svg",
+      "themes/james-bond/ui/gold-divider.svg",
+      "themes/james-bond/ui/gunbarrel-reticle.svg",
+      "themes/james-bond/ui/mi6-command-seal.svg",
+      "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "themes/umbrella/payout/transfer-authorized-seal.svg",
+      "themes/umbrella/ui/containment-division-badge.svg",
+      "themes/umbrella/ui/facility-schematic.svg",
+      "themes/umbrella/ui/specimen-vial.svg",
+      "themes/umbrella/ui/surveillance-terminal.svg",
+      "themes/umbrella/ui/umbrella-containment-emblem.svg"
+    ],
+    "sharedAssetPaths": [],
+    "themePaths": [
+      "themes/hyrule/audio/hyrule-quest-reward.mp3",
+      "themes/hyrule/payout/quest-complete-seal.svg",
+      "themes/hyrule/payout/rupee-burst.svg",
+      "themes/hyrule/ui/ancient-eye-rune.svg",
+      "themes/hyrule/ui/hyrule-command-crest.svg",
+      "themes/hyrule/ui/master-sword-shield-silhouette.svg",
+      "themes/hyrule/ui/parchment-command-map.svg",
+      "themes/hyrule/ui/zonai-energy-ring.svg",
+      "themes/james-bond/007-logo.svg",
+      "themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "themes/james-bond/payout/funds-authorised-seal.svg",
+      "themes/james-bond/ui/agent-silhouette.svg",
+      "themes/james-bond/ui/classified-dossier-grid.svg",
+      "themes/james-bond/ui/gold-divider.svg",
+      "themes/james-bond/ui/gunbarrel-reticle.svg",
+      "themes/james-bond/ui/mi6-command-seal.svg",
+      "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "themes/umbrella/payout/transfer-authorized-seal.svg",
+      "themes/umbrella/ui/containment-division-badge.svg",
+      "themes/umbrella/ui/facility-schematic.svg",
+      "themes/umbrella/ui/specimen-vial.svg",
+      "themes/umbrella/ui/surveillance-terminal.svg",
+      "themes/umbrella/ui/umbrella-containment-emblem.svg"
+    ]
+  },
+  "currentVersion": "4.14.6",
+  "existingStructuredAudio": [
+    "themes/hyrule/audio/hyrule-quest-reward.mp3",
+    "themes/umbrella/audio/umbrella-containment-cashout.mp3"
+  ],
+  "existingThemeDirectories": [
+    {
+      "fileCount": 8,
+      "files": [
+        {
+          "bytes": 32853,
+          "path": "themes/hyrule/audio/hyrule-quest-reward.mp3",
+          "sha256": "54362fcd3adf66c914e882ed84bf9502b7f145304b879c0f74014e642d0e6792"
+        },
+        {
+          "bytes": 1570,
+          "path": "themes/hyrule/payout/quest-complete-seal.svg",
+          "sha256": "2f01771929830ce38baa37e0121a0106b4e92584b425c8957500f00cd870614d"
+        },
+        {
+          "bytes": 2349,
+          "path": "themes/hyrule/payout/rupee-burst.svg",
+          "sha256": "16f3a3f3fb53bc10e55640b3165995b8a0f2c4c38e58f452d418bbd3a076fedf"
+        },
+        {
+          "bytes": 1028,
+          "path": "themes/hyrule/ui/ancient-eye-rune.svg",
+          "sha256": "df10e3cfa9ffe9f14e412587d2b3792db6a107e0c5defe3a7efd65773a11d90e"
+        },
+        {
+          "bytes": 2528,
+          "path": "themes/hyrule/ui/hyrule-command-crest.svg",
+          "sha256": "e6c191a0e862dd303d7b249bc0544a17b5477f22ab8bf2e2633a03b6dd6aeb4a"
+        },
+        {
+          "bytes": 1915,
+          "path": "themes/hyrule/ui/master-sword-shield-silhouette.svg",
+          "sha256": "945e8cd00b8f349a8275309e2e64da7308a6dc2321d50adfcfc5184d0ff12533"
+        },
+        {
+          "bytes": 1803,
+          "path": "themes/hyrule/ui/parchment-command-map.svg",
+          "sha256": "3cc35b16a0c3ed6c98eb6ed1cf56de298318dc4fd1f1cce4c08f3f130a92cd41"
+        },
+        {
+          "bytes": 1279,
+          "path": "themes/hyrule/ui/zonai-energy-ring.svg",
+          "sha256": "62796ed6a14611f0cfc3948210458676c739c21f7d1654c14e62b7e31d7301ab"
+        }
+      ],
+      "mediaCount": 8,
+      "path": "themes/hyrule",
+      "slug": "hyrule"
+    },
+    {
+      "fileCount": 9,
+      "files": [
+        {
+          "bytes": 2489,
+          "path": "themes/james-bond/007-logo.svg",
+          "sha256": "2f22402edafe8c333d916e11f7f25c4feb93182805451aef7527653fc09b1b69"
+        },
+        {
+          "bytes": 1338,
+          "path": "themes/james-bond/manifest.json",
+          "sha256": "ba1b4ea70372d7e460a185e70cd16f365d8552948cfb45a88479732e102fbefc"
+        },
+        {
+          "bytes": 95290,
+          "path": "themes/james-bond/payout/daniel-craig-007-portrait.png",
+          "sha256": "e834be67f23e5dc48d2de27510f5e64fbd97cb0b4a3c0b86725c53c2079bf27f"
+        },
+        {
+          "bytes": 961,
+          "path": "themes/james-bond/payout/funds-authorised-seal.svg",
+          "sha256": "ebcc1e9968b980dd3d478d0cece8c0dbc3b5e083fdaa8465ef7bf2f00067b608"
+        },
+        {
+          "bytes": 915,
+          "path": "themes/james-bond/ui/agent-silhouette.svg",
+          "sha256": "1fa05675cf3281634be522c1077b83bb8e6a461e65dde13fb0a59251a1aad97b"
+        },
+        {
+          "bytes": 1372,
+          "path": "themes/james-bond/ui/classified-dossier-grid.svg",
+          "sha256": "23a5e6d416d16fd368cc7718ca875c47adeff52d5aa546d107a83fe429ca175b"
+        },
+        {
+          "bytes": 774,
+          "path": "themes/james-bond/ui/gold-divider.svg",
+          "sha256": "db31046df77ffce6a063eac2ce45bee5a8b109a23f0fda4802aa3030ac811e11"
+        },
+        {
+          "bytes": 1996,
+          "path": "themes/james-bond/ui/gunbarrel-reticle.svg",
+          "sha256": "deaec9e03354fa4ad754164c0dfad00c7ebfac824f747d7b9bb808ff495991a7"
+        },
+        {
+          "bytes": 2278,
+          "path": "themes/james-bond/ui/mi6-command-seal.svg",
+          "sha256": "8899c0a876f8ec4ec2f27f212ce840e8e1aafb831ebed381350bb100e3d4de86"
+        }
+      ],
+      "mediaCount": 8,
+      "path": "themes/james-bond",
+      "slug": "james-bond"
+    },
+    {
+      "fileCount": 9,
+      "files": [
+        {
+          "bytes": 413,
+          "path": "themes/umbrella/README.md",
+          "sha256": "2a478865a92435b1d2a5927b9fedfdd73472401a0469ad4f8898a007459c1fd0"
+        },
+        {
+          "bytes": 148375,
+          "path": "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+          "sha256": "1a206292a74cf1c984536af2a28028b8c15a7adcdb12e82c01e704b8592e3ae4"
+        },
+        {
+          "bytes": 1002,
+          "path": "themes/umbrella/manifest.json",
+          "sha256": "87202eb5aeb8870cbd4913c6b4afc26ba392ac128c06bda7d1b173e43bdba2d6"
+        },
+        {
+          "bytes": 1494,
+          "path": "themes/umbrella/payout/transfer-authorized-seal.svg",
+          "sha256": "33f6a5ba833438e4f90183b0655b9e9dd3fb1c1d5c36420870d72e6c0d790fd0"
+        },
+        {
+          "bytes": 1732,
+          "path": "themes/umbrella/ui/containment-division-badge.svg",
+          "sha256": "50dbe29797cf3803e1fd8074d0eefbd540b9276608ffa0d6120ccfb43b16fcf4"
+        },
+        {
+          "bytes": 1846,
+          "path": "themes/umbrella/ui/facility-schematic.svg",
+          "sha256": "f3c424f088b63eb8afc635f5f0fbdeaa543a87740fde6500cde2fc6e0134c6c2"
+        },
+        {
+          "bytes": 2102,
+          "path": "themes/umbrella/ui/specimen-vial.svg",
+          "sha256": "0564ffaa5046a795641dc5e6177fa3f86dc01e36c746103b804bc65016e218e1"
+        },
+        {
+          "bytes": 1825,
+          "path": "themes/umbrella/ui/surveillance-terminal.svg",
+          "sha256": "09bf4510aabe3e0fc4f5810d7d596a6b5f658a47748d66b64953f8218b3ed1f2"
+        },
+        {
+          "bytes": 1768,
+          "path": "themes/umbrella/ui/umbrella-containment-emblem.svg",
+          "sha256": "1f22aa7fc48d214d74e9e46715f52fbe52857993229c800f32d647824ece46e5"
+        }
+      ],
+      "mediaCount": 7,
+      "path": "themes/umbrella",
+      "slug": "umbrella"
+    }
+  ],
+  "generatedAt": "2026-07-17",
+  "issue": 117,
+  "mediaFiles": [
+    {
+      "bytes": 58845,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "bf-bad-company-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "sha256": "dbc91ade0209b4b31242c6e19efc56e73284ddfe47b18437af3b33f1573c4470"
+    },
+    {
+      "bytes": 129985,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "cyberpunk-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "sha256": "50ea8b6e812709823bc748790c417849783dc3e31a1668ba2280730ce39cc8b1"
+    },
+    {
+      "bytes": 15323,
+      "canonicalSourceReference": false,
+      "classification": "other-media",
+      "extension": ".svg",
+      "path": "docs/media/readme-hero.svg",
+      "referenceFiles": [
+        "README.md"
+      ],
+      "sha256": "dc2954eccd6e0a1f4dfd50fc415dbcd5ddb6e8d9c030e96712d87f3952f5c97c"
+    },
+    {
+      "bytes": 170200,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "factorio-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "dc0a34bd465554635ad050bb5c19b4f942d9bba7732928cdfd52ffc86488babe"
+    },
+    {
+      "bytes": 45741,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "fallout-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "sha256": "bbc568951a571a4b3be3e946c876d8a199aec39d8d263004b10408ebae544b0f"
+    },
+    {
+      "bytes": 83106,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "gta-vice-city-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "sha256": "7b96892eee4650142be3b5455d98825375fc2500db44e3147bfce3b8d7915597"
+    },
+    {
+      "bytes": 94653,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "james-bond-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "989e9854d786668f999cd6a58ed98c2dc8273499acf0690a3a7aa6487ccef027"
+    },
+    {
+      "bytes": 26877,
+      "canonicalSourceReference": true,
+      "classification": "legacy-root-audio",
+      "extension": ".mp3",
+      "path": "scarface-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.txt",
+        "toolkit-current/MissionChief_Map_Command_Toolkit.user.js",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.txt",
+        "toolkit-releases/v3.4.2/MissionChief_Map_Command_Toolkit_v3.4.2.user.js",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.txt",
+        "toolkit-releases/v3.5.1/MissionChief_Map_Command_Toolkit_v3.5.1.user.js",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.txt",
+        "toolkit-releases/v3.7.1/MissionChief_Map_Command_Toolkit_v3.7.1.user.js"
+      ],
+      "sha256": "55d970d0286d5b777a52aaad0164a99c1cf0951a46dfdf186b0faaf70937a988"
+    },
+    {
+      "bytes": 32853,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".mp3",
+      "path": "themes/hyrule/audio/hyrule-quest-reward.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "54362fcd3adf66c914e882ed84bf9502b7f145304b879c0f74014e642d0e6792"
+    },
+    {
+      "bytes": 1570,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/payout/quest-complete-seal.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "2f01771929830ce38baa37e0121a0106b4e92584b425c8957500f00cd870614d"
+    },
+    {
+      "bytes": 2349,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/payout/rupee-burst.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "16f3a3f3fb53bc10e55640b3165995b8a0f2c4c38e58f452d418bbd3a076fedf"
+    },
+    {
+      "bytes": 1028,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/ui/ancient-eye-rune.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "df10e3cfa9ffe9f14e412587d2b3792db6a107e0c5defe3a7efd65773a11d90e"
+    },
+    {
+      "bytes": 2528,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/ui/hyrule-command-crest.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "e6c191a0e862dd303d7b249bc0544a17b5477f22ab8bf2e2633a03b6dd6aeb4a"
+    },
+    {
+      "bytes": 1915,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/ui/master-sword-shield-silhouette.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "945e8cd00b8f349a8275309e2e64da7308a6dc2321d50adfcfc5184d0ff12533"
+    },
+    {
+      "bytes": 1803,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/ui/parchment-command-map.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "3cc35b16a0c3ed6c98eb6ed1cf56de298318dc4fd1f1cce4c08f3f130a92cd41"
+    },
+    {
+      "bytes": 1279,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/hyrule/ui/zonai-energy-ring.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md"
+      ],
+      "sha256": "62796ed6a14611f0cfc3948210458676c739c21f7d1654c14e62b7e31d7301ab"
+    },
+    {
+      "bytes": 2489,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/007-logo.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "2f22402edafe8c333d916e11f7f25c4feb93182805451aef7527653fc09b1b69"
+    },
+    {
+      "bytes": 95290,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".png",
+      "path": "themes/james-bond/payout/daniel-craig-007-portrait.png",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "e834be67f23e5dc48d2de27510f5e64fbd97cb0b4a3c0b86725c53c2079bf27f"
+    },
+    {
+      "bytes": 961,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/payout/funds-authorised-seal.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "ebcc1e9968b980dd3d478d0cece8c0dbc3b5e083fdaa8465ef7bf2f00067b608"
+    },
+    {
+      "bytes": 915,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/ui/agent-silhouette.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "1fa05675cf3281634be522c1077b83bb8e6a461e65dde13fb0a59251a1aad97b"
+    },
+    {
+      "bytes": 1372,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/ui/classified-dossier-grid.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "23a5e6d416d16fd368cc7718ca875c47adeff52d5aa546d107a83fe429ca175b"
+    },
+    {
+      "bytes": 774,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/ui/gold-divider.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "db31046df77ffce6a063eac2ce45bee5a8b109a23f0fda4802aa3030ac811e11"
+    },
+    {
+      "bytes": 1996,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/ui/gunbarrel-reticle.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "deaec9e03354fa4ad754164c0dfad00c7ebfac824f747d7b9bb808ff495991a7"
+    },
+    {
+      "bytes": 2278,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/james-bond/ui/mi6-command-seal.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/james-bond/manifest.json"
+      ],
+      "sha256": "8899c0a876f8ec4ec2f27f212ce840e8e1aafb831ebed381350bb100e3d4de86"
+    },
+    {
+      "bytes": 148375,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".mp3",
+      "path": "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+      "referenceFiles": [
+        ".github/scripts/test_asset_health.py",
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/media-asset-audit.json",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "1a206292a74cf1c984536af2a28028b8c15a7adcdb12e82c01e704b8592e3ae4"
+    },
+    {
+      "bytes": 1494,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/payout/transfer-authorized-seal.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "33f6a5ba833438e4f90183b0655b9e9dd3fb1c1d5c36420870d72e6c0d790fd0"
+    },
+    {
+      "bytes": 1732,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/ui/containment-division-badge.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "50dbe29797cf3803e1fd8074d0eefbd540b9276608ffa0d6120ccfb43b16fcf4"
+    },
+    {
+      "bytes": 1846,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/ui/facility-schematic.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "f3c424f088b63eb8afc635f5f0fbdeaa543a87740fde6500cde2fc6e0134c6c2"
+    },
+    {
+      "bytes": 2102,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/ui/specimen-vial.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "0564ffaa5046a795641dc5e6177fa3f86dc01e36c746103b804bc65016e218e1"
+    },
+    {
+      "bytes": 1825,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/ui/surveillance-terminal.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "09bf4510aabe3e0fc4f5810d7d596a6b5f658a47748d66b64953f8218b3ed1f2"
+    },
+    {
+      "bytes": 1768,
+      "canonicalSourceReference": true,
+      "classification": "theme-owned",
+      "extension": ".svg",
+      "path": "themes/umbrella/ui/umbrella-containment-emblem.svg",
+      "referenceFiles": [
+        "MissionChief_Map_Command_Toolkit.txt",
+        "MissionChief_Map_Command_Toolkit.user.js",
+        "dist/MissionChief_Map_Command_Toolkit.txt",
+        "dist/MissionChief_Map_Command_Toolkit.user.js",
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/repository-audit.json",
+        "status/repository-audit.md",
+        "themes/umbrella/manifest.json"
+      ],
+      "sha256": "1f22aa7fc48d214d74e9e46715f52fbe52857993229c800f32d647824ece46e5"
+    }
+  ],
+  "mediaSummary": {
+    "audioFiles": 9,
+    "legacyRootAudioFiles": 7,
+    "themeOwnedMediaFiles": 23,
+    "totalMediaFiles": 31
+  },
+  "missingCanonicalThemeDirectories": [
+    "themes/cyberpunk",
+    "themes/factorio",
+    "themes/fallout",
+    "themes/map-command"
+  ],
+  "namingNotes": [
+    {
+      "decision": "Do not rename persisted runtime IDs. Use separate kebab-case canonical asset slugs for repository folders.",
+      "subject": "Runtime IDs versus asset slugs"
+    },
+    {
+      "decision": "Retain runtime ID bond007 and canonical folder slug james-bond while keeping 007 Intelligence as the public display name.",
+      "subject": "007 Intelligence"
+    },
+    {
+      "decision": "The public system name remains Umbrella; the current runtime selector label is Umbrella Containment.",
+      "subject": "Umbrella"
+    },
+    {
+      "decision": "Bad Company, Vice City and Scarface belong under assets/audio/payout-presets, not under themes/.",
+      "subject": "Non-theme payout presets"
+    },
+    {
+      "decision": "All seven public root paths remain indefinitely as compatibility aliases after the current Toolkit migrates.",
+      "subject": "Legacy root audio"
+    },
+    {
+      "decision": "The runtime description currently says Flagship fantasy command interface. Remove Flagship during the migration so all seven systems remain equally represented.",
+      "subject": "Hyrule flagship wording"
+    }
+  ],
+  "phase": 1,
+  "schemaVersion": 1,
+  "source": "src/MissionChief_Map_Command_Toolkit.user.js",
+  "sourceIdentityDefinition": {
+    "definitionEndLine": 980,
+    "definitionStartLine": 971,
+    "runtimeOrder": [
+      "mapCommand",
+      "cyberpunk",
+      "fallout4",
+      "umbrella",
+      "factorio",
+      "bond007",
+      "hyrule"
+    ]
+  },
+  "themeSystems": [
+    {
+      "canonicalDirectory": "themes/map-command",
+      "canonicalSlug": "map-command",
+      "directoryExists": false,
+      "order": 1,
+      "publicName": "Map Command",
+      "runtimeDescription": "The original operational command interface.",
+      "runtimeId": "mapCommand",
+      "runtimeLabel": "Map Command",
+      "runtimeShortLabel": "DEFAULT",
+      "sourceEvidence": {
+        "definitionLine": 971,
+        "runtimeIdQuotedOccurrences": 3,
+        "runtimeLabelOccurrences": 10
+      }
+    },
+    {
+      "canonicalDirectory": "themes/cyberpunk",
+      "canonicalSlug": "cyberpunk",
+      "directoryExists": false,
+      "order": 2,
+      "publicName": "Cyberpunk",
+      "runtimeDescription": "Neon tactical interface with angular panels, signal animations and high-contrast controls.",
+      "runtimeId": "cyberpunk",
+      "runtimeLabel": "Cyberpunk",
+      "runtimeShortLabel": "NEON",
+      "sourceEvidence": {
+        "definitionLine": 973,
+        "runtimeIdQuotedOccurrences": 251,
+        "runtimeLabelOccurrences": 10
+      }
+    },
+    {
+      "canonicalDirectory": "themes/fallout",
+      "canonicalSlug": "fallout",
+      "directoryExists": false,
+      "order": 3,
+      "publicName": "Fallout 4",
+      "runtimeDescription": "Retro-futurist Pip-Boy terminal interface with phosphor display effects and high-contrast Vault-Tec controls.",
+      "runtimeId": "fallout4",
+      "runtimeLabel": "Fallout 4",
+      "runtimeShortLabel": "PIP-BOY",
+      "sourceEvidence": {
+        "definitionLine": 974,
+        "runtimeIdQuotedOccurrences": 264,
+        "runtimeLabelOccurrences": 4
+      }
+    },
+    {
+      "canonicalDirectory": "themes/umbrella",
+      "canonicalSlug": "umbrella",
+      "directoryExists": true,
+      "order": 4,
+      "publicName": "Umbrella",
+      "runtimeDescription": "Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.",
+      "runtimeId": "umbrella",
+      "runtimeLabel": "Umbrella Containment",
+      "runtimeShortLabel": "BSL-4",
+      "sourceEvidence": {
+        "definitionLine": 975,
+        "runtimeIdQuotedOccurrences": 444,
+        "runtimeLabelOccurrences": 12
+      }
+    },
+    {
+      "canonicalDirectory": "themes/factorio",
+      "canonicalSlug": "factorio",
+      "directoryExists": false,
+      "order": 5,
+      "publicName": "Factorio",
+      "runtimeDescription": "Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.",
+      "runtimeId": "factorio",
+      "runtimeLabel": "Factorio",
+      "runtimeShortLabel": "AUTOMATION",
+      "sourceEvidence": {
+        "definitionLine": 976,
+        "runtimeIdQuotedOccurrences": 224,
+        "runtimeLabelOccurrences": 15
+      }
+    },
+    {
+      "canonicalDirectory": "themes/james-bond",
+      "canonicalSlug": "james-bond",
+      "directoryExists": true,
+      "order": 6,
+      "publicName": "007 Intelligence",
+      "runtimeDescription": "Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.",
+      "runtimeId": "bond007",
+      "runtimeLabel": "007 Intelligence",
+      "runtimeShortLabel": "MI6",
+      "sourceEvidence": {
+        "definitionLine": 977,
+        "runtimeIdQuotedOccurrences": 310,
+        "runtimeLabelOccurrences": 6
+      }
+    },
+    {
+      "canonicalDirectory": "themes/hyrule",
+      "canonicalSlug": "hyrule",
+      "directoryExists": true,
+      "order": 7,
+      "publicName": "Hyrule Command",
+      "runtimeDescription": "Flagship fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.",
+      "runtimeId": "hyrule",
+      "runtimeLabel": "Hyrule Command",
+      "runtimeShortLabel": "TRIFORCE",
+      "sourceEvidence": {
+        "definitionLine": 978,
+        "runtimeIdQuotedOccurrences": 108,
+        "runtimeLabelOccurrences": 3
+      }
+    }
+  ]
+}

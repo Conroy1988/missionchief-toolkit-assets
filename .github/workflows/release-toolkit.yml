@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: toolkit-production-release
@@ -216,10 +217,33 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
+      - name: Deploy verified documentation site
+        id: pages_deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run github-pages.yml --ref main
+
+          RUN_ID=""
+          for attempt in $(seq 1 60); do
+            RUN_ID="$(gh run list --workflow github-pages.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$RUN_ID" ]] || { echo "::error::The dispatched GitHub Pages deployment run was not found."; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Waiting for GitHub Pages deployment run ${RUN_ID} for Toolkit ${RELEASE_VERSION}."
+          gh run watch "$RUN_ID" --exit-status
+
       - name: Write release summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
+          PAGES_RUN_ID: ${{ steps.pages_deploy.outputs.run_id }}
         shell: bash
         run: |
           {
@@ -235,4 +259,5 @@ jobs:
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
             echo "- ✅ Release dashboard and generated control panel updated"
+            echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"
           } >> "$GITHUB_STEP_SUMMARY"

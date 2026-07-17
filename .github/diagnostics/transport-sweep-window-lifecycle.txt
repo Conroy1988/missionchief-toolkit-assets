@@ -1,72 +1,37 @@
-===== transportSweepVisibleWindowRoots (1 matches) =====
+===== runtime (1 matches) =====
 
-    function transportSweepVisibleWindowRoots() {
-        const selectors = [
-            '#lightbox_box .lightbox_content', '#lightbox_box', '#lightbox', '.lightbox_content',
-            '[id*="lightbox"]', '.lightbox', '.modal.show .modal-content', '.modal.in .modal-content',
-            '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
-        ];
-        const roots = [];
-        const seen = new Set();
-        for (const context of transportSweepDocumentContexts()) {
-            for (const selector of selectors) {
-                let matches = [];
-                try { matches = Array.from(context.doc.querySelectorAll(selector)); } catch (err) {}
-                for (const root of matches) {
-                    if (!root || seen.has(root) || !transportSweepElementVisible(root)) continue;
-                    if (root.closest?.(`#${SCRIPT.panelId}`)) continue;
-                    seen.add(root);
-                    roots.push(root);
-                }
-            }
-            if (context.doc !== document) {
-                const body = context.doc.body;
-                if (body && !seen.has(body) && transportSweepElementVisible(body) && transportSweepVehicleAnchorsWithin(body, true).length) {
-                    seen.add(body);
-                    roots.push(body);
-                }
-            }
-        }
-        return roots;
-    }
+    const transportSweepRuntime = {
+        running: false,
+        stopRequested: false,
+        queue: [],
+        scannedAt: 0,
+        currentMissionId: null,
+        currentVehicleHref: '',
+        cleared: 0,
+        skipped: 0,
+        errors: 0,
+        processed: 0,
+        rejectedOwn: 0,
+        missionAnchorBaseline: new Set(),
+        vehicleButtonBaseline: new Set(),
+        ownVehicleIds: new Set(),
+        missionWindowRoot: null,
+        lastCandidateStats: null,
+        log: []
+    };
 
-
-===== transportSweepFindMissionWindowRoot (1 matches) =====
-
-    function transportSweepFindMissionWindowRoot(missionId = null) {
-        const roots = transportSweepVisibleWindowRoots();
-        let best = null;
-        let bestScore = -1;
-        for (const root of roots) {
-            const score = transportSweepRootScore(root, missionId);
-            if (score > bestScore) {
-                best = root;
-                bestScore = score;
-            }
-        }
-        if (best) return best;
-
-        // Fallback for MissionChief builds that render lightbox content without a stable wrapper.
-        const baseline = transportSweepRuntime.missionAnchorBaseline;
-        const anchor = transportSweepVisibleVehicleAnchors().find(item => !(baseline instanceof Set) || !baseline.has(item));
-        if (!anchor) return null;
-        return anchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || anchor.ownerDocument?.body || anchor.parentElement;
-    }
-
-
-===== transportSweepMissionDocuments (0 matches) =====
-
-===== openTransportSweepPath (1 matches) =====
+===== open path (1 matches) =====
 
     async function openTransportSweepPath(path, mode) {
         if (transportSweepRuntime.stopRequested) return false;
         if (typeof pageWindow.lightboxOpen !== 'function') throw new Error('MissionChief lightboxOpen is unavailable');
+        const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle');
+        if (!closed || transportSweepRuntime.stopRequested) return false;
 
         if (mode === 'mission') {
             transportSweepRuntime.missionAnchorBaseline = new Set(transportSweepVisibleVehicleAnchors());
             transportSweepRuntime.rejectedOwn = 0;
             transportSweepRuntime.missionWindowRoot = null;
-            const beforeWindowText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
             const missionId = normaliseMissionId(String(path || '').match(/\/missions\/(\d+)/)?.[1]);
             pageWindow.lightboxOpen(path);
             await transportSweepWaitFor(() => {
@@ -74,8 +39,7 @@
                 if (root) {
                     const anchors = transportSweepVehicleAnchorsWithin(root);
                     const afterText = String(root.textContent || '').trim();
-                    const changed = afterText && !beforeWindowText.includes(afterText);
-                    if (anchors.length || changed) {
+                    if (anchors.length || afterText) {
                         transportSweepRuntime.missionWindowRoot = root;
                         return { root, anchors };
                     }
@@ -86,8 +50,8 @@
                     return { root: transportSweepRuntime.missionWindowRoot, anchors: [newAnchor] };
                 }
                 return null;
-            }, 3200, 120);
-            return !transportSweepRuntime.stopRequested;
+            }, 4200, 120);
+            return !transportSweepRuntime.stopRequested && Boolean(transportSweepRuntime.missionWindowRoot);
         }
 
         pageWindow.lightboxOpen(path);
@@ -96,51 +60,113 @@
     }
 
 
-===== openTransportSweepVehicle (1 matches) =====
+===== close windows (1 matches) =====
 
-    async function openTransportSweepVehicle(candidate) {
-        if (transportSweepRuntime.stopRequested || !candidate?.href) return null;
-        transportSweepRuntime.vehicleButtonBaseline = new Set(transportSweepVisibleDischargeButtons());
-        const beforeRoots = transportSweepVisibleWindowRoots();
-        const beforeText = beforeRoots.map(root => String(root.textContent || '').trim()).join('|');
+    async function closeTransportSweepWindows(reason = 'navigation') {
+        transportSweepRuntime.missionWindowRoot = null;
+        for (let pass = 0; pass < 12 && !transportSweepRuntime.stopRequested; pass += 1) {
+            const roots = transportSweepTopLevelWindowRoots();
+            if (!roots.length) return true;
+            const target = roots[roots.length - 1];
+            const beforeCount = roots.length;
+            let requested = false;
 
-        let anchor = candidate.anchor;
-        if (!anchor?.isConnected) {
-            const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : document;
-            anchor = Array.from(root.querySelectorAll?.('a[href*="/vehicles/"]') || []).find(item => transportSweepVehicleIdFromHref(item.getAttribute('href')) === String(candidate.vehicleId));
+            if (typeof pageWindow.lightboxClose === 'function') {
+                try {
+                    pageWindow.lightboxClose();
+                    requested = true;
+                } catch (err) {}
+            }
+
+            if (!requested) {
+                const closeControl = transportSweepWindowCloseControl(target);
+                if (closeControl) {
+                    try {
+                        closeControl.click();
+                        requested = true;
+                    } catch (err) {}
+                }
+            }
+
+            if (!requested) {
+                transportSweepLog(`Could not close the active MissionChief window before ${reason}`, 'error');
+                return false;
+            }
+
+            const closed = await transportSweepWaitFor(() => {
+                const remaining = transportSweepTopLevelWindowRoots();
+                return !target.isConnected || !transportSweepElementVisible(target) || remaining.length < beforeCount ? true : null;
+            }, 2600, 100);
+            if (!closed) {
+                transportSweepLog(`MissionChief did not close the active window before ${reason}`, 'error');
+                return false;
+            }
+            await transportSweepSleep(80);
         }
-
-        let usedMissionClick = false;
-        if (anchor?.isConnected) {
-            try {
-                anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-                anchor.click();
-                usedMissionClick = true;
-            } catch (err) {}
-        }
-
-        if (!usedMissionClick) {
-            if (typeof pageWindow.lightboxOpen !== 'function') return null;
-            pageWindow.lightboxOpen(candidate.href);
-        }
-
-        const openedAt = Date.now();
-        return await transportSweepWaitFor(() => {
-            const button = findVisibleDischargePatientButton(transportSweepRuntime.vehicleButtonBaseline);
-            if (button) return { opened: true, button };
-            const afterText = transportSweepVisibleWindowRoots().map(root => String(root.textContent || '').trim()).join('|');
-            if (afterText && afterText !== beforeText && Date.now() - openedAt > 350) return { opened: true, button: null };
-            return null;
-        }, 7500, 140);
+        return transportSweepTopLevelWindowRoots().length === 0;
     }
 
 
-===== close mentions =====
+===== start sweep (1 matches) =====
 
-        return anchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || anchor.ownerDocument?.body || anchor.parentElement;
+    async function startTransportSweep() {
+        if (transportSweepRuntime.running) return;
+        const queue = buildTransportSweepQueue();
+        if (!queue.length) {
+            showToast('No alliance patient transports found');
+            return;
+        }
+        showToast('Verifying your personal vehicle list…');
+        const ownershipReady = await refreshPersonalVehicleData(true);
+        if (!ownershipReady || !vehicleApiReady || personalVehicleApiCache.size === 0) {
+            showToast('Transport Sweep cancelled — your vehicle ownership list could not be verified');
+            return;
+        }
+        transportSweepRuntime.ownVehicleIds = new Set(Array.from(personalVehicleApiCache.keys(), id => String(id)));
+        const totalRequests = queue.reduce((sum, item) => sum + Math.max(1, Number(item.count) || 1), 0);
+        const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
+        const confirmed = pageWindow.confirm(`Transport Sweep will attempt up to ${planned} alliance-member patient releases across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.
 
-                    transportSweepRuntime.missionWindowRoot = newAnchor.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-content, [role="dialog"], .ui-dialog-content') || newAnchor.ownerDocument?.body || newAnchor.parentElement;
-
-        const selector = 'button, a, [role="button"], [onclick], [data-dismiss], [aria-label], [title], .close, .lightbox-close, .glyphicon, .fa, .fas, .far, svg';
-
-            if (target.closest?.('.navbar, .modal, .modal-backdrop, .dropdown-menu, .popover, [role="dialog"]')) return true;
+The sweep waits dynamically for LSSM's “Release patient (No reward)” controls and processes one alliance ambulance at a time. Your own verified vehicle IDs are always excluded. If LSSM controls do not appear, the existing vehicle-window route remains available as a fallback. Continue?`);
+        if (!confirmed) return;
+        transportSweepRuntime.running = true;
+        transportSweepRuntime.stopRequested = false;
+        transportSweepRuntime.currentMissionId = null;
+        transportSweepRuntime.currentVehicleHref = '';
+        transportSweepRuntime.cleared = 0;
+        transportSweepRuntime.skipped = 0;
+        transportSweepRuntime.errors = 0;
+        transportSweepRuntime.processed = 0;
+        transportSweepRuntime.rejectedOwn = 0;
+        transportSweepRuntime.missionAnchorBaseline = new Set();
+        transportSweepRuntime.vehicleButtonBaseline = new Set();
+        transportSweepRuntime.missionWindowRoot = null;
+        transportSweepRuntime.lastCandidateStats = null;
+        transportSweepRuntime.log = [];
+        renderTransportSweepPanel();
+        transportSweepLog(`Sweep started: ${queue.length} missions, maximum ${state.transportSweep.maxPerRun} requests`);
+        try {
+            for (const item of queue) {
+                if (transportSweepRuntime.stopRequested || transportSweepRuntime.cleared >= state.transportSweep.maxPerRun) break;
+                const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.cleared;
+                await processTransportSweepMission(item, remaining);
+                if (!transportSweepRuntime.stopRequested) await transportSweepSleep(state.transportSweep.delayMs);
+            }
+        } catch (err) {
+            transportSweepRuntime.errors += 1;
+            transportSweepLog(`Sweep stopped by error: ${err?.message || 'unknown error'}`, 'error');
+        } finally {
+            const wasStopped = transportSweepRuntime.stopRequested;
+            transportSweepRuntime.running = false;
+            transportSweepRuntime.stopRequested = false;
+            transportSweepRuntime.currentMissionId = null;
+            transportSweepRuntime.currentVehicleHref = '';
+            transportSweepRuntime.missionAnchorBaseline = new Set();
+            transportSweepRuntime.vehicleButtonBaseline = new Set();
+            buildTransportSweepQueue();
+            renderTransportSweepPanel();
+            scheduleTransportWatcherRefresh(0);
+            showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared`);
+            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`);
+        }
+    }

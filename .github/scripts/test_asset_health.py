@@ -13,6 +13,20 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).with_name("check_asset_health.py")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+CANONICAL_USERSCRIPT = "src/MissionChief_Map_Command_Toolkit.user.js"
+ACTIVE_AUDIO_PATHS = {
+    "bf-bad-company-cashout.mp3",
+    "cyberpunk-cashout.mp3",
+    "factorio-cashout.mp3",
+    "fallout-cashout.mp3",
+    "gta-vice-city-cashout.mp3",
+    "james-bond-cashout.mp3",
+    "scarface-cashout.mp3",
+    "themes/umbrella/audio/umbrella-containment-cashout.mp3",
+    "themes/hyrule/audio/hyrule-quest-reward.mp3",
+}
+AUDIO_EXTENSIONS = {".mp3", ".wav", ".ogg"}
 spec = importlib.util.spec_from_file_location("asset_health", SCRIPT_PATH)
 assert spec and spec.loader
 asset_health = importlib.util.module_from_spec(spec)
@@ -222,13 +236,54 @@ def test_base_url_filename_resolution() -> None:
         assert matching and matching[0].local_path == "audio/tone.mp3", endpoints
 
 
+
+def test_repository_audio_contract() -> None:
+    policy = asset_health.load_json(REPOSITORY_ROOT / ".github/asset-health-policy.json")
+    canonical_policy = dict(policy)
+    canonical_policy["scanFiles"] = [CANONICAL_USERSCRIPT]
+    canonical_policy["scanTextExtensions"] = []
+
+    endpoints, _, local_media = asset_health.discover_endpoints(
+        REPOSITORY_ROOT,
+        canonical_policy,
+        "Conroy1988/missionchief-toolkit-assets",
+    )
+    audio_paths = {
+        asset_health.relative_path(path, REPOSITORY_ROOT)
+        for path in local_media
+        if path.suffix.lower() in AUDIO_EXTENSIONS
+    }
+    referenced_audio = {
+        endpoint.local_path
+        for endpoint in endpoints
+        if endpoint.local_path
+        and Path(endpoint.local_path).suffix.lower() in AUDIO_EXTENSIONS
+        and endpoint.source != "repository-media"
+    }
+
+    missing_required = sorted(ACTIVE_AUDIO_PATHS - audio_paths)
+    unreferenced_required = sorted(ACTIVE_AUDIO_PATHS - referenced_audio)
+    orphaned = sorted(audio_paths - referenced_audio)
+    assert not missing_required, f"Required public audio paths are missing: {missing_required}"
+    assert not unreferenced_required, f"Required public audio paths are no longer referenced: {unreferenced_required}"
+    assert not orphaned, f"Unreferenced repository audio assets detected: {orphaned}"
+
+    hashes: dict[str, list[str]] = {}
+    for rel in sorted(audio_paths):
+        digest = hashlib.sha256((REPOSITORY_ROOT / rel).read_bytes()).hexdigest()
+        hashes.setdefault(digest, []).append(rel)
+    duplicates = [paths for paths in hashes.values() if len(paths) > 1]
+    assert not duplicates, f"Duplicate repository audio payloads detected: {duplicates}"
+
+
 def main() -> None:
     tests = [
         test_live_success_and_optional_warning,
         test_wrong_release_hash_fails,
         test_missing_stable_raw_path_fails_static,
         test_bad_local_signature_fails,
-        test_base_url_filename_resolution
+        test_base_url_filename_resolution,
+        test_repository_audio_contract
     ]
     for test in tests:
         test()

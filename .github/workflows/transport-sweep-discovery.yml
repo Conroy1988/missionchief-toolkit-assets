@@ -11,49 +11,31 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Capture exact transport sweep lightbox hierarchy
+      - name: Reproduce DOM-delta package against current main
         shell: bash
         run: |
-          set -euo pipefail
-          git fetch origin main
+          set -u
+          git fetch origin main fix/issue-94-dom-delta-lightbox-ownership
+          rm -rf /tmp/mcms-package-test
+          git worktree add --detach /tmp/mcms-package-test origin/main
+          mkdir -p /tmp/mcms-package-test/.github/development-packages
+          git show origin/fix/issue-94-dom-delta-lightbox-ownership:.github/development-packages/issue-94-dom-delta-lightbox-ownership.py > /tmp/mcms-package-test/.github/development-packages/issue-94-dom-delta-lightbox-ownership.py
           mkdir -p .github/diagnostics
-          git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/current-toolkit.user.js
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          source = Path('/tmp/current-toolkit.user.js').read_text(encoding='utf-8')
-          names = [
-              'transportSweepVisibleWindowRoots',
-              'transportSweepTopLevelWindowRoots',
-              'transportSweepOwnedWindowRoot',
-              'transportSweepWindowCloseControl',
-              'closeTransportSweepWindows',
-              'transportSweepFindMissionWindowRoot',
-              'openTransportSweepPath',
-          ]
-          chunks = []
-          for name in names:
-              pattern = rf'    (?:async )?function {name}\([\s\S]*?\n    \}}\n'
-              matches = list(re.finditer(pattern, source))
-              chunks.append(f'===== {name} ({len(matches)} matches) =====')
-              chunks.extend(match.group(0) for match in matches[:5])
-          chunks.append('===== relevant selector lines =====')
-          chunks.extend(
-              line for line in source.splitlines()
-              if any(token in line for token in ('#lightbox_box', '#lightbox', 'lightboxClose', 'lightboxOpen', 'modal-content', 'ui-dialog'))
-          )
-          Path('.github/diagnostics/transport-sweep-window-lifecycle.txt').write_text('\n\n'.join(chunks), encoding='utf-8')
-          PY
+          (
+            cd /tmp/mcms-package-test
+            python3 .github/development-packages/issue-94-dom-delta-lightbox-ownership.py
+          ) > .github/diagnostics/transport-sweep-window-lifecycle.txt 2>&1
+          status=$?
+          printf '\nEXIT_STATUS=%s\n' "$status" >> .github/diagnostics/transport-sweep-window-lifecycle.txt
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .github/diagnostics/transport-sweep-window-lifecycle.txt
-          if git diff --cached --quiet; then
-            exit 0
+          if ! git diff --cached --quiet; then
+            git commit -m "Capture v4.14.4 package traceback"
+            git push origin HEAD:chore/transport-sweep-discovery
           fi
-          git commit -m "Capture exact transport sweep lightbox hierarchy"
-          git push origin HEAD:chore/transport-sweep-discovery
+          exit 0

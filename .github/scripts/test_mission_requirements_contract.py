@@ -1,32 +1,40 @@
 #!/usr/bin/env python3
-"""Verify the fixture-backed live mission requirements ownership, calculation and layout contract."""
+"""Verify the executable and structural live mission requirements contract."""
 from __future__ import annotations
 
 import json
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
+RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
 
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
 
-    for case in data["calculationCases"]:
-        still_needed = max(0, case["missing"] - case["enRoute"])
-        covered = case["selected"] >= still_needed
-        assert still_needed == case["stillNeeded"], case["name"]
-        assert covered is case["covered"], case["name"]
+    runtime = subprocess.run(["node", str(RUNTIME_TEST)], cwd=ROOT, text=True, capture_output=True)
+    if runtime.stdout:
+        print(runtime.stdout, end="")
+    if runtime.returncode != 0:
+        if runtime.stderr:
+            print(runtime.stderr, end="")
+        raise SystemExit("Mission requirements runtime fixtures failed")
 
     required_markers = [
         "missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'",
+        "missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style'",
         "missionRequirements: true",
         "merged.missionRequirements = merged.missionRequirements !== false",
         "const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([",
         "function missionRequirementsParseText(rawText, group = 'vehicles')",
+        "function missionRequirementsCapacity(min = 0, max = min, known = null)",
+        "function missionRequirementsCoverageRow(requirement, selectedCapacity, enRouteCapacity)",
+        "function missionRequirementsDefinitionCondition(definition, candidate)",
         "function missionRequirementsResolve(candidate, parsed)",
         "function missionRequirementsOverallState(rows, unresolved)",
         "function missionRequirementsLssmActive(candidate, source)",
@@ -49,6 +57,8 @@ def main() -> int:
         "${makeToggleButton('missionRequirements'",
         "missionRequirements: state.missionRequirements",
         "Mission Requirements on",
+        "if (state.missionRequirements) scheduleMissionRequirementsScan(0);",
+        "const activeDocuments = new WeakSet();",
     ]
     missing = [marker for marker in required_markers if marker not in source]
     assert not missing, f"Missing mission requirements contract markers: {missing}"
@@ -79,12 +89,7 @@ def main() -> int:
 
     lssm = re.search(r"function missionRequirementsLssmActive\(candidate, source\) \{([\s\S]*?)\n    \}", source)
     assert lssm and ".alert-missing-vehicles" in lssm.group(1)
-    assert "missionRequirementsRemoveRecord(source)" in source
-
-    renderer = re.search(r"function missionRequirementsOverallState\(rows, unresolved\) \{([\s\S]*?)\n    \}", source)
-    assert renderer
-    assert "rows.some(row => !row.covered && row.selectedKnown)" in renderer.group(1)
-    assert "rows.some(row => !row.selectedKnown) || unresolved.length" in renderer.group(1)
+    assert "table.table-striped.table-condensed" not in lssm.group(1)
 
     print("Mission requirements contract passed")
     return 0

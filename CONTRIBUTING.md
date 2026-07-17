@@ -18,9 +18,31 @@ The MissionChief Map Command Toolkit is maintained through reviewed, validated c
 - Keep public asset paths stable or update the asset-health policy in the same change.
 - Update user-facing documentation and changelog data when behaviour changes.
 
+## Routine delivery path
+
+Contained userscript changes should use the fastest safe route:
+
+1. Create one owner-authored `feature/`, `fix/` or `chore/` branch from current `main`.
+2. Complete the source, generated distribution, changelog and focused contract in that branch.
+3. Run the deterministic repository preflight:
+
+   ```bash
+   bash .github/scripts/run_userscript_preflight.sh --all
+   ```
+
+4. Open one pull request.
+5. Allow the targeted validation matrix and parallel Full Userscript Audit lanes to complete.
+6. Merge the exact reviewed head and use the permanent guarded release command when a public version is required.
+
+Do not create diagnostic pull requests or test-only commits when the required code and fixtures can be prepared and verified before the pull request is opened.
+
+## Reviewed development packages
+
+The owner-authorised development-package workflow remains available for large generated transformations, exact-source rewrites and changes that are safer to apply inside the repository runner. It is not the default route for small, contained edits.
+
 ## Validation
 
-Pull requests may run userscript validation, code-integrity auditing, performance-regression checks, asset-health checks and documentation-site validation. Do not bypass a failed check without identifying and correcting the underlying cause.
+Pull requests may run userscript validation, code-integrity auditing, performance-regression checks, asset-health checks and documentation-site validation. The Full Userscript Audit executes contract, static-analysis and ESLint lanes concurrently, then reports through one aggregate required check. Do not bypass a failed check without identifying and correcting the underlying cause.
 
 ## Releases
 

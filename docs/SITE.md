@@ -18,6 +18,9 @@ The site is deliberately separated into:
 | `status/release-dashboard.json` | Current version and verified release health |
 | `.github/release-settings.json` | Greasy Fork installation and project links |
 | `CHANGELOG.md` | Release history |
+| `README.md` | Primary GitHub landing page and installation summary |
+| `help/index.html` | Searchable Help Centre loaded by the userscript |
+| `docs/greasyfork-description.md` | Greasy Fork-synchronised Additional Info page |
 | `.github/scripts/build_pages_site.py` | Deterministic static-site generator and link validator |
 
 The generated `_site/` directory is an Actions artifact. It is not committed to `main`.
@@ -41,7 +44,8 @@ Every relevant pull request:
 4. Builds all pages.
 5. Verifies internal links and base-path handling.
 6. Enforces output file-count and size limits.
-7. Retains a complete preview artifact for 14 days.
+7. Cross-checks the README, Help Centre, Pages catalogue and Greasy Fork description for current version, theme, feature and privacy claims.
+8. Retains a complete preview artifact for 14 days.
 
 A deployment occurs only from `main` or a manual workflow run.
 
@@ -49,7 +53,7 @@ A deployment occurs only from `main` or a manual workflow run.
 
 Edit the structured catalogue rather than generated HTML. The build script escapes user-facing source values and fails when required sections, release data, pages or internal targets are missing.
 
-Feature documentation should describe current public behaviour. Experimental ideas belong in issues or Discussions rather than the published catalogue.
+Feature documentation should describe current public behaviour. The README, Help Centre, Pages catalogue and Greasy Fork description form one public documentation contract and must be updated together when shared claims change. Experimental ideas belong in issues or Discussions rather than the published catalogue.
 
 ## Theme safety
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -21,13 +21,34 @@
     "iOS Mobile"
   ],
   "shortcuts": [
-    {"key": "1", "action": "Toggle My Missions"},
-    {"key": "2", "action": "Toggle Alliance Missions"},
-    {"key": "3", "action": "Toggle Vehicles"},
-    {"key": "4", "action": "Toggle My Buildings"},
-    {"key": "5", "action": "Toggle Alliance Credits"},
-    {"key": "6", "action": "Toggle Mission Age"},
-    {"key": "V", "action": "Open or close Vehicle Code Status"}
+    {
+      "key": "1",
+      "action": "Toggle My Missions"
+    },
+    {
+      "key": "2",
+      "action": "Toggle Alliance Missions"
+    },
+    {
+      "key": "3",
+      "action": "Toggle Vehicles"
+    },
+    {
+      "key": "4",
+      "action": "Toggle My Buildings"
+    },
+    {
+      "key": "5",
+      "action": "Toggle Alliance Credits"
+    },
+    {
+      "key": "6",
+      "action": "Toggle Mission Age"
+    },
+    {
+      "key": "V",
+      "action": "Open or close Vehicle Code Status"
+    }
   ],
   "requiredSourceTokens": [
     "Mission Age Watch",
@@ -44,10 +65,59 @@
     "Factorio",
     "007 Intelligence",
     "Hyrule Command",
-    "Auto-load all vehicles"
+    "Auto-load all vehicles",
+    "Patient Transport Sweep",
+    "Mission Value",
+    "Resource Gap",
+    "Economy Mode"
   ],
   "installUrls": [
     "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
     "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
-  ]
+  ],
+  "requiredFeatureNames": [
+    "Mission Age Watch",
+    "Mission Value",
+    "Patient Transport Sweep",
+    "Resource Gap",
+    "Auto-load all vehicles",
+    "Vehicle Code Status",
+    "Coverage Heat Map",
+    "Smart Bookmark Labels",
+    "Alliance Credits",
+    "Financial intelligence",
+    "Payout presentations",
+    "Economy Mode",
+    "Desktop, Tablet and iOS Mobile Mode"
+  ],
+  "publicDocumentation": {
+    "readmeRequiredTokens": [
+      "Patient Transport Sweep",
+      "Mission Value",
+      "Resource Gap",
+      "Economy Mode",
+      "saved Discord webhook",
+      "seven interface systems"
+    ],
+    "helpRequiredTokens": [
+      "Patient Transport Sweep",
+      "Hyrule Command",
+      "LSSM",
+      "saved Discord webhook",
+      "seven interface systems"
+    ],
+    "helpForbiddenTokens": [
+      "v4.2.1",
+      "six interface themes",
+      "all six themes"
+    ],
+    "greasyForkRequiredTokens": [
+      "Patient Transport Sweep",
+      "Mission Value",
+      "saved Discord webhook"
+    ],
+    "greasyForkForbiddenTokens": [
+      "Exported Toolkit settings do not include the Discord webhook"
+    ]
+  }
 }

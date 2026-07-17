@@ -42,7 +42,7 @@ This roadmap separates verified infrastructure, active Toolkit development and r
 
 - Capture real Desktop, Tablet and iOS screenshots.
 - Record short demonstrations for major workflows and themes.
-- Enable GitHub Discussions and create a public GitHub Project when repository administration permits.
+- Keep GitHub Discussions support routes and the public project roadmap aligned with repository configuration.
 - Add media to the generated Pages gallery using the documented capture manifest.
 
 ## Repository architecture

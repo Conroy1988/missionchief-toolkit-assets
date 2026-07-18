@@ -114,6 +114,7 @@
     "compactDock",
     "coverage",
     "criticalView",
+    "customVehicleBadges",
     "heatmap",
     "majorIncidentFeed",
     "markerFocus",
@@ -167,7 +168,8 @@
     "stuckDetector": "stuckDetector.enabled",
     "transportWatcher": "transportWatcher",
     "unitCommitment": "unitCommitment",
-    "vehicles": "visibility.vehicles"
+    "vehicles": "visibility.vehicles",
+    "customVehicleBadges": "customVehicleBadges"
   },
   "legacyMigration": {
     "uiTheme": "invalid",

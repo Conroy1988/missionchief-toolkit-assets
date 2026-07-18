@@ -434,8 +434,8 @@ source, map_count = map_pattern.subn(
                   f"{match.group('indent')}customVehicleBadges: state.customVehicleBadges,{match.group('newline')}",
     source,
 )
-if map_count != 2:
-    raise AssertionError(f"toggle UI maps: expected two missionRequirements entries, found {map_count}")
+if map_count != 1:
+    raise AssertionError(f"toggle UI map: expected one missionRequirements entry, found {map_count}")
 
 source = insert_after_last(
     source,
@@ -605,6 +605,13 @@ const context = {
     pageWindow,
     MutationObserver: pageWindow.MutationObserver,
     personalVehicleApiCache,
+    customVehicleClassificationCache: new Map(),
+    customVehicleClassificationRevision: -1,
+    customVehicleBadgeScanTimer: null,
+    customVehicleBadgeRefreshPromise: null,
+    customVehicleBadgeFeatureInstalled: false,
+    customVehicleBadgeObservedDocuments: new WeakSet(),
+    customVehicleBadgeObservedFrames: new WeakSet(),
     vehicleDataRevision: 0,
     vehicleApiReady: true,
     vehicleApiFetchPromise: null,

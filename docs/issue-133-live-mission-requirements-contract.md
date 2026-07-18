@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented and fixture-validated for the v4.15.0 release candidate.
+Implemented and fixture-validated for the v4.15.1 release candidate.
 
 This document records the MissionChief browser interfaces consumed by the clean-room implementation. It is deliberately independent of LSSM implementation code.
 
@@ -124,7 +124,7 @@ The panel root uses a collision-resistant Toolkit ID and is unique per active mi
 
 The Toolkit works with LSSM absent, present with its equivalent feature disabled, and present with its equivalent feature active.
 
-When an active LSSM enhanced-missing-vehicles panel is detected, the Toolkit does not render a competing second requirements panel. Detection uses observable ownership markers and structure, without dependence on LSSM globals or stores.
+When an active LSSM enhanced-missing-vehicles panel is detected, the Toolkit does not render a competing second requirements panel. Detection uses explicit observable ownership markers and structure, without dependence on LSSM globals or stores. MissionChief and LSSM can both use the generic `.alert-missing-vehicles` presentation class, so that shared class alone is never treated as LSSM ownership; the active LSSM component must expose a marker such as `data-raw-html`.
 
 ## Lifecycle invariants
 
@@ -159,12 +159,14 @@ When an active LSSM enhanced-missing-vehicles panel is detected, the Toolkit doe
 20. Both Toolkit/LSSM load orders.
 21. Desktop table and Tablet/iOS responsive-card contracts.
 22. Feature disable and runtime-owned teardown.
+23. MissionChief native missing alert using the shared presentation class without LSSM ownership metadata.
 
 ## Validation status
 
-The v4.15.0 candidate has passed:
+The v4.15.1 candidate must pass:
 
 - executable parser, calculator and lifecycle fixtures;
+- MissionChief-native versus LSSM ownership fixtures;
 - JavaScript syntax validation;
 - canonical userscript validation;
 - code-integrity audit;
@@ -174,4 +176,4 @@ The v4.15.0 candidate has passed:
 
 ## Release gate
 
-Production publication remains prohibited until PR #134 is review-ready, all pull-request workflows are green, the branch is merged through the guarded repository process, and `/release-toolkit 4.15.0 RELEASE` completes successfully.
+Production publication remains prohibited until PR #140 is review-ready, all pull-request workflows are green, the branch is merged through the guarded repository process, and `/release-toolkit 4.15.1 RELEASE` completes successfully.

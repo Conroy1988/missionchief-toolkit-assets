@@ -22607,7 +22607,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsSafeDiagnostic(value, limit = 600) {
-        let text = String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+        let text = Array.from(String(value ?? ''), ch => { const code = ch.charCodeAt(0); return code < 32 || code === 127 ? ' ' : ch; }).join('').replace(/\s+/g, ' ').trim();
         text = text
             .replace(/https?:\/\/(?:discord(?:app)?\.com\/api\/webhooks|[^\s/]+\/webhooks)\/\S+/gi, '[redacted webhook]')
             .replace(/\b(?:csrf|authenticity|authorization|session|cookie|token|password|secret|api[_-]?key)\b\s*[:=]\s*[^\s,;]+/gi, match => `${match.split(/[:=]/)[0]}: [redacted]`)

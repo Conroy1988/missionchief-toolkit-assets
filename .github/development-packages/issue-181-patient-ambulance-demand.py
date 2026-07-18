@@ -569,8 +569,8 @@ RUNTIME_TEST.write_text(runtime, encoding="utf-8")
 contract = CONTRACT_TEST.read_text(encoding="utf-8")
 contract = replace_once(
     contract,
-    '        "function missionRequirementsParseText(rawText, group = 'vehicles')",',
-    '        "function missionRequirementsParseText(rawText, group = 'vehicles')",\n        "function missionRequirementsParseSource(source)",\n        "function missionRequirementsPatientCount(candidate)",\n        "function missionRequirementsPatientState(record, now = Date.now())",\n        "function missionRequirementsReconcilePatientDemand(parsed, patientState)",\n        "MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS = 1400",',
+    '        "function missionRequirementsParseText(rawText, group = \'vehicles\')",',
+    '        "function missionRequirementsParseText(rawText, group = \'vehicles\')",\n        "function missionRequirementsParseSource(source)",\n        "function missionRequirementsPatientCount(candidate)",\n        "function missionRequirementsPatientState(record, now = Date.now())",\n        "function missionRequirementsReconcilePatientDemand(parsed, patientState)",\n        "MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS = 1400",',
     "patient contract markers",
 )
 contract = replace_once(

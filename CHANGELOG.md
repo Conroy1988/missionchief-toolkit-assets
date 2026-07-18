@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.15.3] - 2026-07-18
+
+### Fixed
+- Mission Requirements now has one primary top-level runtime owner, preventing same-origin mission frames from mounting a second identical panel.
+- Parent and frame representations of the same MissionChief mission are deduplicated by stable mission identity before panel creation.
+- Existing Toolkit panels are adopted at the concrete MissionChief host and any stale duplicate panels are removed before observers are attached.
+
+### Compatibility
+- MissionChief remains the sole mission-window, requirements, selection and en-route authority; LSSM remains optional and is used only for explicit duplicate-equivalent detection.
+- Desktop, Tablet and iOS normal-flow layouts and the seven equal interface systems are unchanged.
+
+
 ## [4.15.2] - 2026-07-18
 
 ### Fixed

@@ -61,6 +61,10 @@ class FakeElement {
         this.attributes.set(name, String(value));
         if (name === 'id') this.id = String(value);
     }
+    removeAttribute(name) {
+        this.attributes.delete(name);
+        if (name === 'id') this.id = '';
+    }
     getAttribute(name) {
         if (name === 'data-raw-html' && this._lssmActive) {
             return '<div data-requirement-type="personnel">Missing Personnel</div>';
@@ -222,6 +226,8 @@ this.__mcmsRequirements = {
     panelHtml: missionRequirementsPanelHtml,
     documentCss: missionRequirementsDocumentCss,
     windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
     scan: scanMissionRequirementsWindows,
     clear: clearMissionRequirementsPanels,
     observeDocument: observeMissionRequirementsDocument,
@@ -480,6 +486,58 @@ assert.strictEqual(policeResolved.covered, true, 'two selected police cars cover
 policeCandidate.root.selectedUnits = [secondPolice.vehicle];
 policeResolved = api.resolve(policeCandidate, policeParsed)[0];
 assert.strictEqual(policeResolved.selectedMin, 1, 'deselecting one police car updates Selected back to one');
+
+const canonicalDoc = new FakeDocument();
+canonicalDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/7001' } };
+const canonicalCandidate = makeMissionCandidate(canonicalDoc, '1 Ambulance');
+canonicalCandidate.missionId = 7001;
+const stalePanelA = canonicalDoc.createElement('section');
+stalePanelA.id = 'mc-map-command-toolkit-mission-requirements';
+canonicalCandidate.root.insertBefore(stalePanelA, canonicalCandidate.source);
+const stalePanelB = canonicalDoc.createElement('section');
+stalePanelB.id = 'mc-map-command-toolkit-mission-requirements';
+canonicalCandidate.root.insertBefore(stalePanelB, canonicalCandidate.source);
+candidates = [canonicalCandidate];
+api.scan();
+flushAnimationFrames();
+const canonicalPanels = canonicalCandidate.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements');
+assert.strictEqual(canonicalPanels.length, 1, 'pre-existing Toolkit duplicates collapse to one canonical host panel');
+assert.strictEqual(api.records.get(canonicalCandidate.source).panel, stalePanelA, 'the first connected host panel is adopted rather than recreated');
+api.clear();
+
+const mirrorDocA = new FakeDocument();
+const mirrorDocB = new FakeDocument();
+mirrorDocA.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/8001' } };
+mirrorDocB.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/8001' } };
+const mirrorCandidateA = makeMissionCandidate(mirrorDocA, '1 Police Sergeant');
+const mirrorCandidateB = makeMissionCandidate(mirrorDocB, '1 Police Sergeant');
+mirrorCandidateA.missionId = 8001;
+mirrorCandidateB.missionId = 8001;
+candidates = [mirrorCandidateA, mirrorCandidateB];
+documentContexts = [mirrorDocA, mirrorDocB];
+assert.strictEqual(api.windowCandidates().length, 1, 'parent and frame mirrors of one MissionChief mission deduplicate by mission identity');
+api.scan();
+flushAnimationFrames();
+assert.strictEqual(api.records.size, 1, 'mirrored MissionChief documents create one requirements record');
+assert.strictEqual(
+    mirrorCandidateA.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements').length
+    + mirrorCandidateB.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements').length,
+    1,
+    'mirrored MissionChief documents render one visible requirements panel'
+);
+api.clear();
+documentContexts = [];
+
+const childDoc = new FakeDocument();
+childDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/9001' } };
+const childCandidate = makeMissionCandidate(childDoc, '1 Ambulance');
+candidates = [childCandidate];
+context.pageWindow.top = {};
+assert.strictEqual(api.primaryRuntime(), false, 'child-frame Toolkit runtime is not the Mission Requirements owner');
+api.scan();
+flushAnimationFrames();
+assert.strictEqual(api.records.size, 0, 'child-frame runtime does not mount a competing requirements panel');
+delete context.pageWindow.top;
 
 const lifecycleDoc = new FakeDocument();
 lifecycleDoc.defaultView = { MutationObserver: FakeMutationObserver };

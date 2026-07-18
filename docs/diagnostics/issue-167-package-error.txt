@@ -1,0 +1,12 @@
+Return code: 1
+
+--- STDOUT ---
+
+--- STDERR ---
+Traceback (most recent call last):
+  File "/tmp/mcms-issue-167-ypl5jb4y/repo/.github/development-packages/issue-167-live-capacity.py", line 362, in <module>
+    source = replace_once(
+             ^^^^^^^^^^^^^
+  File "/tmp/mcms-issue-167-ypl5jb4y/repo/.github/development-packages/issue-167-live-capacity.py", line 20, in replace_once
+    raise AssertionError(f"{label}: expected one match, found {count}")
+AssertionError: on-site mutation observation: expected one match, found 2

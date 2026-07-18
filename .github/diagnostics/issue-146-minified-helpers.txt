@@ -1,0 +1,10 @@
+Issue #146 minified ownership helpers
+====================================
+
+Package return code: 1
+
+MISSING:     function missionRequirementsPrimaryRuntime() {
+
+---
+
+MISSING:     function missionRequirementsHostPanels(source) {

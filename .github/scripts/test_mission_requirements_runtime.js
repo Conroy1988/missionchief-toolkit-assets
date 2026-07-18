@@ -152,6 +152,7 @@ class FakeMutationObserver {
 }
 
 let candidates = [];
+let documentContexts = [];
 let animationQueue = [];
 let nextAnimationId = 1;
 const trackedObservers = new Set();
@@ -193,7 +194,7 @@ const context = {
     runtimeUntrackObserver: observer => { observer?.disconnect?.(); trackedObservers.delete(observer); },
     runtimeListen: (target, type, listener, options) => { listenedEvents.push({ target, type, listener, options }); },
     runtimeOnCleanup: () => {},
-    transportSweepDocumentContexts: () => Array.from(new Set(candidates.map(candidate => candidate.root?.ownerDocument).filter(Boolean))).map(doc => ({ doc })),
+    transportSweepDocumentContexts: () => Array.from(new Set([...(documentContexts || []), ...candidates.map(candidate => candidate.root?.ownerDocument).filter(Boolean)])).map(doc => ({ doc })),
     missionValueWindowCandidates: () => candidates,
     mutationTouchesSelector: () => false,
     setInnerHtmlIfChanged: (element, html) => { if (element.innerHTML !== html) element.innerHTML = html; },
@@ -205,12 +206,14 @@ vm.runInContext(
 this.__mcmsRequirements = {
     definitions: MISSION_REQUIREMENT_DEFINITIONS,
     parseText: missionRequirementsParseText,
+    parseSource: missionRequirementsParseSource,
     capacity: missionRequirementsCapacity,
     capacityText: missionRequirementsCapacityText,
     coverageRow: missionRequirementsCoverageRow,
     staffCapacity: missionRequirementsStaffCapacity,
     equipmentTypes: missionRequirementsEquipmentTypes,
     vehicleId: missionRequirementsVehicleId,
+    vehicleType: missionRequirementsVehicleType,
     collectUnits: missionRequirementsCollectUnits,
     aggregate: missionRequirementsAggregate,
     resolve: missionRequirementsResolve,
@@ -218,6 +221,7 @@ this.__mcmsRequirements = {
     lssmActive: missionRequirementsLssmActive,
     panelHtml: missionRequirementsPanelHtml,
     documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
     scan: scanMissionRequirementsWindows,
     clear: clearMissionRequirementsPanels,
     observeDocument: observeMissionRequirementsDocument,
@@ -353,12 +357,13 @@ function makeVehicleElement(doc, vehicleId, typeId, options = {}) {
     const row = new FakeElement('tr', doc);
     const vehicle = new FakeElement('input', doc);
     vehicle.value = String(vehicleId);
-    vehicle.setAttribute('vehicle_type_id', String(typeId));
+    if (options.typeOnRow) row.setAttribute('vehicle_type_id', String(typeId));
+    else vehicle.setAttribute('vehicle_type_id', String(typeId));
     if (options.tractiveId !== undefined) vehicle.setAttribute('tractive_vehicle_id', String(options.tractiveId));
     if (options.staff !== undefined) vehicle.setAttribute('data-current-personnel', String(options.staff));
     if (options.equipment) row.setAttribute('data-equipment-types', options.equipment.join(','));
     vehicle.closestMap.set('tr', row);
-    row.queryHandler = selector => selector === '[vehicle_type_id]' ? vehicle : null;
+    row.queryHandler = selector => selector.includes('vehicle_type_id') ? (options.typeOnRow ? null : vehicle) : null;
     row.queryAllHandler = () => [];
     return { row, vehicle };
 }
@@ -416,6 +421,65 @@ assert.strictEqual(resolved.covered, true, 'selected plus en-route capacity cove
 unitCandidate.root.enRouteRows = [];
 resolved = api.resolve(unitCandidate, ambulanceParsed)[0];
 assert.strictEqual(resolved.enRouteMin, 0, 'arriving or removed en-route row is reconciled');
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+assert(publicOrderRows.every(row => row.uncertain && row.selectedText === '?' && row.enRouteText === '?'), 'unmapped role capacity remains safely uncertain');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+const directDoc = new FakeDocument();
+directDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const directCandidate = makeMissionCandidate(directDoc, '2 Police cars');
+candidates = [];
+documentContexts = [directDoc];
+const directCandidates = api.windowCandidates();
+assert.strictEqual(directCandidates.length, 1, 'Mission Requirements discovers MissionChief #missing_text without Mission Value');
+assert.strictEqual(directCandidates[0].source, directCandidate.source, 'direct discovery retains the native MissionChief source');
+documentContexts = [];
+
+const policeDoc = new FakeDocument();
+policeDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const policeCandidate = makeMissionCandidate(policeDoc, '2 Police cars');
+const firstPolice = makeVehicleElement(policeDoc, 301, 8, { typeOnRow: true });
+const duplicateFirstPolice = makeVehicleElement(policeDoc, 301, 8, { typeOnRow: true });
+const secondPolice = makeVehicleElement(policeDoc, 302, 8, { typeOnRow: true });
+assert.strictEqual(api.vehicleType(firstPolice.vehicle), 8, 'vehicle type is read from the closest MissionChief row');
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-car');
+const policeParsed = {
+    requirements: [{ key: 'police-car', requirement: 'Police Car', missing: 2, group: 'vehicles', definition: policeDefinition }],
+    unresolved: []
+};
+policeCandidate.root.selectedUnits = [firstPolice.vehicle, duplicateFirstPolice.vehicle];
+let policeResolved = api.resolve(policeCandidate, policeParsed)[0];
+assert.strictEqual(policeResolved.selectedMin, 1, 'duplicate normal/occupied representation of one vehicle counts once');
+assert.strictEqual(policeResolved.covered, false, 'one selected police car does not cover two required');
+policeCandidate.root.selectedUnits = [firstPolice.vehicle, duplicateFirstPolice.vehicle, secondPolice.vehicle];
+policeResolved = api.resolve(policeCandidate, policeParsed)[0];
+assert.strictEqual(policeResolved.selectedMin, 2, 'selecting a second unique police car updates Selected to two');
+assert.strictEqual(policeResolved.covered, true, 'two selected police cars cover two required');
+policeCandidate.root.selectedUnits = [secondPolice.vehicle];
+policeResolved = api.resolve(policeCandidate, policeParsed)[0];
+assert.strictEqual(policeResolved.selectedMin, 1, 'deselecting one police car updates Selected back to one');
 
 const lifecycleDoc = new FakeDocument();
 lifecycleDoc.defaultView = { MutationObserver: FakeMutationObserver };

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.1
+// @version      4.15.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.1',
+        version: '4.15.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -941,7 +941,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.15.1',
+        guideVersion: '4.15.2',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -21925,6 +21925,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         { key: 'eod-heavy', label: 'EOD Heavy Equipment Vehicle', aliases: ['EOD Heavy Equipment Vehicle', 'EOD Heavy Equipment Vehicles'], types: [112] },
         { key: 'marine-eod-response', label: 'Marine EOD Response Vehicle', aliases: ['Marine EOD Response Vehicle', 'Marine EOD Response Vehicles'], types: [113] },
         { key: 'marine-eod-equipment', label: 'Marine EOD Equipment Van', aliases: ['Marine EOD Equipment Van', 'Marine EOD Equipment Vans'], types: [114] },
+        // MissionChief exposes these roles in native missing-personnel text, but does not
+        // currently expose a trustworthy role-specific selected-capacity contract here.
+        // Parse and display them without making false coverage claims.
+        { key: 'public-order-level-1', label: 'Level 1 Public Order Officer', aliases: ['Level 1 Public Order Officer', 'Level 1 Public Order Officers'], group: 'staff', types: [], countable: false },
+        { key: 'public-order-level-2', label: 'Level 2 Public Order Officer', aliases: ['Level 2 Public Order Officer', 'Level 2 Public Order Officers'], group: 'staff', types: [], countable: false },
+        { key: 'police-medic-personnel', label: 'Police Medic', aliases: ['Police Medic', 'Police Medics'], group: 'staff', types: [], countable: false },
+        { key: 'police-sergeant-personnel', label: 'Police Sergeant', aliases: ['Police Sergeant', 'Police Sergeants'], group: 'staff', types: [], countable: false },
+        { key: 'police-inspector-personnel', label: 'Police Inspector', aliases: ['Police Inspector', 'Police Inspectors'], group: 'staff', types: [], countable: false },
+        { key: 'search-advisor-personnel', label: 'Search Advisor', aliases: ['Search Advisor', 'Search Advisors'], group: 'staff', types: [], countable: false },
+        { key: 'sar-commander-personnel', label: 'SAR Commander', aliases: ['SAR Commander', 'SAR Commanders'], group: 'staff', types: [], countable: false },
         { key: 'firefighters', label: 'Firefighters', aliases: ['more firefighter', 'more firefighters', 'Firefighter', 'Firefighters'], group: 'staff', types: [0, 1, 2, 3, 4, 6, 7, 14, 15, 16, 17, 18, 23, 26, 35, 36, 37, 38, 39, 40] },
         { key: 'armed-personnel', label: 'Armed Response Personnel', aliases: ['Armed Response Personnel (In Armed Vehicles)', 'Armed Response Personnel'], group: 'staff', types: [13, 25, 52, 56, 82] },
         { key: 'police-officers', label: 'Police Officers', aliases: ['Police Officer', 'Police Officers'], group: 'staff', types: [8, 12, 13, 19, 24, 25, 51, 52, 53, 55, 56, 82, 116] },
@@ -22014,45 +22024,74 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsFindDefinitionMatch(text, definition) {
+        const aliases = Array.from(new Set([definition.label, ...(definition.aliases || [])]))
+            .filter(Boolean)
+            .sort((a, b) => b.length - a.length)
+            .map(missionRequirementsEscapeRegex);
+        if (!aliases.length) return null;
         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
-        const aliases = Array.from(definition.aliases || []).sort((left, right) => right.length - left.length);
-        for (const alias of aliases) {
-            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\s+/gu, '\\s+');
-            const before = new RegExp(`(^|[,;]\\s*)${numberPattern}\\s*x?\\s+(${labelPattern})(?=\\s*(?:[,;]|$))`, 'iu');
-            const beforeMatch = before.exec(text);
-            if (beforeMatch) return { match: beforeMatch[0], index: beforeMatch.index, missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
-            const after = new RegExp(`(^|[,;]\\s*)(${labelPattern})\\s*:\\s*${numberPattern}(?=\\s*(?:[,;]|$))`, 'iu');
-            const afterMatch = after.exec(text);
-            if (afterMatch) return { match: afterMatch[0], index: afterMatch.index, missing: missionRequirementsNumber(afterMatch[3]), label: afterMatch[2] };
-        }
-        return null;
+        const labelPattern = aliases.join('|');
+        const prefix = '(^|[,;]\\s*)';
+        const suffix = '(?=\\s*(?:[,;]|$))';
+        const before = new RegExp(
+            `${prefix}\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${numberPattern}\\s*(?:x\\s*)?(${labelPattern})${suffix}`,
+            'iu'
+        );
+        const after = new RegExp(
+            `${prefix}\\s*(${labelPattern})\\s*(?::|x)\\s*${numberPattern}${suffix}`,
+            'iu'
+        );
+        const beforeMatch = before.exec(text);
+        const afterMatch = after.exec(text);
+        const candidates = [];
+        if (beforeMatch) candidates.push({
+            index: beforeMatch.index,
+            length: beforeMatch[0].length,
+            missing: missionRequirementsNumber(beforeMatch[2]),
+            label: beforeMatch[3]
+        });
+        if (afterMatch) candidates.push({
+            index: afterMatch.index,
+            length: afterMatch[0].length,
+            missing: missionRequirementsNumber(afterMatch[3]),
+            label: afterMatch[2]
+        });
+        return candidates.sort((a, b) => a.index - b.index || b.length - a.length)[0] || null;
     }
 
     function missionRequirementsParseText(rawText, group = 'vehicles') {
-        let remaining = String(rawText || '')
-            .replace(/\r\n?/gu, '\n')
-            .replace(/\n+/gu, '; ')
-            .replace(/\s+/gu, ' ')
+        const normalized = String(rawText ?? '')
+            .replace(/\r/g, '')
+            .replace(/\n+/g, '; ')
+            .replace(/\s+/g, ' ')
             .trim();
+        if (!normalized) return { requirements: [], remaining: '' };
+        let working = normalized;
         const requirements = [];
-        const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => definition.group === group);
-        while (remaining) {
-            const matches = definitions
-                .map(definition => ({ definition, found: missionRequirementsFindDefinitionMatch(remaining, definition) }))
-                .filter(candidate => candidate.found && candidate.found.missing > 0)
-                .sort((left, right) => left.found.index - right.found.index || right.found.match.length - left.found.match.length);
-            if (!matches.length) break;
-            const { definition, found } = matches[0];
+        while (true) {
+            let best = null;
+            for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
+                if ((definition.group || 'vehicles') !== group) continue;
+                const found = missionRequirementsFindDefinitionMatch(working, definition);
+                if (!found) continue;
+                if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
+                    best = { definition, found };
+                }
+            }
+            if (!best) break;
             requirements.push({
-                key: definition.key,
-                requirement: definition.label || found.label,
-                missing: found.missing,
+                key: best.definition.key,
+                requirement: best.definition.label,
+                missing: best.found.missing,
                 group,
-                definition
+                definition: best.definition,
+                sourceIndex: best.found.index
             });
-            remaining = `${remaining.slice(0, found.index)} ${remaining.slice(found.index + found.match.length)}`;
+            working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
         }
-        return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
+        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
+        requirements.forEach(requirement => { delete requirement.sourceIndex; });
+        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
     }
 
     function missionRequirementsElementText(element) {
@@ -22063,39 +22102,149 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
     }
 
+    function missionRequirementsNormalizeGroup(value, fallback = 'vehicles') {
+        const normalized = String(value || '').trim().toLowerCase();
+        if (normalized === 'personnel' || normalized === 'staff') return 'staff';
+        if (normalized === 'other' || normalized === 'resource' || normalized === 'resources') return 'other';
+        if (normalized === 'vehicle' || normalized === 'vehicles') return 'vehicles';
+        return fallback;
+    }
+
+    function missionRequirementsInferGroup(text, fallback = 'vehicles') {
+        const normalized = String(text || '').toLowerCase();
+        if (/\b(?:missing|required)\s+(?:personnel|staff)\b/.test(normalized)) return 'staff';
+        if (/\b(?:officers?|firefighters?|paramedics?|technicians?|commanders?|sergeants?|inspectors?|medics?|advisors?)\b/.test(normalized)) return 'staff';
+        if (/\b(?:litres?|liters?|water|foam|pumping\s+capacity|resources?)\b/.test(normalized)) return 'other';
+        if (/\b(?:missing|required)\s+vehicles?\b/.test(normalized)) return 'vehicles';
+        return fallback;
+    }
+
+    function missionRequirementsStripGroupHeading(text) {
+        return String(text || '')
+            .replace(/^\s*(?:missing|required)\s+(?:vehicles?|personnel|staff|other|resources?)\s*:?\s*/iu, '')
+            .trim();
+    }
+
+    function missionRequirementsSplitTextSections(rawText, fallback = 'vehicles') {
+        const text = String(rawText || '').replace(/\r/g, '').trim();
+        if (!text) return [];
+        const heading = /(?:^|[\n;])\s*(?:missing|required)\s+(vehicles?|personnel|staff|other|resources?)\s*:?\s*/giu;
+        const matches = Array.from(text.matchAll(heading));
+        if (!matches.length) return [{ group: missionRequirementsInferGroup(text, fallback), text }];
+        const sections = [];
+        const prefix = text.slice(0, matches[0].index).trim();
+        if (prefix) sections.push({ group: missionRequirementsInferGroup(prefix, fallback), text: prefix });
+        matches.forEach((match, index) => {
+            const start = match.index + match[0].length;
+            const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+            const sectionText = text.slice(start, end).trim();
+            if (!sectionText) return;
+            sections.push({ group: missionRequirementsNormalizeGroup(match[1], fallback), text: sectionText });
+        });
+        return sections;
+    }
+
+    function missionRequirementsParseGenericText(rawText, group) {
+        let working = String(rawText || '').replace(/\r/g, '').replace(/\n+/g, '; ').trim();
+        if (!working) return { requirements: [], remaining: '' };
+        const number = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
+        const patterns = [
+            {
+                expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'),
+                quantity: 2,
+                label: 3
+            },
+            {
+                expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'),
+                quantity: 3,
+                label: 2
+            }
+        ];
+        const requirements = [];
+        let serial = 0;
+        for (const pattern of patterns) {
+            pattern.expression.lastIndex = 0;
+            let match;
+            while ((match = pattern.expression.exec(working))) {
+                const missing = missionRequirementsNumber(match[pattern.quantity]);
+                const label = String(match[pattern.label] || '')
+                    .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!missing || !label) continue;
+                const sourceIndex = match.index;
+                const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement';
+                requirements.push({
+                    key: `unmapped-${slug}-${serial++}`,
+                    requirement: label,
+                    missing,
+                    group,
+                    definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true },
+                    sourceIndex
+                });
+                working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`;
+                pattern.expression.lastIndex = sourceIndex + match[0].length;
+            }
+        }
+        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
+        requirements.forEach(requirement => { delete requirement.sourceIndex; });
+        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
+    }
+
     function missionRequirementsParseSource(source) {
-        if (!source) return { requirements: [], unresolved: [] };
         const requirements = [];
         const unresolved = [];
-        const allGroups = Array.from(source.querySelectorAll?.('[data-requirement-type]') || []);
-        const groupElements = allGroups.filter(element => !allGroups.some(other => other !== element && other.contains?.(element)));
-        const parseGroupElement = element => {
-            const rawType = String(element.getAttribute('data-requirement-type') || 'vehicles').toLowerCase();
-            const group = rawType === 'personnel' || rawType === 'staff' ? 'staff' : rawType === 'other' ? 'other' : 'vehicles';
-            const heading = String(element.querySelector?.('b')?.textContent || '').trim();
-            const raw = missionRequirementsElementText(element).replace(heading, ' ').trim();
-            const parsed = missionRequirementsParseText(raw, group);
+        const parseSection = (rawText, requestedGroup) => {
+            const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
+            const cleaned = missionRequirementsStripGroupHeading(rawText);
+            if (!cleaned) return;
+            const parsed = missionRequirementsParseText(cleaned, group);
             requirements.push(...parsed.requirements);
-            if (parsed.remaining) unresolved.push({ group, text: parsed.remaining });
+            const generic = missionRequirementsParseGenericText(parsed.remaining, group);
+            requirements.push(...generic.requirements);
+            if (generic.remaining) unresolved.push({ group, text: generic.remaining });
         };
-        if (groupElements.length) groupElements.forEach(parseGroupElement);
-        else {
+
+        const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []);
+        const groupElements = allGroups.filter(element => {
+            const closest = element.closest?.('#missing_text');
+            return !closest || closest === source;
+        });
+        if (groupElements.length) {
+            for (const element of groupElements) {
+                const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
+                parseSection(missionRequirementsElementText(element), rawGroup);
+            }
+        } else {
             const raw = missionRequirementsElementText(source);
-            const parsed = missionRequirementsParseText(raw, 'vehicles');
-            requirements.push(...parsed.requirements);
-            if (parsed.remaining) unresolved.push({ group: 'vehicles', text: parsed.remaining });
+            for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
         }
         return { requirements, unresolved };
     }
 
     function missionRequirementsVehicleType(element) {
-        if (!element) return -1;
-        const direct = element.getAttribute?.('vehicle_type_id') ?? element.dataset?.vehicleTypeId ?? element.dataset?.vehicle_type_id;
-        const directNumber = Number.parseInt(direct, 10);
-        if (Number.isFinite(directNumber) && directNumber >= 0) return directNumber;
-        const descendant = element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
-        if (!descendant || descendant === element) return -1;
-        return missionRequirementsVehicleType(descendant);
+        const scopes = [];
+        const addScope = scope => {
+            if (scope && !scopes.includes(scope)) scopes.push(scope);
+        };
+        addScope(element);
+        addScope(element?.closest?.('tr'));
+        addScope(element?.closest?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]'));
+        const read = scope => missionRequirementsOptionalNumber(
+            scope?.getAttribute?.('vehicle_type_id')
+            ?? scope?.getAttribute?.('data-vehicle-type-id')
+            ?? scope?.getAttribute?.('data-vehicle_type_id')
+            ?? scope?.dataset?.vehicleTypeId
+            ?? scope?.dataset?.vehicle_type_id
+        );
+        for (const scope of scopes) {
+            const direct = read(scope);
+            if (direct !== null && direct >= 0) return direct;
+            const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
+            const nestedType = read(nested);
+            if (nestedType !== null && nestedType >= 0) return nestedType;
+        }
+        return -1;
     }
 
     function missionRequirementsVehicleId(element) {
@@ -22170,39 +22319,72 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsCollectUnits(candidate, mode) {
-        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
-        if (!root?.querySelectorAll) return [];
+        const root = candidate?.root;
+        const doc = candidate?.source?.ownerDocument || root?.ownerDocument;
+        if (!root?.querySelectorAll && !doc?.querySelectorAll) return [];
         const selector = mode === 'selected'
-            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox[vehicle_type_id]:checked'
+            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked'
             : '#mission_vehicle_driving tbody tr';
-        const elements = Array.from(new Set(Array.from(root.querySelectorAll(selector))));
-        const units = elements.map(element => {
-            const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id]') || element);
+        const elements = [];
+        const seenElements = new Set();
+        const missionScopes = Array.from(new Set([root, candidate?.mount].filter(scope => scope?.querySelectorAll)));
+        const scopes = missionScopes.length ? missionScopes : [doc].filter(scope => scope?.querySelectorAll);
+        for (const scope of scopes) {
+            for (const element of Array.from(scope.querySelectorAll?.(selector) || [])) {
+                if (seenElements.has(element)) continue;
+                seenElements.add(element);
+                elements.push(element);
+            }
+        }
+
+        const units = new Map();
+        elements.forEach((element, index) => {
+            const row = element.matches?.('tr') ? element : element.closest?.('tr');
+            const vehicleElement = mode === 'selected'
+                ? element
+                : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]') || element);
+            const typeId = missionRequirementsVehicleType(vehicleElement);
+            if (typeId < 0) return;
             const vehicleId = missionRequirementsVehicleId(vehicleElement);
-            const tractiveId = Number.parseInt(vehicleElement.getAttribute?.('tractive_vehicle_id') ?? vehicleElement.dataset?.tractiveVehicleId ?? '-1', 10);
-            return {
-                element,
-                vehicleElement,
-                typeId: missionRequirementsVehicleType(vehicleElement),
+            const tractiveId = missionRequirementsOptionalNumber(
+                vehicleElement?.getAttribute?.('tractive_vehicle_id')
+                ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id')
+                ?? row?.getAttribute?.('tractive_vehicle_id')
+                ?? row?.getAttribute?.('data-tractive-vehicle-id')
+                ?? row?.dataset?.tractiveVehicleId
+            );
+            const trailerId = missionRequirementsOptionalNumber(
+                vehicleElement?.getAttribute?.('trailer_id')
+                ?? vehicleElement?.getAttribute?.('data-trailer-id')
+                ?? row?.getAttribute?.('trailer_id')
+                ?? row?.getAttribute?.('data-trailer-id')
+                ?? row?.dataset?.trailerId
+            );
+            let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`;
+            const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId;
+            if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`;
+            const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey;
+            const unit = {
+                typeId,
                 vehicleId,
-                tractiveId: Number.isFinite(tractiveId) ? tractiveId : -1,
-                equipment: missionRequirementsEquipmentTypes(element),
-                staff: missionRequirementsStaffCapacity(element),
-                contributionKey: vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${elements.indexOf(element)}`
+                tractiveId,
+                equipment: missionRequirementsEquipmentTypes(vehicleElement),
+                staff: missionRequirementsStaffCapacity(vehicleElement),
+                contributionKey
             };
+            const existing = units.get(identityKey);
+            if (!existing) {
+                units.set(identityKey, unit);
+                return;
+            }
+            if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId;
+            for (const equipment of unit.equipment) existing.equipment.add(equipment);
+            if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff;
+            if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) {
+                existing.contributionKey = unit.contributionKey;
+            }
         });
-        const pairKeys = new Map();
-        units.forEach(unit => {
-            if (unit.vehicleId < 0 || unit.tractiveId < 0) return;
-            const pair = [unit.vehicleId, unit.tractiveId].sort((a, b) => a - b);
-            const key = `pair:${pair[0]}:${pair[1]}`;
-            pairKeys.set(unit.vehicleId, key);
-            pairKeys.set(unit.tractiveId, key);
-        });
-        units.forEach(unit => {
-            if (unit.vehicleId >= 0 && pairKeys.has(unit.vehicleId)) unit.contributionKey = pairKeys.get(unit.vehicleId);
-        });
-        return units;
+        return Array.from(units.values());
     }
 
     function missionRequirementsMissionTypeId(candidate) {
@@ -22287,10 +22469,34 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return node ? missionRequirementsNumber(node.textContent) : null;
     }
 
+    function missionRequirementsUnknownCoverageRow(requirement) {
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+            ...requirement,
+            missing,
+            missingText: missing.toLocaleString('en-GB'),
+            selectedMin: 0,
+            selectedMax: null,
+            selectedKnown: false,
+            selectedText: '?',
+            enRouteMin: 0,
+            enRouteMax: null,
+            enRouteKnown: false,
+            enRouteText: '?',
+            stillNeededMin: 0,
+            stillNeededMax: missing,
+            stillNeededText: '?',
+            covered: false,
+            definitelyOpen: false,
+            uncertain: true
+        };
+    }
+
     function missionRequirementsResolve(candidate, parsed) {
         const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
         const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
         return parsed.requirements.map(requirement => {
+            if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
             const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
             if (condition !== true) {
                 const unresolvedRow = missionRequirementsCoverageRow(
@@ -22350,14 +22556,55 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsSourceForCandidate(candidate) {
-        for (const scope of [candidate?.root, candidate?.mount]) {
-            try {
-                if (scope?.matches?.('#missing_text')) return scope;
-                const source = scope?.querySelector?.('#missing_text');
-                if (source) return source;
-            } catch (err) {}
+        if (candidate?.source && candidate.source.isConnected !== false) return candidate.source;
+        const root = candidate?.root;
+        if (!root?.querySelector) return null;
+        if (root.matches?.('#missing_text')) return root;
+        return root.querySelector('#missing_text');
+    }
+
+    function missionRequirementsCandidateFromSource(source) {
+        if (!source?.ownerDocument || source.isConnected === false) return null;
+        const rootSelector = [
+            '#mission_form',
+            'form[action*="/missions/"]',
+            '#mission_content',
+            '#lightbox_box',
+            '#lightbox',
+            '.lightbox_content',
+            '.modal',
+            '[role="dialog"]',
+            '.ui-dialog'
+        ].join(', ');
+        const root = source.closest?.(rootSelector) || source.parentNode || source.ownerDocument.body;
+        if (!root) return null;
+        return { root, mount: root, source, directMissionRequirements: true };
+    }
+
+    function missionRequirementsWindowCandidates() {
+        const candidates = [];
+        const seenSources = new Set();
+        const add = candidate => {
+            const source = missionRequirementsSourceForCandidate(candidate);
+            if (!source || source.isConnected === false || seenSources.has(source)) return;
+            seenSources.add(source);
+            candidates.push({ ...candidate, source });
+        };
+        for (const candidate of missionValueWindowCandidates()) add(candidate);
+        for (const context of transportSweepDocumentContexts()) {
+            const doc = context?.doc;
+            if (!doc?.querySelectorAll) continue;
+            for (const source of Array.from(doc.querySelectorAll('#missing_text'))) {
+                add(missionRequirementsCandidateFromSource(source));
+            }
         }
-        return null;
+        return candidates.sort((a, b) => {
+            const aExisting = missionRequirementsRecords.has(a.source) ? 2 : 0;
+            const bExisting = missionRequirementsRecords.has(b.source) ? 2 : 0;
+            const aVisible = isVisible(a.source) ? 1 : 0;
+            const bVisible = isVisible(b.source) ? 1 : 0;
+            return (bExisting + bVisible) - (aExisting + aVisible);
+        });
     }
 
     function missionRequirementsDocumentCss() {
@@ -22502,7 +22749,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const panel = record?.panel;
         const target = mutation?.target;
         if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
-        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [data-equipment-type], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
         return mutationTouchesSelector(mutation, selector);
     }
 
@@ -22546,7 +22793,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 subtree: true,
                 characterData: true,
                 attributes: true,
-                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'sortvalue']
+                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue']
             });
         }
         missionRequirementsRecords.set(source, record);
@@ -22586,20 +22833,22 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function scanMissionRequirementsWindows() {
+        if (runtime.destroyed) return;
         if (!state.missionRequirements) {
             clearMissionRequirementsPanels();
             return;
         }
         const activeSources = new Set();
         const activeDocuments = new WeakSet();
-        for (const candidate of missionValueWindowCandidates()) {
+        for (const candidate of missionRequirementsWindowCandidates()) {
             const source = missionRequirementsSourceForCandidate(candidate);
-            if (!source || !source.isConnected) continue;
-            const doc = source.ownerDocument || document;
-            if (activeDocuments.has(doc)) continue;
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
             if (missionRequirementsLssmActive(candidate, source)) {
                 missionRequirementsRemoveRecord(source);
-                activeDocuments.add(doc);
                 continue;
             }
             const raw = missionRequirementsElementText(source);
@@ -22607,12 +22856,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 missionRequirementsRemoveRecord(source);
                 continue;
             }
-            activeDocuments.add(doc);
             activeSources.add(source);
             missionRequirementsEnsureRecord(candidate, source);
         }
         for (const source of Array.from(missionRequirementsRecords.keys())) {
-            if (!activeSources.has(source) || !source.isConnected) missionRequirementsRemoveRecord(source);
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
         }
     }
 
@@ -22642,7 +22890,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }, true);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
         const view = doc.defaultView || pageWindow;
         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {

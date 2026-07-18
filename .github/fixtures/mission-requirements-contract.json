@@ -4,7 +4,12 @@
       "name": "simple singular vehicle requirement",
       "group": "vehicles",
       "input": "1 Ambulance",
-      "expected": [{"key": "ambulance", "missing": 1}],
+      "expected": [
+        {
+          "key": "ambulance",
+          "missing": 1
+        }
+      ],
       "remaining": ""
     },
     {
@@ -12,8 +17,14 @@
       "group": "vehicles",
       "input": "2 Fire engines\n1 Aerial Appliance Truck",
       "expected": [
-        {"key": "fire-engine", "missing": 2},
-        {"key": "aerial", "missing": 1}
+        {
+          "key": "fire-engine",
+          "missing": 2
+        },
+        {
+          "key": "aerial",
+          "missing": 1
+        }
       ],
       "remaining": ""
     },
@@ -21,28 +32,48 @@
       "name": "plural combined requirement",
       "group": "vehicles",
       "input": "3 Police Cars or Armed Response Vehicles (ARVs)",
-      "expected": [{"key": "police-or-arv", "missing": 3}],
+      "expected": [
+        {
+          "key": "police-or-arv",
+          "missing": 3
+        }
+      ],
       "remaining": ""
     },
     {
       "name": "colon quantity form",
       "group": "vehicles",
       "input": "Ambulances: 4",
-      "expected": [{"key": "ambulance", "missing": 4}],
+      "expected": [
+        {
+          "key": "ambulance",
+          "missing": 4
+        }
+      ],
       "remaining": ""
     },
     {
       "name": "personnel requirement",
       "group": "staff",
       "input": "6 Armed Response Personnel (In Armed Vehicles)",
-      "expected": [{"key": "armed-personnel", "missing": 6}],
+      "expected": [
+        {
+          "key": "armed-personnel",
+          "missing": 6
+        }
+      ],
       "remaining": ""
     },
     {
       "name": "resource requirement",
       "group": "other",
       "input": "2,500 litres of water",
-      "expected": [{"key": "water-resource", "missing": 2500}],
+      "expected": [
+        {
+          "key": "water-resource",
+          "missing": 2500
+        }
+      ],
       "remaining": ""
     },
     {
@@ -51,14 +82,70 @@
       "input": "2 Quantum Response Vans",
       "expected": [],
       "remaining": "2 Quantum Response Vans"
+    },
+    {
+      "name": "quantity immediately followed by x",
+      "group": "staff",
+      "input": "8x Level 1 Public Order Officer",
+      "expected": [
+        {
+          "key": "public-order-level-1",
+          "missing": 8
+        }
+      ],
+      "remaining": ""
+    },
+    {
+      "name": "leading x quantity",
+      "group": "staff",
+      "input": "x8 Level 1 Public Order Officer",
+      "expected": [
+        {
+          "key": "public-order-level-1",
+          "missing": 8
+        }
+      ],
+      "remaining": ""
+    },
+    {
+      "name": "label followed by x quantity",
+      "group": "staff",
+      "input": "Level 2 Public Order Officer x22",
+      "expected": [
+        {
+          "key": "public-order-level-2",
+          "missing": 22
+        }
+      ],
+      "remaining": ""
+    },
+    {
+      "name": "natural language minimum",
+      "group": "vehicles",
+      "input": "At least 2 Police cars",
+      "expected": [
+        {
+          "key": "police-car",
+          "missing": 2
+        }
+      ],
+      "remaining": ""
     }
   ],
   "coverageCases": [
     {
       "name": "simple uncovered exact requirement",
       "missing": 3,
-      "selected": {"min": 1, "max": 1, "known": true},
-      "enRoute": {"min": 0, "max": 0, "known": true},
+      "selected": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "enRoute": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
       "covered": false,
       "definitelyOpen": true,
       "uncertain": false,
@@ -67,8 +154,16 @@
     {
       "name": "en-route reduction and selected coverage",
       "missing": 3,
-      "selected": {"min": 2, "max": 2, "known": true},
-      "enRoute": {"min": 1, "max": 1, "known": true},
+      "selected": {
+        "min": 2,
+        "max": 2,
+        "known": true
+      },
+      "enRoute": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
       "covered": true,
       "definitelyOpen": false,
       "uncertain": false,
@@ -77,8 +172,16 @@
     {
       "name": "known en-route fully covers despite unknown selection",
       "missing": 2,
-      "selected": {"min": 0, "max": null, "known": false},
-      "enRoute": {"min": 2, "max": 2, "known": true},
+      "selected": {
+        "min": 0,
+        "max": null,
+        "known": false
+      },
+      "enRoute": {
+        "min": 2,
+        "max": 2,
+        "known": true
+      },
       "covered": true,
       "definitelyOpen": false,
       "uncertain": false,
@@ -87,8 +190,16 @@
     {
       "name": "unknown en-route but selection alone guarantees coverage",
       "missing": 2,
-      "selected": {"min": 2, "max": 2, "known": true},
-      "enRoute": {"min": 0, "max": null, "known": false},
+      "selected": {
+        "min": 2,
+        "max": 2,
+        "known": true
+      },
+      "enRoute": {
+        "min": 0,
+        "max": null,
+        "known": false
+      },
       "covered": true,
       "definitelyOpen": false,
       "uncertain": false,
@@ -97,8 +208,16 @@
     {
       "name": "bounded personnel could cover but is not exact",
       "missing": 4,
-      "selected": {"min": 2, "max": 6, "known": false},
-      "enRoute": {"min": 0, "max": 0, "known": true},
+      "selected": {
+        "min": 2,
+        "max": 6,
+        "known": false
+      },
+      "enRoute": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
       "covered": false,
       "definitelyOpen": false,
       "uncertain": true,
@@ -107,8 +226,16 @@
     {
       "name": "bounded minimum guarantees personnel coverage",
       "missing": 4,
-      "selected": {"min": 4, "max": 6, "known": false},
-      "enRoute": {"min": 0, "max": 0, "known": true},
+      "selected": {
+        "min": 4,
+        "max": 6,
+        "known": false
+      },
+      "enRoute": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
       "covered": true,
       "definitelyOpen": false,
       "uncertain": false,
@@ -125,17 +252,47 @@
     "Armed Response Personnel (In Armed Vehicles)"
   ],
   "requiredVehicleTypes": {
-    "Police cars": [8, 12, 13, 19, 24, 25, 51, 52, 56, 82, 116],
-    "Dog Support Unit (DSU)": [12, 53],
-    "Ambulance": [5],
-    "HEMS": [9],
-    "EOD Heavy Equipment Vehicle": [112]
+    "Police cars": [
+      8,
+      12,
+      13,
+      19,
+      24,
+      25,
+      51,
+      52,
+      56,
+      82,
+      116
+    ],
+    "Dog Support Unit (DSU)": [
+      12,
+      53
+    ],
+    "Ambulance": [
+      5
+    ],
+    "HEMS": [
+      9
+    ],
+    "EOD Heavy Equipment Vehicle": [
+      112
+    ]
   },
   "layout": {
     "panelId": "mc-map-command-toolkit-mission-requirements",
     "normalFlowInsertion": "source.parentNode?.insertBefore(panel, source)",
-    "forbiddenNormalPanelPositioning": ["position:fixed", "position:absolute"],
+    "forbiddenNormalPanelPositioning": [
+      "position:fixed",
+      "position:absolute"
+    ],
     "mobileBreakpoint": "@media(max-width:767px)",
-    "requiredHeaders": ["Requirement", "Missing on mission", "En-route", "Still needed", "Selected"]
+    "requiredHeaders": [
+      "Requirement",
+      "Missing on mission",
+      "En-route",
+      "Still needed",
+      "Selected"
+    ]
   }
 }

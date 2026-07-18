@@ -1,0 +1,23 @@
+Issue #146 final-package diagnostic
+===================================
+
+Payload return code: 1
+
+Bounded output:
+
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Issue #146 transformation and fixture checks passed
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-final-package.payload.py", line 49, in <module>
+    runpy.run_path(str(TEMP), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.final.payload.py", line 205, in <module>
+AssertionError: v4.15.3 exceeds source budget after token-aware compaction: 1900546 bytes / 30879 lines
+

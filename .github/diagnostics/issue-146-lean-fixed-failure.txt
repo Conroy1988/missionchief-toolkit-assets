@@ -1,0 +1,35 @@
+Issue #146 corrected lean-package diagnostic
+============================================
+
+Payload return code: 1
+
+Bounded output:
+
+/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.lean.payload.py:185: SyntaxWarning: invalid escape sequence '\/'
+  '''    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}function missionRequirementsWindowCandidates(){const a=[],s=new Set(),add=c=>{const x=missionRequirementsSourceForCandidate(c);if(x&&x.isConnected!==false&&!s.has(x)){s.add(x);a.push({...c,source:x})}};missionValueWindowCandidates().forEach(add);for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(d?.querySelectorAll)for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x))}const ids=new Set();return a.sort((x,y)=>2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.source)-isVisible(x.source)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}'''
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_contract.py", line 103, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_contract.py", line 68, in main
+    assert not missing, f"Missing mission requirements contract markers: {missing}"
+           ^^^^^^^^^^^
+AssertionError: Missing mission requirements contract markers: ['source.parentNode?.insertBefore(panel, source)']
+Issue #146 transformation and fixture checks passed
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-lean-fixed.payload.py", line 72, in <module>
+    runpy.run_path(str(TEMP), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.lean.payload.py", line 222, in <module>
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.lean.payload.py", line 21, in run
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('/usr/bin/python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_contract.py')' returned non-zero exit status 1.
+

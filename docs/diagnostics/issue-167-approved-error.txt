@@ -1,0 +1,43 @@
+Package return code: 1
+
+--- PACKAGE STDOUT ---
+
+--- PACKAGE STDERR ---
+Traceback (most recent call last):
+  File "/tmp/mcms-issue-167-approved-i52gg1g4/repo/.github/development-packages/issue-167-live-capacity.py", line 336, in <module>
+    source = replace_once(source, "// @version      4.16.0", "// @version      4.16.1", "metadata version")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/mcms-issue-167-approved-i52gg1g4/repo/.github/development-packages/issue-167-live-capacity.py", line 20, in replace_once
+    raise AssertionError(f"{label}: expected one match, found {count}")
+AssertionError: metadata version: expected one match, found 0
+
+--- CANDIDATE CHECKS ---
+CHECK .github/scripts/validate_userscript.py: 0
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 38 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Code-integrity release baseline unavailable; current-state checks will still run.
+Code integrity passed: 219 static selectors, 27 shortcut bindings, 193 repository text files.
+{
+  "version": "4.16.1",
+  "sha256": "49c1b39ebb874340420912f75e3d94981aaffd4190fda3216ddb19fa07dea742",
+  "bytes": 1926010,
+  "lines": 31422,
+  "baselineHashMatch": null,
+  "metadataWarnings": [],
+  "codeIntegrity": "passed",
+  "staticAssetIntegrity": "passed"
+}
+
+
+--- MODIFIED FILES ---
+./dist/MissionChief_Map_Command_Toolkit.user.js
+./dist/MissionChief_Map_Command_Toolkit.txt
+./dist/SHA256SUMS.txt
+./dist/release-manifest.json

@@ -1,0 +1,70 @@
+{
+  "results": [
+    {
+      "contract": ".github/scripts/test_financial_ledger_contract.py",
+      "returncode": 0,
+      "stdout": "Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_financial_discord_image_layout_contract.py",
+      "returncode": 0,
+      "stdout": "Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_mission_marker_ingestion_contract.py",
+      "returncode": 0,
+      "stdout": "Mission marker ingestion contract passed: direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_boot_lifecycle_contract.py",
+      "returncode": 0,
+      "stdout": "Boot lifecycle contract passed: extracted boot coordinator, runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_settings_ui_contract.py",
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py\", line 620, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py\", line 599, in main\n    assert_static_routes(source, fixtures)\n  File \"/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py\", line 88, in assert_static_routes\n    assert toggle_routes == sorted(fixtures[\"toggleRoutes\"]), \"Feature toggle routing inventory changed\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Feature toggle routing inventory changed\n"
+    },
+    {
+      "contract": ".github/scripts/test_desktop_panel_layout_contract.py",
+      "returncode": 0,
+      "stdout": "Desktop operational-workspace contract passed: 6 bounds and 4 saved-position cases.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_section_navigation_contract.py",
+      "returncode": 0,
+      "stdout": "Section-navigation contract passed: 8 sections, 10 canonical controls and 6 narrow-label cases.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_mission_value_contract.py",
+      "returncode": 0,
+      "stdout": "Mission Value formatting, route, responsive presentation and host ownership contracts passed.\nMission Value toolbar contract passed: 10 responsive presentations, canonical spacer hosting and cross-document deduplication.\n",
+      "stderr": ""
+    },
+    {
+      "contract": ".github/scripts/test_transport_sweep_lssm_contract.py",
+      "returncode": 0,
+      "stdout": "LSSM transport sweep contract passed\n",
+      "stderr": "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_transport_sweep_lssm_contract.py:34: SyntaxWarning: invalid escape sequence '\\/'\n  \"/patient\\/-1\",\n"
+    },
+    {
+      "contract": ".github/scripts/test_mission_requirements_contract.py",
+      "returncode": 0,
+      "stdout": "Mission requirements runtime fixtures passed\nMission requirements contract passed\n",
+      "stderr": ""
+    },
+    {
+      "contract": "node --check",
+      "returncode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

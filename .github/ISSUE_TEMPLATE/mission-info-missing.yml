@@ -1,0 +1,35 @@
+name: Mission requirements data report
+description: Submit a Toolkit-generated diagnostic when MissionChief requirements cannot be resolved.
+title: "Mission requirements missing: "
+labels:
+  - Mission Info Missing
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is opened by the Toolkit's **Report Mission** button. Review the generated diagnostic before submitting.
+
+        Do not add passwords, cookies, account tokens, webhook URLs, addresses, coordinates or private alliance information.
+
+  - type: textarea
+    id: diagnostic
+    attributes:
+      label: Toolkit diagnostic
+      description: Automatically harvested and sanitised Mission Requirements information.
+      placeholder: The Toolkit will prefill this field.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Optional details about what was visible in MissionChief when the report was generated.
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reviewed the diagnostic and removed any information I do not want to publish.
+          required: true

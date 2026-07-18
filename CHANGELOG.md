@@ -6,6 +6,12 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.15.5] - 2026-07-18
+
+### Fixed
+- Changed **Report Mission** to use a repository-owned GitHub issue form so `Mission Info Missing` is applied for contributor reports as well as maintainer reports.
+- Preserved the sanitised diagnostic prefill through the form's canonical `diagnostic` field without storing a GitHub credential in the userscript.
+
 ## [4.15.4] - 2026-07-18
 
 ### Added

@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
 RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
+REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
 
 
 def main() -> int:
@@ -46,7 +47,8 @@ def main() -> int:
         "function missionRequirementsReportUrl(record, reason = 'unknown')",
         "Unable to pull mission requirements",
         "data-mcms-report-mission",
-        "Mission Info Missing",
+        "mission-info-missing.yml",
+        "diagnostic",
         "issues/new",
         "function missionRequirementsEnsureRecord(candidate, source)",
         "data-mcms-requirements-panel",
@@ -73,6 +75,11 @@ def main() -> int:
     compact_source = re.sub(r"\s+", "", source)
     missing = [marker for marker in required_markers if marker not in source and re.sub(r"\s+", "", marker) not in compact_source]
     assert not missing, f"Missing mission requirements contract markers: {missing}"
+
+    report_form = REPORT_FORM.read_text(encoding="utf-8")
+    assert "labels:\n  - Mission Info Missing" in report_form
+    assert "id: diagnostic" in report_form
+    assert "required: true" in report_form
 
     assert source.count("function installMissionRequirementsWindows()") == 1
     assert source.count("function scanMissionRequirementsWindows()") == 1

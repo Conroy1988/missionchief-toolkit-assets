@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import shutil
+import runpy
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
@@ -16,7 +17,7 @@ DIAG = ROOT / "docs" / "diagnostics" / "issue-154-mission-requirements-source.tx
 PAYLOAD_DIR = ROOT / ".github" / "development-packages" / "issue-154-payload"
 
 def payload(name: str) -> str:
-    return (PAYLOAD_DIR / f"{name}.txt").read_text(encoding="utf-8")
+    return runpy.run_path(str(PAYLOAD_DIR / f"{name}.py"))["PAYLOAD"]
 
 
 def replace_function(text: str, name: str, replacement: str) -> str:

@@ -19,6 +19,13 @@ CONTRACT_TEST = ROOT / '.github' / 'scripts' / 'test_mission_requirements_contra
 def compact_region(text: str, start_marker: str, end_marker: str, label: str, preserve_comment: str | None = None) -> str:
     start = text.find(start_marker)
     end = text.find(end_marker, start + len(start_marker))
+    if end < 0:
+        fallback = {
+            'patient-aware resolver': '    function missionRequirementsOverallState',
+            'patient-aware renderer': '    function missionRequirementsScheduleRecord'
+        }.get(label)
+        if fallback:
+            end = text.find(fallback, start + len(start_marker))
     if start < 0 or end < 0 or end <= start:
         raise AssertionError(f'{label}: region markers not found')
     region = text[start:end]

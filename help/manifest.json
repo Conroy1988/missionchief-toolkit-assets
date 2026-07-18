@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.16.1",
-  "toolkitVersion": "4.16.1",
+  "guideVersion": "4.16.2",
+  "toolkitVersion": "4.16.2",
   "updated": "2026-07-18",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.16.1 adds live on-site, responding and selected capacity reconciliation to Mission Requirements."
+  "runtimeGuidePatch": "Toolkit v4.16.2 keeps Mission Requirements under the active mission header in AJAX lightboxes and adds compact adaptive widths."
 }

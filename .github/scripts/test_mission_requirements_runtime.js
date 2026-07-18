@@ -60,6 +60,8 @@ class FakeElement {
         this.queryAllHandler = null;
         this.closestMap = new Map();
     }
+    get firstChild() { return this.children[0] || null; }
+    get nextSibling() { const index = this.parentNode?.children?.indexOf(this) ?? -1; return index >= 0 ? (this.parentNode.children[index + 1] || null) : null; }
     setAttribute(name, value) {
         this.attributes.set(name, String(value));
         if (name === 'id') this.id = String(value);
@@ -183,7 +185,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.16.1'
+        version: '4.16.2'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -212,7 +214,7 @@ const context = {
     missionValueWindowCandidates: () => candidates,
     mutationTouchesSelector: () => false,
     setInnerHtmlIfChanged: (element, html) => { if (element.innerHTML !== html) element.innerHTML = html; },
-    isVisible: () => true,
+    isVisible: element => element?._visible !== false,
 };
 vm.createContext(context);
 vm.runInContext(
@@ -246,6 +248,10 @@ this.__mcmsRequirements = {
     catalogueCacheStore: missionRequirementsCatalogueCacheStore,
     catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
     catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
     catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
     catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
     reportUrl: missionRequirementsReportUrl,
@@ -382,6 +388,9 @@ for (const forbidden of fixture.layout.forbiddenNormalPanelPositioning) {
 assert(normalPanelRule.includes('position:relative!important'), 'normal-flow panel must be relative');
 assert(normalPanelRule.includes('[data-mcms-requirements-source-hidden="1"]{display:none!important}'), 'native source hiding must be CSS-owned');
 assert(css.includes('@media(max-width:767px)'), 'mobile breakpoint missing');
+assert(css.includes(`width:min(100%,${fixture.layout.standardDesktopWidth})!important`), 'standard width missing');
+assert(css.includes(`data-width-mode="wide"]{width:min(100%,${fixture.layout.wideDesktopWidth})!important`), 'wide width missing');
+assert(css.includes('data-width-mode="fluid"]{width:100%!important'), 'fluid width missing');
 
 function makeVehicleElement(doc, vehicleId, typeId, options = {}) {
     const row = new FakeElement('tr', doc);
@@ -447,6 +456,92 @@ function makeMissionCandidateWithoutSource(doc) {
     };
     return { root: missionRoot, mount: missionRoot };
 }
+
+
+const issue169Doc = new FakeDocument();
+issue169Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' }, navigator: context.pageWindow.navigator, innerWidth: 1600, innerHeight: 900 };
+const issue169Root = new FakeElement('form', issue169Doc);
+issue169Root.setAttribute('action', '/missions/255577319');
+issue169Root.matchSet.add('form[action*="/missions/"]');
+const issue169Title = new FakeElement('h1', issue169Doc);
+issue169Title.id = 'mission_caption';
+const issue169Address = new FakeElement('div', issue169Doc);
+issue169Address.id = 'mission_address';
+const issue169Source = new FakeElement('div', issue169Doc);
+issue169Source.id = 'missing_text';
+issue169Source.textContent = issue169Source.innerText = '3 Police cars, 2 4x4 Vehicles';
+issue169Source.queryAllHandler = () => [];
+const issue169Generic = new FakeElement('div', issue169Doc);
+issue169Generic.id = 'incident_note';
+for (const node of [issue169Title, issue169Address, issue169Source, issue169Generic]) issue169Root.appendChild(node);
+issue169Root.queryHandler = selector => {
+    if (selector === '#missing_text') return issue169Source;
+    if (selector.includes('#mission_address')) return issue169Address;
+    if (selector.includes('#mission_caption')) return issue169Title;
+    if (selector === '[data-mcms-requirements-anchor="1"]') return issue169Root.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1') || null;
+    return null;
+};
+issue169Root.queryAllHandler = selector => selector.includes('.vehicle_checkbox') || selector.includes('#mission_vehicle_') ? [] : [];
+const issue169Candidate = { root: issue169Root, mount: issue169Root, source: issue169Generic, missionId: 255577319 };
+assert.strictEqual(api.sourceForCandidate(issue169Candidate), issue169Source, 'native source outranks generic lightbox source');
+candidates = [issue169Candidate];
+api.scan();
+flushAnimationFrames();
+const issue169Record = Array.from(api.records.values())[0];
+const issue169PanelIndex = issue169Root.children.indexOf(issue169Record.panel);
+assert.strictEqual(issue169Root.children[issue169PanelIndex + 1], issue169Source, 'panel mounts immediately before native missing_text');
+assert(issue169Root.children.indexOf(issue169Address) < issue169PanelIndex, 'panel remains below the mission address');
+api.clear();
+
+const delayedDoc = new FakeDocument();
+delayedDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/7002' } };
+const delayedRoot = new FakeElement('form', delayedDoc);
+delayedRoot.setAttribute('action', '/missions/7002');
+delayedRoot.matchSet.add('form[action*="/missions/"]');
+const delayedTitle = new FakeElement('h1', delayedDoc);
+delayedTitle.id = 'mission_caption';
+const delayedAddress = new FakeElement('div', delayedDoc);
+delayedAddress.id = 'mission_address';
+delayedRoot.appendChild(delayedTitle);
+delayedRoot.appendChild(delayedAddress);
+delayedRoot.queryHandler = selector => selector.includes('#mission_address') ? delayedAddress : selector.includes('#mission_caption') ? delayedTitle : null;
+const delayedAnchor = api.anchorForCandidate({ root: delayedRoot, mount: delayedRoot, missionId: 7002 });
+assert.strictEqual(delayedRoot.children[delayedRoot.children.indexOf(delayedAddress) + 1], delayedAnchor, 'delayed source anchor follows the address');
+
+const visibilityDoc = new FakeDocument();
+visibilityDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' } };
+const staleCandidate = makeMissionCandidate(visibilityDoc, '1 Ambulance');
+const visibleCandidate = makeMissionCandidate(visibilityDoc, '2 Fire engines');
+staleCandidate.missionId = 8101;
+visibleCandidate.missionId = 8102;
+staleCandidate.root._visible = false;
+visibleCandidate.root._visible = true;
+api.records.set(staleCandidate.source, { source: staleCandidate.source });
+candidates = [staleCandidate, visibleCandidate];
+assert.strictEqual(api.windowCandidates()[0].root, visibleCandidate.root, 'visible AJAX mission outranks hidden existing record');
+api.records.clear();
+candidates = [];
+
+assert.strictEqual(api.widthMode([{ requirement: 'Police Car' }], []), 'standard', 'ordinary content uses standard width');
+assert.strictEqual(api.widthMode([{ requirement: 'Operational Support or Search and Rescue Vehicle' }], []), 'wide', 'long content expands width');
+assert.strictEqual(api.widthMode([{ requirement: 'X'.repeat(70) }], []), 'fluid', 'exceptional content may use available width');
+
+const transitionDoc = new FakeDocument();
+transitionDoc.defaultView = { location: { origin: 'https://www.missionchief.co.uk', protocol: 'https:', host: 'www.missionchief.co.uk' } };
+const transitionRoot = new FakeElement('div', transitionDoc);
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
 
 const unitDoc = new FakeDocument();
 unitDoc.defaultView = { MutationObserver: FakeMutationObserver };

@@ -4,4 +4,4 @@ Mission Requirements candidates discovered inside Available Units, vehicle table
 
 The panel must never be inserted into `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th` or `colgroup`. Operational fallbacks insert before the top-level block containing the vehicle table.
 
-Normal dispatch-button AJAX opening and standalone mission tabs use the same mission source and header placement. A subsequent scan re-homes any panel temporarily mounted by incomplete AJAX markup.
+Normal dispatch-button AJAX opening and standalone mission tabs use the same mission source and header placement. If incomplete AJAX markup temporarily separates the panel from its canonical source host, the next scan restores the canonical panel beneath the mission header.

@@ -7,3 +7,5 @@ Patient demand and MissionChief's stated Ambulance requirement are reconciled wi
 The existing Selected, Responding and On-site vehicle-ID buckets remain exclusive. Unknown patient totals keep the row unresolved and prevent a green Matrix state. A 1.4-second same-mission transition cache covers temporary AJAX replacement, is isolated by mission ID and expires without polling.
 
 The feature adds no second panel and performs no vehicle selection, dispatch or patient transport. Desktop, Tablet and iOS use the existing Matrix layout, with a compact `Patients` source marker on the Ambulance row.
+
+<!-- final-validation-trigger -->

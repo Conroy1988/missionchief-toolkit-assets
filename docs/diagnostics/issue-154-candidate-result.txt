@@ -1,0 +1,26 @@
+Issue #154 candidate diagnostic
+return_code=1
+
+/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_runtime.js:530
+assert(missingRecord.panel.innerHTML.includes('Loading mission requirements'), 'source-less mission initially shows a bounded loading state');
+                     ^
+
+TypeError: Cannot read properties of undefined (reading 'panel')
+    at Object.<anonymous> (/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_runtime.js:530:22)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-154-mission-requirements-report-fallback.py", line 213, in <module>
+    run("node", str(TEST.relative_to(ROOT)))
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-154-mission-requirements-report-fallback.py", line 44, in run
+    subprocess.run(cmd, cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('node', '.github/scripts/test_mission_requirements_runtime.js')' returned non-zero exit status 1.

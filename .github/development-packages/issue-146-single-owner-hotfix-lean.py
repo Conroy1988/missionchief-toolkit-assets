@@ -13,7 +13,7 @@ TEMP = ROOT / '.github' / 'development-packages' / 'issue-146-single-owner-hotfi
 payload = subprocess.check_output(['git', 'show', f'{SOURCE_COMMIT}:{PACKAGE_PATH}'], cwd=ROOT, text=True)
 
 write_anchor = "SOURCE.write_text(source, encoding='utf-8')\n\nfor relative in ("
-insert = r'''SOURCE.write_text(source, encoding='utf-8')
+insert = r"""SOURCE.write_text(source, encoding='utf-8')
 
 source = SOURCE.read_text(encoding='utf-8')
 
@@ -50,7 +50,7 @@ if contract.count(old_insert_count) != 1:
 contract = contract.replace(old_insert_count, new_insert_count, 1)
 CONTRACT_TEST.write_text(contract, encoding='utf-8')
 
-for relative in ('''
+for relative in ("""
 if payload.count(write_anchor) != 1:
     raise AssertionError('Issue #146 lean injection anchor missing or duplicated')
 payload = payload.replace(write_anchor, insert, 1)

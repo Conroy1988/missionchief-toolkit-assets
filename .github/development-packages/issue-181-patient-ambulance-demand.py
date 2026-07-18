@@ -31,6 +31,12 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def replace_first(text: str, old: str, new: str, label: str) -> str:
+    if old not in text:
+        raise AssertionError(f"{label}: match not found")
+    return text.replace(old, new, 1)
+
+
 def regex_once(text: str, pattern: str, replacement: str, label: str) -> str:
     updated, count = re.subn(pattern, replacement, text, count=1, flags=re.MULTILINE | re.DOTALL)
     if count != 1:
@@ -365,13 +371,13 @@ new_render = r'''    function missionRequirementsRenderRecord(record) {
     function missionRequirementsScheduleRecord'''
 source = source[:old_render.start()] + new_render + source[old_render.end():]
 
-source = replace_once(
+source = replace_first(
     source,
     "#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all",
     "#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all",
     "record patient mutation selectors",
 )
-source = replace_once(
+source = replace_first(
     source,
     "#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all",
     "#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all",

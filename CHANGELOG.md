@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.15.2] - 2026-07-18
+
+### Fixed
+- Mission Requirements now discovers MissionChief-owned `#missing_text` roots independently from Mission Value, including alternate AJAX/lightbox mission layouts.
+- Unstructured native Missing Personnel, Missing Vehicles and resource banners are classified before parsing instead of defaulting every banner to vehicles.
+- Quantity parsing now supports `8x`, `8 x`, `x8`, trailing `x8`, colon and “at least” forms.
+- Unknown quantified requirements remain visible as amber, safely unresolved rows and can no longer produce a false green state.
+- Selected vehicle counting now recognises vehicle types stored on the MissionChief row and deduplicates one vehicle shown in both normal and occupied lists by stable vehicle ID.
+- Selecting and deselecting eligible units recalculates exact Selected counts, including the two-police-car 0 → 1 → 2 → 1 sequence.
+
+### Compatibility
+- MissionChief's native mission DOM remains the sole requirements, selection, en-route and layout authority.
+- LSSM remains optional and is consulted only through explicit duplicate-panel ownership detection.
+
 ## [4.15.1] - 2026-07-18
 
 ### Fixed

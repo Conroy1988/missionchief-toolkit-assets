@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.1
+// @version      4.15.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.1',
+        version: '4.15.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -941,7 +941,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.15.1',
+        guideVersion: '4.15.2',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -21925,6 +21925,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         { key: 'eod-heavy', label: 'EOD Heavy Equipment Vehicle', aliases: ['EOD Heavy Equipment Vehicle', 'EOD Heavy Equipment Vehicles'], types: [112] },
         { key: 'marine-eod-response', label: 'Marine EOD Response Vehicle', aliases: ['Marine EOD Response Vehicle', 'Marine EOD Response Vehicles'], types: [113] },
         { key: 'marine-eod-equipment', label: 'Marine EOD Equipment Van', aliases: ['Marine EOD Equipment Van', 'Marine EOD Equipment Vans'], types: [114] },
+        // MissionChief exposes these roles in native missing-personnel text, but does not
+        // currently expose a trustworthy role-specific selected-capacity contract here.
+        // Parse and display them without making false coverage claims.
+        { key: 'public-order-level-1', label: 'Level 1 Public Order Officer', aliases: ['Level 1 Public Order Officer', 'Level 1 Public Order Officers'], group: 'staff', types: [], countable: false },
+        { key: 'public-order-level-2', label: 'Level 2 Public Order Officer', aliases: ['Level 2 Public Order Officer', 'Level 2 Public Order Officers'], group: 'staff', types: [], countable: false },
+        { key: 'police-medic-personnel', label: 'Police Medic', aliases: ['Police Medic', 'Police Medics'], group: 'staff', types: [], countable: false },
+        { key: 'police-sergeant-personnel', label: 'Police Sergeant', aliases: ['Police Sergeant', 'Police Sergeants'], group: 'staff', types: [], countable: false },
+        { key: 'police-inspector-personnel', label: 'Police Inspector', aliases: ['Police Inspector', 'Police Inspectors'], group: 'staff', types: [], countable: false },
+        { key: 'search-advisor-personnel', label: 'Search Advisor', aliases: ['Search Advisor', 'Search Advisors'], group: 'staff', types: [], countable: false },
+        { key: 'sar-commander-personnel', label: 'SAR Commander', aliases: ['SAR Commander', 'SAR Commanders'], group: 'staff', types: [], countable: false },
         { key: 'firefighters', label: 'Firefighters', aliases: ['more firefighter', 'more firefighters', 'Firefighter', 'Firefighters'], group: 'staff', types: [0, 1, 2, 3, 4, 6, 7, 14, 15, 16, 17, 18, 23, 26, 35, 36, 37, 38, 39, 40] },
         { key: 'armed-personnel', label: 'Armed Response Personnel', aliases: ['Armed Response Personnel (In Armed Vehicles)', 'Armed Response Personnel'], group: 'staff', types: [13, 25, 52, 56, 82] },
         { key: 'police-officers', label: 'Police Officers', aliases: ['Police Officer', 'Police Officers'], group: 'staff', types: [8, 12, 13, 19, 24, 25, 51, 52, 53, 55, 56, 82, 116] },
@@ -22014,45 +22024,74 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsFindDefinitionMatch(text, definition) {
+        const aliases = Array.from(new Set([definition.label, ...(definition.aliases || [])]))
+            .filter(Boolean)
+            .sort((a, b) => b.length - a.length)
+            .map(missionRequirementsEscapeRegex);
+        if (!aliases.length) return null;
         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
-        const aliases = Array.from(definition.aliases || []).sort((left, right) => right.length - left.length);
-        for (const alias of aliases) {
-            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\s+/gu, '\\s+');
-            const before = new RegExp(`(^|[,;]\\s*)${numberPattern}\\s*x?\\s+(${labelPattern})(?=\\s*(?:[,;]|$))`, 'iu');
-            const beforeMatch = before.exec(text);
-            if (beforeMatch) return { match: beforeMatch[0], index: beforeMatch.index, missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
-            const after = new RegExp(`(^|[,;]\\s*)(${labelPattern})\\s*:\\s*${numberPattern}(?=\\s*(?:[,;]|$))`, 'iu');
-            const afterMatch = after.exec(text);
-            if (afterMatch) return { match: afterMatch[0], index: afterMatch.index, missing: missionRequirementsNumber(afterMatch[3]), label: afterMatch[2] };
-        }
-        return null;
+        const labelPattern = aliases.join('|');
+        const prefix = '(^|[,;]\\s*)';
+        const suffix = '(?=\\s*(?:[,;]|$))';
+        const before = new RegExp(
+            `${prefix}\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${numberPattern}\\s*(?:x\\s*)?(${labelPattern})${suffix}`,
+            'iu'
+        );
+        const after = new RegExp(
+            `${prefix}\\s*(${labelPattern})\\s*(?::|x)\\s*${numberPattern}${suffix}`,
+            'iu'
+        );
+        const beforeMatch = before.exec(text);
+        const afterMatch = after.exec(text);
+        const candidates = [];
+        if (beforeMatch) candidates.push({
+            index: beforeMatch.index,
+            length: beforeMatch[0].length,
+            missing: missionRequirementsNumber(beforeMatch[2]),
+            label: beforeMatch[3]
+        });
+        if (afterMatch) candidates.push({
+            index: afterMatch.index,
+            length: afterMatch[0].length,
+            missing: missionRequirementsNumber(afterMatch[3]),
+            label: afterMatch[2]
+        });
+        return candidates.sort((a, b) => a.index - b.index || b.length - a.length)[0] || null;
     }
 
     function missionRequirementsParseText(rawText, group = 'vehicles') {
-        let remaining = String(rawText || '')
-            .replace(/\r\n?/gu, '\n')
-            .replace(/\n+/gu, '; ')
-            .replace(/\s+/gu, ' ')
+        const normalized = String(rawText ?? '')
+            .replace(/\r/g, '')
+            .replace(/\n+/g, '; ')
+            .replace(/\s+/g, ' ')
             .trim();
+        if (!normalized) return { requirements: [], remaining: '' };
+        let working = normalized;
         const requirements = [];
-        const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => definition.group === group);
-        while (remaining) {
-            const matches = definitions
-                .map(definition => ({ definition, found: missionRequirementsFindDefinitionMatch(remaining, definition) }))
-                .filter(candidate => candidate.found && candidate.found.missing > 0)
-                .sort((left, right) => left.found.index - right.found.index || right.found.match.length - left.found.match.length);
-            if (!matches.length) break;
-            const { definition, found } = matches[0];
+        while (true) {
+            let best = null;
+            for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
+                if ((definition.group || 'vehicles') !== group) continue;
+                const found = missionRequirementsFindDefinitionMatch(working, definition);
+                if (!found) continue;
+                if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
+                    best = { definition, found };
+                }
+            }
+            if (!best) break;
             requirements.push({
-                key: definition.key,
-                requirement: definition.label || found.label,
-                missing: found.missing,
+                key: best.definition.key,
+                requirement: best.definition.label,
+                missing: best.found.missing,
                 group,
-                definition
+                definition: best.definition,
+                sourceIndex: best.found.index
             });
-            remaining = `${remaining.slice(0, found.index)} ${remaining.slice(found.index + found.match.length)}`;
+            working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
         }
-        return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
+        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
+        requirements.forEach(requirement => { delete requirement.sourceIndex; });
+        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
     }
 
     function missionRequirementsElementText(element) {
@@ -22063,39 +22102,149 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
     }
 
+    function missionRequirementsNormalizeGroup(value, fallback = 'vehicles') {
+        const normalized = String(value || '').trim().toLowerCase();
+        if (normalized === 'personnel' || normalized === 'staff') return 'staff';
+        if (normalized === 'other' || normalized === 'resource' || normalized === 'resources') return 'other';
+        if (normalized === 'vehicle' || normalized === 'vehicles') return 'vehicles';
+        return fallback;
+    }
+
+    function missionRequirementsInferGroup(text, fallback = 'vehicles') {
+        const normalized = String(text || '').toLowerCase();
+        if (/\b(?:missing|required)\s+(?:personnel|staff)\b/.test(normalized)) return 'staff';
+        if (/\b(?:officers?|firefighters?|paramedics?|technicians?|commanders?|sergeants?|inspectors?|medics?|advisors?)\b/.test(normalized)) return 'staff';
+        if (/\b(?:litres?|liters?|water|foam|pumping\s+capacity|resources?)\b/.test(normalized)) return 'other';
+        if (/\b(?:missing|required)\s+vehicles?\b/.test(normalized)) return 'vehicles';
+        return fallback;
+    }
+
+    function missionRequirementsStripGroupHeading(text) {
+        return String(text || '')
+            .replace(/^\s*(?:missing|required)\s+(?:vehicles?|personnel|staff|other|resources?)\s*:?\s*/iu, '')
+            .trim();
+    }
+
+    function missionRequirementsSplitTextSections(rawText, fallback = 'vehicles') {
+        const text = String(rawText || '').replace(/\r/g, '').trim();
+        if (!text) return [];
+        const heading = /(?:^|[\n;])\s*(?:missing|required)\s+(vehicles?|personnel|staff|other|resources?)\s*:?\s*/giu;
+        const matches = Array.from(text.matchAll(heading));
+        if (!matches.length) return [{ group: missionRequirementsInferGroup(text, fallback), text }];
+        const sections = [];
+        const prefix = text.slice(0, matches[0].index).trim();
+        if (prefix) sections.push({ group: missionRequirementsInferGroup(prefix, fallback), text: prefix });
+        matches.forEach((match, index) => {
+            const start = match.index + match[0].length;
+            const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+            const sectionText = text.slice(start, end).trim();
+            if (!sectionText) return;
+            sections.push({ group: missionRequirementsNormalizeGroup(match[1], fallback), text: sectionText });
+        });
+        return sections;
+    }
+
+    function missionRequirementsParseGenericText(rawText, group) {
+        let working = String(rawText || '').replace(/\r/g, '').replace(/\n+/g, '; ').trim();
+        if (!working) return { requirements: [], remaining: '' };
+        const number = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
+        const patterns = [
+            {
+                expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'),
+                quantity: 2,
+                label: 3
+            },
+            {
+                expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'),
+                quantity: 3,
+                label: 2
+            }
+        ];
+        const requirements = [];
+        let serial = 0;
+        for (const pattern of patterns) {
+            pattern.expression.lastIndex = 0;
+            let match;
+            while ((match = pattern.expression.exec(working))) {
+                const missing = missionRequirementsNumber(match[pattern.quantity]);
+                const label = String(match[pattern.label] || '')
+                    .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (!missing || !label) continue;
+                const sourceIndex = match.index;
+                const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement';
+                requirements.push({
+                    key: `unmapped-${slug}-${serial++}`,
+                    requirement: label,
+                    missing,
+                    group,
+                    definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true },
+                    sourceIndex
+                });
+                working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`;
+                pattern.expression.lastIndex = sourceIndex + match[0].length;
+            }
+        }
+        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
+        requirements.forEach(requirement => { delete requirement.sourceIndex; });
+        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
+    }
+
     function missionRequirementsParseSource(source) {
-        if (!source) return { requirements: [], unresolved: [] };
         const requirements = [];
         const unresolved = [];
-        const allGroups = Array.from(source.querySelectorAll?.('[data-requirement-type]') || []);
-        const groupElements = allGroups.filter(element => !allGroups.some(other => other !== element && other.contains?.(element)));
-        const parseGroupElement = element => {
-            const rawType = String(element.getAttribute('data-requirement-type') || 'vehicles').toLowerCase();
-            const group = rawType === 'personnel' || rawType === 'staff' ? 'staff' : rawType === 'other' ? 'other' : 'vehicles';
-            const heading = String(element.querySelector?.('b')?.textContent || '').trim();
-            const raw = missionRequirementsElementText(element).replace(heading, ' ').trim();
-            const parsed = missionRequirementsParseText(raw, group);
+        const parseSection = (rawText, requestedGroup) => {
+            const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
+            const cleaned = missionRequirementsStripGroupHeading(rawText);
+            if (!cleaned) return;
+            const parsed = missionRequirementsParseText(cleaned, group);
             requirements.push(...parsed.requirements);
-            if (parsed.remaining) unresolved.push({ group, text: parsed.remaining });
+            const generic = missionRequirementsParseGenericText(parsed.remaining, group);
+            requirements.push(...generic.requirements);
+            if (generic.remaining) unresolved.push({ group, text: generic.remaining });
         };
-        if (groupElements.length) groupElements.forEach(parseGroupElement);
-        else {
+
+        const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []);
+        const groupElements = allGroups.filter(element => {
+            const closest = element.closest?.('#missing_text');
+            return !closest || closest === source;
+        });
+        if (groupElements.length) {
+            for (const element of groupElements) {
+                const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
+                parseSection(missionRequirementsElementText(element), rawGroup);
+            }
+        } else {
             const raw = missionRequirementsElementText(source);
-            const parsed = missionRequirementsParseText(raw, 'vehicles');
-            requirements.push(...parsed.requirements);
-            if (parsed.remaining) unresolved.push({ group: 'vehicles', text: parsed.remaining });
+            for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
         }
         return { requirements, unresolved };
     }
 
     function missionRequirementsVehicleType(element) {
-        if (!element) return -1;
-        const direct = element.getAttribute?.('vehicle_type_id') ?? element.dataset?.vehicleTypeId ?? element.dataset?.vehicle_type_id;
-        const directNumber = Number.parseInt(direct, 10);
-        if (Number.isFinite(directNumber) && directNumber >= 0) return directNumber;
-        const descendant = element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
-        if (!descendant || descendant === element) return -1;
-        return missionRequirementsVehicleType(descendant);
+        const scopes = [];
+        const addScope = scope => {
+            if (scope && !scopes.includes(scope)) scopes.push(scope);
+        };
+        addScope(element);
+        addScope(element?.closest?.('tr'));
+        addScope(element?.closest?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]'));
+        const read = scope => missionRequirementsOptionalNumber(
+            scope?.getAttribute?.('vehicle_type_id')
+            ?? scope?.getAttribute?.('data-vehicle-type-id')
+            ?? scope?.getAttribute?.('data-vehicle_type_id')
+            ?? scope?.dataset?.vehicleTypeId
+            ?? scope?.dataset?.vehicle_type_id
+        );
+        for (const scope of scopes) {
+            const direct = read(scope);
+            if (direct !== null && direct >= 0) return direct;
+            const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
+            const nestedType = read(nested);
+            if (nestedType !== null && nestedType >= 0) return nestedType;
+        }
+        return -1;
     }
 
     function missionRequirementsVehicleId(element) {
@@ -22170,39 +22319,72 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsCollectUnits(candidate, mode) {
-        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
-        if (!root?.querySelectorAll) return [];
+        const root = candidate?.root;
+        const doc = candidate?.source?.ownerDocument || root?.ownerDocument;
+        if (!root?.querySelectorAll && !doc?.querySelectorAll) return [];
         const selector = mode === 'selected'
-            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox[vehicle_type_id]:checked'
+            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked'
             : '#mission_vehicle_driving tbody tr';
-        const elements = Array.from(new Set(Array.from(root.querySelectorAll(selector))));
-        const units = elements.map(element => {
-            const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id]') || element);
+        const elements = [];
+        const seenElements = new Set();
+        const missionScopes = Array.from(new Set([root, candidate?.mount].filter(scope => scope?.querySelectorAll)));
+        const scopes = missionScopes.length ? missionScopes : [doc].filter(scope => scope?.querySelectorAll);
+        for (const scope of scopes) {
+            for (const element of Array.from(scope.querySelectorAll?.(selector) || [])) {
+                if (seenElements.has(element)) continue;
+                seenElements.add(element);
+                elements.push(element);
+            }
+        }
+
+        const units = new Map();
+        elements.forEach((element, index) => {
+            const row = element.matches?.('tr') ? element : element.closest?.('tr');
+            const vehicleElement = mode === 'selected'
+                ? element
+                : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]') || element);
+            const typeId = missionRequirementsVehicleType(vehicleElement);
+            if (typeId < 0) return;
             const vehicleId = missionRequirementsVehicleId(vehicleElement);
-            const tractiveId = Number.parseInt(vehicleElement.getAttribute?.('tractive_vehicle_id') ?? vehicleElement.dataset?.tractiveVehicleId ?? '-1', 10);
-            return {
-                element,
-                vehicleElement,
-                typeId: missionRequirementsVehicleType(vehicleElement),
+            const tractiveId = missionRequirementsOptionalNumber(
+                vehicleElement?.getAttribute?.('tractive_vehicle_id')
+                ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id')
+                ?? row?.getAttribute?.('tractive_vehicle_id')
+                ?? row?.getAttribute?.('data-tractive-vehicle-id')
+                ?? row?.dataset?.tractiveVehicleId
+            );
+            const trailerId = missionRequirementsOptionalNumber(
+                vehicleElement?.getAttribute?.('trailer_id')
+                ?? vehicleElement?.getAttribute?.('data-trailer-id')
+                ?? row?.getAttribute?.('trailer_id')
+                ?? row?.getAttribute?.('data-trailer-id')
+                ?? row?.dataset?.trailerId
+            );
+            let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`;
+            const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId;
+            if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`;
+            const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey;
+            const unit = {
+                typeId,
                 vehicleId,
-                tractiveId: Number.isFinite(tractiveId) ? tractiveId : -1,
-                equipment: missionRequirementsEquipmentTypes(element),
-                staff: missionRequirementsStaffCapacity(element),
-                contributionKey: vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${elements.indexOf(element)}`
+                tractiveId,
+                equipment: missionRequirementsEquipmentTypes(vehicleElement),
+                staff: missionRequirementsStaffCapacity(vehicleElement),
+                contributionKey
             };
+            const existing = units.get(identityKey);
+            if (!existing) {
+                units.set(identityKey, unit);
+                return;
+            }
+            if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId;
+            for (const equipment of unit.equipment) existing.equipment.add(equipment);
+            if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff;
+            if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) {
+                existing.contributionKey = unit.contributionKey;
+            }
         });
-        const pairKeys = new Map();
-        units.forEach(unit => {
-            if (unit.vehicleId < 0 || unit.tractiveId < 0) return;
-            const pair = [unit.vehicleId, unit.tractiveId].sort((a, b) => a - b);
-            const key = `pair:${pair[0]}:${pair[1]}`;
-            pairKeys.set(unit.vehicleId, key);
-            pairKeys.set(unit.tractiveId, key);
-        });
-        units.forEach(unit => {
-            if (unit.vehicleId >= 0 && pairKeys.has(unit.vehicleId)) unit.contributionKey = pairKeys.get(unit.vehicleId);
-        });
-        return units;
+        return Array.from(units.values());
     }
 
     function missionRequirementsMissionTypeId(candidate) {
@@ -22287,10 +22469,34 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return node ? missionRequirementsNumber(node.textContent) : null;
     }
 
+    function missionRequirementsUnknownCoverageRow(requirement) {
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+            ...requirement,
+            missing,
+            missingText: missing.toLocaleString('en-GB'),
+            selectedMin: 0,
+            selectedMax: null,
+            selectedKnown: false,
+            selectedText: '?',
+            enRouteMin: 0,
+            enRouteMax: null,
+            enRouteKnown: false,
+            enRouteText: '?',
+            stillNeededMin: 0,
+            stillNeededMax: missing,
+            stillNeededText: '?',
+            covered: false,
+            definitelyOpen: false,
+            uncertain: true
+        };
+    }
+
     function missionRequirementsResolve(candidate, parsed) {
         const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
         const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
         return parsed.requirements.map(requirement => {
+            if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
             const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
             if (condition !== true) {
                 const unresolvedRow = missionRequirementsCoverageRow(
@@ -22350,14 +22556,55 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsSourceForCandidate(candidate) {
-        for (const scope of [candidate?.root, candidate?.mount]) {
-            try {
-                if (scope?.matches?.('#missing_text')) return scope;
-                const source = scope?.querySelector?.('#missing_text');
-                if (source) return source;
-            } catch (err) {}
+        if (candidate?.source && candidate.source.isConnected !== false) return candidate.source;
+        const root = candidate?.root;
+        if (!root?.querySelector) return null;
+        if (root.matches?.('#missing_text')) return root;
+        return root.querySelector('#missing_text');
+    }
+
+    function missionRequirementsCandidateFromSource(source) {
+        if (!source?.ownerDocument || source.isConnected === false) return null;
+        const rootSelector = [
+            '#mission_form',
+            'form[action*="/missions/"]',
+            '#mission_content',
+            '#lightbox_box',
+            '#lightbox',
+            '.lightbox_content',
+            '.modal',
+            '[role="dialog"]',
+            '.ui-dialog'
+        ].join(', ');
+        const root = source.closest?.(rootSelector) || source.parentNode || source.ownerDocument.body;
+        if (!root) return null;
+        return { root, mount: root, source, directMissionRequirements: true };
+    }
+
+    function missionRequirementsWindowCandidates() {
+        const candidates = [];
+        const seenSources = new Set();
+        const add = candidate => {
+            const source = missionRequirementsSourceForCandidate(candidate);
+            if (!source || source.isConnected === false || seenSources.has(source)) return;
+            seenSources.add(source);
+            candidates.push({ ...candidate, source });
+        };
+        for (const candidate of missionValueWindowCandidates()) add(candidate);
+        for (const context of transportSweepDocumentContexts()) {
+            const doc = context?.doc;
+            if (!doc?.querySelectorAll) continue;
+            for (const source of Array.from(doc.querySelectorAll('#missing_text'))) {
+                add(missionRequirementsCandidateFromSource(source));
+            }
         }
-        return null;
+        return candidates.sort((a, b) => {
+            const aExisting = missionRequirementsRecords.has(a.source) ? 2 : 0;
+            const bExisting = missionRequirementsRecords.has(b.source) ? 2 : 0;
+            const aVisible = isVisible(a.source) ? 1 : 0;
+            const bVisible = isVisible(b.source) ? 1 : 0;
+            return (bExisting + bVisible) - (aExisting + aVisible);
+        });
     }
 
     function missionRequirementsDocumentCss() {
@@ -22502,7 +22749,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const panel = record?.panel;
         const target = mutation?.target;
         if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
-        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [data-equipment-type], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
         return mutationTouchesSelector(mutation, selector);
     }
 
@@ -22546,7 +22793,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 subtree: true,
                 characterData: true,
                 attributes: true,
-                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'sortvalue']
+                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue']
             });
         }
         missionRequirementsRecords.set(source, record);
@@ -22586,20 +22833,22 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function scanMissionRequirementsWindows() {
+        if (runtime.destroyed) return;
         if (!state.missionRequirements) {
             clearMissionRequirementsPanels();
             return;
         }
         const activeSources = new Set();
         const activeDocuments = new WeakSet();
-        for (const candidate of missionValueWindowCandidates()) {
+        for (const candidate of missionRequirementsWindowCandidates()) {
             const source = missionRequirementsSourceForCandidate(candidate);
-            if (!source || !source.isConnected) continue;
-            const doc = source.ownerDocument || document;
-            if (activeDocuments.has(doc)) continue;
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
             if (missionRequirementsLssmActive(candidate, source)) {
                 missionRequirementsRemoveRecord(source);
-                activeDocuments.add(doc);
                 continue;
             }
             const raw = missionRequirementsElementText(source);
@@ -22607,12 +22856,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 missionRequirementsRemoveRecord(source);
                 continue;
             }
-            activeDocuments.add(doc);
             activeSources.add(source);
             missionRequirementsEnsureRecord(candidate, source);
         }
         for (const source of Array.from(missionRequirementsRecords.keys())) {
-            if (!activeSources.has(source) || !source.isConnected) missionRequirementsRemoveRecord(source);
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
         }
     }
 
@@ -22642,7 +22890,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }, true);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
         const view = doc.defaultView || pageWindow;
         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
@@ -25103,27 +25351,22 @@ Create the private backup now?`);
 
         const controls = document.getElementById(SCRIPT.controlId);
         if (!controls || !isVisible(controls)) return;
-
         const overlayRect = overlay.getBoundingClientRect();
         const controlRect = controls.getBoundingClientRect();
         if (overlayRect.width <= 0 || overlayRect.height <= 0 || controlRect.width <= 0 || controlRect.height <= 0) return;
-
         const horizontallyIntersects = controlRect.right > overlayRect.left + 4 && controlRect.left < overlayRect.right - 4;
         const controlTop = controlRect.top - overlayRect.top;
         const isLowerMapControl = controlTop > overlayRect.height * .42 && controlTop < overlayRect.height - 12;
         if (!horizontallyIntersects || !isLowerMapControl) return;
-
         const gap = 10;
         const safeBottom = Math.max(190, Math.min(overlayRect.height - 8, controlTop - gap));
         const defaultBottom = overlayRect.height * .5 + banner.offsetHeight * .5;
         if (defaultBottom <= safeBottom) return;
-
         const safeHeight = Math.max(210, safeBottom - 16);
         const safeBottomOffset = Math.max(0, overlayRect.height - safeBottom);
         overlay.style.setProperty('--mcms-payout-safe-height', `${safeHeight}px`);
         overlay.style.setProperty('--mcms-payout-safe-bottom-offset', `${safeBottomOffset}px`);
         overlay.classList.add('mcms-payout-controls-safe');
-
         // Re-read after the compact 007 layout applies, then centre the dossier in
         // the unobstructed map area above the expanded command toolbar.
         void banner.offsetHeight;
@@ -25139,12 +25382,10 @@ Create the private backup now?`);
     function triggerPayoutFlash(amount, force = false, context = null, options = {}) {
         const credits = Math.max(0, Math.round(Number(amount) || 0));
         if (!force && (!state.payoutFlash.enabled || credits < state.payoutFlash.threshold)) return false;
-
         const overlay = ensurePayoutFlashOverlay();
         if (!overlay) return false;
         stopPayoutFlashAnimation(overlay);
         positionPayoutFlashOverlay(overlay);
-
         const duration = normalisePayoutFlashDuration(options.durationMs ?? state.payoutFlash.durationMs);
         const templateKey = PAYOUT_TEMPLATES[options.template] ? options.template : state.payoutFlash.template;
         const resolvedContext = context || (force ? { source: 'personal', caption: 'Emergency Response Test' } : { source: 'unknown', caption: '' });
@@ -25155,7 +25396,6 @@ Create the private backup now?`);
         overlay.style.setProperty('--mcms-payout-accent', presentation.colour);
         overlay.style.setProperty('--mcms-payout-accent-soft', presentation.soft);
         overlay.style.setProperty('--mcms-payout-glow', presentation.glow);
-
         const amountElement = overlay.querySelector('.mcms-payout-amount');
         const titleElement = overlay.querySelector('.mcms-payout-title');
         const missionElement = overlay.querySelector('.mcms-payout-mission');
@@ -25190,15 +25430,12 @@ Create the private backup now?`);
         if (sourceElement) sourceElement.textContent = presentation.label;
         if (tierElement) tierElement.textContent = presentation.tierLabel;
         if (kickerElement) kickerElement.textContent = payoutTemplateMeta(templateKey).kicker;
-
         overlay.style.setProperty('opacity', '1', 'important');
         overlay.classList.add('mcms-payout-active');
         fitPayoutFlashContent(overlay);
-
         const reducedMotion = Boolean(state.economyMode || pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
         animatePayoutAmount(amountElement, credits, duration, reducedMotion);
         playPayoutSound(presentation.tier, templateKey);
-
         if (state.economyMode) {
             if (red) red.style.setProperty('opacity', '.12');
             if (blue) blue.style.setProperty('opacity', '.12');
@@ -25214,7 +25451,6 @@ Create the private backup now?`);
             payoutFlashTimer = runtimeSetTimeout(() => stopPayoutFlashAnimation(overlay), duration + 120);
             return true;
         }
-
         if (typeof overlay.animate === 'function' && red && blue && banner) {
             red.style.setProperty('animation', 'none', 'important');
             blue.style.setProperty('animation', 'none', 'important');
@@ -25348,7 +25584,6 @@ Create the private backup now?`);
                 if (blue) blue.style.setProperty('opacity', bluePhase ? '.88' : '0');
             }, reducedMotion ? 500 : 180);
         }
-
         payoutFlashTimer = runtimeSetTimeout(() => stopPayoutFlashAnimation(overlay), duration + 120);
         return true;
     }
@@ -25356,12 +25591,10 @@ Create the private backup now?`);
     function processCreditTotal(value) {
         const total = parseCreditValue(value);
         if (total === null) return;
-
         if (lastObservedCredits === null) {
             lastObservedCredits = total;
             return;
         }
-
         if (total === lastObservedCredits) return;
         const previous = lastObservedCredits;
         lastObservedCredits = total;
@@ -25377,7 +25610,6 @@ Create the private backup now?`);
         try { current = pageWindow.creditsUpdate; } catch (err) { return false; }
         if (typeof current !== 'function') return false;
         if (current.__mcmsPayoutFlashWrappedV313) return true;
-
         const original = current.__mcmsOriginal || current;
         const wrapped = function (...args) {
             const result = original.apply(this, args);
@@ -25385,7 +25617,6 @@ Create the private backup now?`);
             else processCreditTotal(readCurrentCreditTotal());
             return result;
         };
-
         try {
             Object.defineProperty(wrapped, '__mcmsPayoutFlashWrappedV313', { value: true });
             Object.defineProperty(wrapped, '__mcmsOriginal', { value: original });
@@ -25405,13 +25636,11 @@ Create the private backup now?`);
     function observeCreditValue() {
         const element = document.querySelector('.credits-value');
         if (!element) return false;
-
         if (observedCreditsElement === element && creditsValueObserver) return true;
         if (creditsValueObserver) {
             try { creditsValueObserver.disconnect(); } catch (err) {}
             runtime.observers.delete(creditsValueObserver);
         }
-
         observedCreditsElement = element;
         processCreditTotal(element.textContent);
         creditsValueObserver = runtimeTrackObserver(new MutationObserver(() => processCreditTotal(element.textContent)));
@@ -26279,7 +26508,6 @@ Create the private backup now?`);
                 reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
                 return;
             }
-
             let request = null;
             let settled = false;
             const finish = (error, response = null) => {
@@ -26289,7 +26517,6 @@ Create the private backup now?`);
                 if (error) reject(error);
                 else resolve(response);
             };
-
             try {
                 request = GM_xmlhttpRequest({
                     method,
@@ -26549,7 +26776,6 @@ Create the private backup now?`);
         let endMs = now;
         let label = 'Today';
         let note = '';
-
         if (periodId === 'yesterday') {
             startMs = addLocalDays(todayStart, -1);
             endMs = todayStart;
@@ -26604,7 +26830,6 @@ Create the private backup now?`);
             if (endMs - startMs > 90 * 24 * 60 * 60 * 1000) throw new Error('Custom financial reports are limited to 90 days per run.');
             label = 'Custom Financial Period';
         }
-
         const durationMs = Math.max(1, endMs - startMs);
         let comparisonEndMs = startMs;
         let comparisonStartMs = startMs - durationMs;
@@ -26675,7 +26900,6 @@ Create the private backup now?`);
         let scanLimitReached;
         let lastProcessedPage = 0;
         const scanOccurrenceCounts = new Map();
-
         const absorbPage = (parsed, page) => {
             fetchedPages++;
             lastProcessedPage = Math.max(lastProcessedPage, page);
@@ -26695,7 +26919,6 @@ Create the private backup now?`);
             reachedStart = Number.isFinite(oldestTimestamp) && oldestTimestamp <= effectiveRequiredStart;
             if (canUseIncremental && pageOverlap >= 3 && Number.isFinite(pageOldest) && pageOldest <= vaultLatestTimestamp) overlapFound = true;
         };
-
         const persistCheckpoint = ({ final = false, completeRange = false } = {}) => {
             if (!state.financialVault.enabled || (!pendingEntries.length && !final)) return;
             vault = mergeFinanceVaultEntries(vault, pendingEntries, {
@@ -26713,7 +26936,6 @@ Create the private backup now?`);
             });
             pendingEntries = [];
         };
-
         const firstPage = await fetchCreditLedgerPage(1);
         lastPage = Math.max(1, firstPage.lastPage || 1);
         firstPageAnchor = financialLedgerAnchor(firstPage.entries);
@@ -26740,7 +26962,6 @@ Create the private backup now?`);
         } else {
             absorbPage(firstPage, 1);
         }
-
         if (deepMode) {
             const configuredCap = Math.max(100, Math.min(FINANCE_DEEP_SCAN_HARD_PAGE_CAP, Number(activeFinancialPolicy?.scan?.pageCap) || FINANCE_DEEP_SCAN_HARD_PAGE_CAP));
             const targetLastPage = Math.min(lastPage, configuredCap);
@@ -26776,12 +26997,10 @@ Create the private backup now?`);
             }
             scanLimitReached = lastProcessedPage >= FINANCE_MAX_LEDGER_PAGES && lastProcessedPage < lastPage;
         }
-
         if (canUseIncremental && !overlapFound && !reachedStart && lastProcessedPage < lastPage) {
             setDiscordStatus('Local archive overlap was not found. Performing one complete requested-range scan…', 'busy');
             return fetchFinancialLedger(requiredStartMs, attempt, true, false);
         }
-
         let ledgerStable = true;
         if (fetchedPages > 1 && firstPageAnchor) {
             const verificationPage = await fetchCreditLedgerPage(1);
@@ -26795,13 +27014,11 @@ Create the private backup now?`);
                 setFinanceVaultStatus('MissionChief added ledger activity during the deep scan. Progress was retained and the next run will safely rescan from the changed first page.', 'neutral');
             }
         }
-
         if (!pendingEntries.length && !vault.transactions.length) throw new Error('MissionChief’s timestamped credit ledger could not be read.');
         const coverageReachedThisScan = deepMode
             ? (!scanCancelled && !scanLimitReached && ledgerStable && lastProcessedPage >= lastPage)
             : (ledgerStable && (reachedStart || overlapFound || lastProcessedPage >= lastPage));
         persistCheckpoint({ final: true, completeRange: coverageReachedThisScan });
-
         if (!state.financialVault.enabled) {
             pendingEntries = decorateFinancialEntries(pendingEntries);
         }
@@ -27012,7 +27229,6 @@ Create the private backup now?`);
         let unclassifiedAmount = 0;
         let unclassifiedCount = 0;
         let hasMissionPayout = false;
-
         const addCategory = (map, category, amount) => {
             const existing = map.get(category.key) || { key: category.key, label: category.label, accountingGroup: category.accountingGroup, total: 0, count: 0 };
             existing.total += Math.abs(amount);
@@ -27024,7 +27240,6 @@ Create the private backup now?`);
             topPayouts.sort((a, b) => b.amount - a.amount);
             if (topPayouts.length > 8) topPayouts.length = 8;
         };
-
         const classifiedTransactions = [];
         for (const sourceEntry of transactions) {
             const amount = Number(sourceEntry.amount) || 0;
@@ -27041,7 +27256,6 @@ Create the private backup now?`);
                 unclassifiedCount += 1;
                 if (unclassifiedEntries.length < 20) unclassifiedEntries.push(entry);
             }
-
             if (amount > 0) {
                 income += amount;
                 incomeCount += 1;
@@ -27075,7 +27289,6 @@ Create the private backup now?`);
                 }
             }
         }
-
         if (!hasMissionPayout) {
             topPayouts.length = 0;
             largestReward = 0;
@@ -27087,7 +27300,6 @@ Create the private backup now?`);
                 addTopPayout(entry);
             }
         }
-
         const net = income - spending;
         const operatingResult = operatingIncome + otherIncome - operatingExpense;
         const calendarHours = Math.max(1 / 60, period.durationMs / (60 * 60 * 1000));
@@ -27103,7 +27315,6 @@ Create the private backup now?`);
         const incomeVolatilityPercent = bucketIncomeValues.length && income
             ? Math.round((standardDeviation(bucketIncomeValues) / Math.max(1, bucketIncomeValues.reduce((sum, value) => sum + value, 0) / bucketIncomeValues.length)) * 1000) / 10
             : 0;
-
         return {
             transactions: classifiedTransactions,
             incomeCategories: Array.from(incomeCategoryMap.values()).sort((a, b) => b.total - a.total || b.count - a.count),
@@ -27226,30 +27437,25 @@ Create the private backup now?`);
         if (Number.isFinite(incomeTrend)) revenue += Math.max(-25, Math.min(25, incomeTrend / 2));
         if (summary.activeIncomePerHour > summary.incomePerHour * 1.5) revenue += 4;
         revenue = Math.round(clamp(revenue, 0, 100, 65));
-
         let efficiency = 55 + summary.operatingMarginPercent * 0.45;
         if (summary.operatingExpense === 0 && summary.income > 0) efficiency += 8;
         efficiency = Math.round(clamp(efficiency, 0, 100, 55));
-
         const dailyOperatingExpense = summary.operatingExpense / Math.max(1 / 24, Number(summary.calendarDays) || 1 / 24);
         const runwayDays = balanceAvailable && dailyOperatingExpense > 0 ? Math.max(0, Number(closingBalance) || 0) / dailyOperatingExpense : null;
         let liquidity = balanceAvailable ? 65 : 40;
         if (runwayDays !== null) liquidity += Math.max(-30, Math.min(30, (runwayDays - 7) * 2));
         liquidity = Math.round(clamp(liquidity, 0, 100, 60));
-
         const capexRatio = summary.capitalInvestmentRatioPercent;
         let growth = summary.capitalInvestment > 0 ? 72 : 58;
         if (capexRatio > 200) growth -= 18;
         else if (capexRatio > 120) growth -= 8;
         else if (capexRatio >= 20 && capexRatio <= 100) growth += 10;
         growth = Math.round(clamp(growth, 0, 100, 60));
-
         let confidence = summary.classificationConfidence;
         if (!complete) confidence -= 18;
         if (!balanceAvailable) confidence -= 8;
         if (reconciled) confidence += 5;
         confidence = Math.round(clamp(confidence, 0, 100, 75));
-
         const overall = Math.round(revenue * 0.25 + efficiency * 0.25 + liquidity * 0.20 + growth * 0.15 + confidence * 0.15);
         const assessment = financialScoreLabel(overall);
         return {
@@ -27392,7 +27598,6 @@ Create the private backup now?`);
             else if (comparisonEnabled && entry.timestamp >= period.comparisonStartMs && entry.timestamp < period.comparisonEndMs) previousTransactions.push(entry);
             if (entry.timestamp >= period.endMs && entry.timestamp <= now) afterPeriodNet += entry.amount;
         }
-
         const current = summariseFinancialTransactions(currentTransactions, period);
         const previousPeriod = { ...period, startMs: period.comparisonStartMs, endMs: period.comparisonEndMs, durationMs: period.durationMs };
         const previous = comparisonEnabled ? summariseFinancialTransactions(previousTransactions, previousPeriod) : null;
@@ -27583,7 +27788,6 @@ Create the private backup now?`);
             report.userName ? `Account: **${escapeDiscordMarkdown(report.userName)}**${report.userId ? ` · ID ${escapeDiscordMarkdown(report.userId)}` : ''}` : '',
             report.period.note ? `_${escapeDiscordMarkdown(report.period.note)}_` : ''
         ].filter(Boolean).join('\n');
-
         const balanceLines = report.openingBalance === null || report.closingBalance === null
             ? ['Balance data was unavailable.']
             : [
@@ -27592,7 +27796,6 @@ Create the private backup now?`);
                 `Peak: **${report.drawdown.peakBalance === null ? 'Unavailable' : report.drawdown.peakBalance.toLocaleString('en-GB')}**`,
                 `Largest drawdown: **${report.drawdown.largestDrawdown === null ? 'Unavailable' : formatPlainCredits(report.drawdown.largestDrawdown)}${report.drawdown.largestDrawdownPercent === null ? '' : ` · ${report.drawdown.largestDrawdownPercent.toLocaleString('en-GB')}%`}**`
             ];
-
         const productivity = [
             `Missions/transport rewards: **${report.missionCount.toLocaleString('en-GB')}**`,
             `Active time estimate: **${report.activeHours.toLocaleString('en-GB')}h**`,
@@ -27601,7 +27804,6 @@ Create the private backup now?`);
             `Average / median mission: **${formatPlainCredits(report.averageMissionReward)} / ${formatPlainCredits(report.medianMissionReward)}**`,
             `Alliance / personal share: **${report.allianceIncomePercent.toLocaleString('en-GB')}% / ${report.personalIncomePercent.toLocaleString('en-GB')}%**`
         ].join('\n');
-
         const executive = {
             title: '📈 MissionChief Financial Command — Executive Audit',
             description: truncateDiscord(description, 4096),
@@ -27623,7 +27825,6 @@ Create the private backup now?`);
             footer: { text: `${SCRIPT.name} • v${SCRIPT.version} • GitHub Intelligence ${activeFinancialRuleVersion} / ${activeFinancialPolicyVersion}` }
         };
         if (withAttachment) executive.image = { url: `attachment://${FINANCE_CHART_FILENAME}` };
-
         const audit = {
             title: '🧠 Audit Intelligence & Capital Strategy',
             color: 0x3498db,
@@ -27637,7 +27838,6 @@ Create the private backup now?`);
             ],
             footer: { text: 'Operating performance is separated from capital investment. Forecasts are indicative, not guaranteed.' }
         };
-
         const embeds = fitDiscordEmbedsToBudget(state.discordReport.reportMode === 'executive' ? [executive] : [executive, audit]);
         const payload = {
             username: state.discordReport.webhookName || 'MissionChief Finance',
@@ -27736,18 +27936,15 @@ Create the private backup now?`);
         const valueLeft = valueRight - valueLayout.width;
         const labelMaxWidth = Math.max(56, valueLeft - gap - x);
         const labelLayout = fitFinancialCanvasText(context, label, labelMaxWidth, { weight: 600, size: 15, minSize: 11 });
-
         context.fillStyle = 'rgba(255,255,255,0.58)';
         context.textAlign = 'left';
         context.font = `600 ${labelLayout.fontSize}px Arial, sans-serif`;
         context.fillText(labelLayout.text, x, y);
-
         context.fillStyle = '#ffffff';
         context.textAlign = 'right';
         context.font = `800 ${valueLayout.fontSize}px Arial, sans-serif`;
         context.fillText(valueLayout.text, valueRight, y);
         context.textAlign = 'left';
-
         return {
             gap,
             label: { text: labelLayout.text, left: x, right: x + labelLayout.width, width: labelLayout.width, fontSize: labelLayout.fontSize },
@@ -27768,7 +27965,6 @@ Create the private backup now?`);
             gradient.addColorStop(1, '#080b11');
             context.fillStyle = gradient;
             context.fillRect(0, 0, 1200, 675);
-
             context.fillStyle = 'rgba(88,166,255,0.12)';
             context.beginPath();
             context.arc(1060, 70, 230, 0, Math.PI * 2);
@@ -27777,7 +27973,6 @@ Create the private backup now?`);
             context.beginPath();
             context.arc(140, 650, 280, 0, Math.PI * 2);
             context.fill();
-
             context.fillStyle = '#ffffff';
             context.font = '900 34px Arial, sans-serif';
             context.fillText('MISSIONCHIEF FINANCIAL INTELLIGENCE', 54, 58);
@@ -27785,7 +27980,6 @@ Create the private backup now?`);
             context.font = '600 18px Arial, sans-serif';
             context.fillText(report.period.label, 54, 89);
             context.fillText(report.period.rangeLabel, 54, 116);
-
             roundRectPath(context, 1002, 38, 142, 70, 20);
             context.fillStyle = report.net >= 0 ? 'rgba(46,204,113,0.18)' : 'rgba(231,76,60,0.18)';
             context.fill();
@@ -27796,11 +27990,9 @@ Create the private backup now?`);
             context.font = '700 14px Arial, sans-serif';
             context.fillText(`${report.grade.score}/100`, 1073, 96);
             context.textAlign = 'left';
-
             drawFinancialMetricCard(context, 54, 148, 337, 98, 'Income', formatSignedCompactCredits(report.income), '#2ecc71');
             drawFinancialMetricCard(context, 412, 148, 337, 98, 'Operating result', formatSignedCompactCredits(report.operatingResult), report.operatingResult >= 0 ? '#58a6ff' : '#ff6b61');
             drawFinancialMetricCard(context, 770, 148, 374, 98, 'Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0)), '#f1c40f');
-
             const chartX = 54;
             const chartY = 288;
             const chartW = 730;
@@ -27836,7 +28028,6 @@ Create the private backup now?`);
                 context.fillText(bucket.label, x + Math.max(8, slotW - 10) / 2, chartY + chartH - 15);
             });
             context.textAlign = 'left';
-
             const detailX = 810;
             const detailY = 288;
             const detailW = 334;
@@ -27852,14 +28043,12 @@ Create the private backup now?`);
                 const y = detailY + 65 + index * 29;
                 drawFinancialSnapshotRow(context, detailX + 22, y, detailW - 44, line[0], line[1]);
             });
-
             context.fillStyle = 'rgba(255,255,255,0.42)';
             context.font = '600 14px Arial, sans-serif';
             context.fillText(`${report.activityCount.toLocaleString('en-GB')} transactions · ${report.ledgerPages.toLocaleString('en-GB')} ledger pages · Generated ${new Date(report.generatedAt).toLocaleString('en-GB')}`, 54, 620);
             context.fillStyle = 'rgba(255,255,255,0.27)';
             context.font = '600 12px Arial, sans-serif';
             context.fillText(`${SCRIPT.name} v${SCRIPT.version} · Deterministic local financial audit · projections are estimates`, 54, 648);
-
             return await new Promise(resolve => {
                 canvas.toBlob(resolve, 'image/png', 0.92);
             });
@@ -28046,7 +28235,6 @@ Create the private backup now?`);
 
     function toggleCommandBar() {
         if (commandBarAnimating) return;
-
         const control = document.getElementById(SCRIPT.controlId);
         const opening = state.commandBarOpen === false;
         const animatedItems = control
@@ -28065,18 +28253,15 @@ Create the private backup now?`);
                 item.style.removeProperty('will-change');
             }
         };
-
         if (commandBarAnimationTimer !== null) {
             runtimeClearTimeout(commandBarAnimationTimer);
             commandBarAnimationTimer = null;
         }
-
         if (opening) {
             state.commandBarOpen = true;
             saveState();
             updateUI();
             fitControlToMap();
-
             if (duration > 0 && animatedItems.length) {
                 commandBarAnimating = true;
                 const targetStyles = animatedItems.map(item => {
@@ -28086,7 +28271,6 @@ Create the private backup now?`);
                         transform: computed.transform === 'none' ? 'none' : computed.transform
                     };
                 });
-
                 animatedItems.forEach(item => {
                     item.style.setProperty('transition', 'none', 'important');
                     item.style.setProperty('transition-delay', '0ms', 'important');
@@ -28095,7 +28279,6 @@ Create the private backup now?`);
                     item.style.setProperty('will-change', 'opacity, transform', 'important');
                 });
                 void control.offsetWidth;
-
                 runtimeRequestAnimationFrame(() => {
                     animatedItems.forEach((item, index) => {
                         item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.2,.78,.22,1), transform ${duration}ms cubic-bezier(.2,.78,.22,1)`, 'important');
@@ -28104,18 +28287,15 @@ Create the private backup now?`);
                         item.style.setProperty('transform', targetStyles[index].transform, 'important');
                     });
                 });
-
                 commandBarAnimationTimer = runtimeSetTimeout(() => {
                     commandBarAnimationTimer = null;
                     clearAnimationStyles();
                     commandBarAnimating = false;
                 }, duration + maxDelay + 35);
             }
-
             showToast('Command bar expanded');
             return;
         }
-
         if (duration <= 0 || !animatedItems.length) {
             state.commandBarOpen = false;
             saveState();
@@ -28124,7 +28304,6 @@ Create the private backup now?`);
             showToast('Command bar collapsed');
             return;
         }
-
         commandBarAnimating = true;
         animatedItems.forEach((item, index) => {
             const computed = pageWindow.getComputedStyle(item);
@@ -28136,7 +28315,6 @@ Create the private backup now?`);
             item.dataset.mcmsCollapseDelay = String(Math.min(index * stagger, 70));
         });
         void control.offsetWidth;
-
         runtimeRequestAnimationFrame(() => {
             for (const item of animatedItems) {
                 item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.4,0,.2,1), transform ${duration}ms cubic-bezier(.4,0,.2,1)`, 'important');
@@ -28146,7 +28324,6 @@ Create the private backup now?`);
                 delete item.dataset.mcmsCollapseDelay;
             }
         });
-
         commandBarAnimationTimer = runtimeSetTimeout(() => {
             commandBarAnimationTimer = null;
             state.commandBarOpen = false;
@@ -28156,7 +28333,6 @@ Create the private backup now?`);
             clearAnimationStyles();
             commandBarAnimating = false;
         }, duration + maxDelay + 25);
-
         showToast('Command bar collapsed');
     }
 
@@ -28211,9 +28387,7 @@ Create the private backup now?`);
         if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
         if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
         if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
-
         if (state.cleanMode) closePanel();
-
         if (!criticalViewActive) saveState();
         applyRootAttributes();
         updateUI();
@@ -28305,7 +28479,6 @@ Create the private backup now?`);
     function shouldSuppressControl() {
         if (state.cleanMode) return false;
         if (document.body && document.body.classList.contains('modal-open')) return true;
-
         return SUPPRESSION_SELECTORS.some(selector => {
             let nodes;
             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
@@ -28381,13 +28554,11 @@ Create the private backup now?`);
         const panel = document.getElementById(SCRIPT.panelId);
         const margin = 12;
         if (!control || !panel) return { left: margin, top: margin };
-
         const controlRect = control.getBoundingClientRect();
         const panelWidth = panel.offsetWidth || 318;
         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
         const spaceRight = viewportWidth - controlRect.right - margin;
         const spaceLeft = controlRect.left - margin;
-
         return {
             left: (spaceRight >= panelWidth || spaceRight >= spaceLeft) ? controlRect.right + margin : controlRect.left - panelWidth - margin,
             top: controlRect.top
@@ -28400,10 +28571,8 @@ Create the private backup now?`);
         if (!panel || !panel.classList.contains('mcms-open')) return;
         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
         clearTabletPanelSizing(panel);
-
         let left;
         let top;
-
         if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
             left = Number(state.panelPosition.left);
             top = Number(state.panelPosition.top);
@@ -28412,7 +28581,6 @@ Create the private backup now?`);
             left = pos.left;
             top = pos.top;
         }
-
         const clamped = clampPanelPosition(left, top);
         setPanelCssPosition(clamped.left, clamped.top);
     }
@@ -28443,13 +28611,10 @@ Create the private backup now?`);
         const isTouch = event.type === 'touchstart';
         if (isMouse && event.button !== 0) return;
         if (!isMouse && !isTouch) return;
-
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open')) return;
-
         const point = isTouch ? event.touches[0] : event;
         if (!point) return;
-
         const rect = panel.getBoundingClientRect();
         dragState = {
             startX: point.clientX,
@@ -28458,45 +28623,36 @@ Create the private backup now?`);
             startTop: rect.top,
             moved: false
         };
-
         panel.classList.add('mcms-dragging');
         document.documentElement.style.cursor = 'grabbing';
         document.body.style.userSelect = 'none';
-
         document.addEventListener('mousemove', movePanelDrag, true);
         document.addEventListener('mouseup', endPanelDrag, true);
         document.addEventListener('touchmove', movePanelDrag, { capture: true, passive: false });
         document.addEventListener('touchend', endPanelDrag, true);
         document.addEventListener('touchcancel', endPanelDrag, true);
-
         event.preventDefault();
         event.stopPropagation();
     }
 
     function movePanelDrag(event) {
         if (!dragState) return;
-
         const isTouch = event.type === 'touchmove';
         const point = isTouch ? event.touches[0] : event;
         if (!point) return;
-
         const dx = point.clientX - dragState.startX;
         const dy = point.clientY - dragState.startY;
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
-
         const pos = clampPanelPosition(dragState.startLeft + dx, dragState.startTop + dy);
         setPanelCssPosition(pos.left, pos.top);
-
         event.preventDefault();
         event.stopPropagation();
     }
 
     function endPanelDrag(event) {
         if (!dragState) return;
-
         const didMove = Boolean(dragState.moved);
         const panel = document.getElementById(SCRIPT.panelId);
-
         if (panel) {
             panel.classList.remove('mcms-dragging');
             const rect = panel.getBoundingClientRect();
@@ -28505,23 +28661,19 @@ Create the private backup now?`);
             state.panelPosition = { left: pos.left, top: pos.top };
             saveState();
         }
-
         dragState = null;
         document.documentElement.style.cursor = '';
         document.body.style.userSelect = '';
-
         document.removeEventListener('mousemove', movePanelDrag, true);
         document.removeEventListener('mouseup', endPanelDrag, true);
         document.removeEventListener('touchmove', movePanelDrag, true);
         document.removeEventListener('touchend', endPanelDrag, true);
         document.removeEventListener('touchcancel', endPanelDrag, true);
-
         if (didMove) {
             suppressNextOutsideClick = true;
             showToast('Menu position saved');
             runtimeSetTimeout(() => { suppressNextOutsideClick = false; }, 250);
         }
-
         if (event) {
             event.preventDefault();
             event.stopPropagation();
@@ -28579,14 +28731,12 @@ Create the private backup now?`);
     function requestHelpGuideDocument(force = false) {
         if (!force && helpGuideDocumentCache) return Promise.resolve(helpGuideDocumentCache);
         if (helpGuideLoadPromise) return helpGuideLoadPromise;
-
         const url = helpGuideRequestUrl(force);
         helpGuideLoadPromise = new Promise((resolve, reject) => {
             if (runtime.destroyed) {
                 reject(new Error('Toolkit runtime stopped.'));
                 return;
             }
-
             const validate = text => {
                 const documentText = String(text || '').trim();
                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
@@ -28596,7 +28746,6 @@ Create the private backup now?`);
                 helpGuideLoadedAt = Date.now();
                 return documentText;
             };
-
             if (typeof GM_xmlhttpRequest === 'function') {
                 let request = null;
                 let settled = false;
@@ -28627,7 +28776,6 @@ Create the private backup now?`);
                 }
                 return;
             }
-
             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
                 .then(response => {
                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
@@ -28636,7 +28784,6 @@ Create the private backup now?`);
                 .then(text => resolve(validate(text)))
                 .catch(error => reject(error instanceof Error ? error : new Error('GitHub could not be reached.')));
         }).finally(() => { helpGuideLoadPromise = null; });
-
         return helpGuideLoadPromise;
     }
 
@@ -28760,7 +28907,6 @@ Create the private backup now?`);
                     </div>
                 </div>
             </div>`;
-
         runtimeListen(overlay, 'click', event => {
             const actionButton = closestEventTarget(event, '[data-help-action]');
             if (actionButton) {
@@ -28956,11 +29102,9 @@ Create the private backup now?`);
             </div>
             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
         `;
-
         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
             control.addEventListener(eventName, stopMapInteraction, { passive: false });
         });
-
         let screenPinLongPressTimer = 0;
         let screenPinLongPressButton = null;
         const cancelScreenPinLongPress = () => {
@@ -28986,7 +29130,6 @@ Create the private backup now?`);
             screenPinLongPressTimer = 0;
             screenPinLongPressButton = null;
         }, { passive: true });
-
         control.addEventListener('click', event => {
             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
@@ -29002,9 +29145,7 @@ Create the private backup now?`);
             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
             if (actionButton) handleAction(actionButton);
         });
-
         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
-
         mapEl.appendChild(control);
         renderScreenPins();
         updateUI();
@@ -29021,7 +29162,6 @@ Create the private backup now?`);
         panel.setAttribute('aria-modal', 'false');
         panel.setAttribute('aria-hidden', 'true');
         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
-
         const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
             const theme = UI_THEMES[key];
             return `
@@ -29031,7 +29171,6 @@ Create the private backup now?`);
                 </button>
             `;
         }).join('');
-
         const buildThemeButtons = keys => keys.map(key => {
             const theme = THEMES[key];
             return `
@@ -29047,9 +29186,7 @@ Create the private backup now?`);
         const uiThemeButtons = buildUiThemeButtons();
         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
-
         const positionButtons = Object.entries(POSITIONS).map(([key, pos]) => `<button class="mcms-position-btn" type="button" data-position="${key}" title="${pos.label}">${pos.short}</button>`).join('');
-
         panel.innerHTML = `
             <div class="mcms-panel-sticky-stack">
                 <div class="mcms-header">
@@ -29301,7 +29438,6 @@ Create the private backup now?`);
                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
             </div>
         `;
-
         const tabList = panel.querySelector('.mcms-tabs');
         if (tabList) tabList.setAttribute('role', 'tablist');
         panel.querySelectorAll('.mcms-tab-btn').forEach(button => {
@@ -29319,7 +29455,6 @@ Create the private backup now?`);
             tabPanel.setAttribute('aria-labelledby', `mcms-tab-${tab}`);
             tabPanel.hidden = true;
         });
-
         panel.addEventListener('keydown', event => {
             const current = closestEventTarget(event, '.mcms-tab-btn');
             if (!current || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -29333,7 +29468,6 @@ Create the private backup now?`);
             setActiveTab(nextButton.dataset.tab);
             nextButton.focus({ preventScroll: true });
         });
-
         panel.addEventListener('click', event => {
             const closeButton = closestEventTarget(event, '.mcms-close');
             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
@@ -29354,19 +29488,15 @@ Create the private backup now?`);
                 return;
             }
         });
-
         panel.addEventListener('change', event => handleSettingChange(event.target));
-
         const dragHandle = panel.querySelector('.mcms-drag-handle');
         if (dragHandle) {
             dragHandle.addEventListener('mousedown', startPanelDrag, true);
             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
         }
-
         ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
         });
-
         document.body.appendChild(panel);
         const importInput = panel.querySelector('[data-import-config-file]');
         if (importInput) {
@@ -29451,7 +29581,6 @@ Create the private backup now?`);
                 baseLabel: bookmarkScreenLabel(bookmark)
             });
         });
-
         dock.innerHTML = resolveScreenPinLabels(entries).map(entry => {
             const action = entry.kind === 'quick'
                 ? `data-action="place-go" data-place="${escapeHtml(entry.id)}"`
@@ -29522,7 +29651,6 @@ Create the private backup now?`);
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
-
         if (setting === 'mobile-mode' || setting === 'tablet-mode') {
             const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
             const previousLayout = activeDeviceLayout;
@@ -29545,7 +29673,6 @@ Create the private backup now?`);
             showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
             return;
         }
-
         if (setting === 'major-incident-minimum') {
             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
             saveState();
@@ -29555,7 +29682,6 @@ Create the private backup now?`);
             showToast(`Major Incident Feed: ${formatOperationalCompactCredits(state.majorIncidentFeed.minimumCredits)}+ credits`);
             return;
         }
-
         if (setting === 'coverage-radius') {
             state.coverage.radiusMi = Number(target.value) || 10;
             saveState();
@@ -29563,7 +29689,6 @@ Create the private backup now?`);
             scheduleCoverageRefresh();
             return;
         }
-
         if (setting === 'heatmap-source') state.heatmap.source = target.value === 'vehicles' ? 'vehicles' : 'stations';
         if (setting === 'heatmap-service') state.heatmap.service = ['all', 'fire', 'ambulance', 'police', 'air', 'water'].includes(target.value) ? target.value : 'all';
         if (setting === 'heatmap-radius') state.heatmap.radiusMi = Number(target.value) || 10;
@@ -29571,8 +29696,6 @@ Create the private backup now?`);
         if (setting.startsWith('heatmap-')) {
             saveState(); updateUI(); scheduleHeatmapRefresh(); return;
         }
-
-
         if (setting === 'transport-sweep-delay') {
             state.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 2000;
             saveState(); updateUI();
@@ -29585,7 +29708,6 @@ Create the private backup now?`);
             showToast(`Transport Sweep maximum: ${state.transportSweep.maxPerRun}`);
             return;
         }
-
         if (setting === 'resource-gap-radius') {
             state.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25;
             resourceGapAnalysisCache.clear();
@@ -29593,7 +29715,6 @@ Create the private backup now?`);
             showToast(`Resource Gap radius: ${state.resourceGap.radiusMi}mi`);
             return;
         }
-
         if (setting === 'stuck-threshold') {
             state.stuckDetector.thresholdMin = Math.round(clamp(target.value, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
             saveState();
@@ -29602,7 +29723,6 @@ Create the private backup now?`);
             showToast(`Stuck missions: ${state.stuckDetector.thresholdMin} minutes`);
             return;
         }
-
         if (setting === 'alliance-credit-minimum') {
             state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(target.value)) ? Number(target.value) : 0;
             saveState();
@@ -29611,7 +29731,6 @@ Create the private backup now?`);
             showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
             return;
         }
-
         if (setting === 'discord-webhook') {
             try {
                 saveDiscordWebhookUrl(target.value);
@@ -29657,7 +29776,6 @@ Create the private backup now?`);
             saveState(); updateUI();
             return;
         }
-
         if (setting === 'discord-report-mode') {
             state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
             invalidateDiscordFinancialPreview();
@@ -29688,7 +29806,6 @@ Create the private backup now?`);
             refreshFinancialIntelligenceFeeds(true).then(() => { updateUI(); renderFinanceVaultStatus(); });
             return;
         }
-
         if (setting === 'payout-template') {
             state.payoutFlash.template = PAYOUT_TEMPLATES[target.value] ? target.value : 'gta5';
             disposePayoutMediaAudio();
@@ -29722,12 +29839,10 @@ Create the private backup now?`);
             return;
         }
         if (setting === 'payout-test-amount') return;
-
         if (setting === 'auto-night-start') state.autoNight.nightStart = target.value || '19:00';
         if (setting === 'auto-day-start') state.autoNight.dayStart = target.value || '07:00';
         if (setting === 'auto-night-theme') state.autoNight.nightTheme = normaliseTheme(target.value);
         if (setting === 'auto-day-theme') state.autoNight.dayTheme = normaliseTheme(target.value);
-
         if (setting.startsWith('auto-')) {
             state.autoNight.lastBucket = '';
             saveState();
@@ -29741,10 +29856,8 @@ Create the private backup now?`);
         if (state.missionRequirements) scheduleMissionRequirementsScan(0);
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
-
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
-
         if (control) {
             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
             control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
@@ -29766,7 +29879,6 @@ Create the private backup now?`);
                 btn.setAttribute('aria-pressed', String(on));
                 btn.dataset.mcmsState = on ? 'on' : 'off';
             });
-
             const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
             if (vehicleStatusButton) {
                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
@@ -29774,7 +29886,6 @@ Create the private backup now?`);
                 vehicleStatusButton.setAttribute('aria-pressed', String(open));
                 vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
             }
-
             const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
             if (missionAgeWatchButton) {
                 const open = Boolean(document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open'));
@@ -29782,7 +29893,6 @@ Create the private backup now?`);
                 missionAgeWatchButton.setAttribute('aria-pressed', String(open));
                 missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
             }
-
             const economyButton = control.querySelector('.mcms-economy-btn');
             if (economyButton) {
                 const on = Boolean(state.economyMode);
@@ -29793,7 +29903,6 @@ Create the private backup now?`);
                 economyButton.title = label;
                 economyButton.dataset.mcmsState = on ? 'on' : 'off';
             }
-
             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
             if (dockToggleButton) {
                 const open = state.commandBarOpen !== false;
@@ -29806,9 +29915,7 @@ Create the private backup now?`);
                 if (icon) icon.textContent = open ? '▴' : '▾';
             }
         }
-
         if (!panel) return;
-
         refreshTabletModeUi(panel);
         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
             const active = btn.dataset.tab === state.activeTab;
@@ -29831,7 +29938,6 @@ Create the private backup now?`);
         });
         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
         panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
-
         const toggleValues = {
             clean: state.cleanMode,
             markerFocus: state.markerFocus,
@@ -29863,7 +29969,6 @@ Create the private backup now?`);
             unitCommitment: state.unitCommitment,
             criticalView: criticalViewActive
         };
-
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
             const on = Boolean(toggleValues[key]);
@@ -29871,7 +29976,6 @@ Create the private backup now?`);
             const pill = btn.querySelector('.mcms-pill');
             if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : key === 'heatmap' ? (on ? `${state.heatmap.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
         });
-
         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
         if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
         const radius = panel.querySelector('[data-setting="coverage-radius"]');
@@ -29992,13 +30096,11 @@ Create the private backup now?`);
             )
         );
         if (toolkitTarget) return true;
-
         if (mutation.type === 'attributes' && mutation.attributeName === 'class' && target?.classList) {
             for (const className of target.classList) {
                 if (String(className).startsWith('mcms-')) return true;
             }
         }
-
         const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
         let elementCount = 0;
         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
@@ -30014,14 +30116,12 @@ Create the private backup now?`);
 
     function mutationAddsLeafletMarkerIcon(mutation) {
         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
-
         for (const node of mutation.addedNodes) {
             if (!node || node.nodeType !== 1) continue;
             if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
             if (node.matches?.('.leaflet-marker-icon')) return true;
             if (node.querySelector?.('.leaflet-marker-icon')) return true;
         }
-
         return false;
     }
 
@@ -30114,13 +30214,11 @@ Create the private backup now?`);
         const enabled = state.allianceBuildingsMap !== false;
         root.setAttribute('data-mcms-alliance-buildings-page', 'true');
         root.setAttribute('data-mcms-alliance-buildings-map', enabled ? 'enabled' : 'disabled');
-
         const mapElement = findAllianceBuildingsMapElement();
         if (!mapElement) return false;
         const mapColumn = findResponsiveColumn(mapElement);
         const listColumn = findAllianceBuildingsListColumn(mapColumn);
         if (!mapColumn) return false;
-
         mapColumn.classList.toggle('mcms-alliance-buildings-map-column', !enabled);
         mapColumn.toggleAttribute('data-mcms-alliance-map-column', !enabled);
         mapColumn.setAttribute('aria-hidden', String(!enabled));
@@ -30128,7 +30226,6 @@ Create the private backup now?`);
             listColumn.classList.toggle('mcms-alliance-buildings-list-column', !enabled);
             listColumn.toggleAttribute('data-mcms-alliance-list-column', !enabled);
         }
-
         let notice = document.getElementById(ALLIANCE_BUILDINGS_MAP_NOTICE_ID);
         const target = enabled ? mapColumn : (listColumn || mapColumn.parentElement || document.body);
         if (!notice) {
@@ -30184,7 +30281,6 @@ Create the private backup now?`);
     function installAllianceBuildingsPageOptimisation() {
         const initiallyInContext = isAllianceBuildingsContext();
         const enabled = state.allianceBuildingsMap !== false;
-
         let renderTimer = null;
         const renderWhenRelevant = () => {
             if (!isAllianceBuildingsContext()) {
@@ -30197,13 +30293,11 @@ Create the private backup now?`);
             if (!enabled) optimiseAllianceBuildingsCourseTableEarly();
             return renderAllianceBuildingsMapPreference();
         };
-
         if (initiallyInContext || !enabled) {
             renderWhenRelevant();
             runtimeSetTimeout(renderWhenRelevant, 40);
             runtimeSetTimeout(renderWhenRelevant, 300);
             runtimeSetTimeout(renderWhenRelevant, 1200);
-
             const pageObserver = runtimeTrackObserver(new MutationObserver(mutations => {
                 if (!mutations.some(mutation => mutation.addedNodes?.length || mutation.removedNodes?.length)) return;
                 runtimeClearTimeout(renderTimer);
@@ -30214,7 +30308,6 @@ Create the private backup now?`);
             }));
             pageObserver.observe(document.body, { childList: true, subtree: true });
         }
-
         runtimeListen(document, 'click', event => {
             const button = closestEventTarget(event, '[data-mcms-alliance-map-toggle]');
             if (!button) return;
@@ -30226,7 +30319,6 @@ Create the private backup now?`);
             button.textContent = 'Reloading…';
             runtimeSetTimeout(() => location.reload(), 120);
         }, true);
-
         runtimeOnCleanup(() => {
             document.getElementById(ALLIANCE_BUILDINGS_MAP_NOTICE_ID)?.remove();
             document.querySelectorAll('.mcms-alliance-buildings-map-column').forEach(element => element.classList.remove('mcms-alliance-buildings-map-column'));
@@ -30237,7 +30329,6 @@ Create the private backup now?`);
             });
             document.documentElement?.removeAttribute('data-mcms-alliance-buildings-page');
         });
-
         return initiallyInContext && !enabled;
     }
 
@@ -30245,20 +30336,17 @@ Create the private backup now?`);
     function connectMainMutationObserver() {
         if (!mainMutationObserver || runtime.destroyed || !document.body) return;
         try { mainMutationObserver.disconnect(); } catch (err) {}
-
         const roots = new Set();
         const mapElement = getLargestLeafletMap();
         const mapRoot = mapElement?.closest?.('#map_outer') || mapElement?.parentElement || mapElement;
         const missionRoot = document.querySelector('#missions, #mission_list, .missions-panel, .mission-list');
         if (mapRoot?.isConnected) roots.add(mapRoot);
         if (missionRoot?.isConnected) roots.add(missionRoot);
-
         if (!roots.size) {
             mainMutationObserverFallbackActive = true;
             mainMutationObserver.observe(document.body, { childList: true, subtree: true });
             return;
         }
-
         mainMutationObserverFallbackActive = false;
         for (const root of roots) mainMutationObserver.observe(root, { childList: true, subtree: true });
         mainMutationObserver.observe(document.body, { childList: true, subtree: false });
@@ -30272,7 +30360,6 @@ Create the private backup now?`);
             return;
         }
         operationalStartupStarted = true;
-
         loadCachedFinancialRules();
         loadCachedFinancialPolicy();
         ensureFinanceVaultCredential(financePlayerIdentity());
@@ -30280,14 +30367,12 @@ Create the private backup now?`);
         installMissionMarkerAddHook();
         installRadioMessageHook();
         if (state.missionValue) installMissionValueWindows();
-
         startupDataPassActive = true;
         try {
             if (vehicleDataNeeded()) await refreshPersonalVehicleData(true);
         } finally {
             startupDataPassActive = false;
         }
-
         runtimeClearTimeout(missionSnapshotTimer);
         missionSnapshotTimer = null;
         if (missionSnapshotsNeeded()) refreshMissionSnapshots();
@@ -30298,7 +30383,6 @@ Create the private backup now?`);
         if (state.unitCommitment) scheduleUnitCommitmentRefresh(300);
         if (state.allianceCredits) scheduleAllianceCreditRefresh(320);
         if (state.missionAge) scheduleMissionAgeRefresh(340);
-
         operationalStartupComplete = true;
         scheduleOperationalPanelsRender(0);
         if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(120);
@@ -30474,7 +30558,6 @@ Create the private backup now?`);
             }
             return false;
         }
-
         const visibleCandidates = candidates.filter(candidate => autoLoadAllVehiclesElementVisible(candidate.link));
         if (!visibleCandidates.length) {
             if (autoLoadAllVehiclesHiddenRetryCount < AUTO_LOAD_ALL_VEHICLES_HIDDEN_RETRIES) {
@@ -30484,7 +30567,6 @@ Create the private backup now?`);
             return false;
         }
         autoLoadAllVehiclesHiddenRetryCount = 0;
-
         const candidate = visibleCandidates.find(item => item.info.missionId !== autoLoadAllVehiclesMissionId || !autoLoadAllVehiclesRequestedPages.has(item.info.signature)) || visibleCandidates[0];
         const { link, info } = candidate;
         const missionRoot = autoLoadAllVehiclesResolveMissionRoot(link);
@@ -30499,7 +30581,6 @@ Create the private backup now?`);
             console.warn(`[${SCRIPT.name}] Auto-load all vehicles stopped after ${AUTO_LOAD_ALL_VEHICLES_MAX_REQUESTS} requests for mission ${info.missionId}.`);
             return false;
         }
-
         autoLoadAllVehiclesRequestedPages.add(info.signature);
         autoLoadAllVehiclesRequestCount += 1;
         autoLoadAllVehiclesInFlight = true;
@@ -30507,7 +30588,6 @@ Create the private backup now?`);
         autoLoadAllVehiclesActiveSignature = info.signature;
         link.dataset.mcmsAutoLoadRequested = 'true';
         observeAutoLoadAllVehiclesLink(link);
-
         try {
             link.click();
         } catch (err) {
@@ -30516,7 +30596,6 @@ Create the private backup now?`);
             console.warn(`[${SCRIPT.name}] Auto-load all vehicles could not activate MissionChief's native control.`, err);
             return false;
         }
-
         clearAutoLoadAllVehiclesReleaseTimer();
         autoLoadAllVehiclesReleaseTimer = runtimeSetTimeout(() => {
             autoLoadAllVehiclesReleaseTimer = null;
@@ -30615,9 +30694,7 @@ Create the private backup now?`);
         installCreditsUpdateHook();
         observeCreditValue();
         installMissionRequirementsWindows();
-
         startBootAttemptCoordinator(bootPerformanceStartedAt);
-
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {
                 economyDeferredDomMutation = true;
@@ -30643,7 +30720,6 @@ Create the private backup now?`);
             if (!externalMutationFound) return;
             missionChanged ||= addedLeafletMarker;
             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
-
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
@@ -30651,7 +30727,6 @@ Create the private backup now?`);
             }
             if (layoutChanged) invalidateMapElementCache();
             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
-
             runtimeClearTimeout(mutationTimer);
             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
             const mutationDelay = startupSettling
@@ -30679,7 +30754,6 @@ Create the private backup now?`);
             }, mutationDelay);
         }));
         mainMutationObserver = observer;
-
         runtimeListen(document, 'keydown', handleKeyboard);
         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
         runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
@@ -30693,7 +30767,6 @@ Create the private backup now?`);
                 suppressNextOutsideClick = false;
                 return;
             }
-
             const control = document.getElementById(SCRIPT.controlId);
             const panel = document.getElementById(SCRIPT.panelId);
             if (!panel || !panel.classList.contains('mcms-open')) return;
@@ -30701,7 +30774,6 @@ Create the private backup now?`);
             if (panel.contains(event.target)) return;
             closePanel();
         }, true);
-
         runtimeListen(pageWindow, 'resize', () => {
             invalidateMapElementCache();
             applyRootAttributes();
@@ -30717,7 +30789,6 @@ Create the private backup now?`);
             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
             scheduleMajorIncidentFeedLayout();
         });
-
         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
         runtimeListen(pageWindow, 'orientationchange', () => scheduleTabletLayoutRefresh(30));
         if (pageWindow.visualViewport) {
@@ -30730,7 +30801,6 @@ Create the private backup now?`);
             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
         } catch (err) {}
-
         runtimeListen(pageWindow, 'focus', () => {
             if (dragState) return;
             refreshSuppression();
@@ -30743,7 +30813,6 @@ Create the private backup now?`);
             scheduleOperationalPanelsRender(500);
             scheduleMajorIncidentFeedRender(80);
         });
-
         const recoverUiAfterNavigation = event => {
             runtimeSetTimeout(() => {
                 if (runtime.destroyed || document.hidden) return;
@@ -30760,7 +30829,6 @@ Create the private backup now?`);
         runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
         runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
-
         runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
             if (!vehicleDataNeeded()) return;
             installRadioMessageHook();
@@ -30853,7 +30921,6 @@ Create the private backup now?`);
             if (document.hidden || !operationalStartupComplete) return;
             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
         }, 2200);
-
         runtimeOnCleanup(() => {
             stopAutoLoadAllVehicles();
             transportSweepRuntime.stopRequested = true;
@@ -30914,7 +30981,6 @@ Create the private backup now?`);
             const root = document.documentElement;
             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
         });
-
         runtimeSetTimeout(() => runAutoNight(true), 180);
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

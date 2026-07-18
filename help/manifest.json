@@ -1,8 +1,8 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.15.1",
-  "toolkitVersion": "4.15.1",
-  "updated": "2026-07-17",
+  "guideVersion": "4.15.2",
+  "toolkitVersion": "4.15.2",
+  "updated": "2026-07-18",
   "path": "help/index.html",
   "sections": 19,
   "searchEnabled": true,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.15.1 documents the live Mission Requirements matrix while retaining Financial Command and all seven interface-system guide patches."
+  "runtimeGuidePatch": "Toolkit v4.15.2 documents the live Mission Requirements matrix while retaining Financial Command and all seven interface-system guide patches."
 }

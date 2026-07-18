@@ -1,12 +1,11 @@
 Traceback (most recent call last):
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-181-isolated-diagnostic-current.py", line 15, in <module>
-    runpy.run_path(str(isolated / relative_package), run_name='__main__')
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-181-isolated-diagnostic-v2.py", line 15, in <module>
+    runpy.run_path(str(isolated / package), run_name='__main__')
   File "<frozen runpy>", line 286, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "/tmp/issue-181-current-jlg463a7/repository/.github/development-packages/issue-181-patient-ambulance-demand.py", line 570, in <module>
-    contract = replace_once(
-               ^^^^^^^^^^^^^
-  File "/tmp/issue-181-current-jlg463a7/repository/.github/development-packages/issue-181-patient-ambulance-demand.py", line 30, in replace_once
-    raise AssertionError(f"{label}: expected one match, found {count}")
-AssertionError: patient contract markers: expected one match, found 0
+  File "/tmp/issue-181-v2-1pon22ne/repository/.github/development-packages/issue-181-patient-ambulance-demand.py", line 640, in <module>
+    subprocess.run(["node", str(RUNTIME_TEST)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/issue-181-v2-1pon22ne/repository/.github/scripts/test_mission_requirements_runtime.js']' returned non-zero exit status 1.

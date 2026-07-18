@@ -7,8 +7,10 @@ ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ROOT / ".github" / "development-packages" / "issue-171-ajax-dispatch-root.py"
 REMOVE = [
     ROOT / ".github" / "development-packages" / "issue-171-record-inspection.py",
+    ROOT / ".github" / "development-packages" / "issue-171-final-check.py",
     ROOT / ".github" / "diagnostics" / "issue-171-package-result.txt",
     ROOT / ".github" / "diagnostics" / "issue-171-record-refresh.txt",
+    ROOT / ".github" / "diagnostics" / "issue-171-final-result.txt",
 ]
 
 source = PACKAGE.read_text(encoding="utf-8")
@@ -18,7 +20,7 @@ new_write = '''source = replace_once(source, old_root, new_root, "candidate root
 source = replace_once(
     source,
     "            missionRequirementsEnsureRecord({ ...candidate, source }, source);",
-    "            const activeRecord = missionRequirementsEnsureRecord({ ...candidate, source }, source);\\n            if (activeRecord?.panel) missionRequirementsPlacePanel({ ...candidate, source }, source, activeRecord.panel);",
+    "            missionRequirementsEnsureRecord({ ...candidate, source }, source);\\n            const activeRecord = missionRequirementsRecords.get(source);\\n            if (activeRecord?.panel) missionRequirementsPlacePanel({ ...candidate, source }, source, activeRecord.panel);",
     "active record placement reconciliation",
 )
 SOURCE.write_text(source, encoding="utf-8")'''

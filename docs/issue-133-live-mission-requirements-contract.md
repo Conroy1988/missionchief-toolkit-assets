@@ -177,3 +177,7 @@ The v4.15.1 candidate must pass:
 ## Release gate
 
 Production publication remains prohibited until PR #140 is review-ready, all pull-request workflows are green, the branch is merged through the guarded repository process, and `/release-toolkit 4.15.1 RELEASE` completes successfully.
+
+## Missing-data reporting
+
+When MissionChief does not expose usable requirement data, the Toolkit keeps one native-window fallback panel visible and offers a sanitised, player-reviewed GitHub issue composer. No GitHub credential is stored or transmitted by the userscript.

@@ -30,3 +30,5 @@ Report Mission includes catalogue state, definition ID, variation, official titl
 ## Validation
 
 Recorded fixtures cover a simple mission, a personnel-heavy major incident, alternative vehicles, conditional requirements, public-order personnel, mission variations, cache expiry, stale fallback and live/catalogue mismatch detection.
+
+Maintainer review confirmed that conditional values such as `2 (50%)`, grouped thousands and plain four-digit quantities are parsed independently from probability percentages before the trusted PR validation suite runs.

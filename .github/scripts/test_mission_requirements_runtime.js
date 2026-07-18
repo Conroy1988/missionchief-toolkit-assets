@@ -186,7 +186,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.16.3'
+        version: '4.16.4'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -565,10 +565,46 @@ issue171FallbackBody.id = 'vehicle_show_table_body_all';
 issue171FallbackRoot.appendChild(issue171FallbackArea);
 issue171FallbackArea.appendChild(issue171FallbackTable);
 issue171FallbackTable.appendChild(issue171FallbackBody);
-issue171FallbackRoot.queryHandler = selector => selector.includes('#vehicle_show_table_body_all') ? issue171FallbackBody : null;
-const issue171FallbackPlacement = api.placement({ root: issue171FallbackRoot, mount: issue171FallbackRoot }, null);
-assert.strictEqual(issue171FallbackPlacement.parent, issue171FallbackRoot, 'operational fallback remains block-level');
-assert.strictEqual(issue171FallbackPlacement.before, issue171FallbackArea, 'operational fallback inserts before vehicle area rather than tbody');
+let issue171HeaderReady = false;
+const issue171LateTitle = new FakeElement('h1', issue171FallbackDoc);
+issue171LateTitle.id = 'mission_caption';
+const issue171LateAddress = new FakeElement('div', issue171FallbackDoc);
+issue171LateAddress.id = 'mission_address';
+const issue171LateSource = new FakeElement('div', issue171FallbackDoc);
+issue171LateSource.id = 'missing_text';
+issue171LateSource.textContent = issue171LateSource.innerText = 'Missing Vehicles: 1 Police car';
+issue171LateSource.queryAllHandler = () => [];
+issue171FallbackRoot.queryHandler = selector => {
+    if (selector.includes('#vehicle_show_table_body_all')) return issue171FallbackBody;
+    if (!issue171HeaderReady) return null;
+    if (selector === '#missing_text') return issue171LateSource;
+    if (selector.includes('#mission_address')) return issue171LateAddress;
+    if (selector.includes('#mission_caption')) return issue171LateTitle;
+    if (selector === '[data-mcms-requirements-anchor="1"]') return issue171FallbackRoot.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1') || null;
+    return null;
+};
+issue171FallbackRoot.queryAllHandler = () => [];
+const issue171FallbackCandidate = { root: issue171FallbackRoot, mount: issue171FallbackRoot, missionId: 255577321 };
+assert.strictEqual(api.placement(issue171FallbackCandidate, null), null, 'vehicle-only AJAX state has no valid panel placement');
+assert.strictEqual(api.anchorForCandidate(issue171FallbackCandidate), null, 'vehicle-only AJAX state creates no placeholder');
+candidates = [issue171FallbackCandidate];
+api.scan();
+flushAnimationFrames();
+assert.strictEqual(api.records.size, 0, 'vehicle-only AJAX state creates no record');
+issue171HeaderReady = true;
+issue171FallbackRoot.insertBefore(issue171LateTitle, issue171FallbackArea);
+issue171FallbackRoot.insertBefore(issue171LateAddress, issue171FallbackArea);
+issue171FallbackRoot.insertBefore(issue171LateSource, issue171FallbackArea);
+api.scan();
+flushAnimationFrames();
+const issue171LateRecord = Array.from(api.records.values())[0];
+assert(issue171LateRecord, 'header-ready AJAX state creates a record');
+assert.strictEqual(issue171LateRecord.panel.parentNode, issue171FallbackRoot, 'header-ready panel mounts in mission root');
+const issue171LatePanelIndex = issue171FallbackRoot.children.indexOf(issue171LateRecord.panel);
+assert(issue171FallbackRoot.children.indexOf(issue171LateAddress) < issue171LatePanelIndex, 'late panel mounts below address');
+assert(issue171LatePanelIndex < issue171FallbackRoot.children.indexOf(issue171LateSource), 'late panel mounts before missing_text');
+api.clear();
+candidates = [];
 
 const delayedDoc = new FakeDocument();
 delayedDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/7002' } };
@@ -806,21 +842,17 @@ const missingCandidate = makeMissionCandidateWithoutSource(missingDoc);
 candidates = [missingCandidate];
 api.scan();
 flushAnimationFrames();
-let missingRecord = Array.from(api.records.values())[0];
-assert(missingRecord.panel.innerHTML.includes('Loading mission requirements'), 'source-less mission initially shows a bounded loading state');
-missingRecord.startedAt = Date.now() - 2000;
-api.scan();
-flushAnimationFrames();
-missingRecord = Array.from(api.records.values())[0];
-assert(missingRecord.panel.innerHTML.includes('Unable to pull mission requirements'), 'source-less mission shows an explicit failure state');
-assert(missingRecord.panel.innerHTML.includes('Report Mission'), 'failure state exposes Report Mission');
+assert.strictEqual(api.records.size, 0, 'source-less mission waits for a valid header or native source');
 
 const unsafeSource = new FakeElement('div', missingDoc);
 unsafeSource.id = 'missing_text';
 unsafeSource.textContent = 'token=secret https://discord.com/api/webhooks/1/abc 55.9533,-3.1883';
 unsafeSource.innerText = unsafeSource.textContent;
 missingCandidate.root.appendChild(unsafeSource);
-missingRecord.candidate.source = unsafeSource;
+api.scan();
+flushAnimationFrames();
+let missingRecord = Array.from(api.records.values())[0];
+assert(missingRecord, 'native source creates a record after source-less wait');
 const reportUrl = api.reportUrl(missingRecord, 'token=secret');
 assert(reportUrl.startsWith('https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new?'), 'report uses the GitHub issue composer');
 const reportParams = new URL(reportUrl).searchParams;

@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.16.3",
-  "toolkitVersion": "4.16.3",
+  "guideVersion": "4.16.4",
+  "toolkitVersion": "4.16.4",
   "updated": "2026-07-18",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.16.3 keeps normal AJAX dispatch Mission Requirements outside vehicle tables and re-homes nested candidates beneath the mission header."
+  "runtimeGuidePatch": "Toolkit v4.16.4 waits for the mission header or native requirements source before mounting during AJAX dispatch loading."
 }

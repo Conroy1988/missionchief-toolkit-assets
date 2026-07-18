@@ -1,7 +1,5 @@
-# Issue #171 — AJAX dispatch Mission Requirements root contract
+# Issue #171 / #173 — AJAX dispatch header placement contract
 
-Mission Requirements candidates discovered inside Available Units, vehicle tables, table sections, rows or cells must resolve upward to the enclosing active mission form/content or visible lightbox root.
+Mission Requirements may mount only when the active mission root exposes native `#missing_text` or a confirmed mission title/address.
 
-The panel must never be inserted into `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th` or `colgroup`. Operational fallbacks insert before the top-level block containing the vehicle table.
-
-Normal dispatch-button AJAX opening and standalone mission tabs use the same mission source and header placement. If incomplete AJAX markup temporarily separates the panel from its canonical source host, the next scan restores the canonical panel beneath the mission header.
+Available Units, vehicle tables, responding/on-site tables and incident-note regions are data sources only. If they load first, the Toolkit waits without creating a panel or placeholder. Once the header or native requirements source appears, the panel mounts beneath the address/title and before `#missing_text`.

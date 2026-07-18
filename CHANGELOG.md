@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.16.4] - 2026-07-18
+
+### Fixed
+- Mission Requirements now waits for the active mission's native requirements source or confirmed title/address before mounting in an AJAX dispatch window.
+- Available Units, vehicle/response tables and incident-note regions remain data sources only and can no longer become emergency panel hosts.
+- Premature placeholder anchors are removed until a valid header placement exists.
+
+### Validation
+- Added staged-AJAX coverage proving vehicle-only loading creates no panel and the completed mission header mounts the panel beneath the address and before `#missing_text`.
+
 ## [4.16.3] - 2026-07-18
 
 ### Fixed

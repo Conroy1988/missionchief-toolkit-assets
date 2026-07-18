@@ -1,0 +1,194 @@
+name: Discord Issue Status
+
+run-name: Issue #${{ github.event.issue.number }} · ${{ github.event.action }}
+
+on:
+  issues:
+    types:
+      - opened
+      - closed
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: discord-issue-${{ github.event.issue.number }}-${{ github.event.action }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Post issue status to Discord
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Build issue notification
+        env:
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
+          ISSUE_NUMBER="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
+          ISSUE_TITLE="$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")"
+          ISSUE_URL="$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")"
+          ISSUE_AUTHOR="$(jq -r '.issue.user.login' "$GITHUB_EVENT_PATH")"
+          ACTOR="$(jq -r '.sender.login' "$GITHUB_EVENT_PATH")"
+
+          LABELS="$(
+            jq -r '
+              [.issue.labels[].name]
+              | if length == 0 then "None" else join(", ") end
+              | if length > 1000 then .[0:997] + "..." else . end
+            ' "$GITHUB_EVENT_PATH"
+          )"
+
+          ASSIGNEES="$(
+            jq -r '
+              [.issue.assignees[].login]
+              | if length == 0 then "Unassigned" else join(", ") end
+              | if length > 1000 then .[0:997] + "..." else . end
+            ' "$GITHUB_EVENT_PATH"
+          )"
+
+          BODY_PREVIEW="$(
+            jq -r '
+              (.issue.body // "No description supplied.")
+              | gsub("[\r\n\t]+"; " ")
+              | gsub("  +"; " ")
+              | if length > 900 then .[0:897] + "..." else . end
+            ' "$GITHUB_EVENT_PATH"
+          )"
+
+          if [[ "$ACTION" == "opened" ]]; then
+            EMBED_TITLE="📋 New Pipeline Issue #${ISSUE_NUMBER}"
+            EMBED_DESCRIPTION="A new Toolkit issue has entered the development pipeline."
+            STATUS="Open"
+            COLOR="3447003"
+            TIMESTAMP="$(jq -r '.issue.created_at' "$GITHUB_EVENT_PATH")"
+          else
+            STATE_REASON="$(
+              jq -r '
+                .issue.state_reason
+                | if . == "completed" then "Completed"
+                  elif . == "not_planned" then "Not planned"
+                  elif . == null then "Closed"
+                  else .
+                  end
+              ' "$GITHUB_EVENT_PATH"
+            )"
+
+            EMBED_TITLE="✅ Pipeline Issue Closed #${ISSUE_NUMBER}"
+            EMBED_DESCRIPTION="A Toolkit pipeline issue has been closed."
+            STATUS="$STATE_REASON"
+            COLOR="5763719"
+            TIMESTAMP="$(jq -r '.issue.closed_at // .issue.updated_at' "$GITHUB_EVENT_PATH")"
+          fi
+
+          jq -n \
+            --arg username "MissionChief Toolkit Pipeline" \
+            --arg embed_title "$EMBED_TITLE" \
+            --arg embed_description "$EMBED_DESCRIPTION" \
+            --arg issue_title "$ISSUE_TITLE" \
+            --arg issue_url "$ISSUE_URL" \
+            --arg issue_number "$ISSUE_NUMBER" \
+            --arg status "$STATUS" \
+            --arg body_preview "$BODY_PREVIEW" \
+            --arg labels "$LABELS" \
+            --arg assignees "$ASSIGNEES" \
+            --arg issue_author "$ISSUE_AUTHOR" \
+            --arg actor "$ACTOR" \
+            --arg repository "$REPOSITORY" \
+            --arg repository_url "$REPOSITORY_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            --argjson color "$COLOR" \
+            '{
+              username: $username,
+              allowed_mentions: {
+                parse: []
+              },
+              embeds: [
+                {
+                  title: $embed_title,
+                  description: $embed_description,
+                  url: $issue_url,
+                  color: $color,
+                  fields: [
+                    {
+                      name: ("Issue #" + $issue_number),
+                      value: ("[" + $issue_title + "](" + $issue_url + ")"),
+                      inline: false
+                    },
+                    {
+                      name: "Status",
+                      value: ("`" + $status + "`"),
+                      inline: true
+                    },
+                    {
+                      name: "Labels",
+                      value: $labels,
+                      inline: true
+                    },
+                    {
+                      name: "Assigned",
+                      value: $assignees,
+                      inline: true
+                    },
+                    {
+                      name: "Description",
+                      value: $body_preview,
+                      inline: false
+                    },
+                    {
+                      name: "Created by",
+                      value: ("`" + $issue_author + "`"),
+                      inline: true
+                    },
+                    {
+                      name: "Action by",
+                      value: ("`" + $actor + "`"),
+                      inline: true
+                    },
+                    {
+                      name: "Repository",
+                      value: ("[" + $repository + "](" + $repository_url + ")"),
+                      inline: false
+                    }
+                  ],
+                  footer: {
+                    text: (
+                      "MissionChief Map Command Toolkit · Pipeline · Issue #" +
+                      $issue_number
+                    )
+                  },
+                  timestamp: $timestamp
+                }
+              ]
+            }' > discord-issue-payload.json
+
+      - name: Post issue notification to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_COMMITS_WEBHOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || {
+            echo "::error::DISCORD_COMMITS_WEBHOOK is not configured."
+            exit 1
+          }
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 3 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-issue-payload.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true"

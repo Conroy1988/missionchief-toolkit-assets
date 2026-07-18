@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 import hashlib
 import json
-import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -12,7 +11,10 @@ SRC = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 RUNTIME_TEST = ROOT / ".github" / "scripts" / "test_mission_requirements_runtime.js"
 CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
 FORM = ROOT / ".github" / "ISSUE_TEMPLATE" / "mission-info-missing.yml"
-DIAG = ROOT / "docs" / "diagnostics" / "issue-162-report-source.txt"
+DIAGNOSTICS = (
+    ROOT / "docs" / "diagnostics" / "issue-162-report-source.txt",
+    ROOT / "docs" / "diagnostics" / "issue-162-package-error.txt",
+)
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
@@ -29,7 +31,6 @@ def run(*cmd: str) -> None:
 source = SRC.read_text(encoding="utf-8")
 source = replace_once(source, "// @version      4.15.4", "// @version      4.15.5", "metadata version")
 source = replace_once(source, "version: '4.15.4'", "version: '4.15.5'", "runtime version")
-source = replace_once(source, "guideVersion: '4.15.4'", "guideVersion: '4.15.5'", "guide version")
 source = replace_once(
     source,
     "const params = new URLSearchParams({ title: issueTitle, labels: 'Mission Info Missing', body });",
@@ -146,10 +147,11 @@ help_index = ROOT / "help" / "index.html"
 if help_index.exists():
     help_index.write_text(help_index.read_text(encoding="utf-8").replace("4.15.4", "4.15.5"), encoding="utf-8")
 
-if DIAG.exists():
-    DIAG.unlink()
+for diagnostic in DIAGNOSTICS:
+    if diagnostic.exists():
+        diagnostic.unlink()
 try:
-    DIAG.parent.rmdir()
+    DIAGNOSTICS[0].parent.rmdir()
 except OSError:
     pass
 

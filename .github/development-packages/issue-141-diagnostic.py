@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
 import json
-import os
 import re
 import subprocess
 import sys
@@ -27,19 +27,24 @@ output = result.stdout[-10000:]
 output = re.sub(r"(?i)(authorization:\s*(?:basic|bearer)\s+)[^\s]+", r"\1[redacted]", output)
 body = "Issue #141 package diagnostic (bounded, no production commit):\n\n```text\n" + output + "\n```"
 
-header = subprocess.check_output(
-    ["git", "config", "--local", "--get", "http.https://github.com/.extraheader"],
+config = subprocess.check_output(
+    ["git", "config", "--get-regexp", r"^http\..*\.extraheader$"],
     cwd=ROOT,
     text=True,
 ).strip()
-if ":" not in header:
+match = re.search(r"AUTHORIZATION:\s*basic\s+(\S+)", config, flags=re.I)
+if not match:
     raise RuntimeError("GitHub checkout authorization header unavailable")
-name, value = header.split(":", 1)
+credentials = base64.b64decode(match.group(1)).decode("utf-8")
+token = credentials.split(":", 1)[-1]
+if not token:
+    raise RuntimeError("GitHub checkout token unavailable")
+
 request = urllib.request.Request(
     "https://api.github.com/repos/Conroy1988/missionchief-toolkit-assets/issues/141/comments",
     data=json.dumps({"body": body}).encode("utf-8"),
     headers={
-        name.strip(): value.strip(),
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "Content-Type": "application/json",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.0
+// @version      4.15.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.0',
+        version: '4.15.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -941,7 +941,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.15.0',
+        guideVersion: '4.15.1',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -22322,14 +22322,31 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsLssmActive(candidate, source) {
-        if (!source) return false;
-        try {
-            if (source.matches?.('.alert-missing-vehicles')) return true;
-            if (source.querySelector?.('.alert-missing-vehicles')) return true;
-            return Boolean(candidate?.root?.querySelector?.('.alert-missing-vehicles[data-raw-html], .alert-missing-vehicles table, .alert-missing-vehicles .table'));
-        } catch (err) {
-            return false;
-        }
+        // MissionChief and LSSM both use the generic alert-missing-vehicles class.
+        // Only explicit LSSM ownership metadata may suppress the Toolkit panel.
+        const ownedSelector = [
+            '.alert-missing-vehicles[data-raw-html]',
+            '[data-lssm-enhanced-missing-vehicles]',
+            '[data-lssm-module="extendedCallWindow.enhancedMissingVehicles"]'
+        ].join(', ');
+        const isLssmOwned = element => {
+            if (!element) return false;
+            const sharedAlert = Boolean(
+                element.matches?.('.alert-missing-vehicles')
+                || element.classList?.contains?.('alert-missing-vehicles')
+            );
+            const rawHtml = element.getAttribute?.('data-raw-html');
+            if (sharedAlert && rawHtml !== null && rawHtml !== undefined) return true;
+            return Boolean(
+                element.matches?.('[data-lssm-enhanced-missing-vehicles]')
+                || element.matches?.('[data-lssm-module="extendedCallWindow.enhancedMissingVehicles"]')
+            );
+        };
+
+        if (isLssmOwned(source)) return true;
+        const closestOwned = source?.closest?.(ownedSelector);
+        if (isLssmOwned(closestOwned)) return true;
+        return isLssmOwned(candidate?.root?.querySelector?.(ownedSelector));
     }
 
     function missionRequirementsSourceForCandidate(candidate) {

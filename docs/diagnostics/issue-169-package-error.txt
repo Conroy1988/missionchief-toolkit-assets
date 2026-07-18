@@ -1,0 +1,26 @@
+ISSUE #169 ISOLATED PACKAGE DIAGNOSTIC
+exit_code=1
+
+COMMAND
+python3 .github/development-packages/issue-169-lightbox-context.py
+
+OUTPUT
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Traceback (most recent call last):
+  File "/tmp/issue-169-diagnostic-un4ymm4v/repository/.github/scripts/test_mission_requirements_contract.py", line 137, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue-169-diagnostic-un4ymm4v/repository/.github/scripts/test_mission_requirements_contract.py", line 103, in main
+    assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+Traceback (most recent call last):
+  File "/tmp/issue-169-diagnostic-un4ymm4v/repository/.github/development-packages/issue-169-lightbox-context.py", line 28, in <module>
+    exec(compile(source, __file__, "exec"), namespace)
+  File "/tmp/issue-169-diagnostic-un4ymm4v/repository/.github/development-packages/issue-169-lightbox-context.py", line 535, in <module>
+  File "/tmp/issue-169-diagnostic-un4ymm4v/repository/.github/development-packages/issue-169-lightbox-context.py", line 53, in run
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('python3', '.github/scripts/test_mission_requirements_contract.py')' returned non-zero exit status 1.
+

@@ -47,6 +47,11 @@ def main() -> int:
         "merged.missionRequirements = merged.missionRequirements !== false",
         "const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([",
         "function missionRequirementsParseText(rawText, group = 'vehicles')",
+        "function missionRequirementsParseSource(source)",
+        "function missionRequirementsPatientCount(candidate)",
+        "function missionRequirementsPatientState(record, now = Date.now())",
+        "function missionRequirementsReconcilePatientDemand(parsed, patientState)",
+        "MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS = 1400",
         "function missionRequirementsCapacity(min = 0, max = min, known = null)",
         "function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null)",
         "function missionRequirementsDefinitionCondition(definition, candidate)",
@@ -86,6 +91,8 @@ def main() -> int:
         "missionRequirementsHideSource(source)",
         "missionRequirementsRestoreSource(record.source)",
         "#missing_text",
+        "#patient_button_form",
+        "#patient_button_text",
         "#mission_vehicle_driving",
         "#mission_vehicle_at_mission",
         "#vehicle_show_table_body_all",
@@ -116,6 +123,10 @@ def main() -> int:
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
     assert "missionRequirementsPlacementBlock(root, operational)" not in source
     assert "const operational = root.querySelector?." not in source
+    assert source.count("function missionRequirementsPatientCount(candidate)") == 1
+    assert source.count("function missionRequirementsReconcilePatientDemand(parsed, patientState)") == 1
+    assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
+    assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5\]", source), "patient demand must use the conservative UK transport ambulance mapping"
 
     for alias in data["requiredAliases"]:
         assert alias in source, f"Required UK requirement alias missing: {alias}"

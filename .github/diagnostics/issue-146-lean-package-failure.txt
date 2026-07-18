@@ -1,0 +1,12 @@
+Issue #146 lean-package diagnostic
+==================================
+
+Payload return code: 1
+
+Bounded output:
+
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-lean-package.payload.py", line 31
+    (const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x))}const ids=new Set();return a.sort((x,y)=>2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.source)-isVisible(x.source)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}'''
+               ^^^^^^^^
+SyntaxError: invalid syntax
+

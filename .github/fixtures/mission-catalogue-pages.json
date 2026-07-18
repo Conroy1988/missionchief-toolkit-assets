@@ -183,6 +183,10 @@
           [
             "Required Level 2 Public Order Officers",
             "22"
+          ],
+          [
+            "Required Firefighters",
+            "1000"
           ]
         ],
         "other": [
@@ -202,7 +206,8 @@
         "fire-engine-or-riv": 3,
         "police-car": 2,
         "public-order-level-1": 8,
-        "public-order-level-2": 22
+        "public-order-level-2": 22,
+        "firefighters": 1000
       },
       "conditional": {
         "police-car": 50

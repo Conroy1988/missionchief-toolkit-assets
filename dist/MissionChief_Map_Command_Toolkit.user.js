@@ -22472,7 +22472,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsCatalogueRequirement(label, value) {
         const rawLabel = missionRequirementsCatalogueText({ textContent: label });
         const rawValue = missionRequirementsCatalogueText({ textContent: value });
-        const quantityMatch = rawValue.match(/^\s*(\d{1,3}(?:[\s,.]\d{3})*|\d+)/u);
+        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
         const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
         if (quantity === null) return null;
         const cleanedLabel = rawLabel

@@ -77,6 +77,21 @@ source = replace_function(source, "missionRequirementsLssmActive", replacement)
 SOURCE.write_text(source, encoding="utf-8")
 
 runtime = RUNTIME_TEST.read_text(encoding="utf-8")
+old_getter = r'''    getAttribute(name) {
+        if (name === 'id') return this.id || null;
+        return this.attributes.has(name) ? this.attributes.get(name) : null;
+    }'''
+new_getter = r'''    getAttribute(name) {
+        if (name === 'data-raw-html' && this._lssmActive) {
+            return '<div data-requirement-type="personnel">Missing Personnel</div>';
+        }
+        if (name === 'id') return this.id || null;
+        return this.attributes.has(name) ? this.attributes.get(name) : null;
+    }'''
+if runtime.count(old_getter) != 1:
+    raise AssertionError("FakeElement getAttribute fixture anchor not found exactly once")
+runtime = runtime.replace(old_getter, new_getter, 1)
+
 old_test = r'''const lssmSource = {
     matches(selector) { return selector === '.alert-missing-vehicles'; },
     querySelector() { return null; }

@@ -1,0 +1,7 @@
+exit_code=1
+
+
+Traceback (most recent call last):
+  File "/tmp/issue-176-package-v7h_hvg2/repository/.github/development-packages/issue-176-custom-vehicle-badges.py", line 438, in <module>
+    raise AssertionError(f"toggle UI maps: expected two missionRequirements entries, found {map_count}")
+AssertionError: toggle UI maps: expected two missionRequirements entries, found 1

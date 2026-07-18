@@ -35,4 +35,4 @@ Maintainer review confirmed that conditional values such as `2 (50%)`, grouped t
 
 Performance policy revision `2026-07-18-v4.16.0` increases only the absolute source bytes and line envelope. Runtime-workload, CSS and relative regression limits remain unchanged, and the candidate adds no timers, observers, listeners or startup hooks.
 
-The final candidate was rebased onto the post-v4.15.5 Greasy Fork version-reconciliation commit before merge.
+The final candidate was rebased onto canonical `main` commit `7335f819fd3f9ab77f88bb90765a45c1ad9a159d`, the post-v4.15.5 Greasy Fork version-reconciliation commit, before merge.

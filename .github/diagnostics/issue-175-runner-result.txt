@@ -1,0 +1,6 @@
+exit_code=1
+
+Traceback (most recent call last):
+  File "/tmp/issue-175-runner-jbs9hz29/repository/.github/development-packages/issue-173-v4164-final-runner.py", line 13, in <module>
+    raise AssertionError(f'Expected one over-broad contract assertion, found {text.count(line)}')
+AssertionError: Expected one over-broad contract assertion, found 0

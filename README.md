@@ -6,7 +6,7 @@
 
 ### Turn the MissionChief map into a live operations console.
 
-Mission intelligence · Fleet awareness · Geographic coverage · Financial command · Responsive layouts · Seven complete interface systems
+Mission intelligence · Specialist fleet identity · Geographic coverage · Financial command · Responsive layouts · Seven complete interface systems
 
 [![Install from Greasy Fork](https://img.shields.io/badge/INSTALL%20NOW-GREASY%20FORK-8B0000?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
@@ -20,7 +20,7 @@ Mission intelligence · Fleet awareness · Geographic coverage · Financial comm
 [![Full audit](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence-and-attribution)
 
-[Why it exists](#why-it-exists) · [Install](#install-in-under-a-minute) · [Systems](#operational-systems) · [Themes](#seven-interface-systems) · [Devices](#built-for-every-screen) · [Release confidence](#release-confidence) · [Support](#support-and-development)
+[Why it exists](#why-it-exists) · [Install](#install-in-under-a-minute) · [Specialist fleet](#specialist-fleet-intelligence) · [Systems](#operational-systems) · [Themes](#seven-interface-systems) · [Devices](#built-for-every-screen) · [Release confidence](#release-confidence) · [Support](#support-and-development)
 
 </div>
 
@@ -30,12 +30,12 @@ Mission intelligence · Fleet awareness · Geographic coverage · Financial comm
 
 MissionChief can generate an enormous amount of operational information, but the standard interface spreads that information across map markers, mission windows, vehicle lists, finance pages and separate controls.
 
-**MissionChief Map Command Toolkit brings those signals back into one command layer.** It helps you identify what needs attention, understand the state of your fleet, assess coverage, track mission value and move between incidents without losing the map.
+**MissionChief Map Command Toolkit brings those signals back into one command layer.** It helps you identify what needs attention, understand the state and operational identity of your fleet, assess coverage, track mission value and move between incidents without losing the map.
 
 <table>
 <tr>
 <td width="25%" align="center"><strong>🚨 Triage faster</strong><br><sub>Surface old, critical, blocked and transport-dependent missions immediately.</sub></td>
-<td width="25%" align="center"><strong>🚓 Read the fleet</strong><br><sub>See response codes, availability, hidden batches and unit demand in context.</sub></td>
+<td width="25%" align="center"><strong>🚓 Read the fleet</strong><br><sub>See response codes, custom vehicle classes, availability, hidden batches and unit demand in context.</sub></td>
 <td width="25%" align="center"><strong>🗺️ Understand coverage</strong><br><sub>Use heat maps, rings, labels, bookmarks and focused map states.</sub></td>
 <td width="25%" align="center"><strong>📊 Track the operation</strong><br><sub>Monitor mission value, income, spending, payouts and session performance.</sub></td>
 </tr>
@@ -65,6 +65,29 @@ MissionChief can generate an enormous amount of operational information, but the
 | Check the latest release | [GitHub Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
 | Review version history | [Changelog](CHANGELOG.md) |
 
+## Specialist fleet intelligence
+
+MissionChief can show the same base vehicle type for units with completely different operational purposes. **Custom Vehicle Badges restores that missing identity directly inside Available Units.**
+
+<div align="center">
+
+### `IRV` · `[Railway Police Officer]`
+
+<sub>Native vehicle type retained. Own Vehicle Category exposed. Specialist dispatch intent immediately visible.</sub>
+
+</div>
+
+<table>
+<tr>
+<td width="33%" align="center"><strong>🎯 Identify the role</strong><br><sub>Own Vehicle Categories appear beside the native type instead of replacing it.</sub></td>
+<td width="33%" align="center"><strong>🔒 Respect dispatch rules</strong><br><sub>Category-only vehicles remain visually distinct without the Toolkit selecting or dispatching them.</sub></td>
+<td width="33%" align="center"><strong>🧠 Build better matching</strong><br><sub>Stable vehicle-ID classification gives Mission Requirements the correct foundation for specialist capability logic.</sub></td>
+</tr>
+</table>
+
+> [!NOTE]
+> Badges are compact, theme-aware and automatically restored after MissionChief or LSSM filters, sorts or replaces the Available Units list. Vehicles without an Own Vehicle Category remain untouched.
+
 ## Operational systems
 
 ### Mission command
@@ -74,7 +97,7 @@ MissionChief can generate an enormous amount of operational information, but the
 | **Mission Age Watch** | Sorts and surfaces personal and alliance missions by age, ownership, category, urgency, assistance state and clearing progress. |
 | **Critical View** | Creates a concentrated workflow for missions that need immediate action. |
 | **Mission Value** | Displays a correctly formatted mission value inside opened mission windows, with dynamic clearance from native controls. |
-| **Mission Requirements** | Adds a live, normal-flow matrix of missing, en-route, still-needed and selected capacity above MissionChief dispatch controls. |
+| **Mission Requirements** | Adds a live, normal-flow matrix of required, on-site, responding, selected and still-needed capacity above MissionChief dispatch controls. |
 | **Mission Inspector** | Opens deeper mission context only when requested, avoiding unnecessary startup work. |
 | **Major Incident Feed** | Places high-priority incidents in a live command feed with click-to-zoom navigation. |
 | **Transport Watcher** | Identifies missions that still require patient or prisoner transport and shows current demand. |
@@ -86,6 +109,7 @@ MissionChief can generate an enormous amount of operational information, but the
 | Capability | What it changes |
 |---|---|
 | **Vehicle Code Status** | Summarises the live fleet by response code, description and count. |
+| **Custom Vehicle Badges** | Shows each Own Vehicle Category beside the native type in Available Units—such as `IRV [Railway Police Officer]`—without changing selection or dispatch behaviour. |
 | **Auto-load all vehicles** | Activates MissionChief's native hidden-vehicle batch control when enabled. |
 | **Coverage Heat Map** | Visualises operational coverage directly on the Leaflet map. |
 | **Coverage rings** | Adds readable geographic range context around operational locations. |
@@ -116,12 +140,14 @@ MissionChief can generate an enormous amount of operational information, but the
 - Mission Inspector and rapid map navigation
 - Major Incident Feed with location and incident context
 - Mission Value inside opened mission windows
-- Live Mission Requirements matrix with selected and en-route reconciliation
+- Live Mission Requirements matrix with on-site, responding, selected and still-needed reconciliation
 - Alliance payout overlays and completion history
 
 #### Fleet workflow
 
 - Vehicle Code Status panel and keyboard shortcut
+- Custom Vehicle Badges for Own Vehicle Categories in Available Units
+- Stable vehicle-ID classification for specialist capability logic
 - Transport demand counts
 - Resource Gap analysis within a configurable radius
 - Unit-count overlays

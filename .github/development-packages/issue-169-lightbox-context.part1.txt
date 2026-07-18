@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
+RUNTIME = ROOT / ".github" / "scripts" / "test_mission_requirements_runtime.js"
+CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
+FIXTURE = ROOT / ".github" / "fixtures" / "mission-requirements-contract.json"
+DIAGNOSTIC = ROOT / "docs" / "diagnostics" / "issue-169-mission-requirements-source.txt"
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    count = text.count(old)
+    if count != 1:
+        raise AssertionError(f"{label}: expected one match, found {count}")
+    return text.replace(old, new, 1)
+
+
+def replace_function(text: str, name: str, replacement: str) -> str:
+    marker = f"    function {name}("
+    start = text.find(marker)
+    if start < 0:
+        raise AssertionError(f"function {name} missing")
+    end = text.find("\n    function ", start + len(marker))
+    if end < 0:
+        raise AssertionError(f"next function after {name} missing")
+    return text[:start] + replacement.rstrip() + "\n\n" + text[end + 1:]
+
+
+def replace_in_function(text: str, name: str, old: str, new: str, label: str) -> str:
+    marker = f"    function {name}("
+    start = text.find(marker)
+    end = text.find("\n    function ", start + len(marker))
+    if start < 0 or end < 0:
+        raise AssertionError(f"{label}: function {name} missing")
+    block = text[start:end]
+    block = replace_once(block, old, new, label)
+    return text[:start] + block + text[end:]
+
+
+def insert_before(text: str, marker: str, addition: str, label: str) -> str:
+    if addition.strip() in text:
+        return text
+    return replace_once(text, marker, addition + marker, label)
+
+
+def run(*cmd: str) -> None:
+    subprocess.run(cmd, cwd=ROOT, check=True)
+
+
+source = SRC.read_text(encoding="utf-8")
+source = replace_once(source, "// @version      4.16.1", "// @version      4.16.2", "metadata version")
+source = replace_once(source, "version: '4.16.1'", "version: '4.16.2'", "runtime version")
+
+helpers = r'''    function missionRequirementsExplicitSource(source) {
+        if (!source || source.isConnected === false) return false;
+        if (source.getAttribute?.('data-mcms-requirements-anchor') === '1' || source.id === 'missing_text') return true;
+        if (source.matches?.('[data-requirement-type], .alert-missing-vehicles, [data-lssm-enhanced-missing-vehicles], [data-lssm-module="extendedCallWindow.enhancedMissingVehicles"]')) return true;
+        return Boolean(source.querySelector?.('[data-requirement-type], .alert-missing-vehicles[data-raw-html], [data-lssm-enhanced-missing-vehicles]'));
+    }
+
+    function missionRequirementsDirectChild(root, node) {
+        let current = node;
+        while (current?.parentNode && current.parentNode !== root) current = current.parentNode;
+        return current?.parentNode === root ? current : node;
+    }
+
+    function missionRequirementsPlacement(candidate, source = null) {
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        if (!root) return null;
+        const native = root.matches?.('#missing_text') ? root : root.querySelector?.('#missing_text');
+        const explicit = native || (missionRequirementsExplicitSource(source) && source?.getAttribute?.('data-mcms-requirements-anchor') !== '1' ? source : null);
+        if (explicit?.parentNode) return { root, parent: explicit.parentNode, before: explicit };
+        const address = root.querySelector?.('#mission_address, [data-mission-address], .mission-address, .mission_address');
+        const title = root.querySelector?.('#mission_caption, #mission_name, [data-mission-title], .mission-title, .mission_caption, h1');
+        const header = address || title;
+        if (header) {
+            const block = missionRequirementsDirectChild(root, header);
+            const parent = block?.parentNode || root;
+            const siblings = Array.from(parent.children || []);
+            const index = siblings.indexOf(block);
+            return { root, parent, before: index >= 0 ? (siblings[index + 1] || null) : (block?.nextSibling || null) };
+        }
+        const operational = root.querySelector?.('#vehicle_show_table_body_all, #mission_vehicle_driving, #mission_vehicle_at_mission, #mission_reply_content, .mission_reply_content');
+        if (operational?.parentNode) return { root, parent: operational.parentNode, before: operational };
+        return { root, parent: root, before: root.firstChild || null };
+    }
+
+    function missionRequirementsPlacePanel(candidate, source, panel) {
+        const placement = missionRequirementsPlacement(candidate, source);
+        if (!placement?.parent || !panel) return false;
+        const siblings = Array.from(placement.parent.children || []);
+        const panelIndex = siblings.indexOf(panel);
+        const beforeIndex = placement.before ? siblings.indexOf(placement.before) : siblings.length;
+        if (panel.parentNode !== placement.parent || panelIndex < 0 || panelIndex !== beforeIndex - 1) {
+            placement.parent.insertBefore?.(panel, placement.before || null);
+        }
+        return true;
+    }
+
+'''
+source = insert_before(source, "    function missionRequirementsSourceForCandidate(candidate) {", helpers, "context helpers")
+
+source = replace_function(source, "missionRequirementsSourceForCandidate", r'''    function missionRequirementsSourceForCandidate(candidate) {
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root;
+        const supplied = candidate?.source;
+        const native = root?.matches?.('#missing_text') ? root : root?.querySelector?.('#missing_text');
+        if (native && native.isConnected !== false) return native;
+        if (supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1' && supplied.isConnected !== false) return supplied;
+        return missionRequirementsExplicitSource(supplied) ? supplied : null;
+    }''')
+
+source = replace_function(source, "missionRequirementsAnchorForCandidate", r'''    function missionRequirementsAnchorForCandidate(candidate) {
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        if (!root?.ownerDocument?.createElement) return null;
+        let anchor = Array.from(root.children || []).find(node => node?.getAttribute?.('data-mcms-requirements-anchor') === '1')
+            || root.querySelector?.('[data-mcms-requirements-anchor="1"]');
+        if (!anchor || anchor.isConnected === false) {
+            anchor = root.ownerDocument.createElement('span');
+            anchor.hidden = true;
+            anchor.setAttribute('aria-hidden', 'true');
+            anchor.setAttribute('data-mcms-requirements-anchor', '1');
+        }
+        const placement = missionRequirementsPlacement({ ...candidate, root, mount: root });
+        placement?.parent?.insertBefore?.(anchor, placement.before || null);
+        return anchor;
+    }''')
+
+source = replace_function(source, "missionRequirementsWindowCandidates", r'''    function missionRequirementsWindowCandidates() {
+        const candidates = [];
+        const seenSources = new Set();
+        const seenRoots = new Set();
+        const add = (candidate, trusted = false) => {
+            const root = missionRequirementsCandidateRoot(candidate);
+            if (!root || seenRoots.has(root)) return;
+            let source = missionRequirementsSourceForCandidate({ ...candidate, root, mount: root });
+            if (!source) {
+                if (!trusted && !missionRequirementsLooksLikeWindow({ ...candidate, root, mount: root })) return;
+                source = missionRequirementsAnchorForCandidate({ ...candidate, root, mount: root });
+            }
+            if (!source || source.isConnected === false || seenSources.has(source)) return;
+            seenRoots.add(root);
+            seenSources.add(source);
+            candidates.push({ ...candidate, root, mount: root, source });
+        };
+        missionValueWindowCandidates().forEach(candidate => add(candidate, true));
+        for (const context of transportSweepDocumentContexts()) {
+            const doc = context?.doc;
+            if (!doc?.querySelectorAll) continue;
+            for (const source of doc.querySelectorAll('#missing_text')) add(missionRequirementsCandidateFromSource(source), true);
+            for (const root of doc.querySelectorAll('#mission_form, form[action*="/missions/"], #mission_content')) add({ root, mount: root }, false);
+        }
+        const priority = candidate => {
+            const source = candidate?.source;
+            return (isVisible(candidate?.root) ? 100 : 0)
+                + (source?.id === 'missing_text' || source?.matches?.('#missing_text') ? 20 : 0)
+                + (source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? 0 : 5)
+                + (missionRequirementsRecords.has(source) ? 1 : 0);
+        };
+        const missionIds = new Set();
+        return candidates.sort((left, right) => priority(right) - priority(left)).filter(candidate => {
+            const missionId = missionRequirementsMissionIdentity(candidate, candidate.source);
+            if (!missionId) return true;
+            if (missionIds.has(missionId)) return false;
+            missionIds.add(missionId);
+            return true;
+        });
+    }''')
+
+source = replace_in_function(
+    source,
+    "missionRequirementsCatalogueEnsure",
+    "        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);\n        record.catalogueDescriptor = descriptor;",
+    "        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);\n"
+    "        const previousKey = record?.catalogueDescriptor?.key || '';\n"
+    "        const nextKey = descriptor?.key || '';\n"
+    "        if (previousKey !== nextKey) {\n"
+    "            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;\n"
+    "            record.catalogue = null;\n"
+    "            record.catalogueState = nextKey ? 'idle' : 'unavailable';\n"
+    "            record.catalogueError = '';\n"
+    "        }\n"
+    "        record.catalogueDescriptor = descriptor;\n"

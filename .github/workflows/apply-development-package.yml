@@ -10,24 +10,29 @@ permissions:
   pull-requests: write
   issues: write
 
-concurrency:
-  group: development-package-${{ github.event.issue.number }}
-  cancel-in-progress: false
-
 jobs:
-  apply:
-    name: Apply owner-authorized package
+  command:
+    name: Parse development-package command
     if: >-
       github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
       github.event.sender.login == 'Conroy1988' &&
       github.event.issue.pull_request == null &&
-      startsWith(github.event.comment.body, '/apply-development-package ')
+      (startsWith(github.event.comment.body, '/preflight-development-package ') ||
+       startsWith(github.event.comment.body, '/apply-development-package '))
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 2
+    outputs:
+      accepted: ${{ steps.parse.outputs.accepted }}
+      mode: ${{ steps.parse.outputs.mode }}
+      branch: ${{ steps.parse.outputs.branch }}
+      package: ${{ steps.parse.outputs.package }}
+      expected: ${{ steps.parse.outputs.expected }}
+      base_fingerprint: ${{ steps.parse.outputs.base_fingerprint }}
+      reason: ${{ steps.parse.outputs.reason }}
 
     steps:
       - name: Parse and validate command
-        id: command
+        id: parse
         env:
           COMMENT_BODY: ${{ github.event.comment.body }}
         shell: bash
@@ -40,12 +45,17 @@ jobs:
           }
 
           read -r command branch package expected extra <<< "$COMMENT_BODY"
-          if [[ "$command" != "/apply-development-package" ]]; then
-            reject "The command name is invalid."
-            exit 0
-          fi
+          case "$command" in
+            /preflight-development-package) mode=preflight ;;
+            /apply-development-package) mode=apply ;;
+            *)
+              reject "The command name is invalid."
+              exit 0
+              ;;
+          esac
+
           if [[ -z "$branch" || -z "$package" || -z "$expected" || -n "${extra:-}" ]]; then
-            reject "Use: /apply-development-package <branch> <package.py> <expected-head-sha>"
+            reject "Use: /${mode}-development-package <branch> <package.py> <expected-head-sha>"
             exit 0
           fi
           if [[ ! "$branch" =~ ^(feature|fix|chore)/[A-Za-z0-9._/-]+$ ]]; then
@@ -61,61 +71,225 @@ jobs:
             exit 0
           fi
 
+          base_fingerprint="$(printf '%s\0%s\0%s' "$branch" "$package" "$expected" | sha256sum | cut -d' ' -f1)"
           echo "accepted=true" >> "$GITHUB_OUTPUT"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "branch=$branch" >> "$GITHUB_OUTPUT"
           echo "package=$package" >> "$GITHUB_OUTPUT"
           echo "expected=$expected" >> "$GITHUB_OUTPUT"
-          printf '%s\n' "check-out-authorized-branch" > "$RUNNER_TEMP/development-package-stage"
+          echo "base_fingerprint=$base_fingerprint" >> "$GITHUB_OUTPUT"
 
       - name: Record rejected command
-        if: steps.command.outputs.accepted != 'true'
+        if: steps.parse.outputs.accepted != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          REJECTION_REASON: ${{ steps.command.outputs.reason }}
+          REJECTION_REASON: ${{ steps.parse.outputs.reason }}
         shell: bash
         run: |
           set -euo pipefail
           gh issue comment "$ISSUE_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
-            --body "Development package command rejected safely: ${REJECTION_REASON}\n\nNo branch was checked out, changed or pushed."
+            --body "Development-package command skipped safely: ${REJECTION_REASON} No branch was changed."
 
-      - name: Check out authorized branch
-        if: steps.command.outputs.accepted == 'true'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          ref: ${{ steps.command.outputs.branch }}
-          fetch-depth: 0
+  execute:
+    name: ${{ needs.command.outputs.mode == 'preflight' && 'Preflight reviewed package' || 'Apply owner-authorized package' }}
+    needs: command
+    if: needs.command.outputs.accepted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: development-package-${{ needs.command.outputs.branch }}
+      cancel-in-progress: true
 
-      - name: Confirm exact authorized branch head
-        if: steps.command.outputs.accepted == 'true'
-        shell: bash
+    steps:
+      - name: Resolve command state
+        id: state
         env:
-          EXPECTED_HEAD: ${{ steps.command.outputs.expected }}
-          PACKAGE_PATH: ${{ steps.command.outputs.package }}
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MODE: ${{ needs.command.outputs.mode }}
+          BRANCH: ${{ needs.command.outputs.branch }}
+          EXPECTED_HEAD: ${{ needs.command.outputs.expected }}
+          BASE_FINGERPRINT: ${{ needs.command.outputs.base_fingerprint }}
+        shell: bash
         run: |
           set -euo pipefail
-          printf '%s\n' "confirm-authorized-head" > "$RUNNER_TEMP/development-package-stage"
-          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          test -f "$PACKAGE_PATH"
-          test ! -L "$PACKAGE_PATH"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
-      - name: Rebase package onto current main
-        if: steps.command.outputs.accepted == 'true'
+          encoded_branch="$(jq -rn --arg value "$BRANCH" '$value|@uri')"
+          if ! remote_head="$(gh api "repos/${GITHUB_REPOSITORY}/branches/${encoded_branch}" --jq '.commit.sha' 2>/dev/null)"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "reason=The authorized branch no longer exists." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$remote_head" != "$EXPECTED_HEAD" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "reason=The command is stale because the branch head has moved." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          main_head="$(gh api "repos/${GITHUB_REPOSITORY}/branches/main" --jq '.commit.sha')"
+          fingerprint="$(printf '%s\0%s' "$BASE_FINGERPRINT" "$main_head" | sha256sum | cut -d' ' -f1)"
+          echo "main_head=$main_head" >> "$GITHUB_OUTPUT"
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
+          comments="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}/comments" --jq '.[].body')"
+          if [[ "$MODE" == "preflight" ]]; then
+            passed_marker="<!-- development-package-preflight-passed:${fingerprint} -->"
+            stopped_marker="<!-- development-package-preflight-stopped:${fingerprint} -->"
+            if grep -Fq "$passed_marker" <<< "$comments" || grep -Fq "$stopped_marker" <<< "$comments"; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "reason=This exact preflight command has already completed." >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            apply_marker="<!-- development-package-apply:${fingerprint} -->"
+            if grep -Fq "$apply_marker" <<< "$comments"; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "reason=This exact apply command has already completed." >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            passed_marker="<!-- development-package-preflight-passed:${fingerprint} -->"
+            if ! grep -Fq "$passed_marker" <<< "$comments"; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "reason=This exact package has not passed preflight against the current main branch." >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+      - name: Check out exact authorized commit
+        if: steps.state.outputs.skip != 'true'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ needs.command.outputs.expected }}
+          fetch-depth: 0
+
+      - name: Reconfirm branch, main and package
+        id: ready
+        if: steps.state.outputs.skip != 'true'
+        env:
+          BRANCH: ${{ needs.command.outputs.branch }}
+          EXPECTED_HEAD: ${{ needs.command.outputs.expected }}
+          MAIN_HEAD: ${{ steps.state.outputs.main_head }}
+          PACKAGE_PATH: ${{ needs.command.outputs.package }}
         shell: bash
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+
+          if ! git fetch origin "refs/heads/main:refs/remotes/origin/main" "refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}"; then
+            echo "reason=The branch or main ref became unavailable before execution." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$(git rev-parse "origin/${BRANCH}")" != "$EXPECTED_HEAD" ]]; then
+            echo "reason=The branch moved while this command was starting." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$(git rev-parse origin/main)" != "$MAIN_HEAD" ]]; then
+            echo "reason=The main branch moved after preflight resolution; run preflight again." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ ! -f "$PACKAGE_PATH" || -L "$PACKAGE_PATH" ]]; then
+            echo "reason=The reviewed package is missing or is a symbolic link." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Record neutral skip
+        if: steps.state.outputs.skip == 'true' || (steps.state.outputs.skip != 'true' && steps.ready.outputs.ready != 'true')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          MODE: ${{ needs.command.outputs.mode }}
+          STATE_REASON: ${{ steps.state.outputs.reason }}
+          READY_REASON: ${{ steps.ready.outputs.reason }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          reason="${STATE_REASON:-$READY_REASON}"
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "$GITHUB_REPOSITORY" \
+            --body "Development-package ${MODE} skipped safely: ${reason} No branch was changed."
+
+      - name: Run neutral preflight
+        id: preflight
+        if: needs.command.outputs.mode == 'preflight' && steps.ready.outputs.ready == 'true'
+        env:
+          PACKAGE_PATH: ${{ needs.command.outputs.package }}
+          MAIN_HEAD: ${{ steps.state.outputs.main_head }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          log="$RUNNER_TEMP/development-package-preflight.log"
+          stage="rebase-onto-current-main"
+          status=0
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rebase "$MAIN_HEAD" >"$log" 2>&1 || status=$?
+
+          if [[ "$status" -eq 0 ]]; then
+            stage="apply-development-package"
+            python3 "$PACKAGE_PATH" >>"$log" 2>&1 || status=$?
+          fi
+          if [[ "$status" -eq 0 ]]; then
+            stage="validate-canonical-userscript"
+            {
+              python3 .github/scripts/validate_userscript.py
+              node --check src/MissionChief_Map_Command_Toolkit.user.js
+              cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+            } >>"$log" 2>&1 || status=$?
+          fi
+
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          if [[ "$status" -eq 0 ]]; then
+            echo "outcome=passed" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome=stopped" >> "$GITHUB_OUTPUT"
+            echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          fi
+          tail -n 80 "$log" || true
+          exit 0
+
+      - name: Record preflight outcome
+        if: needs.command.outputs.mode == 'preflight' && steps.ready.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          OUTCOME: ${{ steps.preflight.outputs.outcome }}
+          STAGE: ${{ steps.preflight.outputs.stage }}
+          FINGERPRINT: ${{ steps.state.outputs.fingerprint }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$OUTCOME" == "passed" ]]; then
+            marker="<!-- development-package-preflight-passed:${FINGERPRINT} -->"
+            body="${marker}\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed."
+          else
+            marker="<!-- development-package-preflight-stopped:${FINGERPRINT} -->"
+            body="${marker}\nDevelopment-package preflight stopped safely during **${STAGE}**. No branch was changed and no failed workflow notification is required. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$body"
+
+      - name: Rebase package onto exact main
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
+        shell: bash
+        env:
+          MAIN_HEAD: ${{ steps.state.outputs.main_head }}
         run: |
           set -euo pipefail
           printf '%s\n' "rebase-onto-current-main" > "$RUNNER_TEMP/development-package-stage"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git rebase origin/main
+          git rebase "$MAIN_HEAD"
 
       - name: Apply development package
-        if: steps.command.outputs.accepted == 'true'
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         shell: bash
         env:
-          PACKAGE_PATH: ${{ steps.command.outputs.package }}
+          PACKAGE_PATH: ${{ needs.command.outputs.package }}
         run: |
           set -euo pipefail
           printf '%s\n' "apply-development-package" > "$RUNNER_TEMP/development-package-stage"
@@ -124,7 +298,7 @@ jobs:
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
       - name: Validate canonical userscript
-        if: steps.command.outputs.accepted == 'true'
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -134,28 +308,27 @@ jobs:
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
       - name: Commit validated result
-        if: steps.command.outputs.accepted == 'true'
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         id: commit
         shell: bash
         env:
-          BRANCH: ${{ steps.command.outputs.branch }}
+          BRANCH: ${{ needs.command.outputs.branch }}
+          EXPECTED_HEAD: ${{ needs.command.outputs.expected }}
         run: |
           set -euo pipefail
           printf '%s\n' "commit-and-push-validated-result" > "$RUNNER_TEMP/development-package-stage"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && { echo "::error::Package produced no repository changes."; exit 1; }
           git commit -m "Apply reviewed development package"
-          git push --force-with-lease origin "HEAD:${BRANCH}"
+          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Open or update pull request
-        if: steps.command.outputs.accepted == 'true'
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         id: pr
         env:
           GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN || github.token }}
-          BRANCH: ${{ steps.command.outputs.branch }}
+          BRANCH: ${{ needs.command.outputs.branch }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
@@ -175,25 +348,16 @@ jobs:
             TITLE="$(gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json title -q '.title')"
             BODY_FILE="$(mktemp)"
             printf '%s\n\n%s\n' \
-              "Automated implementation for #${ISSUE_NUMBER}. The owner-authorized development package was rebased onto current main, applied, removed, and validated before this pull request was opened." \
+              "Automated implementation for #${ISSUE_NUMBER}. The owner-authorized package passed preflight, was rebased onto the same main commit, applied, removed, and validated before this pull request was opened." \
               "Closes #${ISSUE_NUMBER}" \
               > "$BODY_FILE"
-            if ! gh pr create \
+            gh pr create \
               --repo "$GITHUB_REPOSITORY" \
               --head "$BRANCH" \
               --base main \
               --title "$TITLE" \
               --body-file "$BODY_FILE" \
-              > /tmp/development-package-pr-url.txt \
-              2> /tmp/development-package-pr-error.txt; then
-              cat /tmp/development-package-pr-error.txt >&2
-              if grep -qi "not permitted to create or approve pull requests" /tmp/development-package-pr-error.txt; then
-                echo "::error::Automatic PR creation is disabled for GITHUB_TOKEN. Enable Settings > Actions > General > Workflow permissions > Allow GitHub Actions to create and approve pull requests, or configure a least-privilege DEVELOPMENT_PR_TOKEN secret."
-              else
-                echo "::error::The validated branch was pushed, but GitHub could not create its pull request."
-              fi
-              exit 1
-            fi
+              > /tmp/development-package-pr-url.txt
             PR_URL="$(cat /tmp/development-package-pr-url.txt)"
             CREATED=true
           fi
@@ -202,25 +366,25 @@ jobs:
           echo "created=$CREATED" >> "$GITHUB_OUTPUT"
 
       - name: Record success
-        if: steps.command.outputs.accepted == 'true'
+        if: needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           RESULT_SHA: ${{ steps.commit.outputs.sha }}
           PR_URL: ${{ steps.pr.outputs.url }}
           PR_CREATED: ${{ steps.pr.outputs.created }}
+          FINGERPRINT: ${{ steps.state.outputs.fingerprint }}
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s\n' "record-success" > "$RUNNER_TEMP/development-package-stage"
           ACTION="updated"
           [[ "$PR_CREATED" == "true" ]] && ACTION="opened"
           gh issue comment "$ISSUE_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
-            --body "Development package applied and validated automatically.\n\n- Result commit: \`${RESULT_SHA}\`\n- Pull request ${ACTION}: ${PR_URL}\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push"
+            --body "<!-- development-package-apply:${FINGERPRINT} -->\nDevelopment package applied and validated automatically.\n\n- Result commit: \`${RESULT_SHA}\`\n- Pull request ${ACTION}: ${PR_URL}\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push"
 
-      - name: Record exact failure
-        if: failure() && steps.command.outputs.accepted == 'true'
+      - name: Record exact publish failure
+        if: failure() && needs.command.outputs.mode == 'apply' && steps.ready.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
@@ -235,4 +399,4 @@ jobs:
           fi
           gh issue comment "$ISSUE_NUMBER" \
             --repo "$GITHUB_REPOSITORY" \
-            --body "The owner-authorized development package stopped during **${STAGE}**. No failed gate was bypassed.${RESULT_NOTE}\n- Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            --body "The publish-capable development package failed during **${STAGE}**. No failed gate was bypassed.${RESULT_NOTE}\n- Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

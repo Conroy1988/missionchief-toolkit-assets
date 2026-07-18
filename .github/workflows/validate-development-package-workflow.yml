@@ -1,0 +1,24 @@
+name: Development Package Workflow Policy
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/apply-development-package.yml
+      - .github/workflows/validate-development-package-workflow.yml
+      - .github/scripts/test_development_package_workflow.py
+      - docs/DEVELOPMENT_PACKAGE_WORKFLOW.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: Validate workflow notification policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Run development-package workflow policy
+        run: python3 .github/scripts/test_development_package_workflow.py

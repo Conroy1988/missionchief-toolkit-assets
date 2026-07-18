@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.15.1] - 2026-07-18
+
+### Fixed
+- Mission Requirements now mounts against MissionChief's native mission window when the game's own missing-vehicle or missing-personnel alert uses the shared `alert-missing-vehicles` class.
+- LSSM coexistence detection now requires explicit ownership metadata such as `data-raw-html`; the shared presentation class alone can no longer suppress the Toolkit.
+
+### Compatibility
+- The Toolkit remains fully independent of LSSM and continues to use MissionChief's own `#missing_text`, mission form, vehicle lists and en-route table as its data and layout sources.
+- Added deterministic coverage for both MissionChief-native alerts and an active LSSM enhanced-missing-vehicles component.
+
 ## [4.15.0] - 2026-07-17
 
 ### Added

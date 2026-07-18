@@ -62,6 +62,9 @@ class FakeElement {
         if (name === 'id') this.id = String(value);
     }
     getAttribute(name) {
+        if (name === 'data-raw-html' && this._lssmActive) {
+            return '<div data-requirement-type="personnel">Missing Personnel</div>';
+        }
         if (name === 'id') return this.id || null;
         return this.attributes.has(name) ? this.attributes.get(name) : null;
     }
@@ -306,11 +309,26 @@ const genericTableSource = {
     querySelector(selector) { return selector.includes('table.table-striped') ? {} : null; }
 };
 assert.strictEqual(api.lssmActive({ root: { querySelector() { return null; } } }, genericTableSource), false, 'generic MissionChief table is not LSSM');
-const lssmSource = {
+const nativeMissingSource = {
     matches(selector) { return selector === '.alert-missing-vehicles'; },
+    classList: { contains(value) { return value === 'alert-missing-vehicles'; } },
+    getAttribute() { return null; },
+    closest() { return null; },
     querySelector() { return null; }
 };
-assert.strictEqual(api.lssmActive({ root: null }, lssmSource), true, 'active LSSM panel is detected');
+assert.strictEqual(
+    api.lssmActive({ root: null }, nativeMissingSource),
+    false,
+    'MissionChief native missing alert must not be classified as LSSM'
+);
+const lssmSource = {
+    matches(selector) { return selector === '.alert-missing-vehicles'; },
+    classList: { contains(value) { return value === 'alert-missing-vehicles'; } },
+    getAttribute(name) { return name === 'data-raw-html' ? '<div data-requirement-type="personnel">Missing Personnel</div>' : null; },
+    closest() { return null; },
+    querySelector() { return null; }
+};
+assert.strictEqual(api.lssmActive({ root: null }, lssmSource), true, 'active LSSM panel is detected by explicit ownership metadata');
 
 const html = api.panelHtml([
     api.coverageRow(

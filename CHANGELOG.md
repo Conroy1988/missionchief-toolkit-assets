@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.16.2] - 2026-07-18
+
+### Fixed
+- Kept Mission Requirements bound to the active MissionChief mission in AJAX/lightbox and standalone views.
+- Native `#missing_text` now outranks generic lightbox sources, preventing lower-right/footer mounting.
+- Visible newly opened missions outrank hidden stale records, and catalogue state resets when the active mission changes.
+
+### Interface
+- Mounted the panel directly beneath the mission title/address and before MissionChief's native requirement banner.
+- Added compact adaptive Desktop widths: 940px standard, 1140px for longer labels, and full available width only for exceptional content.
+- Tablet and iOS remain responsive without horizontal overflow.
+
+### Validation
+- Added lightbox source, header placement, delayed source, hidden-record, catalogue-transition and adaptive-width fixtures.
+
 ## [4.16.1] - 2026-07-18
 
 ### Fixed

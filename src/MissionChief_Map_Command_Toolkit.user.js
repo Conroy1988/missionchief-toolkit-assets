@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.16.1
+// @version      4.16.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.16.1',
+        version: '4.16.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22642,7 +22642,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function missionRequirementsCatalogueEnsure(record) {
         const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
         record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
         if (!descriptor) {
             record.catalogueState = 'unavailable';
             return null;
@@ -22678,11 +22688,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
                 const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
                 missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
                 record.catalogue = catalogue;
                 record.catalogueState = 'ready';
                 return catalogue;
             })
             .catch(error => {
+                if (!stillCurrent()) return null;
                 const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
                 const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
                 current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
@@ -22698,7 +22710,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 record.catalogueState = 'error';
                 return null;
             })
-            .finally(() => missionRequirementsScheduleRecord(record));
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
         entry.promise = promise;
         entry.touchedAt = now;
         missionRequirementsCatalogueCache.set(descriptor.key, entry);
@@ -22733,6 +22745,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             : '<div class="mcms-req-fallback"><span class="mcms-req-fallback-message">The official catalogue lists no fixed vehicle or personnel requirements for this mission.</span></div>';
         return {
             stateName: 'warning',
+            widthMode: missionRequirementsWidthMode(rows, unresolved),
             html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body">${table}<div class="mcms-req-unknown"><b>Baseline planning data</b><span>${escapeHtml(note)}</span></div>${unresolvedHtml}</div>`
         };
     }
@@ -22869,14 +22882,59 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return isLssmOwned(candidate?.root?.querySelector?.(ownedSelector));
     }
 
+    function missionRequirementsExplicitSource(source) {
+        if (!source || source.isConnected === false) return false;
+        if (source.getAttribute?.('data-mcms-requirements-anchor') === '1' || source.id === 'missing_text') return true;
+        if (source.matches?.('[data-requirement-type], .alert-missing-vehicles, [data-lssm-enhanced-missing-vehicles], [data-lssm-module="extendedCallWindow.enhancedMissingVehicles"]')) return true;
+        return Boolean(source.querySelector?.('[data-requirement-type], .alert-missing-vehicles[data-raw-html], [data-lssm-enhanced-missing-vehicles]'));
+    }
+
+    function missionRequirementsDirectChild(root, node) {
+        let current = node;
+        while (current?.parentNode && current.parentNode !== root) current = current.parentNode;
+        return current?.parentNode === root ? current : node;
+    }
+
+    function missionRequirementsPlacement(candidate, source = null) {
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        if (!root) return null;
+        const native = root.matches?.('#missing_text') ? root : root.querySelector?.('#missing_text');
+        const explicit = native || (missionRequirementsExplicitSource(source) && source?.getAttribute?.('data-mcms-requirements-anchor') !== '1' ? source : null);
+        if (explicit?.parentNode) return { root, parent: explicit.parentNode, before: explicit };
+        const address = root.querySelector?.('#mission_address, [data-mission-address], .mission-address, .mission_address');
+        const title = root.querySelector?.('#mission_caption, #mission_name, [data-mission-title], .mission-title, .mission_caption, h1');
+        const header = address || title;
+        if (header) {
+            const block = missionRequirementsDirectChild(root, header);
+            const parent = block?.parentNode || root;
+            const siblings = Array.from(parent.children || []);
+            const index = siblings.indexOf(block);
+            return { root, parent, before: index >= 0 ? (siblings[index + 1] || null) : (block?.nextSibling || null) };
+        }
+        const operational = root.querySelector?.('#vehicle_show_table_body_all, #mission_vehicle_driving, #mission_vehicle_at_mission, #mission_reply_content, .mission_reply_content');
+        if (operational?.parentNode) return { root, parent: operational.parentNode, before: operational };
+        return { root, parent: root, before: root.firstChild || null };
+    }
+
+    function missionRequirementsPlacePanel(candidate, source, panel) {
+        const placement = missionRequirementsPlacement(candidate, source);
+        if (!placement?.parent || !panel) return false;
+        const siblings = Array.from(placement.parent.children || []);
+        const panelIndex = siblings.indexOf(panel);
+        const beforeIndex = placement.before ? siblings.indexOf(placement.before) : siblings.length;
+        if (panel.parentNode !== placement.parent || panelIndex < 0 || panelIndex !== beforeIndex - 1) {
+            placement.parent.insertBefore?.(panel, placement.before || null);
+        }
+        return true;
+    }
+
     function missionRequirementsSourceForCandidate(candidate) {
-        const root = candidate?.root;
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root;
         const supplied = candidate?.source;
-        const suppliedIsAnchor = supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1';
-        if (supplied && supplied.isConnected !== false && !suppliedIsAnchor) return supplied;
-        if (!root?.querySelector) return supplied?.isConnected !== false ? supplied : null;
-        const native = root.matches?.('#missing_text') ? root : root.querySelector('#missing_text');
-        return native || (supplied?.isConnected !== false ? supplied : null);
+        const native = root?.matches?.('#missing_text') ? root : root?.querySelector?.('#missing_text');
+        if (native && native.isConnected !== false) return native;
+        if (supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1' && supplied.isConnected !== false) return supplied;
+        return missionRequirementsExplicitSource(supplied) ? supplied : null;
     }
 
     function missionRequirementsCandidateFromSource(source) {
@@ -22898,16 +22956,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsAnchorForCandidate(candidate) {
-        const root = candidate?.root || candidate?.mount;
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
         if (!root?.ownerDocument?.createElement) return null;
         let anchor = Array.from(root.children || []).find(node => node?.getAttribute?.('data-mcms-requirements-anchor') === '1')
             || root.querySelector?.('[data-mcms-requirements-anchor="1"]');
-        if (anchor && anchor.isConnected !== false) return anchor;
-        anchor = root.ownerDocument.createElement('span');
-        anchor.hidden = true;
-        anchor.setAttribute('aria-hidden', 'true');
-        anchor.setAttribute('data-mcms-requirements-anchor', '1');
-        root.insertBefore?.(anchor, root.firstChild || null);
+        if (!anchor || anchor.isConnected === false) {
+            anchor = root.ownerDocument.createElement('span');
+            anchor.hidden = true;
+            anchor.setAttribute('aria-hidden', 'true');
+            anchor.setAttribute('data-mcms-requirements-anchor', '1');
+        }
+        const placement = missionRequirementsPlacement({ ...candidate, root, mount: root });
+        placement?.parent?.insertBefore?.(anchor, placement.before || null);
         return anchor;
     }
 
@@ -22928,12 +22988,53 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}
     function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}
-    function missionRequirementsWindowCandidates(){const a=[],s=new Set(),roots=new Set(),add=(c,trusted=false)=>{const root=missionRequirementsCandidateRoot(c);if(!root||roots.has(root))return;let x=missionRequirementsSourceForCandidate({...c,root});if(!x){if(!trusted&&!missionRequirementsLooksLikeWindow({...c,root}))return;x=missionRequirementsAnchorForCandidate({...c,root})}if(!x||x.isConnected===false||s.has(x))return;roots.add(root);s.add(x);a.push({...c,root,mount:c?.mount||root,source:x})};missionValueWindowCandidates().forEach(c=>add(c,true));for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(!d?.querySelectorAll)continue;for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x),true);for(const r of d.querySelectorAll('#mission_form, form[action*="/missions/"], #mission_content'))add({root:r,mount:r},false)}const ids=new Set();return a.sort((x,y)=>4*((y.source?.getAttribute?.('data-mcms-requirements-anchor')!=='1')-(x.source?.getAttribute?.('data-mcms-requirements-anchor')!=='1'))+2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.root)-isVisible(x.root)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}
+    function missionRequirementsWindowCandidates() {
+        const candidates = [];
+        const seenSources = new Set();
+        const seenRoots = new Set();
+        const add = (candidate, trusted = false) => {
+            const root = missionRequirementsCandidateRoot(candidate);
+            if (!root || seenRoots.has(root)) return;
+            let source = missionRequirementsSourceForCandidate({ ...candidate, root, mount: root });
+            if (!source) {
+                if (!trusted && !missionRequirementsLooksLikeWindow({ ...candidate, root, mount: root })) return;
+                source = missionRequirementsAnchorForCandidate({ ...candidate, root, mount: root });
+            }
+            if (!source || source.isConnected === false || seenSources.has(source)) return;
+            seenRoots.add(root);
+            seenSources.add(source);
+            candidates.push({ ...candidate, root, mount: root, source });
+        };
+        missionValueWindowCandidates().forEach(candidate => add(candidate, true));
+        for (const context of transportSweepDocumentContexts()) {
+            const doc = context?.doc;
+            if (!doc?.querySelectorAll) continue;
+            for (const source of doc.querySelectorAll('#missing_text')) add(missionRequirementsCandidateFromSource(source), true);
+            for (const root of doc.querySelectorAll('#mission_form, form[action*="/missions/"], #mission_content')) add({ root, mount: root }, false);
+        }
+        const priority = candidate => {
+            const source = candidate?.source;
+            return (isVisible(candidate?.root) ? 100 : 0)
+                + (source?.id === 'missing_text' || source?.matches?.('#missing_text') ? 20 : 0)
+                + (source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? 0 : 5)
+                + (missionRequirementsRecords.has(source) ? 1 : 0);
+        };
+        const missionIds = new Set();
+        return candidates.sort((left, right) => priority(right) - priority(left)).filter(candidate => {
+            const missionId = missionRequirementsMissionIdentity(candidate, candidate.source);
+            if (!missionId) return true;
+            if (missionIds.has(missionId)) return false;
+            missionIds.add(missionId);
+            return true;
+        });
+    }
 
     function missionRequirementsDocumentCss() {
         return `
-#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}
+#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:min(100%,940px)!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}
 [data-mcms-requirements-source-hidden="1"]{display:none!important}
+#${SCRIPT.missionRequirementsPanelId}[data-width-mode="wide"]{width:min(100%,1140px)!important}
+#${SCRIPT.missionRequirementsPanelId}[data-width-mode="fluid"]{width:100%!important}
 #${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}
 #${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}
 #${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}
@@ -22977,7 +23078,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 #${SCRIPT.missionRequirementsPanelId} .mcms-req-fallback-message{min-width:0!important;overflow-wrap:anywhere!important}
 #${SCRIPT.missionRequirementsPanelId} .mcms-req-report{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;padding:5px 8px!important;border:1px solid rgba(255,183,77,.58)!important;border-radius:6px!important;background:rgba(255,183,77,.14)!important;color:#ffe0aa!important;font:800 10px/1.2 Arial,sans-serif!important;cursor:pointer!important}
 #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown .mcms-req-report{justify-self:start!important;margin-top:2px!important}
-@media(min-width:768px) and (max-width:1180px){#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:6px 8px!important}#${SCRIPT.missionRequirementsPanelId} thead th{font-size:9px!important}#${SCRIPT.missionRequirementsPanelId} tbody td{font-size:11.5px!important;padding:5px 3px!important}}
+@media(min-width:768px) and (max-width:1180px){#${SCRIPT.missionRequirementsPanelId}{width:100%!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:6px 8px!important}#${SCRIPT.missionRequirementsPanelId} thead th{font-size:9px!important}#${SCRIPT.missionRequirementsPanelId} tbody td{font-size:11.5px!important;padding:5px 3px!important}}
 @media(max-width:767px){#${SCRIPT.missionRequirementsPanelId}{margin-bottom:6px!important;border-radius:7px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:6px 7px!important;gap:6px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:12px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:47%!important;font-size:9px!important;padding:3px 5px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,390px)!important;padding:5px!important}#${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}#${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}#${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:0!important;margin:0 0 5px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-row-state)!important;border-radius:6px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:38px!important;padding:4px 2px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:11.5px!important;white-space:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:6px!important;border-left:0!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:12px!important;text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:7.5px!important;line-height:1!important;font-weight:900!important;letter-spacing:.08px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-fallback{align-items:stretch!important;flex-direction:column!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-report{align-self:flex-start!important}}
         `;
     }
@@ -23003,6 +23104,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsRestoreSource(source) {
         if (!source || source.dataset.mcmsRequirementsSourceHidden !== '1') return;
         delete source.dataset.mcmsRequirementsSourceHidden;
+    }
+
+    function missionRequirementsWidthMode(rows = [], unresolved = []) {
+        const labels = Array.from(rows || []).map(row => String(row?.requirement || row?.catalogueLabel || row?.label || ''));
+        const fragments = Array.from(unresolved || []).map(item => String(item?.text || [item?.label, item?.value].filter(Boolean).join(': ') || item || ''));
+        const longestLabel = labels.reduce((maximum, value) => Math.max(maximum, value.length), 0);
+        const longestFragment = fragments.reduce((maximum, value) => Math.max(maximum, value.length), 0);
+        if (longestLabel > 62 || longestFragment > 150) return 'fluid';
+        if (longestLabel > 32 || longestFragment > 72) return 'wide';
+        return 'standard';
     }
 
     function missionRequirementsPanelHtml(rows, unresolved) {
@@ -23031,6 +23142,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             : '';
         return {
             stateName,
+            widthMode: missionRequirementsWidthMode(rows, unresolved),
             html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Required</th><th scope="col">On site</th><th scope="col">Responding</th><th scope="col">Selected</th><th scope="col">Still needed</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
         };
     }
@@ -23142,6 +23254,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsPresent(record, presentation, reason = '') {
         record.panel.dataset.state = presentation.stateName;
         record.panel.dataset.mcmsTheme = state.uiTheme;
+        record.panel.dataset.widthMode = presentation.widthMode || 'standard';
         if (reason) record.panel.dataset.mcmsReportReason = reason;
         else delete record.panel.dataset.mcmsReportReason;
         setInnerHtmlIfChanged(record.panel, presentation.html);
@@ -23221,7 +23334,54 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}
     function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}
     function missionRequirementsBindPanel(p){if(!p||p.getAttribute?.('data-mcms-requirements-collapse-bound'))return;p.setAttribute?.('data-mcms-requirements-collapse-bound','1');p.addEventListener('click',e=>{const report=e.target?.closest?.('[data-mcms-report-mission]');if(report){const r=Array.from(missionRequirementsRecords.values()).find(x=>x.panel===p);const url=missionRequirementsReportUrl(r,p.dataset.mcmsReportReason||'unresolved requirement text');const opened=pageWindow.open?.(url,'_blank','noopener,noreferrer');try{if(opened)opened.opener=null}catch(err){}return}const b=e.target?.closest?.('[data-mcms-requirements-collapse]');if(!b)return;const c=p.classList.toggle('mcms-collapsed');b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand mission requirements':'Collapse mission requirements');b.textContent=c?'⌄':'⌃'})}
-    function missionRequirementsEnsureRecord(candidate,source){let r=missionRequirementsRecords.get(source),p=missionRequirementsCanonicalPanel(source,r?.panel?.isConnected?r.panel:null);if(r&&p){r.panel=p;r.candidate=candidate;missionRequirementsBindPanel(p);missionRequirementsScheduleRecord(r);return r}if(r)missionRequirementsRemoveRecord(source);const d=source.ownerDocument||document;for(const[x]of missionRequirementsRecords)if(x!==source&&x.ownerDocument===d)missionRequirementsRemoveRecord(x);ensureMissionRequirementsDocumentStyle(d);p=missionRequirementsCanonicalPanel(source);if(!p){p=d.createElement('section');p.id=SCRIPT.missionRequirementsPanelId;p.setAttribute('data-mcms-requirements-panel','1');p.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(p,source)}p.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(p);r={candidate,source,panel:p,startedAt:Date.now()};const root=candidate.root?.isConnected?candidate.root:candidate.mount,O=d.defaultView?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(root&&typeof O==='function'){r.observer=runtimeTrackObserver(new O(ms=>ms.some(m=>missionRequirementsMutationRelevant(r,m))&&missionRequirementsScheduleRecord(r)));r.observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']})}missionRequirementsRecords.set(source,r);missionRequirementsScheduleRecord(r);return r}
+    function missionRequirementsEnsureRecord(candidate, source) {
+        let record = missionRequirementsRecords.get(source);
+        let panel = missionRequirementsCanonicalPanel(source, record?.panel?.isConnected ? record.panel : null);
+        const root = missionRequirementsCandidateRoot(candidate);
+        const scopedCandidate = { ...candidate, root, mount: root };
+        const missionIdentity = missionRequirementsMissionIdentity(scopedCandidate, source);
+        if (record && panel) {
+            if (record.missionIdentity && missionIdentity && record.missionIdentity !== missionIdentity) {
+                record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+                record.catalogue = null;
+                record.catalogueDescriptor = null;
+                record.catalogueState = 'idle';
+                record.startedAt = Date.now();
+            }
+            record.missionIdentity = missionIdentity;
+            record.panel = panel;
+            record.candidate = scopedCandidate;
+            missionRequirementsPlacePanel(scopedCandidate, source, panel);
+            missionRequirementsBindPanel(panel);
+            missionRequirementsScheduleRecord(record);
+            return record;
+        }
+        if (record) missionRequirementsRemoveRecord(source);
+        const doc = source.ownerDocument || document;
+        for (const [otherSource] of missionRequirementsRecords) {
+            if (otherSource !== source && otherSource.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+        }
+        ensureMissionRequirementsDocumentStyle(doc);
+        panel = missionRequirementsCanonicalPanel(source);
+        if (!panel) {
+            panel = doc.createElement('section');
+            panel.id = SCRIPT.missionRequirementsPanelId;
+            panel.setAttribute('data-mcms-requirements-panel', '1');
+            panel.setAttribute('aria-label', 'Live mission requirements');
+        }
+        missionRequirementsPlacePanel(scopedCandidate, source, panel);
+        panel.dataset.mcmsTheme = state.uiTheme;
+        missionRequirementsBindPanel(panel);
+        record = { candidate: scopedCandidate, source, panel, startedAt: Date.now(), missionIdentity };
+        const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (root && typeof Observer === 'function') {
+            record.observer = runtimeTrackObserver(new Observer(mutations => mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation)) && missionRequirementsScheduleRecord(record)));
+            record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+        }
+        missionRequirementsRecords.set(source, record);
+        missionRequirementsScheduleRecord(record);
+        return record;
+    }
 
     function missionRequirementsRemoveRecord(source) {
         const record = missionRequirementsRecords.get(source);

@@ -47,6 +47,10 @@ def main() -> int:
         "function missionRequirementsCollectUnits(candidate, mode)",
         "function missionRequirementsPrimaryRuntime()",
         "function missionRequirementsMissionIdentity(candidate, source)",
+        "function missionRequirementsSourceForCandidate(candidate)",
+        "function missionRequirementsPlacement(candidate, source = null)",
+        "function missionRequirementsPlacePanel(candidate, source, panel)",
+        "function missionRequirementsWidthMode(rows = [], unresolved = [])",
         "function missionRequirementsAnchorForCandidate(candidate)",
         "function missionRequirementsFallbackHtml(kind)",
         "function missionRequirementsReportUrl(record, reason = 'unknown')",
@@ -67,7 +71,7 @@ def main() -> int:
         "function observeMissionRequirementsDocument(doc)",
         "function installMissionRequirementsWindows()",
         "runtimeOnCleanup(() => {",
-        "source.parentNode?.insertBefore(p, source)",
+        "missionRequirementsPlacePanel(scopedCandidate, source, panel)",
         "missionRequirementsHideSource(source)",
         "missionRequirementsRestoreSource(record.source)",
         "#missing_text",
@@ -96,7 +100,7 @@ def main() -> int:
 
     assert source.count("function installMissionRequirementsWindows()") == 1
     assert source.count("function scanMissionRequirementsWindows()") == 1
-    assert compact_source.count("source.parentNode?.insertBefore(p,source)") == 1
+    assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
 
     for alias in data["requiredAliases"]:
@@ -117,6 +121,9 @@ def main() -> int:
     assert "grid-template-columns:repeat(5,minmax(0,1fr))" in compact_css
     assert "table-layout:fixed!important" in compact_css
     assert "overflow-wrap:anywhere!important" in compact_css
+    assert f"width:min(100%,{data['layout']['standardDesktopWidth']})!important" in compact_css
+    assert f'data-width-mode="wide"]{{width:min(100%,{data["layout"]["wideDesktopWidth"]})!important' in compact_css
+    assert 'data-width-mode="fluid"]{width:100%!important' in compact_css
 
     lssm = re.search(r"function missionRequirementsLssmActive\(candidate, source\) \{([\s\S]*?)\n    \}", source)
     assert lssm and ".alert-missing-vehicles" in lssm.group(1)

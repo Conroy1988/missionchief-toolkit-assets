@@ -354,6 +354,13 @@
       "Responding",
       "Selected",
       "Still needed"
+    ],
+    "standardDesktopWidth": "940px",
+    "wideDesktopWidth": "1140px",
+    "adaptiveWidthModes": [
+      "standard",
+      "wide",
+      "fluid"
     ]
   }
 }

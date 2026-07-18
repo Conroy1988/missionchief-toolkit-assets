@@ -8,49 +8,31 @@ PACKAGE = ROOT / ".github" / "development-packages" / "issue-171-ajax-dispatch-r
 REMOVE = [
     ROOT / ".github" / "development-packages" / "issue-171-record-inspection.py",
     ROOT / ".github" / "development-packages" / "issue-171-final-check.py",
+    ROOT / ".github" / "development-packages" / "issue-171-check2.py",
+    ROOT / ".github" / "development-packages" / "issue-171-check3.py",
+    ROOT / ".github" / "development-packages" / "issue-171-canonical-check.py",
     ROOT / ".github" / "diagnostics" / "issue-171-package-result.txt",
     ROOT / ".github" / "diagnostics" / "issue-171-record-refresh.txt",
     ROOT / ".github" / "diagnostics" / "issue-171-final-result.txt",
+    ROOT / ".github" / "diagnostics" / "issue-171-check2-result.txt",
+    ROOT / ".github" / "diagnostics" / "issue-171-check3-result.txt",
+    ROOT / ".github" / "diagnostics" / "issue-171-canonical-panel.txt",
 ]
 
 source = PACKAGE.read_text(encoding="utf-8")
-old_write = '''source = replace_once(source, old_root, new_root, "candidate root promotion")
-SOURCE.write_text(source, encoding="utf-8")'''
-new_write = '''source = replace_once(source, old_root, new_root, "candidate root promotion")
-source = replace_once(
-    source,
-    "            missionRequirementsEnsureRecord({ ...candidate, source }, source);",
-    "            missionRequirementsEnsureRecord({ ...candidate, source }, source);\\n            const activeRecord = missionRequirementsRecords.get(source);\\n            if (activeRecord?.panel) missionRequirementsPlacePanel({ ...candidate, source }, source, activeRecord.panel);",
-    "active record placement reconciliation",
-)
-SOURCE.write_text(source, encoding="utf-8")'''
-if source.count(old_write) != 1:
-    raise AssertionError("Unable to inject active-record placement reconciliation")
-source = source.replace(old_write, new_write, 1)
-
-old_contract = '''contract = replace_once(
-    contract,
-    '    assert source.count("missionRequirementsPanelId: \\\'mc-map-command-toolkit-mission-requirements\\\'") == 1\\n',
-    '    assert source.count("missionRequirementsPanelId: \\\'mc-map-command-toolkit-mission-requirements\\\'") == 1\\n    assert "return { root, parent: operational.parentNode, before: operational };" not in source\\n    assert "missionRequirementsPlacementBlock(root, operational)" in source\\n',
-    "contract table-host assertions",
-)
-CONTRACT_TEST.write_text(contract, encoding="utf-8")'''
-new_contract = '''contract = replace_once(
-    contract,
-    '    assert source.count("missionRequirementsPanelId: \\\'mc-map-command-toolkit-mission-requirements\\\'") == 1\\n',
-    '    assert source.count("missionRequirementsPanelId: \\\'mc-map-command-toolkit-mission-requirements\\\'") == 1\\n    assert "return { root, parent: operational.parentNode, before: operational };" not in source\\n    assert "missionRequirementsPlacementBlock(root, operational)" in source\\n',
-    "contract table-host assertions",
-)
-contract = replace_once(
-    contract,
-    '    assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2',
-    '    assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2\\n    assert compact_source.count("missionRequirementsPlacePanel({...candidate,source},source,activeRecord.panel)") == 1',
-    "active placement contract",
-)
-CONTRACT_TEST.write_text(contract, encoding="utf-8")'''
-if source.count(old_contract) != 1:
-    raise AssertionError("Unable to update active placement contract")
-source = source.replace(old_contract, new_contract, 1)
+old_fixture = '''api.scan();
+flushAnimationFrames();
+assert.strictEqual(issue171Record.panel.parentNode, issue171Root, 'subsequent scan re-homes a mis-mounted panel');
+assert(!['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH'].includes(issue171Record.panel.parentNode.tagName), 'panel host is never table structure');'''
+new_fixture = '''api.scan();
+flushAnimationFrames();
+const issue171RehomedRecord = Array.from(api.records.values())[0];
+assert.strictEqual(issue171RehomedRecord.panel.parentNode, issue171Root, 'subsequent scan re-homes a mis-mounted panel');
+assert.strictEqual(issue171Record.panel.isConnected, false, 'stale table-mounted panel is removed');
+assert(!['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH'].includes(issue171RehomedRecord.panel.parentNode.tagName), 'panel host is never table structure');'''
+if source.count(old_fixture) != 1:
+    raise AssertionError("Unable to correct Issue 171 canonical panel fixture")
+source = source.replace(old_fixture, new_fixture, 1)
 
 PACKAGE.unlink()
 for path in REMOVE:

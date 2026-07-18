@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.16.3
+// @version      4.16.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.16.3',
+        version: '4.16.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22939,9 +22939,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             const index = siblings.indexOf(block);
             return { root, parent, before: index >= 0 ? (siblings[index + 1] || null) : (block?.nextSibling || null) };
         }
-        const operational = root.querySelector?.('#vehicle_show_table_body_all, #mission_vehicle_driving, #mission_vehicle_at_mission, #mission_reply_content, .mission_reply_content');
-        if (operational?.parentNode) return missionRequirementsPlacementBlock(root, operational);
-        return { root, parent: root, before: root.firstChild || null };
+        // Operational regions may load before the mission header during AJAX dispatch.
+        // They remain data sources only and are never valid panel hosts.
+        return null;
     }
 
     function missionRequirementsPlacePanel(candidate, source, panel) {
@@ -22961,7 +22961,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const supplied = candidate?.source;
         const native = root?.matches?.('#missing_text') ? root : root?.querySelector?.('#missing_text');
         if (native && native.isConnected !== false) return native;
-        if (supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1' && supplied.isConnected !== false) return supplied;
+        if (supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1' && supplied.isConnected !== false) {
+            const placement = missionRequirementsPlacement({ ...candidate, root, mount: root }, supplied);
+            if (placement?.parent) return supplied;
+            supplied.remove?.();
+        }
         return missionRequirementsExplicitSource(supplied) ? supplied : null;
     }
 
@@ -22988,14 +22992,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!root?.ownerDocument?.createElement) return null;
         let anchor = Array.from(root.children || []).find(node => node?.getAttribute?.('data-mcms-requirements-anchor') === '1')
             || root.querySelector?.('[data-mcms-requirements-anchor="1"]');
+        const placement = missionRequirementsPlacement({ ...candidate, root, mount: root });
+        if (!placement?.parent) {
+            anchor?.remove?.();
+            return null;
+        }
         if (!anchor || anchor.isConnected === false) {
             anchor = root.ownerDocument.createElement('span');
             anchor.hidden = true;
             anchor.setAttribute('aria-hidden', 'true');
             anchor.setAttribute('data-mcms-requirements-anchor', '1');
         }
-        const placement = missionRequirementsPlacement({ ...candidate, root, mount: root });
-        placement?.parent?.insertBefore?.(anchor, placement.before || null);
+        placement.parent.insertBefore?.(anchor, placement.before || null);
         return anchor;
     }
 

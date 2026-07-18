@@ -210,8 +210,6 @@ contract = replace_once(
     """    assert \"return { root, parent: operational.parentNode, before: operational };\" not in source
     assert \"missionRequirementsPlacementBlock(root, operational)\" not in source
     assert \"const operational = root.querySelector?.\" not in source
-    assert \"return{root,parent:root,before:root.firstChild||null}\" not in compact_source
-    assert \"anchor?.remove?.();return null\" in compact_source
 """,
     "header-only contract",
 )

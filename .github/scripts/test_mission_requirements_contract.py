@@ -105,7 +105,8 @@ def main() -> int:
     assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
-    assert "missionRequirementsPlacementBlock(root, operational)" in source
+    assert "missionRequirementsPlacementBlock(root, operational)" not in source
+    assert "const operational = root.querySelector?." not in source
 
     for alias in data["requiredAliases"]:
         assert alias in source, f"Required UK requirement alias missing: {alias}"

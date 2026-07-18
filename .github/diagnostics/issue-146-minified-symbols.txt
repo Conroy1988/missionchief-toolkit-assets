@@ -1,0 +1,186 @@
+Issue #146 minified symbol windows
+=================================
+
+Package return code: 1
+
+### missionRequirementsPrimaryRuntime at byte 1384038
+
+t?.(rootSelector) || source.parentNode || source.ownerDocument.body;
+        if (!root) return null;
+        return { root, mount: root, source, directMissionRequirements: true };
+    }
+
+    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow;}catch(err){return true;}}function missionRequirementsMissionIdentity(candidate,source){const root=candidate?.root;const linked=root?.querySelector?.('a[href*="/missions/"], form[action*="/missions/"]');const values=[candidate?.missionId,candidate?.mission_id,root?.dataset?.missionId,root?.getAttribute?.('data-mission-id'),root?.getAttribute?.('mission_id'),root?.getAttribute?.('action'),linked?.getAttribute?.('href'),linked?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname];for(const value of values){const raw=String(value??'').trim();const match=raw.match(/(?:\/missions\/|mission[_-]?)(\d+)/i);const id=Number(match?.[1]??(/^\d+$/.test(raw)?raw:NaN));if(Number.isSafeInteger(id)&&id>0)return`mission:${id}`;}return null;}function missionRequirementsWindowCandidates(){const candidates=[];const seenSources=new Set();const add=candidate=>{const source=missionRequirementsSourceForCandidate(candidate);if(!source||source.isConnected===false||seenSources.has(source))return;seenSources.add(source);candidates.push({...candidate,source});};for(const candidate of missionValueWindowCandidates())add(candidate);for(const context of transportSweepDocumentContexts()){const doc=context?.doc;if(!doc?.querySelectorAll)continue;for(const source of Array.from(doc.querySelectorAll('#missing_text')))add(missionRequirementsCandidateFromSource(source));}const seenMissions=new Set();return candidates.sort((a,b)=>{const aScore=(missionRequirementsRecords.has(a.source)?2:0)+(isVisible(a.source)?1:0);const bScore=(missionRequirementsRecords.has(b.source)?2:0)+(isVisible(b.source)?1:0);return bScore-aScore;}).filter(candidate=>{const identity=missionRequirementsMissionIdentity(candidate,candidate.source);if(!identity)return true;if(seenMissions.has(identity))return false;seenMissions.add(identity);return true;});}
+
+    function missionRequirementsDocumentCss() {
+        return `#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}[data-mcms-requirements-source-hidden="1"]{display:none!important}#${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}#${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}#${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:blo
+
+---
+
+### missionRequirementsMissionIdentity at byte 1384164
+
+unt: root, source, directMissionRequirements: true };
+    }
+
+    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow;}catch(err){return true;}}function missionRequirementsMissionIdentity(candidate,source){const root=candidate?.root;const linked=root?.querySelector?.('a[href*="/missions/"], form[action*="/missions/"]');const values=[candidate?.missionId,candidate?.mission_id,root?.dataset?.missionId,root?.getAttribute?.('data-mission-id'),root?.getAttribute?.('mission_id'),root?.getAttribute?.('action'),linked?.getAttribute?.('href'),linked?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname];for(const value of values){const raw=String(value??'').trim();const match=raw.match(/(?:\/missions\/|mission[_-]?)(\d+)/i);const id=Number(match?.[1]??(/^\d+$/.test(raw)?raw:NaN));if(Number.isSafeInteger(id)&&id>0)return`mission:${id}`;}return null;}function missionRequirementsWindowCandidates(){const candidates=[];const seenSources=new Set();const add=candidate=>{const source=missionRequirementsSourceForCandidate(candidate);if(!source||source.isConnected===false||seenSources.has(source))return;seenSources.add(source);candidates.push({...candidate,source});};for(const candidate of missionValueWindowCandidates())add(candidate);for(const context of transportSweepDocumentContexts()){const doc=context?.doc;if(!doc?.querySelectorAll)continue;for(const source of Array.from(doc.querySelectorAll('#missing_text')))add(missionRequirementsCandidateFromSource(source));}const seenMissions=new Set();return candidates.sort((a,b)=>{const aScore=(missionRequirementsRecords.has(a.source)?2:0)+(isVisible(a.source)?1:0);const bScore=(missionRequirementsRecords.has(b.source)?2:0)+(isVisible(b.source)?1:0);return bScore-aScore;}).filter(candidate=>{const identity=missionRequirementsMissionIdentity(candidate,candidate.source);if(!identity)return true;if(seenMissions.has(identity))return false;seenMissions.add(identity);return true;});}
+
+    function missionRequirementsDocumentCss() {
+        return `#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}[data-mcms-requirements-source-hidden="1"]{display:none!important}#${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}#${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}#${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms
+
+---
+
+### missionRequirementsHostPanels at byte 1401971
+
+sonnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsHostPanels(source){return Array.from(source?.parentNode?.children||[]).filter(panel=>panel?.id===SCRIPT.missionRequirementsPanelId||panel?.getAttribute?.('data-mcms-requirements-panel')==='1');}function missionRequirementsCanonicalPanel(source,preferred=null){const panels=missionRequirementsHostPanels(source);if(!panels.length)return null;const canonical=preferred&&panels.includes(preferred)?preferred:panels[0];canonical.id=SCRIPT.missionRequirementsPanelId;canonical.setAttribute?.('data-mcms-requirements-panel','1');for(const panel of panels)if(panel!==canonical)try{panel.remove();}catch(err){}return canonical;}function missionRequirementsBindPanel(panel){if(!panel||panel.getAttribute?.('data-mcms-requirements-collapse-bound')==='1')return;panel.setAttribute?.('data-mcms-requirements-collapse-bound','1');panel.addEventListener('click',event=>{const button=event.target?.closest?.('[data-mcms-requirements-collapse]');if(!button)return;const collapsed=panel.classList.toggle('mcms-collapsed');button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',collapsed?'Expand mission requirements':'Collapse mission requirements');button.textContent=collapsed?'⌄':'⌃';});}function missionRequirementsEnsureRecord(candidate,source){let record=missionRequirementsRecords.get(source);const connectedPanel=record?.panel?.isConnected?record.panel:null;const canonical=missionRequirementsCanonicalPanel(source,connectedPanel);if(record&&canonical){record.panel=canonical;record.candidate=candidate;missionRequirementsBindPanel(canonical);missionRequirementsHideSource(source);missionRequirementsScheduleRecord(record);return record;}if(record)missionRequirementsRemoveRecord(source);const doc=source.ownerDocument||document;for(const[otherSource,otherRecord]of Array.from(missionRequirementsRecords.entries())){if(otherSource!==source&&otherRecord?.source?.ownerDocument===doc)missionRequirementsRemoveRecord(otherSource);}ensureMissionRequirementsDocumentStyle(doc);let panel=missionRequirementsCanonicalPanel(source);if(!panel){panel=doc.createElement('section');panel.id=SCRIPT.missionRequirementsPanelId;panel.setAttribute('data-mcms-requirements-panel','1');panel.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(panel,source);}panel.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(panel);missionRequirementsHideSource(source);record={candidate,source,panel,observer:null,frame:null};const observeRoot=candidate.root?.isConnected?candidate.root:candidate.mount;const view=doc.defaultView||pageWindow;const MutationObserverCtor=view?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(observeRoot&&typeof MutationObserverCtor==='function'){record.observer=runtimeTrackObserver(new MutationObserverCtor(mutations=>{if(mutations.some(mutation=>missionRequirementsMutationRelevant(record,mutation)))missionRequirementsScheduleRecord(record);}));record.observer.observe(observeRoot,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']});}missionRequirementsRecords.set(source,record);missionRequirementsScheduleRecord(record);return record;}
+
+    function missionRequirementsRemoveRecord(source) {
+        const record = missionRequirementsRecords.get(source);
+        if (!record) {
+            missionRequirementsRestoreSource(source);
+            return;
+        }
+        if (record.frame) runtimeCancelAnimationFrame(record.frame);
+        runtimeUntrackObserver(record.observer);
+        try { record.panel?.remove(); } catch (err) {}
+        missionRequirementsRestoreSource(record.source);
+        missionRequirementsRecords.delete(source);
+    }
+
+    function clearMissionRequirementsPanels() {
+        for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+                context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+            } catch (err) {}
+        }
+    }
+
+    function scheduleMissionRequirementsScan(delay = 60) {
+        runtimeClearTimeout(missionRequirementsScanTimer);
+        missionRequirementsScanTimer = runtimeSetTimeout(() => {
+            missionRequirementsScanTimer = null;
+            scanMissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) ret
+
+---
+
+### missionRequirementsCanonicalPanel at byte 1402193
+
+tPanels(source){return Array.from(source?.parentNode?.children||[]).filter(panel=>panel?.id===SCRIPT.missionRequirementsPanelId||panel?.getAttribute?.('data-mcms-requirements-panel')==='1');}function missionRequirementsCanonicalPanel(source,preferred=null){const panels=missionRequirementsHostPanels(source);if(!panels.length)return null;const canonical=preferred&&panels.includes(preferred)?preferred:panels[0];canonical.id=SCRIPT.missionRequirementsPanelId;canonical.setAttribute?.('data-mcms-requirements-panel','1');for(const panel of panels)if(panel!==canonical)try{panel.remove();}catch(err){}return canonical;}function missionRequirementsBindPanel(panel){if(!panel||panel.getAttribute?.('data-mcms-requirements-collapse-bound')==='1')return;panel.setAttribute?.('data-mcms-requirements-collapse-bound','1');panel.addEventListener('click',event=>{const button=event.target?.closest?.('[data-mcms-requirements-collapse]');if(!button)return;const collapsed=panel.classList.toggle('mcms-collapsed');button.setAttribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',collapsed?'Expand mission requirements':'Collapse mission requirements');button.textContent=collapsed?'⌄':'⌃';});}function missionRequirementsEnsureRecord(candidate,source){let record=missionRequirementsRecords.get(source);const connectedPanel=record?.panel?.isConnected?record.panel:null;const canonical=missionRequirementsCanonicalPanel(source,connectedPanel);if(record&&canonical){record.panel=canonical;record.candidate=candidate;missionRequirementsBindPanel(canonical);missionRequirementsHideSource(source);missionRequirementsScheduleRecord(record);return record;}if(record)missionRequirementsRemoveRecord(source);const doc=source.ownerDocument||document;for(const[otherSource,otherRecord]of Array.from(missionRequirementsRecords.entries())){if(otherSource!==source&&otherRecord?.source?.ownerDocument===doc)missionRequirementsRemoveRecord(otherSource);}ensureMissionRequirementsDocumentStyle(doc);let panel=missionRequirementsCanonicalPanel(source);if(!panel){panel=doc.createElement('section');panel.id=SCRIPT.missionRequirementsPanelId;panel.setAttribute('data-mcms-requirements-panel','1');panel.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(panel,source);}panel.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(panel);missionRequirementsHideSource(source);record={candidate,source,panel,observer:null,frame:null};const observeRoot=candidate.root?.isConnected?candidate.root:candidate.mount;const view=doc.defaultView||pageWindow;const MutationObserverCtor=view?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(observeRoot&&typeof MutationObserverCtor==='function'){record.observer=runtimeTrackObserver(new MutationObserverCtor(mutations=>{if(mutations.some(mutation=>missionRequirementsMutationRelevant(record,mutation)))missionRequirementsScheduleRecord(record);}));record.observer.observe(observeRoot,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']});}missionRequirementsRecords.set(source,record);missionRequirementsScheduleRecord(record);return record;}
+
+    function missionRequirementsRemoveRecord(source) {
+        const record = missionRequirementsRecords.get(source);
+        if (!record) {
+            missionRequirementsRestoreSource(source);
+            return;
+        }
+        if (record.frame) runtimeCancelAnimationFrame(record.frame);
+        runtimeUntrackObserver(record.observer);
+        try { record.panel?.remove(); } catch (err) {}
+        missionRequirementsRestoreSource(record.source);
+        missionRequirementsRecords.delete(source);
+    }
+
+    function clearMissionRequirementsPanels() {
+        for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+                context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+            } catch (err) {}
+        }
+    }
+
+    function scheduleMissionRequirementsScan(delay = 60) {
+        runtimeClearTimeout(missionRequirementsScanTimer);
+        missionRequirementsScanTimer = runtimeSetTimeout(() => {
+            missionRequirementsScanTimer = null;
+            scanMissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for
+
+---
+
+### missionRequirementsEnsureRecord at byte 1403207
+
+tribute('aria-expanded',String(!collapsed));button.setAttribute('aria-label',collapsed?'Expand mission requirements':'Collapse mission requirements');button.textContent=collapsed?'⌄':'⌃';});}function missionRequirementsEnsureRecord(candidate,source){let record=missionRequirementsRecords.get(source);const connectedPanel=record?.panel?.isConnected?record.panel:null;const canonical=missionRequirementsCanonicalPanel(source,connectedPanel);if(record&&canonical){record.panel=canonical;record.candidate=candidate;missionRequirementsBindPanel(canonical);missionRequirementsHideSource(source);missionRequirementsScheduleRecord(record);return record;}if(record)missionRequirementsRemoveRecord(source);const doc=source.ownerDocument||document;for(const[otherSource,otherRecord]of Array.from(missionRequirementsRecords.entries())){if(otherSource!==source&&otherRecord?.source?.ownerDocument===doc)missionRequirementsRemoveRecord(otherSource);}ensureMissionRequirementsDocumentStyle(doc);let panel=missionRequirementsCanonicalPanel(source);if(!panel){panel=doc.createElement('section');panel.id=SCRIPT.missionRequirementsPanelId;panel.setAttribute('data-mcms-requirements-panel','1');panel.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(panel,source);}panel.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(panel);missionRequirementsHideSource(source);record={candidate,source,panel,observer:null,frame:null};const observeRoot=candidate.root?.isConnected?candidate.root:candidate.mount;const view=doc.defaultView||pageWindow;const MutationObserverCtor=view?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(observeRoot&&typeof MutationObserverCtor==='function'){record.observer=runtimeTrackObserver(new MutationObserverCtor(mutations=>{if(mutations.some(mutation=>missionRequirementsMutationRelevant(record,mutation)))missionRequirementsScheduleRecord(record);}));record.observer.observe(observeRoot,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']});}missionRequirementsRecords.set(source,record);missionRequirementsScheduleRecord(record);return record;}
+
+    function missionRequirementsRemoveRecord(source) {
+        const record = missionRequirementsRecords.get(source);
+        if (!record) {
+            missionRequirementsRestoreSource(source);
+            return;
+        }
+        if (record.frame) runtimeCancelAnimationFrame(record.frame);
+        runtimeUntrackObserver(record.observer);
+        try { record.panel?.remove(); } catch (err) {}
+        missionRequirementsRestoreSource(record.source);
+        missionRequirementsRecords.delete(source);
+    }
+
+    function clearMissionRequirementsPanels() {
+        for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+                context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+            } catch (err) {}
+        }
+    }
+
+    function scheduleMissionRequirementsScan(delay = 60) {
+        runtimeClearTimeout(missionRequirementsScanTimer);
+        missionRequirementsScanTimer = runtimeSetTimeout(() => {
+            missionRequirementsScanTimer = null;
+            scanMissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionRequirementsWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate);
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            const raw = missionRequirementsElementText(source);
+            if (!raw) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeSources.add(source);
+            missionRequirementsEnsureRecord(candidate, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (sour

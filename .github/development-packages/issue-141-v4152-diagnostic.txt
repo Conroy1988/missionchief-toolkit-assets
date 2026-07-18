@@ -1,0 +1,8 @@
+returncode=1
+
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-141-v4152-wrapper.py", line 126, in <module>
+    exec(compile(package, str(ORIGINAL), "exec"), namespace, namespace)
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-141-mission-requirements-completeness.py", line 469, in <module>
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-141-mission-requirements-completeness.py", line 26, in replace_function
+AssertionError: Expected one declaration for scanMissionRequirementsWindows, found 0

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.4
+// @version      4.15.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.4',
+        version: '4.15.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22686,7 +22686,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const issueTitle = `Mission requirements missing: ${title || `Mission ${missionId}`}`.slice(0, 180);
         let body = fields.join('\n');
         const build = () => {
-            const params = new URLSearchParams({ title: issueTitle, labels: 'Mission Info Missing', body });
+            const params = new URLSearchParams({ template: 'mission-info-missing.yml', title: issueTitle, diagnostic: body });
             return `https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new?${params.toString()}`;
         };
         let url = build();

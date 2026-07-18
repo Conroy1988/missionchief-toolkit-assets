@@ -182,7 +182,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.15.4'
+        version: '4.15.5'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -543,9 +543,12 @@ missingCandidate.root.appendChild(unsafeSource);
 missingRecord.candidate.source = unsafeSource;
 const reportUrl = api.reportUrl(missingRecord, 'token=secret');
 assert(reportUrl.startsWith('https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new?'), 'report uses the GitHub issue composer');
-assert(reportUrl.includes('Mission+Info+Missing'), 'report requests the Mission Info Missing label');
+const reportParams = new URL(reportUrl).searchParams;
+assert.strictEqual(reportParams.get('template'), 'mission-info-missing.yml', 'report selects the repository-owned Mission Info Missing form');
+assert.strictEqual(reportParams.get('labels'), null, 'report does not request permission-dependent labels');
+assert.strictEqual(reportParams.get('body'), null, 'report diagnostic uses the issue-form field rather than the blank issue body');
 assert(reportUrl.length <= 7600, 'report URL remains bounded');
-const reportBody = new URL(reportUrl).searchParams.get('body');
+const reportBody = reportParams.get('diagnostic');
 assert(!reportBody.includes('secret'), 'report sanitises token values');
 assert(!reportBody.includes('discord.com/api/webhooks'), 'report sanitises webhook URLs');
 assert(!reportBody.includes('55.9533'), 'report sanitises coordinates');

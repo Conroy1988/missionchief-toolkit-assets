@@ -1,0 +1,756 @@
+exit_code=1
+
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: subsequent scan re-homes a mis-mounted panel
++ actual - expected
+... Skipped lines
+
++ <ref *5> FakeElement {
++   attributes: Map(0) {},
+- <ref *3> FakeElement {
+-   attributes: Map(1) {
+-     'action' => '/missions/255577320'
+-   },
+    children: [
++     <ref *11> FakeElement {
+-     <ref *8> FakeElement {
+        attributes: Map(0) {},
+        children: [],
+        classList: FakeClassList {
+          values: Set(0) {}
+        },
+        className: '',
++       closestMap: Map(1) {
++         '#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]' => <ref *4> FakeElement {
++           attributes: Map(1) {
++             'action' => '/missions/255577320'
++           },
++           children: [
++             <ref *3> FakeElement {
++               attributes: Map(0) {},
++               children: [],
++               classList: FakeClassList {
++                 values: Set(0) {}
++               },
++               className: '',
++               closestMap: Map(0) {},
++               dataset: {},
++               hidden: false,
++               id: 'mission_caption',
++               innerHTML: '',
++               innerText: '',
++               isConnected: true,
++               listeners: Map(0) {},
++               matchSet: Set(0) {},
++               ownerDocument: <ref *1> FakeDocument {
++                 body: FakeElement {
++                   attributes: Map(0) {},
++                   children: [],
++                   classList: FakeClassList {
++                     values: Set(0) {}
++                   },
++                   className: '',
++                   closestMap: Map(0) {},
++                   dataset: {},
++                   hidden: false,
++                   id: '',
++                   innerHTML: '',
++                   innerText: '',
++                   isConnected: true,
++                   listeners: Map(0) {},
++                   matchSet: Set(0) {},
++                   ownerDocument: [Circular *1],
++                   parentNode: null,
++                   queryAllHandler: null,
++                   queryAllMap: Map(0) {},
++                   queryHandler: null,
++                   queryMap: Map(0) {},
++                   tagName: 'BODY',
++                   textContent: '',
++                   value: ''
++                 },
++                 defaultView: {
++                   MutationObserver: [class FakeMutationObserver] {
++                     created: 3
++                   },
++                   innerHeight: 900,
++                   innerWidth: 1600,
++                   location: {
++                     pathname: '/'
++                   },
++                   navigator: {
++                     platform: 'FixtureOS',
++                     userAgentData: {
++                       mobile: false,
++                       platform: 'FixtureOS'
++                     }
++                   }
++                 },
++                 documentElement: FakeElement {
++                   attributes: Map(0) {},
++                   children: [],
++                   classList: FakeClassList {
++                     values: Set(0) {}
++                   },
++                   className: '',
++                   closestMap: Map(0) {},
++                   dataset: {},
++                   hidden: false,
++                   id: '',
++                   innerHTML: '',
++                   innerText: '',
++                   isConnected: true,
++                   listeners: Map(0) {},
++                   matchSet: Set(0) {},
++                   ownerDocument: [Circular *1],
++                   parentNode: null,
++                   queryAllHandler: null,
++                   queryAllMap: Map(0) {},
++                   queryHandler: null,
++                   queryMap: Map(0) {},
++                   tagName: 'HTML',
++                   textContent: '',
++                   value: ''
++                 },
++                 head: <ref *2> FakeElement {
++                   attributes: Map(0) {},
++                   children: [
++                     <ref *9> FakeElement {
++                       attributes: Map(0) {},
++                       children: [],
++                       classList: FakeClassList {
++                         values: Set(0) {}
++                       },
++                       className: '',
++                       closestMap: Map(0) {},
++                       dataset: {},
++                       hidden: false,
++                       id: 'mcms-mission-requirements-document-style',
++                       innerHTML: '',
++                       innerText: '',
++                       isConnected: true,
++                       listeners: Map(0) {},
++                       matchSet: Set(0) {},
++                       ownerDocument: [Circular *1],
++                       parentNode: [Circular *2],
++                       queryAllHandler: null,
++                       queryAllMap: Map(0) {},
++                       queryHandler: null,
++                       queryMap: Map(0) {},
++                       tagName: 'STYLE',
++                       textContent: '\n' +
++                         '#mc-map-command-toolkit-mission-requirements{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:min(100%,940px)!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}\n' +
++                         '[data-mcms-requirements-source-hidden="1"]{display:none!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-width-mode="wide"]{width:min(100%,1140px)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-width-mode="fluid"]{width:100%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="danger"]{--mcms-req-state:#ef5350}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="warning"]{--mcms-req-state:#ffb74d}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="success"]{--mcms-req-state:#4dd68a}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-head{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;padding:6px 9px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-title{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1 1 auto!important;font-size:13px!important;line-height:1.15!important;font-weight:900!important;letter-spacing:.12px!important;color:var(--mcms-req-text)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 9px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:50%!important;padding:3px 7px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:10px!important;line-height:1.15!important;font-weight:850!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 26px!important;width:26px!important;height:24px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:6px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 13px/1 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements.mcms-collapsed .mcms-req-body{display:none!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-body{max-height:min(36vh,360px)!important;overflow:auto!important;overscroll-behavior:contain!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements col.mcms-req-name-col{width:40%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements col.mcms-req-number-col{width:12%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements thead th{position:sticky!important;top:0!important;z-index:2!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:9.5px!important;line-height:1.1!important;font-weight:900!important;letter-spacing:.12px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements thead th:first-child{text-align:left!important;padding-left:7px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr{--mcms-row-state:#ef5350}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"]{--mcms-row-state:#4dd68a}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"]{--mcms-row-state:#ffb74d}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"]{--mcms-row-state:#aab2bd}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody td{box-sizing:border-box!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.07)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.15!important;vertical-align:middle!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr:last-child td{border-bottom:0!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody td:first-child{padding-left:7px!important;border-left:3px solid var(--mcms-row-state)!important;font-weight:850!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:800!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.075)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td{background:rgba(255,183,77,.055)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="open"] td{background:rgba(239,83,80,.045)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"] td{background:rgba(170,178,189,.055)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-still{font-size:13px!important;font-weight:950!important;color:var(--mcms-row-state)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown{display:grid!important;gap:4px!important;padding:7px 9px 8px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown b{color:#ffd18a!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.2px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.3!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:9px!important;color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.35!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback-message{min-width:0!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-report{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;padding:5px 8px!important;border:1px solid rgba(255,183,77,.58)!important;border-radius:6px!important;background:rgba(255,183,77,.14)!important;color:#ffe0aa!important;font:800 10px/1.2 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown .mcms-req-report{justify-self:start!important;margin-top:2px!important}\n' +
++                         '@media(min-width:768px) and (max-width:1180px){#mc-map-command-toolkit-mission-requirements{width:100%!important}#mc-map-command-toolkit-mission-requirements .mcms-req-head{padding:6px 8px!important}#mc-map-command-toolkit-mission-requirements thead th'... 2896 more characters,
++                       value: ''
++                     }
++                   ],
++                   classList: FakeClassList {
++                     values: Set(0) {}
++                   },
++                   className: '',
++                   closestMap: Map(0) {},
++                   dataset: {},
++                   hidden: false,
++                   id: '',
++                   innerHTML: '',
++                   innerText: '',
++                   isConnected: true,
++                   listeners: Map(0) {},
++                   matchSet: Set(0) {},
++                   ownerDocument: [Circular *1],
++                   parentNode: null,
++                   queryAllHandler: null,
++                   queryAllMap: Map(0) {},
++                   queryHandler: null,
++                   queryMap: Map(0) {},
++                   tagName: 'HEAD',
++                   textContent: '',
++                   value: ''
++                 },
++                 nodes: Set(11) {
++                   <ref *10> FakeElement {
++                     attributes: Map(3) {
++                       'aria-label' => 'Live mission requirements',
++                       'data-mcms-requirements-collapse-bound' => '1',
++                       'data-mcms-requirements-panel' => '1'
++                     },
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {
++                       mcmsTheme: 'mapCommand',
++                       state: 'danger',
++                       widthMode: 'standard'
++                     },
++                     hidden: false,
++                     id: 'mc-map-command-toolkit-mission-requirements',
++                     innerHTML: '<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">1 outstanding · 0/1 covered</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Required</th><th scope="col">On site</th><th scope="col">Responding</th><th scope="col">Selected</th><th scope="col">Still needed</th></tr></thead><tbody><tr data-row-state="open" title="Police Car: outstanding"><td>Police Car</td><td data-label="Required">3</td><td data-label="On site">0</td><td data-label="Respond.">0</td><td data-label="Selected">0</td><td class="mcms-req-still" data-label="Need">3</td></tr></tbody></table></div>',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(1) {
++                       'click' => [
++                         [Function (anonymous)]
++                       ]
++                     },
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: [Circular *4],
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'SECTION',
++                     textContent: '',
++                     value: ''
++                   },
++                   <ref *2> FakeElement {
++                     attributes: Map(0) {},
++                     children: [
++                       <ref *9> FakeElement {
++                         attributes: Map(0) {},
++                         children: [],
++                         classList: FakeClassList {
++                           values: Set(0) {}
++                         },
++                         className: '',
++                         closestMap: Map(0) {},
++                         dataset: {},
++                         hidden: false,
++                         id: 'mcms-mission-requirements-document-style',
++                         innerHTML: '',
++                         innerText: '',
++                         isConnected: true,
++                         listeners: Map(0) {},
++                         matchSet: Set(0) {},
++                         ownerDocument: [Circular *1],
++                         parentNode: [Circular *2],
++                         queryAllHandler: null,
++                         queryAllMap: Map(0) {},
++                         queryHandler: null,
++                         queryMap: Map(0) {},
++                         tagName: 'STYLE',
++                         textContent: '\n' +
++                           '#mc-map-command-toolkit-mission-requirements{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:min(100%,940px)!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}\n' +
++                           '[data-mcms-requirements-source-hidden="1"]{display:none!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-width-mode="wide"]{width:min(100%,1140px)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-width-mode="fluid"]{width:100%!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-state="danger"]{--mcms-req-state:#ef5350}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-state="warning"]{--mcms-req-state:#ffb74d}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-state="success"]{--mcms-req-state:#4dd68a}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}\n' +
++                           '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-head{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;padding:6px 9px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-title{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1 1 auto!important;font-size:13px!important;line-height:1.15!important;font-weight:900!important;letter-spacing:.12px!important;color:var(--mcms-req-text)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 9px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:50%!important;padding:3px 7px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:10px!important;line-height:1.15!important;font-weight:850!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 26px!important;width:26px!important;height:24px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:6px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 13px/1 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements.mcms-collapsed .mcms-req-body{display:none!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-body{max-height:min(36vh,360px)!important;overflow:auto!important;overscroll-behavior:contain!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements col.mcms-req-name-col{width:40%!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements col.mcms-req-number-col{width:12%!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements thead th{position:sticky!important;top:0!important;z-index:2!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:9.5px!important;line-height:1.1!important;font-weight:900!important;letter-spacing:.12px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements thead th:first-child{text-align:left!important;padding-left:7px!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr{--mcms-row-state:#ef5350}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"]{--mcms-row-state:#4dd68a}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"]{--mcms-row-state:#ffb74d}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"]{--mcms-row-state:#aab2bd}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody td{box-sizing:border-box!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.07)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.15!important;vertical-align:middle!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr:last-child td{border-bottom:0!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody td:first-child{padding-left:7px!important;border-left:3px solid var(--mcms-row-state)!important;font-weight:850!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:800!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.075)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td{background:rgba(255,183,77,.055)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="open"] td{background:rgba(239,83,80,.045)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"] td{background:rgba(170,178,189,.055)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-still{font-size:13px!important;font-weight:950!important;color:var(--mcms-row-state)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown{display:grid!important;gap:4px!important;padding:7px 9px 8px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown b{color:#ffd18a!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.2px!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.3!important;overflow-wrap:anywhere!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:9px!important;color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.35!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback-message{min-width:0!important;overflow-wrap:anywhere!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-report{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;padding:5px 8px!important;border:1px solid rgba(255,183,77,.58)!important;border-radius:6px!important;background:rgba(255,183,77,.14)!important;color:#ffe0aa!important;font:800 10px/1.2 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                           '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown .mcms-req-report{justify-self:start!important;margin-top:2px!important}\n' +
++                           '@media(min-width:768px) and (max-width:1180px){#mc-map-command-toolkit-mission-requirements{width:100%!important}#mc-map-command-toolkit-mission-requirements .mcms-req-head{padding:6px 8px!important}#mc-map-command-toolkit-mission-requirements thead th'... 2896 more characters,
++                         value: ''
++                       }
++                     ],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: '',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: null,
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'HEAD',
++                     textContent: '',
++                     value: ''
++                   },
++                   <ref *6> FakeElement {
++                     attributes: Map(0) {},
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: 'mission_address',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: [Circular *4],
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'DIV',
++                     textContent: '',
++                     value: ''
++                   },
++                   <ref *7> FakeElement {
++                     attributes: Map(0) {},
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {
++                       mcmsRequirementsSourceHidden: '1'
++                     },
++                     hidden: false,
++                     id: 'missing_text',
++                     innerHTML: '',
++                     innerText: 'Missing Vehicles: 3 Police cars',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: [Circular *4],
++                     queryAllHandler: [Function (anonymous)],
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'DIV',
++                     textContent: 'Missing Vehicles: 3 Police cars',
++                     value: ''
++                   },
++                   <ref *8> FakeElement {
++                     attributes: Map(0) {},
++                     children: [
++                       [Circular *5]
++                     ],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: 'available_units',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: [Circular *4],
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'DIV',
++                     textContent: '',
++                     value: ''
++                   },
++                   <ref *9> FakeElement {
++                     attributes: Map(0) {},
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: 'mcms-mission-requirements-document-style',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: <ref *2> FakeElement {
++                       attributes: Map(0) {},
++                       children: [
++                         [Circular *9]
++                       ],
++                       classList: FakeClassList {
++                         values: Set(0) {}
++                       },
++                       className: '',
++                       closestMap: Map(0) {},
++                       dataset: {},
++                       hidden: false,
++                       id: '',
++                       innerHTML: '',
++                       innerText: '',
++                       isConnected: true,
++                       listeners: Map(0) {},
++                       matchSet: Set(0) {},
++                       ownerDocument: [Circular *1],
++                       parentNode: null,
++                       queryAllHandler: null,
++                       queryAllMap: Map(0) {},
++                       queryHandler: null,
++                       queryMap: Map(0) {},
++                       tagName: 'HEAD',
++                       textContent: '',
++                       value: ''
++                     },
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'STYLE',
++                     textContent: '\n' +
++                       '#mc-map-command-toolkit-mission-requirements{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:min(100%,940px)!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}\n' +
++                       '[data-mcms-requirements-source-hidden="1"]{display:none!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-width-mode="wide"]{width:min(100%,1140px)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-width-mode="fluid"]{width:100%!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-state="danger"]{--mcms-req-state:#ef5350}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-state="warning"]{--mcms-req-state:#ffb74d}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-state="success"]{--mcms-req-state:#4dd68a}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}\n' +
++                       '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-head{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;padding:6px 9px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-title{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1 1 auto!important;font-size:13px!important;line-height:1.15!important;font-weight:900!important;letter-spacing:.12px!important;color:var(--mcms-req-text)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 9px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:50%!important;padding:3px 7px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:10px!important;line-height:1.15!important;font-weight:850!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 26px!important;width:26px!important;height:24px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:6px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 13px/1 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements.mcms-collapsed .mcms-req-body{display:none!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-body{max-height:min(36vh,360px)!important;overflow:auto!important;overscroll-behavior:contain!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements col.mcms-req-name-col{width:40%!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements col.mcms-req-number-col{width:12%!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements thead th{position:sticky!important;top:0!important;z-index:2!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:9.5px!important;line-height:1.1!important;font-weight:900!important;letter-spacing:.12px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements thead th:first-child{text-align:left!important;padding-left:7px!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr{--mcms-row-state:#ef5350}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"]{--mcms-row-state:#4dd68a}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"]{--mcms-row-state:#ffb74d}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"]{--mcms-row-state:#aab2bd}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody td{box-sizing:border-box!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.07)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.15!important;vertical-align:middle!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr:last-child td{border-bottom:0!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody td:first-child{padding-left:7px!important;border-left:3px solid var(--mcms-row-state)!important;font-weight:850!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:800!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.075)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td{background:rgba(255,183,77,.055)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="open"] td{background:rgba(239,83,80,.045)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"] td{background:rgba(170,178,189,.055)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-still{font-size:13px!important;font-weight:950!important;color:var(--mcms-row-state)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown{display:grid!important;gap:4px!important;padding:7px 9px 8px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown b{color:#ffd18a!important;font-size:10px!important;text-transform:uppercase!important;letter-spacing:.2px!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.3!important;overflow-wrap:anywhere!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;padding:9px!important;color:var(--mcms-req-text)!important;font-size:11px!important;line-height:1.35!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-fallback-message{min-width:0!important;overflow-wrap:anywhere!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-report{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;padding:5px 8px!important;border:1px solid rgba(255,183,77,.58)!important;border-radius:6px!important;background:rgba(255,183,77,.14)!important;color:#ffe0aa!important;font:800 10px/1.2 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                       '#mc-map-command-toolkit-mission-requirements .mcms-req-unknown .mcms-req-report{justify-self:start!important;margin-top:2px!important}\n' +
++                       '@media(min-width:768px) and (max-width:1180px){#mc-map-command-toolkit-mission-requirements{width:100%!important}#mc-map-command-toolkit-mission-requirements .mcms-req-head{padding:6px 8px!important}#mc-map-command-toolkit-mission-requirements thead th'... 2896 more characters,
++                     value: ''
++                   },
++                   FakeElement {
++                     attributes: Map(0) {},
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: '',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: null,
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'BODY',
++                     textContent: '',
++                     value: ''
++                   },
++                   FakeElement {
++                     attributes: Map(0) {},
++                     children: [],
++                     classList: FakeClassList {
++                       values: Set(0) {}
++                     },
++                     className: '',
++                     closestMap: Map(0) {},
++                     dataset: {},
++                     hidden: false,
++                     id: '',
++                     innerHTML: '',
++                     innerText: '',
++                     isConnected: true,
++                     listeners: Map(0) {},
++                     matchSet: Set(0) {},
++                     ownerDocument: [Circular *1],
++                     parentNode: null,
++                     queryAllHandler: null,
++                     queryAllMap: Map(0) {},
++                     queryHandler: null,
++                     queryMap: Map(0) {},
++                     tagName: 'HTML',
++                     textContent: '',
++                     value: ''
++                   },
++                   [Circular *11],
++                   [Circular *3],
++                   [Circular *5]
++                 }
++               },
++               parentNode: [Circular *4],
++               queryAllHandler: null,
++               queryAllMap: Map(0) {},
++               queryHandler: null,
++               queryMap: Map(0) {},
++               tagName: 'H1',
++               textContent: '',
++               value: ''
++             },
++             <ref *6> FakeElement {
++               attributes: Map(0) {},
++               children: [],
++               classList: FakeClassList {
++                 values: Set(0) {}
++               },
++               className: '',
++               closestMap: Map(0) {},
++               dataset: {},
++               hidden: false,
++               id: 'mission_address',
++               innerHTML: '',
++               innerText: '',
++               isConnected: true,
++               listeners: Map(0) {},
++               matchSet: Set(0) {},
++               ownerDocument: <ref *1> FakeDocument {
++                 body: FakeElement {
++                   attributes: Map(0) {},
++                   children: [],
++                   classList: FakeClassList {
++                     values: Set(0) {}
++                   },
++                   className: '',
++                   closestMap: Map(0) {},
++                   dataset: {},
++                   hidden: false,
++                   id: '',
++                   innerHTML: '',
++                   innerText: '',
++                   isConnected: true,
++                   listeners: Map(0) {},
++                   matchSet: Set(0) {},
++                   ownerDocument: [Circular *1],
++                   parentNode: null,
++                   queryAllHandler: null,
++                   queryAllMap: Map(0) {},
++                   queryHandler: null,
++                   queryMap: Map(0) {},
++                   tagName: 'BODY',
++                   textContent: '',
++                   value: ''
++                 },
++                 defaultView: {
++                   MutationObserver: [class FakeMutationObserver] {
++                     created: 3
++                   },
++                   innerHeight: 900,
++                   innerWidth: 1600,
++                   location: {
++                     pathname: '/'
++                   },
++                   navigator: {
++                     platform: 'FixtureOS',
++                     userAgentData: {
++                       mobile: false,
++                       platform: 'FixtureOS'
++                     }
++                   }
++                 },
++                 documentElement: FakeElement {
++                   attributes: Map(0) {},
++                   children: [],
++                   classList: FakeClassList {
++                     values: Set(0) {}
++                   },
++                   className: '',
++                   closestMap: Map(0) {},
++                   dataset: {},
++                   hidden: false,
++                   id: '',
++                   innerHTML: '',
++                   innerText: '',
++                   isConnected: true,
++                   listeners: Map(0) {},
++                   matchSet: Set(0) {},
++                   ownerDocument: [Circular *1],
++                   parentNode: null,
++                   queryAllHandler: null,
++                   queryAllMap: Map(0) {},
++                   queryHandler: null,
++                   queryMap: Map(0) {},
++                   tagName: 'HTML',
++                   textContent: '',
++                   value: ''
++                 },
++                 head: <ref *2> FakeElement {
++                   attributes: Map(0) {},
++                   children: [
++                     <ref *9> FakeElement {
++                       attributes: Map(0) {},
++                       children: [],
++                       classList: FakeClassList {
++                         values: Set(0) {}
++                       },
++                       className: '',
++                       closestMap: Map(0) {},
++                       dataset: {},
++                       hidden: false,
++                       id: 'mcms-mission-requirements-document-style',
++                       innerHTML: '',
++                       innerText: '',
++                       isConnected: true,
++                       listeners: Map(0) {},
++                       matchSet: Set(0) {},
++                       ownerDocument: [Circular *1],
++                       parentNode: [Circular *2],
++                       queryAllHandler: null,
++                       queryAllMap: Map(0) {},
++                       queryHandler: null,
++                       queryMap: Map(0) {},
++                       tagName: 'STYLE',
++                       textContent: '\n' +
++                         '#mc-map-command-toolkit-mission-requirements{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:min(100%,940px)!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 7px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:9px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 5px 14px rgba(0,0,0,.19)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}\n' +
++                         '[data-mcms-requirements-source-hidden="1"]{display:none!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-width-mode="wide"]{width:min(100%,1140px)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-width-mode="fluid"]{width:100%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="danger"]{--mcms-req-state:#ef5350}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="warning"]{--mcms-req-state:#ffb74d}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-state="success"]{--mcms-req-state:#4dd68a}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-head{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;padding:6px 9px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-title{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important;flex:1 1 auto!important;font-size:13px!important;line-height:1.15!important;font-weight:900!important;letter-spacing:.12px!important;color:var(--mcms-req-text)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 9px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:50%!important;padding:3px 7px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:10px!important;line-height:1.15!important;font-weight:850!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 26px!important;width:26px!important;height:24px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:6px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 13px/1 Arial,sans-serif!important;cursor:pointer!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements.mcms-collapsed .mcms-req-body{display:none!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements .mcms-req-body{max-height:min(36vh,360px)!important;overflow:auto!important;overscroll-behavior:contain!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements col.mcms-req-name-col{width:40%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements col.mcms-req-number-col{width:12%!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements thead th{position:sticky!important;top:0!important;z-index:2!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:9.5px!important;line-height:1.1!important;font-weight:900!important;letter-spacing:.12px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements thead th:first-child{text-align:left!important;padding-left:7px!important}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr{--mcms-row-state:#ef5350}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="covered"]{--mcms-row-state:#4dd68a}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="partial"]{--mcms-row-state:#ffb74d}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody tr[data-row-state="unresolved"]{--mcms-row-state:#aab2bd}\n' +
++                         '#mc-map-command-toolkit-mission-requirements tbody td{Traceback (most recent call last):
+  File "/tmp/issue-171-final-_c8su0_q/repository/.github/development-packages/issue-171-final.py", line 59, in <module>
+    exec(compile(source, str(PACKAGE), "exec"), namespace)
+  File "/tmp/issue-171-final-_c8su0_q/repository/.github/development-packages/issue-171-ajax-dispatch-root.py", line 323, in <module>
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/issue-171-final-_c8su0_q/repository/.github/scripts/test_mission_requirements_runtime.js']' returned non-zero exit status 1.

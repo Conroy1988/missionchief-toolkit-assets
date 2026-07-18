@@ -1,0 +1,50 @@
+icle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}
+    function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}
+    function missionRequirementsBindPanel(p){if(!p||p.getAttribute?.('data-mcms-requirements-collapse-bound'))return;p.setAttribute?.('data-mcms-requirements-collapse-bound','1');p.addEventListener('click',e=>{const report=e.target?.closest?.('[data-mcms-report-mission]');if(report){const r=Array.from(missionRequirementsRecords.values()).find(x=>x.panel===p);const url=missionRequirementsReportUrl(r,p.dataset.mcmsReportReason||'unresolved requirement text');const opened=pageWindow.open?.(url,'_blank','noopener,noreferrer');try{if(opened)opened.opener=null}catch(err){}return}const b=e.target?.closest?.('[data-mcms-requirements-collapse]');if(!b)return;const c=p.classList.toggle('mcms-collapsed');b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand mission requirements':'Collapse mission requirements');b.textContent=c?'⌄':'⌃'})}
+    function missionRequirementsEnsureRecord(candidate, source) {
+        let record = missionRequirementsRecords.get(source);
+        let panel = missionRequirementsCanonicalPanel(source, record?.panel?.isConnected ? record.panel : null);
+        const root = missionRequirementsCandidateRoot(candidate);
+        const scopedCandidate = { ...candidate, root, mount: root };
+        const missionIdentity = missionRequirementsMissionIdentity(scopedCandidate, source);
+        if (record && panel) {
+            if (record.missionIdentity && missionIdentity && record.missionIdentity !== missionIdentity) {
+                record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+                record.catalogue = null;
+                record.catalogueDescriptor = null;
+                record.catalogueState = 'idle';
+                record.startedAt = Date.now();
+            }
+            record.missionIdentity = missionIdentity;
+            record.panel = panel;
+            record.candidate = scopedCandidate;
+            missionRequirementsPlacePanel(scopedCandidate, source, panel);
+            missionRequirementsBindPanel(panel);
+            missionRequirementsScheduleRecord(record);
+            return record;
+        }
+        if (record) missionRequirementsRemoveRecord(source);
+        const doc = source.ownerDocument || document;
+        for (const [otherSource] of missionRequirementsRecords) {
+            if (otherSource !== source && otherSource.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+        }
+        ensureMissionRequirementsDocumentStyle(doc);
+        panel = missionRequirementsCanonicalPanel(source);
+        if (!panel) {
+            panel = doc.createElement('section');
+            panel.id = SCRIPT.missionRequirementsPanelId;
+            panel.setAttribute('data-mcms-requirements-panel', '1');
+            panel.setAttribute('aria-label', 'Live mission requirements');
+        }
+        missionRequirementsPlacePanel(scopedCandidate, source, panel);
+        panel.dataset.mcmsTheme = state.uiTheme;
+        missionRequirementsBindPanel(panel);
+        record = { candidate: scopedCandidate, source, panel, startedAt: Date.now(), missionIdentity };
+        const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (root && typeof Observer === 'function') {
+            record.observer = runtimeTrackObserver(new Observer(mutations => mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation)) && missionRequirementsScheduleRecord(record)));
+            record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'd

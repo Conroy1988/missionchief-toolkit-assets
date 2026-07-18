@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.16.3] - 2026-07-18
+
+### Fixed
+- Prevented the normal AJAX dispatch window from inserting Mission Requirements inside the Available Units vehicle table.
+- Nested vehicle and table candidates now resolve upward to the enclosing mission form or lightbox before source lookup and placement.
+- Existing panels that were temporarily mounted in table structure are re-homed beneath the mission header on the next scan.
+
+### Validation
+- Added a deterministic normal-dispatch fixture covering nested `tbody` discovery, safe block placement and active panel re-homing.
+
 ## [4.16.2] - 2026-07-18
 
 ### Fixed

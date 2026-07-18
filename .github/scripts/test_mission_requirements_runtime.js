@@ -107,6 +107,7 @@ class FakeElement {
         return child;
     }
     insertBefore(child, reference) {
+        if (child.parentNode) child.parentNode.children = child.parentNode.children.filter(item => item !== child);
         child.parentNode = this;
         child.ownerDocument ||= this.ownerDocument;
         child.isConnected = true;
@@ -185,7 +186,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.16.2'
+        version: '4.16.3'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -250,6 +251,8 @@ this.__mcmsRequirements = {
     catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
     catalogueEnsure: missionRequirementsCatalogueEnsure,
     sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
     anchorForCandidate: missionRequirementsAnchorForCandidate,
     widthMode: missionRequirementsWidthMode,
     catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
@@ -492,6 +495,80 @@ const issue169PanelIndex = issue169Root.children.indexOf(issue169Record.panel);
 assert.strictEqual(issue169Root.children[issue169PanelIndex + 1], issue169Source, 'panel mounts immediately before native missing_text');
 assert(issue169Root.children.indexOf(issue169Address) < issue169PanelIndex, 'panel remains below the mission address');
 api.clear();
+
+const issue171Doc = new FakeDocument();
+issue171Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' }, navigator: context.pageWindow.navigator, innerWidth: 1600, innerHeight: 900 };
+const issue171Root = new FakeElement('form', issue171Doc);
+const issue171MissionSelector = '#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]';
+issue171Root.matchSet.add(issue171MissionSelector);
+issue171Root.setAttribute('action', '/missions/255577320');
+const issue171Title = new FakeElement('h1', issue171Doc);
+issue171Title.id = 'mission_caption';
+const issue171Address = new FakeElement('div', issue171Doc);
+issue171Address.id = 'mission_address';
+const issue171Source = new FakeElement('div', issue171Doc);
+issue171Source.id = 'missing_text';
+issue171Source.textContent = issue171Source.innerText = 'Missing Vehicles: 3 Police cars';
+issue171Source.queryAllHandler = () => [];
+const issue171VehicleArea = new FakeElement('div', issue171Doc);
+issue171VehicleArea.id = 'available_units';
+const issue171Table = new FakeElement('table', issue171Doc);
+const issue171Body = new FakeElement('tbody', issue171Doc);
+issue171Body.id = 'vehicle_show_table_body_all';
+issue171Root.appendChild(issue171Title);
+issue171Root.appendChild(issue171Address);
+issue171Root.appendChild(issue171Source);
+issue171Root.appendChild(issue171VehicleArea);
+issue171VehicleArea.appendChild(issue171Table);
+issue171Table.appendChild(issue171Body);
+issue171Body.closestMap.set(issue171MissionSelector, issue171Root);
+issue171Root.queryHandler = selector => {
+    if (selector === '#missing_text') return issue171Source;
+    if (selector.includes('#mission_address')) return issue171Address;
+    if (selector.includes('#mission_caption')) return issue171Title;
+    if (selector.includes('#vehicle_show_table_body_all')) return issue171Body;
+    if (selector === issue171MissionSelector) return issue171Root;
+    if (selector === '[data-mcms-requirements-anchor="1"]') return issue171Root.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1') || null;
+    return null;
+};
+issue171Root.queryAllHandler = selector => selector.includes('.vehicle_checkbox') || selector.includes('#mission_vehicle_') ? [] : [];
+const issue171NestedCandidate = { root: issue171Body, mount: issue171Body, missionId: 255577320 };
+assert.strictEqual(api.candidateRoot(issue171NestedCandidate), issue171Root, 'nested AJAX vehicle candidate promotes to mission root');
+const issue171Placement = api.placement(issue171NestedCandidate, null);
+assert.strictEqual(issue171Placement.parent, issue171Root, 'nested AJAX placement uses mission root');
+assert.strictEqual(issue171Placement.before, issue171Source, 'nested AJAX placement remains before native requirements');
+candidates = [issue171NestedCandidate];
+api.scan();
+flushAnimationFrames();
+const issue171Record = Array.from(api.records.values())[0];
+assert.strictEqual(issue171Record.panel.parentNode, issue171Root, 'normal dispatch panel mounts beneath mission header');
+issue171Table.insertBefore(issue171Record.panel, issue171Body);
+assert.strictEqual(issue171Record.panel.parentNode, issue171Table, 'fixture reproduces invalid table mounting');
+api.scan();
+flushAnimationFrames();
+const issue171RehomedRecord = Array.from(api.records.values())[0];
+assert.strictEqual(issue171RehomedRecord.panel.parentNode, issue171Root, 'subsequent scan re-homes a mis-mounted panel');
+assert.strictEqual(issue171Record.panel.isConnected, false, 'stale table-mounted panel is removed');
+assert(!['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH'].includes(issue171RehomedRecord.panel.parentNode.tagName), 'panel host is never table structure');
+api.clear();
+candidates = [];
+
+const issue171FallbackDoc = new FakeDocument();
+issue171FallbackDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/255577321' } };
+const issue171FallbackRoot = new FakeElement('div', issue171FallbackDoc);
+const issue171WindowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog';
+issue171FallbackRoot.matchSet.add(issue171WindowSelector);
+const issue171FallbackArea = new FakeElement('div', issue171FallbackDoc);
+const issue171FallbackTable = new FakeElement('table', issue171FallbackDoc);
+const issue171FallbackBody = new FakeElement('tbody', issue171FallbackDoc);
+issue171FallbackBody.id = 'vehicle_show_table_body_all';
+issue171FallbackRoot.appendChild(issue171FallbackArea);
+issue171FallbackArea.appendChild(issue171FallbackTable);
+issue171FallbackTable.appendChild(issue171FallbackBody);
+issue171FallbackRoot.queryHandler = selector => selector.includes('#vehicle_show_table_body_all') ? issue171FallbackBody : null;
+const issue171FallbackPlacement = api.placement({ root: issue171FallbackRoot, mount: issue171FallbackRoot }, null);
+assert.strictEqual(issue171FallbackPlacement.parent, issue171FallbackRoot, 'operational fallback remains block-level');
+assert.strictEqual(issue171FallbackPlacement.before, issue171FallbackArea, 'operational fallback inserts before vehicle area rather than tbody');
 
 const delayedDoc = new FakeDocument();
 delayedDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/7002' } };

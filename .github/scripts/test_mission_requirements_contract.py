@@ -49,6 +49,8 @@ def main() -> int:
         "function missionRequirementsMissionIdentity(candidate, source)",
         "function missionRequirementsSourceForCandidate(candidate)",
         "function missionRequirementsPlacement(candidate, source = null)",
+        "function missionRequirementsPlacementHostUnsafe(node, boundary = null)",
+        "function missionRequirementsPlacementBlock(root, node)",
         "function missionRequirementsPlacePanel(candidate, source, panel)",
         "function missionRequirementsWidthMode(rows = [], unresolved = [])",
         "function missionRequirementsAnchorForCandidate(candidate)",
@@ -102,6 +104,8 @@ def main() -> int:
     assert source.count("function scanMissionRequirementsWindows()") == 1
     assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
+    assert "return { root, parent: operational.parentNode, before: operational };" not in source
+    assert "missionRequirementsPlacementBlock(root, operational)" in source
 
     for alias in data["requiredAliases"]:
         assert alias in source, f"Required UK requirement alias missing: {alias}"

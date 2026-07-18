@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.14.10
+// @version      4.15.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.14.10',
+        version: '4.15.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -501,6 +501,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         majorIncidentFeedId: 'mc-map-command-toolkit-major-incident-feed',
         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
+        missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
+        missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
         styleId: 'mc-map-command-toolkit-style-v4146',
@@ -939,7 +941,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.4',
+        guideVersion: '4.15.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1372,6 +1374,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const missionValueObservedFrames = new WeakSet();
     const missionValueHostObservers = new Map();
     const missionValueRetryState = new WeakMap();
+    let missionRequirementsScanTimer = null;
+    let missionRequirementsFeatureInstalled = false;
+    const missionRequirementsObservedDocuments = new WeakSet();
+    const missionRequirementsObservedFrames = new WeakSet();
+    const missionRequirementsRecords = new Map();
     let commandBarAnimationTimer = null;
     let commandBarAnimating = false;
     let helpGuideDocumentCache = '';
@@ -1414,6 +1421,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             },
             missionLockAudio: true,
             missionValue: true,
+            missionRequirements: true,
             allianceCredits: false,
             allianceCreditMinimum: 0,
             missionAge: false,
@@ -1506,6 +1514,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             : null;
         merged.missionLockAudio = merged.missionLockAudio !== false;
         merged.missionValue = merged.missionValue !== false;
+        merged.missionRequirements = merged.missionRequirements !== false;
         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
         merged.transportWatcher = merged.transportWatcher !== false;
@@ -1843,7 +1852,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.criticalDrawerId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.missionInspectorId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.criticalDrawerId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.missionInspectorId}, #${SCRIPT.missionRequirementsPanelId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
             .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -21844,6 +21853,813 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtimeSetTimeout(() => scheduleMissionValueScan(0), 800);
     }
 
+
+    // Issue #133 clean-room live mission requirements matrix.
+    // MissionChief's active mission DOM is authoritative. Unknown labels remain unresolved.
+    const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([
+        { key: 'fire-engine-or-riv', label: 'Fire Engine or RIV', aliases: ['Fire Engine or RIV', 'Fire Engines or RIVs'], types: [0, 1, 16, 17, 26, 37, 38, 47, 76] },
+        { key: 'aerial-or-stairs', label: 'Aerial Appliance or Rescue Stairs', aliases: ['Aerial Appliance Truck or Rescue Stairs', 'Aerial Appliance Trucks or Rescue Stairs'], types: [2, 17, 78] },
+        { key: 'fire-rescue-aerial', label: 'Fire, rescue or aerial appliance', aliases: ['Fire engine, Rescue Support Vehicle or Aerial Appliance Truck', 'Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks'], types: [0, 1, 2, 4, 16, 17, 26, 37, 38, 43, 47] },
+        { key: 'fire-or-rescue', label: 'Fire Engine or Rescue Support Vehicle', aliases: ['Fire engine or Rescue Support Vehicle', 'Fire engines or Rescue Support Vehicles'], types: [0, 1, 4, 16, 17, 26, 37, 38, 43, 47] },
+        { key: 'police-or-arv', label: 'Police Car or ARV', aliases: ['Police Car or Armed Response Vehicle (ARV)', 'Police Cars or Armed Response Vehicles (ARVs)'], types: [8, 12, 13, 19, 24, 25, 51, 52, 56, 82, 116] },
+        { key: 'rsu-or-rescue-pump', label: 'Rescue Support Unit or Rescue Pump', aliases: ['Rescue Support Unit or Rescue Pump', 'Rescue Support Units or Rescue Pumps'], types: [4, 16, 38, 43] },
+        { key: 'iccu-or-control', label: 'ICCU or Ambulance Control Unit', aliases: ['ICCU or Ambulance Control Unit', 'ICCU or Ambulance Control Units'], types: [15, 31, 44, 77] },
+        { key: 'hazmat-or-cbrn', label: 'HazMat Unit or CBRN Vehicle', aliases: ['HazMat Unit or CBRN Vehicle', 'HazMat Units or CBRN Vehicles'], types: [7, 32, 39, 48, 49] },
+        { key: 'boat-or-inland', label: 'Boat Trailer or Inland Rescue Boat', aliases: ['Boat Trailer or Inland Rescue Boat', 'Boat Trailers or Inland Rescue Boats'], types: [67, 74], pair: true },
+        { key: 'ilb-or-alb', label: 'ILB or ALB', aliases: ['ILB or ALB', 'ILBs or ALBs'], types: [68, 69] },
+        { key: 'sar-support', label: 'Operational Support or SAR Vehicle', aliases: ['Operational Support Van, Trailer or Personal SAR Vehicle', 'Operational Support Vans, Trailers or Personal SAR Vehicles'], types: [86, 87, 92], pair: true },
+        { key: 'fire-engine', label: 'Fire Engine', aliases: ['Fire engine', 'Fire engines'], types: [0, 1, 16, 17, 26, 37, 38, 47] },
+        { key: 'aerial', label: 'Aerial Appliance Truck', aliases: ['Aerial Appliance Truck', 'Aerial Appliance Trucks'], types: [2, 17] },
+        { key: 'fire-officer', label: 'Fire Officer', aliases: ['Fire Officer', 'Fire Officers'], types: [3, 15, 44, 77] },
+        { key: 'basu', label: 'BASU', aliases: ['BASU', 'BASUs'], types: [14, 39, 46, 49] },
+        { key: 'water-carrier', label: 'Water Carrier', aliases: ['Water Carrier', 'Water Carriers'], types: [6, 26, 36, 41, 50] },
+        { key: 'drone', label: 'Drone', aliases: ['Drone', 'Drones'], types: [89, 90, 91], equipment: ['drone'] },
+        { key: 'control-van', label: 'Control Van', aliases: ['Control Van', 'Control Vans'], types: [85] },
+        { key: 'ambulance', label: 'Ambulance', aliases: ['Ambulance', 'Ambulances'], types: [5] },
+        { key: 'police-car', label: 'Police Car', aliases: ['Police car', 'Police cars'], types: [8, 12, 13, 19, 24, 25, 51, 52, 56, 82, 116] },
+        { key: 'hems', label: 'HEMS', aliases: ['HEMS'], types: [9] },
+        { key: 'police-helicopter', label: 'Police Helicopter', aliases: ['Police helicopter', 'Police helicopters', 'Policehelicopter', 'Policehelicopters'], types: [11] },
+        { key: 'armed-response', label: 'Armed Response', aliases: ['Armed Response', 'Armed Response Vehicle', 'Armed Response Vehicles'], types: [13, 25, 52, 56, 82] },
+        { key: 'dsu', label: 'Dog Support Unit (DSU)', aliases: ['Dog Support Unit (DSU)', 'Dog Support Units (DSUs)'], types: [12, 53] },
+        { key: 'otl', label: 'Operational Team Leader', aliases: ['Operational Team Leader', 'Operational Team Leaders'], types: [20, 31, 34] },
+        { key: 'traffic-car', label: 'Traffic Car', aliases: ['Traffic Car', 'Traffic Cars'], types: [24, 25] },
+        { key: 'atv-carrier', label: 'ATV Carrier', aliases: ['ATV Carrier', 'ATV Carriers'], types: [30] },
+        { key: 'primary-response', label: 'Primary Response Vehicle', aliases: ['Primary Response Vehicle', 'Primary Response Vehicles'], types: [27] },
+        { key: 'secondary-response', label: 'Secondary Response Vehicle', aliases: ['Secondary Response Vehicle', 'Secondary Response Vehicles'], types: [28] },
+        { key: 'welfare', label: 'Welfare Vehicle', aliases: ['Welfare Vehicle', 'Welfare Vehicles'], types: [29, 39, 45, 49, 115] },
+        { key: 'ambulance-officer', label: 'Ambulance Officer', aliases: ['Ambulance Officer', 'Ambulance Officers'], types: [34] },
+        { key: 'foam-unit', label: 'Foam Unit', aliases: ['Foam Unit', 'Foam Units'], types: [35, 36, 37, 38, 42, 75] },
+        { key: 'mass-casualty', label: 'Mass Casualty Equipment', aliases: ['Mass Casualty Equipment'], types: [33] },
+        { key: 'mounted', label: 'Mounted Unit', aliases: ['Mounted Unit', 'Mounted Units'], types: [55] },
+        { key: '4x4', label: '4x4 Vehicle', aliases: ['4x4 Vehicle', '4x4 Vehicles', '4x4 Unit', '4x4 Units'], types: [66, 73, 93] },
+        { key: 'coastguard-rope', label: 'Coastguard Rope Rescue Unit', aliases: ['Coastguard Rope Rescue Unit', 'Coastguard Rope Rescue Units'], types: [59] },
+        { key: 'flood-rescue', label: 'Flood Rescue Unit', aliases: ['Flood Rescue Unit', 'Flood Rescue Units'], types: [61] },
+        { key: 'crv', label: 'CRV', aliases: ['CRV', 'CRVs'], types: [57, 58, 59] },
+        { key: 'coastguard-commander', label: 'Coastguard Commander', aliases: ['Coastguard Commander', 'Coastguard Commanders'], types: [60] },
+        { key: 'ilb', label: 'ILB', aliases: ['ILB', 'ILBs'], types: [68, 69] },
+        { key: 'coastguard-helicopter', label: 'Coastguard Rescue Helicopter', aliases: ['Coastguard Rescue Helicopter', 'Coastguard Rescue Helicopters'], types: [64, 65] },
+        { key: 'alb', label: 'ALB', aliases: ['ALB', 'ALBs'], types: [69] },
+        { key: 'mud-decon', label: 'Mud Decontamination Unit', aliases: ['Mud Decontamination Unit', 'Mud Decontamination Units'], types: [62] },
+        { key: 'support-unit', label: 'Support Unit', aliases: ['Support Unit', 'Support Units'], types: [63] },
+        { key: 'rescue-watercraft', label: 'Rescue Watercraft Trailer', aliases: ['Rescue Watercraft (Trailer)', 'Rescue Watercraft (Trailers)'], types: [70], pair: true },
+        { key: 'coastguard-mud', label: 'Coastguard Mud Rescue Unit', aliases: ['Coastguard Mud Rescue Unit', 'Coastguard Mud Rescue Units'], types: [58] },
+        { key: 'hovercraft', label: 'Hovercraft Trailer', aliases: ['Hovercraft (trailer)', 'Hovercrafts (trailer)'], types: [71], pair: true },
+        { key: 'major-foam', label: 'Major Foam Tender', aliases: ['Major Foam Tender', 'Major Foam Tenders'], types: [75] },
+        { key: 'rescue-stair', label: 'Rescue Stair', aliases: ['Rescue Stair', 'Rescue Stairs'], types: [78, 2, 17] },
+        { key: 'airfield-command', label: 'Airfield Firefighting Command Vehicle', aliases: ['Airfield Firefighting Command Vehicle', 'Airfield Firefighting Command Vehicles'], types: [77] },
+        { key: 'airfield-operations', label: 'Airfield Operations Vehicle', aliases: ['Airfield Operations Vehicle', 'Airfield Operations Vehicles'], types: [79, 80] },
+        { key: 'riv', label: 'RIV', aliases: ['RIV', 'RIVs'], types: [76] },
+        { key: 'medical-trailer', label: 'Medical Equipment Trailer', aliases: ['Medical equipment trailer', 'Medical equipment trailers'], types: [81], pair: true },
+        { key: 'airfield-supervisor', label: 'Airfield Operations Supervisor', aliases: ['Airfield Operations Supervisor', 'Airfield Operations Supervisors'], types: [80] },
+        { key: 'armed-cell', label: 'Armed Cell Van', aliases: ['Armed Cell Van', 'Armed Cell Vans'], types: [82] },
+        { key: 'cycle-responder', label: 'Medical Cycle Responder', aliases: ['Medical cycle responder', 'Medical cycle responders'], types: [83] },
+        { key: 'midwife', label: 'Community Midwife', aliases: ['Community Midwife', 'Community Midwives', 'Community Midwifes'], types: [95] },
+        { key: 'specialist-paramedic', label: 'Specialist Paramedic RRV', aliases: ['Specialist Paramedic RRV', 'Specialist Paramedic RRVs'], types: [96] },
+        { key: 'rescue-dog', label: 'Rescue Dog', aliases: ['Rescue Dog', 'Rescue Dogs'], types: [101, 102] },
+        { key: 'mountain-4x4', label: 'Mountain Rescue 4x4', aliases: ['Mountain Rescue 4x4', 'Mountain Rescue 4x4s'], types: [99] },
+        { key: 'road-rail', label: 'Road Rail Unit', aliases: ['Road Rail Unit', 'Road Rail Units'], types: [107] },
+        { key: 'eiu', label: 'EIU', aliases: ['EIU', 'EIUs'], types: [108] },
+        { key: 'eod-commander', label: 'EOD Commander', aliases: ['EOD Commander', 'EOD Commanders'], types: [109] },
+        { key: 'eod-response', label: 'EOD Response Vehicle', aliases: ['EOD Response Vehicle', 'EOD Response Vehicles'], types: [110] },
+        { key: 'eod-medium', label: 'EOD Medium Equipment Van', aliases: ['EOD Medium Equipment Van', 'EOD Medium Equipment Vans'], types: [111] },
+        { key: 'eod-heavy', label: 'EOD Heavy Equipment Vehicle', aliases: ['EOD Heavy Equipment Vehicle', 'EOD Heavy Equipment Vehicles'], types: [112] },
+        { key: 'marine-eod-response', label: 'Marine EOD Response Vehicle', aliases: ['Marine EOD Response Vehicle', 'Marine EOD Response Vehicles'], types: [113] },
+        { key: 'marine-eod-equipment', label: 'Marine EOD Equipment Van', aliases: ['Marine EOD Equipment Van', 'Marine EOD Equipment Vans'], types: [114] },
+        { key: 'firefighters', label: 'Firefighters', aliases: ['more firefighter', 'more firefighters', 'Firefighter', 'Firefighters'], group: 'staff', types: [0, 1, 2, 3, 4, 6, 7, 14, 15, 16, 17, 18, 23, 26, 35, 36, 37, 38, 39, 40] },
+        { key: 'armed-personnel', label: 'Armed Response Personnel', aliases: ['Armed Response Personnel (In Armed Vehicles)', 'Armed Response Personnel'], group: 'staff', types: [13, 25, 52, 56, 82] },
+        { key: 'police-officers', label: 'Police Officers', aliases: ['Police Officer', 'Police Officers'], group: 'staff', types: [8, 12, 13, 19, 24, 25, 51, 52, 53, 55, 56, 82, 116] },
+        { key: 'paramedics', label: 'Paramedics', aliases: ['Paramedic', 'Paramedics'], group: 'staff', types: [5, 9, 20, 27, 28, 31, 34, 81, 83, 95, 96] },
+        { key: 'search-technicians', label: 'Search Technicians', aliases: ['Search Technician', 'Search Technicians'], group: 'staff', types: [86, 87, 92, 93, 99, 101, 102] },
+        { key: 'water-resource', label: 'Water', aliases: ['Water', 'litres of water', 'liters of water'], group: 'other', bar: 'water' },
+        { key: 'foam-resource', label: 'Foam', aliases: ['Foam', 'litres of foam', 'liters of foam'], group: 'other', bar: 'foam' },
+        { key: 'pump-resource', label: 'Pumping Capacity', aliases: ['l/min pumping process', 'l/min pumping capacity', 'Pumping Capacity'], group: 'other', bar: 'pump' }
+    ].map(definition => Object.freeze({ group: 'vehicles', aliases: [], types: [], equipment: [], factors: {}, ...definition })));
+
+    function missionRequirementsEscapeRegex(value) {
+        return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function missionRequirementsNumber(value) {
+        const digits = String(value ?? '').replace(/[^0-9-]/g, '');
+        const number = Number.parseInt(digits, 10);
+        return Number.isFinite(number) ? Math.max(0, number) : 0;
+    }
+
+    function missionRequirementsOptionalNumber(value) {
+        const text = String(value ?? '').trim();
+        if (!/\d/u.test(text)) return null;
+        return missionRequirementsNumber(text);
+    }
+
+    function missionRequirementsCapacity(min = 0, max = min, known = null) {
+        const safeMin = Math.max(0, Number(min) || 0);
+        let safeMax = max === null || max === undefined ? null : Math.max(safeMin, Number(max) || 0);
+        if (safeMax !== null && !Number.isFinite(safeMax)) safeMax = null;
+        const exact = known === true ? true : known === false ? false : safeMax !== null && safeMin === safeMax;
+        return { min: safeMin, max: safeMax, known: exact, value: safeMin };
+    }
+
+    function missionRequirementsCapacityText(capacity) {
+        const value = missionRequirementsCapacity(capacity?.min ?? capacity?.value ?? 0, capacity?.max, capacity?.known);
+        if (value.known || value.max === value.min) return value.min.toLocaleString('en-GB');
+        if (value.max === null) return value.min > 0 ? `${value.min.toLocaleString('en-GB')}+` : '?';
+        return `${value.min.toLocaleString('en-GB')}–${value.max.toLocaleString('en-GB')}`;
+    }
+
+    function missionRequirementsCoverageRow(requirement, selectedCapacity, enRouteCapacity) {
+        const missing = Math.max(0, Number(requirement?.missing) || 0);
+        const selected = missionRequirementsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const enRoute = missionRequirementsCapacity(enRouteCapacity?.min ?? enRouteCapacity?.value ?? 0, enRouteCapacity?.max, enRouteCapacity?.known);
+        const totalMin = selected.min + enRoute.min;
+        const totalMax = selected.max === null || enRoute.max === null ? null : selected.max + enRoute.max;
+        const covered = totalMin >= missing;
+        const definitelyOpen = !covered && totalMax !== null && totalMax < missing;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = enRoute.max === null ? 0 : Math.max(0, missing - enRoute.max);
+        const stillMax = Math.max(0, missing - enRoute.min);
+        const still = missionRequirementsCapacity(stillMin, stillMax, enRoute.known && stillMin === stillMax);
+        const partial = !covered && (selected.min > 0 || enRoute.min > 0 || (selected.max || 0) > 0 || (enRoute.max || 0) > 0);
+        return {
+            ...requirement,
+            selected: selected.min,
+            selectedMin: selected.min,
+            selectedMax: selected.max,
+            selectedKnown: selected.known,
+            selectedText: missionRequirementsCapacityText(selected),
+            enRoute: enRoute.min,
+            enRouteMin: enRoute.min,
+            enRouteMax: enRoute.max,
+            enRouteKnown: enRoute.known,
+            enRouteText: missionRequirementsCapacityText(enRoute),
+            stillNeeded: still.max === null ? still.min : still.max,
+            stillNeededMin: still.min,
+            stillNeededMax: still.max,
+            stillNeededKnown: still.known,
+            stillNeededText: missionRequirementsCapacityText(still),
+            covered,
+            definitelyOpen,
+            uncertain,
+            partial,
+            coverageKnown: covered || definitelyOpen
+        };
+    }
+
+    function missionRequirementsCleanRemaining(value) {
+        return String(value || '')
+            .replace(/\b(?:we\s+need|needed|required)\b\s*:*/giu, ' ')
+            .replace(/\s*[,;]\s*(?=[,;]|$)/gu, ' ')
+            .replace(/^(?:\s|[,;.])+|(?:\s|[,;.])+$/gu, '')
+            .replace(/\s+/gu, ' ')
+            .trim();
+    }
+
+    function missionRequirementsFindDefinitionMatch(text, definition) {
+        const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
+        const aliases = Array.from(definition.aliases || []).sort((left, right) => right.length - left.length);
+        for (const alias of aliases) {
+            const labelPattern = missionRequirementsEscapeRegex(alias).replace(/\s+/gu, '\\s+');
+            const before = new RegExp(`(^|[,;]\\s*)${numberPattern}\\s*x?\\s+(${labelPattern})(?=\\s*(?:[,;]|$))`, 'iu');
+            const beforeMatch = before.exec(text);
+            if (beforeMatch) return { match: beforeMatch[0], index: beforeMatch.index, missing: missionRequirementsNumber(beforeMatch[2]), label: beforeMatch[3] };
+            const after = new RegExp(`(^|[,;]\\s*)(${labelPattern})\\s*:\\s*${numberPattern}(?=\\s*(?:[,;]|$))`, 'iu');
+            const afterMatch = after.exec(text);
+            if (afterMatch) return { match: afterMatch[0], index: afterMatch.index, missing: missionRequirementsNumber(afterMatch[3]), label: afterMatch[2] };
+        }
+        return null;
+    }
+
+    function missionRequirementsParseText(rawText, group = 'vehicles') {
+        let remaining = String(rawText || '')
+            .replace(/\r\n?/gu, '\n')
+            .replace(/\n+/gu, '; ')
+            .replace(/\s+/gu, ' ')
+            .trim();
+        const requirements = [];
+        const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => definition.group === group);
+        while (remaining) {
+            const matches = definitions
+                .map(definition => ({ definition, found: missionRequirementsFindDefinitionMatch(remaining, definition) }))
+                .filter(candidate => candidate.found && candidate.found.missing > 0)
+                .sort((left, right) => left.found.index - right.found.index || right.found.match.length - left.found.match.length);
+            if (!matches.length) break;
+            const { definition, found } = matches[0];
+            requirements.push({
+                key: definition.key,
+                requirement: definition.label || found.label,
+                missing: found.missing,
+                group,
+                definition
+            });
+            remaining = `${remaining.slice(0, found.index)} ${remaining.slice(found.index + found.match.length)}`;
+        }
+        return { requirements, remaining: missionRequirementsCleanRemaining(remaining) };
+    }
+
+    function missionRequirementsElementText(element) {
+        if (!element) return '';
+        const rendered = typeof element.innerText === 'string' && element.innerText.trim()
+            ? element.innerText
+            : element.textContent;
+        return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
+    }
+
+    function missionRequirementsParseSource(source) {
+        if (!source) return { requirements: [], unresolved: [] };
+        const requirements = [];
+        const unresolved = [];
+        const allGroups = Array.from(source.querySelectorAll?.('[data-requirement-type]') || []);
+        const groupElements = allGroups.filter(element => !allGroups.some(other => other !== element && other.contains?.(element)));
+        const parseGroupElement = element => {
+            const rawType = String(element.getAttribute('data-requirement-type') || 'vehicles').toLowerCase();
+            const group = rawType === 'personnel' || rawType === 'staff' ? 'staff' : rawType === 'other' ? 'other' : 'vehicles';
+            const heading = String(element.querySelector?.('b')?.textContent || '').trim();
+            const raw = missionRequirementsElementText(element).replace(heading, ' ').trim();
+            const parsed = missionRequirementsParseText(raw, group);
+            requirements.push(...parsed.requirements);
+            if (parsed.remaining) unresolved.push({ group, text: parsed.remaining });
+        };
+        if (groupElements.length) groupElements.forEach(parseGroupElement);
+        else {
+            const raw = missionRequirementsElementText(source);
+            const parsed = missionRequirementsParseText(raw, 'vehicles');
+            requirements.push(...parsed.requirements);
+            if (parsed.remaining) unresolved.push({ group: 'vehicles', text: parsed.remaining });
+        }
+        return { requirements, unresolved };
+    }
+
+    function missionRequirementsVehicleType(element) {
+        if (!element) return -1;
+        const direct = element.getAttribute?.('vehicle_type_id') ?? element.dataset?.vehicleTypeId ?? element.dataset?.vehicle_type_id;
+        const directNumber = Number.parseInt(direct, 10);
+        if (Number.isFinite(directNumber) && directNumber >= 0) return directNumber;
+        const descendant = element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
+        if (!descendant || descendant === element) return -1;
+        return missionRequirementsVehicleType(descendant);
+    }
+
+    function missionRequirementsVehicleId(element) {
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+        for (const scope of scopes) {
+            for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+                const value = Number.parseInt(raw, 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            for (const attribute of attributes) {
+                const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
+            if (idMatch) return Number(idMatch[1]);
+            const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
+            const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+            if (hrefMatch) return Number(hrefMatch[1]);
+        }
+        return -1;
+    }
+
+    function missionRequirementsEquipmentTypes(element) {
+        const values = new Set();
+        const add = raw => String(raw || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean).forEach(value => values.add(value));
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        for (const scope of scopes) {
+            add(scope?.dataset?.equipmentType);
+            add(scope?.dataset?.equipmentTypes);
+            add(scope?.getAttribute?.('data-equipment-type'));
+            add(scope?.getAttribute?.('data-equipment-types'));
+            scope?.querySelectorAll?.('[data-equipment-type], [data-equipment-types]').forEach(node => {
+                add(node.getAttribute('data-equipment-type'));
+                add(node.getAttribute('data-equipment-types'));
+            });
+        }
+        return values;
+    }
+
+    function missionRequirementsStaffCapacity(element) {
+        const row = element?.closest?.('tr') || element;
+        const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], td:nth-of-type(5)[sortvalue]');
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
+            }
+        }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const text = String(crewCell?.textContent || '').trim();
+        const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+        if (currentMaximum) {
+            const current = missionRequirementsNumber(currentMaximum[1]);
+            return missionRequirementsCapacity(current, current, true);
+        }
+        const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+        if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+        const visible = missionRequirementsOptionalNumber(text);
+        if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+        const sortValue = missionRequirementsOptionalNumber(crewCell?.getAttribute?.('sortvalue'));
+        if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+        return null;
+    }
+
+    function missionRequirementsCollectUnits(candidate, mode) {
+        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+        if (!root?.querySelectorAll) return [];
+        const selector = mode === 'selected'
+            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox[vehicle_type_id]:checked'
+            : '#mission_vehicle_driving tbody tr';
+        const elements = Array.from(new Set(Array.from(root.querySelectorAll(selector))));
+        const units = elements.map(element => {
+            const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id]') || element);
+            const vehicleId = missionRequirementsVehicleId(vehicleElement);
+            const tractiveId = Number.parseInt(vehicleElement.getAttribute?.('tractive_vehicle_id') ?? vehicleElement.dataset?.tractiveVehicleId ?? '-1', 10);
+            return {
+                element,
+                vehicleElement,
+                typeId: missionRequirementsVehicleType(vehicleElement),
+                vehicleId,
+                tractiveId: Number.isFinite(tractiveId) ? tractiveId : -1,
+                equipment: missionRequirementsEquipmentTypes(element),
+                staff: missionRequirementsStaffCapacity(element),
+                contributionKey: vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${elements.indexOf(element)}`
+            };
+        });
+        const pairKeys = new Map();
+        units.forEach(unit => {
+            if (unit.vehicleId < 0 || unit.tractiveId < 0) return;
+            const pair = [unit.vehicleId, unit.tractiveId].sort((a, b) => a - b);
+            const key = `pair:${pair[0]}:${pair[1]}`;
+            pairKeys.set(unit.vehicleId, key);
+            pairKeys.set(unit.tractiveId, key);
+        });
+        units.forEach(unit => {
+            if (unit.vehicleId >= 0 && pairKeys.has(unit.vehicleId)) unit.contributionKey = pairKeys.get(unit.vehicleId);
+        });
+        return units;
+    }
+
+    function missionRequirementsMissionTypeId(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
+        for (const scope of scopes) {
+            for (const attribute of attributes) {
+                const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+            const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
+            if (node) {
+                for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
+                    const value = Number.parseInt(raw, 10);
+                    if (Number.isFinite(value) && value >= 0) return value;
+                }
+            }
+        }
+        const runtimeValue = Number.parseInt(pageWindow.missionTypeId ?? pageWindow.mission_type_id, 10);
+        return Number.isFinite(runtimeValue) && runtimeValue >= 0 ? runtimeValue : null;
+    }
+
+    function missionRequirementsDefinitionCondition(definition, candidate) {
+        const included = Array.from(definition?.missionTypes || []).map(Number).filter(Number.isFinite);
+        const excluded = Array.from(definition?.excludedMissionTypes || []).map(Number).filter(Number.isFinite);
+        if (!included.length && !excluded.length) return true;
+        const missionTypeId = missionRequirementsMissionTypeId(candidate);
+        if (missionTypeId === null) return null;
+        if (included.length && !included.includes(missionTypeId)) return false;
+        if (excluded.includes(missionTypeId)) return false;
+        return true;
+    }
+
+    function missionRequirementsUnitContribution(requirement, unit) {
+        const definition = requirement.definition || {};
+        const typeEligible = Array.from(definition.types || []).includes(unit.typeId);
+        const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase()));
+        if (!typeEligible && !equipmentEligible) return { eligible: false, capacity: missionRequirementsCapacity(0, 0, true) };
+        if (requirement.group === 'staff') {
+            const capacity = unit.staff
+                ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known)
+                : missionRequirementsCapacity(0, null, false);
+            return { eligible: true, capacity };
+        }
+        const factor = Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1);
+        const value = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        return { eligible: true, capacity: missionRequirementsCapacity(value, value, true) };
+    }
+
+    function missionRequirementsAggregate(requirement, units) {
+        const contributions = new Map();
+        for (const unit of units) {
+            const contribution = missionRequirementsUnitContribution(requirement, unit);
+            if (!contribution.eligible) continue;
+            const capacity = contribution.capacity;
+            const existing = contributions.get(unit.contributionKey);
+            if (!existing) {
+                contributions.set(unit.contributionKey, capacity);
+                continue;
+            }
+            const pairMin = Math.max(existing.min, capacity.min);
+            const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max);
+            contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin));
+        }
+        let min = 0;
+        let max = 0;
+        let exact = true;
+        for (const capacity of contributions.values()) {
+            min += capacity.min;
+            if (max === null || capacity.max === null) max = null;
+            else max += capacity.max;
+            exact = exact && capacity.known;
+        }
+        return missionRequirementsCapacity(min, max, exact && max !== null && min === max);
+    }
+
+    function missionRequirementsProgressValue(candidate, bar, metric) {
+        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+        const holder = root?.querySelector?.(`[id^="mission_${bar}_holder"]`);
+        if (!holder) return null;
+        const node = holder.querySelector?.(`[class*="mission_${bar}_bar_${metric}_"], [class*="mission_water_bar_${metric}_"]`);
+        return node ? missionRequirementsNumber(node.textContent) : null;
+    }
+
+    function missionRequirementsResolve(candidate, parsed) {
+        const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
+        const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
+        return parsed.requirements.map(requirement => {
+            const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
+            if (condition !== true) {
+                const unresolvedRow = missionRequirementsCoverageRow(
+                    requirement,
+                    missionRequirementsCapacity(0, null, false),
+                    missionRequirementsCapacity(0, null, false)
+                );
+                return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
+            }
+            let selected;
+            let enRoute;
+            if (requirement.definition?.bar) {
+                const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
+                const enRouteValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
+                selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true);
+                enRoute = enRouteValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(enRouteValue, enRouteValue, true);
+            } else {
+                selected = missionRequirementsAggregate(requirement, selectedUnits);
+                enRoute = missionRequirementsAggregate(requirement, enRouteUnits);
+            }
+            return { ...missionRequirementsCoverageRow(requirement, selected, enRoute), conditionKnown: true, conditionMatched: true };
+        });
+    }
+
+    function missionRequirementsOverallState(rows, unresolved) {
+        if (rows.some(row => row.definitelyOpen)) return 'danger';
+        if (rows.some(row => row.uncertain) || unresolved.length) return 'warning';
+        return rows.length ? 'success' : 'warning';
+    }
+
+    function missionRequirementsLssmActive(candidate, source) {
+        if (!source) return false;
+        try {
+            if (source.matches?.('.alert-missing-vehicles')) return true;
+            if (source.querySelector?.('.alert-missing-vehicles')) return true;
+            return Boolean(candidate?.root?.querySelector?.('.alert-missing-vehicles[data-raw-html], .alert-missing-vehicles table, .alert-missing-vehicles .table'));
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function missionRequirementsSourceForCandidate(candidate) {
+        for (const scope of [candidate?.root, candidate?.mount]) {
+            try {
+                if (scope?.matches?.('#missing_text')) return scope;
+                const source = scope?.querySelector?.('#missing_text');
+                if (source) return source;
+            } catch (err) {}
+        }
+        return null;
+    }
+
+    function missionRequirementsDocumentCss() {
+        return `
+            #${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}
+            [data-mcms-requirements-source-hidden="1"]{display:none!important}
+            #${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}
+            #${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}
+            #${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}
+            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 10px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:48%!important;padding:4px 8px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:11px!important;line-height:1.2!important;font-weight:800!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;height:28px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 14px/1 Arial,sans-serif!important;cursor:pointer!important}
+            #${SCRIPT.missionRequirementsPanelId}.mcms-collapsed .mcms-req-body{display:none!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,430px)!important;overflow:auto!important;overscroll-behavior:contain!important}
+            #${SCRIPT.missionRequirementsPanelId} table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}
+            #${SCRIPT.missionRequirementsPanelId} col.mcms-req-name-col{width:52%!important}
+            #${SCRIPT.missionRequirementsPanelId} col.mcms-req-number-col{width:12%!important}
+            #${SCRIPT.missionRequirementsPanelId} thead th{position:sticky!important;top:0!important;z-index:2!important;padding:7px 8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:10.5px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.2px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}
+            #${SCRIPT.missionRequirementsPanelId} thead th:first-child{text-align:left!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.075)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:13px!important;line-height:1.25!important;vertical-align:middle!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody td:first-child{font-weight:800!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:750!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.07)!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}
+            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="unresolved"] td{background:rgba(255,183,77,.06)!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-still{font-size:14px!important;font-weight:950!important;color:var(--mcms-req-state)!important}
+            #${SCRIPT.missionRequirementsPanelId} tr[data-row-state="covered"] .mcms-req-still{color:#7ce4a8!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown{display:grid!important;gap:5px!important;padding:8px 12px 10px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown b{color:#ffd18a!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.25px!important}
+            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.35!important;overflow-wrap:anywhere!important}
+            @media(max-width:767px){
+                #${SCRIPT.missionRequirementsPanelId}{margin-bottom:8px!important;border-radius:8px!important}
+                #${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:8px!important;gap:7px!important}
+                #${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:13px!important}
+                #${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:44%!important;font-size:9.5px!important;padding:3px 6px!important}
+                #${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(48vh,470px)!important;padding:7px!important}
+                #${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}
+                #${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:0 0 7px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-req-state)!important;border-radius:7px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:44px!important;padding:6px 4px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;white-space:normal!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:8px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:13px!important;text-align:left!important}
+                #${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:8.5px!important;line-height:1.05!important;font-weight:850!important;letter-spacing:.15px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important}
+            }
+        `;
+    }
+
+    function ensureMissionRequirementsDocumentStyle(doc) {
+        if (!doc?.createElement) return;
+        const requirementsDocumentStyleId = SCRIPT.missionRequirementsDocumentStyleId;
+        let style = doc.getElementById?.(requirementsDocumentStyleId);
+        if (!style) {
+            style = doc.createElement('style');
+            style.id = requirementsDocumentStyleId;
+            (doc.head || doc.documentElement)?.appendChild(style);
+        }
+        const css = missionRequirementsDocumentCss();
+        if (style.textContent !== css) style.textContent = css;
+    }
+
+    function missionRequirementsHideSource(source) {
+        if (!source || source.dataset.mcmsRequirementsSourceHidden === '1') return;
+        source.dataset.mcmsRequirementsSourceHidden = '1';
+    }
+
+    function missionRequirementsRestoreSource(source) {
+        if (!source || source.dataset.mcmsRequirementsSourceHidden !== '1') return;
+        delete source.dataset.mcmsRequirementsSourceHidden;
+    }
+
+    function missionRequirementsPanelHtml(rows, unresolved) {
+        const definiteOutstanding = rows.filter(row => row.definitelyOpen).length;
+        const uncertain = rows.filter(row => row.uncertain).length + unresolved.length;
+        const stateName = missionRequirementsOverallState(rows, unresolved);
+        const summary = stateName === 'success'
+            ? 'All requirements covered'
+            : stateName === 'warning'
+                ? `${uncertain} requirement${uncertain === 1 ? '' : 's'} need confirmation`
+                : `${definiteOutstanding} requirement${definiteOutstanding === 1 ? '' : 's'} outstanding`;
+        const rowHtml = rows.map(row => {
+            const rowState = row.covered ? 'covered' : row.uncertain ? 'unresolved' : row.partial ? 'partial' : 'open';
+            const prefix = row.covered ? '✓ ' : '';
+            return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing on mission">${row.missing.toLocaleString('en-GB')}</td><td data-label="En-route">${escapeHtml(row.enRouteText)}</td><td class="mcms-req-still" data-label="Still needed">${escapeHtml(row.stillNeededText)}</td><td data-label="Selected">${escapeHtml(row.selectedText)}</td></tr>`;
+        }).join('');
+        const unknownHtml = unresolved.length
+            ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}</div>`
+            : '';
+        return {
+            stateName,
+            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Missing on mission</th><th scope="col">En-route</th><th scope="col">Still needed</th><th scope="col">Selected</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
+        };
+    }
+
+    function missionRequirementsRenderRecord(record) {
+        if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected) {
+            scheduleMissionRequirementsScan(0);
+            return;
+        }
+        if (missionRequirementsLssmActive(record.candidate, record.source)) {
+            missionRequirementsRemoveRecord(record.source);
+            return;
+        }
+        const parsed = missionRequirementsParseSource(record.source);
+        if (!parsed.requirements.length && !parsed.unresolved.length) {
+            missionRequirementsRemoveRecord(record.source);
+            return;
+        }
+        const rows = missionRequirementsResolve(record.candidate, parsed);
+        const presentation = missionRequirementsPanelHtml(rows, parsed.unresolved);
+        record.panel.dataset.state = presentation.stateName;
+        record.panel.dataset.mcmsTheme = state.uiTheme;
+        setInnerHtmlIfChanged(record.panel, presentation.html);
+        const collapse = record.panel.querySelector('[data-mcms-requirements-collapse]');
+        if (collapse) {
+            const expanded = !record.panel.classList.contains('mcms-collapsed');
+            collapse.setAttribute('aria-expanded', String(expanded));
+            collapse.setAttribute('aria-label', expanded ? 'Collapse mission requirements' : 'Expand mission requirements');
+            collapse.textContent = expanded ? '⌃' : '⌄';
+        }
+    }
+
+    function missionRequirementsScheduleRecord(record) {
+        if (!record || record.frame || runtime.destroyed) return;
+        record.frame = runtimeRequestAnimationFrame(() => {
+            record.frame = null;
+            missionRequirementsRenderRecord(record);
+        });
+    }
+
+    function missionRequirementsMutationRelevant(record, mutation) {
+        const panel = record?.panel;
+        const target = mutation?.target;
+        if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
+        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [data-equipment-type], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsEnsureRecord(candidate, source) {
+        let record = missionRequirementsRecords.get(source);
+        if (record?.panel?.isConnected) {
+            record.candidate = candidate;
+            missionRequirementsScheduleRecord(record);
+            return record;
+        }
+        if (record) missionRequirementsRemoveRecord(source);
+        const doc = source.ownerDocument || document;
+        for (const [otherSource, otherRecord] of Array.from(missionRequirementsRecords.entries())) {
+            if (otherSource !== source && otherRecord?.source?.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+        }
+        ensureMissionRequirementsDocumentStyle(doc);
+        const panel = doc.createElement('section');
+        panel.id = SCRIPT.missionRequirementsPanelId;
+        panel.setAttribute('aria-label', 'Live mission requirements');
+        panel.dataset.mcmsTheme = state.uiTheme;
+        source.parentNode?.insertBefore(panel, source);
+        missionRequirementsHideSource(source);
+        record = { candidate, source, panel, observer: null, frame: null };
+        panel.addEventListener('click', event => {
+            const button = event.target?.closest?.('[data-mcms-requirements-collapse]');
+            if (!button) return;
+            const collapsed = panel.classList.toggle('mcms-collapsed');
+            button.setAttribute('aria-expanded', String(!collapsed));
+            button.setAttribute('aria-label', collapsed ? 'Expand mission requirements' : 'Collapse mission requirements');
+            button.textContent = collapsed ? '⌄' : '⌃';
+        });
+        const observeRoot = candidate.root?.isConnected ? candidate.root : candidate.mount;
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (observeRoot && typeof MutationObserverCtor === 'function') {
+            record.observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+                if (mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation))) missionRequirementsScheduleRecord(record);
+            }));
+            record.observer.observe(observeRoot, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+                attributes: true,
+                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'sortvalue']
+            });
+        }
+        missionRequirementsRecords.set(source, record);
+        missionRequirementsScheduleRecord(record);
+        return record;
+    }
+
+    function missionRequirementsRemoveRecord(source) {
+        const record = missionRequirementsRecords.get(source);
+        if (!record) {
+            missionRequirementsRestoreSource(source);
+            return;
+        }
+        if (record.frame) runtimeCancelAnimationFrame(record.frame);
+        runtimeUntrackObserver(record.observer);
+        try { record.panel?.remove(); } catch (err) {}
+        missionRequirementsRestoreSource(record.source);
+        missionRequirementsRecords.delete(source);
+    }
+
+    function clearMissionRequirementsPanels() {
+        for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+                context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+            } catch (err) {}
+        }
+    }
+
+    function scheduleMissionRequirementsScan(delay = 60) {
+        runtimeClearTimeout(missionRequirementsScanTimer);
+        missionRequirementsScanTimer = runtimeSetTimeout(() => {
+            missionRequirementsScanTimer = null;
+            scanMissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionValueWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate);
+            if (!source || !source.isConnected) continue;
+            const doc = source.ownerDocument || document;
+            if (activeDocuments.has(doc)) continue;
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                activeDocuments.add(doc);
+                continue;
+            }
+            const raw = missionRequirementsElementText(source);
+            if (!raw) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeDocuments.add(doc);
+            activeSources.add(source);
+            missionRequirementsEnsureRecord(candidate, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (!activeSources.has(source) || !source.isConnected) missionRequirementsRemoveRecord(source);
+        }
+    }
+
+    function missionRequirementsScheduleDocumentRecords(doc) {
+        for (const record of missionRequirementsRecords.values()) {
+            if (record.source?.ownerDocument === doc) missionRequirementsScheduleRecord(record);
+        }
+    }
+
+    function observeMissionRequirementsFrame(frame) {
+        if (!frame || missionRequirementsObservedFrames.has(frame)) return;
+        missionRequirementsObservedFrames.add(frame);
+        const onLoad = () => scheduleMissionRequirementsScan(20);
+        frame.addEventListener('load', onLoad);
+        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionRequirementsDocument(doc) {
+        if (!doc) return;
+        ensureMissionRequirementsDocumentStyle(doc);
+        if (missionRequirementsObservedDocuments.has(doc)) return;
+        missionRequirementsObservedDocuments.add(doc);
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+        runtimeListen(doc, 'change', event => {
+            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+            missionRequirementsScheduleDocumentRecords(doc);
+        }, true);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-equipment-types], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+            const relevant = mutations.some(mutation => {
+                if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+                if (mutationTouchesSelector(mutation, activitySelector)) return true;
+                return false;
+            });
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+            scheduleMissionRequirementsScan(35);
+            missionRequirementsScheduleDocumentRecords(doc);
+        }));
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+    }
+
+    function installMissionRequirementsWindows() {
+        if (!missionRequirementsFeatureInstalled) {
+            missionRequirementsFeatureInstalled = true;
+            runtimeOnCleanup(() => {
+                runtimeClearTimeout(missionRequirementsScanTimer);
+                missionRequirementsScanTimer = null;
+                clearMissionRequirementsPanels();
+                for (const context of transportSweepDocumentContexts()) {
+                    try { context.doc.getElementById?.(SCRIPT.missionRequirementsDocumentStyleId)?.remove(); } catch (err) {}
+                }
+            });
+        }
+        for (const context of transportSweepDocumentContexts()) observeMissionRequirementsDocument(context.doc);
+        scheduleMissionRequirementsScan(0);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+    }
+
     function criticalMissionValueForEntry(entry) {
         return criticalMissionValueDetails(entry).value;
     }
@@ -27352,6 +28168,7 @@ Create the private backup now?`);
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
         if (feature === 'missionValue') state.missionValue = !state.missionValue;
+        if (feature === 'missionRequirements') state.missionRequirements = !state.missionRequirements;
         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
         if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
         if (feature === 'missionSpawn') {
@@ -27391,6 +28208,11 @@ Create the private backup now?`);
             if (state.missionValue) installMissionValueWindows();
             else clearMissionValueIndicators();
             showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off');
+        }
+        if (feature === 'missionRequirements') {
+            if (state.missionRequirements) installMissionRequirementsWindows();
+            else clearMissionRequirementsPanels();
+            showToast(state.missionRequirements ? 'Mission Requirements on' : 'Mission Requirements off');
         }
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
@@ -28321,6 +29143,7 @@ Create the private backup now?`);
                 <div class="mcms-grid-2">
                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
+                    ${makeToggleButton('missionRequirements', '≡', 'Requirements', 'Show a live MissionChief requirements matrix above dispatch controls.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
@@ -28898,6 +29721,7 @@ Create the private backup now?`);
 
     function updateUI() {
         applyRootAttributes();
+        if (state.missionRequirements) scheduleMissionRequirementsScan(0);
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
 
@@ -29008,6 +29832,7 @@ Create the private backup now?`);
             payoutSound: state.payoutFlash.soundEnabled,
             missionInspector: state.missionInspector,
             missionValue: state.missionValue,
+            missionRequirements: state.missionRequirements,
             stuckDetector: state.stuckDetector.enabled,
             missionSpawn: state.missionSpawn.enabled,
             resourceGap: state.resourceGap.enabled,
@@ -29137,6 +29962,7 @@ Create the private backup now?`);
                 target.id === SCRIPT.vehicleStatusId ||
                 target.id === SCRIPT.majorIncidentFeedId ||
                 target.id === SCRIPT.missionInspectorId ||
+                target.id === SCRIPT.missionRequirementsPanelId ||
                 target.closest?.(`#${SCRIPT.controlId}`) ||
                 target.closest?.(`#${SCRIPT.panelId}`) ||
                 target.closest?.(`#${SCRIPT.toastId}`) ||
@@ -29144,7 +29970,8 @@ Create the private backup now?`);
                 target.closest?.(`#${SCRIPT.criticalDrawerId}`) ||
                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
-                target.closest?.(`#${SCRIPT.missionInspectorId}`)
+                target.closest?.(`#${SCRIPT.missionInspectorId}`) ||
+                target.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)
             )
         );
         if (toolkitTarget) return true;
@@ -29770,6 +30597,7 @@ Create the private backup now?`);
         lastObservedCredits = readCurrentCreditTotal();
         installCreditsUpdateHook();
         observeCreditValue();
+        installMissionRequirementsWindows();
 
         startBootAttemptCoordinator(bootPerformanceStartedAt);
 
@@ -29827,7 +30655,10 @@ Create the private backup now?`);
                     schedulePanelPosition(true, 50);
                     scheduleCriticalDrawerDock(60);
                 }
-                if (missionChanged) scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+                if (missionChanged) {
+                    scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+                    scheduleMissionRequirementsScan(35);
+                }
             }, mutationDelay);
         }));
         mainMutationObserver = observer;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.2
+// @version      4.15.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.2',
+        version: '4.15.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22581,86 +22581,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { root, mount: root, source, directMissionRequirements: true };
     }
 
-    function missionRequirementsWindowCandidates() {
-        const candidates = [];
-        const seenSources = new Set();
-        const add = candidate => {
-            const source = missionRequirementsSourceForCandidate(candidate);
-            if (!source || source.isConnected === false || seenSources.has(source)) return;
-            seenSources.add(source);
-            candidates.push({ ...candidate, source });
-        };
-        for (const candidate of missionValueWindowCandidates()) add(candidate);
-        for (const context of transportSweepDocumentContexts()) {
-            const doc = context?.doc;
-            if (!doc?.querySelectorAll) continue;
-            for (const source of Array.from(doc.querySelectorAll('#missing_text'))) {
-                add(missionRequirementsCandidateFromSource(source));
-            }
-        }
-        return candidates.sort((a, b) => {
-            const aExisting = missionRequirementsRecords.has(a.source) ? 2 : 0;
-            const bExisting = missionRequirementsRecords.has(b.source) ? 2 : 0;
-            const aVisible = isVisible(a.source) ? 1 : 0;
-            const bVisible = isVisible(b.source) ? 1 : 0;
-            return (bExisting + bVisible) - (aExisting + aVisible);
-        });
-    }
+    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}function missionRequirementsWindowCandidates(){const a=[],s=new Set(),add=c=>{const x=missionRequirementsSourceForCandidate(c);if(x&&x.isConnected!==false&&!s.has(x)){s.add(x);a.push({...c,source:x})}};missionValueWindowCandidates().forEach(add);for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(d?.querySelectorAll)for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x))}const ids=new Set();return a.sort((x,y)=>2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.source)-isVisible(x.source)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}
 
     function missionRequirementsDocumentCss() {
-        return `
-            #${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}
-            [data-mcms-requirements-source-hidden="1"]{display:none!important}
-            #${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}
-            #${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}
-            #${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}
-            #${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 10px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:48%!important;padding:4px 8px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:11px!important;line-height:1.2!important;font-weight:800!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;height:28px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 14px/1 Arial,sans-serif!important;cursor:pointer!important}
-            #${SCRIPT.missionRequirementsPanelId}.mcms-collapsed .mcms-req-body{display:none!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,430px)!important;overflow:auto!important;overscroll-behavior:contain!important}
-            #${SCRIPT.missionRequirementsPanelId} table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}
-            #${SCRIPT.missionRequirementsPanelId} col.mcms-req-name-col{width:52%!important}
-            #${SCRIPT.missionRequirementsPanelId} col.mcms-req-number-col{width:12%!important}
-            #${SCRIPT.missionRequirementsPanelId} thead th{position:sticky!important;top:0!important;z-index:2!important;padding:7px 8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:10.5px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.2px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}
-            #${SCRIPT.missionRequirementsPanelId} thead th:first-child{text-align:left!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.075)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:13px!important;line-height:1.25!important;vertical-align:middle!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody td:first-child{font-weight:800!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:750!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.07)!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}
-            #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="unresolved"] td{background:rgba(255,183,77,.06)!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-still{font-size:14px!important;font-weight:950!important;color:var(--mcms-req-state)!important}
-            #${SCRIPT.missionRequirementsPanelId} tr[data-row-state="covered"] .mcms-req-still{color:#7ce4a8!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown{display:grid!important;gap:5px!important;padding:8px 12px 10px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown b{color:#ffd18a!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.25px!important}
-            #${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.35!important;overflow-wrap:anywhere!important}
-            @media(max-width:767px){
-                #${SCRIPT.missionRequirementsPanelId}{margin-bottom:8px!important;border-radius:8px!important}
-                #${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:8px!important;gap:7px!important}
-                #${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:13px!important}
-                #${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:44%!important;font-size:9.5px!important;padding:3px 6px!important}
-                #${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(48vh,470px)!important;padding:7px!important}
-                #${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}
-                #${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:0 0 7px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-req-state)!important;border-radius:7px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:44px!important;padding:6px 4px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;white-space:normal!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:8px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:13px!important;text-align:left!important}
-                #${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:8.5px!important;line-height:1.05!important;font-weight:850!important;letter-spacing:.15px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important}
-            }
-        `;
+        return `#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}[data-mcms-requirements-source-hidden="1"]{display:none!important}#${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}#${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}#${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 10px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:48%!important;padding:4px 8px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:11px!important;line-height:1.2!important;font-weight:800!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;height:28px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 14px/1 Arial,sans-serif!important;cursor:pointer!important}#${SCRIPT.missionRequirementsPanelId}.mcms-collapsed .mcms-req-body{display:none!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,430px)!important;overflow:auto!important;overscroll-behavior:contain!important}#${SCRIPT.missionRequirementsPanelId} table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-name-col{width:52%!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-number-col{width:12%!important}#${SCRIPT.missionRequirementsPanelId} thead th{position:sticky!important;top:0!important;z-index:2!important;padding:7px 8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:10.5px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.2px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} thead th:first-child{text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.075)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:13px!important;line-height:1.25!important;vertical-align:middle!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{font-weight:800!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:750!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.07)!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="unresolved"] td{background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-still{font-size:14px!important;font-weight:950!important;color:var(--mcms-req-state)!important}#${SCRIPT.missionRequirementsPanelId} tr[data-row-state="covered"] .mcms-req-still{color:#7ce4a8!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown{display:grid!important;gap:5px!important;padding:8px 12px 10px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown b{color:#ffd18a!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.25px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.35!important;overflow-wrap:anywhere!important}@media(max-width:767px){#${SCRIPT.missionRequirementsPanelId}{margin-bottom:8px!important;border-radius:8px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:8px!important;gap:7px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:13px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:44%!important;font-size:9.5px!important;padding:3px 6px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(48vh,470px)!important;padding:7px!important}#${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}#${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}#${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:0 0 7px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-req-state)!important;border-radius:7px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:44px!important;padding:6px 4px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;white-space:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:8px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:13px!important;text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:8.5px!important;line-height:1.05!important;font-weight:850!important;letter-spacing:.15px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important}}`;
     }
 
     function ensureMissionRequirementsDocumentStyle(doc) {
@@ -22710,7 +22634,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsRenderRecord(record) {
-        if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected) {
+        if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) {
             scheduleMissionRequirementsScan(0);
             return;
         }
@@ -22753,53 +22677,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return mutationTouchesSelector(mutation, selector);
     }
 
-    function missionRequirementsEnsureRecord(candidate, source) {
-        let record = missionRequirementsRecords.get(source);
-        if (record?.panel?.isConnected) {
-            record.candidate = candidate;
-            missionRequirementsScheduleRecord(record);
-            return record;
-        }
-        if (record) missionRequirementsRemoveRecord(source);
-        const doc = source.ownerDocument || document;
-        for (const [otherSource, otherRecord] of Array.from(missionRequirementsRecords.entries())) {
-            if (otherSource !== source && otherRecord?.source?.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
-        }
-        ensureMissionRequirementsDocumentStyle(doc);
-        const panel = doc.createElement('section');
-        panel.id = SCRIPT.missionRequirementsPanelId;
-        panel.setAttribute('aria-label', 'Live mission requirements');
-        panel.dataset.mcmsTheme = state.uiTheme;
-        source.parentNode?.insertBefore(panel, source);
-        missionRequirementsHideSource(source);
-        record = { candidate, source, panel, observer: null, frame: null };
-        panel.addEventListener('click', event => {
-            const button = event.target?.closest?.('[data-mcms-requirements-collapse]');
-            if (!button) return;
-            const collapsed = panel.classList.toggle('mcms-collapsed');
-            button.setAttribute('aria-expanded', String(!collapsed));
-            button.setAttribute('aria-label', collapsed ? 'Expand mission requirements' : 'Collapse mission requirements');
-            button.textContent = collapsed ? '⌄' : '⌃';
-        });
-        const observeRoot = candidate.root?.isConnected ? candidate.root : candidate.mount;
-        const view = doc.defaultView || pageWindow;
-        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
-        if (observeRoot && typeof MutationObserverCtor === 'function') {
-            record.observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
-                if (mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation))) missionRequirementsScheduleRecord(record);
-            }));
-            record.observer.observe(observeRoot, {
-                childList: true,
-                subtree: true,
-                characterData: true,
-                attributes: true,
-                attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue']
-            });
-        }
-        missionRequirementsRecords.set(source, record);
-        missionRequirementsScheduleRecord(record);
-        return record;
-    }
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}function missionRequirementsBindPanel(p){if(!p||p.getAttribute?.('data-mcms-requirements-collapse-bound'))return;p.setAttribute?.('data-mcms-requirements-collapse-bound','1');p.addEventListener('click',e=>{const b=e.target?.closest?.('[data-mcms-requirements-collapse]');if(!b)return;const c=p.classList.toggle('mcms-collapsed');b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand mission requirements':'Collapse mission requirements');b.textContent=c?'⌄':'⌃'})}function missionRequirementsEnsureRecord(candidate,source){let r=missionRequirementsRecords.get(source),p=missionRequirementsCanonicalPanel(source,r?.panel?.isConnected?r.panel:null);if(r&&p){r.panel=p;r.candidate=candidate;missionRequirementsBindPanel(p);missionRequirementsHideSource(source);missionRequirementsScheduleRecord(r);return r}if(r)missionRequirementsRemoveRecord(source);const d=source.ownerDocument||document;for(const[x]of missionRequirementsRecords)if(x!==source&&x.ownerDocument===d)missionRequirementsRemoveRecord(x);ensureMissionRequirementsDocumentStyle(d);p=missionRequirementsCanonicalPanel(source);if(!p){p=d.createElement('section');p.id=SCRIPT.missionRequirementsPanelId;p.setAttribute('data-mcms-requirements-panel','1');p.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(p,source)}p.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(p);missionRequirementsHideSource(source);r={candidate,source,panel:p};const root=candidate.root?.isConnected?candidate.root:candidate.mount,O=d.defaultView?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(root&&typeof O==='function'){r.observer=runtimeTrackObserver(new O(ms=>ms.some(m=>missionRequirementsMutationRelevant(r,m))&&missionRequirementsScheduleRecord(r)));r.observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']})}missionRequirementsRecords.set(source,r);missionRequirementsScheduleRecord(r);return r}
 
     function missionRequirementsRemoveRecord(source) {
         const record = missionRequirementsRecords.get(source);
@@ -22833,7 +22711,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function scanMissionRequirementsWindows() {
-        if (runtime.destroyed) return;
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
         if (!state.missionRequirements) {
             clearMissionRequirementsPanels();
             return;
@@ -22908,6 +22786,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function installMissionRequirementsWindows() {
+        if (!missionRequirementsPrimaryRuntime()) return;
         if (!missionRequirementsFeatureInstalled) {
             missionRequirementsFeatureInstalled = true;
             runtimeOnCleanup(() => {

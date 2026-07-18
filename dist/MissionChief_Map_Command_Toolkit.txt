@@ -46,9 +46,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 (function () {
     'use strict';
-
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-
     const ALLIANCE_BUILDINGS_PATH_PATTERN = /\/(?:verband\/(?:gebauede|gebaeude|gebäude)|alliance(?:\/|_)(?:buildings|buildings_list))(?:\/|$)/iu;
     const ALLIANCE_BUILDINGS_STORAGE_KEY = 'mc_map_command_toolkit_state_v150';
     const ALLIANCE_BUILDINGS_EARLY_STYLE_ID = 'mcms-alliance-buildings-map-early-style';
@@ -62,68 +60,59 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let allianceBuildingsHadActiveContext = false;
     let allianceLeafletAssignmentRestore = null;
     let allianceSuppressedIcon = null;
-
     function decodedPathname(pathname = location.pathname) {
         const value = String(pathname || '');
         try { return decodeURIComponent(value); } catch (err) { return value; }
     }
-
     function isAllianceBuildingsPath(pathname = location.pathname) {
         return ALLIANCE_BUILDINGS_PATH_PATTERN.test(decodedPathname(pathname));
     }
-
     function isActiveAllianceContextElement(element) {
         if (!element?.isConnected) return false;
         if (element.hidden || element.getAttribute?.('aria-hidden') === 'true') return false;
         let current = element;
         for (let depth = 0; current && current !== document.documentElement && depth < 8; depth += 1, current = current.parentElement) {
-            if (current.hidden || current.getAttribute?.('aria-hidden') === 'true') return false;
-            try {
-                const style = pageWindow.getComputedStyle?.(current);
-                if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
-            } catch (err) {}
+        if (current.hidden || current.getAttribute?.('aria-hidden') === 'true') return false;
+        try {
+            const style = pageWindow.getComputedStyle?.(current);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
+        } catch (err) {}
         }
         try {
-            const rect = element.getBoundingClientRect?.();
-            if (rect && (rect.width > 1 || rect.height > 1)) return true;
-            if (element.getClientRects?.().length) return true;
+        const rect = element.getBoundingClientRect?.();
+        if (rect && (rect.width > 1 || rect.height > 1)) return true;
+        if (element.getClientRects?.().length) return true;
         } catch (err) {}
         return isAllianceBuildingsPath();
     }
-
     function allianceBuildingsTables() {
         return Array.from(document.querySelectorAll?.('table') || []).filter(table => {
-            if (!isActiveAllianceContextElement(table)) return false;
-            const buildingLinks = table.querySelectorAll?.('a[href*="/buildings/"]')?.length || 0;
-            if (buildingLinks < 3) return false;
-            const trainingActions = table.querySelectorAll?.('a.btn-success[href*="/buildings/"], button.btn-success, input.btn-success')?.length || 0;
-            const allianceNavigationLinks = document.querySelectorAll?.('a[href*="/verband/"], a[href*="/alliance/"]')?.length || 0;
-            return trainingActions >= 1 || (allianceNavigationLinks >= 3 && buildingLinks >= 8);
+        if (!isActiveAllianceContextElement(table)) return false;
+        const buildingLinks = table.querySelectorAll?.('a[href*="/buildings/"]')?.length || 0;
+        if (buildingLinks < 3) return false;
+        const trainingActions = table.querySelectorAll?.('a.btn-success[href*="/buildings/"], button.btn-success, input.btn-success')?.length || 0;
+        const allianceNavigationLinks = document.querySelectorAll?.('a[href*="/verband/"], a[href*="/alliance/"]')?.length || 0;
+        return trainingActions >= 1 || (allianceNavigationLinks >= 3 && buildingLinks >= 8);
         });
     }
-
     function hasAllianceBuildingsDomContext() {
         const explicitMaps = Array.from(document.querySelectorAll?.('#verband-gebauede-map, #verband-gebaeude-map, [id*="gebauede"][id*="map"], [id*="gebaeude"][id*="map"]') || []);
         if (explicitMaps.some(isActiveAllianceContextElement)) return true;
         return allianceBuildingsTables().length > 0;
     }
-
     function isAllianceBuildingsContext() {
         return isAllianceBuildingsPath() || hasAllianceBuildingsDomContext();
     }
-
     function resolveAllianceMapContainer(target) {
         if (typeof target === 'string') return document.getElementById?.(target) || null;
         return target?.nodeType === 1 ? target : null;
     }
-
     function isAllianceBuildingsMapTarget(target) {
         const container = resolveAllianceMapContainer(target);
         if (isAllianceBuildingsPath()) return true;
         if (!container) return false;
         if (['verband-gebauede-map', 'verband-gebaeude-map'].includes(container.id)) return true;
         if (/(?:gebauede|gebaeude)/i.test(container.id || '') && /map/i.test(container.id || '')) return true;
-
         const row = container.closest?.('.row') || container.parentElement?.parentElement;
         const table = row?.querySelector?.('table') || null;
         if (!table || !isActiveAllianceContextElement(table)) return false;
@@ -131,18 +120,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const trainingActions = table.querySelectorAll?.('a.btn-success[href*="/buildings/"], button.btn-success, input.btn-success')?.length || 0;
         return buildingLinks >= 3 && trainingActions >= 1;
     }
-
     function readAllianceBuildingsMapPreferenceEarly() {
         try {
-            const raw = localStorage.getItem(ALLIANCE_BUILDINGS_STORAGE_KEY);
-            if (!raw) return true;
-            const parsed = JSON.parse(raw);
-            return parsed?.allianceBuildingsMap !== false;
+        const raw = localStorage.getItem(ALLIANCE_BUILDINGS_STORAGE_KEY);
+        if (!raw) return true;
+        const parsed = JSON.parse(raw);
+        return parsed?.allianceBuildingsMap !== false;
         } catch (err) {
-            return true;
+        return true;
         }
     }
-
     function installAllianceBuildingsEarlyStyle() {
         if (document.getElementById(ALLIANCE_BUILDINGS_EARLY_STYLE_ID)) return;
         const style = document.createElement('style');
@@ -184,175 +171,161 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (parent) parent.appendChild(style);
         else document.addEventListener('readystatechange', () => (document.head || document.documentElement)?.appendChild(style), { once: true });
     }
-
     function createSuppressedAllianceLayer() {
         const layer = {
-            [ALLIANCE_BUILDINGS_SUPPRESSED_LAYER]: true,
-            addTo() { return this; },
-            remove() { return this; },
-            bindTooltip() { return this; },
-            bindPopup() { return this; },
-            openTooltip() { return this; },
-            closeTooltip() { return this; },
-            on() { return this; },
-            off() { return this; },
-            once() { return this; },
-            setOpacity() { return this; },
-            setZIndex() { return this; },
-            bringToFront() { return this; },
-            bringToBack() { return this; }
+        [ALLIANCE_BUILDINGS_SUPPRESSED_LAYER]: true,
+        addTo() { return this; },
+        remove() { return this; },
+        bindTooltip() { return this; },
+        bindPopup() { return this; },
+        openTooltip() { return this; },
+        closeTooltip() { return this; },
+        on() { return this; },
+        off() { return this; },
+        once() { return this; },
+        setOpacity() { return this; },
+        setZIndex() { return this; },
+        bringToFront() { return this; },
+        bringToBack() { return this; }
         };
         return layer;
     }
-
     function shouldSuppressAllianceFactory() {
         return !readAllianceBuildingsMapPreferenceEarly() && allianceBuildingsSuppressionActive && isAllianceBuildingsContext();
     }
-
     function protectAllianceBuildingsLeaflet(Library) {
         if (!Library || protectedAllianceLeafletLibraries.has(Library)) return;
         if (!Library.Map?.prototype || typeof Library.marker !== 'function') return;
-
         const record = { factories: new Map(), factoryGuards: new Map(), mapInitialize: null, mapInitializeGuard: null, mapAddLayer: null, mapAddLayerGuard: null };
         allianceLeafletGuardRecords.set(Library, record);
         protectedAllianceLeafletLibraries.add(Library);
-
         const guardFactory = (factoryName, strategy = 'tag') => {
-            const original = Library[factoryName];
-            if (typeof original !== 'function') return;
-            record.factories.set(factoryName, original);
-            const guarded = function (...args) {
-                if (shouldSuppressAllianceFactory()) {
-                    if (strategy === 'noop') return createSuppressedAllianceLayer();
-                    if (strategy === 'icon') {
-                        allianceSuppressedIcon ||= { options: { ...(args[0] || {}) }, __mcmsAllianceSuppressedIcon: true };
-                        return allianceSuppressedIcon;
-                    }
+        const original = Library[factoryName];
+        if (typeof original !== 'function') return;
+        record.factories.set(factoryName, original);
+        const guarded = function (...args) {
+            if (shouldSuppressAllianceFactory()) {
+                if (strategy === 'noop') return createSuppressedAllianceLayer();
+                if (strategy === 'icon') {
+                    allianceSuppressedIcon ||= { options: { ...(args[0] || {}) }, __mcmsAllianceSuppressedIcon: true };
+                    return allianceSuppressedIcon;
                 }
-                const layer = original.apply(this, args);
-                if (shouldSuppressAllianceFactory() && layer) {
-                    try { layer[ALLIANCE_BUILDINGS_SUPPRESSED_LAYER] = true; } catch (err) {}
-                    if (strategy === 'marker') {
-                        try { layer.bindTooltip = function () { return this; }; } catch (err) {}
-                        try { layer.bindPopup = function () { return this; }; } catch (err) {}
-                        try { layer.on = function () { return this; }; } catch (err) {}
-                        try { layer.once = function () { return this; }; } catch (err) {}
-                    }
+            }
+            const layer = original.apply(this, args);
+            if (shouldSuppressAllianceFactory() && layer) {
+                try { layer[ALLIANCE_BUILDINGS_SUPPRESSED_LAYER] = true; } catch (err) {}
+                if (strategy === 'marker') {
+                    try { layer.bindTooltip = function () { return this; }; } catch (err) {}
+                    try { layer.bindPopup = function () { return this; }; } catch (err) {}
+                    try { layer.on = function () { return this; }; } catch (err) {}
+                    try { layer.once = function () { return this; }; } catch (err) {}
                 }
-                return layer;
-            };
-            try { Object.assign(guarded, original); } catch (err) {}
-            try { Object.setPrototypeOf(guarded, Object.getPrototypeOf(original)); } catch (err) {}
-            record.factoryGuards.set(factoryName, guarded);
-            Library[factoryName] = guarded;
+            }
+            return layer;
         };
-
+        try { Object.assign(guarded, original); } catch (err) {}
+        try { Object.setPrototypeOf(guarded, Object.getPrototypeOf(original)); } catch (err) {}
+        record.factoryGuards.set(factoryName, guarded);
+        Library[factoryName] = guarded;
+        };
         guardFactory('icon', 'icon');
         guardFactory('marker', 'marker');
         guardFactory('circleMarker', 'marker');
         guardFactory('tileLayer', 'noop');
         guardFactory('imageOverlay', 'noop');
-
         const mapPrototype = Library.Map.prototype;
         const originalInitialize = mapPrototype.initialize;
         if (typeof originalInitialize === 'function') {
-            record.mapInitialize = originalInitialize;
-            const guardedInitialize = function (target, options) {
-                const result = originalInitialize.call(this, target, options);
-                if (!readAllianceBuildingsMapPreferenceEarly() && isAllianceBuildingsMapTarget(target)) {
-                    try { this[ALLIANCE_BUILDINGS_SUPPRESSED_MAP] = true; } catch (err) {}
-                    allianceBuildingsSuppressionActive = true;
-                    allianceBuildingsHadActiveContext = true;
-                    document.documentElement?.setAttribute('data-mcms-alliance-buildings-page', 'true');
-                    document.documentElement?.setAttribute('data-mcms-alliance-buildings-map', 'disabled');
-                    installAllianceBuildingsEarlyStyle();
-                    queueAllianceBuildingsEarlyCheck();
-                }
-                return result;
-            };
-            record.mapInitializeGuard = guardedInitialize;
-            mapPrototype.initialize = guardedInitialize;
+        record.mapInitialize = originalInitialize;
+        const guardedInitialize = function (target, options) {
+            const result = originalInitialize.call(this, target, options);
+            if (!readAllianceBuildingsMapPreferenceEarly() && isAllianceBuildingsMapTarget(target)) {
+                try { this[ALLIANCE_BUILDINGS_SUPPRESSED_MAP] = true; } catch (err) {}
+                allianceBuildingsSuppressionActive = true;
+                allianceBuildingsHadActiveContext = true;
+                document.documentElement?.setAttribute('data-mcms-alliance-buildings-page', 'true');
+                document.documentElement?.setAttribute('data-mcms-alliance-buildings-map', 'disabled');
+                installAllianceBuildingsEarlyStyle();
+                queueAllianceBuildingsEarlyCheck();
+            }
+            return result;
+        };
+        record.mapInitializeGuard = guardedInitialize;
+        mapPrototype.initialize = guardedInitialize;
         }
-
         const originalAddLayer = mapPrototype.addLayer;
         if (typeof originalAddLayer === 'function') {
-            record.mapAddLayer = originalAddLayer;
-            const guardedAddLayer = function (layer) {
-                if (this?.[ALLIANCE_BUILDINGS_SUPPRESSED_MAP] || layer?.[ALLIANCE_BUILDINGS_SUPPRESSED_LAYER]) return this;
-                return originalAddLayer.call(this, layer);
-            };
-            record.mapAddLayerGuard = guardedAddLayer;
-            mapPrototype.addLayer = guardedAddLayer;
+        record.mapAddLayer = originalAddLayer;
+        const guardedAddLayer = function (layer) {
+            if (this?.[ALLIANCE_BUILDINGS_SUPPRESSED_MAP] || layer?.[ALLIANCE_BUILDINGS_SUPPRESSED_LAYER]) return this;
+            return originalAddLayer.call(this, layer);
+        };
+        record.mapAddLayerGuard = guardedAddLayer;
+        mapPrototype.addLayer = guardedAddLayer;
         }
     }
-
     function restoreAllianceBuildingsLeafletGuards() {
         for (const Library of Array.from(protectedAllianceLeafletLibraries)) {
-            const record = allianceLeafletGuardRecords.get(Library);
-            if (!record) continue;
-            for (const [factoryName, original] of record.factories) {
-                try {
-                    if (Library[factoryName] === record.factoryGuards.get(factoryName)) Library[factoryName] = original;
-                } catch (err) {}
-            }
+        const record = allianceLeafletGuardRecords.get(Library);
+        if (!record) continue;
+        for (const [factoryName, original] of record.factories) {
             try {
-                if (record.mapInitialize && Library.Map.prototype.initialize === record.mapInitializeGuard) Library.Map.prototype.initialize = record.mapInitialize;
-                if (record.mapAddLayer && Library.Map.prototype.addLayer === record.mapAddLayerGuard) Library.Map.prototype.addLayer = record.mapAddLayer;
+                if (Library[factoryName] === record.factoryGuards.get(factoryName)) Library[factoryName] = original;
             } catch (err) {}
-            protectedAllianceLeafletLibraries.delete(Library);
+        }
+        try {
+            if (record.mapInitialize && Library.Map.prototype.initialize === record.mapInitializeGuard) Library.Map.prototype.initialize = record.mapInitialize;
+            if (record.mapAddLayer && Library.Map.prototype.addLayer === record.mapAddLayerGuard) Library.Map.prototype.addLayer = record.mapAddLayer;
+        } catch (err) {}
+        protectedAllianceLeafletLibraries.delete(Library);
         }
         allianceSuppressedIcon = null;
     }
-
     function installAllianceBuildingsLeafletAssignmentGuard() {
         try { protectAllianceBuildingsLeaflet(pageWindow.L); } catch (err) {}
         if (allianceLeafletAssignmentRestore) return;
-
         const descriptor = Object.getOwnPropertyDescriptor(pageWindow, 'L');
         if (descriptor && !descriptor.configurable) return;
         let leafletValue;
         try { leafletValue = pageWindow.L; } catch (err) { leafletValue = undefined; }
-
         try {
-            Object.defineProperty(pageWindow, 'L', {
-                configurable: true,
-                enumerable: descriptor?.enumerable ?? true,
-                get() { return leafletValue; },
-                set(value) {
-                    leafletValue = value;
-                    protectAllianceBuildingsLeaflet(value);
-                }
-            });
-            allianceLeafletAssignmentRestore = () => {
-                try {
-                    Object.defineProperty(pageWindow, 'L', {
-                        configurable: true,
-                        enumerable: descriptor?.enumerable ?? true,
-                        writable: true,
-                        value: leafletValue
-                    });
-                } catch (err) {}
-                allianceLeafletAssignmentRestore = null;
-            };
+        Object.defineProperty(pageWindow, 'L', {
+            configurable: true,
+            enumerable: descriptor?.enumerable ?? true,
+            get() { return leafletValue; },
+            set(value) {
+                leafletValue = value;
+                protectAllianceBuildingsLeaflet(value);
+            }
+        });
+        allianceLeafletAssignmentRestore = () => {
+            try {
+                Object.defineProperty(pageWindow, 'L', {
+                    configurable: true,
+                    enumerable: descriptor?.enumerable ?? true,
+                    writable: true,
+                    value: leafletValue
+                });
+            } catch (err) {}
+            allianceLeafletAssignmentRestore = null;
+        };
         } catch (err) {}
     }
-
     function findAllianceBuildingsMapElementEarly() {
         const candidates = Array.from(document.querySelectorAll?.('#verband-gebauede-map, #verband-gebaeude-map, #map, #map_outer .leaflet-container, [id*="gebauede"][id*="map"], [id*="gebaeude"][id*="map"], .leaflet-container') || []);
         return candidates.find(element => {
-            if (!element) return false;
-            if (['verband-gebauede-map', 'verband-gebaeude-map'].includes(element.id)) return true;
-            const row = element.closest?.('.row') || element.parentElement?.parentElement;
-            const nearbyTable = row?.querySelector?.('table');
-            return Boolean(isAllianceBuildingsPath() || (nearbyTable && isActiveAllianceContextElement(nearbyTable) && nearbyTable.querySelector('a[href*="/buildings/"]')));
+        if (!element) return false;
+        if (['verband-gebauede-map', 'verband-gebaeude-map'].includes(element.id)) return true;
+        const row = element.closest?.('.row') || element.parentElement?.parentElement;
+        const nearbyTable = row?.querySelector?.('table');
+        return Boolean(isAllianceBuildingsPath() || (nearbyTable && isActiveAllianceContextElement(nearbyTable) && nearbyTable.querySelector('a[href*="/buildings/"]')));
         }) || null;
     }
-
     function markAllianceBuildingsColumnsEarly(mapElement) {
         if (!mapElement) return;
         let mapColumn = mapElement;
         for (let depth = 0; mapColumn && mapColumn !== document.body && depth < 8; depth += 1, mapColumn = mapColumn.parentElement) {
-            if (/\bcol-(?:xs|sm|md|lg|xl|xxl)-\d+\b/u.test(String(mapColumn.className || ''))) break;
+        if (/\bcol-(?:xs|sm|md|lg|xl|xxl)-\d+\b/u.test(String(mapColumn.className || ''))) break;
         }
         if (!mapColumn || mapColumn === document.body) mapColumn = mapElement.parentElement;
         mapColumn?.setAttribute?.('data-mcms-alliance-map-column', 'true');
@@ -360,63 +333,59 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const listColumn = Array.from(row?.children || []).find(child => child !== mapColumn && child.querySelector?.('table'));
         listColumn?.setAttribute?.('data-mcms-alliance-list-column', 'true');
     }
-
     function optimiseAllianceBuildingsCourseTableEarly() {
         for (const table of allianceBuildingsTables()) {
-            table.setAttribute('data-mcms-alliance-courses-table', 'true');
-            table.querySelectorAll('img').forEach(image => {
-                image.loading = 'lazy';
-                image.decoding = 'async';
-                try { image.fetchPriority = 'low'; } catch (err) {}
-            });
+        table.setAttribute('data-mcms-alliance-courses-table', 'true');
+        table.querySelectorAll('img').forEach(image => {
+            image.loading = 'lazy';
+            image.decoding = 'async';
+            try { image.fetchPriority = 'low'; } catch (err) {}
+        });
         }
     }
-
     function repairVisibleMissionChiefMapAfterAllianceExit() {
         if (!allianceBuildingsHadActiveContext) return;
         allianceBuildingsHadActiveContext = false;
         for (const delay of [0, 120, 500, 1100]) {
-            pageWindow.setTimeout(() => {
-                if (isAllianceBuildingsContext()) return;
-                try {
-                    cachedMap = null;
-                    cachedMapElement = null;
-                    mapDiscoveryLastAttempt = 0;
-                } catch (err) {}
-                try {
-                    const map = typeof findLeafletMapInstance === 'function' ? findLeafletMapInstance(false) : null;
-                    map?.invalidateSize?.({ pan: false, animate: false });
-                } catch (err) {}
-                try { pageWindow.dispatchEvent(new Event('resize')); } catch (err) {}
-            }, delay);
+        pageWindow.setTimeout(() => {
+            if (isAllianceBuildingsContext()) return;
+            try {
+                cachedMap = null;
+                cachedMapElement = null;
+                mapDiscoveryLastAttempt = 0;
+            } catch (err) {}
+            try {
+                const map = typeof findLeafletMapInstance === 'function' ? findLeafletMapInstance(false) : null;
+                map?.invalidateSize?.({ pan: false, animate: false });
+            } catch (err) {}
+            try { pageWindow.dispatchEvent(new Event('resize')); } catch (err) {}
+        }, delay);
         }
     }
-
     function clearAllianceBuildingsEarlyContext({ restoreLeaflet = true } = {}) {
         const root = document.documentElement;
         const hadContext = allianceBuildingsSuppressionActive || root?.getAttribute('data-mcms-alliance-buildings-page') === 'true';
         allianceBuildingsSuppressionActive = false;
         root?.removeAttribute('data-mcms-alliance-buildings-page');
         document.querySelectorAll?.('[data-mcms-alliance-map-column], [data-mcms-alliance-list-column]')?.forEach(element => {
-            element.removeAttribute('data-mcms-alliance-map-column');
-            element.removeAttribute('data-mcms-alliance-list-column');
+        element.removeAttribute('data-mcms-alliance-map-column');
+        element.removeAttribute('data-mcms-alliance-list-column');
         });
         document.querySelectorAll?.('[data-mcms-alliance-courses-table]')?.forEach(table => table.removeAttribute('data-mcms-alliance-courses-table'));
         if (restoreLeaflet) {
-            restoreAllianceBuildingsLeafletGuards();
-            allianceLeafletAssignmentRestore?.();
+        restoreAllianceBuildingsLeafletGuards();
+        allianceLeafletAssignmentRestore?.();
         }
         if (hadContext) repairVisibleMissionChiefMapAfterAllianceExit();
     }
-
     function applyAllianceBuildingsEarlySuppression() {
         if (readAllianceBuildingsMapPreferenceEarly()) {
-            clearAllianceBuildingsEarlyContext();
-            return false;
+        clearAllianceBuildingsEarlyContext();
+        return false;
         }
         if (!isAllianceBuildingsContext()) {
-            clearAllianceBuildingsEarlyContext();
-            return false;
+        clearAllianceBuildingsEarlyContext();
+        return false;
         }
         allianceBuildingsSuppressionActive = true;
         allianceBuildingsHadActiveContext = true;
@@ -428,53 +397,47 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         optimiseAllianceBuildingsCourseTableEarly();
         return true;
     }
-
     function queueAllianceBuildingsEarlyCheck() {
         if (allianceBuildingsEarlyCheckQueued) return;
         allianceBuildingsEarlyCheckQueued = true;
         queueMicrotask(() => {
-            allianceBuildingsEarlyCheckQueued = false;
-            applyAllianceBuildingsEarlySuppression();
+        allianceBuildingsEarlyCheckQueued = false;
+        applyAllianceBuildingsEarlySuppression();
         });
     }
-
     function installAllianceBuildingsContextWatcherEarly() {
         if (allianceBuildingsContextWatcherInstalled) return;
         allianceBuildingsContextWatcherInstalled = true;
-
         const armForAllianceNavigation = event => {
-            const anchor = event.target?.closest?.('a[href]');
-            if (!anchor) return;
-            let path;
-            try { path = new URL(anchor.href, location.href).pathname; } catch (err) { path = anchor.getAttribute('href') || ''; }
-            if (!isAllianceBuildingsPath(path)) return;
-            installAllianceBuildingsEarlyStyle();
-            installAllianceBuildingsLeafletAssignmentGuard();
+        const anchor = event.target?.closest?.('a[href]');
+        if (!anchor) return;
+        let path;
+        try { path = new URL(anchor.href, location.href).pathname; } catch (err) { path = anchor.getAttribute('href') || ''; }
+        if (!isAllianceBuildingsPath(path)) return;
+        installAllianceBuildingsEarlyStyle();
+        installAllianceBuildingsLeafletAssignmentGuard();
         };
         document.addEventListener('click', armForAllianceNavigation, true);
-
         const observer = new MutationObserver(mutations => {
-            const relevant = mutations.some(mutation => [mutation.addedNodes, mutation.removedNodes].some(collection => Array.from(collection || []).some(node => {
-                if (!node || node.nodeType !== 1) return false;
-                return node.matches?.('#map, #map_outer, #verband-gebauede-map, #verband-gebaeude-map, .leaflet-container, table, [class*="col-"]') ||
-                    node.querySelector?.('#map, #map_outer, #verband-gebauede-map, #verband-gebaeude-map, .leaflet-container, table a[href*="/buildings/"]');
-            })));
-            if (relevant) queueAllianceBuildingsEarlyCheck();
+        const relevant = mutations.some(mutation => [mutation.addedNodes, mutation.removedNodes].some(collection => Array.from(collection || []).some(node => {
+            if (!node || node.nodeType !== 1) return false;
+            return node.matches?.('#map, #map_outer, #verband-gebauede-map, #verband-gebaeude-map, .leaflet-container, table, [class*="col-"]') ||
+                node.querySelector?.('#map, #map_outer, #verband-gebauede-map, #verband-gebaeude-map, .leaflet-container, table a[href*="/buildings/"]');
+        })));
+        if (relevant) queueAllianceBuildingsEarlyCheck();
         });
         const begin = () => {
-            const root = document.documentElement;
-            if (root) observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden'] });
+        const root = document.documentElement;
+        if (root) observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'aria-hidden'] });
         };
         if (document.documentElement) begin();
         else document.addEventListener('readystatechange', begin, { once: true });
-
         pageWindow.addEventListener?.('popstate', queueAllianceBuildingsEarlyCheck);
         pageWindow.addEventListener?.('hashchange', queueAllianceBuildingsEarlyCheck);
         pageWindow.addEventListener?.('pageshow', queueAllianceBuildingsEarlyCheck);
         pageWindow.addEventListener?.('load', queueAllianceBuildingsEarlyCheck, { once: true });
         applyAllianceBuildingsEarlySuppression();
     }
-
     const earlyAllianceBuildingsPage = isAllianceBuildingsPath();
     const earlyAllianceBuildingsMapEnabled = readAllianceBuildingsMapPreferenceEarly();
     if (earlyAllianceBuildingsPage) {
@@ -519,27 +482,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         financeRulesCacheState: 'mc_map_command_toolkit_finance_rules_v450',
         financePolicyCacheState: 'mc_map_command_toolkit_finance_policy_v460',
         oldStorageKeys: [
-            'mc_map_command_toolkit_state_v149',
-            'mc_map_command_toolkit_state_v148',
-            'mc_map_command_toolkit_state_v147',
-            'mc_map_command_toolkit_state_v146',
-            'mc_map_command_toolkit_state_v145',
-            'mc_map_command_toolkit_state_v144',
-            'mc_map_command_toolkit_state_v143',
-            'mc_map_command_toolkit_state_v142',
-            'mc_map_command_toolkit_state_v141',
-            'mc_map_command_toolkit_state_v140',
+        'mc_map_command_toolkit_state_v149',
+        'mc_map_command_toolkit_state_v148',
+        'mc_map_command_toolkit_state_v147',
+        'mc_map_command_toolkit_state_v146',
+        'mc_map_command_toolkit_state_v145',
+        'mc_map_command_toolkit_state_v144',
+        'mc_map_command_toolkit_state_v143',
+        'mc_map_command_toolkit_state_v142',
+        'mc_map_command_toolkit_state_v141',
+        'mc_map_command_toolkit_state_v140',
             'mc_map_command_toolkit_state_v130'
         ],
         legacyTheme: 'mc_map_command_skins_theme_v2',
         legacyPosition: 'mc_map_command_skins_position_v1'
     };
-
     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
     const previousRuntime = pageWindow[RUNTIME_KEY];
     if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
     try { previousRuntime?.destroy?.('replaced by a newer toolkit runtime'); } catch (err) {}
-
     const runtime = {
         version: SCRIPT.version,
         destroyed: false,
@@ -555,151 +516,138 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         hookRestorers: [],
         cleanupCallbacks: [],
         destroy(reason = 'runtime shutdown') {
-            if (this.destroyed) return;
-            this.destroyed = true;
-            for (const id of this.timeouts) { try { pageWindow.clearTimeout(id); } catch (err) {} }
-            for (const id of this.intervals) { try { pageWindow.clearInterval(id); } catch (err) {} }
-            for (const id of this.animationFrames) { try { pageWindow.cancelAnimationFrame(id); } catch (err) {} }
-            this.timeouts.clear();
-            this.intervals.clear();
-            this.animationFrames.clear();
-            for (const settle of Array.from(this.waiters)) { try { settle(false); } catch (err) {} }
-            this.waiters.clear();
-            for (const request of Array.from(this.requests)) { try { request.abort?.(); } catch (err) {} }
-            this.requests.clear();
-            for (const controller of Array.from(this.fetchControllers)) { try { controller.abort(); } catch (err) {} }
-            this.fetchControllers.clear();
-            for (const observer of this.observers) { try { observer.disconnect(); } catch (err) {} }
-            this.observers.clear();
-            for (const { target, type, listener, options } of this.listeners.splice(0)) {
-                try { target.removeEventListener(type, listener, options); } catch (err) {}
-            }
-            for (const binding of this.mapBindings.splice(0)) {
-                try { binding.map.off(binding.types, binding.handler); } catch (err) {}
-            }
-            for (const restore of this.hookRestorers.splice(0).reverse()) { try { restore(); } catch (err) {} }
-            for (const cleanup of this.cleanupCallbacks.splice(0).reverse()) { try { cleanup(reason); } catch (err) {} }
-            if (pageWindow[RUNTIME_KEY] === this) {
-                try { delete pageWindow[RUNTIME_KEY]; } catch (err) { pageWindow[RUNTIME_KEY] = null; }
-            }
+        if (this.destroyed) return;
+        this.destroyed = true;
+        for (const id of this.timeouts) { try { pageWindow.clearTimeout(id); } catch (err) {} }
+        for (const id of this.intervals) { try { pageWindow.clearInterval(id); } catch (err) {} }
+        for (const id of this.animationFrames) { try { pageWindow.cancelAnimationFrame(id); } catch (err) {} }
+        this.timeouts.clear();
+        this.intervals.clear();
+        this.animationFrames.clear();
+        for (const settle of Array.from(this.waiters)) { try { settle(false); } catch (err) {} }
+        this.waiters.clear();
+        for (const request of Array.from(this.requests)) { try { request.abort?.(); } catch (err) {} }
+        this.requests.clear();
+        for (const controller of Array.from(this.fetchControllers)) { try { controller.abort(); } catch (err) {} }
+        this.fetchControllers.clear();
+        for (const observer of this.observers) { try { observer.disconnect(); } catch (err) {} }
+        this.observers.clear();
+        for (const { target, type, listener, options } of this.listeners.splice(0)) {
+            try { target.removeEventListener(type, listener, options); } catch (err) {}
+        }
+        for (const binding of this.mapBindings.splice(0)) {
+            try { binding.map.off(binding.types, binding.handler); } catch (err) {}
+        }
+        for (const restore of this.hookRestorers.splice(0).reverse()) { try { restore(); } catch (err) {} }
+        for (const cleanup of this.cleanupCallbacks.splice(0).reverse()) { try { cleanup(reason); } catch (err) {} }
+        if (pageWindow[RUNTIME_KEY] === this) {
+            try { delete pageWindow[RUNTIME_KEY]; } catch (err) { pageWindow[RUNTIME_KEY] = null; }
+        }
         }
     };
     pageWindow[RUNTIME_KEY] = runtime;
-
     function runtimeSetTimeout(callback, delay = 0, ...args) {
         if (runtime.destroyed) return null;
         let id = null;
         id = pageWindow.setTimeout((...callbackArgs) => {
-            runtime.timeouts.delete(id);
-            if (!runtime.destroyed) callback(...callbackArgs);
+        runtime.timeouts.delete(id);
+        if (!runtime.destroyed) callback(...callbackArgs);
         }, delay, ...args);
         runtime.timeouts.add(id);
         return id;
     }
-
     function runtimeClearTimeout(id) {
         if (id === null || id === undefined) return;
         runtime.timeouts.delete(id);
         try { pageWindow.clearTimeout(id); } catch (err) {}
     }
-
     function runtimeDelay(delay = 0) {
         if (runtime.destroyed) return Promise.resolve(false);
         return new Promise(resolve => {
-            let timerId = null;
-            let settled = false;
-            const settle = completed => {
-                if (settled) return;
-                settled = true;
-                runtime.waiters.delete(settle);
-                if (timerId !== null) runtimeClearTimeout(timerId);
-                resolve(Boolean(completed));
-            };
-            runtime.waiters.add(settle);
-            timerId = runtimeSetTimeout(() => settle(true), Math.max(0, Number(delay) || 0));
-            if (timerId === null) settle(false);
+        let timerId = null;
+        let settled = false;
+        const settle = completed => {
+            if (settled) return;
+            settled = true;
+            runtime.waiters.delete(settle);
+            if (timerId !== null) runtimeClearTimeout(timerId);
+            resolve(Boolean(completed));
+        };
+        runtime.waiters.add(settle);
+        timerId = runtimeSetTimeout(() => settle(true), Math.max(0, Number(delay) || 0));
+        if (timerId === null) settle(false);
         });
     }
-
     function runtimeSetInterval(callback, delay = 0, ...args) {
         if (runtime.destroyed) return null;
         const id = pageWindow.setInterval((...callbackArgs) => {
-            if (!runtime.destroyed) callback(...callbackArgs);
+        if (!runtime.destroyed) callback(...callbackArgs);
         }, delay, ...args);
         runtime.intervals.add(id);
         return id;
     }
-
     function runtimeClearInterval(id) {
         if (id === null || id === undefined) return;
         runtime.intervals.delete(id);
         try { pageWindow.clearInterval(id); } catch (err) {}
     }
-
     function runtimeRequestAnimationFrame(callback) {
         if (runtime.destroyed) return null;
         let id = null;
         id = pageWindow.requestAnimationFrame(timestamp => {
-            runtime.animationFrames.delete(id);
-            if (!runtime.destroyed) callback(timestamp);
+        runtime.animationFrames.delete(id);
+        if (!runtime.destroyed) callback(timestamp);
         });
         runtime.animationFrames.add(id);
         return id;
     }
-
     function runtimeCancelAnimationFrame(id) {
         if (id === null || id === undefined) return;
         runtime.animationFrames.delete(id);
         try { pageWindow.cancelAnimationFrame(id); } catch (err) {}
     }
-
     function runtimeListen(target, type, listener, options) {
         if (!target?.addEventListener || runtime.destroyed) return listener;
         target.addEventListener(type, listener, options);
         runtime.listeners.push({ target, type, listener, options });
         return listener;
     }
-
     function runtimeTrackObserver(observer) {
         if (!observer) return observer;
         if (runtime.destroyed) {
-            try { observer.disconnect(); } catch (err) {}
-            return observer;
+        try { observer.disconnect(); } catch (err) {}
+        return observer;
         }
         runtime.observers.add(observer);
         return observer;
     }
-
     function runtimeUntrackObserver(observer, disconnect = true) {
         if (!observer) return;
         if (disconnect) {
-            try { observer.disconnect(); } catch (err) {}
+        try { observer.disconnect(); } catch (err) {}
         }
         runtime.observers.delete(observer);
     }
-
     const runtimeTasks = new Map();
     let runtimeTaskTimer = null;
-
     function runtimeWakeTaskScheduler(delay = 0) {
         runtimeClearTimeout(runtimeTaskTimer);
         runtimeTaskTimer = runtimeSetTimeout(runtimeRunScheduledTasks, Math.max(0, Number(delay) || 0));
     }
-
     function runtimeRegisterTask(name, intervalMs, callback, options = {}) {
         if (!name || typeof callback !== 'function') return null;
         const interval = Math.max(250, Number(intervalMs) || 1000);
         const initialDelay = Math.max(0, Number(options.initialDelayMs ?? interval) || 0);
         runtimeTasks.set(String(name), {
-            name: String(name),
-            intervalMs: interval,
-            intervalResolver: typeof options.intervalResolver === 'function' ? options.intervalResolver : null,
-            economyIntervalMs: Math.max(interval, Number(options.economyIntervalMs) || interval),
-            economyIntervalResolver: typeof options.economyIntervalResolver === 'function' ? options.economyIntervalResolver : null,
-            callback,
-            runWhenHidden: Boolean(options.runWhenHidden),
-            nextRun: Date.now() + initialDelay,
-            running: false
+        name: String(name),
+        intervalMs: interval,
+        intervalResolver: typeof options.intervalResolver === 'function' ? options.intervalResolver : null,
+        economyIntervalMs: Math.max(interval, Number(options.economyIntervalMs) || interval),
+        economyIntervalResolver: typeof options.economyIntervalResolver === 'function' ? options.economyIntervalResolver : null,
+        callback,
+        runWhenHidden: Boolean(options.runWhenHidden),
+        nextRun: Date.now() + initialDelay,
+        running: false
         });
         runtimeWakeTaskScheduler(0);
         return String(name);
@@ -710,66 +658,60 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!task) return 1000;
         let resolved = task.intervalMs;
         if (typeof task.intervalResolver === 'function') {
-            try { resolved = Number(task.intervalResolver(task)) || resolved; } catch (err) {}
+        try { resolved = Number(task.intervalResolver(task)) || resolved; } catch (err) {}
         }
         resolved = Math.max(task.intervalMs, resolved);
         if (!state?.economyMode) return resolved;
         let economyResolved = Math.max(resolved, task.economyIntervalMs || resolved);
         if (typeof task.economyIntervalResolver === 'function') {
-            try { economyResolved = Number(task.economyIntervalResolver(task)) || economyResolved; } catch (err) {}
+        try { economyResolved = Number(task.economyIntervalResolver(task)) || economyResolved; } catch (err) {}
         }
         return Math.max(resolved, economyResolved);
     }
-
     function runtimeRescheduleTasks(runSoon = false) {
         const now = Date.now();
         for (const task of runtimeTasks.values()) task.nextRun = runSoon ? now : Math.min(task.nextRun, now + runtimeTaskInterval(task));
         runtimeWakeTaskScheduler(runSoon ? 0 : 50);
     }
-
     function runtimeRunScheduledTasks() {
         runtimeTaskTimer = null;
         if (runtime.destroyed || !runtimeTasks.size) return;
         const now = Date.now();
         const hidden = Boolean(document.hidden);
         let nextDelay = hidden ? 5 * 60 * 1000 : 60000;
-
         for (const task of runtimeTasks.values()) {
-            const dueIn = task.nextRun - now;
-            if (dueIn > 0) {
-                nextDelay = Math.min(nextDelay, dueIn);
-                continue;
-            }
-            if (hidden && !task.runWhenHidden) {
-                const deferredInterval = Math.max(60 * 1000, runtimeTaskInterval(task));
-                task.nextRun = now + deferredInterval;
-                nextDelay = Math.min(nextDelay, deferredInterval);
-                continue;
-            }
-
-            const effectiveInterval = runtimeTaskInterval(task);
-            task.nextRun = now + effectiveInterval;
-            nextDelay = Math.min(nextDelay, effectiveInterval);
-            if (task.running) continue;
-            task.running = true;
-            try {
-                const result = task.callback();
-                if (result && typeof result.then === 'function') {
-                    Promise.resolve(result)
-                        .catch(err => console.debug(`[${SCRIPT.name}] Scheduled task ${task.name} failed.`, err))
-                        .finally(() => { task.running = false; });
-                } else {
-                    task.running = false;
-                }
-            } catch (err) {
-                task.running = false;
-                console.debug(`[${SCRIPT.name}] Scheduled task ${task.name} failed.`, err);
-            }
+        const dueIn = task.nextRun - now;
+        if (dueIn > 0) {
+            nextDelay = Math.min(nextDelay, dueIn);
+            continue;
         }
-
+        if (hidden && !task.runWhenHidden) {
+            const deferredInterval = Math.max(60 * 1000, runtimeTaskInterval(task));
+            task.nextRun = now + deferredInterval;
+            nextDelay = Math.min(nextDelay, deferredInterval);
+            continue;
+        }
+        const effectiveInterval = runtimeTaskInterval(task);
+        task.nextRun = now + effectiveInterval;
+        nextDelay = Math.min(nextDelay, effectiveInterval);
+        if (task.running) continue;
+        task.running = true;
+        try {
+            const result = task.callback();
+            if (result && typeof result.then === 'function') {
+                Promise.resolve(result)
+                    .catch(err => console.debug(`[${SCRIPT.name}] Scheduled task ${task.name} failed.`, err))
+                    .finally(() => { task.running = false; });
+            } else {
+                task.running = false;
+            }
+        } catch (err) {
+            task.running = false;
+            console.debug(`[${SCRIPT.name}] Scheduled task ${task.name} failed.`, err);
+        }
+        }
         runtimeTaskTimer = runtimeSetTimeout(runtimeRunScheduledTasks, Math.max(50, Math.min(hidden ? 5 * 60 * 1000 : 60000, nextDelay)));
     }
-
     function runtimeOnCleanup(callback) {
         if (typeof callback === 'function') runtime.cleanupCallbacks.push(callback);
         return callback;
@@ -782,25 +724,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let settled = false;
         let idleId = null;
         let fallbackTimer = null;
-
         const run = deadline => {
-            if (settled || runtime.destroyed) return;
-            settled = true;
-            if (fallbackTimer !== null) runtimeClearTimeout(fallbackTimer);
-            fallbackTimer = null;
-            callback(deadline || { didTimeout: true, timeRemaining: () => 0 });
+        if (settled || runtime.destroyed) return;
+        settled = true;
+        if (fallbackTimer !== null) runtimeClearTimeout(fallbackTimer);
+        fallbackTimer = null;
+        callback(deadline || { didTimeout: true, timeRemaining: () => 0 });
         };
-
         if (typeof pageWindow.requestIdleCallback === 'function') {
-            try {
-                idleId = pageWindow.requestIdleCallback(run, { timeout: maxWait });
-                fallbackTimer = runtimeSetTimeout(() => run(null), maxWait + 120);
-                runtimeOnCleanup(() => {
-                    if (settled || idleId === null || typeof pageWindow.cancelIdleCallback !== 'function') return;
-                    try { pageWindow.cancelIdleCallback(idleId); } catch (err) {}
-                });
-                return idleId;
-            } catch (err) {}
+        try {
+            idleId = pageWindow.requestIdleCallback(run, { timeout: maxWait });
+            fallbackTimer = runtimeSetTimeout(() => run(null), maxWait + 120);
+            runtimeOnCleanup(() => {
+                if (settled || idleId === null || typeof pageWindow.cancelIdleCallback !== 'function') return;
+                try { pageWindow.cancelIdleCallback(idleId); } catch (err) {}
+            });
+            return idleId;
+        } catch (err) {}
         }
 
         fallbackTimer = runtimeSetTimeout(() => run(null), Math.min(350, maxWait));
@@ -830,12 +770,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (controller) runtime.fetchControllers.add(controller);
         const fetchFunction = pageWindow.fetch || globalThis.fetch;
         if (typeof fetchFunction !== 'function') {
-            if (controller) runtime.fetchControllers.delete(controller);
-            return Promise.reject(new Error('Browser fetch is unavailable.'));
+        if (controller) runtime.fetchControllers.delete(controller);
+        return Promise.reject(new Error('Browser fetch is unavailable.'));
         }
         const options = controller ? { ...init, signal: controller.signal } : init;
         return Promise.resolve(fetchFunction.call(pageWindow, input, options))
-            .finally(() => { if (controller) runtime.fetchControllers.delete(controller); });
+        .finally(() => { if (controller) runtime.fetchControllers.delete(controller); });
     }
 
     runtimeOnCleanup(() => {
@@ -1020,40 +960,40 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     // Hosted payout cues are mapped by template and lazy-loaded only when played.
     const PAYOUT_MEDIA_SOUNDS = Object.freeze({
         viceCity: Object.freeze({
-            label: 'GTA Vice City Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/gta-vice-city-cashout.mp3'
+        label: 'GTA Vice City Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/gta-vice-city-cashout.mp3'
         }),
         badCompany: Object.freeze({
-            label: 'BF Bad Company Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/bf-bad-company-cashout.mp3'
+        label: 'BF Bad Company Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/bf-bad-company-cashout.mp3'
         }),
         scarface: Object.freeze({
-            label: 'Scarface Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/scarface-cashout.mp3'
+        label: 'Scarface Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/assets/audio/payout-presets/scarface-cashout.mp3'
         }),
         cyberpunk: Object.freeze({
-            label: 'Cyberpunk Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/cyberpunk/audio/cyberpunk-cashout.mp3'
+        label: 'Cyberpunk Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/cyberpunk/audio/cyberpunk-cashout.mp3'
         }),
         wasteland: Object.freeze({
-            label: 'Fallout Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/fallout/audio/fallout-cashout.mp3'
+        label: 'Fallout Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/fallout/audio/fallout-cashout.mp3'
         }),
         factorio: Object.freeze({
-            label: 'Factorio Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/factorio/audio/factorio-cashout.mp3'
+        label: 'Factorio Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/factorio/audio/factorio-cashout.mp3'
         }),
         biohazard: Object.freeze({
-            label: 'Umbrella Containment Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
+        label: 'Umbrella Containment Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/umbrella/audio/umbrella-containment-cashout.mp3'
         }),
         jamesBond: Object.freeze({
-            label: '007 Intelligence Cashout',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/audio/james-bond-cashout.mp3'
+        label: '007 Intelligence Cashout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/james-bond/audio/james-bond-cashout.mp3'
         }),
         hyruleQuest: Object.freeze({
-            label: 'Hyrule Quest Reward',
-            url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3'
+        label: 'Hyrule Quest Reward',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3'
         })
     });
 
@@ -1388,93 +1328,93 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function defaultState() {
         return {
-            uiTheme: 'mapCommand',
-            theme: getLegacyTheme(),
-            position: getLegacyPosition(),
-            activeTab: 'skins',
-            cleanMode: false,
-            markerFocus: false,
-            missionPulse: false,
-            roadPriority: false,
-            compactDock: false,
-            commandBarOpen: true,
-            economyMode: false,
-            tabletMode: 'auto',
-            mobileMode: 'auto',
-            shortcuts: true,
-            autoLoadAllVehicles: false,
-            allianceBuildingsMap: true,
-            majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
-            missionAgeWatch: {
-                ageFilter: '8h',
-                sortMode: 'age',
-                expanded: false,
-                ownershipFilter: 'personal',
-                categoryFilter: 'all',
-                primaryStatus: 'all',
-                advancedFiltersOpen: false,
-                hasVehiclesOnWay: false,
-                onlyMyUnits: false,
-                valueMode: 'total',
-                distanceOrigin: 'live',
-                lockedOrigin: null
-            },
-            missionLockAudio: true,
-            missionValue: true,
-            missionRequirements: true,
-            allianceCredits: false,
-            allianceCreditMinimum: 0,
-            missionAge: false,
-            unitCommitment: false,
-            transportWatcher: true,
-            missionInspector: true,
-            stuckDetector: { enabled: true, thresholdMin: 20 },
-            missionSpawn: { enabled: true },
-            resourceGap: { enabled: false, radiusMi: 25 },
-            transportSweep: { delayMs: 2000, maxPerRun: 25 },
-            payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
-            discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
-            financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
-            profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
-            nudge: { x: 0, y: 0 },
-            panelPosition: null,
-            visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
-            quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
-            coverage: { enabled: false, radiusMi: 10 },
-            heatmap: { enabled: false, source: 'stations', service: 'all', radiusMi: 10, opacity: 0.30 },
-            autoNight: {
-                enabled: false,
-                nightStart: '19:00',
-                dayStart: '07:00',
-                nightTheme: 'nightshift',
-                dayTheme: 'default',
-                lastBucket: ''
-            },
-            bookmarks: [null, null, null, null, null]
+        uiTheme: 'mapCommand',
+        theme: getLegacyTheme(),
+        position: getLegacyPosition(),
+        activeTab: 'skins',
+        cleanMode: false,
+        markerFocus: false,
+        missionPulse: false,
+        roadPriority: false,
+        compactDock: false,
+        commandBarOpen: true,
+        economyMode: false,
+        tabletMode: 'auto',
+        mobileMode: 'auto',
+        shortcuts: true,
+        autoLoadAllVehicles: false,
+        allianceBuildingsMap: true,
+        majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
+        missionAgeWatch: {
+            ageFilter: '8h',
+            sortMode: 'age',
+            expanded: false,
+            ownershipFilter: 'personal',
+            categoryFilter: 'all',
+            primaryStatus: 'all',
+            advancedFiltersOpen: false,
+            hasVehiclesOnWay: false,
+            onlyMyUnits: false,
+            valueMode: 'total',
+            distanceOrigin: 'live',
+            lockedOrigin: null
+        },
+        missionLockAudio: true,
+        missionValue: true,
+        missionRequirements: true,
+        allianceCredits: false,
+        allianceCreditMinimum: 0,
+        missionAge: false,
+        unitCommitment: false,
+        transportWatcher: true,
+        missionInspector: true,
+        stuckDetector: { enabled: true, thresholdMin: 20 },
+        missionSpawn: { enabled: true },
+        resourceGap: { enabled: false, radiusMi: 25 },
+        transportSweep: { delayMs: 2000, maxPerRun: 25 },
+        payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
+        discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+        financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
+        profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
+        nudge: { x: 0, y: 0 },
+        panelPosition: null,
+        visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+        quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
+        coverage: { enabled: false, radiusMi: 10 },
+        heatmap: { enabled: false, source: 'stations', service: 'all', radiusMi: 10, opacity: 0.30 },
+        autoNight: {
+            enabled: false,
+            nightStart: '19:00',
+            dayStart: '07:00',
+            nightTheme: 'nightshift',
+            dayTheme: 'default',
+            lastBucket: ''
+        },
+        bookmarks: [null, null, null, null, null]
         };
     }
 
     function normaliseLoadedState(parsed, base = defaultState()) {
         const merged = {
-            ...base,
-            ...parsed,
-            nudge: { ...base.nudge, ...(parsed.nudge || {}) },
-            visibility: { ...base.visibility, ...(parsed.visibility || {}) },
-            quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
-            coverage: { ...base.coverage, ...(parsed.coverage || {}) },
-            heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
-            stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
-            missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
-            resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
-            transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
-            majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
-            missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
-            payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
-            discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
-            financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
-            autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
-            profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
-            bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
+        ...base,
+        ...parsed,
+        nudge: { ...base.nudge, ...(parsed.nudge || {}) },
+        visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+        quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+        coverage: { ...base.coverage, ...(parsed.coverage || {}) },
+        heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
+        stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
+        missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
+        resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+        transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+        majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+        missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+        payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+        discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+        financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+        autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
+        profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
+        bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
         };
 
         while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
@@ -1510,8 +1450,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
         const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
         merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
-            ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
-            : null;
+        ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
+        : null;
         merged.missionLockAudio = merged.missionLockAudio !== false;
         merged.missionValue = merged.missionValue !== false;
         merged.missionRequirements = merged.missionRequirements !== false;
@@ -1545,8 +1485,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.financialVault.enabled = merged.financialVault.enabled !== false;
         merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
         merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
-            ? 'all'
-            : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
+        ? 'all'
+        : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
         delete merged.financialVault.autoSync;
         delete merged.financialVault.benchmarkOptIn;
         delete merged.financialVault.gatewayUrl;
@@ -1554,17 +1494,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
         merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
         merged.bookmarks = merged.bookmarks.map(item => item ? {
-            ...item,
-            name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
-            shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
-            pinned: Boolean(item.pinned)
+        ...item,
+        name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+        shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+        pinned: Boolean(item.pinned)
         } : null);
         merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
 
         if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
-            merged.panelPosition = null;
+        merged.panelPosition = null;
         } else {
-            merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
+        merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
         }
 
         delete merged.requiresAttention;
@@ -1577,17 +1517,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!raw) return base;
 
         try {
-            return normaliseLoadedState(JSON.parse(raw), base);
+        return normaliseLoadedState(JSON.parse(raw), base);
         } catch (err) {
-            return base;
+        return base;
         }
     }
 
     function saveState() {
         try {
-            localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
-            localStorage.setItem(SCRIPT.legacyTheme, state.theme);
-            localStorage.setItem(SCRIPT.legacyPosition, state.position);
+        localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
+        localStorage.setItem(SCRIPT.legacyTheme, state.theme);
+        localStorage.setItem(SCRIPT.legacyPosition, state.position);
         } catch (err) {}
     }
 
@@ -1613,9 +1553,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         saveState();
         updateUI();
         if (announce && changed) {
-            showToast(pairedHyrulePayout
-                ? 'Hyrule Command interface and Quest Reward payout active'
-                : `${UI_THEMES[nextTheme].label} interface active`);
+        showToast(pairedHyrulePayout
+            ? 'Hyrule Command interface and Quest Reward payout active'
+            : `${UI_THEMES[nextTheme].label} interface active`);
         }
     }
 
@@ -1636,51 +1576,51 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function payoutTitleForTemplate(presentation, template = state?.payoutFlash?.template) {
         const tier = presentation?.tier || 'standard';
         const themedTitles = {
-            gta5: {
-                standard: 'MISSION COMPLETE', major: 'BIG SCORE SECURED', high: 'HEIST PAYDAY', elite: 'LEGENDARY TAKE'
-            },
-            viceCity: {
-                standard: 'Cash Collected', major: 'Miami Money', high: 'Empire Payday', elite: 'King of the City'
-            },
-            badCompany: {
-                standard: 'CONTRACT COMPLETE', major: 'OBJECTIVE SECURED', high: 'PAYDAY EXTRACTED', elite: 'FORTUNE OF WAR'
-            },
-            scarface: {
-                standard: 'CASHOUT COMPLETE', major: 'EMPIRE EXPANDED', high: 'POWER SECURED', elite: 'THE WORLD IS YOURS'
-            },
-            cyberpunk: {
-                standard: 'EDdies TRANSFERRED', major: 'DATA HEIST PAID', high: 'MEGACORP JACKPOT', elite: 'NIGHT CITY LEGEND'
-            },
-            hellfire: {
-                standard: 'BOUNTY CLAIMED', major: 'INFERNAL PAYDAY', high: 'HELLGATE FORTUNE', elite: 'CROWN OF CINDERS'
-            },
-            wasteland: {
-                standard: 'CAPS SECURED', major: 'VAULT RESERVES INCREASED', high: 'WASTELAND FORTUNE FOUND', elite: 'JACKPOT OF THE COMMONWEALTH'
-            },
-            factorio: {
-                standard: 'PRODUCTION TARGET MET', major: 'ASSEMBLY BONUS SECURED', high: 'MEGABASE PAYOUT', elite: 'THE FACTORY MUST GROW'
-            },
-            galactic: {
-                standard: 'CREDITS RECEIVED', major: 'FLEET BONUS CLEARED', high: 'SECTOR TREASURY UNLOCKED', elite: 'GALACTIC FORTUNE'
-            },
-            darkFantasy: {
-                standard: 'Reward Bestowed', major: 'Royal Bounty', high: 'Ancient Treasure Claimed', elite: 'Fortune of the Realm'
-            },
-            biohazard: {
-                standard: 'CONTAINMENT OPERATION COMPLETE', major: 'SECURE TRANSFER RELEASED', high: 'BLACKSITE CREDIT AUTHORIZED', elite: 'OMEGA CLEARANCE AWARD'
-            },
-            underworld: {
-                standard: 'Tribute Collected', major: 'Blood Money Secured', high: 'Dynasty Fortune', elite: 'Sovereign of the Night'
-            },
-            pixelArcade: {
-                standard: 'STAGE CLEAR', major: 'BONUS ROUND', high: 'HIGH SCORE PAYOUT', elite: '1UP JACKPOT'
-            },
-            jamesBond: {
-                standard: 'MISSION ACCOMPLISHED', major: 'CLASSIFIED BONUS SECURED', high: 'DOUBLE-O PAYDAY', elite: 'TOP SECRET JACKPOT'
-            },
-            hyruleQuest: {
-                standard: 'QUEST COMPLETE', major: "HERO'S REWARD", high: 'TREASURE OF HYRULE', elite: 'LEGENDARY RELIC CLAIMED'
-            }
+        gta5: {
+            standard: 'MISSION COMPLETE', major: 'BIG SCORE SECURED', high: 'HEIST PAYDAY', elite: 'LEGENDARY TAKE'
+        },
+        viceCity: {
+            standard: 'Cash Collected', major: 'Miami Money', high: 'Empire Payday', elite: 'King of the City'
+        },
+        badCompany: {
+            standard: 'CONTRACT COMPLETE', major: 'OBJECTIVE SECURED', high: 'PAYDAY EXTRACTED', elite: 'FORTUNE OF WAR'
+        },
+        scarface: {
+            standard: 'CASHOUT COMPLETE', major: 'EMPIRE EXPANDED', high: 'POWER SECURED', elite: 'THE WORLD IS YOURS'
+        },
+        cyberpunk: {
+            standard: 'EDdies TRANSFERRED', major: 'DATA HEIST PAID', high: 'MEGACORP JACKPOT', elite: 'NIGHT CITY LEGEND'
+        },
+        hellfire: {
+            standard: 'BOUNTY CLAIMED', major: 'INFERNAL PAYDAY', high: 'HELLGATE FORTUNE', elite: 'CROWN OF CINDERS'
+        },
+        wasteland: {
+            standard: 'CAPS SECURED', major: 'VAULT RESERVES INCREASED', high: 'WASTELAND FORTUNE FOUND', elite: 'JACKPOT OF THE COMMONWEALTH'
+        },
+        factorio: {
+            standard: 'PRODUCTION TARGET MET', major: 'ASSEMBLY BONUS SECURED', high: 'MEGABASE PAYOUT', elite: 'THE FACTORY MUST GROW'
+        },
+        galactic: {
+            standard: 'CREDITS RECEIVED', major: 'FLEET BONUS CLEARED', high: 'SECTOR TREASURY UNLOCKED', elite: 'GALACTIC FORTUNE'
+        },
+        darkFantasy: {
+            standard: 'Reward Bestowed', major: 'Royal Bounty', high: 'Ancient Treasure Claimed', elite: 'Fortune of the Realm'
+        },
+        biohazard: {
+            standard: 'CONTAINMENT OPERATION COMPLETE', major: 'SECURE TRANSFER RELEASED', high: 'BLACKSITE CREDIT AUTHORIZED', elite: 'OMEGA CLEARANCE AWARD'
+        },
+        underworld: {
+            standard: 'Tribute Collected', major: 'Blood Money Secured', high: 'Dynasty Fortune', elite: 'Sovereign of the Night'
+        },
+        pixelArcade: {
+            standard: 'STAGE CLEAR', major: 'BONUS ROUND', high: 'HIGH SCORE PAYOUT', elite: '1UP JACKPOT'
+        },
+        jamesBond: {
+            standard: 'MISSION ACCOMPLISHED', major: 'CLASSIFIED BONUS SECURED', high: 'DOUBLE-O PAYDAY', elite: 'TOP SECRET JACKPOT'
+        },
+        hyruleQuest: {
+            standard: 'QUEST COMPLETE', major: "HERO'S REWARD", high: 'TREASURE OF HYRULE', elite: 'LEGENDARY RELIC CLAIMED'
+        }
         };
         return themedTitles[template]?.[tier] || presentation?.title || '';
     }
@@ -1706,11 +1646,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function escapeHtml(value) {
         return String(value)
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#039;');
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
     }
 
     function allianceAwareHtml(value) {
@@ -1729,18 +1669,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const entityPattern = /&(?:#\d+|#x[\da-f]+|[a-z]+);/i;
         if (!entityPattern.test(text)) return text;
         try {
-            const textarea = document.createElement('textarea');
+        const textarea = document.createElement('textarea');
             // MissionChief can return captions as either &quot; or double-escaped
             // &amp;quot;. Decode a small bounded number of passes until stable.
-            for (let pass = 0; pass < 3 && entityPattern.test(text); pass += 1) {
-                textarea.innerHTML = text;
-                const decoded = textarea.value;
-                if (decoded === text) break;
-                text = decoded;
-            }
-            return text;
+        for (let pass = 0; pass < 3 && entityPattern.test(text); pass += 1) {
+            textarea.innerHTML = text;
+            const decoded = textarea.value;
+            if (decoded === text) break;
+            text = decoded;
+        }
+        return text;
         } catch (err) {
-            return text;
+        return text;
         }
     }
 
@@ -1751,17 +1691,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function missingRequirementKeyLabel(key) {
         const clean = String(key ?? '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
         const labels = {
-            vehicle: 'VEHICLES',
-            vehicles: 'VEHICLES',
-            personnel: 'PERSONNEL',
-            staff: 'PERSONNEL',
-            people: 'PERSONNEL',
-            patient: 'PATIENTS',
-            patients: 'PATIENTS',
-            prisoner: 'PRISONERS',
-            prisoners: 'PRISONERS',
-            transport: 'TRANSPORT',
-            other: 'OTHER'
+        vehicle: 'VEHICLES',
+        vehicles: 'VEHICLES',
+        personnel: 'PERSONNEL',
+        staff: 'PERSONNEL',
+        people: 'PERSONNEL',
+        patient: 'PATIENTS',
+        patients: 'PATIENTS',
+        prisoner: 'PRISONERS',
+        prisoners: 'PRISONERS',
+        transport: 'TRANSPORT',
+        other: 'OTHER'
         };
         return labels[clean] || clean.replace(/\b\w/g, char => char.toUpperCase());
     }
@@ -1769,40 +1709,40 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function missingRequirementValueText(value) {
         if (value === undefined || value === null || value === false) return '';
         if (Array.isArray(value)) {
-            return value.map(missingRequirementValueText).filter(Boolean).join(', ');
+        return value.map(missingRequirementValueText).filter(Boolean).join(', ');
         }
         if (typeof value === 'object') {
-            return Object.entries(value)
-                .map(([key, nestedValue]) => {
-                    const nested = missingRequirementValueText(nestedValue);
-                    return nested ? `${missingRequirementKeyLabel(key)}: ${nested}` : '';
-                })
-                .filter(Boolean)
-                .join(', ');
+        return Object.entries(value)
+            .map(([key, nestedValue]) => {
+                const nested = missingRequirementValueText(nestedValue);
+                return nested ? `${missingRequirementKeyLabel(key)}: ${nested}` : '';
+            })
+            .filter(Boolean)
+            .join(', ');
         }
         return decodeMissionTextEntities(value)
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\\[nrt]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .replace(/^['"]+|['"]+$/g, '')
-            .trim();
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\\[nrt]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/^['"]+|['"]+$/g, '')
+        .trim();
     }
 
     function formatMissingRequirementObject(value) {
         if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
         const priority = ['vehicles', 'vehicle', 'personnel', 'staff', 'people', 'patients', 'patient', 'prisoners', 'prisoner', 'transport', 'other'];
         const entries = Object.entries(value).sort(([keyA], [keyB]) => {
-            const a = priority.indexOf(String(keyA).toLowerCase());
-            const b = priority.indexOf(String(keyB).toLowerCase());
-            return (a < 0 ? priority.length : a) - (b < 0 ? priority.length : b);
+        const a = priority.indexOf(String(keyA).toLowerCase());
+        const b = priority.indexOf(String(keyB).toLowerCase());
+        return (a < 0 ? priority.length : a) - (b < 0 ? priority.length : b);
         });
         return entries
-            .map(([key, rawValue]) => {
-                const formatted = missingRequirementValueText(rawValue);
-                return formatted ? `${missingRequirementKeyLabel(key)}: ${formatted}` : '';
-            })
-            .filter(Boolean)
-            .join(' • ');
+        .map(([key, rawValue]) => {
+            const formatted = missingRequirementValueText(rawValue);
+            return formatted ? `${missingRequirementKeyLabel(key)}: ${formatted}` : '';
+        })
+        .filter(Boolean)
+        .join(' • ');
     }
 
     function normaliseMissingRequirementText(value) {
@@ -1810,28 +1750,28 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (typeof value === 'object') return formatMissingRequirementObject(value) || missingRequirementValueText(value);
 
         let text = decodeMissionTextEntities(value)
-            .replace(/<br\s*\/?>/gi, ' ')
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\\[nrt]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\\[nrt]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
         if (!text) return '';
 
         // MissionChief can expose the requirement payload as JSON, escaped JSON,
         // or occasionally as a key/value fragment without its opening brace.
         for (let pass = 0; pass < 3; pass += 1) {
-            let candidate = text;
-            if (!candidate.startsWith('{') && /^(?:["']?[a-z][\w -]*["']?)\s*:/i.test(candidate)) candidate = `{${candidate}`;
-            if (candidate.startsWith('{') && !candidate.endsWith('}')) candidate += '}';
-            try {
-                const parsed = JSON.parse(candidate);
-                if (parsed && typeof parsed === 'object') return formatMissingRequirementObject(parsed) || missingRequirementValueText(parsed);
-                if (typeof parsed === 'string' && parsed.trim() && parsed.trim() !== text) {
-                    text = parsed.trim();
-                    continue;
-                }
-            } catch (err) {}
-            break;
+        let candidate = text;
+        if (!candidate.startsWith('{') && /^(?:["']?[a-z][\w -]*["']?)\s*:/i.test(candidate)) candidate = `{${candidate}`;
+        if (candidate.startsWith('{') && !candidate.endsWith('}')) candidate += '}';
+        try {
+            const parsed = JSON.parse(candidate);
+            if (parsed && typeof parsed === 'object') return formatMissingRequirementObject(parsed) || missingRequirementValueText(parsed);
+            if (typeof parsed === 'string' && parsed.trim() && parsed.trim() !== text) {
+                text = parsed.trim();
+                continue;
+            }
+        } catch (err) {}
+        break;
         }
 
         // Fallback for malformed but still recognisable object fragments.
@@ -1839,13 +1779,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const pairPattern = /["']?([a-z][\w -]*)["']?\s*:\s*(?:"([^"]*)"|'([^']*)'|([^,}\]]+))/gi;
         let match;
         while ((match = pairPattern.exec(text))) {
-            const key = match[1];
-            const pairValue = match[2] ?? match[3] ?? match[4] ?? '';
-            parsedPairs[key] = pairValue;
+        const key = match[1];
+        const pairValue = match[2] ?? match[3] ?? match[4] ?? '';
+        parsedPairs[key] = pairValue;
         }
         if (Object.keys(parsedPairs).length) {
-            const formatted = formatMissingRequirementObject(parsedPairs);
-            if (formatted) return formatted;
+        const formatted = formatMissingRequirementObject(parsedPairs);
+        if (formatted) return formatted;
         }
 
         return text.replace(/^[{\[]+|[}\]]+$/g, '').replace(/\s+/g, ' ').trim();
@@ -1853,13 +1793,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function removeOldInstances() {
         document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.criticalDrawerId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.missionInspectorId}, #${SCRIPT.missionRequirementsPanelId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
-            .forEach(el => el.remove());
+        .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
-            const text = style.textContent || '';
-            if (style.id.startsWith('mc-map-command-') || (text.includes('mcms-') && text.includes('data-mc-map-skin'))) {
-                style.remove();
-            }
+        const text = style.textContent || '';
+        if (style.id.startsWith('mc-map-command-') || (text.includes('mcms-') && text.includes('data-mc-map-skin'))) {
+            style.remove();
+        }
         });
     }
 
@@ -14118,9 +14058,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!registry) return [];
         if (Array.isArray(registry)) return registry;
         try {
-            if (typeof registry.values === 'function') return Array.from(registry.values());
-            if (typeof registry[Symbol.iterator] === 'function') return Array.from(registry);
-            if (typeof registry === 'object') return Object.values(registry);
+        if (typeof registry.values === 'function') return Array.from(registry.values());
+        if (typeof registry[Symbol.iterator] === 'function') return Array.from(registry);
+        if (typeof registry === 'object') return Object.values(registry);
         } catch (err) {}
         return [];
     }
@@ -14140,22 +14080,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function invalidateMarkerRegistryCaches(scope = 'all') {
         markerRegistryRevision += 1;
         if (scope === 'all' || scope === 'mission') {
-            markerRegistryCache.delete('mission_markers');
-            missionIconMarkerCache = new WeakMap();
-            missionRegistryRevision += 1;
-            missionMarkerIndexCache = { revision: -1, registry: null, markers: [], byId: new Map() };
+        markerRegistryCache.delete('mission_markers');
+        missionIconMarkerCache = new WeakMap();
+        missionRegistryRevision += 1;
+        missionMarkerIndexCache = { revision: -1, registry: null, markers: [], byId: new Map() };
         }
         if (scope === 'all' || scope === 'vehicle') {
-            markerRegistryCache.delete('vehicle_markers');
-            vehicleRegistryRevision += 1;
-            personalVehicleRecordsCache.vehicleRevision = -1;
+        markerRegistryCache.delete('vehicle_markers');
+        vehicleRegistryRevision += 1;
+        personalVehicleRecordsCache.vehicleRevision = -1;
         }
         if (scope === 'all' || scope === 'building') {
-            markerRegistryCache.delete('building_markers');
-            markerRegistryCache.delete('building_markers_cache');
-            buildingRegistryRevision += 1;
-            personalBuildingIdsCache.createdAt = 0;
-            heatmapSourceCache.createdAt = 0;
+        markerRegistryCache.delete('building_markers');
+        markerRegistryCache.delete('building_markers_cache');
+        buildingRegistryRevision += 1;
+        personalBuildingIdsCache.createdAt = 0;
+        heatmapSourceCache.createdAt = 0;
         }
     }
 
@@ -14164,10 +14104,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (cachedUserId !== null || now - cachedUserIdReadAt < 1000) return cachedUserId;
         cachedUserIdReadAt = now;
         try {
-            const value = pageWindow.user_id;
-            cachedUserId = value === undefined || value === null || value === '' ? null : String(value);
+        const value = pageWindow.user_id;
+        cachedUserId = value === undefined || value === null || value === '' ? null : String(value);
         } catch (err) {
-            cachedUserId = null;
+        cachedUserId = null;
         }
         return cachedUserId;
     }
@@ -14195,19 +14135,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const now = Date.now();
         if (cachedMapElement?.isConnected && now - cachedMapElementCheckedAt <= MAP_ELEMENT_CACHE_MS) return cachedMapElement;
         if (cachedMapElement?.isConnected && isVisible(cachedMapElement)) {
-            cachedMapElementCheckedAt = now;
-            return cachedMapElement;
+        cachedMapElementCheckedAt = now;
+        return cachedMapElement;
         }
         const candidates = Array.from(document.querySelectorAll('.leaflet-container')).filter(isVisible);
         let largest = null;
         let largestArea = 0;
         for (const candidate of candidates) {
-            const rect = candidate.getBoundingClientRect();
-            const area = rect.width * rect.height;
-            if (area > largestArea) {
-                largest = candidate;
-                largestArea = area;
-            }
+        const rect = candidate.getBoundingClientRect();
+        const area = rect.width * rect.height;
+        if (area > largestArea) {
+            largest = candidate;
+            largestArea = area;
+        }
         }
         cachedMapElement = largest;
         cachedMapElementCheckedAt = now;
@@ -14221,22 +14161,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const offsetLeft = Number.isFinite(Number(viewport?.offsetLeft)) ? Number(viewport.offsetLeft) : 0;
         const offsetTop = Number.isFinite(Number(viewport?.offsetTop)) ? Number(viewport.offsetTop) : 0;
         return {
-            width,
-            height,
-            offsetLeft,
-            offsetTop,
-            orientation: width >= height ? 'landscape' : 'portrait'
+        width,
+        height,
+        offsetLeft,
+        offsetTop,
+        orientation: width >= height ? 'landscape' : 'portrait'
         };
     }
 
     function hasCoarsePointer() {
         try {
-            return Boolean(
-                pageWindow.matchMedia?.('(pointer: coarse)')?.matches ||
-                pageWindow.matchMedia?.('(any-pointer: coarse)')?.matches
-            );
+        return Boolean(
+            pageWindow.matchMedia?.('(pointer: coarse)')?.matches ||
+            pageWindow.matchMedia?.('(any-pointer: coarse)')?.matches
+        );
         } catch (err) {
-            return false;
+        return false;
         }
     }
 
@@ -14253,50 +14193,50 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const scanBottom = viewportTop + Math.min(220, Math.max(96, viewportHeight * 0.22));
         const minimumWidth = Math.min(280, Math.max(180, viewportWidth * 0.18));
         const selectors = [
-            'header',
-            'nav',
-            '[role="banner"]',
-            '[role="navigation"]',
-            '.navbar',
-            '.navbar-fixed-top',
-            '.navbar-static-top',
-            '[id*="ticker"]',
-            '[class*="ticker"]',
-            'body > *',
+        'header',
+        'nav',
+        '[role="banner"]',
+        '[role="navigation"]',
+        '.navbar',
+        '.navbar-fixed-top',
+        '.navbar-static-top',
+        '[id*="ticker"]',
+        '[class*="ticker"]',
+        'body > *',
             'body > * > *'
         ].join(',');
         const candidates = new Set();
         try {
-            document.querySelectorAll(selectors).forEach(element => candidates.add(element));
+        document.querySelectorAll(selectors).forEach(element => candidates.add(element));
         } catch (err) {}
 
         const obstructions = [];
         for (const element of candidates) {
-            if (!element || element === panel || panel?.contains?.(element) || element === mapEl) continue;
-            if (element.classList?.contains?.('leaflet-container')) continue;
-            let rect;
-            try { rect = element.getBoundingClientRect?.(); } catch (err) { rect = null; }
-            if (!rect || rect.width < minimumWidth || rect.height < 6 || rect.height > 180) continue;
-            if (rect.right <= viewportLeft || rect.left >= viewportRight) continue;
-            if (rect.bottom <= viewportTop || rect.top >= scanBottom || rect.bottom > scanBottom + 24) continue;
+        if (!element || element === panel || panel?.contains?.(element) || element === mapEl) continue;
+        if (element.classList?.contains?.('leaflet-container')) continue;
+        let rect;
+        try { rect = element.getBoundingClientRect?.(); } catch (err) { rect = null; }
+        if (!rect || rect.width < minimumWidth || rect.height < 6 || rect.height > 180) continue;
+        if (rect.right <= viewportLeft || rect.left >= viewportRight) continue;
+        if (rect.bottom <= viewportTop || rect.top >= scanBottom || rect.bottom > scanBottom + 24) continue;
 
-            let style = null;
-            try { style = pageWindow.getComputedStyle?.(element); } catch (err) {}
-            if (style?.display === 'none' || style?.visibility === 'hidden' || Number(style?.opacity) === 0) continue;
-            const positioned = ['fixed', 'sticky', 'absolute'].includes(style?.position);
-            const semantic = element.matches?.('header, nav, [role="banner"], [role="navigation"], .navbar, .navbar-fixed-top, .navbar-static-top');
-            const nearRoot = element.parentElement === document.body || element.parentElement?.parentElement === document.body;
-            if (!positioned && !semantic && !nearRoot) continue;
+        let style = null;
+        try { style = pageWindow.getComputedStyle?.(element); } catch (err) {}
+        if (style?.display === 'none' || style?.visibility === 'hidden' || Number(style?.opacity) === 0) continue;
+        const positioned = ['fixed', 'sticky', 'absolute'].includes(style?.position);
+        const semantic = element.matches?.('header, nav, [role="banner"], [role="navigation"], .navbar, .navbar-fixed-top, .navbar-static-top');
+        const nearRoot = element.parentElement === document.body || element.parentElement?.parentElement === document.body;
+        if (!positioned && !semantic && !nearRoot) continue;
 
-            obstructions.push({
-                element,
-                rect: {
-                    left: Number(rect.left),
-                    right: Number(rect.right),
-                    top: Number(rect.top),
-                    bottom: Number(rect.bottom)
-                }
-            });
+        obstructions.push({
+            element,
+            rect: {
+                left: Number(rect.left),
+                right: Number(rect.right),
+                top: Number(rect.top),
+                bottom: Number(rect.bottom)
+            }
+        });
         }
         return obstructions.sort((a, b) => a.rect.bottom - b.rect.bottom);
     }
@@ -14317,24 +14257,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const safeMargin = Math.max(0, finite(margin) ? margin : 12);
 
         const mapValid = mapRect
-            && finite(mapRect.left)
-            && finite(mapRect.right)
-            && finite(mapRect.top)
-            && finite(mapRect.bottom)
-            && mapRect.right > mapRect.left
-            && mapRect.bottom > mapRect.top;
+        && finite(mapRect.left)
+        && finite(mapRect.right)
+        && finite(mapRect.top)
+        && finite(mapRect.bottom)
+        && mapRect.right > mapRect.left
+        && mapRect.bottom > mapRect.top;
         let workspaceTop = mapValid
-            ? Math.max(viewportTop, Math.min(viewportBottom, mapRect.top))
-            : viewportTop;
+        ? Math.max(viewportTop, Math.min(viewportBottom, mapRect.top))
+        : viewportTop;
         const minimumTopChrome = Math.min(88, Math.max(52, viewportHeight * 0.055));
         workspaceTop = Math.max(workspaceTop, viewportTop + minimumTopChrome);
         const scanBottom = viewportTop + Math.min(220, Math.max(96, viewportHeight * 0.22));
 
         for (const rect of Array.isArray(obstructionRects) ? obstructionRects : []) {
-            if (!rect || !finite(rect.left) || !finite(rect.right) || !finite(rect.top) || !finite(rect.bottom)) continue;
-            if (rect.right <= viewportLeft || rect.left >= viewportRight) continue;
-            if (rect.bottom <= viewportTop || rect.top >= scanBottom || rect.bottom > viewportBottom) continue;
-            workspaceTop = Math.max(workspaceTop, rect.bottom);
+        if (!rect || !finite(rect.left) || !finite(rect.right) || !finite(rect.top) || !finite(rect.bottom)) continue;
+        if (rect.right <= viewportLeft || rect.left >= viewportRight) continue;
+        if (rect.bottom <= viewportTop || rect.top >= scanBottom || rect.bottom > viewportBottom) continue;
+        workspaceTop = Math.max(workspaceTop, rect.bottom);
         }
 
         const areaLeft = viewportLeft;
@@ -14347,11 +14287,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const bottom = Math.max(top, areaBottom - safeMargin);
 
         return {
-            left: Math.round(left),
-            right: Math.round(right),
-            top: Math.round(top),
-            bottom: Math.round(bottom),
-            maxHeight: Math.max(1, Math.floor(bottom - top))
+        left: Math.round(left),
+        right: Math.round(right),
+        top: Math.round(top),
+        bottom: Math.round(bottom),
+        maxHeight: Math.max(1, Math.floor(bottom - top))
         };
     }
 
@@ -14364,64 +14304,64 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const desiredLeft = Number.isFinite(Number(left)) ? Number(left) : safeBounds.left;
         const desiredTop = Number.isFinite(Number(top)) ? Number(top) : safeBounds.top;
         return {
-            left: Math.round(Math.max(safeBounds.left, Math.min(desiredLeft, safeBounds.right - width))),
-            top: Math.round(Math.max(safeBounds.top, Math.min(desiredTop, safeBounds.bottom - height)))
+        left: Math.round(Math.max(safeBounds.left, Math.min(desiredLeft, safeBounds.right - width))),
+        top: Math.round(Math.max(safeBounds.top, Math.min(desiredTop, safeBounds.bottom - height)))
         };
     }
 
     function stopDesktopPanelWorkspaceObservation() {
         if (desktopPanelResizeObserver) {
-            for (const element of desktopPanelObservedElements) {
-                try { desktopPanelResizeObserver.unobserve(element); } catch (err) {}
-            }
+        for (const element of desktopPanelObservedElements) {
+            try { desktopPanelResizeObserver.unobserve(element); } catch (err) {}
+        }
         }
         desktopPanelObservedElements.clear();
     }
 
     function clearDesktopPanelSizing(panel = document.getElementById(SCRIPT.panelId)) {
         if (panel) {
-            panel.style.removeProperty('--mcms-desktop-panel-max-height');
-            panel.style.removeProperty('max-height');
-            delete panel.dataset.mcmsDesktopFit;
+        panel.style.removeProperty('--mcms-desktop-panel-max-height');
+        panel.style.removeProperty('max-height');
+        delete panel.dataset.mcmsDesktopFit;
         }
         stopDesktopPanelWorkspaceObservation();
     }
 
     function observeDesktopPanelWorkspace(mapEl) {
         if (activeDeviceLayout !== 'desktop') {
-            stopDesktopPanelWorkspaceObservation();
-            return;
+        stopDesktopPanelWorkspaceObservation();
+        return;
         }
         const ResizeObserverCtor = pageWindow.ResizeObserver;
         if (typeof ResizeObserverCtor !== 'function') return;
         if (!desktopPanelResizeObserver) {
-            desktopPanelResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => {
-                if (runtime.destroyed || activeDeviceLayout !== 'desktop') return;
-                const panel = document.getElementById(SCRIPT.panelId);
-                if (!panel) return;
-                applyDesktopPanelSizing(panel, getLargestLeafletMap());
-                if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
-            }));
+        desktopPanelResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => {
+            if (runtime.destroyed || activeDeviceLayout !== 'desktop') return;
+            const panel = document.getElementById(SCRIPT.panelId);
+            if (!panel) return;
+            applyDesktopPanelSizing(panel, getLargestLeafletMap());
+            if (!dragState && panel.classList.contains('mcms-open')) schedulePanelPosition(true, 20);
+        }));
         }
 
         const viewport = getViewportMetrics();
         const panel = document.getElementById(SCRIPT.panelId);
         const obstructionElements = collectDesktopWorkspaceObstructions(viewport, mapEl, panel)
-            .map(item => item.element);
+        .map(item => item.element);
         const nextElements = new Set([
-            document.documentElement,
-            document.body,
-            ...(mapEl ? [mapEl] : []),
-            ...obstructionElements
+        document.documentElement,
+        document.body,
+        ...(mapEl ? [mapEl] : []),
+        ...obstructionElements
         ].filter(Boolean));
 
         for (const element of desktopPanelObservedElements) {
-            if (nextElements.has(element)) continue;
-            try { desktopPanelResizeObserver.unobserve(element); } catch (err) {}
+        if (nextElements.has(element)) continue;
+        try { desktopPanelResizeObserver.unobserve(element); } catch (err) {}
         }
         for (const element of nextElements) {
-            if (desktopPanelObservedElements.has(element)) continue;
-            try { desktopPanelResizeObserver.observe(element); } catch (err) {}
+        if (desktopPanelObservedElements.has(element)) continue;
+        try { desktopPanelResizeObserver.observe(element); } catch (err) {}
         }
         desktopPanelObservedElements = nextElements;
     }
@@ -14432,30 +14372,30 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let mapRect = null;
         try { mapRect = mapEl?.getBoundingClientRect?.() || null; } catch (err) {}
         const obstructionRects = collectDesktopWorkspaceObstructions(viewport, mapEl, panel)
-            .map(item => item.rect);
+        .map(item => item.rect);
         const bounds = resolveDesktopPanelBounds(mapRect, viewport, 12, obstructionRects);
         panel.style.setProperty('--mcms-desktop-panel-max-height', `${bounds.maxHeight}px`);
         panel.style.setProperty('max-height', `${bounds.maxHeight}px`, 'important');
         panel.dataset.mcmsDesktopFit = `${bounds.left}:${bounds.top}:${bounds.right}:${bounds.bottom}:${bounds.maxHeight}`;
 
         if (!dragState && panel.classList.contains('mcms-open')) {
-            let panelRect = null;
-            try { panelRect = panel.getBoundingClientRect?.() || null; } catch (err) {}
-            if (panelRect) {
-                const clamped = clampDesktopPanelPoint(
-                    panelRect.left,
-                    panelRect.top,
-                    panelRect.width || panel.offsetWidth || 318,
-                    Math.min(panelRect.height || panel.offsetHeight || 500, bounds.maxHeight),
-                    bounds
-                );
-                if (Math.abs(panelRect.left - clamped.left) > 0.5 || Math.abs(panelRect.top - clamped.top) > 0.5) {
-                    panel.style.setProperty('left', `${clamped.left}px`, 'important');
-                    panel.style.setProperty('top', `${clamped.top}px`, 'important');
-                    panel.style.removeProperty('right');
-                    panel.style.removeProperty('bottom');
-                }
+        let panelRect = null;
+        try { panelRect = panel.getBoundingClientRect?.() || null; } catch (err) {}
+        if (panelRect) {
+            const clamped = clampDesktopPanelPoint(
+                panelRect.left,
+                panelRect.top,
+                panelRect.width || panel.offsetWidth || 318,
+                Math.min(panelRect.height || panel.offsetHeight || 500, bounds.maxHeight),
+                bounds
+            );
+            if (Math.abs(panelRect.left - clamped.left) > 0.5 || Math.abs(panelRect.top - clamped.top) > 0.5) {
+                panel.style.setProperty('left', `${clamped.left}px`, 'important');
+                panel.style.setProperty('top', `${clamped.top}px`, 'important');
+                panel.style.removeProperty('right');
+                panel.style.removeProperty('bottom');
             }
+        }
         }
         return bounds;
     }
@@ -14538,10 +14478,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const touchLayout = isTouchLayoutActive();
         const layoutName = mobileModeActive ? 'MOBILE COMMAND PANEL' : tabletModeActive ? 'TABLET COMMAND PANEL' : '☰ DRAG MENU HERE';
         const layoutHelp = mobileModeActive
-            ? 'iPhone Safari layout · swipe vertically · close with ×'
-            : tabletModeActive
-                ? 'Touch-optimised layout · scroll vertically · close with ×'
-                : 'Hold left-click on this title area. Position saves.';
+        ? 'iPhone Safari layout · swipe vertically · close with ×'
+        : tabletModeActive
+            ? 'Touch-optimised layout · scroll vertically · close with ×'
+            : 'Hold left-click on this title area. Position saves.';
         if (dragHandle) dragHandle.title = touchLayout ? `${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel` : 'Hold left-click and drag this bar to move the menu';
         if (title) title.textContent = layoutName;
         if (subtitle) subtitle.textContent = layoutHelp;
@@ -14549,22 +14489,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function clearTabletDockSizing(control = document.getElementById(SCRIPT.controlId)) {
         if (control) {
-            control.style.removeProperty('--mcms-tablet-dock-width');
-            control.style.removeProperty('--mcms-tablet-filter-columns');
-            control.style.removeProperty('--mcms-tablet-pin-columns');
-            control.style.removeProperty('--mcms-tablet-filter-height');
-            control.style.removeProperty('--mcms-tablet-pin-height');
-            control.style.removeProperty('--mcms-mobile-dock-width');
-            control.style.removeProperty('--mcms-mobile-columns');
-            control.style.removeProperty('--mcms-mobile-pin-columns');
-            control.style.removeProperty('--mcms-mobile-filter-height');
-            control.style.removeProperty('--mcms-mobile-pin-height');
-            delete control.dataset.mcmsTabletFit;
-            delete control.dataset.mcmsMobileFit;
+        control.style.removeProperty('--mcms-tablet-dock-width');
+        control.style.removeProperty('--mcms-tablet-filter-columns');
+        control.style.removeProperty('--mcms-tablet-pin-columns');
+        control.style.removeProperty('--mcms-tablet-filter-height');
+        control.style.removeProperty('--mcms-tablet-pin-height');
+        control.style.removeProperty('--mcms-mobile-dock-width');
+        control.style.removeProperty('--mcms-mobile-columns');
+        control.style.removeProperty('--mcms-mobile-pin-columns');
+        control.style.removeProperty('--mcms-mobile-filter-height');
+        control.style.removeProperty('--mcms-mobile-pin-height');
+        delete control.dataset.mcmsTabletFit;
+        delete control.dataset.mcmsMobileFit;
         }
         if (tabletDockResizeObserver && tabletDockObservedMap) {
-            try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
-            tabletDockObservedMap = null;
+        try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
+        tabletDockObservedMap = null;
         }
     }
 
@@ -14574,15 +14514,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (typeof ResizeObserverCtor !== 'function') return;
 
         if (!tabletDockResizeObserver) {
-            tabletDockResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(entries => {
-                if (!isTouchLayoutActive() || runtime.destroyed) return;
-                if (entries.some(entry => entry?.target === tabletDockObservedMap)) fitControlToMap();
-            }));
+        tabletDockResizeObserver = runtimeTrackObserver(new ResizeObserverCtor(entries => {
+            if (!isTouchLayoutActive() || runtime.destroyed) return;
+            if (entries.some(entry => entry?.target === tabletDockObservedMap)) fitControlToMap();
+        }));
         }
 
         if (tabletDockObservedMap === mapEl) return;
         if (tabletDockObservedMap) {
-            try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
+        try { tabletDockResizeObserver.unobserve(tabletDockObservedMap); } catch (err) {}
         }
         tabletDockObservedMap = mapEl;
         try { tabletDockResizeObserver.observe(mapEl); } catch (err) {}
@@ -14599,8 +14539,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyTabletDockLayout(mapEl = getLargestLeafletMap()) {
         const control = document.getElementById(SCRIPT.controlId);
         if (!control || !mapEl || !tabletModeActive) {
-            clearTabletDockSizing(control);
-            return false;
+        clearTabletDockSizing(control);
+        return false;
         }
 
         const rect = mapEl.getBoundingClientRect();
@@ -14626,30 +14566,30 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         let filterColumns = Math.max(1, Math.min(filterCount, Math.floor((contentWidth + gap) / (preferredFilterWidth + gap)) || 1));
         let pinColumns = pinCount
-            ? Math.max(1, Math.min(pinCount, Math.floor((contentWidth + gap) / (preferredPinWidth + gap)) || 1))
-            : 1;
+        ? Math.max(1, Math.min(pinCount, Math.floor((contentWidth + gap) / (preferredPinWidth + gap)) || 1))
+        : 1;
         let filterHeight = 48;
         let pinHeight = 31;
         const availableMapHeight = Math.max(80, rect.height - (margin * 2) - nudgeY);
 
         let estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
         while (estimatedHeight > availableMapHeight && (filterColumns < filterCount || pinColumns < Math.max(1, pinCount))) {
-            const filterCandidate = filterColumns < filterCount
-                ? estimateTabletDockHeight(filterCount, filterColumns + 1, pinCount, pinColumns, filterHeight, pinHeight, gap)
-                : Number.POSITIVE_INFINITY;
-            const pinCandidate = pinCount && pinColumns < pinCount
-                ? estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns + 1, filterHeight, pinHeight, gap)
-                : Number.POSITIVE_INFINITY;
+        const filterCandidate = filterColumns < filterCount
+            ? estimateTabletDockHeight(filterCount, filterColumns + 1, pinCount, pinColumns, filterHeight, pinHeight, gap)
+            : Number.POSITIVE_INFINITY;
+        const pinCandidate = pinCount && pinColumns < pinCount
+            ? estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns + 1, filterHeight, pinHeight, gap)
+            : Number.POSITIVE_INFINITY;
 
-            if (filterCandidate <= pinCandidate) filterColumns += 1;
-            else pinColumns += 1;
-            estimatedHeight = Math.min(filterCandidate, pinCandidate);
+        if (filterCandidate <= pinCandidate) filterColumns += 1;
+        else pinColumns += 1;
+        estimatedHeight = Math.min(filterCandidate, pinCandidate);
         }
 
         if (estimatedHeight > availableMapHeight) {
-            filterHeight = 46;
-            pinHeight = 29;
-            estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
+        filterHeight = 46;
+        pinHeight = 29;
+        estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
         }
 
         control.style.setProperty('--mcms-tablet-dock-width', `${Math.floor(dockWidth)}px`);
@@ -14672,8 +14612,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyMobileDockLayout(mapEl = getLargestLeafletMap()) {
         const control = document.getElementById(SCRIPT.controlId);
         if (!control || !mapEl || !mobileModeActive) {
-            if (!tabletModeActive) clearTabletDockSizing(control);
-            return false;
+        if (!tabletModeActive) clearTabletDockSizing(control);
+        return false;
         }
 
         const rect = mapEl.getBoundingClientRect();
@@ -14700,17 +14640,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         let estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         while (estimatedHeight > availableMapHeight && columns < commandCount) {
-            columns += 1;
-            estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+        columns += 1;
+        estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
         while (estimatedHeight > availableMapHeight && pinColumns < pinCount) {
-            pinColumns += 1;
-            estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+        pinColumns += 1;
+        estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
         if (estimatedHeight > availableMapHeight) {
-            commandHeight = 40;
-            pinHeight = 28;
-            estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
+        commandHeight = 40;
+        pinHeight = 28;
+        estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
 
         control.style.setProperty('--mcms-mobile-dock-width', `${Math.floor(dockWidth)}px`);
@@ -14733,11 +14673,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const availableWidth = Math.max(1, viewport.width - (margin * 2));
         const availableHeight = Math.max(mobile ? 160 : 180, viewport.height - (margin * 2));
         const desiredWidth = mobile
-            ? availableWidth
-            : Math.min(availableWidth, viewport.orientation === 'landscape' ? 760 : 700);
+        ? availableWidth
+        : Math.min(availableWidth, viewport.orientation === 'landscape' ? 760 : 700);
         const heightRatio = mobile
-            ? (viewport.orientation === 'landscape' ? 0.94 : 0.88)
-            : (viewport.orientation === 'landscape' ? 0.88 : 0.82);
+        ? (viewport.orientation === 'landscape' ? 0.94 : 0.88)
+        : (viewport.orientation === 'landscape' ? 0.88 : 0.82);
         const maxHeight = Math.min(availableHeight, Math.max(mobile ? 220 : 260, viewport.height * heightRatio));
         const left = Math.round(viewport.offsetLeft + Math.max(margin, (viewport.width - desiredWidth) / 2));
 
@@ -14764,17 +14704,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function scheduleTabletLayoutRefresh(delay = 40) {
         runtimeClearTimeout(tabletLayoutTimer);
         tabletLayoutTimer = runtimeSetTimeout(() => {
-            tabletLayoutTimer = null;
-            const previousLayout = activeDeviceLayout;
-            applyRootAttributes();
-            const panel = document.getElementById(SCRIPT.panelId);
-            refreshTabletModeUi(panel);
-            if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
-                clearTabletPanelSizing(panel);
-                clearTabletDockSizing();
-            }
-            fitControlToMap();
-            if (panel?.classList.contains('mcms-open')) positionPanelOverlay(true);
+        tabletLayoutTimer = null;
+        const previousLayout = activeDeviceLayout;
+        applyRootAttributes();
+        const panel = document.getElementById(SCRIPT.panelId);
+        refreshTabletModeUi(panel);
+        if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+            clearTabletPanelSizing(panel);
+            clearTabletDockSizing();
+        }
+        fitControlToMap();
+        if (panel?.classList.contains('mcms-open')) positionPanelOverlay(true);
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -14820,25 +14760,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         texts.push(icon.title || '', icon.alt || '', icon.getAttribute?.('aria-label') || '');
 
         try {
-            const anchor = icon.closest('a') || icon.querySelector('a');
-            if (anchor) {
-                hrefs.push(anchor.href || '');
-                classes.push(anchor.className || '');
-                texts.push(anchor.title || '', anchor.getAttribute('aria-label') || '');
-            }
+        const anchor = icon.closest('a') || icon.querySelector('a');
+        if (anchor) {
+            hrefs.push(anchor.href || '');
+            classes.push(anchor.className || '');
+            texts.push(anchor.title || '', anchor.getAttribute('aria-label') || '');
+        }
         } catch (err) {}
 
         try {
-            const imgs = icon.tagName === 'IMG' ? [icon] : Array.from(icon.querySelectorAll('img'));
-            for (const img of imgs) {
-                srcs.push(img.src || '');
-                classes.push(img.className || '');
-                texts.push(img.alt || '', img.title || '', img.getAttribute('aria-label') || '');
-            }
+        const imgs = icon.tagName === 'IMG' ? [icon] : Array.from(icon.querySelectorAll('img'));
+        for (const img of imgs) {
+            srcs.push(img.src || '');
+            classes.push(img.className || '');
+            texts.push(img.alt || '', img.title || '', img.getAttribute('aria-label') || '');
+        }
         } catch (err) {}
 
         try {
-            if (icon.dataset) texts.push(Object.entries(icon.dataset).map(([key, value]) => `${key}:${value}`).join(' '));
+        if (icon.dataset) texts.push(Object.entries(icon.dataset).map(([key, value]) => `${key}:${value}`).join(' '));
         } catch (err) {}
 
         return { hrefs, srcs, classes: classes.join(' ').toLowerCase(), text: texts.join(' ').toLowerCase() };
@@ -14896,10 +14836,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (missionMarkerIndexCache.revision === missionRegistryRevision && missionMarkerIndexCache.registry === registry) return missionMarkerIndexCache;
         const byId = new Map();
         for (const marker of registry) {
-            const missionId = missionIdFromMarker(marker);
-            if (missionId === null) continue;
-            const existing = byId.get(missionId);
-            if (!existing || (!existing?._map && marker?._map) || (!existing?._icon?.isConnected && marker?._icon?.isConnected)) byId.set(missionId, marker);
+        const missionId = missionIdFromMarker(marker);
+        if (missionId === null) continue;
+        const existing = byId.get(missionId);
+        if (!existing || (!existing?._map && marker?._map) || (!existing?._icon?.isConnected && marker?._icon?.isConnected)) byId.set(missionId, marker);
         }
         const markers = Array.from(byId.values());
         missionMarkerIndexCache = { revision: missionRegistryRevision, registry, markers, byId };
@@ -14958,8 +14898,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const compactMatch = raw.match(/(-?[\d.,]+)\s*([km])\b/i);
         if (compactMatch) {
-            const numeric = Number(compactMatch[1].replaceAll(',', ''));
-            if (Number.isFinite(numeric)) return Math.max(0, Math.round(numeric * (compactMatch[2].toLowerCase() === 'm' ? 1000000 : 1000)));
+        const numeric = Number(compactMatch[1].replaceAll(',', ''));
+        if (Number.isFinite(numeric)) return Math.max(0, Math.round(numeric * (compactMatch[2].toLowerCase() === 'm' ? 1000000 : 1000)));
         }
 
         const match = raw.match(/-?\d[\d\s.,]*/);
@@ -14979,13 +14919,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function parseMissionTimestamp(value) {
         if (value instanceof Date) {
-            const timestamp = value.getTime();
-            return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
+        const timestamp = value.getTime();
+        return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
         }
 
         if (typeof value === 'number' && Number.isFinite(value)) {
-            if (value <= 0) return null;
-            return value < 100000000000 ? Math.round(value * 1000) : Math.round(value);
+        if (value <= 0) return null;
+        return value < 100000000000 ? Math.round(value * 1000) : Math.round(value);
         }
 
         const raw = String(value ?? '').trim();
@@ -15026,47 +14966,47 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const liveCurrentValueUpdatedAt = Date.now();
 
         return {
-            ...existing,
-            ...(credits !== null ? { averageCredits: credits } : {}),
-            ...(createdAt !== null ? { createdAt } : {}),
-            ...(allianceSharedAt !== null ? { allianceSharedAt } : {}),
-            ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
-            ...(allianceId !== undefined ? { allianceId } : {}),
-            ...(missionType !== undefined && missionType !== null ? { missionType: String(missionType) } : {}),
-            ...(filterId !== undefined && filterId !== null ? { filterId: String(filterId) } : {}),
-            ...(eventId !== undefined && eventId !== null ? { eventId: String(eventId) } : {}),
-            ...(eventFlag !== undefined && eventFlag !== null ? { isEvent: normaliseMissionBoolean(eventFlag) } : {}),
-            ...(eventName !== undefined && eventName !== null && String(eventName).trim() ? { eventName: normaliseMissionCaption(eventName) } : {}),
-            ...(specialEventFlag !== undefined && specialEventFlag !== null ? { isSpecialEvent: normaliseMissionBoolean(specialEventFlag) } : {}),
-            ...(dateEndCalc !== null ? { dateEndCalc } : {}),
-            ...(dateEnd !== null ? { dateEnd } : {}),
-            ...(dateNow !== null ? { dateNow, dateNowUpdatedAt } : {}),
-            ...(Number.isFinite(vehicleState) ? { vehicleState } : {}),
-            ...(missingTextKnown ? { missingText: normalisedMissingText, missingTextKnown: true } : {}),
-            ...(Number.isFinite(patientsCount) ? { patientsCount } : {}),
-            ...(Number.isFinite(possiblePatientsCount) ? { possiblePatientsCount } : {}),
-            ...(Number.isFinite(prisonersCount) ? { prisonersCount } : {}),
-            ...(Number.isFinite(possiblePrisonersCount) ? { possiblePrisonersCount } : {}),
-            ...(Number.isFinite(liveCurrentValue) ? { liveCurrentValue, liveCurrentValueUpdatedAt } : {}),
-            ...(item.caption ? { caption: normaliseMissionCaption(item.caption) } : {})
+        ...existing,
+        ...(credits !== null ? { averageCredits: credits } : {}),
+        ...(createdAt !== null ? { createdAt } : {}),
+        ...(allianceSharedAt !== null ? { allianceSharedAt } : {}),
+        ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
+        ...(allianceId !== undefined ? { allianceId } : {}),
+        ...(missionType !== undefined && missionType !== null ? { missionType: String(missionType) } : {}),
+        ...(filterId !== undefined && filterId !== null ? { filterId: String(filterId) } : {}),
+        ...(eventId !== undefined && eventId !== null ? { eventId: String(eventId) } : {}),
+        ...(eventFlag !== undefined && eventFlag !== null ? { isEvent: normaliseMissionBoolean(eventFlag) } : {}),
+        ...(eventName !== undefined && eventName !== null && String(eventName).trim() ? { eventName: normaliseMissionCaption(eventName) } : {}),
+        ...(specialEventFlag !== undefined && specialEventFlag !== null ? { isSpecialEvent: normaliseMissionBoolean(specialEventFlag) } : {}),
+        ...(dateEndCalc !== null ? { dateEndCalc } : {}),
+        ...(dateEnd !== null ? { dateEnd } : {}),
+        ...(dateNow !== null ? { dateNow, dateNowUpdatedAt } : {}),
+        ...(Number.isFinite(vehicleState) ? { vehicleState } : {}),
+        ...(missingTextKnown ? { missingText: normalisedMissingText, missingTextKnown: true } : {}),
+        ...(Number.isFinite(patientsCount) ? { patientsCount } : {}),
+        ...(Number.isFinite(possiblePatientsCount) ? { possiblePatientsCount } : {}),
+        ...(Number.isFinite(prisonersCount) ? { prisonersCount } : {}),
+        ...(Number.isFinite(possiblePrisonersCount) ? { possiblePrisonersCount } : {}),
+        ...(Number.isFinite(liveCurrentValue) ? { liveCurrentValue, liveCurrentValueUpdatedAt } : {}),
+        ...(item.caption ? { caption: normaliseMissionCaption(item.caption) } : {})
         };
     }
 
     function captureMissionMarkerData(payload) {
         if (!payload) return;
         if (Array.isArray(payload)) {
-            payload.forEach(captureMissionMarkerData);
-            return;
+        payload.forEach(captureMissionMarkerData);
+        return;
         }
         if (typeof payload !== 'object') return;
 
         const candidates = [payload, payload.params, payload.mission, payload.data].filter(item => item && typeof item === 'object');
         for (const item of candidates) {
-            const missionId = normaliseMissionId(item.id ?? item.mission_id ?? item.missionId);
-            if (missionId === null) continue;
+        const missionId = normaliseMissionId(item.id ?? item.mission_id ?? item.missionId);
+        if (missionId === null) continue;
 
-            const existing = missionOverlayData.get(missionId) || {};
-            setMissionOverlayRecord(missionId, normaliseMissionOverlayRecord(item, existing));
+        const existing = missionOverlayData.get(missionId) || {};
+        setMissionOverlayRecord(missionId, normaliseMissionOverlayRecord(item, existing));
         }
     }
 
@@ -15077,19 +15017,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let escaped = false;
 
         for (let index = startIndex; index < source.length; index += 1) {
-            const char = source[index];
-            if (quote) {
-                if (escaped) escaped = false;
-                else if (char === '\\') escaped = true;
-                else if (char === quote) quote = '';
-                continue;
-            }
-            if (char === '"' || char === "'") { quote = char; continue; }
-            if (char === '{') depth += 1;
-            else if (char === '}') {
-                depth -= 1;
-                if (depth === 0) return source.slice(startIndex, index + 1);
-            }
+        const char = source[index];
+        if (quote) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === quote) quote = '';
+            continue;
+        }
+        if (char === '"' || char === "'") { quote = char; continue; }
+        if (char === '{') depth += 1;
+        else if (char === '}') {
+            depth -= 1;
+            if (depth === 0) return source.slice(startIndex, index + 1);
+        }
         }
         return null;
     }
@@ -15100,16 +15040,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const matcher = /missionMarkerAdd\s*\(/g;
         let captured = 0;
         while (matcher.exec(content)) {
-            let cursor = matcher.lastIndex;
-            while (/\s/.test(content[cursor] || '')) cursor += 1;
-            if (content[cursor] !== '{') continue;
-            const objectText = readBalancedObject(content, cursor);
-            if (!objectText) continue;
-            try {
-                captureMissionMarkerData(JSON.parse(objectText));
-                captured += 1;
-            } catch (err) {}
-            matcher.lastIndex = cursor + objectText.length;
+        let cursor = matcher.lastIndex;
+        while (/\s/.test(content[cursor] || '')) cursor += 1;
+        if (content[cursor] !== '{') continue;
+        const objectText = readBalancedObject(content, cursor);
+        if (!objectText) continue;
+        try {
+            captureMissionMarkerData(JSON.parse(objectText));
+            captured += 1;
+        } catch (err) {}
+        matcher.lastIndex = cursor + objectText.length;
         }
         return captured;
     }
@@ -15133,38 +15073,38 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (missionProgressPageFetchPromise) return missionProgressPageFetchPromise;
 
         missionProgressPageFetchPromise = (async () => {
-            let succeeded = false;
-            try {
-                const requestModes = [
-                    { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' },
-                    { Accept: 'text/html,application/xhtml+xml' }
-                ];
-                for (const headers of requestModes) {
-                    const response = await runtimeFetch('/', {
-                        method: 'GET',
-                        credentials: 'same-origin',
-                        cache: 'no-store',
-                        headers
-                    });
-                    if (!response.ok) continue;
-                    const html = await response.text();
-                    if (!html || !html.includes('missionMarkerAdd')) continue;
-                    const doc = new DOMParser().parseFromString(html, 'text/html');
-                    if (captureMissionMarkerDataFromDocument(doc) > 0) {
-                        succeeded = true;
-                        missionProgressPageLastSuccessAt = Date.now();
-                        criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
-                        return true;
-                    }
+        let succeeded = false;
+        try {
+            const requestModes = [
+                { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' },
+                { Accept: 'text/html,application/xhtml+xml' }
+            ];
+            for (const headers of requestModes) {
+                const response = await runtimeFetch('/', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers
+                });
+                if (!response.ok) continue;
+                const html = await response.text();
+                if (!html || !html.includes('missionMarkerAdd')) continue;
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                if (captureMissionMarkerDataFromDocument(doc) > 0) {
+                    succeeded = true;
+                    missionProgressPageLastSuccessAt = Date.now();
+                    criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
+                    return true;
                 }
-                return false;
-            } catch (err) {
-                return false;
-            } finally {
-                missionProgressPageLastFetch = Date.now();
-                if (!succeeded && missionProgressPageLastSuccessAt === 0) criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, vehicleApiLastFetch, vehicleStatusLastUpdate);
-                missionProgressPageFetchPromise = null;
             }
+            return false;
+        } catch (err) {
+            return false;
+        } finally {
+            missionProgressPageLastFetch = Date.now();
+            if (!succeeded && missionProgressPageLastSuccessAt === 0) criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, vehicleApiLastFetch, vehicleStatusLastUpdate);
+            missionProgressPageFetchPromise = null;
+        }
         })();
 
         return missionProgressPageFetchPromise;
@@ -15178,27 +15118,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const original = current.__mcmsOriginal || current;
         const wrapped = function (...args) {
-            args.forEach(captureMissionMarkerData);
-            const result = original.apply(this, args);
-            invalidateMarkerRegistryCaches('mission');
-            handleMissionSpawnArguments(args);
-            scheduleEnabledMapRefreshes({ includeSnapshots: true, positionPanel: false });
-            return result;
+        args.forEach(captureMissionMarkerData);
+        const result = original.apply(this, args);
+        invalidateMarkerRegistryCaches('mission');
+        handleMissionSpawnArguments(args);
+        scheduleEnabledMapRefreshes({ includeSnapshots: true, positionPanel: false });
+        return result;
         };
 
         try {
-            Object.defineProperty(wrapped, '__mcmsMissionOverlaysWrappedV313', { value: true });
-            Object.defineProperty(wrapped, '__mcmsOriginal', { value: original });
-            pageWindow.missionMarkerAdd = wrapped;
-            if (pageWindow.missionMarkerAdd !== wrapped) return false;
-            runtime.hookRestorers.push(() => {
-                try {
-                    if (pageWindow.missionMarkerAdd === wrapped) pageWindow.missionMarkerAdd = original;
-                } catch (err) {}
-            });
-            return true;
+        Object.defineProperty(wrapped, '__mcmsMissionOverlaysWrappedV313', { value: true });
+        Object.defineProperty(wrapped, '__mcmsOriginal', { value: original });
+        pageWindow.missionMarkerAdd = wrapped;
+        if (pageWindow.missionMarkerAdd !== wrapped) return false;
+        runtime.hookRestorers.push(() => {
+            try {
+                if (pageWindow.missionMarkerAdd === wrapped) pageWindow.missionMarkerAdd = original;
+            } catch (err) {}
+        });
+        return true;
         } catch (err) {
-            return false;
+        return false;
         }
     }
 
@@ -15207,10 +15147,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const direct = parseCreditValue(source.average_credits ?? source.averageCredits ?? source.average_credit);
         if (direct !== null) return direct;
         for (const key of ['options', 'params', 'mission', 'data', 'missionData', '_missionData']) {
-            const nested = source[key];
-            if (!nested || typeof nested !== 'object') continue;
-            const value = parseCreditValue(nested.average_credits ?? nested.averageCredits ?? nested.average_credit);
-            if (value !== null) return value;
+        const nested = source[key];
+        if (!nested || typeof nested !== 'object') continue;
+        const value = parseCreditValue(nested.average_credits ?? nested.averageCredits ?? nested.average_credit);
+        if (value !== null) return value;
         }
         return null;
     }
@@ -15220,25 +15160,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!panel) return null;
 
         const selectors = [
-            '[average_credits]', '[average-credits]', '[data-average-credits]',
-            '[data-average_credits]', '[data-average-credit]', '[data-mission-credits]'
+        '[average_credits]', '[average-credits]', '[data-average-credits]',
+        '[data-average_credits]', '[data-average-credit]', '[data-mission-credits]'
         ];
         const nodes = [panel, ...panel.querySelectorAll(selectors.join(','))];
         const attributes = ['average_credits', 'average-credits', 'data-average-credits', 'data-average_credits', 'data-average-credit', 'data-mission-credits'];
 
         for (const node of nodes) {
-            for (const attribute of attributes) {
-                const value = parseCreditValue(node.getAttribute?.(attribute));
-                if (value !== null) return value;
-            }
+        for (const attribute of attributes) {
+            const value = parseCreditValue(node.getAttribute?.(attribute));
+            if (value !== null) return value;
+        }
         }
 
         for (const node of panel.querySelectorAll('span, small, .label, .badge')) {
-            const text = String(node.textContent || '').trim();
-            if (!/[≈~]/.test(text)) continue;
-            const match = text.match(/[≈~]\s*([\d][\d.,\s]*(?:[kKmM])?)/);
-            const value = parseCreditValue(match?.[1]);
-            if (value !== null) return value;
+        const text = String(node.textContent || '').trim();
+        if (!/[≈~]/.test(text)) continue;
+        const match = text.match(/[≈~]\s*([\d][\d.,\s]*(?:[kKmM])?)/);
+        const value = parseCreditValue(match?.[1]);
+        if (value !== null) return value;
         }
 
         return null;
@@ -15250,14 +15190,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const markerCredits = exactCreditFromObject(marker);
         if (markerCredits !== null) {
-            setMissionOverlayRecord(missionId, { ...(cached || {}), averageCredits: markerCredits });
-            return markerCredits;
+        setMissionOverlayRecord(missionId, { ...(cached || {}), averageCredits: markerCredits });
+        return markerCredits;
         }
 
         const panelCredits = creditsFromMissionPanel(missionId);
         if (panelCredits !== null) {
-            setMissionOverlayRecord(missionId, { ...(cached || {}), averageCredits: panelCredits });
-            return panelCredits;
+        setMissionOverlayRecord(missionId, { ...(cached || {}), averageCredits: panelCredits });
+        return panelCredits;
         }
 
         return null;
@@ -15267,9 +15207,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const cached = missionOverlayData.get(missionId);
         const panel = getMissionPanelElement(missionId);
         return marker?.user_id ?? marker?.userId ?? marker?.options?.user_id ?? marker?.options?.userId
-            ?? cached?.userId
-            ?? panel?.getAttribute?.('data-user-id') ?? panel?.getAttribute?.('data-user_id')
-            ?? panel?.dataset?.userId ?? null;
+        ?? cached?.userId
+        ?? panel?.getAttribute?.('data-user-id') ?? panel?.getAttribute?.('data-user_id')
+        ?? panel?.dataset?.userId ?? null;
     }
 
     function currentMissionUserId() {
@@ -15283,42 +15223,42 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const panel = document.getElementById(`mission_${id}`);
         const pieces = [];
         const containers = [marker, marker?.options, marker?.params, marker?.mission, marker?.data, overlay, snapshot]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         for (const item of containers) {
-            for (const key of [
-                'mission_type', 'missionType', 'filter_id', 'filterId', 'event_id', 'eventId',
-                'event_name', 'eventName', 'event_title', 'eventTitle', 'special_event', 'specialEvent',
-                'global_event', 'globalEvent', 'developer_event', 'developerEvent',
-                'kind', 'category', 'source', 'alliance_id', 'allianceId', 'alliance_shared_at',
-                'allianceSharedAt', 'shared_at', 'sharedAt'
-            ]) {
-                const value = item[key];
-                if (value !== undefined && value !== null && value !== '') pieces.push(`${key}:${value}`);
-            }
+        for (const key of [
+            'mission_type', 'missionType', 'filter_id', 'filterId', 'event_id', 'eventId',
+            'event_name', 'eventName', 'event_title', 'eventTitle', 'special_event', 'specialEvent',
+            'global_event', 'globalEvent', 'developer_event', 'developerEvent',
+            'kind', 'category', 'source', 'alliance_id', 'allianceId', 'alliance_shared_at',
+            'allianceSharedAt', 'shared_at', 'sharedAt'
+        ]) {
+            const value = item[key];
+            if (value !== undefined && value !== null && value !== '') pieces.push(`${key}:${value}`);
+        }
         }
         if (panel) {
-            pieces.push(panel.id || '', panel.className || '');
+        pieces.push(panel.id || '', panel.className || '');
+        try {
+            for (const [key, value] of Object.entries(panel.dataset || {})) pieces.push(`${key}:${value}`);
+        } catch (err) {}
+        for (const selector of [
+            '[data-mission-type]', '[data-mission_type]', '[data-filter-id]', '[data-filter_id]',
+            '[data-event-id]', '[data-event_id]', '[data-event-name]', '[data-event-title]',
+            '[data-special-event]', '[data-global-event]', '[data-alliance-id]', '[data-alliance_id]',
+            '.mission_event', '.mission-event', '.special-event', '.global-event', '.alliance_mission', '.alliance-mission'
+        ]) {
+            const node = panel.querySelector?.(selector);
+            if (!node) continue;
+            pieces.push(node.id || '', node.className || '');
             try {
-                for (const [key, value] of Object.entries(panel.dataset || {})) pieces.push(`${key}:${value}`);
+                for (const [key, value] of Object.entries(node.dataset || {})) pieces.push(`${key}:${value}`);
             } catch (err) {}
-            for (const selector of [
-                '[data-mission-type]', '[data-mission_type]', '[data-filter-id]', '[data-filter_id]',
-                '[data-event-id]', '[data-event_id]', '[data-event-name]', '[data-event-title]',
-                '[data-special-event]', '[data-global-event]', '[data-alliance-id]', '[data-alliance_id]',
-                '.mission_event', '.mission-event', '.special-event', '.global-event', '.alliance_mission', '.alliance-mission'
-            ]) {
-                const node = panel.querySelector?.(selector);
-                if (!node) continue;
-                pieces.push(node.id || '', node.className || '');
-                try {
-                    for (const [key, value] of Object.entries(node.dataset || {})) pieces.push(`${key}:${value}`);
-                } catch (err) {}
-            }
+        }
         }
         const icon = marker?._icon;
         if (icon) {
-            const signal = getStrongMarkerSignal(icon);
-            pieces.push(signal.classes, signal.text, ...signal.hrefs, ...signal.srcs);
+        const signal = getStrongMarkerSignal(icon);
+        pieces.push(signal.classes, signal.text, ...signal.hrefs, ...signal.srcs);
         }
         return pieces.join(' ').toLowerCase();
     }
@@ -15354,7 +15294,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const allianceId = overlay.allianceId ?? marker?.alliance_id ?? marker?.allianceId ?? marker?.options?.alliance_id;
         const sharedAt = overlay.allianceSharedAt ?? marker?.alliance_shared_at ?? marker?.allianceSharedAt ?? marker?.options?.alliance_shared_at;
         return (allianceId !== undefined && allianceId !== null && allianceId !== '' && String(allianceId) !== '0')
-            || (sharedAt !== undefined && sharedAt !== null && sharedAt !== '' && String(sharedAt) !== '0');
+        || (sharedAt !== undefined && sharedAt !== null && sharedAt !== '' && String(sharedAt) !== '0');
     }
 
     function isPersonalMissionLayer(marker, missionId) {
@@ -15370,12 +15310,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (id === null) return false;
         const overlay = missionOverlayData.get(id) || {};
         const containers = [marker, marker?.options, marker?.params, marker?.mission, marker?.data, overlay, snapshot]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         for (const item of containers) {
-            const explicit = item.sw ?? item.sicherheitswache ?? item.security_watch ?? item.securityWatch ?? item.is_event ?? item.isEvent ?? item.event;
-            if (normaliseMissionBoolean(explicit)) return true;
-            const eventId = item.event_id ?? item.eventId;
-            if (eventId !== undefined && eventId !== null && eventId !== '' && String(eventId) !== '0' && String(eventId).toLowerCase() !== 'false') return true;
+        const explicit = item.sw ?? item.sicherheitswache ?? item.security_watch ?? item.securityWatch ?? item.is_event ?? item.isEvent ?? item.event;
+        if (normaliseMissionBoolean(explicit)) return true;
+        const eventId = item.event_id ?? item.eventId;
+        if (eventId !== undefined && eventId !== null && eventId !== '' && String(eventId) !== '0' && String(eventId).toLowerCase() !== 'false') return true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
         return /(?:^|[\s_:-])(event|event_mission|planned|planned_mission|sicherheitswache|security[\s_:-]?watch|standby|special_event)(?:$|[\s_:-])/i.test(signal);
@@ -15383,23 +15323,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function activeDeveloperEventLabel() {
         const selectors = [
-            '#missions .alert-info', '#missions .alert-success', '#mission_list .alert-info', '#mission_list .alert-success',
-            '.missions-panel .alert-info', '.missions-panel .alert-success', '.alert-info', '.alert-success'
+        '#missions .alert-info', '#missions .alert-success', '#mission_list .alert-info', '#mission_list .alert-success',
+        '.missions-panel .alert-info', '.missions-panel .alert-success', '.alert-info', '.alert-success'
         ];
         const seen = new Set();
         for (const selector of selectors) {
-            let nodes = [];
-            try { nodes = Array.from(document.querySelectorAll(selector)).slice(0, 24); } catch (err) {}
-            for (const node of nodes) {
-                if (!node?.isConnected || seen.has(node)) continue;
-                seen.add(node);
-                const text = normaliseMissionCaption(String(node.textContent || '')).replace(/\s+/g, ' ').trim();
-                if (!text || text.length > 900) continue;
-                const related = text.match(/more\s+(.{2,70}?)\s+related\s+missions\s+will\s+(?:show|appear)/i);
-                if (related?.[1]) return `${related[1].trim().replace(/\bevent\b/ig, '').trim()} Event`;
-                const named = text.match(/(?:special|seasonal|global)\s+event\s*[:\-–—]?\s*([^.!|]{2,70})/i);
-                if (named?.[1]) return named[1].trim();
-            }
+        let nodes = [];
+        try { nodes = Array.from(document.querySelectorAll(selector)).slice(0, 24); } catch (err) {}
+        for (const node of nodes) {
+            if (!node?.isConnected || seen.has(node)) continue;
+            seen.add(node);
+            const text = normaliseMissionCaption(String(node.textContent || '')).replace(/\s+/g, ' ').trim();
+            if (!text || text.length > 900) continue;
+            const related = text.match(/more\s+(.{2,70}?)\s+related\s+missions\s+will\s+(?:show|appear)/i);
+            if (related?.[1]) return `${related[1].trim().replace(/\bevent\b/ig, '').trim()} Event`;
+            const named = text.match(/(?:special|seasonal|global)\s+event\s*[:\-–—]?\s*([^.!|]{2,70})/i);
+            if (named?.[1]) return named[1].trim();
+        }
         }
         return '';
     }
@@ -15431,10 +15371,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function normaliseDeveloperEventMissionTitle(value) {
         return normaliseMissionCaption(value)
-            .replace(/^\s*\[\s*event\s*\]\s*/i, '')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .toLowerCase();
+        .replace(/^\s*\[\s*event\s*\]\s*/i, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
     }
 
     function knownDeveloperEventFallback(marker, missionId, snapshot = null) {
@@ -15442,16 +15382,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (id === null) return { active: false, label: '', eventId: '' };
         const overlay = missionOverlayData.get(id) || {};
         const title = normaliseDeveloperEventMissionTitle(
-            snapshot?.caption ?? overlay.caption ?? getMissionCaption(marker, id)
+        snapshot?.caption ?? overlay.caption ?? getMissionCaption(marker, id)
         );
         if (!title || !missionIsEvent(marker, id, snapshot)) return { active: false, label: '', eventId: '' };
         if (FOOTBALL_SPECIAL_EVENT_MISSIONS.has(title)) {
-            return {
-                active: true,
-                label: 'FOOTBALL EVENT',
-                eventId: 'football-title-fallback',
-                source: 'known-title'
-            };
+        return {
+            active: true,
+            label: 'FOOTBALL EVENT',
+            eventId: 'football-title-fallback',
+            source: 'known-title'
+        };
         }
         return { active: false, label: '', eventId: '' };
     }
@@ -15461,17 +15401,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (id === null) return { active: false, label: '', eventId: '' };
         const overlay = missionOverlayData.get(id) || {};
         const containers = [marker, marker?.options, marker?.params, marker?.mission, marker?.data, overlay, snapshot]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         let eventId = '';
         let eventName = '';
         let explicitSpecial = false;
         for (const item of containers) {
-            const rawEventId = item.event_id ?? item.eventId ?? item.global_event_id ?? item.globalEventId ?? item.active_event_id ?? item.activeEventId;
-            if (rawEventId !== undefined && rawEventId !== null && rawEventId !== '' && String(rawEventId) !== '0' && String(rawEventId).toLowerCase() !== 'false') eventId = String(rawEventId);
-            const rawName = item.event_name ?? item.eventName ?? item.event_title ?? item.eventTitle ?? item.event_caption ?? item.eventCaption;
-            if (!eventName && rawName !== undefined && rawName !== null && String(rawName).trim()) eventName = String(rawName);
-            const rawSpecial = item.special_event ?? item.specialEvent ?? item.is_special_event ?? item.isSpecialEvent ?? item.global_event ?? item.globalEvent ?? item.developer_event ?? item.developerEvent;
-            if (normaliseMissionBoolean(rawSpecial)) explicitSpecial = true;
+        const rawEventId = item.event_id ?? item.eventId ?? item.global_event_id ?? item.globalEventId ?? item.active_event_id ?? item.activeEventId;
+        if (rawEventId !== undefined && rawEventId !== null && rawEventId !== '' && String(rawEventId) !== '0' && String(rawEventId).toLowerCase() !== 'false') eventId = String(rawEventId);
+        const rawName = item.event_name ?? item.eventName ?? item.event_title ?? item.eventTitle ?? item.event_caption ?? item.eventCaption;
+        if (!eventName && rawName !== undefined && rawName !== null && String(rawName).trim()) eventName = String(rawName);
+        const rawSpecial = item.special_event ?? item.specialEvent ?? item.is_special_event ?? item.isSpecialEvent ?? item.global_event ?? item.globalEvent ?? item.developer_event ?? item.developerEvent;
+        if (normaliseMissionBoolean(rawSpecial)) explicitSpecial = true;
         }
         const signal = missionStructuredTypeSignal(marker, id, snapshot);
         const signalSpecial = /(?:^|[\s_:-])(special_event|global_event|seasonal_event|developer_event|world_event)(?:$|[\s_:-])/i.test(signal);
@@ -15529,7 +15469,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let pane = null;
         try { pane = map.getPane(MISSION_OVERLAY_PANE); } catch (err) {}
         if (!pane) {
-            try { pane = map.createPane(MISSION_OVERLAY_PANE); } catch (err) { pane = null; }
+        try { pane = map.createPane(MISSION_OVERLAY_PANE); } catch (err) { pane = null; }
         }
         if (!pane) return null;
 
@@ -15542,7 +15482,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function clearAllianceCreditLabels() {
         if (allianceCreditGroup) {
-            try { allianceCreditGroup.clearLayers(); allianceCreditGroup.remove(); } catch (err) {}
+        try { allianceCreditGroup.clearLayers(); allianceCreditGroup.remove(); } catch (err) {}
         }
         allianceCreditLabels.clear();
         allianceCreditGroup = null;
@@ -15551,11 +15491,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function missionVehicleStateFromObject(source) {
         if (!source || typeof source !== 'object') return null;
         const containers = [source, source.options, source.params, source.mission, source.data, source.missionData, source._missionData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
 
         for (const item of containers) {
-            const value = Number(item.vehicle_state ?? item.vehicleState);
-            if (Number.isFinite(value)) return value;
+        const value = Number(item.vehicle_state ?? item.vehicleState);
+        if (Number.isFinite(value)) return value;
         }
         return null;
     }
@@ -15563,19 +15503,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function vehicleAssignedMissionId(vehicle) {
         if (!vehicle || typeof vehicle !== 'object') return null;
         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         const keys = ['mission_id', 'missionId', 'target_mission_id', 'targetMissionId'];
 
         for (const item of containers) {
-            const targetType = String(item.target_type ?? item.targetType ?? '').toLowerCase();
-            if (targetType === 'mission') {
-                const targetMissionId = normaliseMissionId(item.target_id ?? item.targetId);
-                if (targetMissionId !== null && targetMissionId !== '0') return targetMissionId;
-            }
-            for (const key of keys) {
-                const missionId = normaliseMissionId(item[key]);
-                if (missionId !== null && missionId !== '0') return missionId;
-            }
+        const targetType = String(item.target_type ?? item.targetType ?? '').toLowerCase();
+        if (targetType === 'mission') {
+            const targetMissionId = normaliseMissionId(item.target_id ?? item.targetId);
+            if (targetMissionId !== null && targetMissionId !== '0') return targetMissionId;
+        }
+        for (const key of keys) {
+            const missionId = normaliseMissionId(item[key]);
+            if (missionId !== null && missionId !== '0') return missionId;
+        }
         }
         return null;
     }
@@ -15583,11 +15523,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function vehicleOwnerId(vehicle) {
         if (!vehicle || typeof vehicle !== 'object') return null;
         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
 
         for (const item of containers) {
-            const value = item.user_id ?? item.userId ?? item.owner_id ?? item.ownerId;
-            if (value !== undefined && value !== null && value !== '') return String(value);
+        const value = item.user_id ?? item.userId ?? item.owner_id ?? item.ownerId;
+        if (value !== undefined && value !== null && value !== '') return String(value);
         }
         return null;
     }
@@ -15595,10 +15535,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function vehicleRecordId(vehicle) {
         if (!vehicle || typeof vehicle !== 'object') return null;
         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         for (const item of containers) {
-            const value = item.id ?? item.vehicle_id ?? item.vehicleId;
-            if (value !== undefined && value !== null && value !== '') return String(value);
+        const value = item.id ?? item.vehicle_id ?? item.vehicleId;
+        if (value !== undefined && value !== null && value !== '') return String(value);
         }
         return null;
     }
@@ -15613,32 +15553,32 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function getPersonalVehicleRecords() {
         const now = Date.now();
         if (
-            personalVehicleRecordsCache.vehicleRevision === vehicleDataRevision &&
-            personalVehicleRecordsCache.markerRevision === vehicleRegistryRevision &&
-            personalVehicleRecordsCache.apiReady === vehicleApiReady &&
-            (vehicleApiReady || now - personalVehicleRecordsCache.createdAt <= 1000)
+        personalVehicleRecordsCache.vehicleRevision === vehicleDataRevision &&
+        personalVehicleRecordsCache.markerRevision === vehicleRegistryRevision &&
+        personalVehicleRecordsCache.apiReady === vehicleApiReady &&
+        (vehicleApiReady || now - personalVehicleRecordsCache.createdAt <= 1000)
         ) return personalVehicleRecordsCache.records;
 
         let records;
         if (vehicleApiReady) {
-            records = Array.from(personalVehicleApiCache.values());
+        records = Array.from(personalVehicleApiCache.values());
         } else {
-            const merged = new Map(personalVehicleApiCache);
-            const currentUserId = currentMissionUserId();
-            for (const vehicle of getVehicleMarkerLayers()) {
-                const ownerId = vehicleOwnerId(vehicle);
-                if (currentUserId !== null && ownerId !== null && ownerId !== currentUserId) continue;
-                const id = vehicleRecordId(vehicle) || `marker:${vehicle?._leaflet_id ?? merged.size}`;
-                if (!merged.has(id)) merged.set(id, vehicle);
-            }
-            records = Array.from(merged.values());
+        const merged = new Map(personalVehicleApiCache);
+        const currentUserId = currentMissionUserId();
+        for (const vehicle of getVehicleMarkerLayers()) {
+            const ownerId = vehicleOwnerId(vehicle);
+            if (currentUserId !== null && ownerId !== null && ownerId !== currentUserId) continue;
+            const id = vehicleRecordId(vehicle) || `marker:${vehicle?._leaflet_id ?? merged.size}`;
+            if (!merged.has(id)) merged.set(id, vehicle);
+        }
+        records = Array.from(merged.values());
         }
         personalVehicleRecordsCache = {
-            vehicleRevision: vehicleDataRevision,
-            markerRevision: vehicleRegistryRevision,
-            apiReady: vehicleApiReady,
-            createdAt: now,
-            records
+        vehicleRevision: vehicleDataRevision,
+        markerRevision: vehicleRegistryRevision,
+        apiReady: vehicleApiReady,
+        createdAt: now,
+        records
         };
         return records;
     }
@@ -15655,55 +15595,55 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const currentUserId = currentMissionUserId();
 
         for (const vehicle of getPersonalVehicleRecords()) {
-            const missionId = vehicleAssignedMissionId(vehicle);
-            if (missionId === null) continue;
+        const missionId = vehicleAssignedMissionId(vehicle);
+        if (missionId === null) continue;
 
-            if (!vehicleApiReady) {
-                const ownerId = vehicleOwnerId(vehicle);
-                if (currentUserId !== null && ownerId !== null && ownerId !== currentUserId) continue;
-            }
+        if (!vehicleApiReady) {
+            const ownerId = vehicleOwnerId(vehicle);
+            if (currentUserId !== null && ownerId !== null && ownerId !== currentUserId) continue;
+        }
 
-            const vehicleId = vehicleRecordId(vehicle) || `anon:${seenVehicles.size}`;
-            if (seenVehicles.has(vehicleId)) continue;
-            seenVehicles.add(vehicleId);
+        const vehicleId = vehicleRecordId(vehicle) || `anon:${seenVehicles.size}`;
+        if (seenVehicles.has(vehicleId)) continue;
+        seenVehicles.add(vehicleId);
 
-            let commitment = missionCommitmentIndex.get(missionId);
-            if (!commitment) {
-                commitment = {
-                    total: 0,
-                    active: 0,
-                    onScene: 0,
-                    onWay: 0,
-                    travelling: 0,
-                    transporting: 0,
-                    awaitingPickup: 0,
-                    requestingDispatch: 0,
-                    outOfService: 0,
-                    available: 0,
-                    unknownStatus: 0
-                };
-                missionCommitmentIndex.set(missionId, commitment);
-            }
+        let commitment = missionCommitmentIndex.get(missionId);
+        if (!commitment) {
+            commitment = {
+                total: 0,
+                active: 0,
+                onScene: 0,
+                onWay: 0,
+                travelling: 0,
+                transporting: 0,
+                awaitingPickup: 0,
+                requestingDispatch: 0,
+                outOfService: 0,
+                available: 0,
+                unknownStatus: 0
+            };
+            missionCommitmentIndex.set(missionId, commitment);
+        }
 
-            commitment.total += 1;
-            const code = vehicleStatusCode(vehicle);
-            if (code === 3) {
-                commitment.onWay += 1;
-                commitment.travelling += 1;
-                commitment.active += 1;
-            } else if (code === 4) {
-                commitment.onScene += 1;
-                commitment.active += 1;
-            } else if (code === 7) {
-                commitment.transporting += 1;
-                commitment.active += 1;
-            } else if (code === 9) {
-                commitment.awaitingPickup += 1;
-                commitment.active += 1;
-            } else if (code === 5) commitment.requestingDispatch += 1;
-            else if (code === 6) commitment.outOfService += 1;
-            else if (code === 1 || code === 2) commitment.available += 1;
-            else commitment.unknownStatus += 1;
+        commitment.total += 1;
+        const code = vehicleStatusCode(vehicle);
+        if (code === 3) {
+            commitment.onWay += 1;
+            commitment.travelling += 1;
+            commitment.active += 1;
+        } else if (code === 4) {
+            commitment.onScene += 1;
+            commitment.active += 1;
+        } else if (code === 7) {
+            commitment.transporting += 1;
+            commitment.active += 1;
+        } else if (code === 9) {
+            commitment.awaitingPickup += 1;
+            commitment.active += 1;
+        } else if (code === 5) commitment.requestingDispatch += 1;
+        else if (code === 6) commitment.outOfService += 1;
+        else if (code === 1 || code === 2) commitment.available += 1;
+        else commitment.unknownStatus += 1;
         }
 
         missionCommitmentIndexDirty = false;
@@ -15717,47 +15657,47 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!force && vehicleApiReady && now - vehicleApiLastFetch < VEHICLE_API_MIN_REFRESH_MS) return Promise.resolve(true);
 
         vehicleApiFetchPromise = runtimeFetch(new URL('/api/vehicles', document.baseURI || pageWindow.location.href), {
-            credentials: 'same-origin',
-            cache: 'no-store',
-            headers: { Accept: 'application/json' }
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
         })
-            .then(response => {
-                if (!response.ok) throw new Error(`Vehicle API ${response.status}`);
-                return response.json();
-            })
-            .then(payload => {
-                const records = normaliseVehicleApiPayload(payload);
-                const next = new Map();
-                for (const vehicle of records) {
-                    const id = vehicleRecordId(vehicle);
-                    if (id !== null) next.set(id, vehicle);
-                }
-                personalVehicleApiCache.clear();
-                for (const [id, vehicle] of next) personalVehicleApiCache.set(id, vehicle);
-                vehicleApiReady = true;
-                vehicleApiLastFetch = Date.now();
-                vehicleStatusLastUpdate = vehicleApiLastFetch;
-                vehicleApiLastError = 0;
-                vehicleDataRevision += 1;
-                invalidateMarkerRegistryCaches('vehicle');
-                invalidateMissionCommitmentIndex();
-                rebuildMissionCommitmentIndex();
-                resourceGapAnalysisCache.clear();
-                resourceGapVehicleContextCache.key = '';
-                if (!startupDataPassActive) {
-                    if (state.unitCommitment) scheduleUnitCommitmentRefresh(280);
-                    scheduleMissionSnapshotRefresh(650);
-                    if (state.resourceGap.enabled) scheduleResourceGapRefresh(520);
-                    if (operationalUiIsVisible()) scheduleOperationalPanelsRender(750);
-                    if (criticalViewActive) runtimeSetTimeout(() => { applyCriticalViewFilter(); fitCriticalMissions(); }, 320);
-                }
-                return true;
-            })
-            .catch(() => {
-                vehicleApiLastError = Date.now();
-                return false;
-            })
-            .finally(() => { vehicleApiFetchPromise = null; });
+        .then(response => {
+            if (!response.ok) throw new Error(`Vehicle API ${response.status}`);
+            return response.json();
+        })
+        .then(payload => {
+            const records = normaliseVehicleApiPayload(payload);
+            const next = new Map();
+            for (const vehicle of records) {
+                const id = vehicleRecordId(vehicle);
+                if (id !== null) next.set(id, vehicle);
+            }
+            personalVehicleApiCache.clear();
+            for (const [id, vehicle] of next) personalVehicleApiCache.set(id, vehicle);
+            vehicleApiReady = true;
+            vehicleApiLastFetch = Date.now();
+            vehicleStatusLastUpdate = vehicleApiLastFetch;
+            vehicleApiLastError = 0;
+            vehicleDataRevision += 1;
+            invalidateMarkerRegistryCaches('vehicle');
+            invalidateMissionCommitmentIndex();
+            rebuildMissionCommitmentIndex();
+            resourceGapAnalysisCache.clear();
+            resourceGapVehicleContextCache.key = '';
+            if (!startupDataPassActive) {
+                if (state.unitCommitment) scheduleUnitCommitmentRefresh(280);
+                scheduleMissionSnapshotRefresh(650);
+                if (state.resourceGap.enabled) scheduleResourceGapRefresh(520);
+                if (operationalUiIsVisible()) scheduleOperationalPanelsRender(750);
+                if (criticalViewActive) runtimeSetTimeout(() => { applyCriticalViewFilter(); fitCriticalMissions(); }, 320);
+            }
+            return true;
+        })
+        .catch(() => {
+            vehicleApiLastError = Date.now();
+            return false;
+        })
+        .finally(() => { vehicleApiFetchPromise = null; });
 
         return vehicleApiFetchPromise;
     }
@@ -15773,13 +15713,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const targetType = Number(message.target_building_id) > 0 ? 'building' : Number(message.mission_id) > 0 ? 'mission' : null;
         const targetId = targetType === 'building' ? message.target_building_id : targetType === 'mission' ? message.mission_id : null;
         personalVehicleApiCache.set(id, {
-            ...existing,
-            id: Number.isFinite(Number(message.id)) ? Number(message.id) : message.id,
-            caption: message.caption ?? existing.caption,
-            fms_real: Number.isFinite(Number(message.fms_real)) ? Number(message.fms_real) : existing.fms_real,
-            fms_show: Number.isFinite(Number(message.fms)) ? Number(message.fms) : existing.fms_show,
-            target_type: targetType,
-            target_id: targetId
+        ...existing,
+        id: Number.isFinite(Number(message.id)) ? Number(message.id) : message.id,
+        caption: message.caption ?? existing.caption,
+        fms_real: Number.isFinite(Number(message.fms_real)) ? Number(message.fms_real) : existing.fms_real,
+        fms_show: Number.isFinite(Number(message.fms)) ? Number(message.fms) : existing.fms_show,
+        target_type: targetType,
+        target_id: targetId
         });
         vehicleDataRevision += 1;
         vehicleStatusLastUpdate = Date.now();
@@ -15801,22 +15741,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const original = current.__mcmsOriginal || current;
         const wrapped = function (...args) {
-            for (const arg of args) captureRadioVehicleMessage(arg);
-            return original.apply(this, args);
+        for (const arg of args) captureRadioVehicleMessage(arg);
+        return original.apply(this, args);
         };
         try {
-            Object.defineProperty(wrapped, '__mcmsVehicleDataWrappedV313', { value: true });
-            Object.defineProperty(wrapped, '__mcmsOriginal', { value: original });
-            pageWindow.radioMessage = wrapped;
-            if (pageWindow.radioMessage !== wrapped) return false;
-            runtime.hookRestorers.push(() => {
-                try {
-                    if (pageWindow.radioMessage === wrapped) pageWindow.radioMessage = original;
-                } catch (err) {}
-            });
-            return true;
+        Object.defineProperty(wrapped, '__mcmsVehicleDataWrappedV313', { value: true });
+        Object.defineProperty(wrapped, '__mcmsOriginal', { value: original });
+        pageWindow.radioMessage = wrapped;
+        if (pageWindow.radioMessage !== wrapped) return false;
+        runtime.hookRestorers.push(() => {
+            try {
+                if (pageWindow.radioMessage === wrapped) pageWindow.radioMessage = original;
+            } catch (err) {}
+        });
+        return true;
         } catch (err) {
-            return false;
+        return false;
         }
     }
 
@@ -15830,7 +15770,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const cached = missionOverlayData.get(missionId);
         if (Number.isFinite(Number(cached?.vehicleState))) {
-            return { hasUnit: Number(cached.vehicleState) > 0, known: true, commitment };
+        return { hasUnit: Number(cached.vehicleState) > 0, known: true, commitment };
         }
 
         return { hasUnit: false, known: false, commitment };
@@ -15843,18 +15783,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function makeAllianceCreditIcon(credits, qualified) {
         const statusClass = qualified ? 'mcms-credit-qualified' : 'mcms-credit-unqualified';
         return pageWindow.L.divIcon({
-            className: 'mcms-alliance-credit-icon',
-            html: `<span class="mcms-alliance-credit-badge ${statusClass}">≈ ${escapeHtml(formatAllianceCredits(credits))}</span>`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 18]
+        className: 'mcms-alliance-credit-icon',
+        html: `<span class="mcms-alliance-credit-badge ${statusClass}">≈ ${escapeHtml(formatAllianceCredits(credits))}</span>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 18]
         });
     }
 
     function updateAllianceCreditLabels() {
         if (state.economyMode && economyMapMoving) return;
         if (!state.allianceCredits || !state.visibility.allianceMissions) {
-            clearAllianceCreditLabels();
-            return;
+        clearAllianceCreditLabels();
+        return;
         }
 
         scanInlineMissionMarkerData();
@@ -15862,76 +15802,76 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const map = findLeafletMapInstance(false);
         if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-            clearAllianceCreditLabels();
-            return;
+        clearAllianceCreditLabels();
+        return;
         }
         const floatPane = ensureMissionFloatPane(map);
         if (!floatPane) {
-            clearAllianceCreditLabels();
-            return;
+        clearAllianceCreditLabels();
+        return;
         }
         const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
 
         try {
-            if (!allianceCreditGroup || allianceCreditGroup._map !== map) {
-                clearAllianceCreditLabels();
-                allianceCreditGroup = pageWindow.L.layerGroup();
-                allianceCreditGroup.__mcmsAllianceCreditLayer = true;
-                allianceCreditGroup.addTo(map);
-            }
-            const activeMissionIds = new Set();
-
-            for (const marker of getMissionMarkerIndex().markers) {
-                const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-                if (missionId === null || !isAllianceMissionLayer(marker, missionId)) continue;
-
-                let latLng;
-                try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
-                if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
-
-                try {
-                    const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
-                    if (!isOnMap) continue;
-                } catch (err) {}
-
-                const credits = getMissionAverageCredits(marker, missionId);
-                if (credits === null || credits < state.allianceCreditMinimum) continue;
-                const qualified = missionHasPersonalUnit(marker, missionId);
-                activeMissionIds.add(missionId);
-
-                let label = allianceCreditLabels.get(missionId);
-                if (!label) {
-                    label = pageWindow.L.marker(latLng, {
-                        interactive: false,
-                        keyboard: false,
-                        bubblingMouseEvents: false,
-                        pane: floatPane,
-                        zIndexOffset: 0,
-                        icon: makeAllianceCreditIcon(credits, qualified)
-                    });
-                    label.__mcmsAllianceCreditLabel = true;
-                    label.__mcmsAllianceCreditValue = credits;
-                    label.__mcmsAllianceCreditQualified = qualified;
-                    label.addTo(allianceCreditGroup);
-                    allianceCreditLabels.set(missionId, label);
-                    continue;
-                }
-
-                try { label.setLatLng(latLng); } catch (err) {}
-                if (label.__mcmsAllianceCreditValue !== credits || label.__mcmsAllianceCreditQualified !== qualified) {
-                    label.__mcmsAllianceCreditValue = credits;
-                    label.__mcmsAllianceCreditQualified = qualified;
-                    try { label.setIcon(makeAllianceCreditIcon(credits, qualified)); } catch (err) {}
-                }
-            }
-
-            for (const [missionId, label] of allianceCreditLabels.entries()) {
-                if (activeMissionIds.has(missionId)) continue;
-                allianceCreditLabels.delete(missionId);
-                try { allianceCreditGroup.removeLayer(label); } catch (err) {}
-            }
-        } catch (err) {
+        if (!allianceCreditGroup || allianceCreditGroup._map !== map) {
             clearAllianceCreditLabels();
+            allianceCreditGroup = pageWindow.L.layerGroup();
+            allianceCreditGroup.__mcmsAllianceCreditLayer = true;
+            allianceCreditGroup.addTo(map);
+        }
+        const activeMissionIds = new Set();
+
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null || !isAllianceMissionLayer(marker, missionId)) continue;
+
+            let latLng;
+            try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+
+            try {
+                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!isOnMap) continue;
+            } catch (err) {}
+
+            const credits = getMissionAverageCredits(marker, missionId);
+            if (credits === null || credits < state.allianceCreditMinimum) continue;
+            const qualified = missionHasPersonalUnit(marker, missionId);
+            activeMissionIds.add(missionId);
+
+            let label = allianceCreditLabels.get(missionId);
+            if (!label) {
+                label = pageWindow.L.marker(latLng, {
+                    interactive: false,
+                    keyboard: false,
+                    bubblingMouseEvents: false,
+                    pane: floatPane,
+                    zIndexOffset: 0,
+                    icon: makeAllianceCreditIcon(credits, qualified)
+                });
+                label.__mcmsAllianceCreditLabel = true;
+                label.__mcmsAllianceCreditValue = credits;
+                label.__mcmsAllianceCreditQualified = qualified;
+                label.addTo(allianceCreditGroup);
+                allianceCreditLabels.set(missionId, label);
+                continue;
+            }
+
+            try { label.setLatLng(latLng); } catch (err) {}
+            if (label.__mcmsAllianceCreditValue !== credits || label.__mcmsAllianceCreditQualified !== qualified) {
+                label.__mcmsAllianceCreditValue = credits;
+                label.__mcmsAllianceCreditQualified = qualified;
+                try { label.setIcon(makeAllianceCreditIcon(credits, qualified)); } catch (err) {}
+            }
+        }
+
+        for (const [missionId, label] of allianceCreditLabels.entries()) {
+            if (activeMissionIds.has(missionId)) continue;
+            allianceCreditLabels.delete(missionId);
+            try { allianceCreditGroup.removeLayer(label); } catch (err) {}
+        }
+        } catch (err) {
+        clearAllianceCreditLabels();
         }
     }
 
@@ -15946,10 +15886,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (direct !== null) return direct;
 
         for (const key of ['options', 'params', 'mission', 'data', 'missionData', '_missionData']) {
-            const nested = source[key];
-            if (!nested || typeof nested !== 'object') continue;
-            const value = parseMissionTimestamp(nested.created_at ?? nested.createdAt ?? nested.date_created ?? nested.dateCreated);
-            if (value !== null) return value;
+        const nested = source[key];
+        if (!nested || typeof nested !== 'object') continue;
+        const value = parseMissionTimestamp(nested.created_at ?? nested.createdAt ?? nested.date_created ?? nested.dateCreated);
+        if (value !== null) return value;
         }
         return null;
     }
@@ -15959,17 +15899,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!panel) return null;
 
         const attributes = [
-            'created_at', 'created-at', 'data-created-at', 'data-created_at',
-            'mission-created-at', 'data-mission-created-at'
+        'created_at', 'created-at', 'data-created-at', 'data-created_at',
+        'mission-created-at', 'data-mission-created-at'
         ];
         const selectors = attributes.map(attribute => `[${attribute}]`).join(',');
         const nodes = [panel, ...panel.querySelectorAll(selectors)];
 
         for (const node of nodes) {
-            for (const attribute of attributes) {
-                const value = parseMissionTimestamp(node.getAttribute?.(attribute));
-                if (value !== null) return value;
-            }
+        for (const attribute of attributes) {
+            const value = parseMissionTimestamp(node.getAttribute?.(attribute));
+            if (value !== null) return value;
+        }
         }
         return null;
     }
@@ -15980,14 +15920,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const markerTimestamp = exactMissionTimestampFromObject(marker);
         if (markerTimestamp !== null) {
-            setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: markerTimestamp });
-            return markerTimestamp;
+        setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: markerTimestamp });
+        return markerTimestamp;
         }
 
         const panelTimestamp = timestampFromMissionPanel(missionId);
         if (panelTimestamp !== null) {
-            setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: panelTimestamp });
-            return panelTimestamp;
+        setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: panelTimestamp });
+        return panelTimestamp;
         }
 
         return null;
@@ -16004,7 +15944,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function clearMissionAgeLabels() {
         if (missionAgeGroup) {
-            try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+        try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
         }
         missionAgeLabels.clear();
         missionAgeGroup = null;
@@ -16014,18 +15954,18 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const severityClass = severity?.className || 'mcms-age-recent';
         const severityLabel = severity?.label || 'RECENT';
         return pageWindow.L.divIcon({
-            className: 'mcms-mission-age-icon',
-            html: `<span class="mcms-mission-age-badge ${severityClass}" aria-label="${escapeHtml(`${ageText} · ${severityLabel}`)}">${escapeHtml(ageText)}</span>`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 18]
+        className: 'mcms-mission-age-icon',
+        html: `<span class="mcms-mission-age-badge ${severityClass}" aria-label="${escapeHtml(`${ageText} · ${severityLabel}`)}">${escapeHtml(ageText)}</span>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 18]
         });
     }
 
     function updateMissionAgeLabels() {
         if (state.economyMode && economyMapMoving) return;
         if (!state.missionAge || !state.visibility.myMissions) {
-            clearMissionAgeLabels();
-            return;
+        clearMissionAgeLabels();
+        return;
         }
 
         scanInlineMissionMarkerData();
@@ -16033,102 +15973,102 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const map = findLeafletMapInstance(false);
         if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-            clearMissionAgeLabels();
-            if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
-            return;
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
         }
         const floatPane = ensureMissionFloatPane(map);
         if (!floatPane) {
-            clearMissionAgeLabels();
-            if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
-            return;
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
         }
         const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
 
         try {
-            if (!missionAgeGroup || missionAgeGroup._map !== map) {
-                clearMissionAgeLabels();
-                missionAgeGroup = pageWindow.L.layerGroup();
-                missionAgeGroup.__mcmsMissionAgeLayer = true;
-                missionAgeGroup.addTo(map);
-            }
+        if (!missionAgeGroup || missionAgeGroup._map !== map) {
+            clearMissionAgeLabels();
+            missionAgeGroup = pageWindow.L.layerGroup();
+            missionAgeGroup.__mcmsMissionAgeLayer = true;
+            missionAgeGroup.addTo(map);
+        }
 
-            const activeMissionIds = new Set();
-            const now = Date.now();
+        const activeMissionIds = new Set();
+        const now = Date.now();
 
-            for (const marker of getMissionMarkerIndex().markers) {
-                const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-                if (missionId === null || !missionKnownPersonal(marker, missionId)) continue;
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null || !missionKnownPersonal(marker, missionId)) continue;
 
-                const existingLabel = missionAgeLabels.get(missionId);
-                let latLng;
-                try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
-                if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+            const existingLabel = missionAgeLabels.get(missionId);
+            let latLng;
+            try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
 
-                try {
-                    const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
-                    if (!isOnMap) {
-                        if (existingLabel) activeMissionIds.add(missionId);
-                        continue;
-                    }
-                } catch (err) {
+            try {
+                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!isOnMap) {
                     if (existingLabel) activeMissionIds.add(missionId);
                     continue;
                 }
-
-                const createdAt = getMissionCreatedAt(marker, missionId);
-                if (createdAt === null) {
-                    if (existingLabel && (!criticalViewActive || Number(existingLabel.__mcmsMissionAgeSeverityRank) >= 1)) activeMissionIds.add(missionId);
-                    continue;
-                }
-                if (criticalViewActive && (now - createdAt) < CRITICAL_VIEW_MIN_AGE_MS) continue;
-
-                const ageMs = Math.max(0, now - createdAt);
-                const ageText = formatMissionAge(createdAt, now);
-                const severity = missionAgeSeverity(ageMs);
-                activeMissionIds.add(missionId);
-
-                let label = existingLabel;
-                const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
-                if (!label || !labelIsAttached) {
-                    if (label) {
-                        try { missionAgeGroup.removeLayer(label); } catch (err) {}
-                    }
-                    label = pageWindow.L.marker(latLng, {
-                        interactive: false,
-                        keyboard: false,
-                        bubblingMouseEvents: false,
-                        pane: floatPane,
-                        zIndexOffset: 0,
-                        icon: makeMissionAgeIcon(ageText, severity)
-                    });
-                    label.__mcmsMissionAgeLabel = true;
-                    label.__mcmsMissionAgeText = ageText;
-                    label.__mcmsMissionAgeSeverityRank = severity.rank;
-                    label.__mcmsMissionAgeCreatedAt = createdAt;
-                    label.addTo(missionAgeGroup);
-                    missionAgeLabels.set(missionId, label);
-                    continue;
-                }
-
-                try { label.setLatLng(latLng); } catch (err) {}
-                if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
-                    label.__mcmsMissionAgeText = ageText;
-                    label.__mcmsMissionAgeSeverityRank = severity.rank;
-                    label.__mcmsMissionAgeCreatedAt = createdAt;
-                    try { label.setIcon(makeMissionAgeIcon(ageText, severity)); } catch (err) {}
-                }
+            } catch (err) {
+                if (existingLabel) activeMissionIds.add(missionId);
+                continue;
             }
 
-            for (const [missionId, label] of missionAgeLabels.entries()) {
-                if (activeMissionIds.has(missionId)) continue;
-                missionAgeLabels.delete(missionId);
-                try { missionAgeGroup.removeLayer(label); } catch (err) {}
+            const createdAt = getMissionCreatedAt(marker, missionId);
+            if (createdAt === null) {
+                if (existingLabel && (!criticalViewActive || Number(existingLabel.__mcmsMissionAgeSeverityRank) >= 1)) activeMissionIds.add(missionId);
+                continue;
             }
-            if (!document.hidden) scheduleMissionAgeRefresh(state.economyMode ? Math.max(120000, MISSION_AGE_LABEL_REFRESH_MS) : MISSION_AGE_LABEL_REFRESH_MS);
+            if (criticalViewActive && (now - createdAt) < CRITICAL_VIEW_MIN_AGE_MS) continue;
+
+            const ageMs = Math.max(0, now - createdAt);
+            const ageText = formatMissionAge(createdAt, now);
+            const severity = missionAgeSeverity(ageMs);
+            activeMissionIds.add(missionId);
+
+            let label = existingLabel;
+            const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
+            if (!label || !labelIsAttached) {
+                if (label) {
+                    try { missionAgeGroup.removeLayer(label); } catch (err) {}
+                }
+                label = pageWindow.L.marker(latLng, {
+                    interactive: false,
+                    keyboard: false,
+                    bubblingMouseEvents: false,
+                    pane: floatPane,
+                    zIndexOffset: 0,
+                    icon: makeMissionAgeIcon(ageText, severity)
+                });
+                label.__mcmsMissionAgeLabel = true;
+                label.__mcmsMissionAgeText = ageText;
+                label.__mcmsMissionAgeSeverityRank = severity.rank;
+                label.__mcmsMissionAgeCreatedAt = createdAt;
+                label.addTo(missionAgeGroup);
+                missionAgeLabels.set(missionId, label);
+                continue;
+            }
+
+            try { label.setLatLng(latLng); } catch (err) {}
+            if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
+                label.__mcmsMissionAgeText = ageText;
+                label.__mcmsMissionAgeSeverityRank = severity.rank;
+                label.__mcmsMissionAgeCreatedAt = createdAt;
+                try { label.setIcon(makeMissionAgeIcon(ageText, severity)); } catch (err) {}
+            }
+        }
+
+        for (const [missionId, label] of missionAgeLabels.entries()) {
+            if (activeMissionIds.has(missionId)) continue;
+            missionAgeLabels.delete(missionId);
+            try { missionAgeGroup.removeLayer(label); } catch (err) {}
+        }
+        if (!document.hidden) scheduleMissionAgeRefresh(state.economyMode ? Math.max(120000, MISSION_AGE_LABEL_REFRESH_MS) : MISSION_AGE_LABEL_REFRESH_MS);
         } catch (err) {
-            clearMissionAgeLabels();
-            if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
         }
     }
 
@@ -16166,7 +16106,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function clearUnitCommitmentLabels() {
         if (unitCommitmentGroup) {
-            try { unitCommitmentGroup.clearLayers(); unitCommitmentGroup.remove(); } catch (err) {}
+        try { unitCommitmentGroup.clearLayers(); unitCommitmentGroup.remove(); } catch (err) {}
         }
         unitCommitmentLabels.clear();
         unitCommitmentGroup = null;
@@ -16176,19 +16116,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const personal = isPersonalMissionLayer(marker, missionId);
         let rowsAbove = 0;
         if (personal) {
-            if (state.missionAge) rowsAbove += 1;
+        if (state.missionAge) rowsAbove += 1;
         } else if (state.allianceCredits) rowsAbove += 1;
         return 18 + (rowsAbove * 20);
     }
 
     function makeUnitCommitmentIcon(commitment, personal, anchor) {
         const text = commitment.onScene && commitment.travelling
-            ? `${commitment.onScene}✓ ${commitment.travelling}→`
-            : commitment.onScene ? `${commitment.onScene}✓` : commitment.travelling ? `${commitment.travelling}→` : `U ${commitment.total}`;
+        ? `${commitment.onScene}✓ ${commitment.travelling}→`
+        : commitment.onScene ? `${commitment.onScene}✓` : commitment.travelling ? `${commitment.travelling}→` : `U ${commitment.total}`;
         return pageWindow.L.divIcon({
-            className: 'mcms-unit-commitment-icon',
-            html: `<span class="mcms-unit-commitment-badge ${personal ? 'mcms-unit-personal' : 'mcms-unit-alliance'}">${escapeHtml(text)}</span>`,
-            iconSize: [0, 0], iconAnchor: [0, anchor]
+        className: 'mcms-unit-commitment-icon',
+        html: `<span class="mcms-unit-commitment-badge ${personal ? 'mcms-unit-personal' : 'mcms-unit-alliance'}">${escapeHtml(text)}</span>`,
+        iconSize: [0, 0], iconAnchor: [0, anchor]
         });
     }
 
@@ -16199,57 +16139,57 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!vehicleApiReady || Date.now() - vehicleApiLastFetch >= vehicleDataFreshnessMs) refreshPersonalVehicleData(false);
         const map = findLeafletMapInstance(false);
         if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-            clearUnitCommitmentLabels(); return;
+        clearUnitCommitmentLabels(); return;
         }
         const floatPane = ensureMissionFloatPane(map);
         if (!floatPane) { clearUnitCommitmentLabels(); return; }
         const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
         try {
-            if (!unitCommitmentGroup || unitCommitmentGroup._map !== map) {
-                clearUnitCommitmentLabels();
-                unitCommitmentGroup = pageWindow.L.layerGroup();
-                unitCommitmentGroup.__mcmsUnitCommitmentLayer = true;
-                unitCommitmentGroup.addTo(map);
+        if (!unitCommitmentGroup || unitCommitmentGroup._map !== map) {
+            clearUnitCommitmentLabels();
+            unitCommitmentGroup = pageWindow.L.layerGroup();
+            unitCommitmentGroup.__mcmsUnitCommitmentLayer = true;
+            unitCommitmentGroup.addTo(map);
+        }
+        const activeIds = new Set();
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null) continue;
+            const personal = isPersonalMissionLayer(marker, missionId);
+            if (personal && !state.visibility.myMissions) continue;
+            if (!personal && !state.visibility.allianceMissions) continue;
+            if (criticalViewActive && personal) {
+                const ageRecord = personalMissionAgeRecord(marker, missionId);
+                if (!ageRecord || ageRecord.ageMs < CRITICAL_VIEW_MIN_AGE_MS) continue;
             }
-            const activeIds = new Set();
-            for (const marker of getMissionMarkerIndex().markers) {
-                const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-                if (missionId === null) continue;
-                const personal = isPersonalMissionLayer(marker, missionId);
-                if (personal && !state.visibility.myMissions) continue;
-                if (!personal && !state.visibility.allianceMissions) continue;
-                if (criticalViewActive && personal) {
-                    const ageRecord = personalMissionAgeRecord(marker, missionId);
-                    if (!ageRecord || ageRecord.ageMs < CRITICAL_VIEW_MIN_AGE_MS) continue;
-                }
-                const commitment = personalUnitCommitmentForMission(missionId);
-                if (commitment.total <= 0) continue;
-                let latLng = null;
-                try { latLng = marker.getLatLng?.() || null; } catch (err) {}
-                if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
-                const anchor = unitCommitmentAnchor(marker, missionId);
-                const signature = `${commitment.total}:${commitment.onScene}:${commitment.travelling}:${personal}:${anchor}`;
-                activeIds.add(missionId);
-                let label = unitCommitmentLabels.get(missionId);
-                if (!label) {
-                    label = pageWindow.L.marker(latLng, { interactive:false, keyboard:false, bubblingMouseEvents:false, pane:floatPane, zIndexOffset:0, icon:makeUnitCommitmentIcon(commitment, personal, anchor) });
+            const commitment = personalUnitCommitmentForMission(missionId);
+            if (commitment.total <= 0) continue;
+            let latLng = null;
+            try { latLng = marker.getLatLng?.() || null; } catch (err) {}
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+            const anchor = unitCommitmentAnchor(marker, missionId);
+            const signature = `${commitment.total}:${commitment.onScene}:${commitment.travelling}:${personal}:${anchor}`;
+            activeIds.add(missionId);
+            let label = unitCommitmentLabels.get(missionId);
+            if (!label) {
+                label = pageWindow.L.marker(latLng, { interactive:false, keyboard:false, bubblingMouseEvents:false, pane:floatPane, zIndexOffset:0, icon:makeUnitCommitmentIcon(commitment, personal, anchor) });
+                label.__mcmsUnitCommitmentSignature = signature;
+                label.__mcmsUnitCommitmentLabel = true;
+                label.addTo(unitCommitmentGroup);
+                unitCommitmentLabels.set(missionId, label);
+            } else {
+                try { label.setLatLng(latLng); } catch (err) {}
+                if (label.__mcmsUnitCommitmentSignature !== signature) {
                     label.__mcmsUnitCommitmentSignature = signature;
-                    label.__mcmsUnitCommitmentLabel = true;
-                    label.addTo(unitCommitmentGroup);
-                    unitCommitmentLabels.set(missionId, label);
-                } else {
-                    try { label.setLatLng(latLng); } catch (err) {}
-                    if (label.__mcmsUnitCommitmentSignature !== signature) {
-                        label.__mcmsUnitCommitmentSignature = signature;
-                        try { label.setIcon(makeUnitCommitmentIcon(commitment, personal, anchor)); } catch (err) {}
-                    }
+                    try { label.setIcon(makeUnitCommitmentIcon(commitment, personal, anchor)); } catch (err) {}
                 }
             }
-            for (const [missionId, label] of unitCommitmentLabels.entries()) {
-                if (activeIds.has(missionId)) continue;
-                unitCommitmentLabels.delete(missionId);
-                try { unitCommitmentGroup.removeLayer(label); } catch (err) {}
-            }
+        }
+        for (const [missionId, label] of unitCommitmentLabels.entries()) {
+            if (activeIds.has(missionId)) continue;
+            unitCommitmentLabels.delete(missionId);
+            try { unitCommitmentGroup.removeLayer(label); } catch (err) {}
+        }
         } catch (err) { clearUnitCommitmentLabels(); }
     }
 
@@ -16261,7 +16201,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function clearTransportWatcherLabels() {
         if (transportWatcherGroup) {
-            try { transportWatcherGroup.clearLayers(); transportWatcherGroup.remove(); } catch (err) {}
+        try { transportWatcherGroup.clearLayers(); transportWatcherGroup.remove(); } catch (err) {}
         }
         transportWatcherLabels.clear();
         transportWatcherGroup = null;
@@ -16272,13 +16212,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         if (!raw) return null;
         const text = raw.toLowerCase();
         const transportRequired = [
-            /\btransport(?:ation)?\b.{0,34}\b(?:needed|required|waiting|pending)\b/i,
-            /\b(?:needs?|requires?|awaiting)\b.{0,34}\btransport(?:ation)?\b/i,
-            /\bmust be transported\b/i,
-            /\btransport is needed\b/i,
-            /\b(?:transport|abtransport|gefangenentransport)\b.{0,34}\b(?:erforderlich|ben[oö]tigt|notwendig)\b/i,
-            /\b(?:muss|müssen)\b.{0,34}\btransportiert werden\b/i,
-            /\b(?:transport|vervoer)\b.{0,34}\b(?:nodig|vereist)\b/i,
+        /\btransport(?:ation)?\b.{0,34}\b(?:needed|required|waiting|pending)\b/i,
+        /\b(?:needs?|requires?|awaiting)\b.{0,34}\btransport(?:ation)?\b/i,
+        /\bmust be transported\b/i,
+        /\btransport is needed\b/i,
+        /\b(?:transport|abtransport|gefangenentransport)\b.{0,34}\b(?:erforderlich|ben[oö]tigt|notwendig)\b/i,
+        /\b(?:muss|müssen)\b.{0,34}\btransportiert werden\b/i,
+        /\b(?:transport|vervoer)\b.{0,34}\b(?:nodig|vereist)\b/i,
             /\b(?:moet|moeten)\b.{0,34}\b(?:vervoerd|afgevoerd)\b/i
         ].some(pattern => pattern.test(text));
         if (!transportRequired) return null;
@@ -16298,27 +16238,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         count = Math.min(99, Math.max(0, Math.round(count || 0)));
 
         return {
-            type,
-            count,
-            label: type === 'patient' ? 'Patient transport required' : type === 'prisoner' ? 'Prisoner transport required' : 'Transport required'
+        type,
+        count,
+        label: type === 'patient' ? 'Patient transport required' : type === 'prisoner' ? 'Prisoner transport required' : 'Transport required'
         };
     }
 
     function transportWatcherSvg(type) {
         if (type === 'prisoner') {
-            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h12.2l3.1 3.3v5.1H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.7 8.5v3.3h3.1M7 11.2v3.2M10 11.2v3.2M13 11.2v3.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
+        return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h12.2l3.1 3.3v5.1H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.7 8.5v3.3h3.1M7 11.2v3.2M10 11.2v3.2M13 11.2v3.2" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
         }
         if (type === 'patient') {
-            return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h11.8l3.7 3.5v4.9H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.3 8.5V12H19M8.3 10.2v4.3M6.15 12.35h4.3" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
+        return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.5h11.8l3.7 3.5v4.9H3.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15.3 8.5V12H19M8.3 10.2v4.3M6.15 12.35h4.3" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/><circle cx="7.1" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="16.4" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
         }
         return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.8 8.8h11.9l3.7 3.4v4.7H2.8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.7 8.8v3.4h3.7M7.4 12.7h5.1M10.8 10.8l2 1.9-2 1.9" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/><circle cx="15.8" cy="18" r="1.7" fill="#171008" stroke="currentColor" stroke-width="1.3"/></svg>`;
     }
 
     function renderedMissionFloatWidth(label, selector, fallback) {
         try {
-            const badge = label?._icon?.querySelector?.(selector);
-            const width = Number(badge?.getBoundingClientRect?.().width);
-            if (Number.isFinite(width) && width > 0) return width;
+        const badge = label?._icon?.querySelector?.(selector);
+        const width = Number(badge?.getBoundingClientRect?.().width);
+        if (Number.isFinite(width) && width > 0) return width;
         } catch (err) {}
         return fallback;
     }
@@ -16329,52 +16269,52 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let source = 'marker';
 
         if (personal && state.missionAge) {
-            occupiedWidth = renderedMissionFloatWidth(
-                missionAgeLabels.get(missionId),
-                '.mcms-mission-age-badge',
-                52
-            );
-            source = 'mission-age';
+        occupiedWidth = renderedMissionFloatWidth(
+            missionAgeLabels.get(missionId),
+            '.mcms-mission-age-badge',
+            52
+        );
+        source = 'mission-age';
         } else if (!personal && state.allianceCredits) {
-            occupiedWidth = renderedMissionFloatWidth(
-                allianceCreditLabels.get(missionId),
-                '.mcms-alliance-credit-badge',
-                64
-            );
-            source = 'alliance-credit';
+        occupiedWidth = renderedMissionFloatWidth(
+            allianceCreditLabels.get(missionId),
+            '.mcms-alliance-credit-badge',
+            64
+        );
+        source = 'alliance-credit';
         } else if (state.unitCommitment) {
-            const commitment = personalUnitCommitmentForMission(missionId);
-            if (commitment.total > 0) {
-                occupiedWidth = renderedMissionFloatWidth(
-                    unitCommitmentLabels.get(missionId),
-                    '.mcms-unit-commitment-badge',
-                    54
-                );
-                source = 'unit-count';
-            }
+        const commitment = personalUnitCommitmentForMission(missionId);
+        if (commitment.total > 0) {
+            occupiedWidth = renderedMissionFloatWidth(
+                unitCommitmentLabels.get(missionId),
+                '.mcms-unit-commitment-badge',
+                54
+            );
+            source = 'unit-count';
+        }
         }
 
         const watcherHalfWidth = 13;
         const gap = occupiedWidth > 0 ? 6 : 4;
         const horizontalOffset = occupiedWidth > 0
-            ? Math.ceil((occupiedWidth / 2) + watcherHalfWidth + gap)
-            : 21;
+        ? Math.ceil((occupiedWidth / 2) + watcherHalfWidth + gap)
+        : 21;
 
         let side = 'right';
         try {
-            const latLng = marker?.getLatLng?.();
-            const point = latLng && map?.latLngToContainerPoint?.(latLng);
-            const size = map?.getSize?.();
-            const countExtra = Number(requirement?.count) > 1 ? 10 : 3;
-            if (point && size && point.x + horizontalOffset + watcherHalfWidth + countExtra > size.x - 4) side = 'left';
+        const latLng = marker?.getLatLng?.();
+        const point = latLng && map?.latLngToContainerPoint?.(latLng);
+        const size = map?.getSize?.();
+        const countExtra = Number(requirement?.count) > 1 ? 10 : 3;
+        if (point && size && point.x + horizontalOffset + watcherHalfWidth + countExtra > size.x - 4) side = 'left';
         } catch (err) {}
 
         return {
-            side,
-            source,
-            horizontalOffset,
-            iconAnchor: [side === 'right' ? -horizontalOffset : horizontalOffset, 18],
-            signature: `${side}:${source}:${horizontalOffset}`
+        side,
+        source,
+        horizontalOffset,
+        iconAnchor: [side === 'right' ? -horizontalOffset : horizontalOffset, 18],
+        signature: `${side}:${source}:${horizontalOffset}`
         };
     }
 
@@ -16383,10 +16323,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const side = placement?.side === 'left' ? 'left' : 'right';
         const count = Number(requirement?.count) > 1 ? `<span class="mcms-transport-watcher-count">${escapeHtml(requirement.count)}</span>` : '';
         return pageWindow.L.divIcon({
-            className: 'mcms-transport-watcher-icon',
-            html: `<span class="mcms-transport-watcher-badge mcms-transport-${type} mcms-transport-side-${side}" aria-label="${escapeHtml(requirement?.label || 'Transport required')}" title="${escapeHtml(requirement?.label || 'Transport required')}">${transportWatcherSvg(type)}${count}</span>`,
-            iconSize: [0, 0],
-            iconAnchor: placement?.iconAnchor || [-21, 18]
+        className: 'mcms-transport-watcher-icon',
+        html: `<span class="mcms-transport-watcher-badge mcms-transport-${type} mcms-transport-side-${side}" aria-label="${escapeHtml(requirement?.label || 'Transport required')}" title="${escapeHtml(requirement?.label || 'Transport required')}">${transportWatcherSvg(type)}${count}</span>`,
+        iconSize: [0, 0],
+        iconAnchor: placement?.iconAnchor || [-21, 18]
         });
     }
 
@@ -16395,84 +16335,84 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         runtimeClearTimeout(transportWatcherTimer);
         transportWatcherTimer = null;
         if (!state.transportWatcher) {
-            clearTransportWatcherLabels();
-            return;
+        clearTransportWatcherLabels();
+        return;
         }
 
         const map = findLeafletMapInstance(false);
         if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
-            clearTransportWatcherLabels();
-            return;
+        clearTransportWatcherLabels();
+        return;
         }
         const pane = ensureMissionFloatPane(map);
         if (!pane) {
-            clearTransportWatcherLabels();
-            return;
+        clearTransportWatcherLabels();
+        return;
         }
         const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
 
         try {
-            if (!transportWatcherGroup || transportWatcherGroup._map !== map) {
-                clearTransportWatcherLabels();
-                transportWatcherGroup = pageWindow.L.layerGroup();
-                transportWatcherGroup.__mcmsTransportWatcherLayer = true;
-                transportWatcherGroup.addTo(map);
-            }
-
-            const activeIds = new Set();
-            const now = Date.now();
-            for (const marker of getMissionMarkerIndex().markers) {
-                const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-                if (missionId === null) continue;
-                const personal = isPersonalMissionLayer(marker, missionId);
-                if (personal && !state.visibility.myMissions) continue;
-                if (!personal && !state.visibility.allianceMissions) continue;
-                if (criticalViewActive && personal) {
-                    const ageRecord = personalMissionAgeRecord(marker, missionId, now);
-                    if (!ageRecord || ageRecord.ageMs < CRITICAL_VIEW_MIN_AGE_MS) continue;
-                }
-
-                const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
-                const requirement = transportRequirementFromSnapshot(snapshot);
-                if (!requirement) continue;
-
-                let latLng = null;
-                try { latLng = marker.getLatLng?.() || null; } catch (err) {}
-                if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
-                try {
-                    const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
-                    if (!onMap) continue;
-                } catch (err) {}
-
-                const placement = transportWatcherPlacement(map, marker, missionId, requirement);
-                const signature = `${requirement.type}:${requirement.count}:${requirement.label}:${placement.signature}`;
-                activeIds.add(missionId);
-                let label = transportWatcherLabels.get(missionId);
-                if (!label) {
-                    label = pageWindow.L.marker(latLng, {
-                        interactive: false, keyboard: false, bubblingMouseEvents: false,
-                        pane, zIndexOffset: 0, icon: makeTransportWatcherIcon(requirement, placement)
-                    });
-                    label.__mcmsTransportWatcherSignature = signature;
-                    label.__mcmsTransportWatcherLabel = true;
-                    label.addTo(transportWatcherGroup);
-                    transportWatcherLabels.set(missionId, label);
-                } else {
-                    try { label.setLatLng(latLng); } catch (err) {}
-                    if (label.__mcmsTransportWatcherSignature !== signature) {
-                        label.__mcmsTransportWatcherSignature = signature;
-                        try { label.setIcon(makeTransportWatcherIcon(requirement, placement)); } catch (err) {}
-                    }
-                }
-            }
-
-            for (const [missionId, label] of transportWatcherLabels.entries()) {
-                if (activeIds.has(missionId)) continue;
-                transportWatcherLabels.delete(missionId);
-                try { transportWatcherGroup.removeLayer(label); } catch (err) {}
-            }
-        } catch (err) {
+        if (!transportWatcherGroup || transportWatcherGroup._map !== map) {
             clearTransportWatcherLabels();
+            transportWatcherGroup = pageWindow.L.layerGroup();
+            transportWatcherGroup.__mcmsTransportWatcherLayer = true;
+            transportWatcherGroup.addTo(map);
+        }
+
+        const activeIds = new Set();
+        const now = Date.now();
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null) continue;
+            const personal = isPersonalMissionLayer(marker, missionId);
+            if (personal && !state.visibility.myMissions) continue;
+            if (!personal && !state.visibility.allianceMissions) continue;
+            if (criticalViewActive && personal) {
+                const ageRecord = personalMissionAgeRecord(marker, missionId, now);
+                if (!ageRecord || ageRecord.ageMs < CRITICAL_VIEW_MIN_AGE_MS) continue;
+            }
+
+            const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
+            const requirement = transportRequirementFromSnapshot(snapshot);
+            if (!requirement) continue;
+
+            let latLng = null;
+            try { latLng = marker.getLatLng?.() || null; } catch (err) {}
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+            try {
+                const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!onMap) continue;
+            } catch (err) {}
+
+            const placement = transportWatcherPlacement(map, marker, missionId, requirement);
+            const signature = `${requirement.type}:${requirement.count}:${requirement.label}:${placement.signature}`;
+            activeIds.add(missionId);
+            let label = transportWatcherLabels.get(missionId);
+            if (!label) {
+                label = pageWindow.L.marker(latLng, {
+                    interactive: false, keyboard: false, bubblingMouseEvents: false,
+                    pane, zIndexOffset: 0, icon: makeTransportWatcherIcon(requirement, placement)
+                });
+                label.__mcmsTransportWatcherSignature = signature;
+                label.__mcmsTransportWatcherLabel = true;
+                label.addTo(transportWatcherGroup);
+                transportWatcherLabels.set(missionId, label);
+            } else {
+                try { label.setLatLng(latLng); } catch (err) {}
+                if (label.__mcmsTransportWatcherSignature !== signature) {
+                    label.__mcmsTransportWatcherSignature = signature;
+                    try { label.setIcon(makeTransportWatcherIcon(requirement, placement)); } catch (err) {}
+                }
+            }
+        }
+
+        for (const [missionId, label] of transportWatcherLabels.entries()) {
+            if (activeIds.has(missionId)) continue;
+            transportWatcherLabels.delete(missionId);
+            try { transportWatcherGroup.removeLayer(label); } catch (err) {}
+        }
+        } catch (err) {
+        clearTransportWatcherLabels();
         }
     }
 
@@ -16488,25 +16428,25 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function transportSweepElementVisible(element) {
         if (!element || !element.isConnected) return false;
         try {
-            const view = element.ownerDocument?.defaultView || window;
-            const style = view.getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
-            const rect = element.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
+        const view = element.ownerDocument?.defaultView || window;
+        const style = view.getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
         } catch (err) {
-            return false;
+        return false;
         }
     }
 
     async function transportSweepWaitFor(test, timeoutMs = 5000, intervalMs = 120) {
         const started = Date.now();
         while (Date.now() - started < timeoutMs) {
-            if (runtime.destroyed || transportSweepRuntime.stopRequested) return null;
-            try {
-                const value = test();
-                if (value) return value;
-            } catch (err) {}
-            if (!await transportSweepSleep(intervalMs)) return null;
+        if (runtime.destroyed || transportSweepRuntime.stopRequested) return null;
+        try {
+            const value = test();
+            if (value) return value;
+        } catch (err) {}
+        if (!await transportSweepSleep(intervalMs)) return null;
         }
         return null;
     }
@@ -16526,24 +16466,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const queue = [];
         const seen = new Set();
         for (const marker of getMissionMarkerIndex().markers) {
-            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-            if (missionId === null || seen.has(missionId)) continue;
-            const personal = isPersonalMissionLayer(marker, missionId);
-            if (personal) continue;
-            const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
-            const requirement = transportRequirementFromSnapshot(snapshot);
-            const patientCount = Math.max(0, Number(snapshot?.patientsCount) || 0);
-            if (!requirement || requirement.type === 'prisoner') continue;
-            if (requirement.type !== 'patient' && patientCount <= 0) continue;
-            const count = Math.max(1, Math.min(99, Number(requirement.count) || patientCount || 1));
-            seen.add(missionId);
-            queue.push({
-                missionId,
-                caption: String(snapshot?.caption || `Alliance mission ${missionId}`),
-                count,
-                createdAt: Number(snapshot?.createdAt) || 0,
-                requirement: requirement.label || 'Patient transport required'
-            });
+        const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+        if (missionId === null || seen.has(missionId)) continue;
+        const personal = isPersonalMissionLayer(marker, missionId);
+        if (personal) continue;
+        const snapshot = liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now);
+        const requirement = transportRequirementFromSnapshot(snapshot);
+        const patientCount = Math.max(0, Number(snapshot?.patientsCount) || 0);
+        if (!requirement || requirement.type === 'prisoner') continue;
+        if (requirement.type !== 'patient' && patientCount <= 0) continue;
+        const count = Math.max(1, Math.min(99, Number(requirement.count) || patientCount || 1));
+        seen.add(missionId);
+        queue.push({
+            missionId,
+            caption: String(snapshot?.caption || `Alliance mission ${missionId}`),
+            count,
+            createdAt: Number(snapshot?.createdAt) || 0,
+            requirement: requirement.label || 'Patient transport required'
+        });
         }
         queue.sort((a, b) => (a.createdAt || Number.MAX_SAFE_INTEGER) - (b.createdAt || Number.MAX_SAFE_INTEGER));
         transportSweepRuntime.queue = queue;
@@ -16562,7 +16502,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const matches = transportSweepHudElements();
         let hud = matches.shift() || null;
         for (const duplicate of matches) {
-            try { duplicate.remove(); } catch (err) {}
+        try { duplicate.remove(); } catch (err) {}
         }
         if (hud?.isConnected) return hud;
         const mount = document.body || document.documentElement;
@@ -16581,16 +16521,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
         transportSweepRuntime.hudDismissTimer = null;
         for (const hud of transportSweepHudElements()) {
-            try { hud.remove(); } catch (err) {}
+        try { hud.remove(); } catch (err) {}
         }
     }
 
     function scheduleTransportSweepHudDismiss(delay = 6500) {
         runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
         transportSweepRuntime.hudDismissTimer = runtimeSetTimeout(() => {
-            transportSweepRuntime.hudDismissTimer = null;
-            transportSweepRuntime.hudFinal = false;
-            removeTransportSweepHud();
+        transportSweepRuntime.hudDismissTimer = null;
+        transportSweepRuntime.hudFinal = false;
+        removeTransportSweepHud();
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -16606,16 +16546,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const sweep = transportSweepRuntime;
         const visible = sweep.running || sweep.stopRequested || sweep.hudFinal;
         if (!visible) {
-            removeTransportSweepHud();
-            return;
+        removeTransportSweepHud();
+        return;
         }
         const hud = ensureTransportSweepHud();
         if (!hud) return;
         const total = Math.max(0, Number(sweep.missionTotal) || Number(sweep.queue?.length) || 0);
         const index = total ? Math.min(total, Math.max(1, Number(sweep.missionIndex) || 1)) : 0;
         const phase = sweep.hudFinal ? (sweep.statusLevel === 'error' ? 'Finished with errors' : 'Sweep complete')
-            : sweep.stopRequested ? 'Stopping'
-            : 'Sweep running';
+        : sweep.stopRequested ? 'Stopping'
+        : 'Sweep running';
         const current = String(sweep.currentItem || '').trim();
         const message = String(sweep.statusMessage || (sweep.running ? 'Preparing patient transport sweep' : phase)).trim();
         hud.dataset.state = sweep.hudFinal ? (sweep.errors ? 'error' : 'complete') : sweep.stopRequested ? 'stopping' : 'running';
@@ -16634,11 +16574,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const status = runtime.running ? 'RUNNING' : runtime.stopRequested ? 'STOPPING' : queue.length ? 'READY' : 'IDLE';
         const list = queue.length ? queue.map((item, index) => {
             const current = currentId !== null && normaliseMissionId(item.missionId) === currentId;
-            return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.caption}`)}</span><span class="mcms-sweep-meta">Mission ${escapeHtml(item.missionId)} · ${escapeHtml(item.requirement)}</span></div><span class="mcms-sweep-count">${escapeHtml(item.count)} req</span></div>`;
+        return `<div class="mcms-sweep-entry ${current ? 'mcms-current' : ''}"><div><span class="mcms-sweep-title">${escapeHtml(`${index + 1}. ${item.caption}`)}</span><span class="mcms-sweep-meta">Mission ${escapeHtml(item.missionId)} · ${escapeHtml(item.requirement)}</span></div><span class="mcms-sweep-count">${escapeHtml(item.count)} req</span></div>`;
         }).join('') : `<div class="mcms-empty-state">Scan to find alliance missions currently reporting patient transport requirements.</div>`;
         const logs = runtime.log.length ? runtime.log.map(entry => {
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
+        return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No sweep activity yet.</div>';
         const html = `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${queue.length}</b><span>Missions</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
@@ -16680,7 +16620,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             let node = anchor;
             for (let depth = 0; depth < 7 && node; depth += 1, node = node.parentElement) {
                 const style = view.getComputedStyle(node);
-                if (style.display === 'none' || style.visibility === 'hidden') continue;
+            if (style.display === 'none' || style.visibility === 'hidden') continue;
                 const rect = node.getBoundingClientRect();
                 if (rect.width > 0 && rect.height > 0) return true;
             }
@@ -16696,7 +16636,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             seenDocuments.add(doc);
             contexts.push({ doc, label });
             let frames = [];
-            try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
+        try { frames = Array.from(doc.querySelectorAll('iframe, frame')); } catch (err) {}
             frames.forEach((frame, index) => {
                 try {
                     const child = frame.contentDocument || frame.contentWindow?.document;
@@ -16715,7 +16655,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let anchors = [];
         try { anchors = Array.from(scope.querySelectorAll('a[href*="/vehicles/"]')); } catch (err) {}
         return anchors.filter(anchor => {
-            if (!transportSweepVehicleIdFromHref(anchor.getAttribute('href'))) return false;
+        if (!transportSweepVehicleIdFromHref(anchor.getAttribute('href'))) return false;
             return !requireUsable || transportSweepAnchorUsable(anchor);
         });
     }
@@ -16735,9 +16675,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     function transportSweepVisibleWindowRoots() {
         const selectors = [
-            '#lightbox_box .lightbox_content', '#lightbox_box', '#lightbox', '.lightbox_content',
-            '[id*="lightbox"]', '.lightbox', '.modal.show .modal-content', '.modal.in .modal-content',
-            '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
+        '#lightbox_box .lightbox_content', '#lightbox_box', '#lightbox', '.lightbox_content',
+        '[id*="lightbox"]', '.lightbox', '.modal.show .modal-content', '.modal.in .modal-content',
+        '.modal.show', '.modal.in', '[role="dialog"]', '.ui-dialog-content', '.ui-dialog'
         ];
         const roots = [];
         const seen = new Set();
@@ -16832,12 +16772,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         let rejectedNotPatient = 0;
 
         for (const anchor of Array.from(anchors || [])) {
-            const href = String(anchor.getAttribute?.('href') || '').trim();
+        const href = String(anchor.getAttribute?.('href') || '').trim();
             const vehicleId = transportSweepVehicleIdFromHref(href);
             if (!vehicleId) continue;
 
-            const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, li, [id^="vehicle_row_"], [class*="vehicle_row"]');
-            const fms5 = row?.querySelector?.('.building_list_fms_5');
+        const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, li, [id^="vehicle_row_"], [class*="vehicle_row"]');
+        const fms5 = row?.querySelector?.('.building_list_fms_5');
             if (!row || !fms5) {
                 rejectedNotFms5 += 1;
                 continue;
@@ -16849,10 +16789,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             }
 
             allianceLinks += 1;
-            const vehicleTypeId = String(anchor.getAttribute?.('vehicle_type_id') || '');
-            const label = String(anchor.textContent || 'Alliance vehicle').trim() || 'Alliance vehicle';
+        const vehicleTypeId = String(anchor.getAttribute?.('vehicle_type_id') || '');
+        const label = String(anchor.textContent || 'Alliance vehicle').trim() || 'Alliance vehicle';
             const rowText = String(row.textContent || '').replace(/\s+/g, ' ').trim();
-            const isPatientVehicle = vehicleTypeId === '5' || /ambulance|patient|paramedic|rettungs|krankentransport|rtw\b/i.test(`${label} ${rowText}`);
+        const isPatientVehicle = vehicleTypeId === '5' || /ambulance|patient|paramedic|rettungs|krankentransport|rtw\b/i.test(`${label} ${rowText}`);
             if (!isPatientVehicle) {
                 rejectedNotPatient += 1;
                 continue;
@@ -16893,7 +16833,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const id = normaliseMissionId(missionId);
         if (id === null || transportSweepRuntime.stopRequested) return null;
         const requestModes = [
-            { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } },
+        { headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html, */*;q=0.8' } },
             { headers: { Accept: 'text/html,application/xhtml+xml' } }
         ];
         let bestResult = null;
@@ -17628,23 +17568,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!raw) return result;
         const labelled = /\b(?:vehicles?|personnel|other)\s*:/i.test(raw);
         if (labelled) {
-            const sectionPattern = /\b(vehicles?|personnel|other)\s*:\s*([\s\S]*?)(?=\s*•?\s*\b(?:vehicles?|personnel|other)\s*:|$)/gi;
-            let section;
-            while ((section = sectionPattern.exec(raw))) {
-                const key = /^vehicle/i.test(section[1]) ? 'vehicles' : /^personnel/i.test(section[1]) ? 'personnel' : 'other';
-                for (const item of splitRequirementItems(section[2])) {
-                    const parsed = parseCountedRequirement(item);
-                    if (parsed && parsed.name) result[key].push(parsed);
-                }
+        const sectionPattern = /\b(vehicles?|personnel|other)\s*:\s*([\s\S]*?)(?=\s*•?\s*\b(?:vehicles?|personnel|other)\s*:|$)/gi;
+        let section;
+        while ((section = sectionPattern.exec(raw))) {
+            const key = /^vehicle/i.test(section[1]) ? 'vehicles' : /^personnel/i.test(section[1]) ? 'personnel' : 'other';
+            for (const item of splitRequirementItems(section[2])) {
+                const parsed = parseCountedRequirement(item);
+                if (parsed && parsed.name) result[key].push(parsed);
             }
+        }
         } else {
-            const transportOnly = transportRequirementFromSnapshot(snapshot);
-            if (!transportOnly && /\b(?:vehicle|engine|unit|carrier|ladder|ambulance|police|car|van|boat|helicopter|support|officer)\b/i.test(raw)) {
-                for (const item of splitRequirementItems(raw)) {
-                    const parsed = parseCountedRequirement(item.replace(/^missing\s*:?\s*/i, ''));
-                    if (parsed && parsed.name) result.vehicles.push(parsed);
-                }
+        const transportOnly = transportRequirementFromSnapshot(snapshot);
+        if (!transportOnly && /\b(?:vehicle|engine|unit|carrier|ladder|ambulance|police|car|van|boat|helicopter|support|officer)\b/i.test(raw)) {
+            for (const item of splitRequirementItems(raw)) {
+                const parsed = parseCountedRequirement(item.replace(/^missing\s*:?\s*/i, ''));
+                if (parsed && parsed.name) result.vehicles.push(parsed);
             }
+        }
         }
         result.vehicles = result.vehicles.filter(item => item.name && !/transport is needed|required transport/i.test(item.name));
         return result;
@@ -17679,17 +17619,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const available = [];
         const byToken = new Map();
         for (const vehicle of getPersonalVehicleRecords()) {
-            if (vehicleStatusBucket(vehicle) !== 'available' || vehicleTargetInfo(vehicle).type !== null) continue;
-            const signal = normaliseSearchText(vehicleSearchSignal(vehicle));
-            if (!signal) continue;
-            const tokens = new Set(signal.split(' ').map(resourceSearchToken).filter(Boolean));
-            const prepared = { vehicle, signal, tokens, point: vehicleCoordinates(vehicle, markerById) };
-            available.push(prepared);
-            for (const token of tokens) {
-                const bucket = byToken.get(token) || [];
-                bucket.push(prepared);
-                byToken.set(token, bucket);
-            }
+        if (vehicleStatusBucket(vehicle) !== 'available' || vehicleTargetInfo(vehicle).type !== null) continue;
+        const signal = normaliseSearchText(vehicleSearchSignal(vehicle));
+        if (!signal) continue;
+        const tokens = new Set(signal.split(' ').map(resourceSearchToken).filter(Boolean));
+        const prepared = { vehicle, signal, tokens, point: vehicleCoordinates(vehicle, markerById) };
+        available.push(prepared);
+        for (const token of tokens) {
+            const bucket = byToken.get(token) || [];
+            bucket.push(prepared);
+            byToken.set(token, bucket);
+        }
         }
         resourceGapVehicleContextCache = { key, createdAt: now, available, byToken };
         return resourceGapVehicleContextCache;
@@ -17729,39 +17669,39 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (cached && now - cached.createdAt < RESOURCE_GAP_REFRESH_MS) return cached;
 
         const missionPoint = Number.isFinite(Number(snapshot?.lat)) && Number.isFinite(Number(snapshot?.lng))
-            ? { lat: Number(snapshot.lat), lng: Number(snapshot.lng) }
-            : null;
+        ? { lat: Number(snapshot.lat), lng: Number(snapshot.lng) }
+        : null;
         const rows = requirements.vehicles.map(requirement => {
-            const parts = requirementSearchParts(requirement.name);
-            const candidateSet = new Set();
-            for (const token of [...parts.tokens, ...parts.acronyms.map(resourceSearchToken)]) {
-                for (const prepared of context.byToken?.get(token) || []) candidateSet.add(prepared);
-            }
-            const candidates = candidateSet.size ? candidateSet : context.available;
-            let nearby = 0;
-            let nearest = null;
-            for (const prepared of candidates) {
-                if (!preparedVehicleMatchesRequirement(prepared, parts)) continue;
-                const distance = haversineMiles(missionPoint, prepared.point);
-                if (distance === null || distance > radiusMi) continue;
-                nearby += 1;
-                if (nearest === null || distance < nearest) nearest = distance;
-            }
-            return { ...requirement, nearby, nearest };
+        const parts = requirementSearchParts(requirement.name);
+        const candidateSet = new Set();
+        for (const token of [...parts.tokens, ...parts.acronyms.map(resourceSearchToken)]) {
+            for (const prepared of context.byToken?.get(token) || []) candidateSet.add(prepared);
+        }
+        const candidates = candidateSet.size ? candidateSet : context.available;
+        let nearby = 0;
+        let nearest = null;
+        for (const prepared of candidates) {
+            if (!preparedVehicleMatchesRequirement(prepared, parts)) continue;
+            const distance = haversineMiles(missionPoint, prepared.point);
+            if (distance === null || distance > radiusMi) continue;
+            nearby += 1;
+            if (nearest === null || distance < nearest) nearest = distance;
+        }
+        return { ...requirement, nearby, nearest };
         });
         const analysis = {
-            createdAt: now,
-            requirements,
-            rows,
-            radiusMi,
-            missingTypes: rows.length,
-            uncoveredTypes: rows.filter(row => row.nearby < row.count).length
+        createdAt: now,
+        requirements,
+        rows,
+        radiusMi,
+        missingTypes: rows.length,
+        uncoveredTypes: rows.filter(row => row.nearby < row.count).length
         };
         if (resourceGapAnalysisCache.size > 180) {
-            for (const [key, value] of resourceGapAnalysisCache) {
-                if (now - Number(value?.createdAt || 0) > RESOURCE_GAP_REFRESH_MS * 2) resourceGapAnalysisCache.delete(key);
-            }
-            if (resourceGapAnalysisCache.size > 180) resourceGapAnalysisCache.clear();
+        for (const [key, value] of resourceGapAnalysisCache) {
+            if (now - Number(value?.createdAt || 0) > RESOURCE_GAP_REFRESH_MS * 2) resourceGapAnalysisCache.delete(key);
+        }
+        if (resourceGapAnalysisCache.size > 180) resourceGapAnalysisCache.clear();
         }
         resourceGapAnalysisCache.set(cacheKey, analysis);
         return analysis;
@@ -17771,9 +17711,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const count = Math.max(1, Number(analysis?.missingTypes) || 1);
         const uncovered = Number(analysis?.uncoveredTypes) > 0;
         return pageWindow.L.divIcon({
-            className: 'mcms-resource-gap-icon',
-            html: `<span class="mcms-resource-gap-badge ${uncovered ? 'mcms-gap-uncovered' : ''}" title="${uncovered ? 'Resource shortfall detected' : 'Missing resource types'}">⚠ ${escapeHtml(count)}</span>`,
-            iconSize: [0, 0], iconAnchor: [0, -22]
+        className: 'mcms-resource-gap-icon',
+        html: `<span class="mcms-resource-gap-badge ${uncovered ? 'mcms-gap-uncovered' : ''}" title="${uncovered ? 'Resource shortfall detected' : 'Missing resource types'}">⚠ ${escapeHtml(count)}</span>`,
+        iconSize: [0, 0], iconAnchor: [0, -22]
         });
     }
 
@@ -17787,49 +17727,49 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const pane = ensureMissionFloatPane(map);
         if (!pane) { clearResourceGapLabels(); return; }
         if (!resourceGapGroup || resourceGapGroup._map !== map) {
-            clearResourceGapLabels();
-            resourceGapGroup = pageWindow.L.layerGroup();
-            resourceGapGroup.__mcmsResourceGapLayer = true;
-            resourceGapGroup.addTo(map);
+        clearResourceGapLabels();
+        resourceGapGroup = pageWindow.L.layerGroup();
+        resourceGapGroup.__mcmsResourceGapLayer = true;
+        resourceGapGroup.addTo(map);
         }
         const now = Date.now();
         const context = buildResourceGapVehicleContext();
         const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
         const active = new Set();
         for (const marker of getMissionMarkerIndex().markers) {
-            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
-            const snapshot = missionId === null ? null : (liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now));
-            if (!snapshot) continue;
-            if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
-            if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
-            const requirements = resourceRequirementsFromSnapshot(snapshot);
-            if (!requirements.vehicles.length) continue;
-            let latLng = null;
-            try { latLng = marker.getLatLng?.(); } catch (err) {}
-            if (!latLng) continue;
-            if (economyBounds && !economyBounds.contains?.(latLng)) continue;
-            const analysis = analyseResourceGap(snapshot, context, requirements);
-            active.add(snapshot.missionId);
-            const signature = `${analysis.missingTypes}:${analysis.uncoveredTypes}:${analysis.rows.map(row => `${row.count}:${row.nearby}:${row.nearest === null ? 'x' : row.nearest.toFixed(1)}`).join('|')}:${state.resourceGap.radiusMi}`;
-            let label = resourceGapLabels.get(snapshot.missionId);
-            if (!label) {
-                label = pageWindow.L.marker(latLng, { interactive: false, keyboard: false, bubblingMouseEvents: false, pane, zIndexOffset: 0, icon: makeResourceGapIcon(analysis) });
+        const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+        const snapshot = missionId === null ? null : (liveMissionSnapshots.get(missionId) || missionSnapshotFromMarker(marker, now));
+        if (!snapshot) continue;
+        if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
+        if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
+        const requirements = resourceRequirementsFromSnapshot(snapshot);
+        if (!requirements.vehicles.length) continue;
+        let latLng = null;
+        try { latLng = marker.getLatLng?.(); } catch (err) {}
+        if (!latLng) continue;
+        if (economyBounds && !economyBounds.contains?.(latLng)) continue;
+        const analysis = analyseResourceGap(snapshot, context, requirements);
+        active.add(snapshot.missionId);
+        const signature = `${analysis.missingTypes}:${analysis.uncoveredTypes}:${analysis.rows.map(row => `${row.count}:${row.nearby}:${row.nearest === null ? 'x' : row.nearest.toFixed(1)}`).join('|')}:${state.resourceGap.radiusMi}`;
+        let label = resourceGapLabels.get(snapshot.missionId);
+        if (!label) {
+            label = pageWindow.L.marker(latLng, { interactive: false, keyboard: false, bubblingMouseEvents: false, pane, zIndexOffset: 0, icon: makeResourceGapIcon(analysis) });
+            label.__mcmsResourceGapSignature = signature;
+            label.__mcmsResourceGapLabel = true;
+            label.addTo(resourceGapGroup);
+            resourceGapLabels.set(snapshot.missionId, label);
+        } else {
+            try { label.setLatLng(latLng); } catch (err) {}
+            if (label.__mcmsResourceGapSignature !== signature) {
                 label.__mcmsResourceGapSignature = signature;
-                label.__mcmsResourceGapLabel = true;
-                label.addTo(resourceGapGroup);
-                resourceGapLabels.set(snapshot.missionId, label);
-            } else {
-                try { label.setLatLng(latLng); } catch (err) {}
-                if (label.__mcmsResourceGapSignature !== signature) {
-                    label.__mcmsResourceGapSignature = signature;
-                    try { label.setIcon(makeResourceGapIcon(analysis)); } catch (err) {}
-                }
+                try { label.setIcon(makeResourceGapIcon(analysis)); } catch (err) {}
             }
         }
+        }
         for (const [missionId, label] of resourceGapLabels.entries()) {
-            if (active.has(missionId)) continue;
-            resourceGapLabels.delete(missionId);
-            try { resourceGapGroup.removeLayer(label); } catch (err) {}
+        if (active.has(missionId)) continue;
+        resourceGapLabels.delete(missionId);
+        try { resourceGapGroup.removeLayer(label); } catch (err) {}
         }
     }
 
@@ -17841,15 +17781,15 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function economyPaddedBounds(map = findLeafletMapInstance(false), padding = 0.35) {
         if (!map?.getBounds) return null;
         try {
-            const bounds = map.getBounds();
-            return typeof bounds?.pad === 'function' ? bounds.pad(padding) : bounds;
+        const bounds = map.getBounds();
+        return typeof bounds?.pad === 'function' ? bounds.pad(padding) : bounds;
         } catch (err) { return null; }
     }
 
     function economyLayerIsProtected(layer) {
         if (!layer) return true;
         try {
-            if (layer.isPopupOpen?.() || layer.getPopup?.()?.isOpen?.()) return true;
+        if (layer.isPopupOpen?.() || layer.getPopup?.()?.isOpen?.()) return true;
         } catch (err) {}
         const icon = layer._icon;
         return Boolean(icon?.matches?.(':hover, :focus, :focus-within') || icon?.classList?.contains('leaflet-marker-draggable') || icon?.classList?.contains('mcms-mission-lock-target'));
@@ -17864,8 +17804,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!map || !layer || !hiddenSet) return;
         const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
         if (shouldShow) {
-            if (hiddenSet.delete(layer) && !onMap && typeof map.addLayer === 'function') map.addLayer(layer);
-            return;
+        if (hiddenSet.delete(layer) && !onMap && typeof map.addLayer === 'function') map.addLayer(layer);
+        return;
         }
         hiddenSet.add(layer);
         if (onMap && typeof map.removeLayer === 'function') map.removeLayer(layer);
@@ -17885,27 +17825,27 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         economyLayerEnforcement = true;
         try {
-            for (const layer of Array.from(economyHiddenVehicleLayers)) {
-                if (!vehicleSet.has(layer)) economyHiddenVehicleLayers.delete(layer);
-            }
-            for (const layer of vehicleLayers) {
-                const visible = state.visibility.vehicles && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
-                setEconomyLayerPresence(map, layer, visible, economyHiddenVehicleLayers);
-            }
+        for (const layer of Array.from(economyHiddenVehicleLayers)) {
+            if (!vehicleSet.has(layer)) economyHiddenVehicleLayers.delete(layer);
+        }
+        for (const layer of vehicleLayers) {
+            const visible = state.visibility.vehicles && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
+            setEconomyLayerPresence(map, layer, visible, economyHiddenVehicleLayers);
+        }
 
-            for (const layer of Array.from(economyHiddenBuildingLayers)) {
-                if (!buildingSet.has(layer)) economyHiddenBuildingLayers.delete(layer);
-            }
-            for (const layer of buildingLayers) {
-                const personal = isPersonalBuildingLayer(layer, personalBuildingIds);
-                const allowedByUser = !personal || state.visibility.buildings;
-                const visible = allowedByUser && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
-                setEconomyLayerPresence(map, layer, visible, economyHiddenBuildingLayers);
-            }
+        for (const layer of Array.from(economyHiddenBuildingLayers)) {
+            if (!buildingSet.has(layer)) economyHiddenBuildingLayers.delete(layer);
+        }
+        for (const layer of buildingLayers) {
+            const personal = isPersonalBuildingLayer(layer, personalBuildingIds);
+            const allowedByUser = !personal || state.visibility.buildings;
+            const visible = allowedByUser && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
+            setEconomyLayerPresence(map, layer, visible, economyHiddenBuildingLayers);
+        }
         } catch (err) {
-            console.debug(`[${SCRIPT.name}] Economy marker culling skipped.`, err);
+        console.debug(`[${SCRIPT.name}] Economy marker culling skipped.`, err);
         } finally {
-            economyLayerEnforcement = false;
+        economyLayerEnforcement = false;
         }
     }
 
@@ -17918,9 +17858,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtimeClearTimeout(economyLayerSyncTimer);
         economyLayerSyncTimer = null;
         if (!map) {
-            if (runtime.destroyed) { economyHiddenVehicleLayers.clear(); economyHiddenBuildingLayers.clear(); }
-            else runtimeSetTimeout(() => restoreEconomyLayers(findLeafletMapInstance(false)), 220);
-            return;
+        if (runtime.destroyed) { economyHiddenVehicleLayers.clear(); economyHiddenBuildingLayers.clear(); }
+        else runtimeSetTimeout(() => restoreEconomyLayers(findLeafletMapInstance(false)), 220);
+        return;
         }
         if (economyLayerEnforcement) return;
         const vehicleSet = new Set(getVehicleMarkerLayers().filter(Boolean));
@@ -17928,23 +17868,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const personalBuildingIds = getPersonalBuildingIds();
         economyLayerEnforcement = true;
         try {
-            for (const layer of Array.from(economyHiddenVehicleLayers)) {
-                economyHiddenVehicleLayers.delete(layer);
-                if (!vehicleSet.has(layer)) continue;
-                const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-                if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
-            }
-            for (const layer of Array.from(economyHiddenBuildingLayers)) {
-                economyHiddenBuildingLayers.delete(layer);
-                if (!buildingSet.has(layer)) continue;
-                if (isPersonalBuildingLayer(layer, personalBuildingIds) && !state.visibility.buildings) continue;
-                const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-                if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
-            }
+        for (const layer of Array.from(economyHiddenVehicleLayers)) {
+            economyHiddenVehicleLayers.delete(layer);
+            if (!vehicleSet.has(layer)) continue;
+            const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+            if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
+        }
+        for (const layer of Array.from(economyHiddenBuildingLayers)) {
+            economyHiddenBuildingLayers.delete(layer);
+            if (!buildingSet.has(layer)) continue;
+            if (isPersonalBuildingLayer(layer, personalBuildingIds) && !state.visibility.buildings) continue;
+            const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+            if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
+        }
         } catch (err) {
-            console.debug(`[${SCRIPT.name}] Economy marker restoration skipped.`, err);
+        console.debug(`[${SCRIPT.name}] Economy marker restoration skipped.`, err);
         } finally {
-            economyLayerEnforcement = false;
+        economyLayerEnforcement = false;
         }
     }
 
@@ -17963,27 +17903,27 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function applyLeafletEconomyPolicy(map = findLeafletMapInstance(false)) {
         if (!map || economyLeafletOptionSnapshots.has(map)) return;
         const snapshot = {
-            mapOptions: {},
-            layerOptions: new Map()
+        mapOptions: {},
+        layerOptions: new Map()
         };
         for (const key of ['zoomAnimation', 'fadeAnimation', 'markerZoomAnimation', 'inertia', 'wheelDebounceTime', 'wheelPxPerZoomLevel']) snapshot.mapOptions[key] = map.options?.[key];
         try {
-            map.options.zoomAnimation = false;
-            map.options.fadeAnimation = false;
-            map.options.markerZoomAnimation = false;
-            map.options.inertia = false;
-            map.options.wheelDebounceTime = Math.max(80, Number(map.options.wheelDebounceTime) || 0);
-            map.options.wheelPxPerZoomLevel = Math.max(90, Number(map.options.wheelPxPerZoomLevel) || 0);
-            map.eachLayer?.(layer => {
-                if (!layer?.options || (!layer._tiles && typeof layer.getTileUrl !== 'function')) return;
-                const values = {};
-                for (const key of ['updateWhenIdle', 'updateWhenZooming', 'updateInterval', 'keepBuffer']) values[key] = layer.options[key];
-                snapshot.layerOptions.set(layer, values);
-                layer.options.updateWhenIdle = true;
-                layer.options.updateWhenZooming = false;
-                layer.options.updateInterval = 850;
-                layer.options.keepBuffer = 0;
-            });
+        map.options.zoomAnimation = false;
+        map.options.fadeAnimation = false;
+        map.options.markerZoomAnimation = false;
+        map.options.inertia = false;
+        map.options.wheelDebounceTime = Math.max(80, Number(map.options.wheelDebounceTime) || 0);
+        map.options.wheelPxPerZoomLevel = Math.max(90, Number(map.options.wheelPxPerZoomLevel) || 0);
+        map.eachLayer?.(layer => {
+            if (!layer?.options || (!layer._tiles && typeof layer.getTileUrl !== 'function')) return;
+            const values = {};
+            for (const key of ['updateWhenIdle', 'updateWhenZooming', 'updateInterval', 'keepBuffer']) values[key] = layer.options[key];
+            snapshot.layerOptions.set(layer, values);
+            layer.options.updateWhenIdle = true;
+            layer.options.updateWhenZooming = false;
+            layer.options.updateInterval = 850;
+            layer.options.keepBuffer = 0;
+        });
         } catch (err) {}
         economyLeafletOptionSnapshots.set(map, snapshot);
     }
@@ -17991,47 +17931,47 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function restoreLeafletEconomyPolicy(map = null) {
         const targets = map ? [[map, economyLeafletOptionSnapshots.get(map)]] : Array.from(economyLeafletOptionSnapshots.entries());
         for (const [target, snapshot] of targets) {
-            if (!target || !snapshot) continue;
-            try {
-                Object.assign(target.options, snapshot.mapOptions);
-                for (const [layer, values] of snapshot.layerOptions.entries()) if (layer?.options) Object.assign(layer.options, values);
-            } catch (err) {}
-            economyLeafletOptionSnapshots.delete(target);
+        if (!target || !snapshot) continue;
+        try {
+            Object.assign(target.options, snapshot.mapOptions);
+            for (const [layer, values] of snapshot.layerOptions.entries()) if (layer?.options) Object.assign(layer.options, values);
+        } catch (err) {}
+        economyLeafletOptionSnapshots.delete(target);
         }
     }
 
     function setEconomyMode(enabled, announce = false) {
         const next = Boolean(enabled);
         if (state.economyMode === next) {
-            const existingMap = findLeafletMapInstance(false);
-            if (next) { applyLeafletEconomyPolicy(existingMap); scheduleEconomyLayerSync(0); }
-            else {
-                runtimeClearTimeout(economyLayerSyncTimer);
-                economyLayerSyncTimer = null;
-                restoreEconomyLayers(existingMap);
-                restoreLeafletEconomyPolicy();
-                disposeEconomyCanvasRenderer(existingMap);
-                document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
-                economyDeferredMapRefresh = false;
-                economyDeferredDomMutation = false;
-            }
-            updateUI();
-            return;
+        const existingMap = findLeafletMapInstance(false);
+        if (next) { applyLeafletEconomyPolicy(existingMap); scheduleEconomyLayerSync(0); }
+        else {
+            runtimeClearTimeout(economyLayerSyncTimer);
+            economyLayerSyncTimer = null;
+            restoreEconomyLayers(existingMap);
+            restoreLeafletEconomyPolicy();
+            disposeEconomyCanvasRenderer(existingMap);
+            document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
+            economyDeferredMapRefresh = false;
+            economyDeferredDomMutation = false;
+        }
+        updateUI();
+        return;
         }
         state.economyMode = next;
         saveState();
         applyRootAttributes();
         const map = findLeafletMapInstance(false);
         if (next) {
-            applyLeafletEconomyPolicy(map);
-            scheduleEconomyLayerSync(0);
+        applyLeafletEconomyPolicy(map);
+        scheduleEconomyLayerSync(0);
         } else {
-            runtimeClearTimeout(economyLayerSyncTimer);
-            economyLayerSyncTimer = null;
-            restoreEconomyLayers(map);
-            restoreLeafletEconomyPolicy();
-            document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
-            try { map?.invalidateSize?.({ animate: false }); } catch (err) {}
+        runtimeClearTimeout(economyLayerSyncTimer);
+        economyLayerSyncTimer = null;
+        restoreEconomyLayers(map);
+        restoreLeafletEconomyPolicy();
+        document.documentElement?.setAttribute('data-mcms-map-moving', 'false');
+        try { map?.invalidateSize?.({ animate: false }); } catch (err) {}
         }
         runtimeRescheduleTasks(!next);
         heatmapRenderSignature = '';
@@ -18065,23 +18005,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (currentUserId === null) return new Set();
         const now = Date.now();
         if (
-            personalBuildingIdsCache.revision === buildingRegistryRevision &&
-            personalBuildingIdsCache.userId === currentUserId &&
-            now - personalBuildingIdsCache.createdAt <= PERSONAL_BUILDING_ID_CACHE_MS
+        personalBuildingIdsCache.revision === buildingRegistryRevision &&
+        personalBuildingIdsCache.userId === currentUserId &&
+        now - personalBuildingIdsCache.createdAt <= PERSONAL_BUILDING_ID_CACHE_MS
         ) return personalBuildingIdsCache.values;
 
         const personalBuildingIds = new Set();
         for (const building of getBuildingMarkerCache()) {
-            if (!building || building.user_id === undefined || building.user_id === null) continue;
-            const buildingId = building.id ?? building.building_id;
-            if (buildingId === undefined || buildingId === null) continue;
-            if (String(building.user_id) === currentUserId) personalBuildingIds.add(String(buildingId));
+        if (!building || building.user_id === undefined || building.user_id === null) continue;
+        const buildingId = building.id ?? building.building_id;
+        if (buildingId === undefined || buildingId === null) continue;
+        if (String(building.user_id) === currentUserId) personalBuildingIds.add(String(buildingId));
         }
         personalBuildingIdsCache = {
-            revision: buildingRegistryRevision,
-            userId: currentUserId,
-            createdAt: now,
-            values: personalBuildingIds
+        revision: buildingRegistryRevision,
+        userId: currentUserId,
+        createdAt: now,
+        values: personalBuildingIds
         };
         return personalBuildingIds;
     }
@@ -18111,8 +18051,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const personalBuildingMarkerIcons = new Set();
 
         for (const marker of getBuildingMarkerLayers()) {
-            if (!marker._icon || marker._icon.nodeType !== 1) continue;
-            if (isPersonalBuildingLayer(marker, personalBuildingIds)) personalBuildingMarkerIcons.add(marker._icon);
+        if (!marker._icon || marker._icon.nodeType !== 1) continue;
+        if (isPersonalBuildingLayer(marker, personalBuildingIds)) personalBuildingMarkerIcons.add(marker._icon);
         }
 
         return personalBuildingMarkerIcons;
@@ -18133,7 +18073,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const originalOpacity = personalBuildingLayerOpacity.get(layer);
         personalBuildingLayerOpacity.delete(layer);
         try {
-            if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(originalOpacity) ? originalOpacity : 1);
+        if (typeof layer?.setOpacity === 'function') layer.setOpacity(Number.isFinite(originalOpacity) ? originalOpacity : 1);
         } catch (err) {}
     }
 
@@ -18143,22 +18083,22 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         hiddenPersonalBuildingLayers.add(layer);
 
         if (!personalBuildingLayerOpacity.has(layer)) {
-            const currentOpacity = Number(layer.options?.opacity);
-            personalBuildingLayerOpacity.set(layer, Number.isFinite(currentOpacity) ? currentOpacity : 1);
+        const currentOpacity = Number(layer.options?.opacity);
+        personalBuildingLayerOpacity.set(layer, Number.isFinite(currentOpacity) ? currentOpacity : 1);
         }
 
         try {
-            if (typeof layer.setOpacity === 'function') layer.setOpacity(0);
+        if (typeof layer.setOpacity === 'function') layer.setOpacity(0);
         } catch (err) {}
 
         try {
-            const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-            if (isOnMap && typeof map.removeLayer === 'function') {
-                const previousEnforcementState = enforcingPersonalBuildingVisibility;
-                enforcingPersonalBuildingVisibility = true;
-                try { map.removeLayer(layer); }
-                finally { enforcingPersonalBuildingVisibility = previousEnforcementState; }
-            }
+        const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+        if (isOnMap && typeof map.removeLayer === 'function') {
+            const previousEnforcementState = enforcingPersonalBuildingVisibility;
+            enforcingPersonalBuildingVisibility = true;
+            try { map.removeLayer(layer); }
+            finally { enforcingPersonalBuildingVisibility = previousEnforcementState; }
+        }
         } catch (err) {}
 
         return true;
@@ -18172,30 +18112,30 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const personalBuildingIds = getPersonalBuildingIds();
 
         if (!state.visibility.buildings) {
-            for (const layer of Array.from(hiddenPersonalBuildingLayers)) {
-                if (!currentBuildingLayerSet.has(layer)) {
-                    hiddenPersonalBuildingLayers.delete(layer);
-                    restorePersonalBuildingLayerOpacity(layer);
-                }
+        for (const layer of Array.from(hiddenPersonalBuildingLayers)) {
+            if (!currentBuildingLayerSet.has(layer)) {
+                hiddenPersonalBuildingLayers.delete(layer);
+                restorePersonalBuildingLayerOpacity(layer);
             }
+        }
 
-            for (const layer of currentBuildingLayers) hidePersonalBuildingLayer(map, layer, personalBuildingIds);
-            return;
+        for (const layer of currentBuildingLayers) hidePersonalBuildingLayer(map, layer, personalBuildingIds);
+        return;
         }
 
         enforcingPersonalBuildingVisibility = true;
         try {
-            const layersToRestore = new Set([...hiddenPersonalBuildingLayers, ...personalBuildingLayerOpacity.keys()]);
-            for (const layer of layersToRestore) {
-                const wasHidden = hiddenPersonalBuildingLayers.delete(layer);
-                restorePersonalBuildingLayerOpacity(layer);
-                if (!wasHidden || !currentBuildingLayerSet.has(layer)) continue;
-                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
-                if (!isOnMap && typeof map.addLayer === 'function') map.addLayer(layer);
-            }
+        const layersToRestore = new Set([...hiddenPersonalBuildingLayers, ...personalBuildingLayerOpacity.keys()]);
+        for (const layer of layersToRestore) {
+            const wasHidden = hiddenPersonalBuildingLayers.delete(layer);
+            restorePersonalBuildingLayerOpacity(layer);
+            if (!wasHidden || !currentBuildingLayerSet.has(layer)) continue;
+            const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+            if (!isOnMap && typeof map.addLayer === 'function') map.addLayer(layer);
+        }
         } catch (err) {
         } finally {
-            enforcingPersonalBuildingVisibility = false;
+        enforcingPersonalBuildingVisibility = false;
         }
     }
 
@@ -18203,8 +18143,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const vehicleMarkerIcons = new Set();
 
         for (const marker of getVehicleMarkerLayers()) {
-            if (!marker || !marker._icon || marker._icon.nodeType !== 1) continue;
-            vehicleMarkerIcons.add(marker._icon);
+        if (!marker || !marker._icon || marker._icon.nodeType !== 1) continue;
+        vehicleMarkerIcons.add(marker._icon);
         }
 
         return vehicleMarkerIcons;
@@ -18226,11 +18166,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const normalisedCurrentUserId = currentUserIdCached();
         if (normalisedCurrentUserId === null) return { personalMissionIcons, allianceMissionIcons };
         for (const marker of getMissionMarkerLayers()) {
-            if (!marker || marker.mission_id === undefined || marker.mission_id === null) continue;
-            if (!marker._icon || marker._icon.nodeType !== 1) continue;
-            if (marker.user_id === undefined || marker.user_id === null) continue;
-            if (String(marker.user_id) === normalisedCurrentUserId) personalMissionIcons.add(marker._icon);
-            else allianceMissionIcons.add(marker._icon);
+        if (!marker || marker.mission_id === undefined || marker.mission_id === null) continue;
+        if (!marker._icon || marker._icon.nodeType !== 1) continue;
+        if (marker.user_id === undefined || marker.user_id === null) continue;
+        if (String(marker.user_id) === normalisedCurrentUserId) personalMissionIcons.add(marker._icon);
+        else allianceMissionIcons.add(marker._icon);
         }
 
         return { personalMissionIcons, allianceMissionIcons };
@@ -18254,7 +18194,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!icon?.classList || icon.dataset?.mcmsMarkerKind !== type) return false;
         const desired = new Set(markerClassesForType(type));
         for (const className of MARKER_CLASS_NAMES) {
-            if (icon.classList.contains(className) !== desired.has(className)) return false;
+        if (icon.classList.contains(className) !== desired.has(className)) return false;
         }
         if (type === 'vehicle' && icon.getAttribute('data-mcms-vehicle-marker') !== 'true') return false;
         if (type === 'personal-building' && icon.getAttribute('data-mcms-personal-building-marker') !== 'true') return false;
@@ -18267,18 +18207,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (markerTypeIsApplied(icon, normalisedType)) return;
         const desired = new Set(markerClassesForType(normalisedType));
         for (const className of MARKER_CLASS_NAMES) {
-            const shouldHave = desired.has(className);
-            if (icon.classList.contains(className) !== shouldHave) icon.classList.toggle(className, shouldHave);
+        const shouldHave = desired.has(className);
+        if (icon.classList.contains(className) !== shouldHave) icon.classList.toggle(className, shouldHave);
         }
         if (normalisedType === 'vehicle') {
-            if (icon.getAttribute('data-mcms-vehicle-marker') !== 'true') icon.setAttribute('data-mcms-vehicle-marker', 'true');
-            if (icon.hasAttribute('data-mcms-personal-building-marker')) icon.removeAttribute('data-mcms-personal-building-marker');
+        if (icon.getAttribute('data-mcms-vehicle-marker') !== 'true') icon.setAttribute('data-mcms-vehicle-marker', 'true');
+        if (icon.hasAttribute('data-mcms-personal-building-marker')) icon.removeAttribute('data-mcms-personal-building-marker');
         } else if (normalisedType === 'personal-building') {
-            if (icon.getAttribute('data-mcms-personal-building-marker') !== 'true') icon.setAttribute('data-mcms-personal-building-marker', 'true');
-            if (icon.hasAttribute('data-mcms-vehicle-marker')) icon.removeAttribute('data-mcms-vehicle-marker');
+        if (icon.getAttribute('data-mcms-personal-building-marker') !== 'true') icon.setAttribute('data-mcms-personal-building-marker', 'true');
+        if (icon.hasAttribute('data-mcms-vehicle-marker')) icon.removeAttribute('data-mcms-vehicle-marker');
         } else {
-            if (icon.hasAttribute('data-mcms-personal-building-marker')) icon.removeAttribute('data-mcms-personal-building-marker');
-            if (icon.hasAttribute('data-mcms-vehicle-marker')) icon.removeAttribute('data-mcms-vehicle-marker');
+        if (icon.hasAttribute('data-mcms-personal-building-marker')) icon.removeAttribute('data-mcms-personal-building-marker');
+        if (icon.hasAttribute('data-mcms-vehicle-marker')) icon.removeAttribute('data-mcms-vehicle-marker');
         }
         if (icon.dataset) icon.dataset.mcmsMarkerKind = normalisedType;
     }
@@ -18292,16 +18232,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const personalBuildingMarkerIcons = getPersonalBuildingMarkerIcons();
 
         for (const icon of mapEl.querySelectorAll('.leaflet-marker-icon')) {
-            const type = personalMissionIcons.has(icon)
-                ? 'my-mission'
-                : allianceMissionIcons.has(icon)
-                    ? 'alliance-mission'
-                    : vehicleMarkerIcons.has(icon)
-                        ? 'vehicle'
-                        : personalBuildingMarkerIcons.has(icon) || icon.getAttribute('data-mcms-personal-building-marker') === 'true'
-                            ? 'personal-building'
-                            : classifyMarker(icon);
-            applyMarkerType(icon, type);
+        const type = personalMissionIcons.has(icon)
+            ? 'my-mission'
+            : allianceMissionIcons.has(icon)
+                ? 'alliance-mission'
+                : vehicleMarkerIcons.has(icon)
+                    ? 'vehicle'
+                    : personalBuildingMarkerIcons.has(icon) || icon.getAttribute('data-mcms-personal-building-marker') === 'true'
+                        ? 'personal-building'
+                        : classifyMarker(icon);
+        applyMarkerType(icon, type);
         }
     }
 
@@ -18310,11 +18250,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const currentTimer = trailing ? markerStateTrailingTimer : markerStateSyncTimer;
         runtimeClearTimeout(currentTimer);
         const callback = () => {
-            if (trailing) markerStateTrailingTimer = null;
-            else markerStateSyncTimer = null;
-            if (runtime.destroyed || document.hidden) return;
-            if (!state.visibility.vehicles || state.markerFocus) synchroniseVehicleMarkerClasses();
-            if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+        if (trailing) markerStateTrailingTimer = null;
+        else markerStateSyncTimer = null;
+        if (runtime.destroyed || document.hidden) return;
+        if (!state.visibility.vehicles || state.markerFocus) synchroniseVehicleMarkerClasses();
+        if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
         };
         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
         if (timerName === 'markerStateTrailingTimer') markerStateTrailingTimer = id;
@@ -18328,43 +18268,43 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function markerClassificationNeeded() {
         return Boolean(
-            state.markerFocus || state.missionPulse || criticalViewActive ||
-            !state.visibility.vehicles || !state.visibility.buildings ||
-            !state.visibility.myMissions || !state.visibility.allianceMissions
+        state.markerFocus || state.missionPulse || criticalViewActive ||
+        !state.visibility.vehicles || !state.visibility.buildings ||
+        !state.visibility.myMissions || !state.visibility.allianceMissions
         );
     }
 
     function vehicleDataNeeded() {
         return Boolean(
-            state.unitCommitment || state.allianceCredits || state.resourceGap.enabled ||
-            state.missionInspector || state.stuckDetector.enabled || criticalViewActive ||
-            document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open') ||
-            document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ||
-            transportSweepRuntime.running
+        state.unitCommitment || state.allianceCredits || state.resourceGap.enabled ||
+        state.missionInspector || state.stuckDetector.enabled || criticalViewActive ||
+        document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open') ||
+        document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ||
+        transportSweepRuntime.running
         );
     }
 
     function missionSnapshotsNeeded() {
         return Boolean(
-            state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
-            state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
-            state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled || criticalViewActive ||
-            operationalUiIsVisible() || missionInspectorMarker
+        state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
+        state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
+        state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled || criticalViewActive ||
+        operationalUiIsVisible() || missionInspectorMarker
         );
     }
 
     function isToolkitLeafletLayer(layer) {
         return Boolean(layer && (
-            layer.__mcmsHeatmapCell || layer.__mcmsHeatmapLayer ||
-            layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer ||
-            layer.__mcmsAllianceCreditLabel || layer.__mcmsAllianceCreditLayer ||
-            layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
-            layer.__mcmsUnitCommitmentLabel || layer.__mcmsUnitCommitmentLayer ||
-            layer.__mcmsTransportWatcherLabel || layer.__mcmsTransportWatcherLayer ||
-            layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
-            layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
-            layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
-            layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
+        layer.__mcmsHeatmapCell || layer.__mcmsHeatmapLayer ||
+        layer.__mcmsCoverageRing || layer.__mcmsCoverageLayer ||
+        layer.__mcmsAllianceCreditLabel || layer.__mcmsAllianceCreditLayer ||
+        layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
+        layer.__mcmsUnitCommitmentLabel || layer.__mcmsUnitCommitmentLayer ||
+        layer.__mcmsTransportWatcherLabel || layer.__mcmsTransportWatcherLayer ||
+        layer.__mcmsResourceGapLabel || layer.__mcmsResourceGapLayer ||
+        layer.__mcmsStuckMissionLabel || layer.__mcmsStuckMissionLayer ||
+        layer.__mcmsMissionSpawnLabel || layer.__mcmsMissionSpawnRing || layer.__mcmsMissionSpawnLayer ||
+        layer.__mcmsMissionLockOnMarker || layer.__mcmsMissionLockOnLayer
         ));
     }
 
@@ -18385,10 +18325,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (request.fullRefresh && state.unitCommitment) scheduleUnitCommitmentRefresh();
         if (request.fullRefresh && state.resourceGap.enabled) scheduleResourceGapRefresh();
         if (request.includeSnapshots && missionSnapshotsNeeded()) {
-            scheduleMissionSnapshotRefresh();
+        scheduleMissionSnapshotRefresh();
         } else if (request.fullRefresh) {
-            if (state.transportWatcher) scheduleTransportWatcherRefresh();
-            if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+        if (state.transportWatcher) scheduleTransportWatcherRefresh();
+        if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
         }
         if (request.refreshOperational && operationalUiIsVisible()) scheduleOperationalPanelsRender(800);
         if (request.positionPanel && !dragState) schedulePanelPosition(true, 60);
@@ -18413,9 +18353,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!state.transportWatcher) clearTransportWatcherLabels();
         if (!state.stuckDetector.enabled) clearStuckMissionLabels();
         if (!state.resourceGap.enabled) {
-            clearResourceGapLabels();
-            resourceGapAnalysisCache.clear();
-            resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [], byToken: new Map() };
+        clearResourceGapLabels();
+        resourceGapAnalysisCache.clear();
+        resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [], byToken: new Map() };
         }
         if (!state.missionInspector) hideMissionInspector();
         if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(80);
@@ -18426,30 +18366,30 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function detachMapEvents(map) {
         if (!map) return;
         for (let index = runtime.mapBindings.length - 1; index >= 0; index -= 1) {
-            const binding = runtime.mapBindings[index];
-            if (binding.map !== map) continue;
-            try { binding.map.off(binding.types, binding.handler); } catch (err) {}
-            runtime.mapBindings.splice(index, 1);
+        const binding = runtime.mapBindings[index];
+        if (binding.map !== map) continue;
+        try { binding.map.off(binding.types, binding.handler); } catch (err) {}
+        runtime.mapBindings.splice(index, 1);
         }
     }
 
     function findLeafletMapInstance(showStatus = true) {
         const mapEl = getLargestLeafletMap();
         if (!mapEl) {
-            detachMapEvents(cachedMap);
-            cachedMap = null;
-            cachedMapElement = null;
-            return null;
+        detachMapEvents(cachedMap);
+        cachedMap = null;
+        cachedMapElement = null;
+        return null;
         }
 
         if (cachedMap && typeof cachedMap.getContainer === 'function') {
-            try {
-                const container = cachedMap.getContainer();
-                if (container === mapEl && container?.isConnected !== false) return cachedMap;
-            } catch (err) {}
-            detachMapEvents(cachedMap);
-            cachedMap = null;
-            cachedMapElement = null;
+        try {
+            const container = cachedMap.getContainer();
+            if (container === mapEl && container?.isConnected !== false) return cachedMap;
+        } catch (err) {}
+        detachMapEvents(cachedMap);
+        cachedMap = null;
+        cachedMapElement = null;
         }
 
         const now = Date.now();
@@ -18460,60 +18400,60 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const seen = new Set();
         const candidateRoots = Array.from(new Set([pageWindow, window].filter(Boolean)));
         const names = [
-            'map', 'missionMap', 'mission_map', 'missionChiefMap', 'missionchiefMap',
-            'leafletMap', 'leaflet_map', 'mainMap', 'gameMap', 'mapInstance',
-            'osmMap', 'osm_map', 'lssmMap'
+        'map', 'missionMap', 'mission_map', 'missionChiefMap', 'missionchiefMap',
+        'leafletMap', 'leaflet_map', 'mainMap', 'gameMap', 'mapInstance',
+        'osmMap', 'osm_map', 'lssmMap'
         ];
 
         const addCandidate = value => {
-            if (!value || seen.has(value) || (typeof value !== 'object' && typeof value !== 'function')) return;
-            try {
-                if (typeof value.getCenter === 'function' && typeof value.setView === 'function' && typeof value.getZoom === 'function' && typeof value.addLayer === 'function') {
-                    seen.add(value);
-                    candidates.push(value);
-                }
-            } catch (err) {}
+        if (!value || seen.has(value) || (typeof value !== 'object' && typeof value !== 'function')) return;
+        try {
+            if (typeof value.getCenter === 'function' && typeof value.setView === 'function' && typeof value.getZoom === 'function' && typeof value.addLayer === 'function') {
+                seen.add(value);
+                candidates.push(value);
+            }
+        } catch (err) {}
         };
 
         for (const root of candidateRoots) {
-            for (const name of names) {
-                try { addCandidate(root[name]); } catch (err) {}
-            }
+        for (const name of names) {
+            try { addCandidate(root[name]); } catch (err) {}
+        }
         }
 
         // Scan data properties without invoking arbitrary page getters. MissionChief and
         // extensions expose many globals; reading every accessor was an avoidable hot path.
         for (const root of candidateRoots) {
-            let properties;
-            try { properties = Object.getOwnPropertyNames(root); } catch (err) { continue; }
-            const prioritised = properties.filter(name => /map|leaflet/i.test(name));
-            const fallback = properties.filter(name => !/map|leaflet/i.test(name)).slice(0, 160);
-            for (const prop of [...prioritised, ...fallback]) {
-                if (candidates.length >= 80) break;
-                try {
-                    const descriptor = Object.getOwnPropertyDescriptor(root, prop);
-                    if (descriptor && Object.prototype.hasOwnProperty.call(descriptor, 'value')) addCandidate(descriptor.value);
-                } catch (err) {}
-            }
+        let properties;
+        try { properties = Object.getOwnPropertyNames(root); } catch (err) { continue; }
+        const prioritised = properties.filter(name => /map|leaflet/i.test(name));
+        const fallback = properties.filter(name => !/map|leaflet/i.test(name)).slice(0, 160);
+        for (const prop of [...prioritised, ...fallback]) {
+            if (candidates.length >= 80) break;
+            try {
+                const descriptor = Object.getOwnPropertyDescriptor(root, prop);
+                if (descriptor && Object.prototype.hasOwnProperty.call(descriptor, 'value')) addCandidate(descriptor.value);
+            } catch (err) {}
+        }
         }
 
         for (const map of candidates) {
-            try {
-                if (map.getContainer?.() === mapEl) {
-                    cachedMap = map;
-                    cachedMapElement = mapEl;
-                    attachMapEvents(map);
-                    return map;
-                }
-            } catch (err) {}
+        try {
+            if (map.getContainer?.() === mapEl) {
+                cachedMap = map;
+                cachedMapElement = mapEl;
+                attachMapEvents(map);
+                return map;
+            }
+        } catch (err) {}
         }
 
         // Only use a container-agnostic fallback when exactly one credible map exists.
         if (candidates.length === 1) {
-            cachedMap = candidates[0];
-            cachedMapElement = mapEl;
-            attachMapEvents(cachedMap);
-            return cachedMap;
+        cachedMap = candidates[0];
+        cachedMapElement = mapEl;
+        attachMapEvents(cachedMap);
+        return cachedMap;
         }
 
         if (showStatus) setStatus('Leaflet map object not detected. Map jumps/rings may be unavailable on this page.');
@@ -18524,113 +18464,113 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (runtime.destroyed || !map || runtime.mapBindings.some(binding => binding.map === map)) return;
 
         const inferScope = layer => {
-            if (!layer) return 'all';
-            if (normaliseMissionId(layer.mission_id ?? layer.missionId ?? layer.options?.mission_id ?? layer.options?.missionId) !== null) return 'mission';
-            if (getBuildingLayerId(layer) !== null) return 'building';
-            const vehicleId = layer.vehicle_id ?? layer.vehicleId ?? layer.options?.vehicle_id ?? layer.options?.vehicleId ?? layer.params?.vehicle_id ?? layer.params?.vehicleId;
-            if (vehicleId !== undefined && vehicleId !== null && vehicleId !== '') return 'vehicle';
-            return 'all';
+        if (!layer) return 'all';
+        if (normaliseMissionId(layer.mission_id ?? layer.missionId ?? layer.options?.mission_id ?? layer.options?.missionId) !== null) return 'mission';
+        if (getBuildingLayerId(layer) !== null) return 'building';
+        const vehicleId = layer.vehicle_id ?? layer.vehicleId ?? layer.options?.vehicle_id ?? layer.options?.vehicleId ?? layer.params?.vehicle_id ?? layer.params?.vehicleId;
+        if (vehicleId !== undefined && vehicleId !== null && vehicleId !== '') return 'vehicle';
+        return 'all';
         };
 
         const onLayerAdd = event => {
-            const layer = event?.layer;
-            if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
-            if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
-            const scope = inferScope(layer);
-            invalidateMarkerRegistryCaches(scope);
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredMapRefresh = true;
-                return;
-            }
+        const layer = event?.layer;
+        if (isToolkitLeafletLayer(layer) || economyLayerEnforcement) return;
+        if (state.economyMode) applyEconomyToLeafletLayer(map, layer);
+        const scope = inferScope(layer);
+        invalidateMarkerRegistryCaches(scope);
+        if (state.economyMode && economyMapMoving) {
+            economyDeferredMapRefresh = true;
+            return;
+        }
 
-            const isVehicleLayer = scope === 'vehicle';
-            if (isVehicleLayer && layer?._icon) markVehicleIcon(layer._icon);
-            if (state.markerFocus && isVehicleLayer) scheduleMarkerStateSync(0, false);
-            if (scope === 'building') {
-                const isPersonalBuilding = markPersonalBuildingLayerIfOwned(layer);
-                if (isPersonalBuilding && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
-            }
-            scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
-            if (state.economyMode && (scope === 'vehicle' || scope === 'building')) scheduleEconomyLayerSync(80);
+        const isVehicleLayer = scope === 'vehicle';
+        if (isVehicleLayer && layer?._icon) markVehicleIcon(layer._icon);
+        if (state.markerFocus && isVehicleLayer) scheduleMarkerStateSync(0, false);
+        if (scope === 'building') {
+            const isPersonalBuilding = markPersonalBuildingLayerIfOwned(layer);
+            if (isPersonalBuilding && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
+        }
+        scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
+        if (state.economyMode && (scope === 'vehicle' || scope === 'building')) scheduleEconomyLayerSync(80);
         };
 
         const onLayerRemove = event => {
-            const layer = event?.layer;
-            if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || economyLayerEnforcement) return;
-            const scope = inferScope(layer);
-            invalidateMarkerRegistryCaches(scope);
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredMapRefresh = true;
-                return;
-            }
-            scheduleEnabledMapRefreshes({ includeSnapshots: scope !== 'building', positionPanel: false });
+        const layer = event?.layer;
+        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || economyLayerEnforcement) return;
+        const scope = inferScope(layer);
+        invalidateMarkerRegistryCaches(scope);
+        if (state.economyMode && economyMapMoving) {
+            economyDeferredMapRefresh = true;
+            return;
+        }
+        scheduleEnabledMapRefreshes({ includeSnapshots: scope !== 'building', positionPanel: false });
         };
 
         const onMapMoveStart = () => {
-            economyMapMoving = true;
-            document.documentElement.setAttribute('data-mcms-map-moving', 'true');
+        economyMapMoving = true;
+        document.documentElement.setAttribute('data-mcms-map-moving', 'true');
         };
 
         const onMapMove = () => {
-            economyMapMoving = false;
-            document.documentElement.setAttribute('data-mcms-map-moving', 'false');
-            const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
-            economyDeferredMapRefresh = false;
-            economyDeferredDomMutation = false;
-            if (deferredRefresh) {
-                invalidateMarkerRegistryCaches('all');
-                ensureUi();
-            }
-            if (state.economyMode) scheduleEconomyLayerSync(80);
-            if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings)) scheduleMarkerStateSync(0, false);
-            scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
-            if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') && selectedCriticalDistanceOrigin() === 'live') {
-                if (selectedCriticalSortMode() === 'closest' || selectedCriticalSortMode() === 'furthest') runtimeSetTimeout(() => renderCriticalDrawer(null, { updateViewTime: false }), 40);
-                else runtimeSetTimeout(refreshCriticalDistanceNodes, 40);
-            }
+        economyMapMoving = false;
+        document.documentElement.setAttribute('data-mcms-map-moving', 'false');
+        const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
+        economyDeferredMapRefresh = false;
+        economyDeferredDomMutation = false;
+        if (deferredRefresh) {
+            invalidateMarkerRegistryCaches('all');
+            ensureUi();
+        }
+        if (state.economyMode) scheduleEconomyLayerSync(80);
+        if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings)) scheduleMarkerStateSync(0, false);
+        scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
+        if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') && selectedCriticalDistanceOrigin() === 'live') {
+            if (selectedCriticalSortMode() === 'closest' || selectedCriticalSortMode() === 'furthest') runtimeSetTimeout(() => renderCriticalDrawer(null, { updateViewTime: false }), 40);
+            else runtimeSetTimeout(refreshCriticalDistanceNodes, 40);
+        }
         };
 
         try {
-            map.on('layeradd', onLayerAdd);
-            map.on('layerremove', onLayerRemove);
-            map.on('movestart zoomstart', onMapMoveStart);
-            map.on('moveend zoomend', onMapMove);
-            runtime.mapBindings.push(
-                { map, types: 'layeradd', handler: onLayerAdd },
-                { map, types: 'layerremove', handler: onLayerRemove },
-                { map, types: 'movestart zoomstart', handler: onMapMoveStart },
-                { map, types: 'moveend zoomend', handler: onMapMove }
-            );
+        map.on('layeradd', onLayerAdd);
+        map.on('layerremove', onLayerRemove);
+        map.on('movestart zoomstart', onMapMoveStart);
+        map.on('moveend zoomend', onMapMove);
+        runtime.mapBindings.push(
+            { map, types: 'layeradd', handler: onLayerAdd },
+            { map, types: 'layerremove', handler: onLayerRemove },
+            { map, types: 'movestart zoomstart', handler: onMapMoveStart },
+            { map, types: 'moveend zoomend', handler: onMapMove }
+        );
         } catch (err) {}
     }
 
     function setMapView(lat, lng, zoom) {
         const map = findLeafletMapInstance(true);
         if (!map || typeof map.setView !== 'function') {
-            showToast('Map jump unavailable');
-            return false;
+        showToast('Map jump unavailable');
+        return false;
         }
         try {
-            map.setView([lat, lng], zoom, state.economyMode ? { animate: false } : undefined);
-            return true;
+        map.setView([lat, lng], zoom, state.economyMode ? { animate: false } : undefined);
+        return true;
         } catch (err) {
-            showToast('Map jump failed');
-            return false;
+        showToast('Map jump failed');
+        return false;
         }
     }
 
     function economyLeafletPathRenderer(map) {
         if (!state.economyMode || !map || typeof pageWindow.L?.canvas !== 'function') return undefined;
         try {
-            if (!economyCanvasRenderer || economyCanvasRenderer._map !== map) {
-                const previousRenderer = economyCanvasRenderer;
-                if (previousRenderer?._map && previousRenderer._map !== map) {
-                    try { previousRenderer._map.removeLayer?.(previousRenderer); } catch (err) {}
-                }
-                economyCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
-                economyCanvasRenderer.__mcmsEconomyRenderer = true;
+        if (!economyCanvasRenderer || economyCanvasRenderer._map !== map) {
+            const previousRenderer = economyCanvasRenderer;
+            if (previousRenderer?._map && previousRenderer._map !== map) {
+                try { previousRenderer._map.removeLayer?.(previousRenderer); } catch (err) {}
             }
-            return economyCanvasRenderer;
+            economyCanvasRenderer = pageWindow.L.canvas({ padding: 0.08, tolerance: 2 });
+            economyCanvasRenderer.__mcmsEconomyRenderer = true;
+        }
+        return economyCanvasRenderer;
         } catch (err) { return undefined; }
     }
 
@@ -18648,22 +18588,22 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const seen = new Set();
 
         for (const layer of getBuildingMarkerLayers()) {
-            if (!layer || seen.has(layer) || typeof layer.getLatLng !== 'function') continue;
-            if (!isPersonalBuildingLayer(layer)) continue;
-            try {
-                if (typeof map.hasLayer === 'function' && !map.hasLayer(layer)) continue;
-                const latLng = layer.getLatLng();
-                if (!latLng || (bounds?.contains && !bounds.contains(latLng))) continue;
-                seen.add(layer);
-                layers.push(layer);
-            } catch (err) {}
+        if (!layer || seen.has(layer) || typeof layer.getLatLng !== 'function') continue;
+        if (!isPersonalBuildingLayer(layer)) continue;
+        try {
+            if (typeof map.hasLayer === 'function' && !map.hasLayer(layer)) continue;
+            const latLng = layer.getLatLng();
+            if (!latLng || (bounds?.contains && !bounds.contains(latLng))) continue;
+            seen.add(layer);
+            layers.push(layer);
+        } catch (err) {}
         }
         return layers;
     }
 
     function clearCoverageRings() {
         if (coverageGroup) {
-            try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+        try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
         }
         coverageGroup = null;
         coverageRenderSignature = '';
@@ -18675,50 +18615,50 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const map = findLeafletMapInstance(false);
 
         if (!map || !pageWindow.L || typeof pageWindow.L.circle !== 'function' || typeof pageWindow.L.layerGroup !== 'function') {
-            setStatus('Coverage rings need access to the active Leaflet map object.');
-            return;
+        setStatus('Coverage rings need access to the active Leaflet map object.');
+        return;
         }
 
         try {
-            const layers = visibleBuildingLayers(map).slice(0, 200);
-            const radiusMi = Number(state.coverage.radiusMi) || 10;
-            const layerSignature = layers.map(layer => {
-                const point = layer.getLatLng();
-                return `${getBuildingLayerId(layer) ?? layer._leaflet_id ?? ''}:${Number(point.lat).toFixed(5)}:${Number(point.lng).toFixed(5)}`;
-            }).join('|');
-            const signature = `${radiusMi}:${buildingRegistryRevision}:${layerSignature}`;
-            if (coverageGroup?._map === map && coverageRenderSignature === signature) return;
+        const layers = visibleBuildingLayers(map).slice(0, 200);
+        const radiusMi = Number(state.coverage.radiusMi) || 10;
+        const layerSignature = layers.map(layer => {
+            const point = layer.getLatLng();
+            return `${getBuildingLayerId(layer) ?? layer._leaflet_id ?? ''}:${Number(point.lat).toFixed(5)}:${Number(point.lng).toFixed(5)}`;
+        }).join('|');
+        const signature = `${radiusMi}:${buildingRegistryRevision}:${layerSignature}`;
+        if (coverageGroup?._map === map && coverageRenderSignature === signature) return;
 
-            if (!coverageGroup || coverageGroup._map !== map) {
-                if (coverageGroup && typeof coverageGroup.remove === 'function') coverageGroup.remove();
-                coverageGroup = pageWindow.L.layerGroup();
-                coverageGroup.__mcmsCoverageLayer = true;
-                coverageGroup.addTo(map);
-            }
-            coverageGroup.clearLayers();
-            coverageRenderSignature = signature;
+        if (!coverageGroup || coverageGroup._map !== map) {
+            if (coverageGroup && typeof coverageGroup.remove === 'function') coverageGroup.remove();
+            coverageGroup = pageWindow.L.layerGroup();
+            coverageGroup.__mcmsCoverageLayer = true;
+            coverageGroup.addTo(map);
+        }
+        coverageGroup.clearLayers();
+        coverageRenderSignature = signature;
 
-            const metres = radiusMi * 1609.344;
-            const renderer = economyLeafletPathRenderer(map);
-            for (const layer of layers) {
-                const ring = pageWindow.L.circle(layer.getLatLng(), {
-                    radius: metres,
-                    renderer,
-                    interactive: false,
-                    color: '#56a9ff',
-                    weight: 1,
-                    opacity: 0.34,
-                    fillColor: '#56a9ff',
-                    fillOpacity: 0.035
-                });
-                ring.__mcmsCoverageRing = true;
-                ring.addTo(coverageGroup);
-            }
+        const metres = radiusMi * 1609.344;
+        const renderer = economyLeafletPathRenderer(map);
+        for (const layer of layers) {
+            const ring = pageWindow.L.circle(layer.getLatLng(), {
+                radius: metres,
+                renderer,
+                interactive: false,
+                color: '#56a9ff',
+                weight: 1,
+                opacity: 0.34,
+                fillColor: '#56a9ff',
+                fillOpacity: 0.035
+            });
+            ring.__mcmsCoverageRing = true;
+            ring.addTo(coverageGroup);
+        }
 
-            setStatus(`Coverage rings: ${layers.length} visible personal building${layers.length === 1 ? '' : 's'}, ${radiusMi} mile radius.`);
+        setStatus(`Coverage rings: ${layers.length} visible personal building${layers.length === 1 ? '' : 's'}, ${radiusMi} mile radius.`);
         } catch (err) {
-            coverageRenderSignature = '';
-            setStatus('Coverage rings failed to draw on this map view.');
+        coverageRenderSignature = '';
+        setStatus('Coverage rings failed to draw on this map view.');
         }
     }
 
@@ -18748,7 +18688,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         let lat = item.lat ?? item.latitude ?? item.position?.lat ?? item.options?.lat;
         let lng = item.lng ?? item.lon ?? item.longitude ?? item.position?.lng ?? item.options?.lng;
         if ((!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) && typeof item.getLatLng === 'function') {
-            try { const point = item.getLatLng(); lat = point?.lat; lng = point?.lng; } catch (err) {}
+        try { const point = item.getLatLng(); lat = point?.lat; lng = point?.lng; } catch (err) {}
         }
         lat = Number(lat); lng = Number(lng);
         return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
@@ -18762,26 +18702,26 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         const points = [];
         if (state.heatmap.source === 'vehicles') {
-            for (const vehicle of getVehicleMarkerLayers()) {
-                const point = heatmapPointFromObject(vehicle);
-                if (!point) continue;
-                const service = heatmapServiceFromSignal([vehicle.caption, vehicle.name, vehicle.vehicle_type, vehicle.vehicle_type_caption, vehicle.options?.title, vehicle._icon?.title, vehicle._icon?.alt].filter(Boolean).join(' '));
-                if (requestedService !== 'all' && service !== requestedService) continue;
-                points.push(point);
-            }
+        for (const vehicle of getVehicleMarkerLayers()) {
+            const point = heatmapPointFromObject(vehicle);
+            if (!point) continue;
+            const service = heatmapServiceFromSignal([vehicle.caption, vehicle.name, vehicle.vehicle_type, vehicle.vehicle_type_caption, vehicle.options?.title, vehicle._icon?.title, vehicle._icon?.alt].filter(Boolean).join(' '));
+            if (requestedService !== 'all' && service !== requestedService) continue;
+            points.push(point);
+        }
         } else {
-            const currentUserId = currentUserIdCached();
-            const activeBuildingsById = new Map(getBuildingMarkerLayers().map(layer => [String(layer?.building_id ?? layer?.id ?? ''), layer]));
-            for (const building of getBuildingMarkerCache()) {
-                if (!building) continue;
-                if (currentUserId !== null && (building.user_id === undefined || building.user_id === null || String(building.user_id) !== currentUserId)) continue;
-                const activeLayer = activeBuildingsById.get(String(building.id ?? building.building_id ?? ''));
-                const point = heatmapPointFromObject(building) || heatmapPointFromObject(activeLayer);
-                if (!point) continue;
-                const service = heatmapServiceFromSignal([building.caption, building.name, building.building_type_caption, building.type_name, building.building_marker_image, activeLayer?.options?.title, activeLayer?._icon?.title].filter(Boolean).join(' '), building.building_type);
-                if (requestedService !== 'all' && service !== requestedService) continue;
-                points.push(point);
-            }
+        const currentUserId = currentUserIdCached();
+        const activeBuildingsById = new Map(getBuildingMarkerLayers().map(layer => [String(layer?.building_id ?? layer?.id ?? ''), layer]));
+        for (const building of getBuildingMarkerCache()) {
+            if (!building) continue;
+            if (currentUserId !== null && (building.user_id === undefined || building.user_id === null || String(building.user_id) !== currentUserId)) continue;
+            const activeLayer = activeBuildingsById.get(String(building.id ?? building.building_id ?? ''));
+            const point = heatmapPointFromObject(building) || heatmapPointFromObject(activeLayer);
+            if (!point) continue;
+            const service = heatmapServiceFromSignal([building.caption, building.name, building.building_type_caption, building.type_name, building.building_marker_image, activeLayer?.options?.title, activeLayer?._icon?.title].filter(Boolean).join(' '), building.building_type);
+            if (requestedService !== 'all' && service !== requestedService) continue;
+            points.push(point);
+        }
         }
 
         heatmapSourceCache = { key: cacheKey, createdAt: now, points };
@@ -18808,7 +18748,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function clearCoverageHeatmap() {
         if (heatmapGroup) {
-            try { heatmapGroup.clearLayers(); heatmapGroup.remove(); } catch (err) {}
+        try { heatmapGroup.clearLayers(); heatmapGroup.remove(); } catch (err) {}
         }
         heatmapGroup = null;
         heatmapRenderSignature = '';
@@ -18819,8 +18759,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!state.heatmap.enabled) { clearCoverageHeatmap(); return; }
         const map = findLeafletMapInstance(false);
         if (!map || !pageWindow.L?.layerGroup || !pageWindow.L?.rectangle || typeof map.getBounds !== 'function') {
-            setStatus('Coverage Heatmap needs access to the active Leaflet map.');
-            return;
+        setStatus('Coverage Heatmap needs access to the active Leaflet map.');
+        return;
         }
 
         const bounds = map.getBounds();
@@ -18843,24 +18783,24 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const mapRect = map.getContainer?.().getBoundingClientRect?.();
         const aspect = mapRect?.width && mapRect?.height ? mapRect.height / mapRect.width : 0.65;
         const rows = state.economyMode
-            ? Math.max(4, Math.min(8, Math.round(columns * aspect)))
-            : Math.max(10, Math.min(20, Math.round(columns * aspect)));
+        ? Math.max(4, Math.min(8, Math.round(columns * aspect)))
+        : Math.max(10, Math.min(20, Math.round(columns * aspect)));
         const sourceFingerprint = sources.reduce((acc, point) => acc + Math.round(point.lat * 1000) * 31 + Math.round(point.lng * 1000), 0);
         const signature = [north, south, east, west].map(value => value.toFixed(5)).join(':') + `:${rows}:${columns}:${radius}:${opacity}:${state.heatmap.source}:${state.heatmap.service}:${sources.length}:${sourceFingerprint}`;
         if (heatmapGroup?._map === map && heatmapRenderSignature === signature) return;
 
         if (!heatmapGroup || heatmapGroup._map !== map) {
-            clearCoverageHeatmap();
-            heatmapGroup = pageWindow.L.layerGroup();
-            heatmapGroup.__mcmsHeatmapLayer = true;
-            heatmapGroup.addTo(map);
+        clearCoverageHeatmap();
+        heatmapGroup = pageWindow.L.layerGroup();
+        heatmapGroup.__mcmsHeatmapLayer = true;
+        heatmapGroup.addTo(map);
         }
         heatmapGroup.clearLayers();
         heatmapRenderSignature = signature;
 
         if (!sources.length) {
-            setStatus(`Heatmap: no ${sourceLabel} detected in this area.`);
-            return;
+        setStatus(`Heatmap: no ${sourceLabel} detected in this area.`);
+        return;
         }
 
         const latStep = (north - south) / rows;
@@ -18869,50 +18809,50 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const bucketSize = Math.max(1, radius * 1.5);
         const buckets = new Map();
         const projectedSources = sources.map(source => ({
-            ...source,
-            x: source.lng * milesPerLng,
-            y: source.lat * 69
+        ...source,
+        x: source.lng * milesPerLng,
+        y: source.lat * 69
         }));
         for (const source of projectedSources) {
-            const key = `${Math.floor(source.x / bucketSize)}:${Math.floor(source.y / bucketSize)}`;
-            const bucket = buckets.get(key) || [];
-            bucket.push(source);
-            buckets.set(key, bucket);
+        const key = `${Math.floor(source.x / bucketSize)}:${Math.floor(source.y / bucketSize)}`;
+        const bucket = buckets.get(key) || [];
+        bucket.push(source);
+        buckets.set(key, bucket);
         }
 
         for (let row = 0; row < rows; row += 1) {
-            for (let column = 0; column < columns; column += 1) {
-                const cellSouth = south + row * latStep;
-                const cellWest = west + column * lngStep;
-                const centre = { lat: cellSouth + latStep / 2, lng: cellWest + lngStep / 2 };
-                const centreX = centre.lng * milesPerLng;
-                const centreY = centre.lat * 69;
-                const bucketX = Math.floor(centreX / bucketSize);
-                const bucketY = Math.floor(centreY / bucketSize);
-                let nearest = Infinity;
-                let supportingSources = 0;
-                for (let dx = -1; dx <= 1; dx += 1) {
-                    for (let dy = -1; dy <= 1; dy += 1) {
-                        const candidates = buckets.get(`${bucketX + dx}:${bucketY + dy}`) || [];
-                        for (const source of candidates) {
-                            const distance = heatmapDistanceMiles(centre, source);
-                            if (distance < nearest) nearest = distance;
-                            if (distance <= radius) supportingSources += 1;
-                        }
+        for (let column = 0; column < columns; column += 1) {
+            const cellSouth = south + row * latStep;
+            const cellWest = west + column * lngStep;
+            const centre = { lat: cellSouth + latStep / 2, lng: cellWest + lngStep / 2 };
+            const centreX = centre.lng * milesPerLng;
+            const centreY = centre.lat * 69;
+            const bucketX = Math.floor(centreX / bucketSize);
+            const bucketY = Math.floor(centreY / bucketSize);
+            let nearest = Infinity;
+            let supportingSources = 0;
+            for (let dx = -1; dx <= 1; dx += 1) {
+                for (let dy = -1; dy <= 1; dy += 1) {
+                    const candidates = buckets.get(`${bucketX + dx}:${bucketY + dy}`) || [];
+                    for (const source of candidates) {
+                        const distance = heatmapDistanceMiles(centre, source);
+                        if (distance < nearest) nearest = distance;
+                        if (distance <= radius) supportingSources += 1;
                     }
                 }
-                const colour = heatmapColour(nearest, radius, supportingSources);
-                const cell = pageWindow.L.rectangle([[cellSouth, cellWest], [cellSouth + latStep, cellWest + lngStep]], {
-                    interactive: false,
-                    stroke: false,
-                    fill: true,
-                    renderer,
-                    fillColor: colour,
-                    fillOpacity: opacity
-                });
-                cell.__mcmsHeatmapCell = true;
-                cell.addTo(heatmapGroup);
             }
+            const colour = heatmapColour(nearest, radius, supportingSources);
+            const cell = pageWindow.L.rectangle([[cellSouth, cellWest], [cellSouth + latStep, cellWest + lngStep]], {
+                interactive: false,
+                stroke: false,
+                fill: true,
+                renderer,
+                fillColor: colour,
+                fillOpacity: opacity
+            });
+            cell.__mcmsHeatmapCell = true;
+            cell.addTo(heatmapGroup);
+        }
         }
 
         setStatus(`Heatmap: ${sources.length} ${sourceLabel}, ${radius} mile planning radius.`);
@@ -18925,13 +18865,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function sanitiseBookmarkShortLabel(value) {
         return String(value || '')
-            .normalize('NFKD')
-            .replace(/[\u0300-\u036f]/gu, '')
-            .toUpperCase()
-            .replace(/[^A-Z0-9&/+ -]+/gu, ' ')
-            .replace(/\s+/gu, ' ')
-            .trim()
-            .slice(0, SMART_BOOKMARK_LABEL_MAX);
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/gu, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9&/+ -]+/gu, ' ')
+        .replace(/\s+/gu, ' ')
+        .trim()
+        .slice(0, SMART_BOOKMARK_LABEL_MAX);
     }
 
     function compactBookmarkWord(value, targetLength = SMART_BOOKMARK_SINGLE_WORD_MAX) {
@@ -18943,12 +18883,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         let upper = key.toUpperCase();
         if (upper.length <= targetLength) return upper;
         upper = upper
-            .replace(/BOROUGH$/u, 'BORO')
-            .replace(/BURGH$/u, 'BRG')
-            .replace(/FIELD$/u, 'FD')
-            .replace(/SHIRE$/u, 'SHR')
-            .replace(/INGTON$/u, 'NGTN')
-            .replace(/CHESTER$/u, 'CHST');
+        .replace(/BOROUGH$/u, 'BORO')
+        .replace(/BURGH$/u, 'BRG')
+        .replace(/FIELD$/u, 'FD')
+        .replace(/SHIRE$/u, 'SHR')
+        .replace(/INGTON$/u, 'NGTN')
+        .replace(/CHESTER$/u, 'CHST');
 
         let compressed = upper.charAt(0) + upper.slice(1).replace(/[AEIOUY]/gu, '');
         compressed = compressed.replace(/(.)\1+/gu, '$1');
@@ -18961,9 +18901,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const interior = chars.slice(1, -1);
         const slots = target - 2;
         for (let index = 0; index < slots; index += 1) {
-            const position = slots === 1 ? 0 : Math.round(index * (interior.length - 1) / (slots - 1));
-            const character = interior[Math.max(0, position)];
-            if (character && result[result.length - 1] !== character) result.push(character);
+        const position = slots === 1 ? 0 : Math.round(index * (interior.length - 1) / (slots - 1));
+        const character = interior[Math.max(0, position)];
+        if (character && result[result.length - 1] !== character) result.push(character);
         }
         if (result[result.length - 1] !== chars[chars.length - 1]) result.push(chars[chars.length - 1]);
         return result.join('').slice(0, target);
@@ -18974,10 +18914,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (manual) return manual;
 
         const rawWords = String(name || '')
-            .normalize('NFKD')
-            .replace(/[\u0300-\u036f]/gu, '')
-            .toLowerCase()
-            .match(/[a-z0-9]+/gu) || [];
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/gu, '')
+        .toLowerCase()
+        .match(/[a-z0-9]+/gu) || [];
         let words = rawWords.filter(word => !SMART_BOOKMARK_STOP_WORDS.has(word));
         if (words.length > 2) words = words.filter(word => !SMART_BOOKMARK_OPTIONAL_WORDS.has(word));
         if (!words.length) words = rawWords;
@@ -18985,7 +18925,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         const tokens = words.map((word, index) => compactBookmarkWord(word, index === 0 ? 5 : 4)).filter(Boolean);
         while (tokens.length > 1 && /^[NSEW]$/u.test(tokens[0]) && /^[NSEW]$/u.test(tokens[1])) {
-            tokens.splice(0, 2, `${tokens[0]}${tokens[1]}`);
+        tokens.splice(0, 2, `${tokens[0]}${tokens[1]}`);
         }
 
         if (tokens.length === 1) return sanitiseBookmarkShortLabel(tokens[0]) || 'PIN';
@@ -19009,19 +18949,19 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function resolveScreenPinLabels(entries) {
         const counts = new Map();
         entries.forEach(entry => {
-            const key = entry.baseLabel.toUpperCase();
-            counts.set(key, (counts.get(key) || 0) + 1);
+        const key = entry.baseLabel.toUpperCase();
+        counts.set(key, (counts.get(key) || 0) + 1);
         });
         const seen = new Map();
         return entries.map(entry => {
-            const key = entry.baseLabel.toUpperCase();
-            const total = counts.get(key) || 1;
-            if (total === 1) return { ...entry, label: entry.baseLabel };
-            const number = (seen.get(key) || 0) + 1;
-            seen.set(key, number);
-            const suffix = ` ${number}`;
-            const available = Math.max(3, SMART_BOOKMARK_LABEL_MAX - suffix.length);
-            return { ...entry, label: `${entry.baseLabel.slice(0, available).trim()}${suffix}` };
+        const key = entry.baseLabel.toUpperCase();
+        const total = counts.get(key) || 1;
+        if (total === 1) return { ...entry, label: entry.baseLabel };
+        const number = (seen.get(key) || 0) + 1;
+        seen.set(key, number);
+        const suffix = ` ${number}`;
+        const available = Math.max(3, SMART_BOOKMARK_LABEL_MAX - suffix.length);
+        return { ...entry, label: `${entry.baseLabel.slice(0, available).trim()}${suffix}` };
         });
     }
 
@@ -19045,19 +18985,19 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function saveBookmark(slot) {
         const map = findLeafletMapInstance(true);
         if (!map || typeof map.getCenter !== 'function' || typeof map.getZoom !== 'function') {
-            showToast('Map object not detected');
-            setStatus('Bookmark saving needs access to the active Leaflet map object.');
-            return;
+        showToast('Map object not detected');
+        setStatus('Bookmark saving needs access to the active Leaflet map object.');
+        return;
         }
 
         let center;
         let zoom;
         try {
-            center = map.getCenter();
-            zoom = map.getZoom();
+        center = map.getCenter();
+        zoom = map.getZoom();
         } catch (err) {
-            showToast('Could not read map view');
-            return;
+        showToast('Could not read map view');
+        return;
         }
 
         const existing = state.bookmarks[slot];
@@ -19071,12 +19011,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const shortLabel = shortLabelPrompt === null ? currentShortLabel : sanitiseBookmarkShortLabel(shortLabelPrompt);
 
         state.bookmarks[slot] = {
-            name: cleanName,
-            shortLabel,
-            lat: Number(center.lat.toFixed(6)),
-            lng: Number(center.lng.toFixed(6)),
-            zoom: Number(zoom),
-            pinned: existing ? Boolean(existing.pinned) : false
+        name: cleanName,
+        shortLabel,
+        lat: Number(center.lat.toFixed(6)),
+        lng: Number(center.lng.toFixed(6)),
+        zoom: Number(zoom),
+        pinned: existing ? Boolean(existing.pinned) : false
         };
 
         saveState();
@@ -19089,8 +19029,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function goBookmark(slot) {
         const bookmark = state.bookmarks[slot];
         if (!bookmark) {
-            showToast('Empty bookmark');
-            return;
+        showToast('Empty bookmark');
+        return;
         }
         if (setMapView(bookmark.lat, bookmark.lng, bookmark.zoom)) showToast(bookmark.name);
     }
@@ -19110,8 +19050,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function toggleBookmarkPin(slot) {
         const bookmark = state.bookmarks[slot];
         if (!bookmark) {
-            showToast('Save bookmark first');
-            return;
+        showToast('Save bookmark first');
+        return;
         }
         bookmark.pinned = !bookmark.pinned;
         saveState();
@@ -19133,18 +19073,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function loadPayoutHistory() {
         try {
-            const parsed = JSON.parse(localStorage.getItem(SCRIPT.payoutHistoryState) || '[]');
-            if (!Array.isArray(parsed)) return [];
-            return parsed.filter(item => item && Number.isFinite(Number(item.amount)) && Number.isFinite(Number(item.timestamp)))
-                .slice(0, PAYOUT_HISTORY_LIMIT)
-                .map(item => ({
-                    id: String(item.id || `${item.timestamp}-${item.amount}`),
-                    timestamp: Number(item.timestamp),
-                    amount: Math.max(0, Math.round(Number(item.amount))),
-                    caption: String(item.caption || ''),
-                    source: ['personal', 'alliance', 'unknown'].includes(item.source) ? item.source : 'unknown',
-                    tier: ['standard', 'major', 'high', 'elite'].includes(item.tier) ? item.tier : 'standard'
-                }));
+        const parsed = JSON.parse(localStorage.getItem(SCRIPT.payoutHistoryState) || '[]');
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(item => item && Number.isFinite(Number(item.amount)) && Number.isFinite(Number(item.timestamp)))
+            .slice(0, PAYOUT_HISTORY_LIMIT)
+            .map(item => ({
+                id: String(item.id || `${item.timestamp}-${item.amount}`),
+                timestamp: Number(item.timestamp),
+                amount: Math.max(0, Math.round(Number(item.amount))),
+                caption: String(item.caption || ''),
+                source: ['personal', 'alliance', 'unknown'].includes(item.source) ? item.source : 'unknown',
+                tier: ['standard', 'major', 'high', 'elite'].includes(item.tier) ? item.tier : 'standard'
+            }));
         } catch (err) { return []; }
     }
 
@@ -19155,16 +19095,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function defaultSessionPerformance() {
         return {
-            startedAt: Date.now(), creditsEarned: 0, payoutCount: 0, qualifyingCount: 0,
-            largestPayout: 0, personalPayouts: 0, alliancePayouts: 0, unknownPayouts: 0
+        startedAt: Date.now(), creditsEarned: 0, payoutCount: 0, qualifyingCount: 0,
+        largestPayout: 0, personalPayouts: 0, alliancePayouts: 0, unknownPayouts: 0
         };
     }
 
     function loadSessionPerformance() {
         try {
-            const parsed = JSON.parse(sessionStorage.getItem(SCRIPT.sessionPerformanceState) || 'null');
-            if (!parsed || typeof parsed !== 'object') return defaultSessionPerformance();
-            return { ...defaultSessionPerformance(), ...parsed };
+        const parsed = JSON.parse(sessionStorage.getItem(SCRIPT.sessionPerformanceState) || 'null');
+        if (!parsed || typeof parsed !== 'object') return defaultSessionPerformance();
+        return { ...defaultSessionPerformance(), ...parsed };
         } catch (err) { return defaultSessionPerformance(); }
     }
 
@@ -19190,12 +19130,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function majorIncidentThemeLabel() {
         const labels = {
-            mapCommand: 'MAJOR INCIDENTS',
-            cyberpunk: 'CITY INCIDENT WIRE',
-            fallout4: 'ROBCO EMERGENCY BAND',
-            umbrella: 'CONTAINMENT ALERTS',
-            factorio: 'FACTORY INCIDENT BUS',
-            bond007: 'MI6 INCIDENT WIRE'
+        mapCommand: 'MAJOR INCIDENTS',
+        cyberpunk: 'CITY INCIDENT WIRE',
+        fallout4: 'ROBCO EMERGENCY BAND',
+        umbrella: 'CONTAINMENT ALERTS',
+        factorio: 'FACTORY INCIDENT BUS',
+        bond007: 'MI6 INCIDENT WIRE'
         };
         return labels[state.uiTheme] || labels.mapCommand;
     }
@@ -19209,10 +19149,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const clearing = criticalMissionClearingProgress(snapshot);
 
         if (stuck?.isStuck || missing) {
-            return {
-                key: 'alert',
-                label: stuck?.isStuck ? `ASSISTANCE · STUCK ${formatStuckDuration(stuck.stuckForMs)}` : 'ASSISTANCE REQUIRED'
-            };
+        return {
+            key: 'alert',
+            label: stuck?.isStuck ? `ASSISTANCE · STUCK ${formatStuckDuration(stuck.stuckForMs)}` : 'ASSISTANCE REQUIRED'
+        };
         }
         if (clearing && onScene > 0) return { key: 'clearing', label: `CLEARING ${clearing.completion}%` };
         if (travelling > 0) return { key: 'responding', label: `${travelling} RESPONDING` };
@@ -19224,32 +19164,32 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const minimumCredits = Math.max(0, Number(state.majorIncidentFeed?.minimumCredits) || 25000);
         const entries = [];
         for (const snapshot of liveMissionSnapshots.values()) {
-            if (!snapshot || !Number.isFinite(Number(snapshot.lat)) || !Number.isFinite(Number(snapshot.lng))) continue;
-            if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
-            if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
+        if (!snapshot || !Number.isFinite(Number(snapshot.lat)) || !Number.isFinite(Number(snapshot.lng))) continue;
+        if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
+        if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
 
-            const credits = Number(snapshot.averageCredits);
-            const createdAt = Number(snapshot.createdAt);
-            const ageMs = Number.isFinite(createdAt) && createdAt > 0 ? Math.max(0, now - createdAt) : 0;
-            const stuck = missionStuckRecord(snapshot.missionId, now);
-            const patients = Math.max(Number(snapshot.patientsCount) || 0, Number(snapshot.possiblePatientsCount) || 0);
-            const prisoners = Math.max(Number(snapshot.prisonersCount) || 0, Number(snapshot.possiblePrisonersCount) || 0);
-            const creditMajor = Number.isFinite(credits) && credits >= minimumCredits;
-            const ageMajor = ageMs >= 24 * 60 * 60 * 1000;
-            const massCasualty = patients >= MAJOR_INCIDENT_MASS_CASUALTY_PATIENTS || prisoners >= MAJOR_INCIDENT_MASS_CASUALTY_PRISONERS;
-            if (!creditMajor && !ageMajor && !stuck?.isStuck && !massCasualty) continue;
+        const credits = Number(snapshot.averageCredits);
+        const createdAt = Number(snapshot.createdAt);
+        const ageMs = Number.isFinite(createdAt) && createdAt > 0 ? Math.max(0, now - createdAt) : 0;
+        const stuck = missionStuckRecord(snapshot.missionId, now);
+        const patients = Math.max(Number(snapshot.patientsCount) || 0, Number(snapshot.possiblePatientsCount) || 0);
+        const prisoners = Math.max(Number(snapshot.prisonersCount) || 0, Number(snapshot.possiblePrisonersCount) || 0);
+        const creditMajor = Number.isFinite(credits) && credits >= minimumCredits;
+        const ageMajor = ageMs >= 24 * 60 * 60 * 1000;
+        const massCasualty = patients >= MAJOR_INCIDENT_MASS_CASUALTY_PATIENTS || prisoners >= MAJOR_INCIDENT_MASS_CASUALTY_PRISONERS;
+        if (!creditMajor && !ageMajor && !stuck?.isStuck && !massCasualty) continue;
 
-            const operational = majorIncidentOperationalState(snapshot, now);
-            const postcode = snapshot.postcode || normaliseMissionPostcode(snapshot.address) || 'POSTCODE N/A';
-            const score =
-                (stuck?.isStuck ? 900000000 : 0) +
-                (snapshot.missingText ? 500000000 : 0) +
-                (ageMajor ? Math.min(250000000, ageMs) : 0) +
-                (massCasualty ? 150000000 + (patients * 1000000) + (prisoners * 750000) : 0) +
-                (Number.isFinite(credits) ? credits : 0) +
-                (snapshot.source === 'personal' ? 5000 : 0);
+        const operational = majorIncidentOperationalState(snapshot, now);
+        const postcode = snapshot.postcode || normaliseMissionPostcode(snapshot.address) || 'POSTCODE N/A';
+        const score =
+            (stuck?.isStuck ? 900000000 : 0) +
+            (snapshot.missingText ? 500000000 : 0) +
+            (ageMajor ? Math.min(250000000, ageMs) : 0) +
+            (massCasualty ? 150000000 + (patients * 1000000) + (prisoners * 750000) : 0) +
+            (Number.isFinite(credits) ? credits : 0) +
+            (snapshot.source === 'personal' ? 5000 : 0);
 
-            entries.push({ snapshot, operational, postcode, credits, ageMs, patients, prisoners, score });
+        entries.push({ snapshot, operational, postcode, credits, ageMs, patients, prisoners, score });
         }
         return entries.sort((a, b) => b.score - a.score || String(a.snapshot.caption || '').localeCompare(String(b.snapshot.caption || ''))).slice(0, MAJOR_INCIDENT_FEED_MAX_ITEMS);
     }
@@ -19259,27 +19199,27 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (direct && isVisible(direct)) return direct;
         const pattern = /(location|place|address|postcode|postal|ort|plaats|lokal|emplacement|ubicaci[oó]n|posizione)/iu;
         return Array.from(document.querySelectorAll('input[type="search"], input[type="text"], input:not([type])'))
-            .filter(input => isVisible(input) && pattern.test(`${input.placeholder || ''} ${input.getAttribute('aria-label') || ''} ${input.title || ''}`))
-            .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0] || null;
+        .filter(input => isVisible(input) && pattern.test(`${input.placeholder || ''} ${input.getAttribute('aria-label') || ''} ${input.title || ''}`))
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0] || null;
     }
 
     function findTopClockElement() {
         const clockPattern = /^\d{1,2}:\d{2}:\d{2}$/u;
         const preferred = Array.from(document.querySelectorAll('[id*="timer" i], [class*="timer" i], .navbar-text, .navbar-brand'))
-            .find(element => isVisible(element) && clockPattern.test(String(element.textContent || '').trim()) && element.getBoundingClientRect().top < 160);
+        .find(element => isVisible(element) && clockPattern.test(String(element.textContent || '').trim()) && element.getBoundingClientRect().top < 160);
         if (preferred) return preferred;
 
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
         let node;
         let scanned = 0;
         while ((node = walker.nextNode()) && scanned < 2500) {
-            scanned += 1;
-            if (node.id === SCRIPT.majorIncidentFeedId || node.closest?.(`#${SCRIPT.majorIncidentFeedId}`)) continue;
-            if (node.children?.length > 2) continue;
-            const text = String(node.textContent || '').trim();
-            if (!clockPattern.test(text) || !isVisible(node)) continue;
-            const rect = node.getBoundingClientRect();
-            if (rect.top < 160 && rect.height >= 18 && rect.height <= 70) return node;
+        scanned += 1;
+        if (node.id === SCRIPT.majorIncidentFeedId || node.closest?.(`#${SCRIPT.majorIncidentFeedId}`)) continue;
+        if (node.children?.length > 2) continue;
+        const text = String(node.textContent || '').trim();
+        if (!clockPattern.test(text) || !isVisible(node)) continue;
+        const rect = node.getBoundingClientRect();
+        if (rect.top < 160 && rect.height >= 18 && rect.height <= 70) return node;
         }
         return null;
     }
@@ -19291,41 +19231,41 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         const candidates = new Set();
         const addCandidate = element => {
-            if (!element) return;
-            const host = element.matches?.('a,button,[role="link"],.navbar-brand')
-                ? element
-                : element.closest?.('a,button,[role="link"],.navbar-brand') || element;
-            if (host && host !== bar && !host.closest?.(`#${SCRIPT.majorIncidentFeedId}`)) candidates.add(host);
+        if (!element) return;
+        const host = element.matches?.('a,button,[role="link"],.navbar-brand')
+            ? element
+            : element.closest?.('a,button,[role="link"],.navbar-brand') || element;
+        if (host && host !== bar && !host.closest?.(`#${SCRIPT.majorIncidentFeedId}`)) candidates.add(host);
         };
 
         [
-            '.navbar-brand',
-            '[id*="logo" i]',
-            '[class*="logo" i]',
-            'a[href="/"]',
-            'a[href="./"]',
-            'a[href$="/dashboard"]',
+        '.navbar-brand',
+        '[id*="logo" i]',
+        '[class*="logo" i]',
+        'a[href="/"]',
+        'a[href="./"]',
+        'a[href$="/dashboard"]',
             'a[href$="/missions"]'
         ].forEach(selector => {
-            try { bar.querySelectorAll(selector).forEach(addCandidate); } catch (err) {}
+        try { bar.querySelectorAll(selector).forEach(addCandidate); } catch (err) {}
         });
         try { bar.querySelectorAll('a,button,[role="link"],img,svg').forEach(addCandidate); } catch (err) {}
 
         const scored = Array.from(candidates).map(element => {
-            if (!isVisible(element)) return null;
-            const rect = element.getBoundingClientRect?.();
-            if (!rect || rect.width < 18 || rect.height < 18 || rect.width > 180 || rect.height > 90) return null;
-            if (rect.right <= barRect.left || rect.left >= barRect.right || rect.bottom <= barRect.top || rect.top >= barRect.bottom) return null;
-            if (rect.left > barRect.left + Math.min(220, barRect.width * .24)) return null;
+        if (!isVisible(element)) return null;
+        const rect = element.getBoundingClientRect?.();
+        if (!rect || rect.width < 18 || rect.height < 18 || rect.width > 180 || rect.height > 90) return null;
+        if (rect.right <= barRect.left || rect.left >= barRect.right || rect.bottom <= barRect.top || rect.top >= barRect.bottom) return null;
+        if (rect.left > barRect.left + Math.min(220, barRect.width * .24)) return null;
 
-            const descriptor = `${element.id || ''} ${element.className || ''} ${element.getAttribute?.('href') || ''} ${element.getAttribute?.('aria-label') || ''} ${element.getAttribute?.('title') || ''} ${element.querySelector?.('img')?.alt || ''}`.toLowerCase();
-            let score = Math.max(0, 100 - Math.abs(rect.left - barRect.left));
-            if (element.matches?.('.navbar-brand')) score += 180;
-            if (/missionchief|leitstellenspiel|meldkamerspel|logo|brand|home/.test(descriptor)) score += 90;
-            if (/^(?:https?:\/\/[^/]+)?\/?$/u.test(String(element.getAttribute?.('href') || '').trim())) score += 80;
-            if (element.querySelector?.('img,svg') || element.matches?.('img,svg')) score += 35;
-            if (rect.left <= barRect.left + 80) score += 55;
-            return { element, rect, score };
+        const descriptor = `${element.id || ''} ${element.className || ''} ${element.getAttribute?.('href') || ''} ${element.getAttribute?.('aria-label') || ''} ${element.getAttribute?.('title') || ''} ${element.querySelector?.('img')?.alt || ''}`.toLowerCase();
+        let score = Math.max(0, 100 - Math.abs(rect.left - barRect.left));
+        if (element.matches?.('.navbar-brand')) score += 180;
+        if (/missionchief|leitstellenspiel|meldkamerspel|logo|brand|home/.test(descriptor)) score += 90;
+        if (/^(?:https?:\/\/[^/]+)?\/?$/u.test(String(element.getAttribute?.('href') || '').trim())) score += 80;
+        if (element.querySelector?.('img,svg') || element.matches?.('img,svg')) score += 35;
+        if (rect.left <= barRect.left + 80) score += 55;
+        return { element, rect, score };
         }).filter(Boolean).sort((a, b) => b.score - a.score || a.rect.left - b.rect.left);
 
         return scored[0]?.element || null;
@@ -19333,25 +19273,25 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function commonTopBarAncestor(clockElement, searchInput) {
         if (clockElement && searchInput) {
-            const clockAncestors = new Set();
-            let current = clockElement;
-            for (let depth = 0; current && depth < 10; depth += 1, current = current.parentElement) clockAncestors.add(current);
-            current = searchInput;
-            for (let depth = 0; current && depth < 10; depth += 1, current = current.parentElement) {
-                if (!clockAncestors.has(current)) continue;
-                const rect = current.getBoundingClientRect?.();
-                if (rect && rect.top < 160 && rect.width >= 420 && rect.height >= 36 && rect.height <= 120) return current;
-            }
+        const clockAncestors = new Set();
+        let current = clockElement;
+        for (let depth = 0; current && depth < 10; depth += 1, current = current.parentElement) clockAncestors.add(current);
+        current = searchInput;
+        for (let depth = 0; current && depth < 10; depth += 1, current = current.parentElement) {
+            if (!clockAncestors.has(current)) continue;
+            const rect = current.getBoundingClientRect?.();
+            if (rect && rect.top < 160 && rect.width >= 420 && rect.height >= 36 && rect.height <= 120) return current;
+        }
         }
         const candidates = [
-            clockElement?.closest?.('nav,header,.navbar,[role="banner"]'),
-            searchInput?.closest?.('nav,header,.navbar,[role="banner"]'),
-            ...Array.from(document.querySelectorAll('nav.navbar, header, .navbar, [role="banner"]'))
+        clockElement?.closest?.('nav,header,.navbar,[role="banner"]'),
+        searchInput?.closest?.('nav,header,.navbar,[role="banner"]'),
+        ...Array.from(document.querySelectorAll('nav.navbar, header, .navbar, [role="banner"]'))
         ].filter(Boolean);
         return candidates.find(element => {
-            if (!isVisible(element)) return false;
-            const rect = element.getBoundingClientRect();
-            return rect.top < 160 && rect.width >= 320 && rect.height >= 36 && rect.height <= 130;
+        if (!isVisible(element)) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.top < 160 && rect.width >= 320 && rect.height >= 36 && rect.height <= 130;
         }) || null;
     }
 
@@ -19382,10 +19322,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function majorIncidentFeedDomComplete(feed) {
         return Boolean(
-            feed?.isConnected &&
-            feed.querySelector?.('.mcms-incident-feed-label') &&
-            feed.querySelector?.('.mcms-incident-feed-viewport') &&
-            feed.querySelector?.('.mcms-incident-feed-track')
+        feed?.isConnected &&
+        feed.querySelector?.('.mcms-incident-feed-label') &&
+        feed.querySelector?.('.mcms-incident-feed-viewport') &&
+        feed.querySelector?.('.mcms-incident-feed-track')
         );
     }
 
@@ -19402,19 +19342,19 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         let feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         const needsRebuild = !majorIncidentFeedDomComplete(feed);
         if (needsRebuild) {
-            if (feed) feed.remove();
-            resetMajorIncidentFeedObserver();
-            majorIncidentFeedRenderSignature = '';
-            renderMajorIncidentFeed(true);
-            console.debug(`[${SCRIPT.name}] Major Incident Feed recovered after ${reason}.`);
-            return true;
+        if (feed) feed.remove();
+        resetMajorIncidentFeedObserver();
+        majorIncidentFeedRenderSignature = '';
+        renderMajorIncidentFeed(true);
+        console.debug(`[${SCRIPT.name}] Major Incident Feed recovered after ${reason}.`);
+        return true;
         }
 
         if (majorIncidentFeedObservedElement !== feed && !state.economyMode) {
-            resetMajorIncidentFeedObserver();
-            majorIncidentFeedRenderSignature = '';
-            renderMajorIncidentFeed(true);
-            return true;
+        resetMajorIncidentFeedObserver();
+        majorIncidentFeedRenderSignature = '';
+        renderMajorIncidentFeed(true);
+        return true;
         }
 
         scheduleMajorIncidentFeedLayout();
@@ -19429,30 +19369,30 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!viewport || !track || !firstGroup) return false;
 
         if (state.economyMode) {
-            feed.classList.add('mcms-feed-static');
-            feed.style.removeProperty('--mcms-incident-feed-duration');
-            track.style.removeProperty('animation');
-            return true;
+        feed.classList.add('mcms-feed-static');
+        feed.style.removeProperty('--mcms-incident-feed-duration');
+        track.style.removeProperty('animation');
+        return true;
         }
 
         const viewportWidth = viewport.clientWidth;
         const groupWidth = Math.max(firstGroup.scrollWidth || 0, firstGroup.getBoundingClientRect?.().width || 0);
         if ((viewportWidth < 40 || groupWidth < 20) && attempt < 6) {
-            runtimeClearTimeout(majorIncidentFeedMotionTimer);
-            majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
-                majorIncidentFeedMotionTimer = null;
-                refreshMajorIncidentFeedMotion(feed, true, attempt + 1, revision);
-            }, 70 + (attempt * 55));
-            return false;
+        runtimeClearTimeout(majorIncidentFeedMotionTimer);
+        majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
+            majorIncidentFeedMotionTimer = null;
+            refreshMajorIncidentFeedMotion(feed, true, attempt + 1, revision);
+        }, 70 + (attempt * 55));
+        return false;
         }
 
         const entryCount = Math.max(0, Number(feed.dataset.mcmsEntryCount) || 0);
         const shouldScroll = entryCount > 1 || groupWidth > viewportWidth - 8;
         feed.classList.toggle('mcms-feed-static', !shouldScroll);
         if (!shouldScroll) {
-            feed.style.removeProperty('--mcms-incident-feed-duration');
-            track.style.removeProperty('animation');
-            return true;
+        feed.style.removeProperty('--mcms-incident-feed-duration');
+        track.style.removeProperty('animation');
+        return true;
         }
 
         const reducedMotion = Boolean(pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
@@ -19462,9 +19402,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         const animations = typeof track.getAnimations === 'function' ? track.getAnimations() : [];
         if (forceRestart || animations.length === 0) {
-            track.style.setProperty('animation', 'none', 'important');
-            void track.offsetWidth;
-            track.style.removeProperty('animation');
+        track.style.setProperty('animation', 'none', 'important');
+        void track.offsetWidth;
+        track.style.removeProperty('animation');
         }
         return true;
     }
@@ -19473,14 +19413,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!feed) return;
         runtimeClearTimeout(majorIncidentFeedMotionTimer);
         if (state.economyMode) {
-            majorIncidentFeedMotionTimer = null;
-            refreshMajorIncidentFeedMotion(feed, false, 0, ++majorIncidentFeedMotionRevision);
-            return;
+        majorIncidentFeedMotionTimer = null;
+        refreshMajorIncidentFeedMotion(feed, false, 0, ++majorIncidentFeedMotionRevision);
+        return;
         }
         const revision = ++majorIncidentFeedMotionRevision;
         majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
-            majorIncidentFeedMotionTimer = null;
-            refreshMajorIncidentFeedMotion(feed, forceRestart, 0, revision);
+        majorIncidentFeedMotionTimer = null;
+        refreshMajorIncidentFeedMotion(feed, forceRestart, 0, revision);
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -19488,14 +19428,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         majorIncidentFeedLayoutFrame = null;
         const feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         if (!feed || !state.majorIncidentFeed.enabled || !getLargestLeafletMap() || isAllianceBuildingsContext()) {
-            if (feed) feed.classList.remove('mcms-feed-visible');
-            return false;
+        if (feed) feed.classList.remove('mcms-feed-visible');
+        return false;
         }
 
         const { bar } = majorIncidentFeedHeaderContext();
         if (!bar) {
-            feed.classList.remove('mcms-feed-visible');
-            return false;
+        feed.classList.remove('mcms-feed-visible');
+        return false;
         }
         const barRect = bar.getBoundingClientRect();
         const viewport = getViewportMetrics();
@@ -19524,12 +19464,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function scheduleMajorIncidentFeedLayout() {
         if (state.economyMode) {
-            runtimeClearTimeout(majorIncidentFeedLayoutTimer);
-            majorIncidentFeedLayoutTimer = runtimeSetTimeout(() => {
-                majorIncidentFeedLayoutTimer = null;
-                positionMajorIncidentFeed();
-            }, 180);
-            return;
+        runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+        majorIncidentFeedLayoutTimer = runtimeSetTimeout(() => {
+            majorIncidentFeedLayoutTimer = null;
+            positionMajorIncidentFeed();
+        }, 180);
+        return;
         }
         if (majorIncidentFeedLayoutFrame !== null) return;
         majorIncidentFeedLayoutFrame = runtimeRequestAnimationFrame(positionMajorIncidentFeed);
@@ -19547,58 +19487,58 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             <span class="mcms-incident-level">MAJOR</span>
             <span class="mcms-incident-name">${allianceAwareHtml(caption)}</span>
             <span class="mcms-incident-postcode">${escapeHtml(entry.postcode)}</span>
-            <span class="mcms-incident-meta">${escapeHtml(`${creditText} · `)}<span class="${source === 'ALLIANCE' ? 'mcms-alliance-text' : ''}">${escapeHtml(source)}</span>${escapeHtml(`${ageText}${casualtyText}`)}</span>
+        <span class="mcms-incident-meta">${escapeHtml(`${creditText} · `)}<span class="${source === 'ALLIANCE' ? 'mcms-alliance-text' : ''}">${escapeHtml(source)}</span>${escapeHtml(`${ageText}${casualtyText}`)}</span>
             <span class="mcms-incident-state">${escapeHtml(entry.operational.label)}</span>
         </button>`;
     }
 
     function ensureMajorIncidentFeed() {
         if (!state.majorIncidentFeed.enabled || !getLargestLeafletMap() || isAllianceBuildingsContext()) {
-            removeMajorIncidentFeed();
-            return null;
+        removeMajorIncidentFeed();
+        return null;
         }
 
         let feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         if (feed && !majorIncidentFeedDomComplete(feed)) {
-            feed.remove();
-            feed = null;
-            resetMajorIncidentFeedObserver();
-            majorIncidentFeedRenderSignature = '';
+        feed.remove();
+        feed = null;
+        resetMajorIncidentFeedObserver();
+        majorIncidentFeedRenderSignature = '';
         }
 
         if (!feed) {
-            resetMajorIncidentFeedObserver();
-            majorIncidentFeedRenderSignature = '';
-            feed = document.createElement('section');
-            feed.id = SCRIPT.majorIncidentFeedId;
-            feed.setAttribute('aria-label', 'Major incident news feed');
-            feed.innerHTML = '<div class="mcms-incident-feed-label"></div><div class="mcms-incident-feed-viewport" aria-live="off"><div class="mcms-incident-feed-track"></div></div>';
-            feed.addEventListener('click', event => {
-                const item = closestEventTarget(event, '[data-mcms-major-mission-id]');
-                if (!item) return;
-                event.preventDefault();
-                event.stopPropagation();
-                focusMissionById(item.dataset.mcmsMajorMissionId, false);
-            });
-            feed.addEventListener('pointerdown', () => {
-                feed.classList.add('mcms-feed-paused');
-                runtimeSetTimeout(() => feed?.classList?.remove('mcms-feed-paused'), 1800);
-            }, { passive: true });
-            document.body.appendChild(feed);
+        resetMajorIncidentFeedObserver();
+        majorIncidentFeedRenderSignature = '';
+        feed = document.createElement('section');
+        feed.id = SCRIPT.majorIncidentFeedId;
+        feed.setAttribute('aria-label', 'Major incident news feed');
+        feed.innerHTML = '<div class="mcms-incident-feed-label"></div><div class="mcms-incident-feed-viewport" aria-live="off"><div class="mcms-incident-feed-track"></div></div>';
+        feed.addEventListener('click', event => {
+            const item = closestEventTarget(event, '[data-mcms-major-mission-id]');
+            if (!item) return;
+            event.preventDefault();
+            event.stopPropagation();
+            focusMissionById(item.dataset.mcmsMajorMissionId, false);
+        });
+        feed.addEventListener('pointerdown', () => {
+            feed.classList.add('mcms-feed-paused');
+            runtimeSetTimeout(() => feed?.classList?.remove('mcms-feed-paused'), 1800);
+        }, { passive: true });
+        document.body.appendChild(feed);
         }
 
         if (state.economyMode) {
-            resetMajorIncidentFeedObserver();
+        resetMajorIncidentFeedObserver();
         } else if (majorIncidentFeedObservedElement !== feed && typeof pageWindow.ResizeObserver === 'function') {
-            resetMajorIncidentFeedObserver();
-            majorIncidentFeedObservedElement = feed;
-            majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
-                if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
-                else recoverMajorIncidentFeed('header replacement');
-            }));
-            majorIncidentFeedResizeObserver.observe(feed);
-            const viewport = feed.querySelector('.mcms-incident-feed-viewport');
-            if (viewport) majorIncidentFeedResizeObserver.observe(viewport);
+        resetMajorIncidentFeedObserver();
+        majorIncidentFeedObservedElement = feed;
+        majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
+            if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
+            else recoverMajorIncidentFeed('header replacement');
+        }));
+        majorIncidentFeedResizeObserver.observe(feed);
+        const viewport = feed.querySelector('.mcms-incident-feed-viewport');
+        if (viewport) majorIncidentFeedResizeObserver.observe(viewport);
         }
 
         scheduleMajorIncidentFeedLayout();
@@ -19610,16 +19550,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!feed) return;
         const entries = state.economyMode ? majorIncidentFeedEntries().slice(0, 1) : majorIncidentFeedEntries();
         const signature = JSON.stringify({
-            theme: state.uiTheme,
-            minimum: state.majorIncidentFeed.minimumCredits,
-            entries: entries.map(entry => [entry.snapshot.missionId, entry.snapshot.caption, entry.postcode, entry.operational.key, entry.operational.label, entry.credits, Math.floor(entry.ageMs / 60000)])
+        theme: state.uiTheme,
+        minimum: state.majorIncidentFeed.minimumCredits,
+        entries: entries.map(entry => [entry.snapshot.missionId, entry.snapshot.caption, entry.postcode, entry.operational.key, entry.operational.label, entry.credits, Math.floor(entry.ageMs / 60000)])
         });
         const existingTrack = feed.querySelector('.mcms-incident-feed-track');
         const hasRenderedContent = Boolean(existingTrack?.childElementCount);
         if (!force && signature === majorIncidentFeedRenderSignature && hasRenderedContent) {
-            scheduleMajorIncidentFeedLayout();
-            scheduleMajorIncidentFeedMotion(feed, false, 60);
-            return;
+        scheduleMajorIncidentFeedLayout();
+        scheduleMajorIncidentFeedMotion(feed, false, 60);
+        return;
         }
         majorIncidentFeedRenderSignature = signature;
         const label = feed.querySelector('.mcms-incident-feed-label');
@@ -19631,13 +19571,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         feed.classList.remove('mcms-feed-static');
         feed.dataset.mcmsEntryCount = String(entries.length);
         if (!entries.length) {
-            track.innerHTML = '<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>';
-            feed.style.removeProperty('--mcms-incident-feed-duration');
+        track.innerHTML = '<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>';
+        feed.style.removeProperty('--mcms-incident-feed-duration');
         } else {
-            const itemHtml = entries.map(majorIncidentFeedItemHtml).join('');
-            const group = `<div class="mcms-incident-feed-group">${itemHtml}</div>`;
-            track.innerHTML = state.economyMode ? group : `${group}${group}`;
-            scheduleMajorIncidentFeedMotion(feed, true, 70);
+        const itemHtml = entries.map(majorIncidentFeedItemHtml).join('');
+        const group = `<div class="mcms-incident-feed-group">${itemHtml}</div>`;
+        track.innerHTML = state.economyMode ? group : `${group}${group}`;
+        scheduleMajorIncidentFeedMotion(feed, true, 70);
         }
         scheduleMajorIncidentFeedLayout();
     }
@@ -19645,8 +19585,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function scheduleMajorIncidentFeedRender(delay = 120) {
         runtimeClearTimeout(majorIncidentFeedRenderTimer);
         majorIncidentFeedRenderTimer = runtimeSetTimeout(() => {
-            majorIncidentFeedRenderTimer = null;
-            renderMajorIncidentFeed();
+        majorIncidentFeedRenderTimer = null;
+        renderMajorIncidentFeed();
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -19662,18 +19602,18 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const cached = missionOverlayData.get(missionId) || {};
         const direct = cached.caption ?? marker?.caption ?? marker?.name ?? marker?.options?.title ?? marker?.options?.caption;
         if (direct && String(direct).trim()) {
-            const caption = normaliseMissionCaption(direct);
-            if (cached.caption !== caption) setMissionOverlayRecord(missionId, { ...cached, caption });
-            return caption;
+        const caption = normaliseMissionCaption(direct);
+        if (cached.caption !== caption) setMissionOverlayRecord(missionId, { ...cached, caption });
+        return caption;
         }
         const panel = getMissionPanelElement(missionId);
         if (panel) {
-            const captionNode = panel.querySelector('.map_position_mover[id^="mission_caption_"], .mission_caption, [id^="mission_caption_"]');
-            const caption = normaliseMissionCaption(captionNode?.textContent || '');
-            if (caption) {
-                setMissionOverlayRecord(missionId, { ...cached, caption });
-                return caption;
-            }
+        const captionNode = panel.querySelector('.map_position_mover[id^="mission_caption_"], .mission_caption, [id^="mission_caption_"]');
+        const caption = normaliseMissionCaption(captionNode?.textContent || '');
+        if (caption) {
+            setMissionOverlayRecord(missionId, { ...cached, caption });
+            return caption;
+        }
         }
         const iconText = marker?._icon?.title || marker?._icon?.alt || marker?._icon?.getAttribute?.('aria-label');
         const caption = normaliseMissionCaption(iconText || '');
@@ -19695,8 +19635,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!text) return '';
         const normalisedPostcode = normaliseMissionPostcode(postcode || text);
         if (normalisedPostcode) {
-            const compactPattern = normalisedPostcode.replace(/\s+/g, '\\s*');
-            try { text = text.replace(new RegExp(`\\b${compactPattern}\\b`, 'iu'), ' '); } catch (err) {}
+        const compactPattern = normalisedPostcode.replace(/\s+/g, '\\s*');
+        try { text = text.replace(new RegExp(`\\b${compactPattern}\\b`, 'iu'), ' '); } catch (err) {}
         }
         text = text.replace(UK_POSTCODE_PATTERN, ' ').replace(/\s+/g, ' ').trim();
 
@@ -19715,20 +19655,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const cached = missionOverlayData.get(missionId) || {};
         const direct = cached.address ?? marker?.address ?? marker?.mission_address ?? marker?.missionAddress ?? marker?.options?.address ?? marker?.options?.mission_address ?? marker?.options?.missionAddress;
         if (direct && String(direct).trim()) {
-            const address = String(direct).replace(/\s+/g, ' ').trim();
-            const postcode = normaliseMissionPostcode(address);
-            if (cached.address !== address || cached.postcode !== postcode) setMissionOverlayRecord(missionId, { ...cached, address, postcode });
-            return address;
+        const address = String(direct).replace(/\s+/g, ' ').trim();
+        const postcode = normaliseMissionPostcode(address);
+        if (cached.address !== address || cached.postcode !== postcode) setMissionOverlayRecord(missionId, { ...cached, address, postcode });
+        return address;
         }
 
         const panel = getMissionPanelElement(missionId);
         const addressNode = document.getElementById(`mission_address_${missionId}`)
-            || panel?.querySelector?.('.mission_address, [id^="mission_address_"]')
-            || null;
+        || panel?.querySelector?.('.mission_address, [id^="mission_address_"]')
+        || null;
         const address = String(addressNode?.textContent || '').replace(/\s+/g, ' ').trim();
         if (address) {
-            const postcode = normaliseMissionPostcode(address);
-            setMissionOverlayRecord(missionId, { ...cached, address, postcode });
+        const postcode = normaliseMissionPostcode(address);
+        setMissionOverlayRecord(missionId, { ...cached, address, postcode });
         }
         return address;
     }
@@ -19736,10 +19676,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function vehicleStatusCode(vehicle) {
         if (!vehicle || typeof vehicle !== 'object') return null;
         const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         for (const item of containers) {
-            const value = Number(item.fms_real ?? item.fmsReal ?? item.fms ?? item.fms_show ?? item.fmsShow);
-            if (Number.isFinite(value)) return value;
+        const value = Number(item.fms_real ?? item.fmsReal ?? item.fms ?? item.fms_show ?? item.fmsShow);
+        if (Number.isFinite(value)) return value;
         }
         return null;
     }
@@ -19749,29 +19689,29 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const commitment = normalisedId === null ? null : rebuildMissionCommitmentIndex().get(normalisedId);
 
         if (!commitment) {
-            return {
-                total: 0,
-                active: 0,
-                onScene: 0,
-                onWay: 0,
-                travelling: 0,
-                transporting: 0,
-                awaitingPickup: 0,
-                requestingDispatch: 0,
-                outOfService: 0,
-                available: 0,
-                unknownStatus: 0,
-                markerPresence: false,
-                known: vehicleApiReady,
-                source: vehicleApiReady ? 'api' : 'unknown'
-            };
+        return {
+            total: 0,
+            active: 0,
+            onScene: 0,
+            onWay: 0,
+            travelling: 0,
+            transporting: 0,
+            awaitingPickup: 0,
+            requestingDispatch: 0,
+            outOfService: 0,
+            available: 0,
+            unknownStatus: 0,
+            markerPresence: false,
+            known: vehicleApiReady,
+            source: vehicleApiReady ? 'api' : 'unknown'
+        };
         }
 
         return {
-            ...commitment,
-            markerPresence: false,
-            known: true,
-            source: vehicleApiReady ? 'api' : 'live'
+        ...commitment,
+        markerPresence: false,
+        known: true,
+        source: vehicleApiReady ? 'api' : 'live'
         };
     }
 
@@ -19782,10 +19722,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function missionLiveCurrentValueFromMarker(marker) {
         const containers = [marker, marker?.options, marker?.params, marker?.mission, marker?.data, marker?._missionData]
-            .filter(item => item && typeof item === 'object');
+        .filter(item => item && typeof item === 'object');
         for (const item of containers) {
-            const value = normaliseMissionLiveCurrentValue(item.live_current_value ?? item.liveCurrentValue ?? item.current_value ?? item.currentValue);
-            if (value !== null) return value;
+        const value = normaliseMissionLiveCurrentValue(item.live_current_value ?? item.liveCurrentValue ?? item.current_value ?? item.currentValue);
+        if (value !== null) return value;
         }
         return null;
     }
@@ -19794,17 +19734,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const panel = getMissionPanelElement(missionId);
         if (!panel) return null;
         const candidates = [
-            panel,
-            ...Array.from(panel.querySelectorAll('[data-live-current-value], [data-live_current_value], [data-current-value], [data-current_value]'))
+        panel,
+        ...Array.from(panel.querySelectorAll('[data-live-current-value], [data-live_current_value], [data-current-value], [data-current_value]'))
         ];
         for (const element of candidates) {
-            const value = normaliseMissionLiveCurrentValue(
-                element.getAttribute?.('data-live-current-value') ??
-                element.getAttribute?.('data-live_current_value') ??
-                element.getAttribute?.('data-current-value') ??
-                element.getAttribute?.('data-current_value')
-            );
-            if (value !== null) return value;
+        const value = normaliseMissionLiveCurrentValue(
+            element.getAttribute?.('data-live-current-value') ??
+            element.getAttribute?.('data-live_current_value') ??
+            element.getAttribute?.('data-current-value') ??
+            element.getAttribute?.('data-current_value')
+        );
+        if (value !== null) return value;
         }
         return null;
     }
@@ -19831,15 +19771,15 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const progressBucket = Math.floor(now / MISSION_SNAPSHOT_REUSE_MS);
         const cachedSnapshot = missionSnapshotCache.get(missionId);
         if (
-            cachedSnapshot?.marker === marker &&
-            cachedSnapshot.missionRevision === missionRegistryRevision &&
-            cachedSnapshot.vehicleRevision === vehicleDataRevision &&
-            cachedSnapshot.overlayVersion === overlayVersion &&
-            cachedSnapshot.progressBucket === progressBucket
+        cachedSnapshot?.marker === marker &&
+        cachedSnapshot.missionRevision === missionRegistryRevision &&
+        cachedSnapshot.vehicleRevision === vehicleDataRevision &&
+        cachedSnapshot.overlayVersion === overlayVersion &&
+        cachedSnapshot.progressBucket === progressBucket
         ) {
-            cachedSnapshot.lastUsed = now;
-            cachedSnapshot.snapshot.lastSeen = now;
-            return cachedSnapshot.snapshot;
+        cachedSnapshot.lastUsed = now;
+        cachedSnapshot.snapshot.lastSeen = now;
+        return cachedSnapshot.snapshot;
         }
         let latLng = null;
         try { latLng = marker.getLatLng?.() || null; } catch (err) {}
@@ -19848,58 +19788,58 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const category = missionWatchCategory(marker, missionId, null, specialEvent);
         const unitState = missionPersonalUnitState(marker, missionId);
         const units = {
-            ...unitState.commitment,
-            markerPresence: Boolean(unitState.hasUnit && Number(unitState.commitment?.total || 0) <= 0)
+        ...unitState.commitment,
+        markerPresence: Boolean(unitState.hasUnit && Number(unitState.commitment?.total || 0) <= 0)
         };
         const overlay = missionOverlayData.get(missionId) || {};
         const overlayMissingTextKnown = overlay.missingTextKnown === true || Object.prototype.hasOwnProperty.call(overlay, 'missingText');
         const rawMissingText = overlayMissingTextKnown
-            ? String(overlay.missingText || '')
-            : marker?.missing_text || marker?.missingText || marker?.options?.missing_text || marker?.options?.missingText || '';
+        ? String(overlay.missingText || '')
+        : marker?.missing_text || marker?.missingText || marker?.options?.missing_text || marker?.options?.missingText || '';
         const address = getMissionAddress(marker, missionId);
         const postcode = normaliseMissionPostcode(overlay.postcode || address);
         const area = normaliseMissionCity(overlay.city || address, postcode);
         const liveCurrentValue = resolveMissionLiveCurrentValue(marker, missionId, overlay, now);
         const snapshot = {
-            missionId,
-            marker,
-            caption: getMissionCaption(marker, missionId),
-            address,
-            postcode,
-            city: area,
-            area,
-            source: ownership,
-            ownership,
-            category,
-            specialEvent,
-            missionType: ownership,
-            averageCredits: getMissionAverageCredits(marker, missionId),
-            qualified: ownership === 'personal' || unitState.hasUnit,
-            units,
-            createdAt: getMissionCreatedAt(marker, missionId),
-            missingText: normaliseMissingRequirementText(rawMissingText),
-            patientsCount: Number.isFinite(Number(overlay.patientsCount ?? marker?.patients_count ?? marker?.patientsCount ?? marker?.options?.patients_count)) ? Number(overlay.patientsCount ?? marker?.patients_count ?? marker?.patientsCount ?? marker?.options?.patients_count) : null,
-            possiblePatientsCount: Number.isFinite(Number(overlay.possiblePatientsCount ?? marker?.possible_patients_count ?? marker?.possiblePatientsCount ?? marker?.options?.possible_patients_count)) ? Number(overlay.possiblePatientsCount ?? marker?.possible_patients_count ?? marker?.possiblePatientsCount ?? marker?.options?.possible_patients_count) : null,
-            prisonersCount: Number.isFinite(Number(overlay.prisonersCount ?? marker?.prisoners_count ?? marker?.prisonersCount ?? marker?.options?.prisoners_count)) ? Number(overlay.prisonersCount ?? marker?.prisoners_count ?? marker?.prisonersCount ?? marker?.options?.prisoners_count) : null,
-            possiblePrisonersCount: Number.isFinite(Number(overlay.possiblePrisonersCount ?? marker?.possible_prisoners_count ?? marker?.possiblePrisonersCount ?? marker?.options?.possible_prisoners_count)) ? Number(overlay.possiblePrisonersCount ?? marker?.possible_prisoners_count ?? marker?.possiblePrisonersCount ?? marker?.options?.possible_prisoners_count) : null,
-            liveCurrentValue,
-            dateEndCalc: Number.isFinite(Number(overlay.dateEndCalc)) ? Number(overlay.dateEndCalc) : null,
-            dateEnd: Number.isFinite(Number(overlay.dateEnd)) ? Number(overlay.dateEnd) : null,
-            dateNow: Number.isFinite(Number(overlay.dateNow)) ? Number(overlay.dateNow) : null,
-            dateNowUpdatedAt: Number.isFinite(Number(overlay.dateNowUpdatedAt)) ? Number(overlay.dateNowUpdatedAt) : null,
-            vehicleState: Number.isFinite(Number(overlay.vehicleState ?? marker?.vehicle_state ?? marker?.vehicleState ?? marker?.options?.vehicle_state)) ? Number(overlay.vehicleState ?? marker?.vehicle_state ?? marker?.vehicleState ?? marker?.options?.vehicle_state) : null,
-            lat: Number(latLng?.lat),
-            lng: Number(latLng?.lng),
-            lastSeen: now
+        missionId,
+        marker,
+        caption: getMissionCaption(marker, missionId),
+        address,
+        postcode,
+        city: area,
+        area,
+        source: ownership,
+        ownership,
+        category,
+        specialEvent,
+        missionType: ownership,
+        averageCredits: getMissionAverageCredits(marker, missionId),
+        qualified: ownership === 'personal' || unitState.hasUnit,
+        units,
+        createdAt: getMissionCreatedAt(marker, missionId),
+        missingText: normaliseMissingRequirementText(rawMissingText),
+        patientsCount: Number.isFinite(Number(overlay.patientsCount ?? marker?.patients_count ?? marker?.patientsCount ?? marker?.options?.patients_count)) ? Number(overlay.patientsCount ?? marker?.patients_count ?? marker?.patientsCount ?? marker?.options?.patients_count) : null,
+        possiblePatientsCount: Number.isFinite(Number(overlay.possiblePatientsCount ?? marker?.possible_patients_count ?? marker?.possiblePatientsCount ?? marker?.options?.possible_patients_count)) ? Number(overlay.possiblePatientsCount ?? marker?.possible_patients_count ?? marker?.possiblePatientsCount ?? marker?.options?.possible_patients_count) : null,
+        prisonersCount: Number.isFinite(Number(overlay.prisonersCount ?? marker?.prisoners_count ?? marker?.prisonersCount ?? marker?.options?.prisoners_count)) ? Number(overlay.prisonersCount ?? marker?.prisoners_count ?? marker?.prisonersCount ?? marker?.options?.prisoners_count) : null,
+        possiblePrisonersCount: Number.isFinite(Number(overlay.possiblePrisonersCount ?? marker?.possible_prisoners_count ?? marker?.possiblePrisonersCount ?? marker?.options?.possible_prisoners_count)) ? Number(overlay.possiblePrisonersCount ?? marker?.possible_prisoners_count ?? marker?.possiblePrisonersCount ?? marker?.options?.possible_prisoners_count) : null,
+        liveCurrentValue,
+        dateEndCalc: Number.isFinite(Number(overlay.dateEndCalc)) ? Number(overlay.dateEndCalc) : null,
+        dateEnd: Number.isFinite(Number(overlay.dateEnd)) ? Number(overlay.dateEnd) : null,
+        dateNow: Number.isFinite(Number(overlay.dateNow)) ? Number(overlay.dateNow) : null,
+        dateNowUpdatedAt: Number.isFinite(Number(overlay.dateNowUpdatedAt)) ? Number(overlay.dateNowUpdatedAt) : null,
+        vehicleState: Number.isFinite(Number(overlay.vehicleState ?? marker?.vehicle_state ?? marker?.vehicleState ?? marker?.options?.vehicle_state)) ? Number(overlay.vehicleState ?? marker?.vehicle_state ?? marker?.vehicleState ?? marker?.options?.vehicle_state) : null,
+        lat: Number(latLng?.lat),
+        lng: Number(latLng?.lng),
+        lastSeen: now
         };
         missionSnapshotCache.set(missionId, {
-            marker,
-            missionRevision: missionRegistryRevision,
-            vehicleRevision: vehicleDataRevision,
-            overlayVersion: missionOverlayVersion(missionId),
-            progressBucket,
-            lastUsed: now,
-            snapshot
+        marker,
+        missionRevision: missionRegistryRevision,
+        vehicleRevision: vehicleDataRevision,
+        overlayVersion: missionOverlayVersion(missionId),
+        progressBucket,
+        lastUsed: now,
+        snapshot
         });
         return snapshot;
     }
@@ -19912,54 +19852,54 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const previousSnapshots = liveMissionSnapshots;
         const missionMarkers = getMissionMarkerIndex().markers;
         for (const marker of missionMarkers) {
-            const snapshot = missionSnapshotFromMarker(marker, now);
-            if (!snapshot) continue;
-            updateMissionProgressState(snapshot, now);
-            current.set(snapshot.missionId, snapshot);
-            missionLifecycleLastSeen.set(snapshot.missionId, now);
-            const newlySeen = !knownMissionIds.has(snapshot.missionId);
-            knownMissionIds.add(snapshot.missionId);
-            if (newlySeen && missionSpawnArmed && state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(snapshot.missionId), 60);
+        const snapshot = missionSnapshotFromMarker(marker, now);
+        if (!snapshot) continue;
+        updateMissionProgressState(snapshot, now);
+        current.set(snapshot.missionId, snapshot);
+        missionLifecycleLastSeen.set(snapshot.missionId, now);
+        const newlySeen = !knownMissionIds.has(snapshot.missionId);
+        knownMissionIds.add(snapshot.missionId);
+        if (newlySeen && missionSpawnArmed && state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(snapshot.missionId), 60);
         }
 
         if (missionSnapshotReady) {
-            for (const [missionId, previous] of previousSnapshots.entries()) {
-                if (current.has(missionId)) continue;
-                if (now - Number(previous.lastSeen || now) > 15000) continue;
-                if (!recentCompletedMissions.some(item => item.missionId === missionId && now - item.removedAt < PAYOUT_MATCH_WINDOW_MS)) {
-                    recentCompletedMissions.unshift({ ...previous, removedAt: now, matched: false });
-                }
+        for (const [missionId, previous] of previousSnapshots.entries()) {
+            if (current.has(missionId)) continue;
+            if (now - Number(previous.lastSeen || now) > 15000) continue;
+            if (!recentCompletedMissions.some(item => item.missionId === missionId && now - item.removedAt < PAYOUT_MATCH_WINDOW_MS)) {
+                recentCompletedMissions.unshift({ ...previous, removedAt: now, matched: false });
             }
+        }
         }
 
         liveMissionSnapshots = current;
         missionSnapshotReady = missionSnapshotReady || current.size > 0;
         if (document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open')) {
-            criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, now, missionProgressPageLastSuccessAt, vehicleApiLastFetch, vehicleStatusLastUpdate);
+        criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, now, missionProgressPageLastSuccessAt, vehicleApiLastFetch, vehicleStatusLastUpdate);
         }
 
         for (let index = recentCompletedMissions.length - 1; index >= 0; index -= 1) {
-            const item = recentCompletedMissions[index];
-            if (current.has(item.missionId) || now - item.removedAt > PAYOUT_MATCH_WINDOW_MS) recentCompletedMissions.splice(index, 1);
+        const item = recentCompletedMissions[index];
+        if (current.has(item.missionId) || now - item.removedAt > PAYOUT_MATCH_WINDOW_MS) recentCompletedMissions.splice(index, 1);
         }
         if (recentCompletedMissions.length > 30) recentCompletedMissions.length = 30;
 
         let progressEntriesRemoved = false;
         for (const [missionId, progress] of missionProgressState.entries()) {
-            if (current.has(missionId)) continue;
-            if (now - Number(progress.lastSeen || now) > MISSION_CACHE_RETENTION_MS) {
-                missionProgressState.delete(missionId);
-                progressEntriesRemoved = true;
-            }
+        if (current.has(missionId)) continue;
+        if (now - Number(progress.lastSeen || now) > MISSION_CACHE_RETENTION_MS) {
+            missionProgressState.delete(missionId);
+            progressEntriesRemoved = true;
+        }
         }
 
         for (const [missionId, lastSeen] of missionLifecycleLastSeen.entries()) {
-            if (current.has(missionId) || now - lastSeen <= MISSION_CACHE_RETENTION_MS) continue;
-            missionLifecycleLastSeen.delete(missionId);
-            deleteMissionOverlayRecord(missionId);
-            knownMissionIds.delete(missionId);
-            resourceGapLabels.delete(missionId);
-            stuckMissionLabels.delete(missionId);
+        if (current.has(missionId) || now - lastSeen <= MISSION_CACHE_RETENTION_MS) continue;
+        missionLifecycleLastSeen.delete(missionId);
+        deleteMissionOverlayRecord(missionId);
+        knownMissionIds.delete(missionId);
+        resourceGapLabels.delete(missionId);
+        stuckMissionLabels.delete(missionId);
         }
         if (progressEntriesRemoved) saveMissionProgressState();
         if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(80);
@@ -19981,30 +19921,30 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const now = Date.now();
         const value = Math.max(0, Number(amount) || 0);
         const candidates = recentCompletedMissions.filter(item => !item.matched && now - item.removedAt <= PAYOUT_MATCH_WINDOW_MS)
-            .filter(item => item.source === 'personal' || item.qualified);
+        .filter(item => item.source === 'personal' || item.qualified);
         if (!candidates.length) return { source: 'unknown', caption: '', missionId: null, confidence: 0 };
 
         let best = null;
         let bestScore = -Infinity;
         for (const item of candidates) {
-            const recencyScore = Math.max(0, 35 - ((now - item.removedAt) / 500));
-            const sourceScore = item.source === 'personal' || item.qualified ? 18 : -30;
-            let creditScore = 5;
-            if (Number.isFinite(Number(item.averageCredits)) && Number(item.averageCredits) > 0) {
-                const ratio = Math.abs(value - Number(item.averageCredits)) / Math.max(value, Number(item.averageCredits), 1);
-                creditScore = Math.max(-20, 70 - (ratio * 100));
-            }
-            const score = recencyScore + sourceScore + creditScore + (item.caption ? 6 : 0);
-            if (score > bestScore) { bestScore = score; best = item; }
+        const recencyScore = Math.max(0, 35 - ((now - item.removedAt) / 500));
+        const sourceScore = item.source === 'personal' || item.qualified ? 18 : -30;
+        let creditScore = 5;
+        if (Number.isFinite(Number(item.averageCredits)) && Number(item.averageCredits) > 0) {
+            const ratio = Math.abs(value - Number(item.averageCredits)) / Math.max(value, Number(item.averageCredits), 1);
+            creditScore = Math.max(-20, 70 - (ratio * 100));
+        }
+        const score = recencyScore + sourceScore + creditScore + (item.caption ? 6 : 0);
+        if (score > bestScore) { bestScore = score; best = item; }
         }
         if (!best || bestScore < 20) return { source: 'unknown', caption: '', missionId: null, confidence: 0 };
         best.matched = true;
         return {
-            source: best.source,
-            caption: best.caption || '',
-            missionId: best.missionId,
-            confidence: Math.min(1, Math.max(0, bestScore / 120)),
-            units: best.units || { total: 0, onScene: 0, travelling: 0 }
+        source: best.source,
+        caption: best.caption || '',
+        missionId: best.missionId,
+        confidence: Math.min(1, Math.max(0, bestScore / 120)),
+        units: best.units || { total: 0, onScene: 0, travelling: 0 }
         };
     }
 
@@ -20013,9 +19953,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!value) return;
         const tier = payoutTierForAmount(value);
         const entry = {
-            id: `${Date.now()}-${value}-${Math.random().toString(36).slice(2, 7)}`,
-            timestamp: Date.now(), amount: value, caption: String(context?.caption || ''),
-            source: ['personal', 'alliance'].includes(context?.source) ? context.source : 'unknown', tier
+        id: `${Date.now()}-${value}-${Math.random().toString(36).slice(2, 7)}`,
+        timestamp: Date.now(), amount: value, caption: String(context?.caption || ''),
+        source: ['personal', 'alliance'].includes(context?.source) ? context.source : 'unknown', tier
         };
         payoutHistory.unshift(entry);
         if (payoutHistory.length > PAYOUT_HISTORY_LIMIT) payoutHistory.length = PAYOUT_HISTORY_LIMIT;
@@ -20081,58 +20021,58 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const clearing = criticalMissionClearingProgress(snapshot);
 
         if (missing || stuck) {
-            return {
-                key: 'assistance',
-                label: 'VEHICLES NEED ASSISTANCE',
-                detail: missing || `No recorded progress for ${formatStuckDuration(stuckRecord.stuckForMs)}`,
-                rank: 2
-            };
+        return {
+            key: 'assistance',
+            label: 'VEHICLES NEED ASSISTANCE',
+            detail: missing || `No recorded progress for ${formatStuckDuration(stuckRecord.stuckForMs)}`,
+            rank: 2
+        };
         }
 
         if (!units?.known) {
-            return {
-                key: 'syncing',
-                label: 'SYNCING VEHICLE DATA',
-                detail: units?.markerPresence ? 'Your unit presence is detected · exact vehicle codes are loading' : 'Waiting for current personal vehicle status data',
-                rank: 4
-            };
+        return {
+            key: 'syncing',
+            label: 'SYNCING VEHICLE DATA',
+            detail: units?.markerPresence ? 'Your unit presence is detected · exact vehicle codes are loading' : 'Waiting for current personal vehicle status data',
+            rank: 4
+        };
         }
 
         if (clearing && total > 0 && onScene > 0) {
-            const respondingDetail = onWay > 0 ? ` · ${onWay} still responding` : '';
-            return {
-                key: 'clearing',
-                label: 'MISSION CLEARING',
-                detail: `${clearing.completion}% complete · ${onScene} on scene${respondingDetail}`,
-                rank: -1,
-                progress: clearing.completion
-            };
+        const respondingDetail = onWay > 0 ? ` · ${onWay} still responding` : '';
+        return {
+            key: 'clearing',
+            label: 'MISSION CLEARING',
+            detail: `${clearing.completion}% complete · ${onScene} on scene${respondingDetail}`,
+            rank: -1,
+            progress: clearing.completion
+        };
         }
 
         if (onScene <= 0 && onWay <= 0) {
-            const auxiliary = transporting + awaitingPickup;
-            return {
-                key: 'no-scene',
-                label: 'NO VEHICLES AT SCENE',
-                detail: auxiliary > 0 ? `${auxiliary} unit${auxiliary === 1 ? '' : 's'} occupied with transport activity` : 'Immediate dispatch attention required',
-                rank: 3
-            };
+        const auxiliary = transporting + awaitingPickup;
+        return {
+            key: 'no-scene',
+            label: 'NO VEHICLES AT SCENE',
+            detail: auxiliary > 0 ? `${auxiliary} unit${auxiliary === 1 ? '' : 's'} occupied with transport activity` : 'Immediate dispatch attention required',
+            rank: 3
+        };
         }
 
         if (onWay > 0) {
-            return {
-                key: 'enroute',
-                label: 'VEHICLES ON WAY',
-                detail: `${onWay} responding · ${onScene} already on scene`,
-                rank: 1
-            };
+        return {
+            key: 'enroute',
+            label: 'VEHICLES ON WAY',
+            detail: `${onWay} responding · ${onScene} already on scene`,
+            rank: 1
+        };
         }
 
         return {
-            key: 'on-scene',
-            label: 'VEHICLES ON SCENE',
-            detail: `${onScene} vehicle${onScene === 1 ? '' : 's'} operating at mission`,
-            rank: 0
+        key: 'on-scene',
+        label: 'VEHICLES ON SCENE',
+        detail: `${onScene} vehicle${onScene === 1 ? '' : 's'} operating at mission`,
+        rank: 0
         };
     }
 
@@ -20144,29 +20084,29 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         let lat = Number(snapshot?.lat);
         let lng = Number(snapshot?.lng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-            try {
-                const latLng = marker?.getLatLng?.();
-                lat = Number(latLng?.lat);
-                lng = Number(latLng?.lng);
-            } catch (err) {}
+        try {
+            const latLng = marker?.getLatLng?.();
+            lat = Number(latLng?.lat);
+            lng = Number(latLng?.lng);
+        } catch (err) {}
         }
         const signature = [rawCaption, rawAddress, rawValue ?? '', ownership, category, specialEvent?.label || '', lat, lng].join('|');
         const cached = criticalMissionStableCache.get(missionId);
         if (cached?.signature === signature) {
-            cached.lastSeen = Date.now();
-            return cached.data;
+        cached.lastSeen = Date.now();
+        return cached.data;
         }
         const address = String(rawAddress || '').replace(/\s+/g, ' ').trim();
         const postcode = normaliseMissionPostcode(snapshot?.postcode || overlay.postcode || address);
         const area = normaliseMissionCity(snapshot?.area || snapshot?.city || overlay.city || address, postcode);
         const data = {
-            caption: normaliseMissionCaption(rawCaption),
-            address,
-            postcode,
-            area,
-            averageCredits: rawValue,
-            lat,
-            lng
+        caption: normaliseMissionCaption(rawCaption),
+        address,
+        postcode,
+        area,
+        averageCredits: rawValue,
+        lat,
+        lng
         };
         criticalMissionStableCache.set(missionId, { signature, data, lastSeen: Date.now() });
         return data;
@@ -20183,80 +20123,80 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const markerById = markerIndex.byId;
 
         const appendEntry = (marker, missionId, snapshotOverride = null) => {
-            if (missionId === null || includedMissionIds.has(missionId)) return;
-            const snapshot = snapshotOverride || liveMissionSnapshots.get(missionId) || (marker ? missionSnapshotFromMarker(marker, now) : null) || {};
-            const ownership = missionWatchOwnership(marker, missionId, snapshot);
-            if (!allowedOwnership.has(ownership)) return;
-            const specialEvent = snapshot?.specialEvent?.active ? snapshot.specialEvent : missionDeveloperEventInfo(marker, missionId, snapshot);
-            const category = missionWatchCategory(marker, missionId, snapshot, specialEvent);
-            const createdAt = Number(snapshot?.createdAt) || Number(getMissionCreatedAt(marker, missionId));
-            const missionAge = Number.isFinite(createdAt) && createdAt > 0 ? Math.max(0, now - createdAt) : null;
-            if (Number.isFinite(Number(minAgeMs)) && Number(minAgeMs) > 0 && (!Number.isFinite(missionAge) || missionAge < Number(minAgeMs))) return;
-            const severity = Number.isFinite(missionAge)
-                ? missionAgeSeverity(missionAge)
-                : { rank: -1, label: 'AGE UNKNOWN', className: 'mcms-age-unknown' };
-            const exactUnits = personalUnitCommitmentForMission(missionId);
-            const unitState = missionPersonalUnitState(marker, missionId);
-            const units = {
-                ...exactUnits,
-                markerPresence: Boolean(exactUnits.markerPresence || (!exactUnits.known && unitState.hasUnit))
-            };
-            if (!units.known && units.markerPresence && units.total <= 0) units.total = 1;
-            const stuckRecord = missionStuckRecord(missionId, now);
-            const operationalState = criticalMissionOperationalState(units, snapshot, stuckRecord);
-            const stable = criticalMissionStableData(marker, missionId, snapshot, ownership, category, specialEvent);
-            const valueDetails = criticalMissionValueDetails({ missionId, marker, snapshot, averageCredits: stable.averageCredits });
-            const eligibleForCredits = ownership === 'personal' || units.active > 0 || units.markerPresence;
-            entries.push({
-                missionId,
-                marker,
-                caption: stable.caption,
-                address: stable.address,
-                postcode: stable.postcode,
-                city: stable.area,
-                area: stable.area,
-                lat: stable.lat,
-                lng: stable.lng,
-                distanceMi: null,
-                missionAge,
-                severity,
-                units,
-                snapshot,
-                averageCredits: stable.averageCredits,
-                valueDetails,
-                ownership,
-                category,
-                missionType: ownership,
-                specialEvent,
-                eligibleForCredits,
-                stuckRecord,
-                operationalState,
-                dataQuality: {
-                    ageKnown: Number.isFinite(missionAge),
-                    unitsKnown: Boolean(units.known),
-                    valueKnown: valueDetails.value !== null,
-                    locationKnown: Number.isFinite(stable.lat) && Number.isFinite(stable.lng),
-                    areaKnown: Boolean(stable.area || stable.postcode)
-                }
-            });
-            includedMissionIds.add(missionId);
+        if (missionId === null || includedMissionIds.has(missionId)) return;
+        const snapshot = snapshotOverride || liveMissionSnapshots.get(missionId) || (marker ? missionSnapshotFromMarker(marker, now) : null) || {};
+        const ownership = missionWatchOwnership(marker, missionId, snapshot);
+        if (!allowedOwnership.has(ownership)) return;
+        const specialEvent = snapshot?.specialEvent?.active ? snapshot.specialEvent : missionDeveloperEventInfo(marker, missionId, snapshot);
+        const category = missionWatchCategory(marker, missionId, snapshot, specialEvent);
+        const createdAt = Number(snapshot?.createdAt) || Number(getMissionCreatedAt(marker, missionId));
+        const missionAge = Number.isFinite(createdAt) && createdAt > 0 ? Math.max(0, now - createdAt) : null;
+        if (Number.isFinite(Number(minAgeMs)) && Number(minAgeMs) > 0 && (!Number.isFinite(missionAge) || missionAge < Number(minAgeMs))) return;
+        const severity = Number.isFinite(missionAge)
+            ? missionAgeSeverity(missionAge)
+            : { rank: -1, label: 'AGE UNKNOWN', className: 'mcms-age-unknown' };
+        const exactUnits = personalUnitCommitmentForMission(missionId);
+        const unitState = missionPersonalUnitState(marker, missionId);
+        const units = {
+            ...exactUnits,
+            markerPresence: Boolean(exactUnits.markerPresence || (!exactUnits.known && unitState.hasUnit))
+        };
+        if (!units.known && units.markerPresence && units.total <= 0) units.total = 1;
+        const stuckRecord = missionStuckRecord(missionId, now);
+        const operationalState = criticalMissionOperationalState(units, snapshot, stuckRecord);
+        const stable = criticalMissionStableData(marker, missionId, snapshot, ownership, category, specialEvent);
+        const valueDetails = criticalMissionValueDetails({ missionId, marker, snapshot, averageCredits: stable.averageCredits });
+        const eligibleForCredits = ownership === 'personal' || units.active > 0 || units.markerPresence;
+        entries.push({
+            missionId,
+            marker,
+            caption: stable.caption,
+            address: stable.address,
+            postcode: stable.postcode,
+            city: stable.area,
+            area: stable.area,
+            lat: stable.lat,
+            lng: stable.lng,
+            distanceMi: null,
+            missionAge,
+            severity,
+            units,
+            snapshot,
+            averageCredits: stable.averageCredits,
+            valueDetails,
+            ownership,
+            category,
+            missionType: ownership,
+            specialEvent,
+            eligibleForCredits,
+            stuckRecord,
+            operationalState,
+            dataQuality: {
+                ageKnown: Number.isFinite(missionAge),
+                unitsKnown: Boolean(units.known),
+                valueKnown: valueDetails.value !== null,
+                locationKnown: Number.isFinite(stable.lat) && Number.isFinite(stable.lng),
+                areaKnown: Boolean(stable.area || stable.postcode)
+            }
+        });
+        includedMissionIds.add(missionId);
         };
 
         for (const [missionId, marker] of markerById.entries()) appendEntry(marker, missionId);
         for (const [missionId, snapshot] of liveMissionSnapshots.entries()) {
-            if (includedMissionIds.has(missionId)) continue;
-            appendEntry(markerById.get(missionId) || snapshot?.marker || null, missionId, snapshot);
+        if (includedMissionIds.has(missionId)) continue;
+        appendEntry(markerById.get(missionId) || snapshot?.marker || null, missionId, snapshot);
         }
 
         const activeIds = new Set(entries.map(entry => entry.missionId));
         for (const [missionId, cached] of criticalMissionStableCache.entries()) {
-            if (!activeIds.has(missionId) && now - Number(cached?.lastSeen || now) > MISSION_CACHE_RETENTION_MS) criticalMissionStableCache.delete(missionId);
+        if (!activeIds.has(missionId) && now - Number(cached?.lastSeen || now) > MISSION_CACHE_RETENTION_MS) criticalMissionStableCache.delete(missionId);
         }
 
         return entries.sort((a, b) => {
-            const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
-            const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
-            return bAge - aAge || a.caption.localeCompare(b.caption) || String(a.missionId).localeCompare(String(b.missionId), undefined, { numeric: true });
+        const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+        const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+        return bAge - aAge || a.caption.localeCompare(b.caption) || String(a.missionId).localeCompare(String(b.missionId), undefined, { numeric: true });
         });
     }
 
@@ -20302,15 +20242,15 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const selected = String(state.missionAgeWatch?.distanceOrigin || 'live');
         let valid = selected === 'live';
         if (selected === 'locked') {
-            const locked = state.missionAgeWatch?.lockedOrigin;
-            valid = Boolean(locked && Number.isFinite(Number(locked.lat)) && Number.isFinite(Number(locked.lng)));
+        const locked = state.missionAgeWatch?.lockedOrigin;
+        valid = Boolean(locked && Number.isFinite(Number(locked.lat)) && Number.isFinite(Number(locked.lng)));
         } else if (selected.startsWith('quick:')) {
-            const id = selected.slice(6);
-            valid = QUICK_PLACES.some(place => place.id === id);
+        const id = selected.slice(6);
+        valid = QUICK_PLACES.some(place => place.id === id);
         } else if (selected.startsWith('bookmark:')) {
-            const index = Number(selected.slice(9));
-            const bookmark = state.bookmarks?.[index];
-            valid = Boolean(bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng)));
+        const index = Number(selected.slice(9));
+        const bookmark = state.bookmarks?.[index];
+        valid = Boolean(bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng)));
         }
         if (valid) return selected;
         state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: 'live' };
@@ -20323,7 +20263,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (locked && Number.isFinite(Number(locked.lat)) && Number.isFinite(Number(locked.lng))) options.push({ key: 'locked', label: locked.label || 'Locked centre' });
         for (const place of QUICK_PLACES) options.push({ key: `quick:${place.id}`, label: place.name });
         state.bookmarks.forEach((bookmark, index) => {
-            if (bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng))) options.push({ key: `bookmark:${index}`, label: bookmark.name || `Bookmark ${index + 1}` });
+        if (bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng))) options.push({ key: `bookmark:${index}`, label: bookmark.name || `Bookmark ${index + 1}` });
         });
         return options;
     }
@@ -20332,25 +20272,25 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const mode = selectedCriticalDistanceOrigin();
         const map = findLeafletMapInstance(false);
         if (mode === 'locked') {
-            const locked = state.missionAgeWatch?.lockedOrigin;
-            if (locked && Number.isFinite(Number(locked.lat)) && Number.isFinite(Number(locked.lng))) return { lat: Number(locked.lat), lng: Number(locked.lng), map, label: locked.label || 'Locked centre' };
+        const locked = state.missionAgeWatch?.lockedOrigin;
+        if (locked && Number.isFinite(Number(locked.lat)) && Number.isFinite(Number(locked.lng))) return { lat: Number(locked.lat), lng: Number(locked.lng), map, label: locked.label || 'Locked centre' };
         }
         if (mode.startsWith('quick:')) {
-            const id = mode.slice(6);
-            const place = QUICK_PLACES.find(item => item.id === id);
-            if (place) return { lat: Number(place.lat), lng: Number(place.lng), map, label: place.name };
+        const id = mode.slice(6);
+        const place = QUICK_PLACES.find(item => item.id === id);
+        if (place) return { lat: Number(place.lat), lng: Number(place.lng), map, label: place.name };
         }
         if (mode.startsWith('bookmark:')) {
-            const index = Number(mode.slice(9));
-            const bookmark = state.bookmarks[index];
-            if (bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng))) return { lat: Number(bookmark.lat), lng: Number(bookmark.lng), map, label: bookmark.name || `Bookmark ${index + 1}` };
+        const index = Number(mode.slice(9));
+        const bookmark = state.bookmarks[index];
+        if (bookmark && Number.isFinite(Number(bookmark.lat)) && Number.isFinite(Number(bookmark.lng))) return { lat: Number(bookmark.lat), lng: Number(bookmark.lng), map, label: bookmark.name || `Bookmark ${index + 1}` };
         }
         if (!map || typeof map.getCenter !== 'function') return null;
         try {
-            const centre = map.getCenter();
-            const lat = Number(centre?.lat);
-            const lng = Number(centre?.lng);
-            return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng, map, label: 'Live map centre' } : null;
+        const centre = map.getCenter();
+        const lat = Number(centre?.lat);
+        const lng = Number(centre?.lng);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng, map, label: 'Live map centre' } : null;
         } catch (err) { return null; }
     }
 
@@ -20358,17 +20298,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const map = findLeafletMapInstance(false);
         if (!map?.getCenter) return false;
         try {
-            const centre = map.getCenter();
-            const lat = Number(centre?.lat);
-            const lng = Number(centre?.lng);
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-            state.missionAgeWatch = {
-                ...(state.missionAgeWatch || {}),
-                distanceOrigin: 'locked',
-                lockedOrigin: { lat, lng, label: `Locked ${lat.toFixed(3)}, ${lng.toFixed(3)}` }
-            };
-            saveState();
-            return true;
+        const centre = map.getCenter();
+        const lat = Number(centre?.lat);
+        const lng = Number(centre?.lng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+        state.missionAgeWatch = {
+            ...(state.missionAgeWatch || {}),
+            distanceOrigin: 'locked',
+            lockedOrigin: { lat, lng, label: `Locked ${lat.toFixed(3)}, ${lng.toFixed(3)}` }
+        };
+        saveState();
+        return true;
         } catch (err) { return false; }
     }
 
@@ -20378,10 +20318,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const lng = Number(entry?.lng ?? entry?.snapshot?.lng);
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
         try {
-            if (typeof reference.map?.distance === 'function') {
-                const metres = Number(reference.map.distance([reference.lat, reference.lng], [lat, lng]));
-                if (Number.isFinite(metres)) return Math.max(0, metres / 1609.344);
-            }
+        if (typeof reference.map?.distance === 'function') {
+            const metres = Number(reference.map.distance([reference.lat, reference.lng], [lat, lng]));
+            if (Number.isFinite(metres)) return Math.max(0, metres / 1609.344);
+        }
         } catch (err) {}
         return haversineMiles(reference, { lat, lng });
     }
@@ -20409,24 +20349,24 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function criticalEntryMatchesDimension(entry, dimension) {
         if (dimension === 'age') {
-            const definition = criticalAgeFilterDefinition();
-            if (!Number.isFinite(entry?.missionAge)) return definition.minAgeMs === 0;
-            return entry.missionAge >= definition.minAgeMs;
+        const definition = criticalAgeFilterDefinition();
+        if (!Number.isFinite(entry?.missionAge)) return definition.minAgeMs === 0;
+        return entry.missionAge >= definition.minAgeMs;
         }
         if (dimension === 'ownership') {
-            const selected = selectedCriticalOwnershipFilter();
-            return selected === 'all' || entry?.ownership === selected;
+        const selected = selectedCriticalOwnershipFilter();
+        return selected === 'all' || entry?.ownership === selected;
         }
         if (dimension === 'category') {
-            const selected = selectedCriticalCategoryFilter();
-            return selected === 'all' || entry?.category === selected;
+        const selected = selectedCriticalCategoryFilter();
+        return selected === 'all' || entry?.category === selected;
         }
         if (dimension === 'status') {
-            const selected = selectedCriticalPrimaryStatus();
-            const actual = criticalEntryPrimaryStatus(entry);
-            if (selected === 'all') return true;
-            if (selected === 'attention') return actual === 'no-scene' || actual === 'assistance';
-            return actual === selected;
+        const selected = selectedCriticalPrimaryStatus();
+        const actual = criticalEntryPrimaryStatus(entry);
+        if (selected === 'all') return true;
+        if (selected === 'attention') return actual === 'no-scene' || actual === 'assistance';
+        return actual === selected;
         }
         if (dimension === 'onway') return !state.missionAgeWatch?.hasVehiclesOnWay || Math.max(0, Number(entry?.units?.onWay ?? entry?.units?.travelling) || 0) > 0;
         if (dimension === 'myunits') return !state.missionAgeWatch?.onlyMyUnits || criticalEntryHasMyUnits(entry);
@@ -20444,35 +20384,35 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const sortMode = selectedCriticalSortMode();
         const withDistance = entries.map(entry => ({ ...entry, distanceMi: criticalEntryDistanceMiles(entry, reference), distanceOriginLabel: reference?.label || '' }));
         return withDistance.sort((a, b) => {
-            let primaryDifference = 0;
-            if (sortMode === 'closest' || sortMode === 'furthest') {
-                const aKnown = Number.isFinite(a.distanceMi);
-                const bKnown = Number.isFinite(b.distanceMi);
-                if (aKnown !== bKnown) return aKnown ? -1 : 1;
-                if (aKnown && bKnown) primaryDifference = sortMode === 'closest' ? Number(a.distanceMi) - Number(b.distanceMi) : Number(b.distanceMi) - Number(a.distanceMi);
-            } else {
-                const aKnown = Number.isFinite(a.missionAge);
-                const bKnown = Number.isFinite(b.missionAge);
-                if (aKnown !== bKnown) return aKnown ? -1 : 1;
-                if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
-            }
-            const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
-            const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
-            return primaryDifference || (definition.sort === 'newest' ? aAge - bAge : bAge - aAge) || a.caption.localeCompare(b.caption) || String(a.missionId).localeCompare(String(b.missionId), undefined, { numeric: true });
+        let primaryDifference = 0;
+        if (sortMode === 'closest' || sortMode === 'furthest') {
+            const aKnown = Number.isFinite(a.distanceMi);
+            const bKnown = Number.isFinite(b.distanceMi);
+            if (aKnown !== bKnown) return aKnown ? -1 : 1;
+            if (aKnown && bKnown) primaryDifference = sortMode === 'closest' ? Number(a.distanceMi) - Number(b.distanceMi) : Number(b.distanceMi) - Number(a.distanceMi);
+        } else {
+            const aKnown = Number.isFinite(a.missionAge);
+            const bKnown = Number.isFinite(b.missionAge);
+            if (aKnown !== bKnown) return aKnown ? -1 : 1;
+            if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
+        }
+        const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+        const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+        return primaryDifference || (definition.sort === 'newest' ? aAge - bAge : bAge - aAge) || a.caption.localeCompare(b.caption) || String(a.missionId).localeCompare(String(b.missionId), undefined, { numeric: true });
         });
     }
 
     function qualifiedAllianceMissionCount() {
         let count = 0;
         if (missionSnapshotReady) {
-            for (const snapshot of liveMissionSnapshots.values()) {
-                if (snapshot?.ownership === 'alliance' && snapshot.qualified) count += 1;
-            }
-            return count;
+        for (const snapshot of liveMissionSnapshots.values()) {
+            if (snapshot?.ownership === 'alliance' && snapshot.qualified) count += 1;
+        }
+        return count;
         }
         for (const marker of getMissionMarkerIndex().markers) {
-            const missionId = missionIdFromMarker(marker);
-            if (missionId !== null && isAllianceMissionLayer(marker, missionId) && missionHasPersonalUnit(marker, missionId)) count += 1;
+        const missionId = missionIdFromMarker(marker);
+        if (missionId !== null && isAllianceMissionLayer(marker, missionId) && missionHasPersonalUnit(marker, missionId)) count += 1;
         }
         return count;
     }
@@ -20510,19 +20450,19 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const criticalEntries = getCriticalMissionEntries(CRITICAL_VIEW_MIN_AGE_MS);
         const qualifiedAlliance = opsPanelVisible ? qualifiedAllianceMissionCount() : 0;
         const summarySignature = JSON.stringify({
-            credits: sessionPerformance.creditsEarned,
-            qualifying: sessionPerformance.qualifyingCount,
-            largest: sessionPerformance.largestPayout,
-            payouts: sessionPerformance.payoutCount,
-            critical: criticalEntries.map(entry => [entry.missionId, entry.severity.rank, Math.floor(entry.missionAge / 60000), entry.units.total]),
-            qualifiedAlliance,
-            history: payoutHistory.map(entry => [entry.id, entry.amount, entry.timestamp])
+        credits: sessionPerformance.creditsEarned,
+        qualifying: sessionPerformance.qualifyingCount,
+        largest: sessionPerformance.largestPayout,
+        payouts: sessionPerformance.payoutCount,
+        critical: criticalEntries.map(entry => [entry.missionId, entry.severity.rank, Math.floor(entry.missionAge / 60000), entry.units.total]),
+        qualifiedAlliance,
+        history: payoutHistory.map(entry => [entry.id, entry.amount, entry.timestamp])
         });
 
         if (opsPanelVisible && panel) {
-            const session = panel.querySelector('[data-ops-session]');
-            if (session) {
-                const html = `
+        const session = panel.querySelector('[data-ops-session]');
+        if (session) {
+            const html = `
                     <div class="mcms-ops-session-grid">
                         <div class="mcms-ops-stat"><span class="mcms-ops-stat-label">Credits earned</span><strong class="mcms-ops-stat-value">${escapeHtml(formatOperationalCompactCredits(sessionPerformance.creditsEarned))}</strong></div>
                         <div class="mcms-ops-stat"><span class="mcms-ops-stat-label">10K+ completions</span><strong class="mcms-ops-stat-value">${Number(sessionPerformance.qualifyingCount) || 0}</strong></div>
@@ -20530,38 +20470,38 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                         <div class="mcms-ops-stat"><span class="mcms-ops-stat-label">Aged missions</span><strong class="mcms-ops-stat-value">${criticalEntries.length}</strong></div>
                         <div class="mcms-ops-stat"><span class="mcms-ops-stat-label"><span class="mcms-alliance-text">Alliance</span> qualified</span><strong class="mcms-ops-stat-value">${qualifiedAlliance}</strong></div>
                         <div class="mcms-ops-stat"><span class="mcms-ops-stat-label">Payout events</span><strong class="mcms-ops-stat-value">${Number(sessionPerformance.payoutCount) || 0}</strong></div>
-                    </div>`;
-                setInnerHtmlIfChanged(session, html, `session:${summarySignature}`);
-            }
+                </div>`;
+            setInnerHtmlIfChanged(session, html, `session:${summarySignature}`);
+        }
 
-            const criticalPreview = panel.querySelector('[data-ops-critical-preview]');
-            if (criticalPreview) {
-                const entries = criticalEntries.slice(0, 4);
-                const html = entries.length ? entries.map(entry => `
+        const criticalPreview = panel.querySelector('[data-ops-critical-preview]');
+        if (criticalPreview) {
+            const entries = criticalEntries.slice(0, 4);
+            const html = entries.length ? entries.map(entry => `
                     <div class="mcms-ops-entry">
                         <div class="mcms-ops-entry-main"><span class="mcms-ops-entry-title">${escapeHtml(entry.caption)}</span><span class="mcms-ops-entry-meta">${escapeHtml(entry.severity.label)} · ${escapeHtml(formatElapsedCompact(entry.missionAge))} old · ${entry.units.total} unit${entry.units.total === 1 ? '' : 's'}</span></div>
                         <button class="mcms-small-btn" type="button" data-action="critical-go" data-mission-id="${escapeHtml(entry.missionId)}">GO</button>
-                    </div>`).join('') : '<div class="mcms-empty-state">No personal missions are currently 8 hours old or more.</div>';
-                setInnerHtmlIfChanged(criticalPreview, html, `critical:${criticalEntries.map(entry => `${entry.missionId}:${Math.floor(entry.missionAge / 60000)}:${entry.units.total}`).join('|')}`);
-            }
+                </div>`).join('') : '<div class="mcms-empty-state">No personal missions are currently 8 hours old or more.</div>';
+            setInnerHtmlIfChanged(criticalPreview, html, `critical:${criticalEntries.map(entry => `${entry.missionId}:${Math.floor(entry.missionAge / 60000)}:${entry.units.total}`).join('|')}`);
+        }
 
-            const history = panel.querySelector('[data-ops-history]');
-            if (history) {
-                const historyEntryHtml = entry => `
+        const history = panel.querySelector('[data-ops-history]');
+        if (history) {
+            const historyEntryHtml = entry => `
                     <div class="mcms-ops-entry">
                         <div class="mcms-ops-entry-main"><span class="mcms-ops-entry-title">${allianceAwareHtml(entry.caption || (entry.source === 'alliance' ? 'Alliance mission payout' : entry.source === 'personal' ? 'Personal mission payout' : 'Credit award'))}</span><span class="mcms-ops-entry-meta">${escapeHtml(formatClockTime(entry.timestamp))} · <span class="${entry.source === 'alliance' ? 'mcms-alliance-text' : ''}">${escapeHtml(entry.source.toUpperCase())}</span> · ${escapeHtml(entry.tier.toUpperCase())}</span></div>
                         <strong class="mcms-ops-entry-value">+${escapeHtml(formatOperationalCompactCredits(entry.amount))}</strong>
-                    </div>`;
-                let html = '<div class="mcms-empty-state">No payout events recorded in this browser yet.</div>';
-                if (payoutHistory.length) {
-                    const latest = payoutHistory.slice(0, 3);
-                    const older = payoutHistory.slice(3, PAYOUT_HISTORY_LIMIT);
-                    html = `
+                </div>`;
+            let html = '<div class="mcms-empty-state">No payout events recorded in this browser yet.</div>';
+            if (payoutHistory.length) {
+                const latest = payoutHistory.slice(0, 3);
+                const older = payoutHistory.slice(3, PAYOUT_HISTORY_LIMIT);
+                html = `
                         <div class="mcms-history-latest">${latest.map(historyEntryHtml).join('')}</div>
-                        ${older.length ? `<details class="mcms-history-older" data-ops-history-older>
-                            <summary>Earlier payouts (${older.length})</summary>
-                            <div class="mcms-history-scroll">${older.map(historyEntryHtml).join('')}</div>
-                        </details>` : ''}`;
+                    ${older.length ? `<details class="mcms-history-older" data-ops-history-older>
+                        <summary>Earlier payouts (${older.length})</summary>
+                        <div class="mcms-history-scroll">${older.map(historyEntryHtml).join('')}</div>
+                    </details>` : ''}`;
                 }
                 setInnerHtmlIfChanged(history, html, `history:${payoutHistory.map(entry => entry.id).join('|')}`);
             }
@@ -20620,32 +20560,32 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         drawer.innerHTML = `
             <div class="mcms-vcs-head">
                 <div class="mcms-vcs-heading">
-                    <strong class="mcms-vcs-title">VEHICLE CODE STATUS</strong>
-                    <span class="mcms-vcs-subtitle">Live overview of your personal fleet</span>
-                </div>
-                <div class="mcms-vcs-head-actions">
-                    <button class="mcms-vcs-refresh" type="button" title="Refresh vehicle data" aria-label="Refresh vehicle data">↻</button>
-                    <button class="mcms-vcs-close" type="button" title="Close Vehicle Code Status" aria-label="Close Vehicle Code Status">×</button>
-                </div>
+                <strong class="mcms-vcs-title">VEHICLE CODE STATUS</strong>
+                <span class="mcms-vcs-subtitle">Live overview of your personal fleet</span>
             </div>
-            <div class="mcms-vcs-meta">
-                <span data-vcs-source>Loading fleet…</span>
-                <span data-vcs-updated>Updated —</span>
+            <div class="mcms-vcs-head-actions">
+                <button class="mcms-vcs-refresh" type="button" title="Refresh vehicle data" aria-label="Refresh vehicle data">↻</button>
+                <button class="mcms-vcs-close" type="button" title="Close Vehicle Code Status" aria-label="Close Vehicle Code Status">×</button>
             </div>
+        </div>
+        <div class="mcms-vcs-meta">
+            <span data-vcs-source>Loading fleet…</span>
+            <span data-vcs-updated>Updated —</span>
+        </div>
             <div class="mcms-vcs-table" role="table" aria-label="Vehicle status-code counts">
                 <div class="mcms-vcs-table-row mcms-vcs-table-head" role="row">
-                    <span role="columnheader">Code</span>
-                    <span role="columnheader">Status</span>
-                    <span role="columnheader">Vehicles</span>
-                </div>
-                <div class="mcms-vcs-table-body" data-vcs-body></div>
-                <div class="mcms-vcs-table-row mcms-vcs-total-row" role="row">
-                    <strong role="cell">Total</strong>
-                    <span role="cell">Personal fleet</span>
-                    <strong role="cell" data-vcs-total>0</strong>
-                </div>
+                <span role="columnheader">Code</span>
+                <span role="columnheader">Status</span>
+                <span role="columnheader">Vehicles</span>
             </div>
-            <div class="mcms-vcs-footnote">Codes are read from MissionChief's live <code>fms_real</code> vehicle status. Zero-count codes remain visible so out-of-service units are never hidden.</div>`;
+            <div class="mcms-vcs-table-body" data-vcs-body></div>
+            <div class="mcms-vcs-table-row mcms-vcs-total-row" role="row">
+                <strong role="cell">Total</strong>
+                <span role="cell">Personal fleet</span>
+                <strong role="cell" data-vcs-total>0</strong>
+            </div>
+        </div>
+        <div class="mcms-vcs-footnote">Codes are read from MissionChief's live <code>fms_real</code> vehicle status. Zero-count codes remain visible so out-of-service units are never hidden.</div>`;
 
         drawer.addEventListener('click', event => {
             event.stopPropagation();
@@ -20675,10 +20615,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
         const html = snapshot.rows.map(row => `
             <div class="mcms-vcs-table-row mcms-vcs-status-row${row.recognised ? '' : ' mcms-vcs-unknown'}" role="row" data-code="${escapeHtml(row.code)}">
-                <span class="mcms-vcs-code" role="cell" data-code="${escapeHtml(row.code)}">${escapeHtml(row.code)}</span>
-                <span class="mcms-vcs-status" role="cell">${escapeHtml(row.label)}</span>
-                <strong class="mcms-vcs-count" role="cell">${Number(row.count).toLocaleString()}</strong>
-            </div>`).join('');
+            <span class="mcms-vcs-code" role="cell" data-code="${escapeHtml(row.code)}">${escapeHtml(row.code)}</span>
+            <span class="mcms-vcs-status" role="cell">${escapeHtml(row.label)}</span>
+            <strong class="mcms-vcs-count" role="cell">${Number(row.count).toLocaleString()}</strong>
+        </div>`).join('');
         const signature = `vehicle-status:${snapshot.complete}:${snapshot.updatedAt}:${snapshot.rows.map(row => `${row.code}:${row.count}`).join('|')}`;
         setInnerHtmlIfChanged(body, html, signature);
         total.textContent = snapshot.total.toLocaleString();
@@ -20794,23 +20734,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             if (missionItemCount < 2) continue;
             const id = String(element.id || '').toLowerCase();
             const classes = String(element.className || '').toLowerCase();
-            const identityBonus = id === 'mission_list' ? 6000 : id === 'missions' ? 4500 : /mission[-_ ]?list|mission[-_ ]?sidebar/.test(`${id} ${classes}`) ? 2600 : 0;
-            const widthPenalty = rect.width > viewportWidth * 0.72 ? (rect.width - viewportWidth * 0.72) * 8 : 0;
-            const scrollBonus = element.scrollHeight > element.clientHeight + 80 ? 900 : 0;
-            const rightEdgeBonus = rect.right >= viewportWidth - 40 ? 500 : 0;
-            const score = identityBonus + Math.min(missionItemCount, 100) * 120 + Math.min(rect.height, viewportHeight) + rect.width * 0.3 + scrollBonus + rightEdgeBonus - widthPenalty;
-            if (score > bestScore) {
-                bestScore = score;
-                best = rect;
-            }
+        const identityBonus = id === 'mission_list' ? 6000 : id === 'missions' ? 4500 : /mission[-_ ]?list|mission[-_ ]?sidebar/.test(`${id} ${classes}`) ? 2600 : 0;
+        const widthPenalty = rect.width > viewportWidth * 0.72 ? (rect.width - viewportWidth * 0.72) * 8 : 0;
+        const scrollBonus = element.scrollHeight > element.clientHeight + 80 ? 900 : 0;
+        const rightEdgeBonus = rect.right >= viewportWidth - 40 ? 500 : 0;
+        const score = identityBonus + Math.min(missionItemCount, 100) * 120 + Math.min(rect.height, viewportHeight) + rect.width * 0.3 + scrollBonus + rightEdgeBonus - widthPenalty;
+        if (score > bestScore) {
+            bestScore = score;
+            best = rect;
+        }
         }
 
         if (best) {
-            const left = Math.max(6, best.left);
-            const top = Math.max(6, best.top);
-            const right = Math.min(viewportWidth - 6, best.right);
-            const bottom = Math.min(viewportHeight - 6, best.bottom);
-            if (right - left >= 320 && bottom - top >= 240) return { left, top, width: right - left, height: bottom - top };
+        const left = Math.max(6, best.left);
+        const top = Math.max(6, best.top);
+        const right = Math.min(viewportWidth - 6, best.right);
+        const bottom = Math.min(viewportHeight - 6, best.bottom);
+        if (right - left >= 320 && bottom - top >= 240) return { left, top, width: right - left, height: bottom - top };
         }
 
         if (!mapRect) return null;
@@ -20850,8 +20790,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         button.title = expanded ? 'Restore Mission Age Watch to the mission-list area' : 'Expand Mission Age Watch over the Radio area';
         button.setAttribute('aria-label', button.title);
         button.innerHTML = expanded
-            ? '<span aria-hidden="true">⤡</span><small>Restore</small>'
-            : '<span aria-hidden="true">⤢</span><small>Expand</small>';
+        ? '<span aria-hidden="true">⤡</span><small>Restore</small>'
+        : '<span aria-hidden="true">⤢</span><small>Expand</small>';
     }
 
     function toggleCriticalDrawerExpanded() {
@@ -20866,8 +20806,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!drawer) return;
         drawer.classList.remove('mcms-sidebar-docked', 'mcms-critical-expanded');
         for (const property of [
-            '--mcms-critical-dock-left', '--mcms-critical-dock-top', '--mcms-critical-dock-width', '--mcms-critical-dock-height',
-            'left', 'right', 'top', 'bottom', 'width', 'max-width', 'height', 'max-height', 'transform'
+        '--mcms-critical-dock-left', '--mcms-critical-dock-top', '--mcms-critical-dock-width', '--mcms-critical-dock-height',
+        'left', 'right', 'top', 'bottom', 'width', 'max-width', 'height', 'max-height', 'transform'
         ]) drawer.style.removeProperty(property);
     }
 
@@ -20875,13 +20815,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         criticalDrawerDockTimer = null;
         const drawer = document.getElementById(SCRIPT.criticalDrawerId);
         if (!drawer?.classList.contains('mcms-open')) {
-            clearCriticalDrawerDock(drawer);
-            return false;
+        clearCriticalDrawerDock(drawer);
+        return false;
         }
         const baseRect = findMissionListDockRect();
         if (!baseRect) {
-            clearCriticalDrawerDock(drawer);
-            return false;
+        clearCriticalDrawerDock(drawer);
+        return false;
         }
         const expanded = criticalDrawerExpanded();
         const rect = expanded ? expandedCriticalDrawerDockRect(baseRect) : baseRect;
@@ -20975,178 +20915,178 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                     </section>
                 </div>
             </section>
-            <div class="mcms-drawer-list" tabindex="0" aria-label="Mission Age Watch mission list"></div>`;
+        <div class="mcms-drawer-list" tabindex="0" aria-label="Mission Age Watch mission list"></div>`;
 
         drawer.addEventListener('change', event => {
-            const origin = closestEventTarget(event, '[data-critical-distance-origin]');
-            if (!origin) return;
-            const value = String(origin.value || 'live');
-            if (!/^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(value)) return;
-            state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: value };
-            saveState();
-            resetCriticalVirtualWindow(drawer);
-            renderCriticalDrawer(null, { updateViewTime: true });
+        const origin = closestEventTarget(event, '[data-critical-distance-origin]');
+        if (!origin) return;
+        const value = String(origin.value || 'live');
+        if (!/^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(value)) return;
+        state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: value };
+        saveState();
+        resetCriticalVirtualWindow(drawer);
+        renderCriticalDrawer(null, { updateViewTime: true });
         });
 
         drawer.addEventListener('scroll', event => {
-            const list = event.target?.classList?.contains('mcms-drawer-list') ? event.target : null;
-            if (!list || criticalDrawerVirtualScrollTimer) return;
-            if (list.scrollTop + list.clientHeight < list.scrollHeight - 240) return;
-            criticalDrawerVirtualScrollTimer = runtimeSetTimeout(() => {
-                criticalDrawerVirtualScrollTimer = null;
-                criticalDrawerRenderLimit += CRITICAL_RENDER_BATCH_SIZE;
-                renderCriticalDrawer(null, { updateViewTime: false, preserveScroll: true });
-            }, 80);
+        const list = event.target?.classList?.contains('mcms-drawer-list') ? event.target : null;
+        if (!list || criticalDrawerVirtualScrollTimer) return;
+        if (list.scrollTop + list.clientHeight < list.scrollHeight - 240) return;
+        criticalDrawerVirtualScrollTimer = runtimeSetTimeout(() => {
+            criticalDrawerVirtualScrollTimer = null;
+            criticalDrawerRenderLimit += CRITICAL_RENDER_BATCH_SIZE;
+            renderCriticalDrawer(null, { updateViewTime: false, preserveScroll: true });
+        }, 80);
         }, true);
 
         drawer.addEventListener('click', event => {
-            if (closestEventTarget(event, '[data-critical-view-toggle]')) { toggleCriticalViewControls(drawer); return; }
-            if (closestEventTarget(event, '[data-critical-view-close]')) {
-                closeCriticalViewControls(drawer);
-                drawer.querySelector('[data-critical-view-toggle]')?.focus?.({ preventScroll: true });
-                return;
-            }
-            if (closestEventTarget(event, '[data-critical-advanced-toggle]')) {
-                const next = !state.missionAgeWatch?.advancedFiltersOpen;
-                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
-                saveState();
-                setCriticalAdvancedFiltersOpen(next, drawer);
-                return;
-            }
-            const quickViewButton = closestEventTarget(event, '[data-critical-quick-view]');
-            if (quickViewButton) {
-                const quickView = String(quickViewButton.dataset.criticalQuickView || '');
-                if (applyCriticalQuickView(quickView)) {
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            if (closestEventTarget(event, '.mcms-drawer-expand')) { toggleCriticalDrawerExpanded(); return; }
-            if (closestEventTarget(event, '.mcms-drawer-refresh')) { refreshCriticalDrawer(true); return; }
-            if (closestEventTarget(event, '.mcms-drawer-close')) { closeCriticalDrawer(); return; }
-            if (closestEventTarget(event, '[data-critical-clear-filters]')) {
-                resetCriticalWatchFilters();
+        if (closestEventTarget(event, '[data-critical-view-toggle]')) { toggleCriticalViewControls(drawer); return; }
+        if (closestEventTarget(event, '[data-critical-view-close]')) {
+            closeCriticalViewControls(drawer);
+            drawer.querySelector('[data-critical-view-toggle]')?.focus?.({ preventScroll: true });
+            return;
+        }
+        if (closestEventTarget(event, '[data-critical-advanced-toggle]')) {
+            const next = !state.missionAgeWatch?.advancedFiltersOpen;
+            state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
+            saveState();
+            setCriticalAdvancedFiltersOpen(next, drawer);
+            return;
+        }
+        const quickViewButton = closestEventTarget(event, '[data-critical-quick-view]');
+        if (quickViewButton) {
+            const quickView = String(quickViewButton.dataset.criticalQuickView || '');
+            if (applyCriticalQuickView(quickView)) {
                 resetCriticalVirtualWindow(drawer);
                 renderCriticalDrawer(null, { updateViewTime: true });
-                return;
             }
-            const ageFilterButton = closestEventTarget(event, '[data-critical-age-filter]');
-            if (ageFilterButton) {
-                const ageFilter = String(ageFilterButton.dataset.criticalAgeFilter || '');
-                if (CRITICAL_AGE_FILTER_KEYS.includes(ageFilter)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter };
-                    saveState();
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            const sortButton = closestEventTarget(event, '[data-critical-sort]');
-            if (sortButton) {
-                const sortMode = String(sortButton.dataset.criticalSort || '');
-                if (CRITICAL_SORT_KEYS.includes(sortMode)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode };
-                    saveState();
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            if (closestEventTarget(event, '[data-critical-lock-origin]')) {
-                if (lockCriticalDistanceOrigin()) {
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                    showToast('Distance origin locked to current map centre');
-                }
-                return;
-            }
-            const ownershipButton = closestEventTarget(event, '[data-critical-ownership-filter]');
-            if (ownershipButton) {
-                const ownership = String(ownershipButton.dataset.criticalOwnershipFilter || '');
-                if (CRITICAL_OWNERSHIP_FILTER_KEYS.includes(ownership)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ownershipFilter: ownership };
-                    saveState();
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            const categoryButton = closestEventTarget(event, '[data-critical-category-filter]');
-            if (categoryButton) {
-                const category = String(categoryButton.dataset.criticalCategoryFilter || '');
-                if (CRITICAL_CATEGORY_FILTER_KEYS.includes(category)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), categoryFilter: category };
-                    saveState();
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            const statusButton = closestEventTarget(event, '[data-critical-primary-status]');
-            if (statusButton) {
-                const status = String(statusButton.dataset.criticalPrimaryStatus || 'all');
-                if (CRITICAL_PRIMARY_STATUS_KEYS.includes(status)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), primaryStatus: selectedCriticalPrimaryStatus() === status ? 'all' : status };
-                    saveState();
-                    resetCriticalVirtualWindow(drawer);
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
-            }
-            const conditionButton = closestEventTarget(event, '[data-critical-condition]');
-            if (conditionButton) {
-                const condition = String(conditionButton.dataset.criticalCondition || '');
-                if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
-                if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
+            return;
+        }
+        if (closestEventTarget(event, '.mcms-drawer-expand')) { toggleCriticalDrawerExpanded(); return; }
+        if (closestEventTarget(event, '.mcms-drawer-refresh')) { refreshCriticalDrawer(true); return; }
+        if (closestEventTarget(event, '.mcms-drawer-close')) { closeCriticalDrawer(); return; }
+        if (closestEventTarget(event, '[data-critical-clear-filters]')) {
+            resetCriticalWatchFilters();
+            resetCriticalVirtualWindow(drawer);
+            renderCriticalDrawer(null, { updateViewTime: true });
+            return;
+        }
+        const ageFilterButton = closestEventTarget(event, '[data-critical-age-filter]');
+        if (ageFilterButton) {
+            const ageFilter = String(ageFilterButton.dataset.criticalAgeFilter || '');
+            if (CRITICAL_AGE_FILTER_KEYS.includes(ageFilter)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter };
                 saveState();
                 resetCriticalVirtualWindow(drawer);
                 renderCriticalDrawer(null, { updateViewTime: true });
-                return;
             }
-            const valueModeButton = closestEventTarget(event, '[data-critical-value-mode]');
-            if (valueModeButton) {
-                const mode = String(valueModeButton.dataset.criticalValueMode || 'total');
-                if (CRITICAL_VALUE_MODE_KEYS.includes(mode)) {
-                    state.missionAgeWatch = { ...(state.missionAgeWatch || {}), valueMode: mode };
-                    saveState();
-                    renderCriticalDrawer(null, { updateViewTime: true });
-                }
-                return;
+            return;
+        }
+        const sortButton = closestEventTarget(event, '[data-critical-sort]');
+        if (sortButton) {
+            const sortMode = String(sortButton.dataset.criticalSort || '');
+            if (CRITICAL_SORT_KEYS.includes(sortMode)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode };
+                saveState();
+                resetCriticalVirtualWindow(drawer);
+                renderCriticalDrawer(null, { updateViewTime: true });
             }
-            if (closestEventTarget(event, '[data-critical-load-more]')) {
-                criticalDrawerRenderLimit += CRITICAL_RENDER_BATCH_SIZE;
-                renderCriticalDrawer(null, { updateViewTime: false, preserveScroll: true });
-                return;
+            return;
+        }
+        if (closestEventTarget(event, '[data-critical-lock-origin]')) {
+            if (lockCriticalDistanceOrigin()) {
+                resetCriticalVirtualWindow(drawer);
+                renderCriticalDrawer(null, { updateViewTime: true });
+                showToast('Distance origin locked to current map centre');
             }
-            const zoomButton = closestEventTarget(event, '.mcms-critical-zoom');
-            if (zoomButton) {
-                event.preventDefault();
-                event.stopPropagation();
-                focusMissionById(zoomButton.dataset.zoomMissionId, false);
-                return;
+            return;
+        }
+        const ownershipButton = closestEventTarget(event, '[data-critical-ownership-filter]');
+        if (ownershipButton) {
+            const ownership = String(ownershipButton.dataset.criticalOwnershipFilter || '');
+            if (CRITICAL_OWNERSHIP_FILTER_KEYS.includes(ownership)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ownershipFilter: ownership };
+                saveState();
+                resetCriticalVirtualWindow(drawer);
+                renderCriticalDrawer(null, { updateViewTime: true });
             }
-            const openButton = closestEventTarget(event, '.mcms-critical-open');
-            if (openButton) {
-                event.preventDefault();
-                event.stopPropagation();
-                focusMissionById(openButton.dataset.openMissionId, true);
-                return;
+            return;
+        }
+        const categoryButton = closestEventTarget(event, '[data-critical-category-filter]');
+        if (categoryButton) {
+            const category = String(categoryButton.dataset.criticalCategoryFilter || '');
+            if (CRITICAL_CATEGORY_FILTER_KEYS.includes(category)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), categoryFilter: category };
+                saveState();
+                resetCriticalVirtualWindow(drawer);
+                renderCriticalDrawer(null, { updateViewTime: true });
             }
-            const row = closestEventTarget(event, '[data-mission-id]');
-            if (row) focusMissionById(row.dataset.missionId, false);
+            return;
+        }
+        const statusButton = closestEventTarget(event, '[data-critical-primary-status]');
+        if (statusButton) {
+            const status = String(statusButton.dataset.criticalPrimaryStatus || 'all');
+            if (CRITICAL_PRIMARY_STATUS_KEYS.includes(status)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), primaryStatus: selectedCriticalPrimaryStatus() === status ? 'all' : status };
+                saveState();
+                resetCriticalVirtualWindow(drawer);
+                renderCriticalDrawer(null, { updateViewTime: true });
+            }
+            return;
+        }
+        const conditionButton = closestEventTarget(event, '[data-critical-condition]');
+        if (conditionButton) {
+            const condition = String(conditionButton.dataset.criticalCondition || '');
+            if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+            if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
+            saveState();
+            resetCriticalVirtualWindow(drawer);
+            renderCriticalDrawer(null, { updateViewTime: true });
+            return;
+        }
+        const valueModeButton = closestEventTarget(event, '[data-critical-value-mode]');
+        if (valueModeButton) {
+            const mode = String(valueModeButton.dataset.criticalValueMode || 'total');
+            if (CRITICAL_VALUE_MODE_KEYS.includes(mode)) {
+                state.missionAgeWatch = { ...(state.missionAgeWatch || {}), valueMode: mode };
+                saveState();
+                renderCriticalDrawer(null, { updateViewTime: true });
+            }
+            return;
+        }
+        if (closestEventTarget(event, '[data-critical-load-more]')) {
+            criticalDrawerRenderLimit += CRITICAL_RENDER_BATCH_SIZE;
+            renderCriticalDrawer(null, { updateViewTime: false, preserveScroll: true });
+            return;
+        }
+        const zoomButton = closestEventTarget(event, '.mcms-critical-zoom');
+        if (zoomButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            focusMissionById(zoomButton.dataset.zoomMissionId, false);
+            return;
+        }
+        const openButton = closestEventTarget(event, '.mcms-critical-open');
+        if (openButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            focusMissionById(openButton.dataset.openMissionId, true);
+            return;
+        }
+        const row = closestEventTarget(event, '[data-mission-id]');
+        if (row) focusMissionById(row.dataset.missionId, false);
         });
         drawer.addEventListener('dblclick', event => {
-            if (closestEventTarget(event, '.mcms-critical-zoom, .mcms-critical-open')) return;
-            const row = closestEventTarget(event, '[data-mission-id]');
-            if (row) { event.preventDefault(); focusMissionById(row.dataset.missionId, true); }
+        if (closestEventTarget(event, '.mcms-critical-zoom, .mcms-critical-open')) return;
+        const row = closestEventTarget(event, '[data-mission-id]');
+        if (row) { event.preventDefault(); focusMissionById(row.dataset.missionId, true); }
         });
         runtimeListen(document, 'pointerdown', event => {
-            const activeDrawer = document.getElementById(SCRIPT.criticalDrawerId);
-            const controls = activeDrawer?.querySelector?.('[data-critical-view-controls]');
-            if (!controls?.classList?.contains('mcms-open')) return;
-            if (event.target && controls.contains(event.target)) return;
-            closeCriticalViewControls(activeDrawer);
+        const activeDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+        const controls = activeDrawer?.querySelector?.('[data-critical-view-controls]');
+        if (!controls?.classList?.contains('mcms-open')) return;
+        if (event.target && controls.contains(event.target)) return;
+        closeCriticalViewControls(activeDrawer);
         }, true);
         document.body.appendChild(drawer);
         updateCriticalDrawerExpandButton(drawer);
@@ -21160,32 +21100,32 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionAgeWatchHasNonDefaultState() {
         const watch = state.missionAgeWatch || {};
         return selectedCriticalAgeFilter() !== '8h' ||
-            selectedCriticalSortMode() !== 'age' ||
-            selectedCriticalOwnershipFilter() !== 'personal' ||
-            selectedCriticalCategoryFilter() !== 'all' ||
-            selectedCriticalPrimaryStatus() !== 'all' ||
-            Boolean(watch.hasVehiclesOnWay) ||
-            Boolean(watch.onlyMyUnits) ||
-            selectedCriticalValueMode() !== 'total' ||
-            selectedCriticalDistanceOrigin() !== 'live';
+        selectedCriticalSortMode() !== 'age' ||
+        selectedCriticalOwnershipFilter() !== 'personal' ||
+        selectedCriticalCategoryFilter() !== 'all' ||
+        selectedCriticalPrimaryStatus() !== 'all' ||
+        Boolean(watch.hasVehiclesOnWay) ||
+        Boolean(watch.onlyMyUnits) ||
+        selectedCriticalValueMode() !== 'total' ||
+        selectedCriticalDistanceOrigin() !== 'live';
     }
 
     function resetCriticalWatchFilters() {
         const expanded = Boolean(state.missionAgeWatch?.expanded);
         state.missionAgeWatch = {
-            ...(state.missionAgeWatch || {}),
-            ageFilter: '8h',
-            sortMode: 'age',
-            expanded,
-            ownershipFilter: 'personal',
-            categoryFilter: 'all',
-            primaryStatus: 'all',
-            advancedFiltersOpen: false,
-            hasVehiclesOnWay: false,
-            onlyMyUnits: false,
-            valueMode: 'total',
-            distanceOrigin: 'live',
-            lockedOrigin: null
+        ...(state.missionAgeWatch || {}),
+        ageFilter: '8h',
+        sortMode: 'age',
+        expanded,
+        ownershipFilter: 'personal',
+        categoryFilter: 'all',
+        primaryStatus: 'all',
+        advancedFiltersOpen: false,
+        hasVehiclesOnWay: false,
+        onlyMyUnits: false,
+        valueMode: 'total',
+        distanceOrigin: 'live',
+        lockedOrigin: null
         };
         criticalDrawerRenderLimit = CRITICAL_RENDER_BATCH_SIZE;
         saveState();
@@ -21195,10 +21135,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const selected = selectedCriticalAgeFilter();
         const scoped = criticalFilterEntries(allEntries, ['age']);
         const button = key => {
-            const definition = criticalAgeFilterDefinition(key);
-            const active = selected === key;
-            const count = scoped.filter(entry => definition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= definition.minAgeMs).length;
-            return `<button type="button" class="mcms-critical-age-filter mcms-age-filter-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-age-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(definition.title)}"><span>${escapeHtml(definition.label)}</span><strong>${count.toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
+        const definition = criticalAgeFilterDefinition(key);
+        const active = selected === key;
+        const count = scoped.filter(entry => definition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= definition.minAgeMs).length;
+        return `<button type="button" class="mcms-critical-age-filter mcms-age-filter-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-age-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(definition.title)}"><span>${escapeHtml(definition.label)}</span><strong>${count.toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
         };
         return `<span class="mcms-critical-age-label">AGE</span>${CRITICAL_AGE_FILTER_KEYS.map(button).join('')}`;
     }
@@ -21213,8 +21153,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const selected = selectedCriticalSortMode();
         const ageDefinition = criticalAgeFilterDefinition();
         const button = (key, label, title) => {
-            const active = selected === key;
-            return `<button type="button" class="mcms-critical-sort-button mcms-sort-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-sort="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
+        const active = selected === key;
+        return `<button type="button" class="mcms-critical-sort-button mcms-sort-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-sort="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
         };
         return `<span class="mcms-critical-sort-label">SORT</span>${button('age', 'Age', `Use ${ageDefinition.sort === 'newest' ? 'newest' : 'oldest'} mission ordering for the selected age range`)}${button('closest', 'Closest', 'Sort closest to the selected distance origin first')}${button('furthest', 'Furthest', 'Sort furthest from the selected distance origin first')}${criticalDistanceOriginControlsHtml()}`;
     }
@@ -21223,21 +21163,21 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const ageDefinition = criticalAgeFilterDefinition();
         let age = String(ageDefinition.label || 'ALL').toUpperCase();
         if (Array.isArray(allEntries)) {
-            const scoped = criticalFilterEntries(allEntries, ['age']);
-            const count = scoped.filter(entry => ageDefinition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= ageDefinition.minAgeMs).length;
-            age = `${age} ${count.toLocaleString('en-GB')}`;
+        const scoped = criticalFilterEntries(allEntries, ['age']);
+        const count = scoped.filter(entry => ageDefinition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= ageDefinition.minAgeMs).length;
+        age = `${age} ${count.toLocaleString('en-GB')}`;
         }
         const sort = {
-            age: 'AGE',
-            closest: 'CLOSEST',
-            furthest: 'FURTHEST'
+        age: 'AGE',
+        closest: 'CLOSEST',
+        furthest: 'FURTHEST'
         }[selectedCriticalSortMode()] || 'AGE';
         const originKey = selectedCriticalDistanceOrigin();
         const originOption = criticalDistanceOriginOptions().find(option => option.key === originKey);
         let origin = String(originOption?.label || 'Live map centre')
-            .replace(/^Quick Place:\s*/iu, '')
-            .replace(/^Bookmark:\s*/iu, '')
-            .trim();
+        .replace(/^Quick Place:\s*/iu, '')
+        .replace(/^Bookmark:\s*/iu, '')
+        .trim();
         if (originKey === 'live') origin = 'LIVE MAP';
         else if (originKey === 'locked') origin = 'LOCKED';
         else origin = origin.toUpperCase();
@@ -21284,12 +21224,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function applyCriticalQuickView(key) {
         const definitions = {
-            all: { primaryStatus: 'all', hasVehiclesOnWay: false, onlyMyUnits: false },
-            attention: { primaryStatus: 'attention', hasVehiclesOnWay: false, onlyMyUnits: false },
-            responding: { primaryStatus: 'all', hasVehiclesOnWay: true, onlyMyUnits: false },
-            clearing: { primaryStatus: 'clearing', hasVehiclesOnWay: false, onlyMyUnits: false },
-            stable: { primaryStatus: 'on-scene', hasVehiclesOnWay: false, onlyMyUnits: false },
-            'my-units': { primaryStatus: 'all', hasVehiclesOnWay: false, onlyMyUnits: true }
+        all: { primaryStatus: 'all', hasVehiclesOnWay: false, onlyMyUnits: false },
+        attention: { primaryStatus: 'attention', hasVehiclesOnWay: false, onlyMyUnits: false },
+        responding: { primaryStatus: 'all', hasVehiclesOnWay: true, onlyMyUnits: false },
+        clearing: { primaryStatus: 'clearing', hasVehiclesOnWay: false, onlyMyUnits: false },
+        stable: { primaryStatus: 'on-scene', hasVehiclesOnWay: false, onlyMyUnits: false },
+        'my-units': { primaryStatus: 'all', hasVehiclesOnWay: false, onlyMyUnits: true }
         };
         const definition = definitions[String(key || '')];
         if (!definition) return false;
@@ -21312,12 +21252,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function criticalAdvancedFilterSummaryText() {
         const statusLabels = {
-            all: 'Any condition',
-            attention: 'Needs attention',
-            'no-scene': 'No units on scene',
-            assistance: 'Needs assistance',
-            clearing: 'Clearing',
-            'on-scene': 'On scene / stable'
+        all: 'Any condition',
+        attention: 'Needs attention',
+        'no-scene': 'No units on scene',
+        assistance: 'Needs assistance',
+        clearing: 'Clearing',
+        'on-scene': 'On scene / stable'
         };
         const parts = [];
         const status = selectedCriticalPrimaryStatus();
@@ -21331,38 +21271,38 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const scoped = criticalFilterEntries(allEntries, ['status', 'onway', 'myunits']);
         const countStatus = key => scoped.filter(entry => criticalEntryPrimaryStatus(entry) === key).length;
         const counts = {
-            all: scoped.length,
-            attention: scoped.filter(entry => ['no-scene', 'assistance'].includes(criticalEntryPrimaryStatus(entry))).length,
-            responding: scoped.filter(entry => Math.max(0, Number(entry?.units?.onWay ?? entry?.units?.travelling) || 0) > 0).length,
-            clearing: countStatus('clearing'),
-            stable: countStatus('on-scene'),
-            'my-units': scoped.filter(criticalEntryHasMyUnits).length
+        all: scoped.length,
+        attention: scoped.filter(entry => ['no-scene', 'assistance'].includes(criticalEntryPrimaryStatus(entry))).length,
+        responding: scoped.filter(entry => Math.max(0, Number(entry?.units?.onWay ?? entry?.units?.travelling) || 0) > 0).length,
+        clearing: countStatus('clearing'),
+        stable: countStatus('on-scene'),
+        'my-units': scoped.filter(criticalEntryHasMyUnits).length
         };
         const selected = selectedCriticalQuickView();
         const definitions = [
-            ['all', 'All', 'Show every mission matching the ownership, category and age filters'],
-            ['attention', 'Attention', 'Show missions with no units on scene or detected assistance requirements'],
-            ['responding', 'Responding', 'Show missions with at least one vehicle on the way'],
-            ['clearing', 'Clearing', 'Show missions currently completing'],
-            ['stable', 'Stable', 'Show missions with units on scene and no detected issue'],
-            ['my-units', 'My Units', 'Show missions with one of your units committed']
+        ['all', 'All', 'Show every mission matching the ownership, category and age filters'],
+        ['attention', 'Attention', 'Show missions with no units on scene or detected assistance requirements'],
+        ['responding', 'Responding', 'Show missions with at least one vehicle on the way'],
+        ['clearing', 'Clearing', 'Show missions currently completing'],
+        ['stable', 'Stable', 'Show missions with units on scene and no detected issue'],
+        ['my-units', 'My Units', 'Show missions with one of your units committed']
         ];
         return definitions.map(([key, label, title]) => {
-            const active = selected === key;
-            const count = Number(counts[key]) || 0;
-            return `<button type="button" class="mcms-critical-quick-view mcms-quick-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}${count === 0 ? ' mcms-zero' : ''}" data-critical-quick-view="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><strong>${count.toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓' : ''}</i></button>`;
+        const active = selected === key;
+        const count = Number(counts[key]) || 0;
+        return `<button type="button" class="mcms-critical-quick-view mcms-quick-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}${count === 0 ? ' mcms-zero' : ''}" data-critical-quick-view="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><strong>${count.toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓' : ''}</i></button>`;
         }).join('');
     }
 
     function criticalOperationalFilterLabel() {
         const quick = selectedCriticalQuickView();
         const labels = {
-            all: 'All missions',
-            attention: 'Needs attention',
-            responding: 'Responding',
-            clearing: 'Clearing',
-            stable: 'Stable',
-            'my-units': 'Only my units'
+        all: 'All missions',
+        attention: 'Needs attention',
+        responding: 'Responding',
+        clearing: 'Clearing',
+        stable: 'Stable',
+        'my-units': 'Only my units'
         };
         return labels[quick] || `Custom: ${criticalAdvancedFilterSummaryText()}`;
     }
@@ -21381,9 +21321,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const counts = { all: scoped.length, personal: 0, alliance: 0 };
         scoped.forEach(entry => { if (CRITICAL_OWNERSHIP_KEYS.includes(entry.ownership)) counts[entry.ownership] += 1; });
         const button = (key, label, title) => {
-            const active = selected === key;
-            const allianceClass = key === 'alliance' ? ' mcms-alliance-text' : '';
-            return `<button type="button" class="mcms-critical-type-filter mcms-ownership-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-ownership-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span class="${allianceClass.trim()}">${escapeHtml(label)}</span><strong>${counts[key].toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
+        const active = selected === key;
+        const allianceClass = key === 'alliance' ? ' mcms-alliance-text' : '';
+        return `<button type="button" class="mcms-critical-type-filter mcms-ownership-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}" data-critical-ownership-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span class="${allianceClass.trim()}">${escapeHtml(label)}</span><strong>${counts[key].toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓ SELECTED' : 'SELECT'}</i></button>`;
         };
         return `<span class="mcms-critical-type-label">OWNERSHIP</span>${button('all', 'All', 'Show Personal and Alliance missions')}${button('personal', 'Personal', 'Show missions owned by you')}${button('alliance', 'Alliance', 'Show Alliance-owned or Alliance-shared missions')}`;
     }
@@ -21394,8 +21334,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const counts = { all: scoped.length, standard: 0, event: 0, special: 0 };
         scoped.forEach(entry => { if (CRITICAL_CATEGORY_KEYS.includes(entry.category)) counts[entry.category] += 1; });
         const button = (key, label, title) => {
-            const active = selected === key;
-            return `<button type="button" class="mcms-critical-category-filter mcms-category-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}${counts[key] === 0 ? ' mcms-zero' : ''}" data-critical-category-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><strong>${counts[key].toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓' : ''}</i></button>`;
+        const active = selected === key;
+        return `<button type="button" class="mcms-critical-category-filter mcms-category-${escapeHtml(key)}${active ? ' mcms-filter-active' : ''}${counts[key] === 0 ? ' mcms-zero' : ''}" data-critical-category-filter="${escapeHtml(key)}" aria-pressed="${active ? 'true' : 'false'}" title="${escapeHtml(title)}"><span>${escapeHtml(label)}</span><strong>${counts[key].toLocaleString('en-GB')}</strong><i aria-hidden="true">${active ? '✓' : ''}</i></button>`;
         };
         return `<span class="mcms-critical-category-label">CATEGORY</span>${button('all', 'All', 'Show Standard, Timed Event and Special Event missions')}${button('standard', 'Standard', 'Show normal missions')}${button('event', 'Timed Event', 'Show ordinary timed or community Event missions')}${button('special', 'Special Event', 'Show official developer-launched Special Event missions')}`;
     }
@@ -21446,40 +21386,40 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const doc = root.ownerDocument || document;
         const directNodes = [root];
         try {
-            directNodes.push(...root.querySelectorAll('[data-mission-id], [data-mission_id], input[name="mission_id"], input[name="mission[id]"]'));
+        directNodes.push(...root.querySelectorAll('[data-mission-id], [data-mission_id], input[name="mission_id"], input[name="mission[id]"]'));
         } catch (err) {}
         for (const node of directNodes) {
-            const candidates = [
-                node?.dataset?.missionId,
-                node?.dataset?.mission_id,
-                node?.getAttribute?.('data-mission-id'),
-                node?.getAttribute?.('data-mission_id'),
-                node?.value
-            ];
-            for (const candidate of candidates) {
-                const id = normaliseMissionId(candidate);
-                if (id !== null) return id;
-            }
-            const idMatch = String(node?.id || '').match(/(?:^|_)(?:mission|mission_content|mission_panel)_(\d+)(?:$|_)/u);
-            if (idMatch) return normaliseMissionId(idMatch[1]);
+        const candidates = [
+            node?.dataset?.missionId,
+            node?.dataset?.mission_id,
+            node?.getAttribute?.('data-mission-id'),
+            node?.getAttribute?.('data-mission_id'),
+            node?.value
+        ];
+        for (const candidate of candidates) {
+            const id = normaliseMissionId(candidate);
+            if (id !== null) return id;
+        }
+        const idMatch = String(node?.id || '').match(/(?:^|_)(?:mission|mission_content|mission_panel)_(\d+)(?:$|_)/u);
+        if (idMatch) return normaliseMissionId(idMatch[1]);
         }
 
         let routeNodes = [];
         try {
-            routeNodes = Array.from(root.querySelectorAll('a[href*="/missions/"], form[action*="/missions/"], [data-url*="/missions/"], [data-href*="/missions/"]'));
+        routeNodes = Array.from(root.querySelectorAll('a[href*="/missions/"], form[action*="/missions/"], [data-url*="/missions/"], [data-href*="/missions/"]'));
         } catch (err) {}
         for (const node of routeNodes) {
-            for (const attribute of ['href', 'action', 'data-url', 'data-href']) {
-                const id = missionValueIdFromUrl(node.getAttribute?.(attribute), doc.location?.href || location.href);
-                if (id !== null) return id;
-            }
+        for (const attribute of ['href', 'action', 'data-url', 'data-href']) {
+            const id = missionValueIdFromUrl(node.getAttribute?.(attribute), doc.location?.href || location.href);
+            if (id !== null) return id;
+        }
         }
 
         if (doc !== document) {
-            try {
-                const id = missionValueIdFromUrl(doc.location?.href, location.href);
-                if (id !== null) return id;
-            } catch (err) {}
+        try {
+            const id = missionValueIdFromUrl(doc.location?.href, location.href);
+            if (id !== null) return id;
+        } catch (err) {}
         }
         return null;
     }
@@ -21488,34 +21428,34 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!root) return null;
         const selector = '.lightbox_content, .modal-body, #mission_content, .mission_content, [data-mission-content]';
         try {
-            if (root.matches?.(selector)) return root;
-            return root.querySelector?.(selector) || root;
+        if (root.matches?.(selector)) return root;
+        return root.querySelector?.(selector) || root;
         } catch (err) {
-            return root;
+        return root;
         }
     }
 
         function missionValueWindowCandidates() {
         const discovered = [];
         const add = root => {
-            if (!root?.isConnected) return;
-            const missionId = missionValueIdFromElement(root);
-            if (missionId === null) return;
-            const mount = missionValueMountForRoot(root);
-            if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
-            const toolbarSpacer = missionValueToolbarSpacer(root, mount);
-            const toolbar = missionValueToolbarBar(toolbarSpacer, root, mount);
-            discovered.push({ root, mount, missionId, toolbarSpacer, toolbar });
+        if (!root?.isConnected) return;
+        const missionId = missionValueIdFromElement(root);
+        if (missionId === null) return;
+        const mount = missionValueMountForRoot(root);
+        if (!mount?.isConnected || mount.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.helpCenterId}`)) return;
+        const toolbarSpacer = missionValueToolbarSpacer(root, mount);
+        const toolbar = missionValueToolbarBar(toolbarSpacer, root, mount);
+        discovered.push({ root, mount, missionId, toolbarSpacer, toolbar });
         };
 
         transportSweepVisibleWindowRoots().forEach(add);
         for (const context of transportSweepDocumentContexts()) {
-            observeMissionValueDocument(context.doc);
-            if (context.doc !== document) {
-                try {
-                    if (missionValueIdFromUrl(context.doc.location?.href, location.href) !== null) add(context.doc.body);
-                } catch (err) {}
-            }
+        observeMissionValueDocument(context.doc);
+        if (context.doc !== document) {
+            try {
+                if (missionValueIdFromUrl(context.doc.location?.href, location.href) !== null) add(context.doc.body);
+            } catch (err) {}
+        }
         }
         return missionValuePreferredCandidates(discovered);
     }
@@ -21532,35 +21472,35 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         function missionValueToolbarSpacer(root, mount) {
         const scopes = [root, mount].filter(Boolean);
         for (const scope of scopes) {
-            try {
-                if (scope.matches?.('#navbar-alarm-spacer')) return scope;
-                const spacer = scope.querySelector?.('#navbar-alarm-spacer');
-                if (spacer) return spacer;
-            } catch (err) {}
+        try {
+            if (scope.matches?.('#navbar-alarm-spacer')) return scope;
+            const spacer = scope.querySelector?.('#navbar-alarm-spacer');
+            if (spacer) return spacer;
+        } catch (err) {}
         }
         const doc = root?.ownerDocument || mount?.ownerDocument || null;
         if (!doc || (root !== doc.body && mount !== doc.body)) return null;
         try {
-            return missionValueIdFromUrl(doc.location?.href, location.href) !== null
-                ? doc.getElementById?.('navbar-alarm-spacer') || null
-                : null;
+        return missionValueIdFromUrl(doc.location?.href, location.href) !== null
+            ? doc.getElementById?.('navbar-alarm-spacer') || null
+            : null;
         } catch (err) {
-            return null;
+        return null;
         }
     }
 
     function missionValueToolbarBar(spacer, root, mount) {
         if (spacer?.isConnected) {
-            try {
-                return spacer.closest?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || spacer.parentElement || null;
-            } catch (err) {}
+        try {
+            return spacer.closest?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || spacer.parentElement || null;
+        } catch (err) {}
         }
         for (const scope of [root, mount]) {
-            try {
-                const bars = Array.from(scope?.querySelectorAll?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || []);
-                const bar = bars.find(candidate => candidate.querySelector?.('#navbar-alarm-spacer'));
-                if (bar) return bar;
-            } catch (err) {}
+        try {
+            const bars = Array.from(scope?.querySelectorAll?.('.navbar-header.flex-row.flex-nowrap.align-items-center, .navbar-header') || []);
+            const bar = bars.find(candidate => candidate.querySelector?.('#navbar-alarm-spacer'));
+            if (bar) return bar;
+        } catch (err) {}
         }
         return null;
     }
@@ -21568,15 +21508,15 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionValueSpacerVisibleWidth(spacer) {
         if (!spacer?.isConnected) return 0;
         try {
-            const view = spacer.ownerDocument?.defaultView || pageWindow;
-            const style = view?.getComputedStyle?.(spacer);
-            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return 0;
+        const view = spacer.ownerDocument?.defaultView || pageWindow;
+        const style = view?.getComputedStyle?.(spacer);
+        if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse' || Number(style?.opacity) === 0) return 0;
         } catch (err) {}
         try {
-            const rect = spacer.getBoundingClientRect?.();
-            return rect && rect.width > 0 ? Math.max(0, Math.floor(rect.width)) : 0;
+        const rect = spacer.getBoundingClientRect?.();
+        return rect && rect.width > 0 ? Math.max(0, Math.floor(rect.width)) : 0;
         } catch (err) {
-            return 0;
+        return 0;
         }
     }
 
@@ -21592,22 +21532,22 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionValuePreferredCandidates(candidateList) {
         const groups = new Map();
         for (const candidate of Array.from(candidateList || [])) {
-            const missionId = normaliseMissionId(candidate?.missionId);
-            if (missionId === null || !candidate?.mount?.isConnected) continue;
-            if (!groups.has(missionId)) groups.set(missionId, []);
-            groups.get(missionId).push(candidate);
+        const missionId = normaliseMissionId(candidate?.missionId);
+        if (missionId === null || !candidate?.mount?.isConnected) continue;
+        if (!groups.has(missionId)) groups.set(missionId, []);
+        groups.get(missionId).push(candidate);
         }
         const selected = [];
         for (const group of groups.values()) {
-            const toolbarCandidates = group.filter(candidate => candidate.toolbarSpacer?.isConnected && candidate.toolbar?.isConnected);
-            const pool = toolbarCandidates.length ? toolbarCandidates : group;
-            const seenHosts = new Set();
-            for (const candidate of pool) {
-                const host = candidate.toolbarSpacer?.isConnected ? candidate.toolbarSpacer : candidate.mount;
-                if (!host || seenHosts.has(host)) continue;
-                seenHosts.add(host);
-                selected.push(candidate);
-            }
+        const toolbarCandidates = group.filter(candidate => candidate.toolbarSpacer?.isConnected && candidate.toolbar?.isConnected);
+        const pool = toolbarCandidates.length ? toolbarCandidates : group;
+        const seenHosts = new Set();
+        for (const candidate of pool) {
+            const host = candidate.toolbarSpacer?.isConnected ? candidate.toolbarSpacer : candidate.mount;
+            if (!host || seenHosts.has(host)) continue;
+            seenHosts.add(host);
+            selected.push(candidate);
+        }
         }
         return selected;
     }
@@ -21616,12 +21556,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const scopes = new Set([candidate?.root, candidate?.mount, candidate?.toolbarSpacer, candidate?.toolbar].filter(Boolean));
         const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument || null;
         try {
-            const frame = doc?.defaultView?.frameElement || null;
-            if (frame) {
-                scopes.add(frame);
-                const frameWindow = frame.closest?.('#lightbox_box, #lightbox, .modal, [role="dialog"], .ui-dialog, .lightbox_content');
-                if (frameWindow) scopes.add(frameWindow);
-            }
+        const frame = doc?.defaultView?.frameElement || null;
+        if (frame) {
+            scopes.add(frame);
+            const frameWindow = frame.closest?.('#lightbox_box, #lightbox, .modal, [role="dialog"], .ui-dialog, .lightbox_content');
+            if (frameWindow) scopes.add(frameWindow);
+        }
         } catch (err) {}
         return Array.from(scopes);
     }
@@ -21629,21 +21569,21 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionValueRowsForCandidate(candidate) {
         const rows = new Set();
         for (const scope of missionValueCandidateScopes(candidate)) {
-            try {
-                if (scope.matches?.('.mcms-mission-value-row')) rows.add(scope);
-                scope.querySelectorAll?.('.mcms-mission-value-row').forEach(row => rows.add(row));
-            } catch (err) {}
+        try {
+            if (scope.matches?.('.mcms-mission-value-row')) rows.add(scope);
+            scope.querySelectorAll?.('.mcms-mission-value-row').forEach(row => rows.add(row));
+        } catch (err) {}
         }
         return Array.from(rows);
     }
 
     function pruneMissionValueHostObservers(activeSpacers = null) {
         for (const [spacer, record] of missionValueHostObservers) {
-            const keep = Boolean(spacer?.isConnected && record?.toolbar?.isConnected && (!activeSpacers || activeSpacers.has(spacer)));
-            if (keep) continue;
-            try { record?.resizeObserver?.disconnect?.(); } catch (err) {}
-            try { record?.mutationObserver?.disconnect?.(); } catch (err) {}
-            missionValueHostObservers.delete(spacer);
+        const keep = Boolean(spacer?.isConnected && record?.toolbar?.isConnected && (!activeSpacers || activeSpacers.has(spacer)));
+        if (keep) continue;
+        try { record?.resizeObserver?.disconnect?.(); } catch (err) {}
+        try { record?.mutationObserver?.disconnect?.(); } catch (err) {}
+        missionValueHostObservers.delete(spacer);
         }
     }
 
@@ -21654,20 +21594,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const existing = missionValueHostObservers.get(spacer);
         if (existing?.toolbar === toolbar) return;
         if (existing) {
-            try { existing.resizeObserver?.disconnect?.(); } catch (err) {}
-            try { existing.mutationObserver?.disconnect?.(); } catch (err) {}
+        try { existing.resizeObserver?.disconnect?.(); } catch (err) {}
+        try { existing.mutationObserver?.disconnect?.(); } catch (err) {}
         }
         const view = spacer.ownerDocument?.defaultView || pageWindow;
         const ResizeObserverCtor = view?.ResizeObserver || pageWindow.ResizeObserver;
         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         const record = { toolbar, resizeObserver: null, mutationObserver: null };
         if (typeof ResizeObserverCtor === 'function') {
-            record.resizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => scheduleMissionValueScan(24)));
-            record.resizeObserver.observe(spacer);
+        record.resizeObserver = runtimeTrackObserver(new ResizeObserverCtor(() => scheduleMissionValueScan(24)));
+        record.resizeObserver.observe(spacer);
         }
         if (typeof MutationObserverCtor === 'function') {
-            record.mutationObserver = runtimeTrackObserver(new MutationObserverCtor(() => scheduleMissionValueScan(24)));
-            record.mutationObserver.observe(toolbar, { childList: true, subtree: false });
+        record.mutationObserver = runtimeTrackObserver(new MutationObserverCtor(() => scheduleMissionValueScan(24)));
+        record.mutationObserver.observe(toolbar, { childList: true, subtree: false });
         }
         missionValueHostObservers.set(spacer, record);
     }
@@ -21685,8 +21625,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const formatted = formatMissionWindowValue(details.value);
         const existingRows = missionValueRowsForCandidate(candidate);
         if (!formatted) {
-            existingRows.forEach(row => row.remove());
-            return null;
+        existingRows.forEach(row => row.remove());
+        return null;
         }
 
         observeMissionValueHost(candidate);
@@ -21696,13 +21636,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const targetDocument = (useToolbar ? toolbarSpacer.ownerDocument : mount.ownerDocument) || document;
         let row = null;
         if (useToolbar) {
-            row = existingRows.find(candidateRow => candidateRow.parentNode === toolbarSpacer) || null;
+        row = existingRows.find(candidateRow => candidateRow.parentNode === toolbarSpacer) || null;
         } else if (toolbar?.parentNode) {
-            row = existingRows.find(candidateRow => candidateRow.parentNode === toolbar.parentNode && candidateRow.previousElementSibling === toolbar) || null;
+        row = existingRows.find(candidateRow => candidateRow.parentNode === toolbar.parentNode && candidateRow.previousElementSibling === toolbar) || null;
         }
         row ||= existingRows.find(candidateRow => candidateRow.ownerDocument === targetDocument) || null;
         existingRows.forEach(candidateRow => {
-            if (candidateRow !== row) candidateRow.remove();
+        if (candidateRow !== row) candidateRow.remove();
         });
         if (!row) row = targetDocument.createElement('div');
         row.className = 'mcms-mission-value-row';
@@ -21719,13 +21659,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (badge.parentNode !== row) row.appendChild(badge);
 
         if (useToolbar) {
-            if (row.parentNode !== toolbarSpacer) toolbarSpacer.appendChild(row);
+        if (row.parentNode !== toolbarSpacer) toolbarSpacer.appendChild(row);
         } else if (toolbar?.parentNode) {
-            if (row.parentNode !== toolbar.parentNode || row.previousElementSibling !== toolbar) {
-                toolbar.parentNode.insertBefore(row, toolbar.nextSibling);
-            }
+        if (row.parentNode !== toolbar.parentNode || row.previousElementSibling !== toolbar) {
+            toolbar.parentNode.insertBefore(row, toolbar.nextSibling);
+        }
         } else if (row.parentNode !== mount || row !== mount.firstElementChild) {
-            mount.insertBefore(row, mount.firstChild || null);
+        mount.insertBefore(row, mount.firstChild || null);
         }
 
         const fullLabel = `Mission Value · ${formatted}`;
@@ -21740,41 +21680,41 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function scheduleMissionValueScan(delay = 80) {
         runtimeClearTimeout(missionValueScanTimer);
         missionValueScanTimer = runtimeSetTimeout(() => {
-            missionValueScanTimer = null;
-            scanMissionValueWindows();
+        missionValueScanTimer = null;
+        scanMissionValueWindows();
         }, Math.max(0, Number(delay) || 0));
     }
 
         function scanMissionValueWindows() {
         if (!state.missionValue) {
-            clearMissionValueIndicators();
-            pruneMissionValueHostObservers(new Set());
-            return;
+        clearMissionValueIndicators();
+        pruneMissionValueHostObservers(new Set());
+        return;
         }
         let needsRetry = false;
         const activeRows = new Set();
         const activeSpacers = new Set();
         for (const candidate of missionValueWindowCandidates()) {
-            if (candidate.toolbarSpacer?.isConnected) activeSpacers.add(candidate.toolbarSpacer);
-            const renderedRow = syncMissionValueCandidate(candidate);
-            if (renderedRow) {
-                activeRows.add(renderedRow);
-                missionValueRetryState.delete(candidate.mount);
-                continue;
-            }
-            const previous = missionValueRetryState.get(candidate.mount);
-            const attempts = previous?.missionId === candidate.missionId ? previous.attempts : 0;
-            if (attempts < 3) {
-                missionValueRetryState.set(candidate.mount, { missionId: candidate.missionId, attempts: attempts + 1 });
-                needsRetry = true;
-            }
+        if (candidate.toolbarSpacer?.isConnected) activeSpacers.add(candidate.toolbarSpacer);
+        const renderedRow = syncMissionValueCandidate(candidate);
+        if (renderedRow) {
+            activeRows.add(renderedRow);
+            missionValueRetryState.delete(candidate.mount);
+            continue;
+        }
+        const previous = missionValueRetryState.get(candidate.mount);
+        const attempts = previous?.missionId === candidate.missionId ? previous.attempts : 0;
+        if (attempts < 3) {
+            missionValueRetryState.set(candidate.mount, { missionId: candidate.missionId, attempts: attempts + 1 });
+            needsRetry = true;
+        }
         }
         for (const context of transportSweepDocumentContexts()) {
-            try {
-                context.doc.querySelectorAll?.('.mcms-mission-value-row').forEach(row => {
-                    if (!activeRows.has(row)) row.remove();
-                });
-            } catch (err) {}
+        try {
+            context.doc.querySelectorAll?.('.mcms-mission-value-row').forEach(row => {
+                if (!activeRows.has(row)) row.remove();
+            });
+        } catch (err) {}
         }
         pruneMissionValueHostObservers(activeSpacers);
         if (needsRetry) runtimeSetTimeout(() => scheduleMissionValueScan(0), 650);
@@ -21800,8 +21740,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function clearMissionValueDocumentStyles() {
         for (const context of transportSweepDocumentContexts()) {
-            if (context.doc === document) continue;
-            try { context.doc.getElementById?.('mcms-mission-value-document-style')?.remove(); } catch (err) {}
+        if (context.doc === document) continue;
+        try { context.doc.getElementById?.('mcms-mission-value-document-style')?.remove(); } catch (err) {}
         }
     }
 
@@ -21825,27 +21765,27 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!root) return;
         const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, [id^="lssmv4-shareAlliancePost_alarm"], .navbar-header';
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
-            const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
-                if (node?.nodeType !== 1) return false;
-                if (node.matches?.(activitySelector)) return true;
-                return Boolean(node.querySelector?.(activitySelector));
-            }));
-            if (!relevant) return;
-            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionValueFrame); } catch (err) {}
-            scheduleMissionValueScan(50);
+        const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
+            if (node?.nodeType !== 1) return false;
+            if (node.matches?.(activitySelector)) return true;
+            return Boolean(node.querySelector?.(activitySelector));
+        }));
+        if (!relevant) return;
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionValueFrame); } catch (err) {}
+        scheduleMissionValueScan(50);
         }));
         observer.observe(root, { childList: true, subtree: true });
     }
 
     function installMissionValueWindows() {
         if (!missionValueFeatureInstalled) {
-            missionValueFeatureInstalled = true;
-            runtimeOnCleanup(() => {
-                runtimeClearTimeout(missionValueScanTimer);
-                missionValueScanTimer = null;
-                clearMissionValueIndicators();
-                clearMissionValueDocumentStyles();
-            });
+        missionValueFeatureInstalled = true;
+        runtimeOnCleanup(() => {
+            runtimeClearTimeout(missionValueScanTimer);
+            missionValueScanTimer = null;
+            clearMissionValueIndicators();
+            clearMissionValueDocumentStyles();
+        });
         }
         for (const context of transportSweepDocumentContexts()) observeMissionValueDocument(context.doc);
         scheduleMissionValueScan(0);
@@ -21990,104 +21930,104 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const still = missionRequirementsCapacity(stillMin, stillMax, enRoute.known && stillMin === stillMax);
         const partial = !covered && (selected.min > 0 || enRoute.min > 0 || (selected.max || 0) > 0 || (enRoute.max || 0) > 0);
         return {
-            ...requirement,
-            selected: selected.min,
-            selectedMin: selected.min,
-            selectedMax: selected.max,
-            selectedKnown: selected.known,
-            selectedText: missionRequirementsCapacityText(selected),
-            enRoute: enRoute.min,
-            enRouteMin: enRoute.min,
-            enRouteMax: enRoute.max,
-            enRouteKnown: enRoute.known,
-            enRouteText: missionRequirementsCapacityText(enRoute),
-            stillNeeded: still.max === null ? still.min : still.max,
-            stillNeededMin: still.min,
-            stillNeededMax: still.max,
-            stillNeededKnown: still.known,
-            stillNeededText: missionRequirementsCapacityText(still),
-            covered,
-            definitelyOpen,
-            uncertain,
-            partial,
-            coverageKnown: covered || definitelyOpen
+        ...requirement,
+        selected: selected.min,
+        selectedMin: selected.min,
+        selectedMax: selected.max,
+        selectedKnown: selected.known,
+        selectedText: missionRequirementsCapacityText(selected),
+        enRoute: enRoute.min,
+        enRouteMin: enRoute.min,
+        enRouteMax: enRoute.max,
+        enRouteKnown: enRoute.known,
+        enRouteText: missionRequirementsCapacityText(enRoute),
+        stillNeeded: still.max === null ? still.min : still.max,
+        stillNeededMin: still.min,
+        stillNeededMax: still.max,
+        stillNeededKnown: still.known,
+        stillNeededText: missionRequirementsCapacityText(still),
+        covered,
+        definitelyOpen,
+        uncertain,
+        partial,
+        coverageKnown: covered || definitelyOpen
         };
     }
 
     function missionRequirementsCleanRemaining(value) {
         return String(value || '')
-            .replace(/\b(?:we\s+need|needed|required)\b\s*:*/giu, ' ')
-            .replace(/\s*[,;]\s*(?=[,;]|$)/gu, ' ')
-            .replace(/^(?:\s|[,;.])+|(?:\s|[,;.])+$/gu, '')
-            .replace(/\s+/gu, ' ')
-            .trim();
+        .replace(/\b(?:we\s+need|needed|required)\b\s*:*/giu, ' ')
+        .replace(/\s*[,;]\s*(?=[,;]|$)/gu, ' ')
+        .replace(/^(?:\s|[,;.])+|(?:\s|[,;.])+$/gu, '')
+        .replace(/\s+/gu, ' ')
+        .trim();
     }
 
     function missionRequirementsFindDefinitionMatch(text, definition) {
         const aliases = Array.from(new Set([definition.label, ...(definition.aliases || [])]))
-            .filter(Boolean)
-            .sort((a, b) => b.length - a.length)
-            .map(missionRequirementsEscapeRegex);
+        .filter(Boolean)
+        .sort((a, b) => b.length - a.length)
+        .map(missionRequirementsEscapeRegex);
         if (!aliases.length) return null;
         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
         const labelPattern = aliases.join('|');
         const prefix = '(^|[,;]\\s*)';
         const suffix = '(?=\\s*(?:[,;]|$))';
         const before = new RegExp(
-            `${prefix}\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${numberPattern}\\s*(?:x\\s*)?(${labelPattern})${suffix}`,
+        `${prefix}\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${numberPattern}\\s*(?:x\\s*)?(${labelPattern})${suffix}`,
             'iu'
         );
         const after = new RegExp(
-            `${prefix}\\s*(${labelPattern})\\s*(?::|x)\\s*${numberPattern}${suffix}`,
+        `${prefix}\\s*(${labelPattern})\\s*(?::|x)\\s*${numberPattern}${suffix}`,
             'iu'
         );
         const beforeMatch = before.exec(text);
         const afterMatch = after.exec(text);
         const candidates = [];
         if (beforeMatch) candidates.push({
-            index: beforeMatch.index,
-            length: beforeMatch[0].length,
-            missing: missionRequirementsNumber(beforeMatch[2]),
-            label: beforeMatch[3]
+        index: beforeMatch.index,
+        length: beforeMatch[0].length,
+        missing: missionRequirementsNumber(beforeMatch[2]),
+        label: beforeMatch[3]
         });
         if (afterMatch) candidates.push({
-            index: afterMatch.index,
-            length: afterMatch[0].length,
-            missing: missionRequirementsNumber(afterMatch[3]),
-            label: afterMatch[2]
+        index: afterMatch.index,
+        length: afterMatch[0].length,
+        missing: missionRequirementsNumber(afterMatch[3]),
+        label: afterMatch[2]
         });
         return candidates.sort((a, b) => a.index - b.index || b.length - a.length)[0] || null;
     }
 
     function missionRequirementsParseText(rawText, group = 'vehicles') {
         const normalized = String(rawText ?? '')
-            .replace(/\r/g, '')
-            .replace(/\n+/g, '; ')
-            .replace(/\s+/g, ' ')
-            .trim();
+        .replace(/\r/g, '')
+        .replace(/\n+/g, '; ')
+        .replace(/\s+/g, ' ')
+        .trim();
         if (!normalized) return { requirements: [], remaining: '' };
         let working = normalized;
         const requirements = [];
         while (true) {
-            let best = null;
-            for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
-                if ((definition.group || 'vehicles') !== group) continue;
-                const found = missionRequirementsFindDefinitionMatch(working, definition);
-                if (!found) continue;
-                if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
-                    best = { definition, found };
-                }
+        let best = null;
+        for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
+            if ((definition.group || 'vehicles') !== group) continue;
+            const found = missionRequirementsFindDefinitionMatch(working, definition);
+            if (!found) continue;
+            if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
+                best = { definition, found };
             }
-            if (!best) break;
-            requirements.push({
-                key: best.definition.key,
-                requirement: best.definition.label,
-                missing: best.found.missing,
-                group,
-                definition: best.definition,
-                sourceIndex: best.found.index
-            });
-            working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
+        }
+        if (!best) break;
+        requirements.push({
+            key: best.definition.key,
+            requirement: best.definition.label,
+            missing: best.found.missing,
+            group,
+            definition: best.definition,
+            sourceIndex: best.found.index
+        });
+        working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
         }
         requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
         requirements.forEach(requirement => { delete requirement.sourceIndex; });
@@ -22097,8 +22037,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsElementText(element) {
         if (!element) return '';
         const rendered = typeof element.innerText === 'string' && element.innerText.trim()
-            ? element.innerText
-            : element.textContent;
+        ? element.innerText
+        : element.textContent;
         return String(rendered || '').replace(/\u00a0/gu, ' ').trim();
     }
 
@@ -22121,8 +22061,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function missionRequirementsStripGroupHeading(text) {
         return String(text || '')
-            .replace(/^\s*(?:missing|required)\s+(?:vehicles?|personnel|staff|other|resources?)\s*:?\s*/iu, '')
-            .trim();
+        .replace(/^\s*(?:missing|required)\s+(?:vehicles?|personnel|staff|other|resources?)\s*:?\s*/iu, '')
+        .trim();
     }
 
     function missionRequirementsSplitTextSections(rawText, fallback = 'vehicles') {
@@ -22135,11 +22075,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const prefix = text.slice(0, matches[0].index).trim();
         if (prefix) sections.push({ group: missionRequirementsInferGroup(prefix, fallback), text: prefix });
         matches.forEach((match, index) => {
-            const start = match.index + match[0].length;
-            const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
-            const sectionText = text.slice(start, end).trim();
-            if (!sectionText) return;
-            sections.push({ group: missionRequirementsNormalizeGroup(match[1], fallback), text: sectionText });
+        const start = match.index + match[0].length;
+        const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+        const sectionText = text.slice(start, end).trim();
+        if (!sectionText) return;
+        sections.push({ group: missionRequirementsNormalizeGroup(match[1], fallback), text: sectionText });
         });
         return sections;
     }
@@ -22149,42 +22089,42 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!working) return { requirements: [], remaining: '' };
         const number = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
         const patterns = [
-            {
-                expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'),
-                quantity: 2,
-                label: 3
-            },
-            {
-                expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'),
-                quantity: 3,
-                label: 2
-            }
+        {
+            expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'),
+            quantity: 2,
+            label: 3
+        },
+        {
+            expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'),
+            quantity: 3,
+            label: 2
+        }
         ];
         const requirements = [];
         let serial = 0;
         for (const pattern of patterns) {
-            pattern.expression.lastIndex = 0;
-            let match;
-            while ((match = pattern.expression.exec(working))) {
-                const missing = missionRequirementsNumber(match[pattern.quantity]);
-                const label = String(match[pattern.label] || '')
-                    .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-                if (!missing || !label) continue;
-                const sourceIndex = match.index;
-                const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement';
-                requirements.push({
-                    key: `unmapped-${slug}-${serial++}`,
-                    requirement: label,
-                    missing,
-                    group,
-                    definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true },
-                    sourceIndex
-                });
-                working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`;
-                pattern.expression.lastIndex = sourceIndex + match[0].length;
-            }
+        pattern.expression.lastIndex = 0;
+        let match;
+        while ((match = pattern.expression.exec(working))) {
+            const missing = missionRequirementsNumber(match[pattern.quantity]);
+            const label = String(match[pattern.label] || '')
+                .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!missing || !label) continue;
+            const sourceIndex = match.index;
+            const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement';
+            requirements.push({
+                key: `unmapped-${slug}-${serial++}`,
+                requirement: label,
+                missing,
+                group,
+                definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true },
+                sourceIndex
+            });
+            working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`;
+            pattern.expression.lastIndex = sourceIndex + match[0].length;
+        }
         }
         requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
         requirements.forEach(requirement => { delete requirement.sourceIndex; });
@@ -22195,29 +22135,29 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const requirements = [];
         const unresolved = [];
         const parseSection = (rawText, requestedGroup) => {
-            const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
-            const cleaned = missionRequirementsStripGroupHeading(rawText);
-            if (!cleaned) return;
-            const parsed = missionRequirementsParseText(cleaned, group);
-            requirements.push(...parsed.requirements);
-            const generic = missionRequirementsParseGenericText(parsed.remaining, group);
-            requirements.push(...generic.requirements);
-            if (generic.remaining) unresolved.push({ group, text: generic.remaining });
+        const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
+        const cleaned = missionRequirementsStripGroupHeading(rawText);
+        if (!cleaned) return;
+        const parsed = missionRequirementsParseText(cleaned, group);
+        requirements.push(...parsed.requirements);
+        const generic = missionRequirementsParseGenericText(parsed.remaining, group);
+        requirements.push(...generic.requirements);
+        if (generic.remaining) unresolved.push({ group, text: generic.remaining });
         };
 
         const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []);
         const groupElements = allGroups.filter(element => {
-            const closest = element.closest?.('#missing_text');
-            return !closest || closest === source;
+        const closest = element.closest?.('#missing_text');
+        return !closest || closest === source;
         });
         if (groupElements.length) {
-            for (const element of groupElements) {
-                const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
-                parseSection(missionRequirementsElementText(element), rawGroup);
-            }
+        for (const element of groupElements) {
+            const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
+            parseSection(missionRequirementsElementText(element), rawGroup);
+        }
         } else {
-            const raw = missionRequirementsElementText(source);
-            for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
+        const raw = missionRequirementsElementText(source);
+        for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
         }
         return { requirements, unresolved };
     }
@@ -22225,24 +22165,24 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsVehicleType(element) {
         const scopes = [];
         const addScope = scope => {
-            if (scope && !scopes.includes(scope)) scopes.push(scope);
+        if (scope && !scopes.includes(scope)) scopes.push(scope);
         };
         addScope(element);
         addScope(element?.closest?.('tr'));
         addScope(element?.closest?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]'));
         const read = scope => missionRequirementsOptionalNumber(
-            scope?.getAttribute?.('vehicle_type_id')
-            ?? scope?.getAttribute?.('data-vehicle-type-id')
-            ?? scope?.getAttribute?.('data-vehicle_type_id')
-            ?? scope?.dataset?.vehicleTypeId
-            ?? scope?.dataset?.vehicle_type_id
+        scope?.getAttribute?.('vehicle_type_id')
+        ?? scope?.getAttribute?.('data-vehicle-type-id')
+        ?? scope?.getAttribute?.('data-vehicle_type_id')
+        ?? scope?.dataset?.vehicleTypeId
+        ?? scope?.dataset?.vehicle_type_id
         );
         for (const scope of scopes) {
-            const direct = read(scope);
-            if (direct !== null && direct >= 0) return direct;
-            const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
-            const nestedType = read(nested);
-            if (nestedType !== null && nestedType >= 0) return nestedType;
+        const direct = read(scope);
+        if (direct !== null && direct >= 0) return direct;
+        const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]');
+        const nestedType = read(nested);
+        if (nestedType !== null && nestedType >= 0) return nestedType;
         }
         return -1;
     }
@@ -22251,19 +22191,19 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
         const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
         for (const scope of scopes) {
-            for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
-                const value = Number.parseInt(raw, 10);
-                if (Number.isFinite(value) && value >= 0) return value;
-            }
-            for (const attribute of attributes) {
-                const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
-                if (Number.isFinite(value) && value >= 0) return value;
-            }
-            const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
-            if (idMatch) return Number(idMatch[1]);
-            const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
-            const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
-            if (hrefMatch) return Number(hrefMatch[1]);
+        for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+            const value = Number.parseInt(raw, 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
+        if (idMatch) return Number(idMatch[1]);
+        const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
+        const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+        if (hrefMatch) return Number(hrefMatch[1]);
         }
         return -1;
     }
@@ -22273,14 +22213,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const add = raw => String(raw || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean).forEach(value => values.add(value));
         const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
         for (const scope of scopes) {
-            add(scope?.dataset?.equipmentType);
-            add(scope?.dataset?.equipmentTypes);
-            add(scope?.getAttribute?.('data-equipment-type'));
-            add(scope?.getAttribute?.('data-equipment-types'));
-            scope?.querySelectorAll?.('[data-equipment-type], [data-equipment-types]').forEach(node => {
-                add(node.getAttribute('data-equipment-type'));
-                add(node.getAttribute('data-equipment-types'));
-            });
+        add(scope?.dataset?.equipmentType);
+        add(scope?.dataset?.equipmentTypes);
+        add(scope?.getAttribute?.('data-equipment-type'));
+        add(scope?.getAttribute?.('data-equipment-types'));
+        scope?.querySelectorAll?.('[data-equipment-type], [data-equipment-types]').forEach(node => {
+            add(node.getAttribute('data-equipment-type'));
+            add(node.getAttribute('data-equipment-types'));
+        });
         }
         return values;
     }
@@ -22291,23 +22231,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
         const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew'];
         for (const scope of scopes) {
-            for (const attribute of exactAttributes) {
-                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
-                if (value !== null) return missionRequirementsCapacity(value, value, true);
-            }
+        for (const attribute of exactAttributes) {
+            const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+            if (value !== null) return missionRequirementsCapacity(value, value, true);
+        }
         }
         let min = null;
         let max = null;
         for (const scope of scopes) {
-            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
-            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+        if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
         }
         if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
         const text = String(crewCell?.textContent || '').trim();
         const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
         if (currentMaximum) {
-            const current = missionRequirementsNumber(currentMaximum[1]);
-            return missionRequirementsCapacity(current, current, true);
+        const current = missionRequirementsNumber(currentMaximum[1]);
+        return missionRequirementsCapacity(current, current, true);
         }
         const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
         if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
@@ -22323,66 +22263,66 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const doc = candidate?.source?.ownerDocument || root?.ownerDocument;
         if (!root?.querySelectorAll && !doc?.querySelectorAll) return [];
         const selector = mode === 'selected'
-            ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked'
-            : '#mission_vehicle_driving tbody tr';
+        ? '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked'
+        : '#mission_vehicle_driving tbody tr';
         const elements = [];
         const seenElements = new Set();
         const missionScopes = Array.from(new Set([root, candidate?.mount].filter(scope => scope?.querySelectorAll)));
         const scopes = missionScopes.length ? missionScopes : [doc].filter(scope => scope?.querySelectorAll);
         for (const scope of scopes) {
-            for (const element of Array.from(scope.querySelectorAll?.(selector) || [])) {
-                if (seenElements.has(element)) continue;
-                seenElements.add(element);
-                elements.push(element);
-            }
+        for (const element of Array.from(scope.querySelectorAll?.(selector) || [])) {
+            if (seenElements.has(element)) continue;
+            seenElements.add(element);
+            elements.push(element);
+        }
         }
 
         const units = new Map();
         elements.forEach((element, index) => {
-            const row = element.matches?.('tr') ? element : element.closest?.('tr');
-            const vehicleElement = mode === 'selected'
-                ? element
-                : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]') || element);
-            const typeId = missionRequirementsVehicleType(vehicleElement);
-            if (typeId < 0) return;
-            const vehicleId = missionRequirementsVehicleId(vehicleElement);
-            const tractiveId = missionRequirementsOptionalNumber(
-                vehicleElement?.getAttribute?.('tractive_vehicle_id')
-                ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id')
-                ?? row?.getAttribute?.('tractive_vehicle_id')
-                ?? row?.getAttribute?.('data-tractive-vehicle-id')
-                ?? row?.dataset?.tractiveVehicleId
-            );
-            const trailerId = missionRequirementsOptionalNumber(
-                vehicleElement?.getAttribute?.('trailer_id')
-                ?? vehicleElement?.getAttribute?.('data-trailer-id')
-                ?? row?.getAttribute?.('trailer_id')
-                ?? row?.getAttribute?.('data-trailer-id')
-                ?? row?.dataset?.trailerId
-            );
-            let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`;
-            const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId;
-            if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`;
-            const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey;
-            const unit = {
-                typeId,
-                vehicleId,
-                tractiveId,
-                equipment: missionRequirementsEquipmentTypes(vehicleElement),
-                staff: missionRequirementsStaffCapacity(vehicleElement),
-                contributionKey
-            };
-            const existing = units.get(identityKey);
-            if (!existing) {
-                units.set(identityKey, unit);
-                return;
-            }
-            if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId;
-            for (const equipment of unit.equipment) existing.equipment.add(equipment);
-            if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff;
-            if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) {
-                existing.contributionKey = unit.contributionKey;
-            }
+        const row = element.matches?.('tr') ? element : element.closest?.('tr');
+        const vehicleElement = mode === 'selected'
+            ? element
+            : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]') || element);
+        const typeId = missionRequirementsVehicleType(vehicleElement);
+        if (typeId < 0) return;
+        const vehicleId = missionRequirementsVehicleId(vehicleElement);
+        const tractiveId = missionRequirementsOptionalNumber(
+            vehicleElement?.getAttribute?.('tractive_vehicle_id')
+            ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id')
+            ?? row?.getAttribute?.('tractive_vehicle_id')
+            ?? row?.getAttribute?.('data-tractive-vehicle-id')
+            ?? row?.dataset?.tractiveVehicleId
+        );
+        const trailerId = missionRequirementsOptionalNumber(
+            vehicleElement?.getAttribute?.('trailer_id')
+            ?? vehicleElement?.getAttribute?.('data-trailer-id')
+            ?? row?.getAttribute?.('trailer_id')
+            ?? row?.getAttribute?.('data-trailer-id')
+            ?? row?.dataset?.trailerId
+        );
+        let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`;
+        const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId;
+        if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`;
+        const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey;
+        const unit = {
+            typeId,
+            vehicleId,
+            tractiveId,
+            equipment: missionRequirementsEquipmentTypes(vehicleElement),
+            staff: missionRequirementsStaffCapacity(vehicleElement),
+            contributionKey
+        };
+        const existing = units.get(identityKey);
+        if (!existing) {
+            units.set(identityKey, unit);
+            return;
+        }
+        if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId;
+        for (const equipment of unit.equipment) existing.equipment.add(equipment);
+        if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff;
+        if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) {
+            existing.contributionKey = unit.contributionKey;
+        }
         });
         return Array.from(units.values());
     }
@@ -22391,17 +22331,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
         const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
         for (const scope of scopes) {
-            for (const attribute of attributes) {
-                const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
+        if (node) {
+            for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
+                const value = Number.parseInt(raw, 10);
                 if (Number.isFinite(value) && value >= 0) return value;
             }
-            const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
-            if (node) {
-                for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
-                    const value = Number.parseInt(raw, 10);
-                    if (Number.isFinite(value) && value >= 0) return value;
-                }
-            }
+        }
         }
         const runtimeValue = Number.parseInt(pageWindow.missionTypeId ?? pageWindow.mission_type_id, 10);
         return Number.isFinite(runtimeValue) && runtimeValue >= 0 ? runtimeValue : null;
@@ -22424,10 +22364,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase()));
         if (!typeEligible && !equipmentEligible) return { eligible: false, capacity: missionRequirementsCapacity(0, 0, true) };
         if (requirement.group === 'staff') {
-            const capacity = unit.staff
-                ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known)
-                : missionRequirementsCapacity(0, null, false);
-            return { eligible: true, capacity };
+        const capacity = unit.staff
+            ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known)
+            : missionRequirementsCapacity(0, null, false);
+        return { eligible: true, capacity };
         }
         const factor = Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1);
         const value = Number.isFinite(factor) && factor > 0 ? factor : 1;
@@ -22437,26 +22377,26 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsAggregate(requirement, units) {
         const contributions = new Map();
         for (const unit of units) {
-            const contribution = missionRequirementsUnitContribution(requirement, unit);
-            if (!contribution.eligible) continue;
-            const capacity = contribution.capacity;
-            const existing = contributions.get(unit.contributionKey);
-            if (!existing) {
-                contributions.set(unit.contributionKey, capacity);
-                continue;
-            }
-            const pairMin = Math.max(existing.min, capacity.min);
-            const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max);
-            contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin));
+        const contribution = missionRequirementsUnitContribution(requirement, unit);
+        if (!contribution.eligible) continue;
+        const capacity = contribution.capacity;
+        const existing = contributions.get(unit.contributionKey);
+        if (!existing) {
+            contributions.set(unit.contributionKey, capacity);
+            continue;
+        }
+        const pairMin = Math.max(existing.min, capacity.min);
+        const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max);
+        contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin));
         }
         let min = 0;
         let max = 0;
         let exact = true;
         for (const capacity of contributions.values()) {
-            min += capacity.min;
-            if (max === null || capacity.max === null) max = null;
-            else max += capacity.max;
-            exact = exact && capacity.known;
+        min += capacity.min;
+        if (max === null || capacity.max === null) max = null;
+        else max += capacity.max;
+        exact = exact && capacity.known;
         }
         return missionRequirementsCapacity(min, max, exact && max !== null && min === max);
     }
@@ -22472,23 +22412,23 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function missionRequirementsUnknownCoverageRow(requirement) {
         const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
         return {
-            ...requirement,
-            missing,
-            missingText: missing.toLocaleString('en-GB'),
-            selectedMin: 0,
-            selectedMax: null,
-            selectedKnown: false,
-            selectedText: '?',
-            enRouteMin: 0,
-            enRouteMax: null,
-            enRouteKnown: false,
-            enRouteText: '?',
-            stillNeededMin: 0,
-            stillNeededMax: missing,
-            stillNeededText: '?',
-            covered: false,
-            definitelyOpen: false,
-            uncertain: true
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
         };
     }
 
@@ -22496,28 +22436,28 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
         const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
         return parsed.requirements.map(requirement => {
-            if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
-            const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
-            if (condition !== true) {
-                const unresolvedRow = missionRequirementsCoverageRow(
-                    requirement,
-                    missionRequirementsCapacity(0, null, false),
-                    missionRequirementsCapacity(0, null, false)
-                );
-                return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
-            }
-            let selected;
-            let enRoute;
-            if (requirement.definition?.bar) {
-                const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
-                const enRouteValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
-                selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true);
-                enRoute = enRouteValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(enRouteValue, enRouteValue, true);
-            } else {
-                selected = missionRequirementsAggregate(requirement, selectedUnits);
-                enRoute = missionRequirementsAggregate(requirement, enRouteUnits);
-            }
-            return { ...missionRequirementsCoverageRow(requirement, selected, enRoute), conditionKnown: true, conditionMatched: true };
+        if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
+        const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
+        if (condition !== true) {
+            const unresolvedRow = missionRequirementsCoverageRow(
+                requirement,
+                missionRequirementsCapacity(0, null, false),
+                missionRequirementsCapacity(0, null, false)
+            );
+            return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
+        }
+        let selected;
+        let enRoute;
+        if (requirement.definition?.bar) {
+            const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
+            const enRouteValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
+            selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true);
+            enRoute = enRouteValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(enRouteValue, enRouteValue, true);
+        } else {
+            selected = missionRequirementsAggregate(requirement, selectedUnits);
+            enRoute = missionRequirementsAggregate(requirement, enRouteUnits);
+        }
+        return { ...missionRequirementsCoverageRow(requirement, selected, enRoute), conditionKnown: true, conditionMatched: true };
         });
     }
 
@@ -22531,16 +22471,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         // MissionChief and LSSM both use the generic alert-missing-vehicles class.
         // Only explicit LSSM ownership metadata may suppress the Toolkit panel.
         const ownedSelector = [
-            '.alert-missing-vehicles[data-raw-html]',
-            '[data-lssm-enhanced-missing-vehicles]',
+        '.alert-missing-vehicles[data-raw-html]',
+        '[data-lssm-enhanced-missing-vehicles]',
             '[data-lssm-module="extendedCallWindow.enhancedMissingVehicles"]'
         ].join(', ');
         const isLssmOwned = element => {
-            if (!element) return false;
-            const sharedAlert = Boolean(
-                element.matches?.('.alert-missing-vehicles')
-                || element.classList?.contains?.('alert-missing-vehicles')
-            );
+        if (!element) return false;
+        const sharedAlert = Boolean(
+            element.matches?.('.alert-missing-vehicles')
+            || element.classList?.contains?.('alert-missing-vehicles')
+        );
             const rawHtml = element.getAttribute?.('data-raw-html');
             if (sharedAlert && rawHtml !== null && rawHtml !== undefined) return true;
             return Boolean(

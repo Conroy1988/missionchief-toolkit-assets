@@ -1,0 +1,217 @@
+{
+  "capturedAt": "2026-07-18",
+  "source": "https://www.missionchief.co.uk/einsaetze",
+  "index": [
+    {
+      "title": "Bin fire",
+      "href": "/einsaetze/0"
+    },
+    {
+      "title": "Fire in Hospital - Major Incident",
+      "href": "/einsaetze/34?overlay_index=0"
+    }
+  ],
+  "pages": [
+    {
+      "name": "simple fire mission",
+      "sourceUrl": "https://www.missionchief.co.uk/einsaetze/0",
+      "id": 0,
+      "title": "Bin fire",
+      "sections": {
+        "reward": [
+          [
+            "Average credits",
+            "110"
+          ],
+          [
+            "Required Fire Stations",
+            "1"
+          ]
+        ],
+        "requirements": [
+          [
+            "Required Fire engines",
+            "1"
+          ]
+        ],
+        "other": [
+          [
+            "Follow-Up Missions",
+            "Phonebox on fire; Burning leaves; Burning bus shelter"
+          ]
+        ]
+      },
+      "variations": [],
+      "expected": {
+        "fire-engine": 1
+      }
+    },
+    {
+      "name": "personnel-heavy major incident",
+      "sourceUrl": "https://www.missionchief.co.uk/einsaetze/34?overlay_index=0",
+      "id": 34,
+      "overlayIndex": 0,
+      "title": "Fire in Hospital - Major Incident",
+      "sections": {
+        "reward": [
+          [
+            "Average credits",
+            "15500"
+          ],
+          [
+            "Required Fire Stations",
+            "13"
+          ],
+          [
+            "Required Rescue Stations",
+            "6"
+          ],
+          [
+            "Requirement of Police Stations",
+            "5"
+          ]
+        ],
+        "requirements": [
+          [
+            "Required Fire engines",
+            "10"
+          ],
+          [
+            "Required Police Cars",
+            "3"
+          ],
+          [
+            "Required Fire Officers",
+            "8"
+          ],
+          [
+            "Required ICCU or Ambulance Control Units",
+            "1"
+          ],
+          [
+            "Required Rescue Support Vehicles",
+            "2"
+          ],
+          [
+            "Required Water Carriers",
+            "1"
+          ],
+          [
+            "Required Aerial Appliance Trucks",
+            "2"
+          ],
+          [
+            "Required Breathing Apparatus Support Units",
+            "1"
+          ],
+          [
+            "Required Operational Team Leaders",
+            "1"
+          ],
+          [
+            "Required PRVs",
+            "2"
+          ],
+          [
+            "Required SRVs",
+            "2"
+          ],
+          [
+            "Required Welfare Vehicles",
+            "1"
+          ],
+          [
+            "Required Ambulance Officers",
+            "1"
+          ]
+        ],
+        "other": [
+          [
+            "Max. Patients",
+            "25"
+          ],
+          [
+            "Probability that a patient has to be transported",
+            "50"
+          ]
+        ]
+      },
+      "variations": [
+        {
+          "href": "/einsaetze/34?overlay_index=1",
+          "title": "Fire in Hospital - Major Incident"
+        },
+        {
+          "href": "/einsaetze/34?overlay_index=2",
+          "title": "Fire in Hospital - Major Incident"
+        }
+      ],
+      "expected": {
+        "fire-engine": 10,
+        "police-car": 3,
+        "fire-officer": 8,
+        "iccu-or-control": 1,
+        "otl": 1,
+        "ambulance-officer": 1
+      }
+    },
+    {
+      "name": "alternative and conditional requirements",
+      "sourceUrl": "https://www.missionchief.co.uk/einsaetze/fixture-alternative",
+      "id": 99991,
+      "title": "Recorded alternative requirement fixture",
+      "sections": {
+        "reward": [
+          [
+            "Average credits",
+            "9000"
+          ]
+        ],
+        "requirements": [
+          [
+            "Required Fire Engines or RIVs",
+            "3"
+          ],
+          [
+            "Required Police Cars",
+            "2 (50%)"
+          ],
+          [
+            "Required Level 1 Public Order Officers",
+            "8"
+          ],
+          [
+            "Required Level 2 Public Order Officers",
+            "22"
+          ],
+          [
+            "Required Firefighters",
+            "1000"
+          ]
+        ],
+        "other": [
+          [
+            "Max. Patients",
+            "4"
+          ]
+        ]
+      },
+      "variations": [
+        {
+          "href": "/einsaetze/99991?overlay_index=1",
+          "title": "Recorded alternative requirement fixture"
+        }
+      ],
+      "expected": {
+        "fire-engine-or-riv": 3,
+        "police-car": 2,
+        "public-order-level-1": 8,
+        "public-order-level-2": 22,
+        "firefighters": 1000
+      },
+      "conditional": {
+        "police-car": 50
+      }
+    }
+  ]
+}

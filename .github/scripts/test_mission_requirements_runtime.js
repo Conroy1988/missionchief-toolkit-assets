@@ -9,6 +9,7 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
 const fixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-requirements-contract.json'), 'utf8'));
+const catalogueFixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-catalogue-pages.json'), 'utf8'));
 const startMarker = '    // Issue #133 clean-room live mission requirements matrix.';
 const endMarker = '    function criticalMissionValueForEntry(entry) {';
 const start = source.indexOf(startMarker);
@@ -182,7 +183,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.15.5'
+        version: '4.16.0'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -238,6 +239,15 @@ this.__mcmsRequirements = {
     primaryRuntime: missionRequirementsPrimaryRuntime,
     canonicalPanel: missionRequirementsCanonicalPanel,
     fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
     reportUrl: missionRequirementsReportUrl,
     sanitize: missionRequirementsSafeDiagnostic,
     scan: scanMissionRequirementsWindows,
@@ -519,6 +529,78 @@ policeCandidate.root.selectedUnits = [secondPolice.vehicle];
 policeResolved = api.resolve(policeCandidate, policeParsed)[0];
 assert.strictEqual(policeResolved.selectedMin, 1, 'deselecting one police car updates Selected back to one');
 
+
+
+function makeCatalogueDocument(page) {
+    const sectionNames = {
+        reward: 'Reward and Precondition',
+        requirements: 'Vehicle and Personnel Requirements',
+        other: 'Other information'
+    };
+    const tables = Object.entries(page.sections).map(([key, entries]) => {
+        const rows = [[sectionNames[key], 'Value'], ...entries].map(values => ({
+            querySelectorAll(selector) {
+                if (selector !== 'th, td') return [];
+                return values.map(text => ({ textContent: String(text), innerText: String(text) }));
+            }
+        }));
+        return {
+            textContent: [sectionNames[key], 'Value', ...entries.flat()].join(' '),
+            innerText: [sectionNames[key], 'Value', ...entries.flat()].join(' '),
+            querySelectorAll(selector) { return selector === 'tr' ? rows : []; }
+        };
+    });
+    const links = (page.variations || []).map(item => ({
+        textContent: item.title,
+        innerText: item.title,
+        getAttribute(name) { return name === 'href' ? item.href : null; }
+    }));
+    return {
+        querySelector(selector) {
+            return selector.includes('h1') ? { textContent: page.title, innerText: page.title } : null;
+        },
+        querySelectorAll(selector) {
+            if (selector === 'table') return tables;
+            if (selector === 'a[href*="/einsaetze/"]') return links;
+            return [];
+        }
+    };
+}
+
+const parsedCatalogues = new Map();
+for (const page of catalogueFixture.pages) {
+    const descriptor = { id: page.id, overlayIndex: page.overlayIndex ?? null, path: `/einsaetze/${page.id}`, url: page.sourceUrl };
+    const catalogue = api.parseCatalogueDocument(makeCatalogueDocument(page), descriptor);
+    parsedCatalogues.set(page.name, catalogue);
+    assert.strictEqual(catalogue.title, page.title, `${page.name}: title`);
+    const quantities = Object.fromEntries(catalogue.requirements.map(item => [item.key, item.baseline]));
+    for (const [key, value] of Object.entries(page.expected)) assert.strictEqual(quantities[key], value, `${page.name}: ${key}`);
+    for (const [key, probability] of Object.entries(page.conditional || {})) {
+        assert.strictEqual(catalogue.requirements.find(item => item.key === key)?.probability, probability, `${page.name}: conditional probability`);
+    }
+    assert.strictEqual(catalogue.variations.length, (page.variations || []).length, `${page.name}: variations`);
+}
+
+const simpleCatalogue = parsedCatalogues.get('simple fire mission');
+assert.strictEqual(simpleCatalogue.averageCredits, 110, 'catalogue average credits');
+assert(api.cataloguePanelHtml(simpleCatalogue).html.includes('Official MissionChief catalogue baseline only'), 'catalogue panel clearly marks baseline data');
+assert(!api.cataloguePanelHtml(simpleCatalogue).html.includes('Still needed'), 'catalogue baseline must not claim current still-needed quantities');
+const comparison = api.catalogueCompare({ requirements: [{ key: 'fire-engine', requirement: 'Fire Engine', missing: 2 }], unresolved: [] }, simpleCatalogue);
+assert.strictEqual(comparison.state, 'mismatch', 'live quantity above baseline is reported as a mismatch');
+
+const descriptorDoc = new FakeDocument();
+descriptorDoc.defaultView = { location: { origin: 'https://www.missionchief.co.uk', protocol: 'https:', host: 'www.missionchief.co.uk' } };
+const descriptorRoot = new FakeElement('div', descriptorDoc);
+const descriptorLink = { getAttribute(name) { return name === 'href' ? '/einsaetze/34?overlay_index=2' : null; } };
+descriptorRoot.queryAllMap.set('a[href*="/einsaetze/"]', [descriptorLink]);
+const descriptor = api.catalogueDescriptor({ root: descriptorRoot, mount: descriptorRoot });
+assert.deepStrictEqual(JSON.parse(JSON.stringify({ id: descriptor.id, overlayIndex: descriptor.overlayIndex, path: descriptor.path })), { id: 34, overlayIndex: 2, path: '/einsaetze/34?overlay_index=2' }, 'catalogue descriptor preserves mission variation');
+
+api.catalogueCacheStore('fixture-cache', simpleCatalogue, 1000);
+assert.strictEqual(api.catalogueCacheLookup('fixture-cache', 1001).stale, false, 'fresh catalogue cache');
+assert.strictEqual(api.catalogueCacheLookup('fixture-cache', 1000 + api.catalogueTtl + 1).stale, true, 'expired catalogue remains bounded stale fallback');
+assert.strictEqual(api.catalogueFailureFallback('fixture-cache', 1000 + api.catalogueTtl + 1).value.title, 'Bin fire', 'network failure reuses stale catalogue');
+assert.strictEqual(api.catalogueCacheLookup('fixture-cache', 1000 + api.catalogueStale + 1), null, 'catalogue cache expires after stale boundary');
 
 const missingDoc = new FakeDocument();
 missingDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/9901' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };

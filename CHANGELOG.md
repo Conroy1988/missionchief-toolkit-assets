@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.16.0] - 2026-07-18
+
+### Added
+- Added an on-demand resolver for MissionChief's official Possible Missions catalogue and per-mission `Vehicle and Personnel Requirements` tables.
+- Added variation-aware six-hour caching with a bounded stale fallback for temporary catalogue failures.
+- Added an explicitly labelled official catalogue baseline when live MissionChief requirement data is absent or unparseable.
+- Added catalogue title, definition, patient, variation and live-versus-catalogue diagnostics to **Report Mission**.
+
+### Safety
+- Live MissionChief `#missing_text`, en-route units and selected units remain authoritative whenever live data is available.
+- Catalogue quantities are never presented as current **Still needed** values.
+- Recalibrated the static source-size envelope after v4.15.5 exhausted the original v4.11.2 allowance; runtime, CSS and relative performance limits are unchanged.
+
 ## [4.15.5] - 2026-07-18
 
 ### Fixed

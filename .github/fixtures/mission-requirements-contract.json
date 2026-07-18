@@ -134,14 +134,24 @@
   ],
   "coverageCases": [
     {
-      "name": "simple uncovered exact requirement",
+      "name": "no live capacity remains fully open",
       "missing": 3,
-      "selected": {
-        "min": 1,
-        "max": 1,
+      "required": {
+        "min": 3,
+        "max": 3,
         "known": true
       },
-      "enRoute": {
+      "onSite": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
+      "responding": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
+      "selected": {
         "min": 0,
         "max": 0,
         "known": true
@@ -152,14 +162,80 @@
       "stillNeededText": "3"
     },
     {
-      "name": "en-route reduction and selected coverage",
+      "name": "selected capacity immediately reduces shortage",
       "missing": 3,
+      "required": {
+        "min": 3,
+        "max": 3,
+        "known": true
+      },
+      "onSite": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
+      "responding": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
       "selected": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "covered": false,
+      "definitelyOpen": true,
+      "uncertain": false,
+      "stillNeededText": "2"
+    },
+    {
+      "name": "on-site responding and selected capacity combine",
+      "missing": 3,
+      "required": {
+        "min": 4,
+        "max": 4,
+        "known": true
+      },
+      "onSite": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "responding": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "selected": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "covered": false,
+      "definitelyOpen": true,
+      "uncertain": false,
+      "stillNeededText": "1"
+    },
+    {
+      "name": "all live buckets fulfil the requirement",
+      "missing": 2,
+      "required": {
+        "min": 4,
+        "max": 4,
+        "known": true
+      },
+      "onSite": {
         "min": 2,
         "max": 2,
         "known": true
       },
-      "enRoute": {
+      "responding": {
+        "min": 1,
+        "max": 1,
+        "known": true
+      },
+      "selected": {
         "min": 1,
         "max": 1,
         "known": true
@@ -167,17 +243,27 @@
       "covered": true,
       "definitelyOpen": false,
       "uncertain": false,
-      "stillNeededText": "2"
+      "stillNeededText": "0"
     },
     {
-      "name": "known en-route fully covers despite unknown selection",
+      "name": "known minimum covers despite unknown maximum",
       "missing": 2,
-      "selected": {
+      "required": {
+        "min": 4,
+        "max": 4,
+        "known": true
+      },
+      "onSite": {
+        "min": 2,
+        "max": 2,
+        "known": true
+      },
+      "responding": {
         "min": 0,
         "max": null,
         "known": false
       },
-      "enRoute": {
+      "selected": {
         "min": 2,
         "max": 2,
         "known": true
@@ -188,58 +274,32 @@
       "stillNeededText": "0"
     },
     {
-      "name": "unknown en-route but selection alone guarantees coverage",
-      "missing": 2,
-      "selected": {
-        "min": 2,
-        "max": 2,
+      "name": "bounded personnel remains visibly uncertain",
+      "missing": 4,
+      "required": {
+        "min": 4,
+        "max": 4,
         "known": true
       },
-      "enRoute": {
+      "onSite": {
         "min": 0,
-        "max": null,
-        "known": false
+        "max": 0,
+        "known": true
       },
-      "covered": true,
-      "definitelyOpen": false,
-      "uncertain": false,
-      "stillNeededText": "0–2"
-    },
-    {
-      "name": "bounded personnel could cover but is not exact",
-      "missing": 4,
+      "responding": {
+        "min": 0,
+        "max": 0,
+        "known": true
+      },
       "selected": {
         "min": 2,
         "max": 6,
         "known": false
-      },
-      "enRoute": {
-        "min": 0,
-        "max": 0,
-        "known": true
       },
       "covered": false,
       "definitelyOpen": false,
       "uncertain": true,
-      "stillNeededText": "4"
-    },
-    {
-      "name": "bounded minimum guarantees personnel coverage",
-      "missing": 4,
-      "selected": {
-        "min": 4,
-        "max": 6,
-        "known": false
-      },
-      "enRoute": {
-        "min": 0,
-        "max": 0,
-        "known": true
-      },
-      "covered": true,
-      "definitelyOpen": false,
-      "uncertain": false,
-      "stillNeededText": "4"
+      "stillNeededText": "0–2"
     }
   ],
   "requiredAliases": [
@@ -289,10 +349,11 @@
     "mobileBreakpoint": "@media(max-width:767px)",
     "requiredHeaders": [
       "Requirement",
-      "Missing on mission",
-      "En-route",
-      "Still needed",
-      "Selected"
+      "Required",
+      "On site",
+      "Responding",
+      "Selected",
+      "Still needed"
     ]
   }
 }

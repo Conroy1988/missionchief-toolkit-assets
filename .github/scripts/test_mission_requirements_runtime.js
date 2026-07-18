@@ -183,7 +183,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.16.0'
+        version: '4.16.1'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -274,7 +274,9 @@ for (const testCase of fixture.coverageCases) {
     const row = api.coverageRow(
         { key: testCase.name, requirement: testCase.name, missing: testCase.missing, group: 'vehicles', definition: {} },
         testCase.selected,
-        testCase.enRoute
+        testCase.responding,
+        testCase.onSite,
+        testCase.required
     );
     assert.strictEqual(row.covered, testCase.covered, `${testCase.name}: covered`);
     assert.strictEqual(row.definitelyOpen, testCase.definitelyOpen, `${testCase.name}: definitelyOpen`);
@@ -408,6 +410,7 @@ function makeMissionCandidate(doc, requirementText = '1 Ambulance') {
     missionRoot.appendChild(sourceNode);
     missionRoot.selectedUnits = [];
     missionRoot.enRouteRows = [];
+    missionRoot.onSiteRows = [];
     missionRoot.queryHandler = selector => {
         if (selector === '#missing_text') return sourceNode.isConnected ? sourceNode : null;
         if (selector === '[data-mcms-requirements-anchor="1"]') return missionRoot.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1') || null;
@@ -417,6 +420,7 @@ function makeMissionCandidate(doc, requirementText = '1 Ambulance') {
     missionRoot.queryAllHandler = selector => {
         if (selector.includes('.vehicle_checkbox')) return missionRoot.selectedUnits;
         if (selector === '#mission_vehicle_driving tbody tr') return missionRoot.enRouteRows;
+        if (selector === '#mission_vehicle_at_mission tbody tr') return missionRoot.onSiteRows;
         if (selector === 'iframe, frame') return [];
         return [];
     };
@@ -429,6 +433,7 @@ function makeMissionCandidateWithoutSource(doc) {
     missionRoot.matchSet.add('form[action*="/missions/"]');
     missionRoot.selectedUnits = [];
     missionRoot.enRouteRows = [];
+    missionRoot.onSiteRows = [];
     missionRoot.queryHandler = selector => {
         if (selector === '#missing_text') return missionRoot.children.find(child => child.id === 'missing_text' && child.isConnected) || null;
         if (selector === '[data-mcms-requirements-anchor="1"]') return missionRoot.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1' && child.isConnected) || null;
@@ -437,6 +442,7 @@ function makeMissionCandidateWithoutSource(doc) {
     missionRoot.queryAllHandler = selector => {
         if (selector.includes('.vehicle_checkbox')) return missionRoot.selectedUnits;
         if (selector === '#mission_vehicle_driving tbody tr') return missionRoot.enRouteRows;
+        if (selector === '#mission_vehicle_at_mission tbody tr') return missionRoot.onSiteRows;
         return [];
     };
     return { root: missionRoot, mount: missionRoot };
@@ -445,30 +451,50 @@ function makeMissionCandidateWithoutSource(doc) {
 const unitDoc = new FakeDocument();
 unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
 const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
-const normalAmbulance = makeVehicleElement(unitDoc, 101, 5);
-const occupiedAmbulance = makeVehicleElement(unitDoc, 102, 5);
-unitCandidate.root.selectedUnits = [normalAmbulance.vehicle, occupiedAmbulance.vehicle];
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
 const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
 const ambulanceParsed = {
     requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
     unresolved: []
 };
-let resolved = api.resolve(unitCandidate, ambulanceParsed)[0];
-assert.strictEqual(resolved.selectedMin, 2, 'normal and occupied selected lists must both count');
-assert.strictEqual(resolved.covered, true, 'two selected ambulances cover two missing ambulances');
-unitCandidate.root.selectedUnits = [normalAmbulance.vehicle];
-resolved = api.resolve(unitCandidate, ambulanceParsed)[0];
-assert.strictEqual(resolved.selectedMin, 1, 'checkbox deselection decrements selected capacity');
-assert.strictEqual(resolved.definitelyOpen, true, 'deselection reopens the requirement');
-const drivingAmbulance = makeVehicleElement(unitDoc, 201, 5);
-unitCandidate.root.enRouteRows = [drivingAmbulance.row];
-resolved = api.resolve(unitCandidate, ambulanceParsed)[0];
-assert.strictEqual(resolved.enRouteMin, 1, 'newly en-route vehicle updates en-route capacity');
-assert.strictEqual(resolved.stillNeededText, '1', 'en-route capacity reduces still needed');
-assert.strictEqual(resolved.covered, true, 'selected plus en-route capacity covers the requirement');
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+let resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.requiredText, '2', 'catalogue baseline supplies total required capacity');
+assert.strictEqual(resolved.selectedMin, 1, 'selected vehicle is counted');
+assert.strictEqual(resolved.stillNeededText, '1', 'selected capacity immediately reduces still needed');
+
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle, secondAmbulance.vehicle];
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.stillNeededText, '0', 'second selected vehicle fulfils the requirement');
+assert.strictEqual(resolved.covered, true, 'selected vehicles can produce a green fulfilled row');
+
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+unitCandidate.root.enRouteRows = [secondAmbulance.row];
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.respondingMin, 1, 'dispatch moves capacity into responding');
+assert.strictEqual(resolved.stillNeededText, '0', 'selected to responding transition preserves fulfilment');
+
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle, secondAmbulance.vehicle];
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.selectedMin, 1, 'same vehicle visible as selected and responding is not double-counted');
+assert.strictEqual(resolved.respondingMin, 1, 'responding bucket takes precedence during DOM transition');
+
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
 unitCandidate.root.enRouteRows = [];
-resolved = api.resolve(unitCandidate, ambulanceParsed)[0];
-assert.strictEqual(resolved.enRouteMin, 0, 'arriving or removed en-route row is reconciled');
+unitCandidate.root.onSiteRows = [secondAmbulance.row];
+ambulanceParsed.requirements[0].missing = 1;
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.onSiteMin, 1, 'arrival moves capacity into on-site');
+assert.strictEqual(resolved.respondingMin, 0, 'arrived unit leaves responding');
+assert.strictEqual(resolved.stillNeededText, '0', 'responding to on-site transition preserves fulfilment');
+
+unitCandidate.root.onSiteRows = [];
+ambulanceParsed.requirements[0].missing = 2;
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.onSiteMin, 0, 'unit removal is reconciled');
+assert.strictEqual(resolved.stillNeededText, '1', 'shortage returns when capacity leaves the mission');
 
 const personnelDoc = new FakeDocument();
 personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };

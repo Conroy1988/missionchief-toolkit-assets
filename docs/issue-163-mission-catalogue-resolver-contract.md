@@ -3,7 +3,7 @@
 ## Authority model
 
 1. The active MissionChief mission window remains authoritative for current outstanding requirements.
-2. Native selected checkboxes and the native en-route table remain authoritative for selected and travelling units.
+2. Native selected checkboxes, the responding table and the on-site table remain authoritative for selected, travelling and arrived units.
 3. `/einsaetze/<definition>` is an official static baseline and diagnostic cross-reference only.
 4. Catalogue baseline values must never be labelled or calculated as current **Still needed** quantities.
 

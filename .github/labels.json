@@ -26,6 +26,11 @@
       "description": "Additional reproduction details or diagnostics are required"
     },
     {
+      "name": "Mission Info Missing",
+      "color": "d4c5f9",
+      "description": "Matrix Mission Information Issues"
+    },
+    {
       "name": "confirmed",
       "color": "0e8a16",
       "description": "The report has been reproduced or otherwise verified"

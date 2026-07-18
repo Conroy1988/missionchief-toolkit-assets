@@ -1,0 +1,105 @@
+Issue #146 canonical-validation diagnostic
+=========================================
+
+Package return code: 0
+Validation return code: 1
+
+Bounded output:
+
+/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.lean.payload.py:185: SyntaxWarning: invalid escape sequence '\/'
+  '''    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}function missionRequirementsWindowCandidates(){const a=[],s=new Set(),add=c=>{const x=missionRequirementsSourceForCandidate(c);if(x&&x.isConnected!==false&&!s.has(x)){s.add(x);a.push({...c,source:x})}};missionValueWindowCandidates().forEach(add);for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(d?.querySelectorAll)for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x))}const ids=new Set();return a.sort((x,y)=>2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.source)-isVisible(x.source)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}'''
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Mission requirements contract passed
+Issue #146 transformation and fixture checks passed
+Issue #146 v4.15.3 candidate fits source budget: 1899245 bytes / 30879 lines
+
+
+--- canonical validation ---
+
+{
+  "failures": 1,
+  "warnings": 0,
+  "result": "failed"
+}
+Code-integrity release baseline: v4.15.2
+# Toolkit code-integrity audit
+
+- Result: **FAILED**
+- Failures: **1**
+- Warnings: **0**
+- Baseline available: **yes**
+
+## Inventory
+
+- Resolved static interface IDs: **21**
+- Duplicate interface ID values: **1**
+- Detected shortcut bindings: **27**
+- Shortcut conflict values: **0**
+- Fully static selectors validated: **215**
+- Runtime URLs inspected: **38**
+- Repository text files scanned: **191**
+
+## Findings
+
+- ❌ **new-interface-id** (`mc-map-command-toolkit-mission-requirements`): New duplicate interface id 'mc-map-command-toolkit-mission-requirements' appears 2 times (lines 22680, 22680).
+
+## Resolved interface-ID inventory
+
+- `mcms-alliance-buildings-map-early-style` — line 149 (property-symbol:ALLIANCE_BUILDINGS_EARLY_STYLE_ID)
+- `mc-map-command-toolkit-style-v4146` — line 1868 (property-symbol:SCRIPT.styleId)
+- `mc-map-command-toolkit-transport-sweep-hud` — line 16571 (property-symbol:SCRIPT.transportSweepHudId)
+- `mc-map-command-toolkit-major-incident-feed` — line 19573 (property-symbol:SCRIPT.majorIncidentFeedId)
+- `mc-map-command-toolkit-vehicle-status` — line 20617 (property-symbol:SCRIPT.vehicleStatusId)
+- `mc-map-command-toolkit-critical-drawer` — line 20926 (property-symbol:SCRIPT.criticalDrawerId)
+- `mc-map-command-toolkit-critical-drawer-view-menu` — line 20943 (html-tag)
+- `mc-map-command-toolkit-critical-drawer-advanced-filters` — line 20973 (html-tag)
+- `mcms-mission-value-document-style` — line 21789 (property-symbol:styleId)
+- `mc-map-command-toolkit-mission-requirements` — line 22680 (property-symbol:SCRIPT.missionRequirementsPanelId)
+- `mc-map-command-toolkit-mission-requirements` — line 22680 (property-symbol:SCRIPT.missionRequirementsPanelId)
+- `mc-map-command-toolkit-mission-inspector` — line 23820 (property-symbol:SCRIPT.missionInspectorId)
+- `mc-map-command-toolkit-payout-flash` — line 24847 (property-symbol:SCRIPT.payoutFlashId)
+- `mc-map-command-toolkit-toast` — line 28066 (property-symbol:SCRIPT.toastId)
+- `financial-command` — line 28695 (html-tag)
+- `economy-mode` — line 28705 (html-tag)
+- `mc-map-command-toolkit-help-center` — line 28758 (property-symbol:SCRIPT.helpCenterId)
+- `mcms-clean-exit` — line 28947 (property-symbol:SCRIPT.cleanExitId)
+- `mc-map-command-toolkit-control` — line 28958 (property-symbol:SCRIPT.controlId)
+- `mc-map-command-toolkit-panel` — line 29039 (property-symbol:SCRIPT.panelId)
+- `mcms-alliance-buildings-map-notice` — line 30112 (property-symbol:ALLIANCE_BUILDINGS_MAP_NOTICE_ID)
+
+## Shortcut binding inventory
+
+- `m` — line 28881 (handler:togglePanel:))
+- `1` — line 28883 (handler-map:myMissions)
+- `2` — line 28884 (handler-map:allianceMissions)
+- `3` — line 28885 (handler-map:vehicles)
+- `4` — line 28886 (handler-map:buildings)
+- `5` — line 28887 (handler-map:allianceCredits)
+- `6` — line 28888 (handler-map:missionAge)
+- `7` — line 28889 (handler-map:transportWatcher)
+- `8` — line 28890 (handler-map:unitCommitment)
+- `9` — line 28891 (handler-map:criticalView)
+- `v` — line 28898 (handler:toggleVehicleCodeStatus:))
+- `w` — line 28899 (handler:toggleCriticalDrawer:))
+- `c` — line 28900 (handler:toggleFeature:'clean'))
+- `f` — line 28901 (handler:toggleFeature:'markerFocus'))
+- `p` — line 28902 (handler:toggleFeature:'missionPulse'))
+- `r` — line 28903 (handler:toggleFeature:'roadPriority'))
+- `1` — line 28970 (button:myMissions)
+- `2` — line 28971 (button:allianceMissions)
+- `3` — line 28972 (button:vehicles)
+- `4` — line 28973 (button:buildings)
+- `5` — line 28974 (button:allianceCredits)
+- `6` — line 28975 (button:missionAge)
+- `7` — line 28976 (button:transportWatcher)
+- `8` — line 28977 (button:unitCommitment)
+- `9` — line 28978 (button:criticalView)
+- `v` — line 28979 (button:open-vehicle-status)
+- `w` — line 28980 (button:open-critical-drawer)
+
+VALIDATION ERROR: expanded code-integrity audit failed
+

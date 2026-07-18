@@ -34,6 +34,7 @@ def main() -> int:
         "function customVehicleClassificationForId(vehicleId)",
         "__MCMS_CUSTOM_VEHICLE_CLASSIFICATIONS__",
         "function customVehicleBadgeApplyRow(row)",
+        "if (badge.parentElement !== host) host.appendChild(badge)",
         "data-mcms-custom-vehicle-category",
         "function observeCustomVehicleBadgeDocument(doc)",
         "function installCustomVehicleBadges()",

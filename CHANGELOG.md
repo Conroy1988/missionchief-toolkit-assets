@@ -14,7 +14,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Behaviour
 - Reuses the Toolkit's existing `/api/vehicles` cache and never performs a second vehicle-list request.
-- Reapplies badges after MissionChief or LSSM replaces, filters or sorts the Available Units DOM, without duplicates or dispatch-side effects.
+- Reapplies badges after MissionChief or LSSM replaces, filters or sorts the Available Units DOM, without duplicates, repeat DOM insertion or dispatch-side effects.
 - Vehicles without an Own Vehicle Category remain unchanged.
 
 ### Validation

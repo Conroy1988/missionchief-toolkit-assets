@@ -37,6 +37,7 @@ class FakeElement {
         this.textContent = "";
         this.title = "";
         this.isConnected = true;
+        this.appendCount = 0;
     }
     setAttribute(name, value) {
         const text = String(value);
@@ -57,6 +58,7 @@ class FakeElement {
         }
     }
     appendChild(child) {
+        this.appendCount += 1;
         if (child.parentElement) child.parentElement.children = child.parentElement.children.filter(item => item !== child);
         child.parentElement = this;
         child.parentNode = this;
@@ -220,10 +222,12 @@ assert.equal(specialist.row.querySelectorAll('[data-mcms-custom-vehicle-badge="1
 assert.equal(specialist.row.dataset.mcmsCustomVehicleCategory, "Railway Police Officer");
 assert.equal(specialist.row.dataset.mcmsCustomVehicleLocked, "true");
 assert.equal(badge.parentElement, specialist.label, "badge was not placed beside the native label");
+const specialistHostAppendCount = specialist.label.appendCount;
 
 badge = api.applyRow(specialist.row);
 assert.equal(specialist.row.querySelectorAll('[data-mcms-custom-vehicle-badge="1"]').length, 1, "repeat scan duplicated badge");
 assert.equal(badge.textContent, "[Railway Police Officer]");
+assert.equal(specialist.label.appendCount, specialistHostAppendCount, "repeat scan reinserted an already placed badge");
 
 personalVehicleApiCache.set("102", { id: 102, vehicle_type: 0, vehicle_type_caption: null, ignore_aao: false });
 context.vehicleDataRevision = 2;

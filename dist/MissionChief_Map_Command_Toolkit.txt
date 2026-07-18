@@ -15712,7 +15712,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         badge.dataset.mcmsTheme = state.uiTheme;
         badge.dataset.mcmsVehicleId = classification.vehicleId;
         badge.dataset.mcmsLocked = classification.locked ? 'true' : 'false';
-        host.appendChild(badge);
+        if (badge.parentElement !== host) host.appendChild(badge);
         row.dataset.mcmsCustomVehicleCategory = classification.category;
         row.dataset.mcmsCustomVehicleLocked = classification.locked ? 'true' : 'false';
         row.dataset.mcmsCustomVehicleId = classification.vehicleId;

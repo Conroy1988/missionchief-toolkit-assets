@@ -1,0 +1,33 @@
+Issue #146 v4.15.3 hotfix diagnostic
+====================================
+
+Payload return code: 1
+
+Bounded output:
+
+mission-requirements-runtime.js:739
+    const id = normaliseMissionId(match?.[1] ?? (/^\d+$/.test(raw) ? raw : null));
+               ^
+
+ReferenceError: normaliseMissionId is not defined
+    at missionRequirementsMissionIdentity (mission-requirements-runtime.js:739:16)
+    at mission-requirements-runtime.js:766:22
+    at Array.filter (<anonymous>)
+    at Object.missionRequirementsWindowCandidates [as windowCandidates] (mission-requirements-runtime.js:765:8)
+    at Object.<anonymous> (/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_runtime.js:461:30)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.py", line 317, in <module>
+    run("node", str(RUNTIME_TEST))
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-146-single-owner-hotfix.py", line 32, in run
+    subprocess.run(command, cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('node', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_mission_requirements_runtime.js')' returned non-zero exit status 1.
+

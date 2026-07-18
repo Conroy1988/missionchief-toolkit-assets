@@ -22,3 +22,5 @@ The report must exclude usernames, alliance identifiers, addresses, coordinates,
 ## Validation
 
 Fixtures cover absent, delayed, empty, unparseable and recovered requirement sources; report sanitisation; URL-size bounds; and single-panel ownership through fallback recovery.
+
+The v4.15.4 candidate remains inside the unchanged static performance envelope at 1,899,013 source bytes and 30,979 lines. Observer, listener, timer, animation-frame and startup-hook counts remain unchanged; the required headroom was recovered through lexical formatting compaction outside strings, comments, regular expressions and template literals.

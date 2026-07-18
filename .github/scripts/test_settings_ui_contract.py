@@ -214,6 +214,8 @@ function installMissionValueWindows() {{ record("installMissionValueWindows"); }
 function clearMissionValueIndicators() {{ record("clearMissionValueIndicators"); }}
 function installMissionRequirementsWindows() {{ record("installMissionRequirementsWindows"); }}
 function clearMissionRequirementsPanels() {{ record("clearMissionRequirementsPanels"); }}
+function installCustomVehicleBadges() {{ record("installCustomVehicleBadges"); }}
+function clearCustomVehicleBadges() {{ record("clearCustomVehicleBadges"); }}
 function unlockPayoutAudio(value) {{ record("unlockPayoutAudio", value); }}
 function disposePayoutMediaAudio() {{ record("disposePayoutMediaAudio"); }}
 function runtimeClearTimeout(value) {{ record("runtimeClearTimeout", value); }}

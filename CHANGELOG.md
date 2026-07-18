@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.17.0] - 2026-07-18
+
+### Added
+- Added **Custom Vehicle Badges**: Available Units now shows each vehicle's MissionChief Own Vehicle Category as a compact badge beside the native vehicle label, for example `IRV [Railway Police Officer]`.
+- Added a stable read-only vehicle classification API keyed by vehicle ID for Mission Requirements Matrix capability matching.
+
+### Behaviour
+- Reuses the Toolkit's existing `/api/vehicles` cache and never performs a second vehicle-list request.
+- Reapplies badges after MissionChief or LSSM replaces, filters or sorts the Available Units DOM, without duplicates, repeat DOM insertion or dispatch-side effects.
+- Vehicles without an Own Vehicle Category remain unchanged.
+
+### Validation
+- Added fixture-backed classification, duplicate-prevention, category-removal and AJAX-row-replacement tests.
+
 ## [4.16.4] - 2026-07-18
 
 ### Fixed

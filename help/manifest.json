@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.16.4",
-  "toolkitVersion": "4.16.4",
+  "guideVersion": "4.17.0",
+  "toolkitVersion": "4.17.0",
   "updated": "2026-07-18",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.16.4 waits for the mission header or native requirements source before mounting during AJAX dispatch loading."
+  "runtimeGuidePatch": "Toolkit v4.17.0 adds Custom Vehicle Badges, showing compact Own Vehicle Category labels in Available Units and exposing the same vehicle-ID classification cache to the Mission Requirements Matrix."
 }

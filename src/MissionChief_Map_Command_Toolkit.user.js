@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.16.4
+// @version      4.17.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.16.4',
+        version: '4.17.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -466,6 +466,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
+        customVehicleBadgeStyleId: 'mcms-custom-vehicle-badge-style',
         helpCenterId: 'mc-map-command-toolkit-help-center',
         cleanExitId: 'mcms-clean-exit',
         styleId: 'mc-map-command-toolkit-style-v4146',
@@ -1319,6 +1320,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const missionRequirementsObservedDocuments = new WeakSet();
     const missionRequirementsObservedFrames = new WeakSet();
     const missionRequirementsRecords = new Map();
+    let customVehicleBadgeScanTimer = null;
+    let customVehicleBadgeRefreshPromise = null;
+    let customVehicleBadgeFeatureInstalled = false;
+    const customVehicleBadgeObservedDocuments = new WeakSet();
+    const customVehicleBadgeObservedFrames = new WeakSet();
+    const customVehicleClassificationCache = new Map();
+    let customVehicleClassificationRevision = -1;
     let commandBarAnimationTimer = null;
     let commandBarAnimating = false;
     let helpGuideDocumentCache = '';
@@ -1362,6 +1370,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         missionLockAudio: true,
         missionValue: true,
         missionRequirements: true,
+        customVehicleBadges: true,
         allianceCredits: false,
         allianceCreditMinimum: 0,
         missionAge: false,
@@ -1435,6 +1444,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.commandBarOpen = merged.commandBarOpen !== false;
         merged.economyMode = Boolean(merged.economyMode);
         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+        merged.customVehicleBadges = merged.customVehicleBadges !== false;
         merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
         merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
         merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
@@ -15550,6 +15560,323 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return [];
     }
 
+
+    // CUSTOM VEHICLE BADGES START
+    const CUSTOM_VEHICLE_BADGE_SELECTOR = '[data-mcms-custom-vehicle-badge="1"]';
+    const CUSTOM_VEHICLE_AVAILABLE_SELECTOR = [
+        '#vehicle_show_table_body_all .vehicle_checkbox',
+        '#vehicle_show_table_body_all [vehicle_id]',
+        '#vehicle_show_table_body_all [data-vehicle-id]',
+        '#vehicle_show_table_body_all [data-vehicle_id]',
+        '#occupied .vehicle_checkbox',
+        '#occupied [vehicle_id]',
+        '#occupied [data-vehicle-id]',
+        '#occupied [data-vehicle_id]'
+    ].join(', ');
+    const CUSTOM_VEHICLE_ROW_SELECTOR = 'tr, li, .vehicle_select_table_tr, .vehicle_select_table_body_tr, .vehicle-row, .vehicle_row, .vehicle';
+
+    function customVehicleCategoryText(value) {
+        return String(value ?? '').replace(/\s+/g, ' ').trim();
+    }
+
+    function customVehicleClassificationFromRecord(record) {
+        if (!record || typeof record !== 'object') return null;
+        const vehicleId = vehicleRecordId(record);
+        const category = customVehicleCategoryText(
+            record.vehicle_type_caption
+            ?? record.vehicleTypeCaption
+            ?? record.own_vehicle_category
+            ?? record.ownVehicleCategory
+        );
+        if (!vehicleId || !category) return null;
+        const baseTypeRaw = record.vehicle_type ?? record.vehicleType ?? record.vehicle_type_id ?? record.vehicleTypeId;
+        const baseTypeId = Number.isFinite(Number(baseTypeRaw)) ? Number(baseTypeRaw) : null;
+        const locked = Boolean(
+            record.ignore_aao
+            ?? record.ignoreAao
+            ?? record.only_dispatch_as_own_vehicle_class
+            ?? record.onlyDispatchAsOwnVehicleClass
+        );
+        return Object.freeze({ vehicleId: String(vehicleId), category, baseTypeId, locked });
+    }
+
+    function rebuildCustomVehicleClassificationCache() {
+        customVehicleClassificationCache.clear();
+        for (const record of personalVehicleApiCache.values()) {
+            const classification = customVehicleClassificationFromRecord(record);
+            if (classification) customVehicleClassificationCache.set(classification.vehicleId, classification);
+        }
+        customVehicleClassificationRevision = vehicleDataRevision;
+        return customVehicleClassificationCache;
+    }
+
+    function customVehicleClassificationForId(vehicleId) {
+        const key = String(vehicleId ?? '').trim();
+        if (!key) return null;
+        if (customVehicleClassificationRevision !== vehicleDataRevision) rebuildCustomVehicleClassificationCache();
+        return customVehicleClassificationCache.get(key) || null;
+    }
+
+    const customVehicleClassificationApi = Object.freeze({
+        get(vehicleId) {
+            const classification = customVehicleClassificationForId(vehicleId);
+            return classification ? { ...classification } : null;
+        },
+        has(vehicleId) {
+            return Boolean(customVehicleClassificationForId(vehicleId));
+        },
+        entries() {
+            if (customVehicleClassificationRevision !== vehicleDataRevision) rebuildCustomVehicleClassificationCache();
+            return Array.from(customVehicleClassificationCache.entries(), ([vehicleId, value]) => [vehicleId, { ...value }]);
+        },
+        get revision() {
+            return customVehicleClassificationRevision;
+        }
+    });
+
+    function customVehicleBadgeVehicleId(row) {
+        if (!row) return '';
+        const checkbox = row.matches?.('.vehicle_checkbox')
+            ? row
+            : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+        const resolved = missionRequirementsVehicleId(checkbox || row);
+        if (Number.isFinite(Number(resolved)) && Number(resolved) >= 0) return String(Number(resolved));
+        const link = row.matches?.('a[href*="/vehicles/"]') ? row : row.querySelector?.('a[href*="/vehicles/"]');
+        const match = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+        return match?.[1] || '';
+    }
+
+    function customVehicleBadgeRows(doc) {
+        const rows = new Set();
+        let nodes = [];
+        try { nodes = Array.from(doc?.querySelectorAll?.(CUSTOM_VEHICLE_AVAILABLE_SELECTOR) || []); } catch (err) {}
+        for (const node of nodes) {
+            const row = node?.closest?.(CUSTOM_VEHICLE_ROW_SELECTOR) || node?.parentElement || node;
+            if (row) rows.add(row);
+        }
+        return Array.from(rows);
+    }
+
+    function customVehicleBadgeHost(row) {
+        if (!row) return null;
+        const checkbox = row.matches?.('.vehicle_checkbox')
+            ? row
+            : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+        const directLabel = checkbox?.closest?.('label');
+        if (directLabel) return directLabel;
+        if (checkbox?.id) {
+            for (const label of Array.from(row.querySelectorAll?.('label') || [])) {
+                if (String(label.getAttribute?.('for') || label.htmlFor || '') === String(checkbox.id)) return label;
+            }
+        }
+        return row.querySelector?.('.vehicle_caption, .vehicle-name, .vehicle_name, [data-vehicle-caption], a[href*="/vehicles/"]')
+            || checkbox?.parentElement
+            || row;
+    }
+
+    function customVehicleBadgeRemoveRow(row) {
+        if (!row) return;
+        try { row.querySelectorAll?.(CUSTOM_VEHICLE_BADGE_SELECTOR).forEach(badge => badge.remove?.()); } catch (err) {}
+        try {
+            delete row.dataset.mcmsCustomVehicleCategory;
+            delete row.dataset.mcmsCustomVehicleLocked;
+            delete row.dataset.mcmsCustomVehicleId;
+        } catch (err) {
+            row.removeAttribute?.('data-mcms-custom-vehicle-category');
+            row.removeAttribute?.('data-mcms-custom-vehicle-locked');
+            row.removeAttribute?.('data-mcms-custom-vehicle-id');
+        }
+    }
+
+    function customVehicleBadgeApplyRow(row) {
+        if (!row) return null;
+        const vehicleId = customVehicleBadgeVehicleId(row);
+        const classification = customVehicleClassificationForId(vehicleId);
+        if (!classification) {
+            customVehicleBadgeRemoveRow(row);
+            return null;
+        }
+        const host = customVehicleBadgeHost(row);
+        const doc = row.ownerDocument || host?.ownerDocument || document;
+        if (!host?.appendChild || !doc?.createElement) return null;
+        const badges = Array.from(row.querySelectorAll?.(CUSTOM_VEHICLE_BADGE_SELECTOR) || []);
+        let badge = badges.shift() || null;
+        badges.forEach(duplicate => duplicate.remove?.());
+        if (!badge) {
+            badge = doc.createElement('span');
+            badge.setAttribute('data-mcms-custom-vehicle-badge', '1');
+            badge.setAttribute('aria-label', `Own Vehicle Category: ${classification.category}`);
+        }
+        badge.textContent = `[${classification.category}]`;
+        badge.title = `Own Vehicle Category: ${classification.category}`;
+        badge.dataset.mcmsTheme = state.uiTheme;
+        badge.dataset.mcmsVehicleId = classification.vehicleId;
+        badge.dataset.mcmsLocked = classification.locked ? 'true' : 'false';
+        if (badge.parentElement !== host) host.appendChild(badge);
+        row.dataset.mcmsCustomVehicleCategory = classification.category;
+        row.dataset.mcmsCustomVehicleLocked = classification.locked ? 'true' : 'false';
+        row.dataset.mcmsCustomVehicleId = classification.vehicleId;
+        return badge;
+    }
+
+    function customVehicleBadgeDocumentCss() {
+        return `
+${CUSTOM_VEHICLE_BADGE_SELECTOR}{display:inline-flex!important;align-items:center!important;vertical-align:middle!important;max-width:min(240px,45vw)!important;margin-inline-start:4px!important;padding:1px 4px!important;border:1px solid rgba(116,190,255,.48)!important;border-radius:999px!important;background:rgba(24,91,140,.20)!important;color:#d8efff!important;font:800 9.5px/1.25 Arial,sans-serif!important;letter-spacing:.04px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;pointer-events:none!important;box-sizing:border-box!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="mapCommand"]{border-color:rgba(103,190,255,.52)!important;background:rgba(34,107,158,.22)!important;color:#d8f1ff!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="cyberpunk"]{border-color:rgba(0,238,255,.58)!important;background:rgba(0,238,255,.12)!important;color:#8ff8ff!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="fallout4"]{border-color:rgba(164,234,101,.55)!important;background:rgba(102,180,68,.14)!important;color:#d8ffad!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="umbrella"]{border-color:rgba(214,39,50,.62)!important;background:rgba(214,39,50,.16)!important;color:#fff1f2!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="factorio"]{border-color:rgba(240,164,74,.58)!important;background:rgba(240,164,74,.14)!important;color:#ffe1b7!important;border-radius:3px!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="bond007"]{border-color:rgba(217,189,119,.58)!important;background:rgba(217,189,119,.13)!important;color:#f6e9c7!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217,183,90,.58)!important;background:rgba(110,230,214,.12)!important;color:#e8fff8!important}
+@media(max-width:767px){${CUSTOM_VEHICLE_BADGE_SELECTOR}{max-width:42vw!important;margin-inline-start:3px!important;padding:1px 3px!important;font-size:8.5px!important}}
+`;
+    }
+
+    function ensureCustomVehicleBadgeDocumentStyle(doc) {
+        if (!doc?.head?.appendChild || doc.getElementById?.(SCRIPT.customVehicleBadgeStyleId)) return;
+        const style = doc.createElement('style');
+        style.id = SCRIPT.customVehicleBadgeStyleId;
+        style.textContent = customVehicleBadgeDocumentCss();
+        doc.head.appendChild(style);
+    }
+
+    function customVehicleBadgeDocumentContexts() {
+        const docs = [];
+        const seen = new Set();
+        const add = (doc, depth = 0) => {
+            if (!doc || seen.has(doc) || depth > 3) return;
+            seen.add(doc);
+            docs.push(doc);
+            let frames = [];
+            try { frames = Array.from(doc.querySelectorAll?.('iframe, frame') || []); } catch (err) {}
+            for (const frame of frames) {
+                try { add(frame.contentDocument || frame.contentWindow?.document, depth + 1); } catch (err) {}
+            }
+        };
+        add(document);
+        return docs;
+    }
+
+    function customVehicleBadgeMutationRelevant(mutation) {
+        const target = mutation?.target;
+        if (target?.closest?.(CUSTOM_VEHICLE_BADGE_SELECTOR)) return false;
+        const selector = '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_id], [data-vehicle-id], [data-vehicle_id], a[href*="/vehicles/"]';
+        if (target?.matches?.(selector) || target?.closest?.('#vehicle_show_table_body_all, #occupied')) return true;
+        for (const node of Array.from(mutation?.addedNodes || [])) {
+            if (node?.nodeType !== 1) continue;
+            if (node.matches?.(selector) || node.querySelector?.(selector)) return true;
+        }
+        return false;
+    }
+
+    function scheduleCustomVehicleBadgeScan(delay = 35) {
+        runtimeClearTimeout(customVehicleBadgeScanTimer);
+        customVehicleBadgeScanTimer = runtimeSetTimeout(scanCustomVehicleBadges, Math.max(0, Number(delay) || 0));
+    }
+
+    function observeCustomVehicleBadgeFrame(frame) {
+        if (!frame || customVehicleBadgeObservedFrames.has(frame)) return;
+        customVehicleBadgeObservedFrames.add(frame);
+        runtimeListen(frame, 'load', () => scheduleCustomVehicleBadgeScan(20));
+    }
+
+    function observeCustomVehicleBadgeDocument(doc) {
+        if (!doc) return;
+        ensureCustomVehicleBadgeDocumentStyle(doc);
+        try { doc.querySelectorAll?.('iframe, frame').forEach(observeCustomVehicleBadgeFrame); } catch (err) {}
+        if (customVehicleBadgeObservedDocuments.has(doc)) return;
+        customVehicleBadgeObservedDocuments.add(doc);
+        const root = doc.documentElement || doc.body;
+        const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        if (!root || typeof Observer !== 'function') return;
+        const observer = runtimeTrackObserver(new Observer(mutations => {
+            if (!mutations.some(customVehicleBadgeMutationRelevant)) return;
+            try { doc.querySelectorAll?.('iframe, frame').forEach(observeCustomVehicleBadgeFrame); } catch (err) {}
+            scheduleCustomVehicleBadgeScan(25);
+        }));
+        observer.observe(root, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['id', 'class', 'vehicle_id', 'data-vehicle-id', 'data-vehicle_id', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id']
+        });
+    }
+
+    function clearCustomVehicleBadges() {
+        runtimeClearTimeout(customVehicleBadgeScanTimer);
+        customVehicleBadgeScanTimer = null;
+        for (const doc of customVehicleBadgeDocumentContexts()) {
+            try { doc.querySelectorAll?.(CUSTOM_VEHICLE_BADGE_SELECTOR).forEach(badge => badge.remove?.()); } catch (err) {}
+            try {
+                doc.querySelectorAll?.('[data-mcms-custom-vehicle-category], [data-mcms-custom-vehicle-id]').forEach(row => {
+                    row.removeAttribute?.('data-mcms-custom-vehicle-category');
+                    row.removeAttribute?.('data-mcms-custom-vehicle-locked');
+                    row.removeAttribute?.('data-mcms-custom-vehicle-id');
+                });
+            } catch (err) {}
+        }
+    }
+
+    function scanCustomVehicleBadges() {
+        customVehicleBadgeScanTimer = null;
+        const docs = customVehicleBadgeDocumentContexts();
+        if (!state.customVehicleBadges) {
+            clearCustomVehicleBadges();
+            return 0;
+        }
+        let rendered = 0;
+        for (const doc of docs) {
+            observeCustomVehicleBadgeDocument(doc);
+            for (const row of customVehicleBadgeRows(doc)) {
+                if (customVehicleBadgeApplyRow(row)) rendered += 1;
+            }
+        }
+        if (!vehicleApiReady && !customVehicleBadgeRefreshPromise) {
+            customVehicleBadgeRefreshPromise = Promise.resolve(refreshPersonalVehicleData(false))
+                .then(ok => { if (ok) scheduleCustomVehicleBadgeScan(0); return ok; })
+                .catch(() => false)
+                .finally(() => { customVehicleBadgeRefreshPromise = null; });
+        }
+        return rendered;
+    }
+
+    function installCustomVehicleBadges() {
+        if (!customVehicleBadgeFeatureInstalled) {
+            customVehicleBadgeFeatureInstalled = true;
+            runtime.customVehicleClassifications = customVehicleClassificationApi;
+            try { pageWindow.__MCMS_CUSTOM_VEHICLE_CLASSIFICATIONS__ = customVehicleClassificationApi; } catch (err) {}
+            runtimeOnCleanup(() => {
+                clearCustomVehicleBadges();
+                for (const doc of customVehicleBadgeDocumentContexts()) doc.getElementById?.(SCRIPT.customVehicleBadgeStyleId)?.remove?.();
+                if (pageWindow.__MCMS_CUSTOM_VEHICLE_CLASSIFICATIONS__ === customVehicleClassificationApi) {
+                    try { delete pageWindow.__MCMS_CUSTOM_VEHICLE_CLASSIFICATIONS__; } catch (err) { pageWindow.__MCMS_CUSTOM_VEHICLE_CLASSIFICATIONS__ = null; }
+                }
+            });
+        }
+        scheduleCustomVehicleBadgeScan(0);
+        if (!vehicleApiReady && !customVehicleBadgeRefreshPromise) {
+            customVehicleBadgeRefreshPromise = Promise.resolve(refreshPersonalVehicleData(false))
+                .then(ok => { if (ok) scheduleCustomVehicleBadgeScan(0); return ok; })
+                .catch(() => false)
+                .finally(() => { customVehicleBadgeRefreshPromise = null; });
+        }
+    }
+
+    if (pageWindow.__MCMS_TEST_HOOKS__ && typeof pageWindow.__MCMS_TEST_HOOKS__ === 'object') {
+        pageWindow.__MCMS_TEST_HOOKS__.customVehicleBadges = Object.freeze({
+            classificationFromRecord: customVehicleClassificationFromRecord,
+            rebuildCache: rebuildCustomVehicleClassificationCache,
+            classificationForId: customVehicleClassificationForId,
+            vehicleId: customVehicleBadgeVehicleId,
+            rows: customVehicleBadgeRows,
+            host: customVehicleBadgeHost,
+            applyRow: customVehicleBadgeApplyRow,
+            removeRow: customVehicleBadgeRemoveRow
+        });
+    }
+    // CUSTOM VEHICLE BADGES END
+
     function getPersonalVehicleRecords() {
         const now = Date.now();
         if (
@@ -15679,6 +16006,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             vehicleStatusLastUpdate = vehicleApiLastFetch;
             vehicleApiLastError = 0;
             vehicleDataRevision += 1;
+            rebuildCustomVehicleClassificationCache();
+            scheduleCustomVehicleBadgeScan(0);
             invalidateMarkerRegistryCaches('vehicle');
             invalidateMissionCommitmentIndex();
             rebuildMissionCommitmentIndex();
@@ -29005,6 +29334,7 @@ Create the private backup now?`);
         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
         if (feature === 'missionValue') state.missionValue = !state.missionValue;
         if (feature === 'missionRequirements') state.missionRequirements = !state.missionRequirements;
+        if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
         if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
         if (feature === 'missionSpawn') {
@@ -29047,6 +29377,11 @@ Create the private backup now?`);
             if (state.missionRequirements) installMissionRequirementsWindows();
             else clearMissionRequirementsPanels();
             showToast(state.missionRequirements ? 'Mission Requirements on' : 'Mission Requirements off');
+        }
+        if (feature === 'customVehicleBadges') {
+            if (state.customVehicleBadges) installCustomVehicleBadges();
+            else clearCustomVehicleBadges();
+            showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off');
         }
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
@@ -29941,6 +30276,7 @@ Create the private backup now?`);
                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
                     ${makeToggleButton('missionRequirements', '≡', 'Requirements', 'Show a live MissionChief requirements matrix above dispatch controls.')}
+                    ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
@@ -30599,6 +30935,8 @@ Create the private backup now?`);
             missionInspector: state.missionInspector,
             missionValue: state.missionValue,
             missionRequirements: state.missionRequirements,
+
+            customVehicleBadges: state.customVehicleBadges,
             stuckDetector: state.stuckDetector.enabled,
             missionSpawn: state.missionSpawn.enabled,
             resourceGap: state.resourceGap.enabled,
@@ -31337,6 +31675,7 @@ Create the private backup now?`);
         installCreditsUpdateHook();
         observeCreditValue();
         installMissionRequirementsWindows();
+        installCustomVehicleBadges();
         startBootAttemptCoordinator(bootPerformanceStartedAt);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {

@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
 RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
+CUSTOM_VEHICLE_BADGES_CONTRACT = ROOT / ".github/scripts/test_custom_vehicle_badges_contract.py"
 CATALOGUE_FIXTURE = ROOT / ".github/fixtures/mission-catalogue-pages.json"
 REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
 
@@ -30,6 +31,14 @@ def main() -> int:
         if runtime.stderr:
             print(runtime.stderr, end="")
         raise SystemExit("Mission requirements runtime fixtures failed")
+
+    custom_badges = subprocess.run(["python3", str(CUSTOM_VEHICLE_BADGES_CONTRACT)], cwd=ROOT, text=True, capture_output=True)
+    if custom_badges.stdout:
+        print(custom_badges.stdout, end="")
+    if custom_badges.returncode != 0:
+        if custom_badges.stderr:
+            print(custom_badges.stderr, end="")
+        raise SystemExit("Custom Vehicle Badges contract failed")
 
     required_markers = [
         "missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'",

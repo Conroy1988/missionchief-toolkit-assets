@@ -439,6 +439,7 @@ runtime = replace_once(
 
 patient_tests = r'''
 
+{
 function attachPatientSummary(candidate, totalText, detailText = '') {
     const doc = candidate.root.ownerDocument;
     const form = new FakeElement('div', doc);
@@ -562,6 +563,7 @@ assert(patientRecord.panel.innerHTML.includes('Patients'), 'patient-derived row 
 assert.strictEqual(patientRenderCandidate.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements').length, 1, 'patient demand uses the existing single Matrix panel');
 api.clear();
 candidates = [];
+}
 '''
 runtime = replace_once(runtime, "\nconst directDoc = new FakeDocument();", patient_tests + "\nconst directDoc = new FakeDocument();", "patient runtime fixtures")
 RUNTIME_TEST.write_text(runtime, encoding="utf-8")

@@ -10,7 +10,7 @@ PARTS = [
     ROOT / ".github" / "development-packages" / "issue-169-lightbox-context.part2.txt",
     ROOT / ".github" / "development-packages" / "issue-169-lightbox-context.part3.txt",
 ]
-EXPECTED_SHA256 = "ac49bd4faa68cf2b5c5d6f60a38d94d1e8dda4004057956dab2b7a2f9c17e669"
+EXPECTED_SHA256 = "7effd147e2175008628f107309553136d75c78e88483c77d252ac2ea4041198d"
 
 missing = [str(path.relative_to(ROOT)) for path in PARTS if not path.exists()]
 if missing:

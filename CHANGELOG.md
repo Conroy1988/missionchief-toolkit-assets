@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.16.1] - 2026-07-18
+
+### Fixed
+- Reworked Mission Requirements into a complete live capacity matrix with **Required**, **On site**, **Responding**, **Selected** and **Still needed** values.
+- Selected vehicles now reduce **Still needed** immediately; responding and arrived units move between mutually exclusive buckets without double-counting.
+- Added `#mission_vehicle_at_mission` observation so arrivals, departures and cancellations update the matrix dynamically.
+
+### Interface
+- Added compact red, amber, green and unresolved row states with tighter headers, rows and responsive five-metric mobile cards.
+- Preserved normal-flow mounting, collapse behaviour, Desktop/Tablet/iOS distinctions and equal treatment for all seven interface systems.
+
+### Validation
+- Added deterministic selection, dispatch, arrival, removal, cross-bucket de-duplication, uncertainty and compact-layout fixtures.
+
 ## [4.16.0] - 2026-07-18
 
 ### Added

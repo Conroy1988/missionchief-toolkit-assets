@@ -39,9 +39,9 @@ def main() -> int:
         "const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([",
         "function missionRequirementsParseText(rawText, group = 'vehicles')",
         "function missionRequirementsCapacity(min = 0, max = min, known = null)",
-        "function missionRequirementsCoverageRow(requirement, selectedCapacity, enRouteCapacity)",
+        "function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null)",
         "function missionRequirementsDefinitionCondition(definition, candidate)",
-        "function missionRequirementsResolve(candidate, parsed)",
+        "function missionRequirementsResolve(candidate, parsed, catalogue = null)",
         "function missionRequirementsOverallState(rows, unresolved)",
         "function missionRequirementsLssmActive(candidate, source)",
         "function missionRequirementsCollectUnits(candidate, mode)",
@@ -72,6 +72,7 @@ def main() -> int:
         "missionRequirementsRestoreSource(record.source)",
         "#missing_text",
         "#mission_vehicle_driving",
+        "#mission_vehicle_at_mission",
         "#vehicle_show_table_body_all",
         "#occupied",
         ".vehicle_checkbox",
@@ -113,7 +114,7 @@ def main() -> int:
     assert "position:relative!important" in panel_rule
     assert "clear:both!important" in panel_rule
     assert data["layout"]["mobileBreakpoint"].replace(" ", "") in compact_css
-    assert "grid-template-columns:repeat(4,minmax(0,1fr))" in compact_css
+    assert "grid-template-columns:repeat(5,minmax(0,1fr))" in compact_css
     assert "table-layout:fixed!important" in compact_css
     assert "overflow-wrap:anywhere!important" in compact_css
 

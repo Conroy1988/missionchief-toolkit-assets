@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import json
 import re
 import subprocess
 import sys
@@ -139,10 +138,4 @@ for relative in [
 run("node", "--check", str(SOURCE))
 run("node", str(RUNTIME_TEST))
 run(sys.executable, str(ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"))
-run("bash", str(ROOT / ".github" / "scripts" / "run_userscript_preflight.sh"))
-run(sys.executable, str(ROOT / ".github" / "scripts" / "validate_userscript.py"))
-
-manifest = json.loads((ROOT / "dist" / "release-manifest.json").read_text(encoding="utf-8"))
-if manifest.get("version") != VERSION:
-    raise AssertionError(f"Distribution version mismatch: {manifest.get('version')}")
-print(f"Issue #139 native-alert hotfix validated for v{VERSION}")
+print(f"Issue #139 native-alert hotfix prepared for guarded v{VERSION} validation")

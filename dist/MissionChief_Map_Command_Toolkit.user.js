@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.16.2
+// @version      4.16.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.16.2',
+        version: '4.16.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22895,12 +22895,40 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return current?.parentNode === root ? current : node;
     }
 
+    function missionRequirementsPlacementHostUnsafe(node, boundary = null) {
+        const unsafeTags = new Set(['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'COLGROUP']);
+        let current = node;
+        while (current && current !== boundary) {
+            if (unsafeTags.has(String(current.tagName || '').toUpperCase())) return true;
+            current = current.parentNode;
+        }
+        return false;
+    }
+
+    function missionRequirementsPlacementBlock(root, node) {
+        if (!root || !node) return null;
+        let target = node;
+        let current = node;
+        while (current && current !== root) {
+            if (String(current.tagName || '').toUpperCase() === 'TABLE') target = current;
+            current = current.parentNode;
+        }
+        const block = missionRequirementsDirectChild(root, target);
+        const parent = block?.parentNode || root;
+        if (!parent || missionRequirementsPlacementHostUnsafe(parent, root?.parentNode || null)) {
+            return { root, parent: root, before: root.firstChild || null };
+        }
+        return { root, parent, before: block };
+    }
+
     function missionRequirementsPlacement(candidate, source = null) {
         const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
         if (!root) return null;
         const native = root.matches?.('#missing_text') ? root : root.querySelector?.('#missing_text');
         const explicit = native || (missionRequirementsExplicitSource(source) && source?.getAttribute?.('data-mcms-requirements-anchor') !== '1' ? source : null);
-        if (explicit?.parentNode) return { root, parent: explicit.parentNode, before: explicit };
+        if (explicit?.parentNode) return missionRequirementsPlacementHostUnsafe(explicit.parentNode, root?.parentNode || null)
+            ? missionRequirementsPlacementBlock(root, explicit)
+            : { root, parent: explicit.parentNode, before: explicit };
         const address = root.querySelector?.('#mission_address, [data-mission-address], .mission-address, .mission_address');
         const title = root.querySelector?.('#mission_caption, #mission_name, [data-mission-title], .mission-title, .mission_caption, h1');
         const header = address || title;
@@ -22912,7 +22940,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             return { root, parent, before: index >= 0 ? (siblings[index + 1] || null) : (block?.nextSibling || null) };
         }
         const operational = root.querySelector?.('#vehicle_show_table_body_all, #mission_vehicle_driving, #mission_vehicle_at_mission, #mission_reply_content, .mission_reply_content');
-        if (operational?.parentNode) return { root, parent: operational.parentNode, before: operational };
+        if (operational?.parentNode) return missionRequirementsPlacementBlock(root, operational);
         return { root, parent: root, before: root.firstChild || null };
     }
 
@@ -22972,10 +23000,35 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsCandidateRoot(candidate) {
-        const root = candidate?.root || candidate?.mount;
-        if (!root) return null;
-        if (root.matches?.('#mission_form, form[action*="/missions/"], #mission_content')) return root;
-        return root.querySelector?.('#mission_form, form[action*="/missions/"], #mission_content') || root;
+        const missionSelector = '#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]';
+        const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog';
+        const nodes = [candidate?.source, candidate?.root, candidate?.mount].filter(Boolean);
+        const missionWithin = node => {
+            if (!node) return null;
+            if (node.matches?.(missionSelector)) return node;
+            const closest = node.closest?.(missionSelector);
+            if (closest) return closest;
+            return node.querySelector?.(missionSelector) || null;
+        };
+        for (const node of nodes) {
+            const mission = missionWithin(node);
+            if (mission) return mission;
+        }
+        for (const node of nodes) {
+            const windowRoot = node.matches?.(windowSelector) ? node : node.closest?.(windowSelector);
+            if (windowRoot) return missionWithin(windowRoot) || windowRoot;
+        }
+        for (const node of nodes) {
+            try {
+                const frame = node.ownerDocument?.defaultView?.frameElement || null;
+                if (!frame) continue;
+                const frameMission = missionWithin(frame);
+                if (frameMission) return frameMission;
+                const frameWindow = frame.matches?.(windowSelector) ? frame : frame.closest?.(windowSelector);
+                if (frameWindow) return missionWithin(frameWindow) || frameWindow;
+            } catch (err) {}
+        }
+        return candidate?.root || candidate?.mount || candidate?.source || null;
     }
 
     function missionRequirementsLooksLikeWindow(candidate) {

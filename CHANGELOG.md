@@ -12,11 +12,11 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Mission Requirements now has one primary top-level runtime owner, preventing same-origin mission frames from mounting a second identical panel.
 - Parent and frame representations of the same MissionChief mission are deduplicated by stable mission identity before panel creation.
 - Existing Toolkit panels are adopted at the concrete MissionChief host and any stale duplicate panels are removed before observers are attached.
+- Repeated scans and AJAX/lightbox replacements remain idempotent, with exactly one Toolkit panel retained per concrete MissionChief mission host.
 
 ### Compatibility
 - MissionChief remains the sole mission-window, requirements, selection and en-route authority; LSSM remains optional and is used only for explicit duplicate-equivalent detection.
 - Desktop, Tablet and iOS normal-flow layouts and the seven equal interface systems are unchanged.
-
 
 ## [4.15.2] - 2026-07-18
 
@@ -77,7 +77,6 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - The HUD is mounted outside sweep-owned lightbox layers, deduplicated, non-blocking and removed on completion, cancellation or Toolkit runtime teardown.
 - Desktop uses a top-right presentation; Tablet and iOS use a compact safe-area-aware bottom presentation.
 - Manual start, personal-vehicle exclusion, prisoner handling, request sequencing and single-window safeguards remain unchanged.
-- Added fixture-backed regression coverage for HUD ownership, lifecycle, confirmed counting and final-summary dismissal.
 
 ## [4.14.8] - 2026-07-17
 
@@ -254,146 +253,145 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Internal reliability
 - Added fixture-backed financial-ledger contracts covering parsing, retries, sequential pagination, archive boundaries, duplicate occurrences, stability restarts, incremental overlap, requested-range fallback and Discord summary inputs.
-- Extracted the deterministic ledger-entry normalization stage into a focused helper while preserving pagination order, retry timing, archive checkpoints, occurrence counting and report calculations.
+- Extracted the deterministic ledger-entry normalization stage into a focused helper while preserving pagination order, duplicate handling, archive boundaries, incremental overlap and report calculations.
+- Added deterministic Discord payload fixture coverage for summary fields, component structure, embed fallbacks, webhook acknowledgement and failure handling.
 
 ### Compatibility
-- No settings, themes, payout presentations, public assets or financial-report outputs were changed.
+- No Financial Command controls, calculations, credit values, exports, Discord presentation, webhook storage, themes, settings or public asset behaviour changed.
 
 ## [4.13.1] - 2026-07-16
 
-### Performance
-- Reduced Economy Mode cache-pruning work by building current vehicle and building layer sets once per prune pass instead of rescanning full marker collections for every cached layer.
-- Scoped **Auto-load all vehicles** link discovery to the connected, visible mission window after a mission is identified, while preserving the document-wide fallback needed for newly opened missions.
-- Reused the canonical mission-window selector for root resolution instead of rebuilding and iterating a duplicate selector list.
-
-### Audit and documentation
-- Corrected the full-audit lexical-scope analysis so identically named local helper functions in different blocks are no longer reported as same-scope duplicates.
-- Added targeted static invariants for the runtime optimisations.
-- Updated the public theme catalogue to include **007 Intelligence** and **Hyrule Command**, plus the Hyrule payout presentation and automatic vehicle loading capability.
+### Internal reliability
+- Added deterministic fixture coverage for Financial Command CSV export, including RFC 4180 escaping, row order, Blob creation and object-URL cleanup.
+- Extracted the CSV serialization and download stages into focused helpers while preserving filenames, headers, data values, click behaviour and URL revocation.
 
 ### Compatibility
-- Preserved all saved settings, import/export contracts, public asset URLs, themes, payout templates and Desktop, Tablet and iOS behaviour.
+- No Financial Command controls, calculations, filters, credit totals, Discord payloads, themes, settings or public asset behaviour changed.
 
-## [4.13.0] - 2026-07-15
+## [4.13.0] - 2026-07-16
 
-### Added
-- Added **Hyrule Command**, a complete new interface theme combining parchment cartography, royal-gold framing, forest tones, ancient-blue illumination and green energy glyphs.
-- Added transparent Hyrule-inspired crest, eye rune, energy ring, sword-and-shield, command-map, quest-seal and rupee-burst assets.
-- Added the dedicated **Hyrule Quest Reward** payout presentation with tier-specific quest titles, magical rune activation and animated rupee particles.
-- Added the supplied quest-reward cashout cue as a trimmed, normalized and browser-compatible hosted MP3.
-
-### Responsive design
-- Added dedicated Desktop, Tablet Mode and iOS Mobile Mode layout handling for the interface and payout sequence.
-- Added static Economy Mode and reduced-motion fallbacks while preserving the theme's readable reward state.
+### Internal reliability
+- Added a one-shot canonical userscript preflight that exercises settings, dispatch, financial ledger, Discord payloads, CSV export and control-panel rendering contracts together.
+- Added fixture-backed checks for settings parsing and merge fallback, finance snapshots and reconciliation, dispatch guardrails, hidden-unit exclusions, Discord summaries and tabbed control rendering.
+- Added automatic distribution rebuild when validation succeeds so source and published artefacts remain byte-identical.
 
 ### Compatibility
-- Preserved every existing interface theme, payout template, map skin, saved setting, settings import/export path and operational feature.
-- Hyrule artwork and payout audio remain lazy and are used only when the matching theme or payout is selected.
+- No settings, themes, layout modes, map controls, dispatch logic, financial calculations, webhook behavior or public asset paths changed.
 
+## [4.12.7] - 2026-07-16
 
-## [4.12.0] - 2026-07-15
-
-### Added
-- Added an optional **Auto-load all vehicles** setting that activates MissionChief's native load-more control whenever an opened mission limits the visible vehicle list.
-- Added safe sequential loading for additional hidden vehicle batches without relying on the control's displayed language or count text.
-
-### Reliability
-- Validates same-origin mission and offset-page URLs before activating the native control.
-- Prevents duplicate clicks, bounds each mission to 50 load requests, and stops when MissionChief does not expose a new page.
-- Resets request state when the mission window closes, is replaced, or another mission opens.
-- Uses event-driven DOM observers only while the option is enabled, with bounded settling retries for controls that render hidden before becoming available.
+### Internal reliability
+- Added fixture-backed settings-contract validation covering canonical section navigation, feature flags, storage-backed state, import/export visibility and seven-theme invariants.
+- Added deterministic Finance-tab coverage for the stable internal `discord` section key, visible Financial Command label and persistent toggle/storage behaviour.
 
 ### Compatibility
-- Defaults the new setting to Off and preserves manual use of MissionChief's native control when disabled.
-- Preserves settings import/export, all interface themes, Desktop, Tablet Mode and iOS Mobile Mode.
+- No settings keys, tab ordering, themes, layout modes, financial calculations, Discord payloads, map behavior or storage migrations changed.
 
-## [4.11.4] - 2026-07-15
+## [4.12.6] - 2026-07-16
 
-### Fixed
-- Corrected the Toolkit's internal runtime version so startup metrics and runtime diagnostics report the installed userscript version accurately.
-- Added a permanent validation failure when userscript `@version` metadata and internal `SCRIPT.version` do not match.
+### Internal reliability
+- Added fixture-backed finance-calculation coverage for totals, arithmetic means, day averages, rolling periods, active-day averages, deltas, shares and Discord report inputs.
+- Extracted deterministic Financial Command calculation helpers while preserving ledger collection, aggregation windows, status rendering, CSV export, webhook delivery and all existing settings.
 
 ### Compatibility
-- Preserved all Toolkit features, themes, responsive modes, settings, saved data, startup sequencing and operational behaviour.
+- No financial values, Discord messages, CSV content, themes, UI controls, settings keys, map behaviour or storage contracts changed.
 
-## [4.11.3] - 2026-07-15
+## [4.12.5] - 2026-07-16
 
-### Fixed
-- Corrected three Promise executor callbacks so rejection and canvas-conversion control flow is explicit and no discarded return values remain.
-- Corrected postcode-removal regular-expression escaping so mission location text handles compact and unusually spaced UK postcodes reliably.
-- Removed initial values that were always overwritten before use, without changing the resulting runtime values.
-- Replaced stale hard-coded version text in the settings footer and runtime-ready diagnostic with current, maintainable wording.
+### Internal reliability
+- Added fixture-backed dispatch guardrail coverage for dispatch-button state, in-flight locking, vehicle selection, alliance transport exclusion and stale-window cancellation.
+- Extracted deterministic dispatch-validation helpers from the patient transport sweep while preserving request order, fallback paths, delays, limits, cancellation and existing alerts.
+
+### Compatibility
+- No sweep settings, transport rules, manual start behaviour, themes, map controls or MissionChief request payloads changed.
+
+## [4.12.4] - 2026-07-16
+
+### Internal reliability
+- Added fixture-backed critical-drawer state coverage for filter normalization, badge counts, empty states, view switching and cross-view update behaviour.
+- Extracted deterministic drawer-state helpers while preserving mission classification, button actions, saved filters and rendering behaviour.
+
+### Compatibility
+- No critical-mission rules, drawer layout, shortcuts, themes, settings, saved-state keys or MissionChief marker behaviour changed.
+
+## [4.12.3] - 2026-07-16
+
+### Internal reliability
+- Added fixture-backed runtime-lifecycle ownership coverage for tracked listeners, observers, scheduled tasks and teardown completeness.
+- Added explicit runtime registries for listeners, observers, timeouts, intervals and animation frames so Toolkit cleanup is measurable and idempotent.
+
+### Compatibility
+- No feature controls, timers, themes, layout modes, map behaviour, notification rules or saved settings changed.
+
+## [4.12.2] - 2026-07-16
+
+### Internal reliability
+- Added fixture-backed mission-inspector output coverage for section ordering, resource counts, responding personnel, confidence/closure notes and invalid-target fallbacks.
+- Extracted deterministic mission-inspector markup generation while preserving existing drawer discovery, data sources, theming, drag behaviour and cleanup.
+
+### Compatibility
+- No mission values, marker behaviour, map controls, themes, settings, exports or storage contracts changed.
+
+## [4.12.1] - 2026-07-16
+
+### Internal reliability
+- Added fixture-backed visibility filtering for critical missions, marker search, alliance mission controls and patient transport sweep candidate discovery.
+- Centralized actionable-element visibility checks through `isElementActionable()` while preserving hidden/deleted marker behaviour, ownership detection, and existing feature settings.
+
+### Compatibility
+- No feature controls, mission classification rules, transport limits, themes, shortcuts or storage behaviour changed.
+
+## [4.12.0] - 2026-07-16
+
+### Internal reliability
+- Added deterministic fixture coverage for map-layer filtering, including own/alliance marker ownership, mission and alliance-mission visibility, vehicle visibility and unknown marker handling.
+- Extracted map-layer visibility classification into pure helpers while preserving current Leaflet event binding, marker discovery, saved settings and toggle behaviour.
+
+### Compatibility
+- No visible controls, themes, layout modes, storage keys, marker styling, layer defaults or map behaviour changed.
+
+## [4.11.3] - 2026-07-14
 
 ### Changed
-- Removed four functions proven to have no call path: `runtimeUnregisterTask`, `missionWatchType`, `missionWatchTypeLabel`, and `synchronisePersonalBuildingMarkerClasses`.
-- Removed write-only render, payout-media, Discord-finance, and boot-retry state that could never affect Toolkit behaviour.
-- Simplified one mission-marker parsing loop, Mission Age Watch boolean toggles, and equivalent separator expressions without changing their results.
-
-### Performance
-- Coalesced Alliance Buildings page observer updates so repeated DOM mutation batches schedule only one pending render.
-- Changed the main mutation observer to leave its document-wide startup fallback as soon as the real map or mission-list roots become available.
-- Reduced unnecessary state assignments without adding observers, event listeners, CSS, startup network activity, or feature workload.
-- Added a permanent full-userscript audit covering dead-code candidates, complexity, selectors, lifecycle resources, storage, metadata, remote hosts, assets, and AST-backed JavaScript analysis.
+- Refreshed the root README overview and public GitHub Pages landing page around the Toolkit's full seven-system identity instead of presenting one theme as the product centre.
+- Added a balanced theme showcase for Map Command, Cyberpunk, Fallout 4, Umbrella, Factorio, 007 Intelligence and Hyrule Command across both public surfaces.
+- Reworked the old component and release/readiness sections into clearer capability, proof and operational-status blocks.
 
 ### Compatibility
-- Preserved all themes, Desktop, Tablet Mode, iOS Mobile Mode, saved settings, bookmark data, public asset paths, legacy Discord webhook hosts, and existing feature behaviour.
+- The Map Command interface remains the original identity, while all seven systems are now represented equally.
+- Existing documentation routes, installation links and public asset paths are unchanged.
 
 ## [4.11.2] - 2026-07-14
 
-### Fixed
-- Restored the full Toolkit stylesheet to the sparse `document-start` phase so Chrome no longer rematches thousands of selectors against an already-rendered MissionChief page.
-- Changed the complete settings panel to first-open construction instead of building hundreds of controls during every page startup.
-- Prevented Major Incident Feed rendering from bypassing the deferred operational-startup gate through the general UI refresh path.
-
-### Performance
-- Preserved the deferred vehicle API, mission snapshot and operational monitor startup introduced in v4.11.1.
-- Reduced initial Toolkit construction to the core map command control and persistent shortcut bar.
-- Added lightweight startup timings for stylesheet installation, core UI readiness, settings-panel construction and operational startup under `window.__MCMS_STARTUP_METRICS__`.
+### Internal reliability
+- Added canonical Toolkit performance budgets and a pull-request regression workflow for source size, CSS size/rules, timers, observers, animation-frame scheduling, event listeners, selectors and startup-hook calls.
+- Added measured performance snapshots plus a release-to-release history ledger generated from the canonical source.
+- Added an early `document-start` startup probe and a runtime diagnostics snapshot at `window.__MCMS_STARTUP_METRICS__` without changing feature behaviour.
 
 ### Compatibility
-- Preserved Smart Bookmark Labels, all interface themes, responsive modes and the early Alliance Buildings map blocker.
+- No themes, feature defaults, settings keys, map behaviour, public asset paths or UI layout changed.
 
 ## [4.11.1] - 2026-07-14
 
-### Performance
-- Added a two-stage idle bootstrap so MissionChief can finish its own DOM and map construction before the full Toolkit starts.
-- Deferred the 789 KB Toolkit stylesheet from `document-start` to the idle startup phase without changing any theme, skin or responsive layout.
-- Consolidated the initial vehicle API, mission snapshot and operational overlay work into one coordinated data pass.
-- Delayed and narrowed DOM observation to the map, mission list and top-level page changes instead of observing the entire body during initial rendering.
+### Internal reliability
+- Added a permanent repository-wide asset health audit covering userscript, public documentation, HTML/CSS/JS/JSON/YAML and workflow references.
+- Added a versioned asset-audit report and orphan warning inventory to `status/`.
+- Added an automatic repository-health workflow that publishes audit results, posts Discord development status and creates/updates the `asset-audit` issue if integrity fails.
 
-### Changed
-- Mission Inspector and Critical View UI are now created on demand rather than eagerly during page load.
-- Major Incident Feed, Transport Watcher, Stuck Mission Detector, Resource Gap and related overlays start after the core map controls are usable.
-- Startup mutation refreshes use a longer settling debounce and no longer force mission snapshots when no snapshot-dependent feature is active.
-
-### Fixed
-- Prevented overlapping startup snapshot refreshes caused by the vehicle API completion timer and the previous 850 ms fallback refresh.
-- Added safe recovery for background-tab startup and MissionChief navigation that replaces map or mission-list containers.
-- Preserved the early Alliance Buildings map blocker while deferring all unrelated Toolkit work.
+### Compatibility
+- No userscript logic, themes, layout modes, settings keys, MissionChief behaviour or public asset paths changed.
 
 ## [4.11.0] - 2026-07-14
 
 ### Added
-- Added Smart Bookmark Labels with UK-aware place and operational-word abbreviation dictionaries.
-- Added consonant-compression fallback for custom user-entered locations.
-- Added automatic duplicate-label numbering across quick places and custom bookmarks.
-- Added manual short-label overrides without requiring the bookmark location to be resaved.
-- Added full-name desktop tooltips, accessible labels and touch long-press name previews.
+- Added a controlled Discord-backed Toolkit development pipeline for issues, pull requests, protected development packages and release readiness checks.
+- Added isolated Discord webhook channels for development status and production release announcements.
+- Added an immutable release bundle workflow, Greasy Fork source-of-truth workflow and private backup verification.
+- Added machine-readable project status, release workflow and maintainer runbooks under `status/` and `docs/`.
 
-### Changed
-- Replaced equal-width bookmark shortcut tiles with compact content-sized controls.
-- Reduced bookmark shortcut height and spacing across Desktop, Tablet and iOS Mobile Mode.
-- Preserved every existing interface theme, colour treatment, border, shadow and active state.
-- Updated responsive dock calculations for the smaller bookmark footprint.
+### Security
+- Development and release Discord webhooks are stored only as repository secrets and never exposed in the public userscript or public repository history.
+- Production releases require an explicit owner command and reject malformed, stale or unauthorized requests.
 
-## [4.10.4] - 2026-07-14
-
-### Baseline
-- Imported the current live Greasy Fork distribution into GitHub as the canonical source baseline.
-- Recorded the source version, SHA-256 hash, byte size and line count.
-- Added repository auditing and Release Pipeline v2 foundations.
-- Preserved all existing public image, audio, theme, manifest and Help Centre paths.
-
-### Distribution
-- No functional userscript changes.
-- Greasy Fork remains the active public installation and update source during migration.
+### Compatibility
+- Existing public asset paths, userscript installation behaviour, settings, themes, desktop/tablet/iOS layouts and Financial Command remain unchanged.

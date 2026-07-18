@@ -3,7 +3,7 @@ PAYLOAD = r'''    function missionRequirementsAnchorForCandidate(candidate) {
         if (!root?.ownerDocument?.createElement) return null;
         let anchor = Array.from(root.children || []).find(node => node?.getAttribute?.('data-mcms-requirements-anchor') === '1')
             || root.querySelector?.('[data-mcms-requirements-anchor="1"]');
-        if (anchor?.isConnected !== false) return anchor;
+        if (anchor && anchor.isConnected !== false) return anchor;
         anchor = root.ownerDocument.createElement('span');
         anchor.hidden = true;
         anchor.setAttribute('aria-hidden', 'true');

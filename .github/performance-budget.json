@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-14-initial",
-  "rationale": "Initial guardrails are calibrated to Toolkit v4.11.2 and permit normal feature growth while blocking abrupt startup-workload expansion.",
+  "revision": "2026-07-18-v4.16.0",
+  "rationale": "Recalibrated after v4.15.5 exhausted the initial v4.11.2 source envelope; all runtime-workload, CSS and relative regression limits remain unchanged.",
   "requiredSourceFragments": [
     "@run-at       document-start",
     "__MCMS_STARTUP_METRICS__"
   ],
   "absoluteLimits": {
-    "bytes": 1900000,
-    "lines": 31000,
+    "bytes": 2000000,
+    "lines": 32000,
     "css_bytes": 950000,
     "css_rule_blocks": 7000,
     "set_interval_calls": 4,

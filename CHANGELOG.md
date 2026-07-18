@@ -17,6 +17,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ### Safety
 - Live MissionChief `#missing_text`, en-route units and selected units remain authoritative whenever live data is available.
 - Catalogue quantities are never presented as current **Still needed** values.
+- Recalibrated the static source-size envelope after v4.15.5 exhausted the original v4.11.2 allowance; runtime, CSS and relative performance limits are unchanged.
 
 ## [4.15.5] - 2026-07-18
 

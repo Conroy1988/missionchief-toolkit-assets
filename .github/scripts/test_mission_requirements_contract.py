@@ -39,11 +39,14 @@ def main() -> int:
         "function missionRequirementsOverallState(rows, unresolved)",
         "function missionRequirementsLssmActive(candidate, source)",
         "function missionRequirementsCollectUnits(candidate, mode)",
+        "function missionRequirementsPrimaryRuntime()",
+        "function missionRequirementsMissionIdentity(candidate, source)",
         "function missionRequirementsEnsureRecord(candidate, source)",
+        "data-mcms-requirements-panel",
         "function observeMissionRequirementsDocument(doc)",
         "function installMissionRequirementsWindows()",
         "runtimeOnCleanup(() => {",
-        "source.parentNode?.insertBefore(panel, source)",
+        "source.parentNode?.insertBefore(p, source)",
         "missionRequirementsHideSource(source)",
         "missionRequirementsRestoreSource(record.source)",
         "#missing_text",
@@ -60,12 +63,13 @@ def main() -> int:
         "if (state.missionRequirements) scheduleMissionRequirementsScan(0);",
         "const activeDocuments = new WeakSet();",
     ]
-    missing = [marker for marker in required_markers if marker not in source]
+    compact_source = re.sub(r"\s+", "", source)
+    missing = [marker for marker in required_markers if marker not in source and re.sub(r"\s+", "", marker) not in compact_source]
     assert not missing, f"Missing mission requirements contract markers: {missing}"
 
     assert source.count("function installMissionRequirementsWindows()") == 1
     assert source.count("function scanMissionRequirementsWindows()") == 1
-    assert source.count("source.parentNode?.insertBefore(panel, source)") == 1
+    assert compact_source.count("source.parentNode?.insertBefore(p,source)") == 1
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
 
     for alias in data["requiredAliases"]:

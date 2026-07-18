@@ -68,6 +68,7 @@
     "Auto-load all vehicles",
     "Patient Transport Sweep",
     "Mission Value",
+    "Mission Requirements",
     "Resource Gap",
     "Economy Mode"
   ],
@@ -78,6 +79,7 @@
   "requiredFeatureNames": [
     "Mission Age Watch",
     "Mission Value",
+    "Mission Requirements",
     "Patient Transport Sweep",
     "Resource Gap",
     "Auto-load all vehicles",
@@ -94,12 +96,14 @@
     "readmeRequiredTokens": [
       "Patient Transport Sweep",
       "Mission Value",
+      "Mission Requirements",
       "Resource Gap",
       "Economy Mode",
       "saved Discord webhook",
       "seven interface systems"
     ],
     "helpRequiredTokens": [
+      "Mission Requirements",
       "Patient Transport Sweep",
       "Hyrule Command",
       "LSSM",
@@ -114,6 +118,7 @@
     "greasyForkRequiredTokens": [
       "Patient Transport Sweep",
       "Mission Value",
+      "Mission Requirements",
       "saved Discord webhook"
     ],
     "greasyForkForbiddenTokens": [

@@ -74,6 +74,7 @@ MissionChief can generate an enormous amount of operational information, but the
 | **Mission Age Watch** | Sorts and surfaces personal and alliance missions by age, ownership, category, urgency, assistance state and clearing progress. |
 | **Critical View** | Creates a concentrated workflow for missions that need immediate action. |
 | **Mission Value** | Displays a correctly formatted mission value inside opened mission windows, with dynamic clearance from native controls. |
+| **Mission Requirements** | Adds a live, normal-flow matrix of missing, en-route, still-needed and selected capacity above MissionChief dispatch controls. |
 | **Mission Inspector** | Opens deeper mission context only when requested, avoiding unnecessary startup work. |
 | **Major Incident Feed** | Places high-priority incidents in a live command feed with click-to-zoom navigation. |
 | **Transport Watcher** | Identifies missions that still require patient or prisoner transport and shows current demand. |
@@ -115,6 +116,7 @@ MissionChief can generate an enormous amount of operational information, but the
 - Mission Inspector and rapid map navigation
 - Major Incident Feed with location and incident context
 - Mission Value inside opened mission windows
+- Live Mission Requirements matrix with selected and en-route reconciliation
 - Alliance payout overlays and completion history
 
 #### Fleet workflow

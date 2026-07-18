@@ -7,7 +7,7 @@ A configurable command-centre enhancement for MissionChief, combining advanced m
 ## Main features
 
 - Advanced map controls and visibility tools
-- Mission Age Watch, Mission Value, Critical View and Mission Inspector
+- Mission Age Watch, Mission Value, live Mission Requirements, Critical View and Mission Inspector
 - Patient and prisoner transport alerts plus a manual, guarded Patient Transport Sweep for eligible alliance-member ambulances
 - Resource-gap and vehicle intelligence
 - Smart bookmarks, Map Jump and saved profiles

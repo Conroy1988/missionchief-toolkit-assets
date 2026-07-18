@@ -941,7 +941,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '4.14.4',
+        guideVersion: '4.15.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000

@@ -103,6 +103,22 @@
           ]
         },
         {
+          "name": "Mission Requirements",
+          "summary": "Shows live missing, en-route, still-needed and selected capacity inside opened MissionChief mission windows.",
+          "details": [
+            "Mounted in normal document flow above dispatch controls",
+            "Updates immediately from normal and occupied vehicle selections",
+            "Range-aware personnel, equipment, trailer and capacity-factor handling",
+            "Fails safely on unknown wording and yields to an active LSSM equivalent"
+          ],
+          "visual": "mission-requirements",
+          "tags": [
+            "missions",
+            "requirements",
+            "dispatch"
+          ]
+        },
+        {
           "name": "Major Incident Feed",
           "summary": "A live top-bar feed for major incidents with quick map navigation.",
           "details": [

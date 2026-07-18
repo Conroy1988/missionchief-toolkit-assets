@@ -1,0 +1,6 @@
+DIAGNOSTIC_V6
+exit_code=2
+--- STDOUT ---
+
+--- STDERR ---
+python3: can't open file '/tmp/issue-181-v6-zwni51x7/repository/.github/development-packages/issue-181-patient-ambulance-demand.py': [Errno 2] No such file or directory

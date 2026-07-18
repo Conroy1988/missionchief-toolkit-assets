@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.3
+// @version      4.15.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -490,7 +490,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.3',
+        version: '4.15.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22556,11 +22556,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
     function missionRequirementsSourceForCandidate(candidate) {
-        if (candidate?.source && candidate.source.isConnected !== false) return candidate.source;
         const root = candidate?.root;
-        if (!root?.querySelector) return null;
-        if (root.matches?.('#missing_text')) return root;
-        return root.querySelector('#missing_text');
+        const supplied = candidate?.source;
+        const suppliedIsAnchor = supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1';
+        if (supplied && supplied.isConnected !== false && !suppliedIsAnchor) return supplied;
+        if (!root?.querySelector) return supplied?.isConnected !== false ? supplied : null;
+        const native = root.matches?.('#missing_text') ? root : root.querySelector('#missing_text');
+        return native || (supplied?.isConnected !== false ? supplied : null);
     }
 
     function missionRequirementsCandidateFromSource(source) {
@@ -22581,10 +22583,41 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { root, mount: root, source, directMissionRequirements: true };
     }
 
-    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}function missionRequirementsWindowCandidates(){const a=[],s=new Set(),add=c=>{const x=missionRequirementsSourceForCandidate(c);if(x&&x.isConnected!==false&&!s.has(x)){s.add(x);a.push({...c,source:x})}};missionValueWindowCandidates().forEach(add);for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(d?.querySelectorAll)for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x))}const ids=new Set();return a.sort((x,y)=>2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.source)-isVisible(x.source)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}
+    function missionRequirementsAnchorForCandidate(candidate) {
+        const root = candidate?.root || candidate?.mount;
+        if (!root?.ownerDocument?.createElement) return null;
+        let anchor = Array.from(root.children || []).find(node => node?.getAttribute?.('data-mcms-requirements-anchor') === '1')
+            || root.querySelector?.('[data-mcms-requirements-anchor="1"]');
+        if (anchor && anchor.isConnected !== false) return anchor;
+        anchor = root.ownerDocument.createElement('span');
+        anchor.hidden = true;
+        anchor.setAttribute('aria-hidden', 'true');
+        anchor.setAttribute('data-mcms-requirements-anchor', '1');
+        root.insertBefore?.(anchor, root.firstChild || null);
+        return anchor;
+    }
+
+    function missionRequirementsCandidateRoot(candidate) {
+        const root = candidate?.root || candidate?.mount;
+        if (!root) return null;
+        if (root.matches?.('#mission_form, form[action*="/missions/"], #mission_content')) return root;
+        return root.querySelector?.('#mission_form, form[action*="/missions/"], #mission_content') || root;
+    }
+
+    function missionRequirementsLooksLikeWindow(candidate) {
+        const root = missionRequirementsCandidateRoot(candidate);
+        if (!root?.querySelector) return false;
+        if (missionRequirementsMissionIdentity({ ...candidate, root }, missionRequirementsSourceForCandidate({ ...candidate, root })) > 0) return true;
+        if (root.matches?.('#mission_form, form[action*="/missions/"], #mission_content')) return true;
+        return Boolean(root.querySelector('#vehicle_show_table_body_all, #mission_vehicle_driving, .vehicle_checkbox, [mission_type_id], [data-mission-type-id]'));
+    }
+
+    function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}
+    function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}
+    function missionRequirementsWindowCandidates(){const a=[],s=new Set(),roots=new Set(),add=(c,trusted=false)=>{const root=missionRequirementsCandidateRoot(c);if(!root||roots.has(root))return;let x=missionRequirementsSourceForCandidate({...c,root});if(!x){if(!trusted&&!missionRequirementsLooksLikeWindow({...c,root}))return;x=missionRequirementsAnchorForCandidate({...c,root})}if(!x||x.isConnected===false||s.has(x))return;roots.add(root);s.add(x);a.push({...c,root,mount:c?.mount||root,source:x})};missionValueWindowCandidates().forEach(c=>add(c,true));for(const c of transportSweepDocumentContexts()){const d=c?.doc;if(!d?.querySelectorAll)continue;for(const x of d.querySelectorAll('#missing_text'))add(missionRequirementsCandidateFromSource(x),true);for(const r of d.querySelectorAll('#mission_form, form[action*="/missions/"], #mission_content'))add({root:r,mount:r},false)}const ids=new Set();return a.sort((x,y)=>4*((y.source?.getAttribute?.('data-mcms-requirements-anchor')!=='1')-(x.source?.getAttribute?.('data-mcms-requirements-anchor')!=='1'))+2*(missionRequirementsRecords.has(y.source)-missionRequirementsRecords.has(x.source))+isVisible(y.root)-isVisible(x.root)).filter(c=>{const id=missionRequirementsMissionIdentity(c,c.source);return!id||!ids.has(id)&&(ids.add(id),true)})}
 
     function missionRequirementsDocumentCss() {
-        return `#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}[data-mcms-requirements-source-hidden="1"]{display:none!important}#${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}#${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}#${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 10px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:48%!important;padding:4px 8px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:11px!important;line-height:1.2!important;font-weight:800!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;height:28px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 14px/1 Arial,sans-serif!important;cursor:pointer!important}#${SCRIPT.missionRequirementsPanelId}.mcms-collapsed .mcms-req-body{display:none!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,430px)!important;overflow:auto!important;overscroll-behavior:contain!important}#${SCRIPT.missionRequirementsPanelId} table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-name-col{width:52%!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-number-col{width:12%!important}#${SCRIPT.missionRequirementsPanelId} thead th{position:sticky!important;top:0!important;z-index:2!important;padding:7px 8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:10.5px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.2px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} thead th:first-child{text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.075)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:13px!important;line-height:1.25!important;vertical-align:middle!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{font-weight:800!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:750!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.07)!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="unresolved"] td{background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-still{font-size:14px!important;font-weight:950!important;color:var(--mcms-req-state)!important}#${SCRIPT.missionRequirementsPanelId} tr[data-row-state="covered"] .mcms-req-still{color:#7ce4a8!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown{display:grid!important;gap:5px!important;padding:8px 12px 10px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown b{color:#ffd18a!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.25px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.35!important;overflow-wrap:anywhere!important}@media(max-width:767px){#${SCRIPT.missionRequirementsPanelId}{margin-bottom:8px!important;border-radius:8px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:8px!important;gap:7px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:13px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:44%!important;font-size:9.5px!important;padding:3px 6px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(48vh,470px)!important;padding:7px!important}#${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}#${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}#${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:0 0 7px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-req-state)!important;border-radius:7px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:44px!important;padding:6px 4px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;white-space:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:8px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:13px!important;text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:8.5px!important;line-height:1.05!important;font-weight:850!important;letter-spacing:.15px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important}}`;
+        return `#${SCRIPT.missionRequirementsPanelId}{--mcms-req-accent:#6fd7ff;--mcms-req-surface:#101820;--mcms-req-surface-2:#17242f;--mcms-req-border:rgba(111,215,255,.38);--mcms-req-text:#eef9ff;--mcms-req-muted:#a9bdc8;display:block!important;position:relative!important;clear:both!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;margin:0 0 10px!important;border:1px solid var(--mcms-req-border)!important;border-left:4px solid var(--mcms-req-state,#ef5350)!important;border-radius:10px!important;background:linear-gradient(145deg,var(--mcms-req-surface),var(--mcms-req-surface-2))!important;color:var(--mcms-req-text)!important;box-shadow:0 7px 18px rgba(0,0,0,.22)!important;overflow:hidden!important;font-family:Arial,Helvetica,sans-serif!important;z-index:auto!important}[data-mcms-requirements-source-hidden="1"]{display:none!important}#${SCRIPT.missionRequirementsPanelId}[data-state="danger"]{--mcms-req-state:#ef5350}#${SCRIPT.missionRequirementsPanelId}[data-state="warning"]{--mcms-req-state:#ffb74d}#${SCRIPT.missionRequirementsPanelId}[data-state="success"]{--mcms-req-state:#4dd68a}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="cyberpunk"]{--mcms-req-accent:#00f0ff;--mcms-req-surface:#080b12;--mcms-req-surface-2:#111725;--mcms-req-border:rgba(0,240,255,.50);border-radius:2px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="fallout4"]{--mcms-req-accent:#c8ff8b;--mcms-req-surface:#071008;--mcms-req-surface-2:#172817;--mcms-req-border:rgba(164,234,101,.48);--mcms-req-text:#d8ffad;--mcms-req-muted:#91b978}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="umbrella"]{--mcms-req-accent:#f4f6f8;--mcms-req-surface:#101114;--mcms-req-surface-2:#1c1d21;--mcms-req-border:rgba(214,39,50,.55)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="factorio"]{--mcms-req-accent:#f0a44a;--mcms-req-surface:#171717;--mcms-req-surface-2:#2a2824;--mcms-req-border:rgba(240,164,74,.48);border-radius:4px!important}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="bond007"]{--mcms-req-accent:#d9bd77;--mcms-req-surface:#090a0c;--mcms-req-surface-2:#17191e;--mcms-req-border:rgba(217,189,119,.45)}#${SCRIPT.missionRequirementsPanelId}[data-mcms-theme="hyrule"]{--mcms-req-accent:#6ee6d6;--mcms-req-surface:#10231d;--mcms-req-surface-2:#17352b;--mcms-req-border:rgba(217,183,90,.48)}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important;padding:9px 12px!important;border-bottom:1px solid rgba(255,255,255,.10)!important;background:rgba(0,0,0,.16)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;flex:1 1 auto!important;font-size:15px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.15px!important;color:var(--mcms-req-text)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title i{display:block!important;width:8px!important;height:8px!important;flex:0 0 8px!important;border-radius:50%!important;background:var(--mcms-req-state)!important;box-shadow:0 0 10px color-mix(in srgb,var(--mcms-req-state) 65%,transparent)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{flex:0 1 auto!important;min-width:0!important;max-width:48%!important;padding:4px 8px!important;border:1px solid color-mix(in srgb,var(--mcms-req-state) 52%,transparent)!important;border-radius:999px!important;color:var(--mcms-req-text)!important;background:color-mix(in srgb,var(--mcms-req-state) 15%,transparent)!important;font-size:11px!important;line-height:1.2!important;font-weight:800!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-collapse{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;height:28px!important;padding:0!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:7px!important;background:rgba(255,255,255,.07)!important;color:var(--mcms-req-text)!important;font:900 14px/1 Arial,sans-serif!important;cursor:pointer!important}#${SCRIPT.missionRequirementsPanelId}.mcms-collapsed .mcms-req-body{display:none!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(42vh,430px)!important;overflow:auto!important;overscroll-behavior:contain!important}#${SCRIPT.missionRequirementsPanelId} table{width:100%!important;max-width:100%!important;border-collapse:separate!important;border-spacing:0!important;table-layout:fixed!important;margin:0!important;background:transparent!important;color:inherit!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-name-col{width:52%!important}#${SCRIPT.missionRequirementsPanelId} col.mcms-req-number-col{width:12%!important}#${SCRIPT.missionRequirementsPanelId} thead th{position:sticky!important;top:0!important;z-index:2!important;padding:7px 8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.12)!important;background:color-mix(in srgb,var(--mcms-req-surface-2) 94%,black)!important;color:var(--mcms-req-muted)!important;font-size:10.5px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.2px!important;text-transform:uppercase!important;white-space:normal!important;text-align:center!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} thead th:first-child{text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:8px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.075)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:13px!important;line-height:1.25!important;vertical-align:middle!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{font-weight:800!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:750!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.07)!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="partial"] td:first-child{color:#ffd18a!important}#${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="unresolved"] td{background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-still{font-size:14px!important;font-weight:950!important;color:var(--mcms-req-state)!important}#${SCRIPT.missionRequirementsPanelId} tr[data-row-state="covered"] .mcms-req-still{color:#7ce4a8!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown{display:grid!important;gap:5px!important;padding:8px 12px 10px!important;border-top:1px solid rgba(255,183,77,.22)!important;background:rgba(255,183,77,.06)!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown b{color:#ffd18a!important;font-size:11px!important;text-transform:uppercase!important;letter-spacing:.25px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown span{color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.35!important;overflow-wrap:anywhere!important}@media(max-width:767px){#${SCRIPT.missionRequirementsPanelId}{margin-bottom:8px!important;border-radius:8px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-head{padding:8px!important;gap:7px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-title{font-size:13px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-summary{max-width:44%!important;font-size:9.5px!important;padding:3px 6px!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-body{max-height:min(48vh,470px)!important;padding:7px!important}#${SCRIPT.missionRequirementsPanelId} table,#${SCRIPT.missionRequirementsPanelId} tbody{display:block!important;width:100%!important}#${SCRIPT.missionRequirementsPanelId} colgroup,#${SCRIPT.missionRequirementsPanelId} thead{display:none!important}#${SCRIPT.missionRequirementsPanelId} tbody tr{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:0!important;margin:0 0 7px!important;border:1px solid rgba(255,255,255,.11)!important;border-left:3px solid var(--mcms-req-state)!important;border-radius:7px!important;background:rgba(255,255,255,.035)!important;overflow:hidden!important}#${SCRIPT.missionRequirementsPanelId} tbody tr:last-child{margin-bottom:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:44px!important;padding:6px 4px!important;border:0!important;border-right:1px solid rgba(255,255,255,.07)!important;font-size:12px!important;white-space:normal!important}#${SCRIPT.missionRequirementsPanelId} tbody td:last-child{border-right:0!important}#${SCRIPT.missionRequirementsPanelId} tbody td:first-child{grid-column:1/-1!important;display:block!important;min-height:0!important;padding:8px!important;border-right:0!important;border-bottom:1px solid rgba(255,255,255,.09)!important;font-size:13px!important;text-align:left!important}#${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child)::before{content:attr(data-label)!important;display:block!important;margin-bottom:2px!important;color:var(--mcms-req-muted)!important;font-size:8.5px!important;line-height:1.05!important;font-weight:850!important;letter-spacing:.15px!important;text-transform:uppercase!important;text-align:center!important;white-space:normal!important}}#${SCRIPT.missionRequirementsPanelId} .mcms-req-fallback{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:12px!important;color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.4!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-fallback-message{min-width:0!important;overflow-wrap:anywhere!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-report{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;padding:6px 10px!important;border:1px solid rgba(255,183,77,.58)!important;border-radius:7px!important;background:rgba(255,183,77,.14)!important;color:#ffe0aa!important;font:800 11px/1.2 Arial,sans-serif!important;cursor:pointer!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-unknown .mcms-req-report{justify-self:start!important;margin-top:2px!important}@media(max-width:767px){#${SCRIPT.missionRequirementsPanelId} .mcms-req-fallback{align-items:stretch!important;flex-direction:column!important}#${SCRIPT.missionRequirementsPanelId} .mcms-req-report{align-self:flex-start!important}}`;
     }
 
     function ensureMissionRequirementsDocumentStyle(doc) {
@@ -22625,12 +22658,127 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             return `<tr data-row-state="${rowState}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Missing on mission">${row.missing.toLocaleString('en-GB')}</td><td data-label="En-route">${escapeHtml(row.enRouteText)}</td><td class="mcms-req-still" data-label="Still needed">${escapeHtml(row.stillNeededText)}</td><td data-label="Selected">${escapeHtml(row.selectedText)}</td></tr>`;
         }).join('');
         const unknownHtml = unresolved.length
-            ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}</div>`
+            ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}<button type="button" class="mcms-req-report" data-mcms-report-mission>Report Mission</button></div>`
             : '';
         return {
             stateName,
             html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Missing on mission</th><th scope="col">En-route</th><th scope="col">Still needed</th><th scope="col">Selected</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
         };
+    }
+
+    function missionRequirementsSafeDiagnostic(value, limit = 600) {
+        let text = String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+        text = text
+            .replace(/https?:\/\/(?:discord(?:app)?\.com\/api\/webhooks|[^\s/]+\/webhooks)\/\S+/gi, '[redacted webhook]')
+            .replace(/\b(?:csrf|authenticity|authorization|session|cookie|token|password|secret|api[_-]?key)\b\s*[:=]\s*[^\s,;]+/gi, match => `${match.split(/[:=]/)[0]}: [redacted]`)
+            .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
+            .replace(/-?\d{1,3}\.\d{4,}\s*[,/]\s*-?\d{1,3}\.\d{4,}/g, '[redacted coordinates]');
+        return text.slice(0, Math.max(0, limit));
+    }
+
+    function missionRequirementsTypeSummary(units) {
+        const counts = new Map();
+        for (const unit of units || []) if (Number.isFinite(unit?.typeId) && unit.typeId >= 0) counts.set(unit.typeId, (counts.get(unit.typeId) || 0) + 1);
+        return Array.from(counts.entries()).sort((a, b) => a[0] - b[0]).map(([type, count]) => `${type}×${count}`).join(', ') || 'None detected';
+    }
+
+    function missionRequirementsMissionTitle(record) {
+        const root = record?.candidate?.root || record?.candidate?.mount;
+        const node = root?.querySelector?.('[data-mission-title], #mission_name, .mission-title, .mission_caption, h1');
+        return missionRequirementsSafeDiagnostic(node?.getAttribute?.('data-mission-title') || node?.textContent || node?.innerText || '', 100);
+    }
+
+    function missionRequirementsReportUrl(record, reason = 'unknown') {
+        const candidate = record?.candidate || {};
+        const source = record?.source;
+        const root = candidate.root || candidate.mount;
+        const doc = source?.ownerDocument || root?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const missionId = missionRequirementsMissionIdentity(candidate, source) || 'Unknown';
+        const title = missionRequirementsMissionTitle(record);
+        const missionType = missionRequirementsMissionTypeId(candidate);
+        const raw = source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? '' : missionRequirementsElementText(source);
+        let parsed = { requirements: [], unresolved: [] };
+        try { if (raw) parsed = missionRequirementsParseSource(source); } catch (err) {}
+        const selected = missionRequirementsCollectUnits(candidate, 'selected');
+        const enRoute = missionRequirementsCollectUnits(candidate, 'enroute');
+        const classes = Array.from(source?.classList || []).filter(value => /^[A-Za-z0-9_-]{1,40}$/.test(value)).slice(0, 8).join(' ');
+        const count = selector => { try { return root?.querySelectorAll?.(selector)?.length || 0; } catch (err) { return 0; } };
+        const platform = missionRequirementsSafeDiagnostic(view?.navigator?.userAgentData?.platform || view?.navigator?.platform || 'Unknown', 80);
+        const mobile = view?.navigator?.userAgentData?.mobile === true ? 'yes' : 'no/unknown';
+        const path = missionRequirementsSafeDiagnostic(view?.location?.pathname || '', 180);
+        const mode = state.uiMode || state.operatingMode || (Number(view?.innerWidth) <= 767 ? 'mobile' : Number(view?.innerWidth) <= 1180 ? 'tablet' : 'desktop');
+        const fields = [
+            '## Automatically harvested Mission Requirements diagnostic',
+            '',
+            '> Review this report before submitting. No GitHub token, cookies, chat, coordinates, addresses, vehicle IDs or authentication data are included.',
+            '',
+            `- **Failure reason:** ${missionRequirementsSafeDiagnostic(reason, 120) || 'Unknown'}`,
+            `- **Mission ID:** ${missionId}`,
+            `- **Mission title:** ${title || 'Unavailable'}`,
+            `- **Mission type ID:** ${missionType ?? 'Unavailable'}`,
+            `- **MissionChief path:** ${path || 'Unavailable'}`,
+            `- **Toolkit version:** ${SCRIPT.version}`,
+            `- **Layout:** ${missionRequirementsSafeDiagnostic(mode, 40)}`,
+            `- **Viewport:** ${Number(view?.innerWidth) || 0}×${Number(view?.innerHeight) || 0}`,
+            `- **Platform:** ${platform}; mobile=${mobile}`,
+            '',
+            '### Requirement source',
+            `- Present: ${source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? 'No' : 'Yes'}`,
+            `- Element: ${missionRequirementsSafeDiagnostic(source?.tagName || 'Unavailable', 30)}#${missionRequirementsSafeDiagnostic(source?.id || '', 60)}`,
+            `- Classes: ${missionRequirementsSafeDiagnostic(classes, 180) || 'None'}`,
+            `- Typed groups: ${count('[data-requirement-type]')}`,
+            `- Parsed rows: ${parsed.requirements.length}`,
+            `- Unresolved fragments: ${parsed.unresolved.length}`,
+            '',
+            '### Native selector counts',
+            `- missing_text: ${count('#missing_text')}`,
+            `- selected checkboxes: ${count('.vehicle_checkbox:checked')}`,
+            `- en-route rows: ${count('#mission_vehicle_driving tbody tr')}`,
+            `- selected vehicle types: ${missionRequirementsTypeSummary(selected)}`,
+            `- en-route vehicle types: ${missionRequirementsTypeSummary(enRoute)}`,
+            '',
+            '### Visible requirement text',
+            '```text',
+            missionRequirementsSafeDiagnostic(raw, 1200) || 'Unavailable',
+            '```'
+        ];
+        const issueTitle = `Mission requirements missing: ${title || `Mission ${missionId}`}`.slice(0, 180);
+        let body = fields.join('\n');
+        const build = () => {
+            const params = new URLSearchParams({ title: issueTitle, labels: 'Mission Info Missing', body });
+            return `https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new?${params.toString()}`;
+        };
+        let url = build();
+        while (url.length > 7600 && body.length > 1800) {
+            body = `${body.slice(0, Math.max(1500, body.length - 500))}\n\n_Report shortened to fit GitHub's issue URL limit._`;
+            url = build();
+        }
+        return url;
+    }
+
+    function missionRequirementsFallbackHtml(kind) {
+        const loading = kind === 'loading';
+        const empty = kind === 'empty';
+        const message = loading ? 'Loading mission requirements…' : empty ? 'No outstanding requirements reported by MissionChief.' : 'Unable to pull mission requirements';
+        const summary = loading ? 'Loading' : empty ? 'No outstanding requirements' : 'Requirements unavailable';
+        const report = loading || empty ? '' : '<button type="button" class="mcms-req-report" data-mcms-report-mission>Report Mission</button>';
+        return { stateName: 'warning', html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${summary}</span></div><div class="mcms-req-fallback"><span class="mcms-req-fallback-message">${message}</span>${report}</div>` };
+    }
+
+    function missionRequirementsPresent(record, presentation, reason = '') {
+        record.panel.dataset.state = presentation.stateName;
+        record.panel.dataset.mcmsTheme = state.uiTheme;
+        if (reason) record.panel.dataset.mcmsReportReason = reason;
+        else delete record.panel.dataset.mcmsReportReason;
+        setInnerHtmlIfChanged(record.panel, presentation.html);
+        const collapse = record.panel.querySelector('[data-mcms-requirements-collapse]');
+        if (collapse) {
+            const expanded = !record.panel.classList.contains('mcms-collapsed');
+            collapse.setAttribute('aria-expanded', String(expanded));
+            collapse.setAttribute('aria-label', expanded ? 'Collapse mission requirements' : 'Expand mission requirements');
+            collapse.textContent = expanded ? '⌃' : '⌄';
+        }
     }
 
     function missionRequirementsRenderRecord(record) {
@@ -22642,23 +22790,33 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             missionRequirementsRemoveRecord(record.source);
             return;
         }
-        const parsed = missionRequirementsParseSource(record.source);
-        if (!parsed.requirements.length && !parsed.unresolved.length) {
-            missionRequirementsRemoveRecord(record.source);
+        const age = Date.now() - (record.startedAt || Date.now());
+        const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1';
+        if (anchor) {
+            missionRequirementsRestoreSource(record.source);
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'error'), age < 1200 ? '' : 'requirement source absent');
             return;
         }
-        const rows = missionRequirementsResolve(record.candidate, parsed);
-        const presentation = missionRequirementsPanelHtml(rows, parsed.unresolved);
-        record.panel.dataset.state = presentation.stateName;
-        record.panel.dataset.mcmsTheme = state.uiTheme;
-        setInnerHtmlIfChanged(record.panel, presentation.html);
-        const collapse = record.panel.querySelector('[data-mcms-requirements-collapse]');
-        if (collapse) {
-            const expanded = !record.panel.classList.contains('mcms-collapsed');
-            collapse.setAttribute('aria-expanded', String(expanded));
-            collapse.setAttribute('aria-label', expanded ? 'Collapse mission requirements' : 'Expand mission requirements');
-            collapse.textContent = expanded ? '⌃' : '⌄';
+        const raw = missionRequirementsElementText(record.source);
+        if (!raw) {
+            missionRequirementsRestoreSource(record.source);
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty'));
+            return;
         }
+        let parsed;
+        try { parsed = missionRequirementsParseSource(record.source); }
+        catch (err) {
+            missionRequirementsRestoreSource(record.source);
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml('error'), `parser exception: ${err?.message || 'unknown'}`);
+            return;
+        }
+        if (!parsed.requirements.length) {
+            missionRequirementsRestoreSource(record.source);
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml('error'), parsed.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected');
+            return;
+        }
+        missionRequirementsHideSource(record.source);
+        missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, parsed), parsed.unresolved), parsed.unresolved.length ? 'partially unresolved requirement text' : '');
     }
 
     function missionRequirementsScheduleRecord(record) {
@@ -22673,22 +22831,27 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const panel = record?.panel;
         const target = mutation?.target;
         if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
-        const selector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        const selector = '#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
         return mutationTouchesSelector(mutation, selector);
     }
 
-    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}function missionRequirementsBindPanel(p){if(!p||p.getAttribute?.('data-mcms-requirements-collapse-bound'))return;p.setAttribute?.('data-mcms-requirements-collapse-bound','1');p.addEventListener('click',e=>{const b=e.target?.closest?.('[data-mcms-requirements-collapse]');if(!b)return;const c=p.classList.toggle('mcms-collapsed');b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand mission requirements':'Collapse mission requirements');b.textContent=c?'⌄':'⌃'})}function missionRequirementsEnsureRecord(candidate,source){let r=missionRequirementsRecords.get(source),p=missionRequirementsCanonicalPanel(source,r?.panel?.isConnected?r.panel:null);if(r&&p){r.panel=p;r.candidate=candidate;missionRequirementsBindPanel(p);missionRequirementsHideSource(source);missionRequirementsScheduleRecord(r);return r}if(r)missionRequirementsRemoveRecord(source);const d=source.ownerDocument||document;for(const[x]of missionRequirementsRecords)if(x!==source&&x.ownerDocument===d)missionRequirementsRemoveRecord(x);ensureMissionRequirementsDocumentStyle(d);p=missionRequirementsCanonicalPanel(source);if(!p){p=d.createElement('section');p.id=SCRIPT.missionRequirementsPanelId;p.setAttribute('data-mcms-requirements-panel','1');p.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(p,source)}p.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(p);missionRequirementsHideSource(source);r={candidate,source,panel:p};const root=candidate.root?.isConnected?candidate.root:candidate.mount,O=d.defaultView?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(root&&typeof O==='function'){r.observer=runtimeTrackObserver(new O(ms=>ms.some(m=>missionRequirementsMutationRelevant(r,m))&&missionRequirementsScheduleRecord(r)));r.observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']})}missionRequirementsRecords.set(source,r);missionRequirementsScheduleRecord(r);return r}
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}
+    function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}
+    function missionRequirementsBindPanel(p){if(!p||p.getAttribute?.('data-mcms-requirements-collapse-bound'))return;p.setAttribute?.('data-mcms-requirements-collapse-bound','1');p.addEventListener('click',e=>{const report=e.target?.closest?.('[data-mcms-report-mission]');if(report){const r=Array.from(missionRequirementsRecords.values()).find(x=>x.panel===p);const url=missionRequirementsReportUrl(r,p.dataset.mcmsReportReason||'unresolved requirement text');const opened=pageWindow.open?.(url,'_blank','noopener,noreferrer');try{if(opened)opened.opener=null}catch(err){}return}const b=e.target?.closest?.('[data-mcms-requirements-collapse]');if(!b)return;const c=p.classList.toggle('mcms-collapsed');b.setAttribute('aria-expanded',String(!c));b.setAttribute('aria-label',c?'Expand mission requirements':'Collapse mission requirements');b.textContent=c?'⌄':'⌃'})}
+    function missionRequirementsEnsureRecord(candidate,source){let r=missionRequirementsRecords.get(source),p=missionRequirementsCanonicalPanel(source,r?.panel?.isConnected?r.panel:null);if(r&&p){r.panel=p;r.candidate=candidate;missionRequirementsBindPanel(p);missionRequirementsScheduleRecord(r);return r}if(r)missionRequirementsRemoveRecord(source);const d=source.ownerDocument||document;for(const[x]of missionRequirementsRecords)if(x!==source&&x.ownerDocument===d)missionRequirementsRemoveRecord(x);ensureMissionRequirementsDocumentStyle(d);p=missionRequirementsCanonicalPanel(source);if(!p){p=d.createElement('section');p.id=SCRIPT.missionRequirementsPanelId;p.setAttribute('data-mcms-requirements-panel','1');p.setAttribute('aria-label','Live mission requirements');source.parentNode?.insertBefore(p,source)}p.dataset.mcmsTheme=state.uiTheme;missionRequirementsBindPanel(p);r={candidate,source,panel:p,startedAt:Date.now()};const root=candidate.root?.isConnected?candidate.root:candidate.mount,O=d.defaultView?.MutationObserver||pageWindow.MutationObserver||MutationObserver;if(root&&typeof O==='function'){r.observer=runtimeTrackObserver(new O(ms=>ms.some(m=>missionRequirementsMutationRelevant(r,m))&&missionRequirementsScheduleRecord(r)));r.observer.observe(root,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['checked','class','style','vehicle_type_id','data-vehicle-type-id','data-vehicle_type_id','data-equipment-types','data-equipment-type','data-current-personnel','data-min-personnel','data-max-personnel','tractive_vehicle_id','data-tractive-vehicle-id','trailer_id','data-trailer-id','sortvalue']})}missionRequirementsRecords.set(source,r);missionRequirementsScheduleRecord(r);return r}
 
     function missionRequirementsRemoveRecord(source) {
         const record = missionRequirementsRecords.get(source);
         if (!record) {
             missionRequirementsRestoreSource(source);
+            if (source?.getAttribute?.('data-mcms-requirements-anchor') === '1') source.remove?.();
             return;
         }
         if (record.frame) runtimeCancelAnimationFrame(record.frame);
         runtimeUntrackObserver(record.observer);
         try { record.panel?.remove(); } catch (err) {}
         missionRequirementsRestoreSource(record.source);
+        if (record.source?.getAttribute?.('data-mcms-requirements-anchor') === '1') record.source.remove?.();
         missionRequirementsRecords.delete(source);
     }
 
@@ -22698,6 +22861,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             try {
                 context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
                 context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+                context.doc.querySelectorAll?.('[data-mcms-requirements-anchor="1"]').forEach(anchor => anchor.remove());
             } catch (err) {}
         }
     }
@@ -22719,7 +22883,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const activeSources = new Set();
         const activeDocuments = new WeakSet();
         for (const candidate of missionRequirementsWindowCandidates()) {
-            const source = missionRequirementsSourceForCandidate(candidate);
+            const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
             if (!source || source.isConnected === false) continue;
             const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
             if (!doc || activeDocuments.has(doc)) continue;
@@ -22729,13 +22893,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 missionRequirementsRemoveRecord(source);
                 continue;
             }
-            const raw = missionRequirementsElementText(source);
-            if (!raw) {
-                missionRequirementsRemoveRecord(source);
-                continue;
-            }
             activeSources.add(source);
-            missionRequirementsEnsureRecord(candidate, source);
+            missionRequirementsEnsureRecord({ ...candidate, source }, source);
         }
         for (const source of Array.from(missionRequirementsRecords.keys())) {
             if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
@@ -22768,7 +22927,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }, true);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#missing_text, #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
         const view = doc.defaultView || pageWindow;
         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
@@ -22802,6 +22961,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         scheduleMissionRequirementsScan(0);
         runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
         runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 1600);
     }
 
     function criticalMissionValueForEntry(entry) {

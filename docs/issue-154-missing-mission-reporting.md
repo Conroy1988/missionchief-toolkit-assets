@@ -17,7 +17,7 @@ The failure and partially unresolved states expose a compact `Report Mission` co
 
 The report may include mission ID, title, mission type ID, MissionChief pathname, Toolkit version, layout mode, viewport, platform summary, requirement-source metadata, bounded visible requirement text, selector counts and aggregated vehicle-type counts.
 
-The report must exclude usernames, alliance identifiers, addresses, coordinates, chat content, cookies, CSRF/authentication data, API keys, webhook URLs, vehicle IDs and unrelated page HTML. The generated URL is bounded and the body is shortened when required.
+The report must exclude usernames, alliance identifiers, addresses, coordinates, chat content, cookies, CSRF/authentication data, API keys, webhook URLs, vehicle IDs and unrelated page HTML. The generated URL is bounded and the body is shortened when required. Control characters are removed through explicit character-code checks rather than a control-character regular-expression range.
 
 ## Validation
 

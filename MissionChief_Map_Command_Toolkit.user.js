@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.17.0
+// @version      4.18.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.17.0',
+        version: '4.18.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22515,6 +22515,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { requirements, unresolved };
     }
 
+
+
+    // Issue #181: patient-derived ambulance demand.
+    const MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS = 1400; const MISSION_REQUIREMENTS_PATIENT_SNAPSHOT_LIMIT = 32; const missionRequirementsPatientSnapshots = new Map(); function missionRequirementsPatientCount(candidate) { const root = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount; const scopes = Array.from(new Set([root, candidate?.mount].filter(scope => scope?.querySelector))); let patientText = null; let patientForm = null; for (const scope of scopes) { if (!patientText) patientText = scope.matches?.('#patient_button_text') ? scope : scope.querySelector?.('#patient_button_text'); if (!patientForm) patientForm = scope.matches?.('#patient_button_form') ? scope : scope.querySelector?.('#patient_button_form'); if (patientText && patientForm) break; } const holder = patientText || patientForm; if (!holder) return { present: false, known: true, count: 0, source: 'absent', text: '' }; const attributeNames = ['data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count']; for (const scope of Array.from(new Set([patientText, patientForm].filter(Boolean)))) { for (const name of attributeNames) { const value = missionRequirementsOptionalNumber(scope?.getAttribute?.(name)); if (value !== null) return { present: true, known: true, count: value, source: name, text: missionRequirementsElementText(holder) }; } for (const value of [scope?.dataset?.patientCount, scope?.dataset?.patientTotal, scope?.dataset?.patients]) { const parsed = missionRequirementsOptionalNumber(value); if (parsed !== null) return { present: true, known: true, count: parsed, source: 'dataset', text: missionRequirementsElementText(holder) }; } } const strong = patientText?.querySelector?.('strong') || patientForm?.querySelector?.('#patient_button_text strong, strong') || null; const parseTotal = value => { const match = String(value || '').replace(/\u00a0/gu, ' ').match(/\b(\d{1,3}(?:[\s,.]\d{3})*)\s+patients?\b/iu); return match ? missionRequirementsNumber(match[1]) : null; }; const strongCount = parseTotal(missionRequirementsElementText(strong)); if (strongCount !== null) return { present: true, known: true, count: strongCount, source: 'patient-total-strong', text: missionRequirementsElementText(holder) }; const text = missionRequirementsElementText(holder); const textCount = parseTotal(text); if (textCount !== null) return { present: true, known: true, count: textCount, source: 'patient-summary-text', text }; return { present: true, known: false, count: null, source: 'patient-summary-unresolved', text }; } function missionRequirementsPatientSnapshotPrune(now = Date.now()) { for (const [key, snapshot] of missionRequirementsPatientSnapshots) { if (now - (Number(snapshot?.updatedAt) || 0) > 60000) missionRequirementsPatientSnapshots.delete(key); } if (missionRequirementsPatientSnapshots.size <= MISSION_REQUIREMENTS_PATIENT_SNAPSHOT_LIMIT) return; const ordered = Array.from(missionRequirementsPatientSnapshots.entries()) .sort((left, right) => (Number(left[1]?.updatedAt) || 0) - (Number(right[1]?.updatedAt) || 0)); for (const [key] of ordered.slice(0, missionRequirementsPatientSnapshots.size - MISSION_REQUIREMENTS_PATIENT_SNAPSHOT_LIMIT)) { missionRequirementsPatientSnapshots.delete(key); } } function missionRequirementsPatientState(record, now = Date.now()) { const candidate = record?.candidate || record; const missionIdentity = missionRequirementsMissionIdentity(candidate, record?.source || candidate?.source); const current = missionRequirementsPatientCount(candidate); const key = missionIdentity > 0 ? String(missionIdentity) : ''; if (current.present) { if (record?.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer); if (record) record.patientTransitionTimer = null; if (key) missionRequirementsPatientSnapshots.set(key, { state: { ...current }, updatedAt: now }); missionRequirementsPatientSnapshotPrune(now); return { ...current, missionIdentity, transitional: false }; } const snapshot = key ? missionRequirementsPatientSnapshots.get(key) : null; const age = snapshot ? now - (Number(snapshot.updatedAt) || 0) : Number.POSITIVE_INFINITY; if (snapshot?.state && age >= 0 && age < MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS) { if (record && !record.patientTransitionTimer) { const wait = Math.max(20, MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS - age + 20); record.patientTransitionTimer = runtimeSetTimeout(() => { record.patientTransitionTimer = null; missionRequirementsScheduleRecord(record); }, wait); } return { ...snapshot.state, missionIdentity, transitional: true }; } if (key && snapshot) missionRequirementsPatientSnapshots.delete(key); if (record?.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer); if (record) record.patientTransitionTimer = null; return { ...current, missionIdentity, transitional: false }; } function missionRequirementsReconcilePatientDemand(parsed, patientState) { const requirements = Array.from(parsed?.requirements || []).map(requirement => ({ ...requirement })); const unresolved = Array.from(parsed?.unresolved || []).map(item => ({ ...item })); const ambulanceDefinition = MISSION_REQUIREMENT_DEFINITIONS.find(definition => definition.key === 'ambulance'); const ambulanceIndexes = requirements.map((requirement, index) => requirement.key === 'ambulance' ? index : -1).filter(index => index >= 0); const statedRows = ambulanceIndexes.map(index => requirements[index]); const statedMissing = statedRows.reduce((maximum, requirement) => Math.max(maximum, Math.max(0, Number(requirement?.missing) || 0)), 0); const patientPresent = patientState?.present === true || patientState?.transitional === true; const patientKnown = patientState?.known === true && Number.isFinite(Number(patientState?.count)); const patientCount = patientKnown ? Math.max(0, Number(patientState.count) || 0) : null; if (!patientPresent && patientCount === 0) return { requirements, unresolved, patientState }; if (patientKnown && patientCount === 0 && !statedRows.length) return { requirements, unresolved, patientState }; if (statedRows.length) { for (const index of ambulanceIndexes.slice(1).reverse()) requirements.splice(index, 1); } const index = ambulanceIndexes.length ? ambulanceIndexes[0] : requirements.length; const base = statedRows[0] || { key: 'ambulance', requirement: 'Ambulance', missing: patientCount ?? 0, group: 'vehicles', definition: ambulanceDefinition }; const row = { ...base, missing: statedRows.length ? statedMissing : (patientCount ?? 0), group: 'vehicles', definition: ambulanceDefinition, patientDerived: true, patientCountKnown: patientKnown, patientRequired: patientCount, statedRequirement: statedRows.length > 0, requirementSource: 'Patients' }; if (index < requirements.length) requirements[index] = row; else requirements.push(row); if (!patientKnown && !unresolved.some(item => item?.patientDerived)) { unresolved.push({ group: 'vehicles', text: 'Patient total is present but could not be determined.', patientDerived: true }); } return { requirements, unresolved, patientState }; }
+
     function missionRequirementsVehicleType(element) {
         const scopes = [];
         const addScope = scope => {
@@ -23123,59 +23128,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return { selected, responding, onSite };
     }
 
-    function missionRequirementsResolve(candidate, parsed, catalogue = null) {
-        const rawSelectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
-        const rawRespondingUnits = missionRequirementsCollectUnits(candidate, 'responding');
-        const rawOnSiteUnits = missionRequirementsCollectUnits(candidate, 'onsite');
-        const buckets = missionRequirementsExclusiveUnitBuckets(rawSelectedUnits, rawRespondingUnits, rawOnSiteUnits);
-        const catalogueByKey = new Map(Array.from(catalogue?.requirements || []).map(item => [item.key, item]));
-        return parsed.requirements.map(requirement => {
-            if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
-            const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
-            if (condition !== true) {
-                const unknown = missionRequirementsCapacity(0, null, false);
-                const unresolvedRow = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown);
-                return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
-            }
-            let selected;
-            let responding;
-            let onSite;
-            if (requirement.definition?.bar) {
-                const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
-                const respondingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
-                const onSiteMetrics = ['at_mission', 'on_site', 'onsite', 'arrived', 'actual'];
-                const onSiteValue = onSiteMetrics.map(metric => missionRequirementsProgressValue(candidate, requirement.definition.bar, metric)).find(value => value !== null);
-                selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true);
-                responding = respondingValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(respondingValue, respondingValue, true);
-                onSite = onSiteValue === undefined ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(onSiteValue, onSiteValue, true);
-            } else {
-                selected = missionRequirementsAggregate(requirement, buckets.selected);
-                responding = missionRequirementsAggregate(requirement, buckets.responding);
-                onSite = missionRequirementsAggregate(requirement, buckets.onSite);
-            }
-
-            const catalogueRequirement = catalogueByKey.get(requirement.key);
-            const baseline = missionRequirementsOptionalNumber(catalogueRequirement?.baseline ?? catalogueRequirement?.missing);
-            if (baseline !== null) {
-                const inferredOnSite = Math.max(0, baseline - Math.max(0, Number(requirement.missing) || 0));
-                if (inferredOnSite > onSite.min) {
-                    const inferredMax = onSite.max === null ? null : Math.max(onSite.max, inferredOnSite);
-                    onSite = missionRequirementsCapacity(inferredOnSite, inferredMax, onSite.known && inferredMax === inferredOnSite);
-                }
-            }
-            const liveRequiredMin = Math.max(0, Number(requirement.missing) || 0) + onSite.min;
-            const liveRequiredMax = onSite.max === null ? null : Math.max(0, Number(requirement.missing) || 0) + onSite.max;
-            const required = baseline !== null
-                ? missionRequirementsCapacity(Math.max(baseline, liveRequiredMin), Math.max(baseline, liveRequiredMin), true)
-                : missionRequirementsCapacity(liveRequiredMin, liveRequiredMax, onSite.known && liveRequiredMax !== null && liveRequiredMin === liveRequiredMax);
-            return {
-                ...missionRequirementsCoverageRow(requirement, selected, responding, onSite, required),
-                conditionKnown: true,
-                conditionMatched: true,
-                requirementAuthority: baseline !== null ? 'catalogue+live' : 'live-reconstructed'
-            };
-        });
-    }
+    function missionRequirementsResolve(candidate, parsed, catalogue = null) { const rawSelectedUnits = missionRequirementsCollectUnits(candidate, 'selected'); const rawRespondingUnits = missionRequirementsCollectUnits(candidate, 'responding'); const rawOnSiteUnits = missionRequirementsCollectUnits(candidate, 'onsite'); const buckets = missionRequirementsExclusiveUnitBuckets(rawSelectedUnits, rawRespondingUnits, rawOnSiteUnits); const catalogueByKey = new Map(Array.from(catalogue?.requirements || []).map(item => [item.key, item])); return parsed.requirements.map(requirement => { if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement); const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate); if (condition !== true) { const unknown = missionRequirementsCapacity(0, null, false); const unresolvedRow = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown); return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false }; } let selected; let responding; let onSite; if (requirement.definition?.bar) { const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected'); const respondingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving'); const onSiteMetrics = ['at_mission', 'on_site', 'onsite', 'arrived', 'actual']; const onSiteValue = onSiteMetrics.map(metric => missionRequirementsProgressValue(candidate, requirement.definition.bar, metric)).find(value => value !== null); selected = selectedValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(selectedValue, selectedValue, true); responding = respondingValue === null ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(respondingValue, respondingValue, true); onSite = onSiteValue === undefined ? missionRequirementsCapacity(0, null, false) : missionRequirementsCapacity(onSiteValue, onSiteValue, true); } else { selected = missionRequirementsAggregate(requirement, buckets.selected); responding = missionRequirementsAggregate(requirement, buckets.responding); onSite = missionRequirementsAggregate(requirement, buckets.onSite); } const catalogueRequirement = catalogueByKey.get(requirement.key); const baseline = missionRequirementsOptionalNumber(catalogueRequirement?.baseline ?? catalogueRequirement?.missing); const patientKnown = requirement.patientDerived === true && requirement.patientCountKnown === true; const patientUnknown = requirement.patientDerived === true && requirement.patientCountKnown === false; const patientRequired = patientKnown ? Math.max(0, Number(requirement.patientRequired) || 0) : null; const hasStatedRequirement = requirement.statedRequirement !== false; if (baseline !== null && hasStatedRequirement) { const inferredOnSite = Math.max(0, baseline - Math.max(0, Number(requirement.missing) || 0)); if (inferredOnSite > onSite.min) { const inferredMax = onSite.max === null ? null : Math.max(onSite.max, inferredOnSite); onSite = missionRequirementsCapacity(inferredOnSite, inferredMax, onSite.known && inferredMax === inferredOnSite); } } const statedRequiredMin = hasStatedRequirement ? Math.max(0, Number(requirement.missing) || 0) + onSite.min : 0; const statedRequiredMax = hasStatedRequirement ? (onSite.max === null ? null : Math.max(0, Number(requirement.missing) || 0) + onSite.max) : 0; const fixedMinimum = Math.max(patientRequired ?? 0, baseline ?? 0, statedRequiredMin); let required; if (patientUnknown) { required = missionRequirementsCapacity(Math.max(baseline ?? 0, statedRequiredMin), null, false); } else if (patientKnown) { const possibleMaximum = statedRequiredMax === null ? null : Math.max(patientRequired, baseline ?? 0, statedRequiredMax); const exact = possibleMaximum !== null && possibleMaximum === fixedMinimum && (hasStatedRequirement ? onSite.known : true); required = missionRequirementsCapacity(fixedMinimum, possibleMaximum, exact); } else { const liveRequiredMin = statedRequiredMin; const liveRequiredMax = statedRequiredMax; required = baseline !== null ? missionRequirementsCapacity(Math.max(baseline, liveRequiredMin), Math.max(baseline, liveRequiredMin), true) : missionRequirementsCapacity(liveRequiredMin, liveRequiredMax, onSite.known && liveRequiredMax !== null && liveRequiredMin === liveRequiredMax); } const row = missionRequirementsCoverageRow(requirement, selected, responding, onSite, required); if (patientUnknown) { row.covered = false; row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } const authorities = []; if (requirement.patientDerived) authorities.push('patients'); if (baseline !== null) authorities.push('catalogue'); if (hasStatedRequirement) authorities.push('live'); return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: authorities.length ? authorities.join('+') : 'live-reconstructed' }; }); }
 
     function missionRequirementsOverallState(rows, unresolved) {
         if (rows.some(row => row.definitelyOpen)) return 'danger';
@@ -23453,6 +23406,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 #${SCRIPT.missionRequirementsPanelId} tbody td{box-sizing:border-box!important;padding:5px 4px!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.07)!important;background:transparent!important;color:var(--mcms-req-text)!important;font-size:12px!important;line-height:1.15!important;vertical-align:middle!important}
 #${SCRIPT.missionRequirementsPanelId} tbody tr:last-child td{border-bottom:0!important}
 #${SCRIPT.missionRequirementsPanelId} tbody td:first-child{padding-left:7px!important;border-left:3px solid var(--mcms-row-state)!important;font-weight:850!important;text-align:left!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
+#${SCRIPT.missionRequirementsPanelId} tbody td:first-child>span{display:inline!important}
+#${SCRIPT.missionRequirementsPanelId} .mcms-req-source{display:inline-flex!important;align-items:center!important;margin-left:5px!important;padding:1px 4px!important;border:1px solid color-mix(in srgb,var(--mcms-req-accent) 48%,transparent)!important;border-radius:999px!important;background:color-mix(in srgb,var(--mcms-req-accent) 12%,transparent)!important;color:var(--mcms-req-accent)!important;font-size:8px!important;line-height:1.2!important;font-weight:900!important;letter-spacing:.08px!important;text-transform:uppercase!important;vertical-align:middle!important;white-space:nowrap!important}
 #${SCRIPT.missionRequirementsPanelId} tbody td:not(:first-child){font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;font-weight:800!important}
 #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td{background:rgba(77,214,138,.075)!important}
 #${SCRIPT.missionRequirementsPanelId} tbody tr[data-row-state="covered"] td:first-child{color:#9bf2bf!important}
@@ -23525,7 +23480,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             const selectedText = row.selectedText || '?';
             const stillText = row.stillNeededText || '?';
             const status = row.covered ? 'fulfilled' : row.uncertain ? 'requires confirmation' : row.partial ? 'partially fulfilled' : 'outstanding';
-            return `<tr data-row-state="${rowState}" title="${escapeHtml(`${row.requirement}: ${status}`)}"><td>${escapeHtml(prefix + row.requirement)}</td><td data-label="Required">${escapeHtml(requiredText)}</td><td data-label="On site">${escapeHtml(onSiteText)}</td><td data-label="Respond.">${escapeHtml(respondingText)}</td><td data-label="Selected">${escapeHtml(selectedText)}</td><td class="mcms-req-still" data-label="Need">${escapeHtml(stillText)}</td></tr>`;
+            const sourceBadge = row.requirementSource ? `<small class="mcms-req-source">${escapeHtml(row.requirementSource)}</small>` : '';
+            return `<tr data-row-state="${rowState}" title="${escapeHtml(`${row.requirement}: ${status}`)}"><td><span>${escapeHtml(prefix + row.requirement)}</span>${sourceBadge}</td><td data-label="Required">${escapeHtml(requiredText)}</td><td data-label="On site">${escapeHtml(onSiteText)}</td><td data-label="Respond.">${escapeHtml(respondingText)}</td><td data-label="Selected">${escapeHtml(selectedText)}</td><td class="mcms-req-still" data-label="Need">${escapeHtml(stillText)}</td></tr>`;
         }).join('');
         const unknownHtml = unresolved.length
             ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}<button type="button" class="mcms-req-report" data-mcms-report-mission>Report Mission</button></div>`
@@ -23610,6 +23566,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             `- selected checkboxes: ${count('.vehicle_checkbox:checked')}`,
             `- responding rows: ${count('#mission_vehicle_driving tbody tr')}`,
             `- on-site rows: ${count('#mission_vehicle_at_mission tbody tr')}`,
+            `- patient summary nodes: ${count('#patient_button_form, #patient_button_text')}`,
+            `- patient state: ${missionRequirementsSafeDiagnostic(JSON.stringify(missionRequirementsPatientCount(candidate)), 240)}`,
             `- selected vehicle types: ${missionRequirementsTypeSummary(selected)}`,
             `- responding vehicle types: ${missionRequirementsTypeSummary(responding)}`,
             `- on-site vehicle types: ${missionRequirementsTypeSummary(onSite)}`,
@@ -23657,54 +23615,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }
     }
 
-    function missionRequirementsRenderRecord(record) {
-        if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) {
-            scheduleMissionRequirementsScan(0);
-            return;
-        }
-        if (missionRequirementsLssmActive(record.candidate, record.source)) {
-            missionRequirementsRemoveRecord(record.source);
-            return;
-        }
-        missionRequirementsCatalogueEnsure(record);
-        const presentCatalogue = reason => {
-            if (!record.catalogue) return false;
-            missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason);
-            return true;
-        };
-        const age = Date.now() - (record.startedAt || Date.now());
-        const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1';
-        if (anchor) {
-            if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return;
-            missionRequirementsRestoreSource(record.source);
-            const loading = record.catalogueState === 'loading' || age < 1200;
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable');
-            return;
-        }
-        const raw = missionRequirementsElementText(record.source);
-        if (!raw) {
-            missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty'));
-            return;
-        }
-        let parsed;
-        try { parsed = missionRequirementsParseSource(record.source); }
-        catch (err) {
-            if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return;
-            missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`);
-            return;
-        }
-        if (!parsed.requirements.length) {
-            if (presentCatalogue(parsed.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return;
-            missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), parsed.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected');
-            return;
-        }
-        missionRequirementsHideSource(record.source);
-        missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, parsed, record.catalogue), parsed.unresolved), parsed.unresolved.length ? 'partially unresolved requirement text' : '');
-    }
+    function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+
     function missionRequirementsScheduleRecord(record) {
         if (!record || record.frame || runtime.destroyed) return;
         record.frame = runtimeRequestAnimationFrame(() => {
@@ -23717,7 +23629,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const panel = record?.panel;
         const target = mutation?.target;
         if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
-        const selector = '#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        const selector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
         return mutationTouchesSelector(mutation, selector);
     }
 
@@ -23737,6 +23649,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 record.catalogueDescriptor = null;
                 record.catalogueState = 'idle';
                 record.startedAt = Date.now();
+                if (record.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer);
+                record.patientTransitionTimer = null;
             }
             record.missionIdentity = missionIdentity;
             record.panel = panel;
@@ -23766,7 +23680,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         if (root && typeof Observer === 'function') {
             record.observer = runtimeTrackObserver(new Observer(mutations => mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation)) && missionRequirementsScheduleRecord(record)));
-            record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+            record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
         }
         missionRequirementsRecords.set(source, record);
         missionRequirementsScheduleRecord(record);
@@ -23781,6 +23695,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             return;
         }
         if (record.frame) runtimeCancelAnimationFrame(record.frame);
+        if (record.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer);
+        record.patientTransitionTimer = null;
         runtimeUntrackObserver(record.observer);
         try { record.panel?.remove(); } catch (err) {}
         missionRequirementsRestoreSource(record.source);
@@ -23790,6 +23706,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function clearMissionRequirementsPanels() {
         for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        missionRequirementsPatientSnapshots.clear();
         for (const context of transportSweepDocumentContexts()) {
             try {
                 context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
@@ -23860,7 +23777,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }, true);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
         const view = doc.defaultView || pageWindow;
         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {

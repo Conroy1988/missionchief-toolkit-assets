@@ -497,9 +497,9 @@ assert.strictEqual(patientResolved.selectedText, '1', 'selected ambulance capaci
 assert.strictEqual(patientResolved.stillNeededText, '0', 'committed and selected ambulances cover patient demand');
 assert.strictEqual(patientResolved.covered, true, 'covered patient demand allows a green row');
 
-const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const patientAmbulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
 const statedLower = {
-    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: ambulanceDefinition }],
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: patientAmbulanceDefinition }],
     unresolved: []
 };
 const mergedDemand = api.reconcilePatientDemand(statedLower, patientState);

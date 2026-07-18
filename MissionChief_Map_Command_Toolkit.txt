@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.15.5
+// @version      4.16.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.15.5',
+        version: '4.16.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22432,6 +22432,310 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         };
     }
 
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+                if (!match) continue;
+                matched = { id: Number(match[1]), overlayIndex: match[2] === undefined ? null : Number(match[2]) };
+                break;
+            }
+            if (matched) break;
+        }
+        if (!matched) {
+            const id = missionRequirementsMissionTypeId(candidate);
+            if (id === null || id === undefined || !Number.isFinite(Number(id)) || Number(id) < 0) return null;
+            matched = { id: Number(id), overlayIndex: null };
+        }
+        const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument;
+        const location = doc?.defaultView?.location || pageWindow.location || {};
+        const origin = location.origin || `${location.protocol || 'https:'}//${location.host || 'www.missionchief.co.uk'}`;
+        const path = `/einsaetze/${matched.id}${matched.overlayIndex === null ? '' : `?overlay_index=${matched.overlayIndex}`}`;
+        return { ...matched, origin, path, url: `${origin}${path}`, key: `${origin}${path}` };
+    }
+
+    function missionRequirementsCatalogueRequirement(label, value) {
+        const rawLabel = missionRequirementsCatalogueText({ textContent: label });
+        const rawValue = missionRequirementsCatalogueText({ textContent: value });
+        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
+        const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
+        if (quantity === null) return null;
+        const cleanedLabel = rawLabel
+            .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '')
+            .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '')
+            .trim();
+        if (!cleanedLabel) return null;
+        const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u);
+        const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100;
+        const sourceText = `${quantity} ${cleanedLabel}`;
+        for (const group of ['vehicles', 'staff', 'other']) {
+            const parsed = missionRequirementsParseText(sourceText, group);
+            if (!parsed.requirements.length) continue;
+            const requirement = parsed.requirements[0];
+            return {
+                ...requirement,
+                missing: quantity,
+                baseline: quantity,
+                baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+                probability,
+                catalogueLabel: rawLabel,
+                catalogueValue: rawValue,
+                catalogueKnown: true
+            };
+        }
+        const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles');
+        const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`;
+        return {
+            key,
+            requirement: cleanedLabel,
+            missing: quantity,
+            baseline: quantity,
+            baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+            probability,
+            group: inferredGroup,
+            definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false },
+            catalogueLabel: rawLabel,
+            catalogueValue: rawValue,
+            catalogueKnown: false
+        };
+    }
+
+    function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) {
+        if (!doc?.querySelectorAll) throw new Error('catalogue document unavailable');
+        const requirements = [];
+        const unresolved = [];
+        const preconditions = {};
+        const other = {};
+        const tables = Array.from(doc.querySelectorAll('table') || []);
+        for (const table of tables) {
+            const tableText = missionRequirementsCatalogueText(table);
+            let kind = /Vehicle\s+and\s+Personnel\s+Requirements/iu.test(tableText) ? 'requirements'
+                : /Reward\s+and\s+Precondition/iu.test(tableText) ? 'preconditions'
+                    : /Other\s+information/iu.test(tableText) ? 'other' : null;
+            const rows = Array.from(table.querySelectorAll?.('tr') || []);
+            for (const row of rows) {
+                const cells = Array.from(row.querySelectorAll?.('th, td') || []);
+                if (cells.length < 2) continue;
+                const label = missionRequirementsCatalogueText(cells[0]);
+                const value = missionRequirementsCatalogueText(cells[1]);
+                if (!label || /^(?:Value|Vehicle\s+and\s+Personnel\s+Requirements|Reward\s+and\s+Precondition|Other\s+information)$/iu.test(label)) continue;
+                if (!kind && /^(?:Required|Requirement\s+of|Needed)\b/iu.test(label)) kind = 'requirements';
+                if (kind === 'requirements') {
+                    const parsed = missionRequirementsCatalogueRequirement(label, value);
+                    if (parsed) requirements.push(parsed);
+                    else unresolved.push({ label, value });
+                } else if (kind === 'preconditions') {
+                    preconditions[label] = value;
+                } else if (kind === 'other') {
+                    other[label] = value;
+                }
+            }
+        }
+        const titleNode = doc.querySelector?.('h1, [data-mission-title], .mission-title');
+        const title = missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(titleNode), 140) || `Mission ${descriptor.id ?? 'Unknown'}`;
+        const variationLinks = Array.from(doc.querySelectorAll('a[href*="/einsaetze/"]') || []);
+        const seenVariations = new Set();
+        const variations = [];
+        for (const link of variationLinks) {
+            const href = String(link.getAttribute?.('href') || link.href || '');
+            if (!/\/einsaetze\/\d+/u.test(href) || seenVariations.has(href)) continue;
+            seenVariations.add(href);
+            variations.push({ href: missionRequirementsSafeDiagnostic(href, 180), title: missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(link), 140) });
+        }
+        const findValue = (source, pattern) => {
+            const entry = Object.entries(source).find(([key]) => pattern.test(key));
+            return entry ? entry[1] : '';
+        };
+        return {
+            id: descriptor.id ?? null,
+            overlayIndex: descriptor.overlayIndex ?? null,
+            path: descriptor.path || '',
+            url: descriptor.url || '',
+            title,
+            requirements,
+            unresolved,
+            preconditions,
+            other,
+            averageCredits: missionRequirementsOptionalNumber(findValue(preconditions, /Average\s+credits/iu)),
+            maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)),
+            patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)),
+            variations,
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        record.catalogueDescriptor = descriptor;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+        const DOMParserCtor = view?.DOMParser || pageWindow.DOMParser;
+        if (!fetcher || typeof DOMParserCtor !== 'function') {
+            record.catalogueState = record.catalogue ? 'stale' : 'unavailable';
+            return record.catalogue || null;
+        }
+        record.catalogueState = record.catalogue ? 'stale' : 'loading';
+        const promise = Promise.resolve(fetcher(descriptor.url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }))
+            .then(response => {
+                if (!response || response.ok === false) throw new Error(`catalogue HTTP ${response?.status || 'failure'}`);
+                return response.text();
+            })
+            .then(html => {
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => missionRequirementsScheduleRecord(record));
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+        const baseline = new Map(catalogue.requirements.map(item => [item.key, Number(item.baseline ?? item.missing) || 0]));
+        const issues = [];
+        for (const live of parsed?.requirements || []) {
+            if (!baseline.has(live.key)) issues.push(`Live-only requirement: ${live.requirement}`);
+            else if ((Number(live.missing) || 0) > baseline.get(live.key)) issues.push(`Live quantity exceeds catalogue: ${live.requirement}`);
+        }
+        if (parsed?.unresolved?.length) issues.push(`${parsed.unresolved.length} unresolved live fragment${parsed.unresolved.length === 1 ? '' : 's'}`);
+        return { state: issues.length ? 'mismatch' : 'compatible', summary: issues.length ? issues.join('; ') : 'Live requirements are compatible with the catalogue baseline', issues };
+    }
+
+    function missionRequirementsCataloguePanelHtml(catalogue) {
+        const rows = Array.from(catalogue?.requirements || []);
+        const stale = catalogue?.stale === true;
+        const rowHtml = rows.map(row => `<tr data-row-state="unresolved"><td>${escapeHtml(row.requirement)}</td><td data-label="Catalogue baseline">${escapeHtml(row.baselineText || String(row.baseline ?? row.missing ?? '?'))}</td></tr>`).join('');
+        const unresolved = Array.from(catalogue?.unresolved || []);
+        const unresolvedHtml = unresolved.length ? `<div class="mcms-req-unknown"><b>Unmapped catalogue entries</b>${unresolved.map(item => `<span>${escapeHtml(`${item.label}: ${item.value}`)}</span>`).join('')}</div>` : '';
+        const note = stale
+            ? 'Using a cached official catalogue baseline because the latest catalogue request failed. Current outstanding requirements are unavailable.'
+            : 'Official MissionChief catalogue baseline only. Current outstanding requirements are unavailable, so do not treat these quantities as still needed.';
+        const title = missionRequirementsSafeDiagnostic(catalogue?.title || '', 100);
+        const summary = `${stale ? 'Cached ' : ''}official baseline${title ? ` · ${title}` : ''}`;
+        const table = rows.length
+            ? `<table aria-label="MissionChief catalogue baseline requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Catalogue baseline</th></tr></thead><tbody>${rowHtml}</tbody></table>`
+            : '<div class="mcms-req-fallback"><span class="mcms-req-fallback-message">The official catalogue lists no fixed vehicle or personnel requirements for this mission.</span></div>';
+        return {
+            stateName: 'warning',
+            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body">${table}<div class="mcms-req-unknown"><b>Baseline planning data</b><span>${escapeHtml(note)}</span></div>${unresolvedHtml}</div>`
+        };
+    }
+
+    function missionRequirementsCatalogueDiagnosticLines(record, parsed) {
+        const descriptor = record?.catalogueDescriptor || missionRequirementsCatalogueDescriptor(record?.candidate);
+        const catalogue = record?.catalogue;
+        const comparison = missionRequirementsCatalogueCompare(parsed, catalogue);
+        const rows = Array.from(catalogue?.requirements || []).slice(0, 24).map(item => `  - ${item.requirement}: ${item.baselineText || item.baseline || item.missing}`);
+        return [
+            '### Official MissionChief catalogue',
+            `- State: ${missionRequirementsSafeDiagnostic(record?.catalogueState || 'not requested', 40)}`,
+            `- Definition ID: ${descriptor?.id ?? 'Unavailable'}`,
+            `- Overlay index: ${descriptor?.overlayIndex ?? 'None'}`,
+            `- Path: ${missionRequirementsSafeDiagnostic(descriptor?.path || '', 180) || 'Unavailable'}`,
+            `- Catalogue title: ${missionRequirementsSafeDiagnostic(catalogue?.title || '', 140) || 'Unavailable'}`,
+            `- Parsed catalogue rows: ${catalogue?.requirements?.length || 0}`,
+            `- Unmapped catalogue rows: ${catalogue?.unresolved?.length || 0}`,
+            `- Average credits: ${catalogue?.averageCredits ?? 'Unavailable'}`,
+            `- Max patients: ${catalogue?.maxPatients ?? 'Unavailable'}`,
+            `- Mission variations: ${catalogue?.variations?.length || 0}`,
+            `- Live/catalogue comparison: ${missionRequirementsSafeDiagnostic(comparison.summary, 500)}`,
+            ...(rows.length ? ['', 'Catalogue requirement summary:', ...rows] : []),
+            ''
+        ];
+    }
+
     function missionRequirementsResolve(candidate, parsed) {
         const selectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
         const enRouteUnits = missionRequirementsCollectUnits(candidate, 'enroute');
@@ -22640,6 +22944,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const raw = source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? '' : missionRequirementsElementText(source);
         let parsed = { requirements: [], unresolved: [] };
         try { if (raw) parsed = missionRequirementsParseSource(source); } catch (err) {}
+        missionRequirementsCatalogueEnsure(record);
         const selected = missionRequirementsCollectUnits(candidate, 'selected');
         const enRoute = missionRequirementsCollectUnits(candidate, 'enroute');
         const classes = Array.from(source?.classList || []).filter(value => /^[A-Za-z0-9_-]{1,40}$/.test(value)).slice(0, 8).join(' ');
@@ -22671,6 +22976,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             `- Parsed rows: ${parsed.requirements.length}`,
             `- Unresolved fragments: ${parsed.unresolved.length}`,
             '',
+            ...missionRequirementsCatalogueDiagnosticLines(record, parsed),
             '### Native selector counts',
             `- missing_text: ${count('#missing_text')}`,
             `- selected checkboxes: ${count('.vehicle_checkbox:checked')}`,
@@ -22696,7 +23002,6 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         }
         return url;
     }
-
     function missionRequirementsFallbackHtml(kind) {
         const loading = kind === 'loading';
         const empty = kind === 'empty';
@@ -22730,11 +23035,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             missionRequirementsRemoveRecord(record.source);
             return;
         }
+        missionRequirementsCatalogueEnsure(record);
+        const presentCatalogue = reason => {
+            if (!record.catalogue) return false;
+            missionRequirementsRestoreSource(record.source);
+            missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason);
+            return true;
+        };
         const age = Date.now() - (record.startedAt || Date.now());
         const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1';
         if (anchor) {
+            if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return;
             missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'error'), age < 1200 ? '' : 'requirement source absent');
+            const loading = record.catalogueState === 'loading' || age < 1200;
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable');
             return;
         }
         const raw = missionRequirementsElementText(record.source);
@@ -22746,19 +23060,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         let parsed;
         try { parsed = missionRequirementsParseSource(record.source); }
         catch (err) {
+            if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return;
             missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml('error'), `parser exception: ${err?.message || 'unknown'}`);
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`);
             return;
         }
         if (!parsed.requirements.length) {
+            if (presentCatalogue(parsed.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return;
             missionRequirementsRestoreSource(record.source);
-            missionRequirementsPresent(record, missionRequirementsFallbackHtml('error'), parsed.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected');
+            missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), parsed.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected');
             return;
         }
         missionRequirementsHideSource(record.source);
         missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, parsed), parsed.unresolved), parsed.unresolved.length ? 'partially unresolved requirement text' : '');
     }
-
     function missionRequirementsScheduleRecord(record) {
         if (!record || record.frame || runtime.destroyed) return;
         record.frame = runtimeRequestAnimationFrame(() => {

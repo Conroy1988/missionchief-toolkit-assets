@@ -6,6 +6,22 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.18.0] - 2026-07-18
+
+### Fixed
+- Mission Requirements now derives Ambulance demand from the live patient total even when MissionChief does not list ambulances in `#missing_text`.
+- Patient-derived demand reconciles with stated Ambulance requirements using the larger authoritative total instead of adding both values.
+- Unknown patient totals can no longer produce a false covered/green Matrix state.
+
+### Behaviour
+- One current patient requires one ordinary UK Ambulance by default.
+- On-site, responding and selected Ambulances use the existing exclusive vehicle-ID buckets and are never double-counted.
+- Patient counts update through the existing mission-window observer lifecycle, including bounded AJAX replacement recovery and mission-ID isolation.
+- The Ambulance row carries a compact `Patients` source marker and remains inside the existing Matrix panel.
+
+### Validation
+- Added deterministic singular/plural parsing, zero/unknown state, stated-demand reconciliation, live capacity, transition and mission-navigation fixtures.
+
 ## [4.17.0] - 2026-07-18
 
 ### Added

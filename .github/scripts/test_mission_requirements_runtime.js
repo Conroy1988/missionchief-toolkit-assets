@@ -186,7 +186,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.16.4'
+        version: '4.18.0'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -224,6 +224,9 @@ this.__mcmsRequirements = {
     definitions: MISSION_REQUIREMENT_DEFINITIONS,
     parseText: missionRequirementsParseText,
     parseSource: missionRequirementsParseSource,
+    patientCount: missionRequirementsPatientCount,
+    patientState: missionRequirementsPatientState,
+    reconcilePatientDemand: missionRequirementsReconcilePatientDemand,
     capacity: missionRequirementsCapacity,
     capacityText: missionRequirementsCapacityText,
     coverageRow: missionRequirementsCoverageRow,
@@ -423,8 +426,12 @@ function makeMissionCandidate(doc, requirementText = '1 Ambulance') {
     missionRoot.selectedUnits = [];
     missionRoot.enRouteRows = [];
     missionRoot.onSiteRows = [];
+    missionRoot.patientForm = null;
+    missionRoot.patientText = null;
     missionRoot.queryHandler = selector => {
         if (selector === '#missing_text') return sourceNode.isConnected ? sourceNode : null;
+        if (selector === '#patient_button_form') return missionRoot.patientForm?.isConnected === false ? null : missionRoot.patientForm;
+        if (selector === '#patient_button_text') return missionRoot.patientText?.isConnected === false ? null : missionRoot.patientText;
         if (selector === '[data-mcms-requirements-anchor="1"]') return missionRoot.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1') || null;
         if (selector.includes('.alert-missing-vehicles')) return sourceNode._lssmActive ? sourceNode : null;
         return null;
@@ -446,8 +453,12 @@ function makeMissionCandidateWithoutSource(doc) {
     missionRoot.selectedUnits = [];
     missionRoot.enRouteRows = [];
     missionRoot.onSiteRows = [];
+    missionRoot.patientForm = null;
+    missionRoot.patientText = null;
     missionRoot.queryHandler = selector => {
         if (selector === '#missing_text') return missionRoot.children.find(child => child.id === 'missing_text' && child.isConnected) || null;
+        if (selector === '#patient_button_form') return missionRoot.patientForm?.isConnected === false ? null : missionRoot.patientForm;
+        if (selector === '#patient_button_text') return missionRoot.patientText?.isConnected === false ? null : missionRoot.patientText;
         if (selector === '[data-mcms-requirements-anchor="1"]') return missionRoot.children.find(child => child.getAttribute?.('data-mcms-requirements-anchor') === '1' && child.isConnected) || null;
         return null;
     };
@@ -728,6 +739,133 @@ assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified req
 assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
 assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
 assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+
+{
+function attachPatientSummary(candidate, totalText, detailText = '') {
+    const doc = candidate.root.ownerDocument;
+    const form = new FakeElement('div', doc);
+    form.id = 'patient_button_form';
+    const text = new FakeElement('span', doc);
+    text.id = 'patient_button_text';
+    const strong = new FakeElement('strong', doc);
+    strong.textContent = strong.innerText = String(totalText || '');
+    text.textContent = text.innerText = `${totalText || ''}${detailText ? ` - ${detailText}` : ''}`;
+    text.queryMap.set('strong', strong);
+    form.queryMap.set('#patient_button_text strong, strong', strong);
+    form.queryMap.set('#patient_button_text', text);
+    candidate.root.patientForm = form;
+    candidate.root.patientText = text;
+    candidate.root.appendChild(form);
+    form.appendChild(text);
+    text.appendChild(strong);
+    return { form, text, strong };
+}
+
+const patientDoc = new FakeDocument();
+patientDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/18101' } };
+const patientCandidate = makeMissionCandidate(patientDoc, '');
+patientCandidate.missionId = 18101;
+const patientNodes = attachPatientSummary(patientCandidate, '1 Patient', '1 Untreated patients');
+let patientState = api.patientCount(patientCandidate);
+assert.deepStrictEqual(JSON.parse(JSON.stringify({ present: patientState.present, known: patientState.known, count: patientState.count, source: patientState.source })), {
+    present: true, known: true, count: 1, source: 'patient-total-strong'
+}, 'singular patient total is read from the strong summary rather than untreated text');
+
+patientNodes.strong.textContent = patientNodes.strong.innerText = '3 Patients';
+patientNodes.text.textContent = patientNodes.text.innerText = '3 Patients - 1 Untreated patients';
+patientState = api.patientCount(patientCandidate);
+assert.strictEqual(patientState.count, 3, 'plural patient total is parsed');
+let reconciledPatients = api.reconcilePatientDemand({ requirements: [], unresolved: [] }, patientState);
+assert.strictEqual(reconciledPatients.requirements.length, 1, 'patient-only mission creates one requirement row');
+assert.strictEqual(reconciledPatients.requirements[0].key, 'ambulance', 'patient demand creates the Ambulance row');
+assert.strictEqual(reconciledPatients.requirements[0].patientRequired, 3, 'one ambulance is required per patient');
+assert.strictEqual(reconciledPatients.requirements[0].requirementSource, 'Patients', 'patient source is retained for the UI');
+
+let patientResolved = api.resolve(patientCandidate, reconciledPatients)[0];
+assert.strictEqual(patientResolved.requiredText, '3', 'patient-only demand sets exact required capacity');
+assert.strictEqual(patientResolved.stillNeededText, '3', 'three patients with no ambulances need three');
+assert.strictEqual(patientResolved.definitelyOpen, true, 'uncovered patient demand keeps the matrix red');
+
+const patientOnSite = makeVehicleElement(patientDoc, 18111, 5);
+const patientResponding = makeVehicleElement(patientDoc, 18112, 5);
+const patientSelected = makeVehicleElement(patientDoc, 18113, 5);
+patientCandidate.root.onSiteRows = [patientOnSite.row];
+patientCandidate.root.enRouteRows = [patientResponding.row];
+patientCandidate.root.selectedUnits = [patientSelected.vehicle];
+patientResolved = api.resolve(patientCandidate, reconciledPatients)[0];
+assert.strictEqual(patientResolved.onSiteText, '1', 'on-site ambulance capacity is counted');
+assert.strictEqual(patientResolved.respondingText, '1', 'responding ambulance capacity is counted');
+assert.strictEqual(patientResolved.selectedText, '1', 'selected ambulance capacity is counted separately');
+assert.strictEqual(patientResolved.stillNeededText, '0', 'committed and selected ambulances cover patient demand');
+assert.strictEqual(patientResolved.covered, true, 'covered patient demand allows a green row');
+
+const patientAmbulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const statedLower = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: patientAmbulanceDefinition }],
+    unresolved: []
+};
+const mergedDemand = api.reconcilePatientDemand(statedLower, patientState);
+assert.strictEqual(mergedDemand.requirements.filter(item => item.key === 'ambulance').length, 1, 'stated and patient demand never duplicate the Ambulance row');
+assert.strictEqual(mergedDemand.requirements[0].missing, 1, 'stated missing quantity is retained for live reconstruction');
+assert.strictEqual(mergedDemand.requirements[0].patientRequired, 3, 'patient total remains the minimum authoritative requirement');
+patientCandidate.root.onSiteRows = [];
+patientCandidate.root.enRouteRows = [];
+patientCandidate.root.selectedUnits = [];
+patientResolved = api.resolve(patientCandidate, mergedDemand)[0];
+assert.strictEqual(patientResolved.requiredText, '3', 'lower stated requirement does not reduce patient-derived demand');
+
+patientNodes.strong.textContent = patientNodes.strong.innerText = '0 Patients';
+patientNodes.text.textContent = patientNodes.text.innerText = '0 Patients - 0 Untreated patients';
+const zeroState = api.patientCount(patientCandidate);
+assert.strictEqual(api.reconcilePatientDemand({ requirements: [], unresolved: [] }, zeroState).requirements.length, 0, 'zero patients create no synthetic ambulance row');
+
+patientNodes.strong.textContent = patientNodes.strong.innerText = '';
+patientNodes.text.textContent = patientNodes.text.innerText = 'Patient details loading';
+const unknownState = api.patientCount(patientCandidate);
+assert.strictEqual(unknownState.known, false, 'present but unparseable patient summary is unknown');
+const unknownDemand = api.reconcilePatientDemand({ requirements: [], unresolved: [] }, unknownState);
+assert.strictEqual(unknownDemand.requirements.length, 1, 'unknown patient total still creates a guarded Ambulance row');
+assert.strictEqual(unknownDemand.unresolved.length, 1, 'unknown patient total is visible as unresolved');
+const unknownResolved = api.resolve(patientCandidate, unknownDemand)[0];
+assert.strictEqual(unknownResolved.uncertain, true, 'unknown patient total cannot become covered');
+assert.strictEqual(unknownResolved.requiredText, '?', 'unknown patient total displays unknown required capacity');
+
+const transitionRecord = { candidate: patientCandidate, source: patientCandidate.source, missionIdentity: 18101 };
+patientNodes.strong.textContent = patientNodes.strong.innerText = '2 Patients';
+patientNodes.text.textContent = patientNodes.text.innerText = '2 Patients - 2 Untreated patients';
+let transition = api.patientState(transitionRecord, 1000);
+assert.strictEqual(transition.count, 2, 'known patient snapshot is stored');
+patientCandidate.root.patientForm = null;
+patientCandidate.root.patientText = null;
+patientNodes.form.isConnected = false;
+patientNodes.text.isConnected = false;
+transition = api.patientState(transitionRecord, 1100);
+assert.strictEqual(transition.count, 2, 'brief same-mission DOM replacement preserves patient demand');
+assert.strictEqual(transition.transitional, true, 'bounded replacement state is marked transitional');
+const otherMissionCandidate = makeMissionCandidate(patientDoc, '');
+otherMissionCandidate.missionId = 18102;
+const otherMissionState = api.patientState({ candidate: otherMissionCandidate, source: otherMissionCandidate.source, missionIdentity: 18102 }, 1100);
+assert.strictEqual(otherMissionState.count, 0, 'patient snapshot never leaks into a different mission');
+transition = api.patientState(transitionRecord, 2501);
+assert.strictEqual(transition.count, 0, 'patient snapshot expires after the bounded transition');
+
+const patientRenderDoc = new FakeDocument();
+patientRenderDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/18103' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };
+const patientRenderCandidate = makeMissionCandidate(patientRenderDoc, '');
+patientRenderCandidate.missionId = 18103;
+attachPatientSummary(patientRenderCandidate, '1 Patient', '1 Untreated patients');
+candidates = [patientRenderCandidate];
+api.scan();
+flushAnimationFrames();
+const patientRecord = api.records.get(patientRenderCandidate.source);
+assert(patientRecord, 'patient-only mission creates a normal Matrix record');
+assert(patientRecord.panel.innerHTML.includes('Ambulance'), 'patient-only mission renders an Ambulance row');
+assert(patientRecord.panel.innerHTML.includes('Patients'), 'patient-derived row identifies its source');
+assert.strictEqual(patientRenderCandidate.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements').length, 1, 'patient demand uses the existing single Matrix panel');
+api.clear();
+candidates = [];
+}
 
 const directDoc = new FakeDocument();
 directDoc.defaultView = { MutationObserver: FakeMutationObserver };

@@ -1,0 +1,6 @@
+Issue #163 performance policy locations
+
+.github/development-packages/issue-163-locate-performance-budget.py:8: needles = ["1900000", "1_900_000", "1,900,000", "31000", "31_000", "31,000", "2026-07-14-initial"]
+.github/performance-budget.json:3: "revision": "2026-07-14-initial",
+.github/performance-budget.json:10: "bytes": 1900000,
+.github/performance-budget.json:11: "lines": 31000,

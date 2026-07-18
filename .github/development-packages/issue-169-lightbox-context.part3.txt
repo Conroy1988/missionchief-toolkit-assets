@@ -1,0 +1,171 @@
+issue169Root.queryAllHandler = selector => selector.includes('.vehicle_checkbox') || selector.includes('#mission_vehicle_') ? [] : [];
+const issue169Candidate = { root: issue169Root, mount: issue169Root, source: issue169Generic, missionId: 255577319 };
+assert.strictEqual(api.sourceForCandidate(issue169Candidate), issue169Source, 'native source outranks generic lightbox source');
+candidates = [issue169Candidate];
+api.scan();
+flushAnimationFrames();
+const issue169Record = Array.from(api.records.values())[0];
+const issue169PanelIndex = issue169Root.children.indexOf(issue169Record.panel);
+assert.strictEqual(issue169Root.children[issue169PanelIndex + 1], issue169Source, 'panel mounts immediately before native missing_text');
+assert(issue169Root.children.indexOf(issue169Address) < issue169PanelIndex, 'panel remains below the mission address');
+api.clear();
+
+const delayedDoc = new FakeDocument();
+delayedDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/7002' } };
+const delayedRoot = new FakeElement('form', delayedDoc);
+delayedRoot.setAttribute('action', '/missions/7002');
+delayedRoot.matchSet.add('form[action*="/missions/"]');
+const delayedTitle = new FakeElement('h1', delayedDoc);
+delayedTitle.id = 'mission_caption';
+const delayedAddress = new FakeElement('div', delayedDoc);
+delayedAddress.id = 'mission_address';
+delayedRoot.appendChild(delayedTitle);
+delayedRoot.appendChild(delayedAddress);
+delayedRoot.queryHandler = selector => selector.includes('#mission_address') ? delayedAddress : selector.includes('#mission_caption') ? delayedTitle : null;
+const delayedAnchor = api.anchorForCandidate({ root: delayedRoot, mount: delayedRoot, missionId: 7002 });
+assert.strictEqual(delayedRoot.children[delayedRoot.children.indexOf(delayedAddress) + 1], delayedAnchor, 'delayed source anchor follows the address');
+
+const visibilityDoc = new FakeDocument();
+visibilityDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' } };
+const staleCandidate = makeMissionCandidate(visibilityDoc, '1 Ambulance');
+const visibleCandidate = makeMissionCandidate(visibilityDoc, '2 Fire engines');
+staleCandidate.missionId = 8101;
+visibleCandidate.missionId = 8102;
+staleCandidate.root._visible = false;
+visibleCandidate.root._visible = true;
+api.records.set(staleCandidate.source, { source: staleCandidate.source });
+candidates = [staleCandidate, visibleCandidate];
+assert.strictEqual(api.windowCandidates()[0].root, visibleCandidate.root, 'visible AJAX mission outranks hidden existing record');
+api.records.clear();
+candidates = [];
+
+assert.strictEqual(api.widthMode([{ requirement: 'Police Car' }], []), 'standard', 'ordinary content uses standard width');
+assert.strictEqual(api.widthMode([{ requirement: 'Operational Support or Search and Rescue Vehicle' }], []), 'wide', 'long content expands width');
+assert.strictEqual(api.widthMode([{ requirement: 'X'.repeat(70) }], []), 'fluid', 'exceptional content may use available width');
+
+const transitionDoc = new FakeDocument();
+transitionDoc.defaultView = { location: { origin: 'https://www.missionchief.co.uk', protocol: 'https:', host: 'www.missionchief.co.uk' } };
+const transitionRoot = new FakeElement('div', transitionDoc);
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+'''
+runtime = replace_once(runtime, "const unitDoc = new FakeDocument();\n", tests + "const unitDoc = new FakeDocument();\n", "Issue 169 runtime tests")
+runtime = replace_once(
+    runtime,
+    "assert(css.includes('@media(max-width:767px)'), 'mobile breakpoint missing');\n",
+    "assert(css.includes('@media(max-width:767px)'), 'mobile breakpoint missing');\n"
+    "assert(css.includes(`width:min(100%,${fixture.layout.standardDesktopWidth})!important`), 'standard width missing');\n"
+    "assert(css.includes(`data-width-mode=\"wide\"]{width:min(100%,${fixture.layout.wideDesktopWidth})!important`), 'wide width missing');\n"
+    "assert(css.includes('data-width-mode=\"fluid\"]{width:100%!important'), 'fluid width missing');\n",
+    "adaptive width assertions",
+)
+RUNTIME.write_text(runtime, encoding="utf-8")
+
+contract = CONTRACT.read_text(encoding="utf-8")
+contract = replace_once(
+    contract,
+    '        "function missionRequirementsMissionIdentity(candidate, source)",\n',
+    '        "function missionRequirementsMissionIdentity(candidate, source)",\n'
+    '        "function missionRequirementsSourceForCandidate(candidate)",\n'
+    '        "function missionRequirementsPlacement(candidate, source = null)",\n'
+    '        "function missionRequirementsPlacePanel(candidate, source, panel)",\n'
+    '        "function missionRequirementsWidthMode(rows = [], unresolved = [])",\n',
+    "contract markers",
+)
+contract = replace_once(contract, '        "source.parentNode?.insertBefore(p, source)",\n', '        "missionRequirementsPlacePanel(scopedCandidate, source, panel)",\n', "placement marker")
+contract = replace_once(contract, '    assert compact_source.count("source.parentNode?.insertBefore(p,source)") == 1\n', '    assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 1\n', "placement assertion")
+contract = replace_once(
+    contract,
+    '    assert "overflow-wrap:anywhere!important" in compact_css\n',
+    '    assert "overflow-wrap:anywhere!important" in compact_css\n'
+    '    assert f"width:min(100%,{data[\'layout\'][\'standardDesktopWidth\']})!important" in compact_css\n'
+    '    assert f\'data-width-mode="wide"]{{width:min(100%,{data["layout"]["wideDesktopWidth"]})!important\' in compact_css\n'
+    '    assert \'data-width-mode="fluid"]{width:100%!important\' in compact_css\n',
+    "adaptive width contract",
+)
+CONTRACT.write_text(contract, encoding="utf-8")
+
+changelog_path = ROOT / "CHANGELOG.md"
+changelog = changelog_path.read_text(encoding="utf-8")
+entry = '''## [4.16.2] - 2026-07-18
+
+### Fixed
+- Kept Mission Requirements bound to the active MissionChief mission in AJAX/lightbox and standalone views.
+- Native `#missing_text` now outranks generic lightbox sources, preventing lower-right/footer mounting.
+- Visible newly opened missions outrank hidden stale records, and catalogue state resets when the active mission changes.
+
+### Interface
+- Mounted the panel directly beneath the mission title/address and before MissionChief's native requirement banner.
+- Added compact adaptive Desktop widths: 940px standard, 1140px for longer labels, and full available width only for exceptional content.
+- Tablet and iOS remain responsive without horizontal overflow.
+
+### Validation
+- Added lightbox source, header placement, delayed source, hidden-record, catalogue-transition and adaptive-width fixtures.
+
+'''
+if "## [4.16.2]" not in changelog:
+    changelog = replace_once(changelog, "## [4.16.1]", entry + "## [4.16.1]", "changelog")
+changelog_path.write_text(changelog, encoding="utf-8")
+
+(ROOT / "docs" / "issue-169-lightbox-requirements-context-contract.md").write_text('''# Issue #169 — Mission Requirements lightbox context and placement contract
+
+The matrix resolves one active mission root per document. Native requirement text, selected units, responding units, on-site units, mission identity and catalogue lookup are scoped to that root. Visible AJAX missions outrank hidden records.
+
+The panel is inserted immediately before native `#missing_text`. While that source is delayed, its anchor is placed after the mission address/title. Incident notes, response tables and dispatch footers are not valid preferred hosts.
+
+Mission and catalogue descriptor changes invalidate record-local catalogue data and stale asynchronous results.
+
+Desktop uses 940px standard width, 1140px for longer labels and the full available root width only for exceptional content. Tablet and iOS use the available width, always capped at 100%.
+''', encoding="utf-8")
+
+DIAGNOSTIC.unlink(missing_ok=True)
+try:
+    DIAGNOSTIC.parent.rmdir()
+except OSError:
+    pass
+
+help_manifest_path = ROOT / "help" / "manifest.json"
+help_manifest = json.loads(help_manifest_path.read_text(encoding="utf-8"))
+help_manifest.update({
+    "guideVersion": "4.16.2",
+    "toolkitVersion": "4.16.2",
+    "updated": "2026-07-18",
+    "runtimeGuidePatch": "Toolkit v4.16.2 keeps Mission Requirements under the active mission header in AJAX lightboxes and adds compact adaptive widths.",
+})
+help_manifest_path.write_text(json.dumps(help_manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+help_index = ROOT / "help" / "index.html"
+help_index.write_text(help_index.read_text(encoding="utf-8").replace("4.16.1", "4.16.2"), encoding="utf-8")
+
+canonical = SRC.read_bytes()
+for path in [ROOT / "dist" / "MissionChief_Map_Command_Toolkit.user.js", ROOT / "dist" / "MissionChief_Map_Command_Toolkit.txt"]:
+    path.write_bytes(canonical)
+digest = hashlib.sha256(canonical).hexdigest()
+(ROOT / "dist" / "SHA256SUMS.txt").write_text(f"{digest}  MissionChief_Map_Command_Toolkit.user.js\n{digest}  MissionChief_Map_Command_Toolkit.txt\n", encoding="utf-8")
+manifest_path = ROOT / "dist" / "release-manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+manifest.update({
+    "version": "4.16.2",
+    "sha256": digest,
+    "bytes": len(canonical),
+    "lines": canonical.count(b"\n"),
+    "distributionStatus": "dry-run-not-yet-greasyfork-source",
+})
+manifest.setdefault("metadata", {})["runtimeVersion"] = "4.16.2"
+manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+run("node", "--check", str(SRC.relative_to(ROOT)))
+run("node", str(RUNTIME.relative_to(ROOT)))
+run("python3", str(CONTRACT.relative_to(ROOT)))
+print(f"Issue #169 candidate ready: sha256={digest}")

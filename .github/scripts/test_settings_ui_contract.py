@@ -212,6 +212,8 @@ function installAutoLoadAllVehicles() {{ record("installAutoLoadAllVehicles"); }
 function stopAutoLoadAllVehicles() {{ record("stopAutoLoadAllVehicles"); }}
 function installMissionValueWindows() {{ record("installMissionValueWindows"); }}
 function clearMissionValueIndicators() {{ record("clearMissionValueIndicators"); }}
+function installMissionRequirementsWindows() {{ record("installMissionRequirementsWindows"); }}
+function clearMissionRequirementsPanels() {{ record("clearMissionRequirementsPanels"); }}
 function unlockPayoutAudio(value) {{ record("unlockPayoutAudio", value); }}
 function disposePayoutMediaAudio() {{ record("disposePayoutMediaAudio"); }}
 function runtimeClearTimeout(value) {{ record("runtimeClearTimeout", value); }}
@@ -320,6 +322,7 @@ function assertDefaultShape(value) {{
     assert.equal(value.visibility.vehicles, true);
     assert.equal(value.payoutFlash.template, "gta5");
     assert.equal(value.missionValue, true);
+    assert.equal(value.missionRequirements, true);
 }}
 
 function testStateMigration() {{
@@ -337,6 +340,7 @@ function testStateMigration() {{
     assert.equal(directMigrated.visibility.buildings, true);
     assert.equal(directMigrated.payoutFlash.template, "gta5");
     assert.equal(directMigrated.missionValue, false);
+    assert.equal(directMigrated.missionRequirements, false);
 
     localStorage.setItem(SCRIPT.storageState, "{{not-json");
     localStorage.setItem(SCRIPT.oldStorageKeys[0], JSON.stringify(fixtures.modernState));
@@ -361,6 +365,7 @@ function testStateMigration() {{
     assert.equal(migrated.allianceCreditMinimum, 0);
     assert.equal(migrated.autoLoadAllVehicles, true);
     assert.equal(migrated.missionValue, false);
+    assert.equal(migrated.missionRequirements, false);
     assert.equal(migrated.allianceBuildingsMap, false);
     assert.equal(migrated.majorIncidentFeed.enabled, false);
     assert.equal(migrated.majorIncidentFeed.minimumCredits, 25000);
@@ -404,6 +409,7 @@ function testStateMigration() {{
     assert.equal(modern.payoutFlash.template, "hyruleQuest");
     assert.equal(modern.discordReport.reportMode, "executive");
     assert.equal(modern.missionValue, true);
+    assert.equal(modern.missionRequirements, true);
 
     state = modern;
     saveState();

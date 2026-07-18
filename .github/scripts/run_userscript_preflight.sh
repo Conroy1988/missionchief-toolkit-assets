@@ -34,6 +34,7 @@ CONTRACTS=(
   .github/scripts/test_desktop_panel_layout_contract.py
   .github/scripts/test_section_navigation_contract.py
   .github/scripts/test_mission_value_contract.py
+  .github/scripts/test_mission_requirements_contract.py
   .github/scripts/test_transport_sweep_lssm_contract.py
 )
 

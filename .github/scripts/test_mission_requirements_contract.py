@@ -11,12 +11,17 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
 RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
+CATALOGUE_FIXTURE = ROOT / ".github/fixtures/mission-catalogue-pages.json"
 REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
 
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    catalogue_fixture = json.loads(CATALOGUE_FIXTURE.read_text(encoding="utf-8"))
+    assert len(catalogue_fixture["pages"]) >= 3
+    assert any(page.get("variations") for page in catalogue_fixture["pages"])
+    assert any(page.get("conditional") for page in catalogue_fixture["pages"])
 
     runtime = subprocess.run(["node", str(RUNTIME_TEST)], cwd=ROOT, text=True, capture_output=True)
     if runtime.stdout:
@@ -45,6 +50,13 @@ def main() -> int:
         "function missionRequirementsAnchorForCandidate(candidate)",
         "function missionRequirementsFallbackHtml(kind)",
         "function missionRequirementsReportUrl(record, reason = 'unknown')",
+        "function missionRequirementsCatalogueDescriptor(candidate)",
+        "function missionRequirementsCatalogueParseDocument(doc, descriptor = {})",
+        "function missionRequirementsCatalogueEnsure(record)",
+        "function missionRequirementsCataloguePanelHtml(catalogue)",
+        "function missionRequirementsCatalogueCompare(parsed, catalogue)",
+        "Official MissionChief catalogue baseline only",
+        "/einsaetze/",
         "Unable to pull mission requirements",
         "data-mcms-report-mission",
         "mission-info-missing.yml",

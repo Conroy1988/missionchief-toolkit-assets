@@ -1,0 +1,569 @@
+Issue #162 source extraction
+
+    function missionRequirementsReportUrl(record, reason = 'unknown') {
+        const candidate = record?.candidate || {};
+        const source = record?.source;
+        const root = candidate.root || candidate.mount;
+        const doc = source?.ownerDocument || root?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const missionId = missionRequirementsMissionIdentity(candidate, source) || 'Unknown';
+        const title = missionRequirementsMissionTitle(record);
+        const missionType = missionRequirementsMissionTypeId(candidate);
+        const raw = source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? '' : missionRequirementsElementText(source);
+        let parsed = { requirements: [], unresolved: [] };
+        try { if (raw) parsed = missionRequirementsParseSource(source); } catch (err) {}
+        const selected = missionRequirementsCollectUnits(candidate, 'selected');
+        const enRoute = missionRequirementsCollectUnits(candidate, 'enroute');
+        const classes = Array.from(source?.classList || []).filter(value => /^[A-Za-z0-9_-]{1,40}$/.test(value)).slice(0, 8).join(' ');
+        const count = selector => { try { return root?.querySelectorAll?.(selector)?.length || 0; } catch (err) { return 0; } };
+        const platform = missionRequirementsSafeDiagnostic(view?.navigator?.userAgentData?.platform || view?.navigator?.platform || 'Unknown', 80);
+        const mobile = view?.navigator?.userAgentData?.mobile === true ? 'yes' : 'no/unknown';
+        const path = missionRequirementsSafeDiagnostic(view?.location?.pathname || '', 180);
+        const mode = state.uiMode || state.operatingMode || (Number(view?.innerWidth) <= 767 ? 'mobile' : Number(view?.innerWidth) <= 1180 ? 'tablet' : 'desktop');
+        const fields = [
+            '## Automatically harvested Mission Requirements diagnostic',
+            '',
+            '> Review this report before submitting. No GitHub token, cookies, chat, coordinates, addresses, vehicle IDs or authentication data are included.',
+            '',
+            `- **Failure reason:** ${missionRequirementsSafeDiagnostic(reason, 120) || 'Unknown'}`,
+            `- **Mission ID:** ${missionId}`,
+            `- **Mission title:** ${title || 'Unavailable'}`,
+            `- **Mission type ID:** ${missionType ?? 'Unavailable'}`,
+            `- **MissionChief path:** ${path || 'Unavailable'}`,
+            `- **Toolkit version:** ${SCRIPT.version}`,
+            `- **Layout:** ${missionRequirementsSafeDiagnostic(mode, 40)}`,
+            `- **Viewport:** ${Number(view?.innerWidth) || 0}×${Number(view?.innerHeight) || 0}`,
+            `- **Platform:** ${platform}; mobile=${mobile}`,
+            '',
+            '### Requirement source',
+            `- Present: ${source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? 'No' : 'Yes'}`,
+            `- Element: ${missionRequirementsSafeDiagnostic(source?.tagName || 'Unavailable', 30)}#${missionRequirementsSafeDiagnostic(source?.id || '', 60)}`,
+            `- Classes: ${missionRequirementsSafeDiagnostic(classes, 180) || 'None'}`,
+            `- Typed groups: ${count('[data-requirement-type]')}`,
+            `- Parsed rows: ${parsed.requirements.length}`,
+            `- Unresolved fragments: ${parsed.unresolved.length}`,
+            '',
+            '### Native selector counts',
+            `- missing_text: ${count('#missing_text')}`,
+            `- selected checkboxes: ${count('.vehicle_checkbox:checked')}`,
+            `- en-route rows: ${count('#mission_vehicle_driving tbody tr')}`,
+            `- selected vehicle types: ${missionRequirementsTypeSummary(selected)}`,
+            `- en-route vehicle types: ${missionRequirementsTypeSummary(enRoute)}`,
+            '',
+            '### Visible requirement text',
+            '```text',
+            missionRequirementsSafeDiagnostic(raw, 1200) || 'Unavailable',
+            '```'
+        ];
+        const issueTitle = `Mission requirements missing: ${title || `Mission ${missionId}`}`.slice(0, 180);
+        let body = fields.join('\n');
+        const build = () => {
+            const params = new URLSearchParams({ title: issueTitle, labels: 'Mission Info Missing', body });
+            return `https://github.com/Conroy1988/missionchief-toolkit-assets/issues/new?${params.toString()}`;
+        };
+        let url = build();
+        while (url.length > 7600 && body.length > 1800) {
+            body = `${body.slice(0, Math.max(1500, body.length - 500))}\n\n_Report shortened to fit GitHub's issue URL limit._`;
+            url = build();
+        }
+        return url;
+    }
+
+Existing issue templates:
+
+--- bug-report.yml ---
+name: Bug report
+
+description: Report a reproducible problem with the MissionChief Map Command Toolkit.
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please check that Tampermonkey has installed the latest Toolkit version and reproduce the issue once after a hard refresh before submitting.
+
+        Do not include account passwords, webhook URLs, private tokens or other sensitive information.
+
+  - type: input
+    id: toolkit-version
+    attributes:
+      label: Toolkit version
+      description: The version shown in Tampermonkey or the Toolkit interface.
+      placeholder: "4.11.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation-source
+    attributes:
+      label: Installation source
+      options:
+        - Greasy Fork
+        - GitHub release
+        - Local or manually modified copy
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 142, Firefox 140, Safari 18"
+    validations:
+      required: true
+
+  - type: input
+    id: tampermonkey
+    attributes:
+      label: Tampermonkey version
+      placeholder: "5.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-mode
+    attributes:
+      label: Device and Toolkit mode
+      options:
+        - Windows or Linux desktop — Desktop Mode
+        - Windows or Linux tablet — Tablet Mode
+        - macOS — Desktop Mode
+        - iPadOS — Tablet Mode
+        - iPhone or iOS — iOS Mobile Mode
+        - Android — mobile browser
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      options:
+        - Map controls, markers or overlays
+        - Bookmarks or map jumps
+        - Mission Age Watch or Critical View
+        - Mission Inspector, Transport Watcher or mission processing
+        - Vehicle Code Status or vehicle processing
+        - Payouts, completion history or financial features
+        - Themes, map skins or visual presentation
+        - Settings panel, import or export
+        - Tablet or iOS layout
+        - GitHub, Greasy Fork or release infrastructure
+        - Other or not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem summary
+      description: State what is broken and where it appears.
+      placeholder: "The bookmark row overlaps the map controls after switching to Tablet Mode."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give exact steps starting from opening MissionChief.
+      placeholder: |
+        1. Open MissionChief in a new tab.
+        2. Open the Toolkit menu.
+        3. Enable Tablet Mode.
+        4. Add a bookmark and close the menu.
+        5. Observe the bookmark row.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      placeholder: "The bookmark row should remain inside the map area without covering other controls."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      placeholder: "The final bookmark is drawn over the layer control."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Did this work in an earlier Toolkit version?
+      options:
+        - Yes
+        - No
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: last-working-version
+    attributes:
+      label: Last known working version
+      description: Leave blank when unknown.
+      placeholder: "4.11.1"
+
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Browser console output
+      description: Paste relevant red errors or warnings. Use a code block where possible.
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recording
+      description: Drag files into this box. Remove personal or alliance-sensitive information first.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Include relevant enabled features, theme, map skin, mission count, vehicle count or settings changes.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I reproduced this on the latest available Toolkit version.
+          required: true
+        - label: I checked that another enabled userscript is not obviously causing the same problem.
+          required: true
+        - label: I removed passwords, tokens, webhook URLs and other sensitive information.
+          required: true
+
+
+--- config.yml ---
+blank_issues_enabled: false
+contact_links:
+  - name: Install or update the Toolkit
+    url: https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit
+    about: Use the official Greasy Fork page for the current public version.
+  - name: Review releases and changelogs
+    url: https://github.com/Conroy1988/missionchief-toolkit-assets/releases
+    about: Check whether a problem has already been corrected in a newer release.
+  - name: Read project and release status
+    url: https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/status/README.md
+    about: View the current canonical version and release-pipeline state.
+
+
+--- feature-request.yml ---
+name: Feature request
+
+description: Propose a useful improvement or new capability for the Toolkit.
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Strong feature requests explain the player problem first, then the proposed solution. Please consider Desktop, Tablet and iOS behaviour where relevant.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or limitation
+      description: What is difficult, repetitive, unclear or currently impossible for MissionChief players?
+      placeholder: "When many alliance missions are clustered together, it is difficult to identify which incidents need my units without opening each mission."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: Describe what the Toolkit should do from the user's point of view.
+      placeholder: "Add an optional map indicator that distinguishes alliance missions where I have an eligible unit nearby."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Primary Toolkit area
+      options:
+        - Map controls, markers or overlays
+        - Bookmarks or map jumps
+        - Mission Age Watch or Critical View
+        - Mission Inspector, Transport Watcher or mission processing
+        - Vehicle Code Status or vehicle processing
+        - Payouts, completion history or financial features
+        - Themes, map skins or visual presentation
+        - Settings, import or export
+        - Tablet or iOS experience
+        - GitHub, Greasy Fork or release infrastructure
+        - New area
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who benefits most?
+      options:
+        - All Toolkit users
+        - Large-account users
+        - Alliance administrators
+        - Desktop users
+        - Tablet users
+        - iOS users
+        - Theme or visual-customisation users
+        - Developers and maintainers
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Suggested user workflow
+      description: Explain how the user would enable, configure and use the feature.
+      placeholder: |
+        1. Open the Map tab.
+        2. Enable the new indicator.
+        3. Choose the minimum mission value.
+        4. Relevant mission markers receive a compact badge.
+    validations:
+      required: true
+
+  - type: textarea
+    id: visual-design
+    attributes:
+      label: Visual or interaction concept
+      description: Describe placement, controls, colours, animations or touch behaviour. Screenshots and mock-ups can be dragged here.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Explain existing Toolkit features, MissionChief controls or other approaches that do not fully solve the problem.
+
+  - type: dropdown
+    id: default-state
+    attributes:
+      label: Recommended default state
+      options:
+        - Enabled by default
+        - Disabled by default and user-selectable
+        - Automatic based on device or context
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance and compatibility considerations
+      description: Note expected mission, marker or vehicle scale; mobile implications; theme requirements; and any risk of visual clutter.
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References or examples
+      description: Add relevant MissionChief screenshots, Leaflet examples or links to similar behaviour.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked that the Toolkit does not already provide this behaviour.
+          required: true
+        - label: This request explains a user problem rather than only requesting a cosmetic change without context.
+          required: true
+        - label: I considered Desktop, Tablet and iOS implications where relevant.
+          required: true
+
+
+--- performance-report.yml ---
+name: Performance report
+
+description: Report slow startup, freezing, lag, excessive processing or memory use.
+title: "[Performance]: "
+labels:
+  - performance
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when MissionChief or the Toolkit becomes slow, freezes temporarily, or consumes excessive resources.
+
+        Before reporting, compare one clean load with the Toolkit enabled and one with only this userscript disabled. Do not include private tokens, webhook URLs or account credentials.
+
+  - type: input
+    id: toolkit-version
+    attributes:
+      label: Toolkit version
+      placeholder: "4.11.2"
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 142"
+    validations:
+      required: true
+
+  - type: input
+    id: tampermonkey
+    attributes:
+      label: Tampermonkey version
+      placeholder: "5.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-mode
+    attributes:
+      label: Device and Toolkit mode
+      options:
+        - Windows or Linux desktop — Desktop Mode
+        - Windows or Linux tablet — Tablet Mode
+        - macOS — Desktop Mode
+        - iPadOS — Tablet Mode
+        - iPhone or iOS — iOS Mobile Mode
+        - Android — mobile browser
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: Main performance symptom
+      options:
+        - Game cannot be interacted with during startup
+        - Toolkit controls take too long to appear
+        - Opening the Toolkit menu is slow
+        - Map movement or zooming is laggy
+        - Mission markers or mission list update slowly
+        - Vehicle processing is slow
+        - Performance degrades over time
+        - High memory or CPU use
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: duration
+    attributes:
+      label: Approximate delay or freeze duration
+      placeholder: "About 15 seconds"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sequence
+    attributes:
+      label: What happens during the delay?
+      description: Describe what is visible and what cannot be clicked or moved.
+      placeholder: "The map appears, but clicks and map dragging do nothing until the Toolkit bar finishes appearing."
+    validations:
+      required: true
+
+  - type: input
+    id: mission-count
+    attributes:
+      label: Approximate visible mission count
+      placeholder: "250"
+
+  - type: input
+    id: vehicle-count
+    attributes:
+      label: Approximate personal vehicle count
+      placeholder: "1,500"
+
+  - type: textarea
+    id: enabled-systems
+    attributes:
+      label: Relevant enabled Toolkit systems
+      description: List systems such as Major Incident Feed, Transport Watcher, Mission Inspector, Stuck Mission Detector, Mission Age Watch, payout tracking and coverage overlays.
+      placeholder: "Major Incident Feed, Transport Watcher and Mission Age Watch are enabled."
+
+  - type: textarea
+    id: startup-metrics
+    attributes:
+      label: Startup metrics
+      description: Open the browser console after loading, run `window.__MCMS_STARTUP_METRICS__`, and paste the returned object here.
+      render: javascript
+
+  - type: textarea
+    id: console-output
+    attributes:
+      label: Browser console errors or warnings
+      render: shell
+
+  - type: textarea
+    id: comparison
+    attributes:
+      label: Comparison with the Toolkit disabled
+      description: State how long MissionChief takes to become interactive when only this userscript is disabled.
+      placeholder: "Toolkit enabled: 15 seconds. Toolkit disabled: 2 seconds."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Was an earlier Toolkit version faster?
+      options:
+        - Yes
+        - No
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: last-fast-version
+    attributes:
+      label: Last known faster version
+      placeholder: "4.11.0"
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction procedure
+      placeholder: |
+        1. Close all MissionChief tabs.
+        2. Open MissionChief in a new tab.
+        3. Attempt to drag the map immediately.
+        4. Record when interaction becomes possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots, recording or browser performance profile
+      description: Drag supporting files here after removing personal or alliance-sensitive information.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmation
+      options:
+        - label: I tested the latest available Toolkit version.
+          required: true
+        - label: I compared startup or responsiveness with only this userscript disabled.
+          required: true
+        - label: I removed passwords, tokens, webhook URLs and other sensitive information.
+          required: true

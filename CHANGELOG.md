@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.7] - 2026-07-19
+
+### Fixed
+- Fixed Railway Police selected personnel showing inflated values such as `239+` when an unrelated table-cell sort value was mistaken for crew capacity.
+- Personnel capacity now uses semantically labelled crew metadata or explicit current/maximum crew text; unlabelled positional numeric cells are ignored.
+
+### Validation
+- Added deterministic regression coverage proving one selected Railway Police Officer contributes exactly one and an unlabelled `sortvalue=239` contributes nothing.
+
 ## [4.20.6] - 2026-07-19
 
 ### Added

@@ -17,6 +17,7 @@
     ".github/workflows/owner-release-command.yml": ["actions", "issues"],
     ".github/workflows/pages-production-monitor.yml": ["issues"],
     ".github/workflows/prepare-release-rollback.yml": ["contents", "issues", "pull-requests"],
+    ".github/workflows/publish-update-manifest.yml": ["contents"],
     ".github/workflows/reconcile-release-announcement-state.yml": ["contents"],
     ".github/workflows/release-recovery.yml": ["contents"],
     ".github/workflows/release-toolkit-dry-run.yml": ["contents"],

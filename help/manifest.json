@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.19.0",
-  "toolkitVersion": "4.19.0",
+  "guideVersion": "4.19.1",
+  "toolkitVersion": "4.19.1",
   "updated": "2026-07-19",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.19.0 makes Requirements for this Mission an authoritative Matrix source, adding missing vehicle and personnel baselines without duplication while retaining patient-derived Ambulance demand."
+  "runtimeGuidePatch": "Toolkit v4.19.1 restores live patient discovery outside the mission form, enforces one ambulance per patient, and adds affirmative Critical Care, HEMS and transport conditions to the Mission Requirements Matrix."
 }

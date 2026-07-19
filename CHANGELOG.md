@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.19.1] - 2026-07-19
+
+### Fixed
+- Corrected live patient discovery when MissionChief renders the patient summary and details outside the resolved mission form, preventing the Mission Requirements Matrix from falsely reporting no outstanding requirements.
+- Restored the one-transport-ambulance-per-current-patient requirement on the real mission-window layout.
+
+### Added
+- Added patient-detail reconciliation for affirmative **Critical Care required**, **HEMS required** and **Requires Transport** fields.
+- Added fulfilment handling for **Ambulance with the patient** and **Critical Care with the patient** without double-counting vehicle demand.
+
+### Validation
+- Added deterministic outside-form patient DOM fixtures, affirmative/negative patient-flag fixtures and false-green prevention checks.
+
 ## [4.19.0] - 2026-07-19
 
 ### Fixed

@@ -18,6 +18,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Validation
 - Added deterministic outside-form patient DOM fixtures, affirmative/negative patient-flag fixtures and false-green prevention checks.
+- Compacted the reviewed patient runtime after validation to remain within the established release performance envelope.
 
 ## [4.19.0] - 2026-07-19
 

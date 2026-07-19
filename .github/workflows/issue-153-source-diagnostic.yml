@@ -15,68 +15,59 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - name: Inspect Toolkit control and release architecture
+      - name: Inspect exact Toolkit control and lifecycle anchors
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          python3 - <<'PY' > "$RUNNER_TEMP/issue-153-source.txt"
+          python3 - <<'PY' > "$RUNNER_TEMP/issue-153-targeted.txt"
           from pathlib import Path
           import re
 
-          source_path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          source = source_path.read_text(encoding='utf-8')
+          source = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
           lines = source.splitlines()
 
-          patterns = [
-              r'controlId', r'panelId', r'leaflet-control', r'L\.Control', r'L\.control',
-              r'createElement\(["\']button', r'addEventListener\(["\']click',
-              r'function .*Control', r'function .*control', r'function .*teardown',
-              r'function .*destroy', r'function .*cleanup', r'function .*boot',
-              r'GM_getValue', r'GM_setValue', r'localStorage', r'visibilitychange',
-              r'pagehide', r'beforeunload', r'AbortController', r'GM_xmlhttpRequest'
-          ]
-          regex = re.compile('|'.join(f'(?:{p})' for p in patterns), re.I)
-          hits = [i for i, line in enumerate(lines) if regex.search(line)]
+          def emit(title, indexes, before=18, after=36, limit=12):
+              print(f'\n## {title}')
+              emitted=[]
+              for index in indexes:
+                  start=max(0,index-before); end=min(len(lines),index+after)
+                  if emitted and start <= emitted[-1][1]:
+                      emitted[-1]=(emitted[-1][0],max(emitted[-1][1],end))
+                  else:
+                      emitted.append((start,end))
+              for start,end in emitted[:limit]:
+                  print(f'--- lines {start+1}-{end} ---')
+                  for n in range(start,end): print(f'{n+1:05d}: {lines[n]}')
 
-          groups = []
-          for index in hits:
-              start = max(0, index - 8)
-              end = min(len(lines), index + 18)
-              if groups and start <= groups[-1][1] + 8:
-                  groups[-1] = (groups[-1][0], max(groups[-1][1], end))
-              else:
-                  groups.append((start, end))
+          exact_patterns = {
+              'CONTROL_ID_RUNTIME': re.compile(r'(?:getElementById\(SCRIPT\.controlId\)|\.id\s*=\s*SCRIPT\.controlId|id:\s*SCRIPT\.controlId)'),
+              'CONTROL_CLASSES': re.compile(r'(?:leaflet-control|mcms-shell|mcms-main-button|mcms-control)', re.I),
+              'CONTROL_FUNCTIONS': re.compile(r'^\s*function\s+\w*(?:Control|control|Dock|dock|Shell|shell|Button|button)\w*\s*\('),
+              'BOOT_LIFECYCLE': re.compile(r'^\s*(?:async\s+)?function\s+\w*(?:boot|Boot|teardown|Teardown|destroy|Destroy|cleanup|Cleanup|shutdown|Shutdown)\w*\s*\('),
+              'VISIBILITY': re.compile(r'visibilitychange|document\.visibilityState'),
+              'RUNTIME_REPLACEMENT': re.compile(r'runtime replacement|runtimeReplacement|__mcms|destroy\s*:\s*|teardown\s*:\s*', re.I),
+              'STORAGE_HELPERS': re.compile(r'^\s*(?:async\s+)?function\s+\w*(?:Storage|storage|Persist|persist|Setting|setting|Value|value)\w*\s*\('),
+              'NETWORK_HELPERS': re.compile(r'GM_xmlhttpRequest|AbortController|fetch\s*\('),
+          }
+          for title, pattern in exact_patterns.items():
+              indexes=[i for i,line in enumerate(lines) if pattern.search(line)]
+              if title == 'CONTROL_CLASSES': indexes=[i for i in indexes if i > 15000]
+              emit(title,indexes,limit=18)
 
-          print('SOURCE_LINES', len(lines))
-          print('SOURCE_EXCERPTS')
-          for start, end in groups[:35]:
-              print(f'--- lines {start + 1}-{end} ---')
-              for number in range(start, end):
-                  print(f'{number + 1:05d}: {lines[number]}')
-
-          print('\nRELEASE_FILES')
-          for path in sorted(Path('.github').rglob('*')):
-              if not path.is_file():
-                  continue
-              try:
-                  text = path.read_text(encoding='utf-8')
-              except Exception:
-                  continue
-              if re.search(r'release-dashboard|latestRelease|Greasy Fork|release manifest|site-data|release-toolkit', text, re.I):
-                  print(path)
+          print('\n## LAST_900_LINES')
+          for n in range(max(0,len(lines)-900),len(lines)):
+              print(f'{n+1:05d}: {lines[n]}')
           PY
 
-          body="$RUNNER_TEMP/issue-153-comment.md"
+          body="$RUNNER_TEMP/issue-153-targeted-comment.md"
           {
-            echo '### Issue #153 source architecture diagnostic'
+            echo '### Issue #153 targeted runtime diagnostic'
             echo
-            echo 'The temporary branch diagnostic captured control creation, lifecycle, persistence and release-pipeline anchors required for implementation.'
-            echo
-            echo '<details><summary>Source and release excerpts</summary>'
+            echo '<details><summary>Exact control, lifecycle and network anchors</summary>'
             echo
             echo '```text'
-            tail -n 900 "$RUNNER_TEMP/issue-153-source.txt"
+            cat "$RUNNER_TEMP/issue-153-targeted.txt"
             echo '```'
             echo '</details>'
           } > "$body"

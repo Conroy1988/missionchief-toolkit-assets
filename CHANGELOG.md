@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.19.0] - 2026-07-19
+
+### Fixed
+- Promoted MissionChief's **Requirements for this Mission** vehicle and personnel data from fallback-only planning information into an authoritative Mission Requirements Matrix source.
+- Added authoritative-only rows that were absent from `#missing_text`, while reconciling overlaps with the strongest non-duplicated requirement.
+- Preserved patient-derived Ambulance demand as an independent authority and rejected stale mission responses during AJAX navigation.
+
+### Behaviour
+- Deterministic requirements are counted normally; probability-based requirements remain visible as uncertain until MissionChief confirms them or sufficient units cover the maximum.
+- The Matrix now fails closed while authoritative mission information is loading or unavailable, preventing a false green state.
+- Official mission definitions remain cached by definition URL, with active mission-instance tokens preventing stale response application.
+
+### Validation
+- Added fixtures for catalogue-only vehicles, personnel, overlapping sources, conditional requirements, patient coexistence, loading failures and cached authoritative data.
+
 ## [4.18.0] - 2026-07-18
 
 ### Fixed

@@ -186,7 +186,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.18.0'
+        version: '4.19.0'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -227,6 +227,7 @@ this.__mcmsRequirements = {
     patientCount: missionRequirementsPatientCount,
     patientState: missionRequirementsPatientState,
     reconcilePatientDemand: missionRequirementsReconcilePatientDemand,
+    reconcileCatalogue: missionRequirementsReconcileCatalogue,
     capacity: missionRequirementsCapacity,
     capacityText: missionRequirementsCapacityText,
     coverageRow: missionRequirementsCoverageRow,
@@ -1148,5 +1149,48 @@ assert.strictEqual(api.records.size, 0, 'disabling the feature removes every pan
 context.state.missionRequirements = true;
 assert(listenedEvents.filter(event => event.type === 'change').length === 1, 'delegated checkbox change listener is installed once');
 assert(trackedObservers.size >= 1, 'document lifecycle observer remains runtime-owned');
+
+
+// Issue #183 authoritative Requirements for this Mission reconciliation.
+{
+const authoritativeMajor = parsedCatalogues.get('personnel-heavy major incident');
+const authoritativeOnly = api.reconcileCatalogue({ requirements: [], unresolved: [] }, authoritativeMajor, 'ready', true);
+assert.strictEqual(authoritativeOnly.requirements.filter(item => item.key === 'fire-engine').length, 1, 'catalogue-only vehicle requirement is added once');
+assert.strictEqual(authoritativeOnly.requirements.filter(item => item.key === 'otl').length, 1, 'catalogue-only personnel requirement is added once');
+assert.strictEqual(authoritativeOnly.requirements.filter(item => item.key === 'ambulance-officer').length, 1, 'catalogue-only specialist personnel requirement is retained');
+assert(authoritativeOnly.requirements.every(item => item.requirementSource === 'Mission info'), 'catalogue-only rows identify the mission-info source');
+
+const authoritativeDoc = new FakeDocument();
+authoritativeDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const authoritativeCandidate = makeMissionCandidate(authoritativeDoc, '');
+const authoritativeRows = api.resolve(authoritativeCandidate, authoritativeOnly, authoritativeMajor);
+assert.strictEqual(authoritativeRows.find(item => item.key === 'fire-engine').requiredText, '10', 'authoritative vehicle baseline becomes Required');
+assert.strictEqual(authoritativeRows.find(item => item.key === 'otl').requiredText, '1', 'authoritative personnel baseline becomes Required');
+assert(api.panelHtml(authoritativeRows, []).html.includes('Mission info'), 'normal Matrix displays the compact mission-info source badge');
+
+const fireDefinition = api.definitions.find(item => item.key === 'fire-engine');
+const overlapping = api.reconcileCatalogue({ requirements: [{ key: 'fire-engine', requirement: 'Fire Engine', missing: 2, group: 'vehicles', definition: fireDefinition }], unresolved: [] }, authoritativeMajor, 'ready', true);
+assert.strictEqual(overlapping.requirements.filter(item => item.key === 'fire-engine').length, 1, 'live and authoritative rows are not duplicated');
+const overlappingRow = api.resolve(authoritativeCandidate, overlapping, authoritativeMajor).find(item => item.key === 'fire-engine');
+assert.strictEqual(overlappingRow.requiredText, '10', 'larger authoritative baseline wins over a lower live reconstruction');
+
+const conditionalCatalogue = parsedCatalogues.get('alternative and conditional requirements');
+const conditionalParsed = api.reconcileCatalogue({ requirements: [], unresolved: [] }, conditionalCatalogue, 'ready', true);
+const conditionalRow = api.resolve(authoritativeCandidate, conditionalParsed, conditionalCatalogue).find(item => item.key === 'police-car');
+assert.strictEqual(conditionalRow.uncertain, true, 'probabilistic mission-info requirement remains uncertain when not covered');
+assert.strictEqual(conditionalRow.definitelyOpen, false, 'probabilistic mission-info requirement is not falsely reported as definitely required');
+
+const loadingAuthority = api.reconcileCatalogue({ requirements: [{ key: 'fire-engine', requirement: 'Fire Engine', missing: 1, group: 'vehicles', definition: fireDefinition }], unresolved: [] }, null, 'loading', true);
+assert(loadingAuthority.unresolved.some(item => item.authoritativePending), 'Matrix fails closed while Requirements for this Mission is loading');
+const failedAuthority = api.reconcileCatalogue({ requirements: [], unresolved: [] }, null, 'error', true);
+assert(failedAuthority.unresolved.some(item => /could not be loaded/.test(item.text)), 'failed authoritative source remains visible for manual verification');
+
+const patientCoexistence = api.reconcilePatientDemand(authoritativeOnly, { present: true, known: true, count: 12, source: 'fixture' });
+assert.strictEqual(patientCoexistence.requirements.filter(item => item.key === 'ambulance').length, 1, 'patient Ambulance authority coexists without duplication');
+assert.strictEqual(patientCoexistence.requirements.find(item => item.key === 'ambulance').patientRequired, 12, 'patient-derived Ambulance demand remains authoritative');
+
+const staleAuthority = api.reconcileCatalogue({ requirements: [], unresolved: [] }, { ...authoritativeMajor, stale: true }, 'stale', true);
+assert(staleAuthority.unresolved.some(item => /cached Requirements for this Mission/.test(item.text)), 'stale authoritative data is explicitly identified');
+}
 
 console.log('Mission requirements runtime fixtures passed');

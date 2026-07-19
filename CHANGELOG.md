@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.8] - 2026-07-20
+
+### Fixed
+- Fulfilled Mission Requirements Matrix rows are now hidden whenever their reconciled **Still needed** value is definitively zero.
+- Hidden rows immediately return when selection, responding, on-site, patient, personnel or upgraded mission demand creates a positive shortage.
+- All-covered missions retain a compact explicit success state instead of showing an empty table.
+
+### Safety
+- Unresolved, uncertain, loading and unavailable requirements remain visible and continue to block false success states.
+- Requirement calculations, authoritative reconciliation, unit de-duplication and MissionChief/LSSM coexistence are unchanged.
+
+### Validation
+- Added deterministic fixtures for fulfilled-row suppression, mixed outstanding/fulfilled rows, renewed shortages after upgrade or re-entry, and unresolved-authority precedence.
+
 ## [4.20.7] - 2026-07-19
 
 ### Fixed

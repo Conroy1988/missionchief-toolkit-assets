@@ -1,0 +1,1465 @@
+CONTROL_RUNTIME_HITS
+FUNCTION fitPayoutFlashAroundToolkitControls around line 26280
+--- lines 26260-26339 ---
+26260:             void banner.offsetHeight;
+26261:             if (isOverflowing()) overlay.classList.add('mcms-payout-fit-tight');
+26262:             fitPayoutFlashAroundToolkitControls(overlay);
+26263:         };
+26264: 
+26265:         runtimeRequestAnimationFrame(() => runtimeRequestAnimationFrame(run));
+26266:     }
+26267: 
+26268:     function fitPayoutFlashAroundToolkitControls(overlay) {
+26269:         if (!overlay || runtime.destroyed) return;
+26270:         const banner = overlay.querySelector('.mcms-payout-banner');
+26271:         if (!banner) return;
+26272: 
+26273:         overlay.classList.remove('mcms-payout-controls-safe');
+26274:         overlay.style.removeProperty('--mcms-payout-banner-top');
+26275:         overlay.style.removeProperty('--mcms-payout-safe-height');
+26276:         overlay.style.removeProperty('--mcms-payout-safe-bottom-offset');
+26277: 
+26278:         if (overlay.dataset.template !== 'jamesBond') return;
+26279: 
+26280:         const controls = document.getElementById(SCRIPT.controlId);
+26281:         if (!controls || !isVisible(controls)) return;
+26282:         const overlayRect = overlay.getBoundingClientRect();
+26283:         const controlRect = controls.getBoundingClientRect();
+26284:         if (overlayRect.width <= 0 || overlayRect.height <= 0 || controlRect.width <= 0 || controlRect.height <= 0) return;
+26285:         const horizontallyIntersects = controlRect.right > overlayRect.left + 4 && controlRect.left < overlayRect.right - 4;
+26286:         const controlTop = controlRect.top - overlayRect.top;
+26287:         const isLowerMapControl = controlTop > overlayRect.height * .42 && controlTop < overlayRect.height - 12;
+26288:         if (!horizontallyIntersects || !isLowerMapControl) return;
+26289:         const gap = 10;
+26290:         const safeBottom = Math.max(190, Math.min(overlayRect.height - 8, controlTop - gap));
+26291:         const defaultBottom = overlayRect.height * .5 + banner.offsetHeight * .5;
+26292:         if (defaultBottom <= safeBottom) return;
+26293:         const safeHeight = Math.max(210, safeBottom - 16);
+26294:         const safeBottomOffset = Math.max(0, overlayRect.height - safeBottom);
+26295:         overlay.style.setProperty('--mcms-payout-safe-height', `${safeHeight}px`);
+26296:         overlay.style.setProperty('--mcms-payout-safe-bottom-offset', `${safeBottomOffset}px`);
+26297:         overlay.classList.add('mcms-payout-controls-safe');
+26298:         // Re-read after the compact 007 layout applies, then centre the dossier in
+26299:         // the unobstructed map area above the expanded command toolbar.
+26300:         void banner.offsetHeight;
+26301:         const fittedHeight = Math.min(banner.offsetHeight, safeHeight);
+26302:         const upperMargin = 8;
+26303:         const preferredCentre = overlayRect.height * .5;
+26304:         const maximumCentre = safeBottom - fittedHeight * .5;
+26305:         const minimumCentre = upperMargin + fittedHeight * .5;
+26306:         const fittedCentre = Math.max(minimumCentre, Math.min(preferredCentre, maximumCentre));
+26307:         overlay.style.setProperty('--mcms-payout-banner-top', `${Math.round(fittedCentre)}px`);
+26308:     }
+26309: 
+26310:     function triggerPayoutFlash(amount, force = false, context = null, options = {}) {
+26311:         const credits = Math.max(0, Math.round(Number(amount) || 0));
+26312:         if (!force && (!state.payoutFlash.enabled || credits < state.payoutFlash.threshold)) return false;
+26313:         const overlay = ensurePayoutFlashOverlay();
+26314:         if (!overlay) return false;
+26315:         stopPayoutFlashAnimation(overlay);
+26316:         positionPayoutFlashOverlay(overlay);
+26317:         const duration = normalisePayoutFlashDuration(options.durationMs ?? state.payoutFlash.durationMs);
+26318:         const templateKey = PAYOUT_TEMPLATES[options.template] ? options.template : state.payoutFlash.template;
+26319:         const resolvedContext = context || (force ? { source: 'personal', caption: 'Emergency Response Test' } : { source: 'unknown', caption: '' });
+26320:         const presentation = payoutPresentation(credits, resolvedContext);
+26321:         overlay.dataset.tier = presentation.tier;
+26322:         overlay.dataset.source = presentation.source;
+26323:         overlay.dataset.template = templateKey;
+26324:         overlay.style.setProperty('--mcms-payout-accent', presentation.colour);
+26325:         overlay.style.setProperty('--mcms-payout-accent-soft', presentation.soft);
+26326:         overlay.style.setProperty('--mcms-payout-glow', presentation.glow);
+26327:         const amountElement = overlay.querySelector('.mcms-payout-amount');
+26328:         const titleElement = overlay.querySelector('.mcms-payout-title');
+26329:         const missionElement = overlay.querySelector('.mcms-payout-mission');
+26330:         const sourceElement = overlay.querySelector('.mcms-payout-source');
+26331:         const tierElement = overlay.querySelector('.mcms-payout-tier');
+26332:         const red = overlay.querySelector('.mcms-payout-red');
+26333:         const blue = overlay.querySelector('.mcms-payout-blue');
+26334:         const cinematic = overlay.querySelector('.mcms-payout-cinematic');
+26335:         const viceSunset = overlay.querySelector('.mcms-payout-vc-sunset');
+26336:         const viceGrid = overlay.querySelector('.mcms-payout-vc-grid');
+26337:         const badDust = overlay.querySelector('.mcms-payout-bc-dust');
+26338:         const badHud = overlay.querySelector('.mcms-payout-bc-hud');
+26339:         const badEmbers = overlay.querySelector('.mcms-payout-bc-embers');
+FUNCTION toggleCommandBar around line 29166
+--- lines 29146-29225 ---
+29146:         if (persist) saveState();
+29147:         updateUI();
+29148:         fitControlToMap();
+29149:     }
+29150: 
+29151:     function nudgeControl(dx, dy) {
+29152:         state.nudge.x = clamp(state.nudge.x + dx, -220, 220, 0);
+29153:         state.nudge.y = clamp(state.nudge.y + dy, -220, 220, 0);
+29154:         saveState();
+29155:         updateUI();
+29156:     }
+29157: 
+29158:     function resetNudge() {
+29159:         state.nudge = { x: 0, y: 0 };
+29160:         saveState();
+29161:         updateUI();
+29162:     }
+29163: 
+29164:     function toggleCommandBar() {
+29165:         if (commandBarAnimating) return;
+29166:         const control = document.getElementById(SCRIPT.controlId);
+29167:         const opening = state.commandBarOpen === false;
+29168:         const animatedItems = control
+29169:             ? Array.from(control.querySelectorAll('.mcms-float-btn, .mcms-screen-pin-btn'))
+29170:             : [];
+29171:         const reduceMotion = Boolean(state.economyMode || pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+29172:         const duration = reduceMotion ? 0 : (mobileModeActive ? 145 : 175);
+29173:         const stagger = reduceMotion ? 0 : (mobileModeActive ? 5 : 7);
+29174:         const maxDelay = Math.min(Math.max(0, animatedItems.length - 1) * stagger, 70);
+29175:         const clearAnimationStyles = () => {
+29176:             for (const item of animatedItems) {
+29177:                 item.style.removeProperty('opacity');
+29178:                 item.style.removeProperty('transform');
+29179:                 item.style.removeProperty('transition');
+29180:                 item.style.removeProperty('transition-delay');
+29181:                 item.style.removeProperty('will-change');
+29182:             }
+29183:         };
+29184:         if (commandBarAnimationTimer !== null) {
+29185:             runtimeClearTimeout(commandBarAnimationTimer);
+29186:             commandBarAnimationTimer = null;
+29187:         }
+29188:         if (opening) {
+29189:             state.commandBarOpen = true;
+29190:             saveState();
+29191:             updateUI();
+29192:             fitControlToMap();
+29193:             if (duration > 0 && animatedItems.length) {
+29194:                 commandBarAnimating = true;
+29195:                 const targetStyles = animatedItems.map(item => {
+29196:                     const computed = pageWindow.getComputedStyle(item);
+29197:                     return {
+29198:                         opacity: computed.opacity || '1',
+29199:                         transform: computed.transform === 'none' ? 'none' : computed.transform
+29200:                     };
+29201:                 });
+29202:                 animatedItems.forEach(item => {
+29203:                     item.style.setProperty('transition', 'none', 'important');
+29204:                     item.style.setProperty('transition-delay', '0ms', 'important');
+29205:                     item.style.setProperty('opacity', '0', 'important');
+29206:                     item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
+29207:                     item.style.setProperty('will-change', 'opacity, transform', 'important');
+29208:                 });
+29209:                 void control.offsetWidth;
+29210:                 runtimeRequestAnimationFrame(() => {
+29211:                     animatedItems.forEach((item, index) => {
+29212:                         item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.2,.78,.22,1), transform ${duration}ms cubic-bezier(.2,.78,.22,1)`, 'important');
+29213:                         item.style.setProperty('transition-delay', `${Math.min(index * stagger, 70)}ms`, 'important');
+29214:                         item.style.setProperty('opacity', targetStyles[index].opacity, 'important');
+29215:                         item.style.setProperty('transform', targetStyles[index].transform, 'important');
+29216:                     });
+29217:                 });
+29218:                 commandBarAnimationTimer = runtimeSetTimeout(() => {
+29219:                     commandBarAnimationTimer = null;
+29220:                     clearAnimationStyles();
+29221:                     commandBarAnimating = false;
+29222:                 }, duration + maxDelay + 35);
+29223:             }
+29224:             showToast('Command bar expanded');
+29225:             return;
+FUNCTION refreshSuppression around line 29429
+--- lines 29409-29488 ---
+29409:         if (!match) return fallback;
+29410:         return clamp(match[1], 0, 23, Math.floor(fallback / 60)) * 60 + clamp(match[2], 0, 59, fallback % 60);
+29411:     }
+29412: 
+29413:     function shouldSuppressControl() {
+29414:         if (state.cleanMode) return false;
+29415:         if (document.body && document.body.classList.contains('modal-open')) return true;
+29416:         return SUPPRESSION_SELECTORS.some(selector => {
+29417:             let nodes;
+29418:             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
+29419:             return nodes.some(el => {
+29420:                 if (!el || el.closest(`#${SCRIPT.controlId}`) || el.closest(`#${SCRIPT.panelId}`)) return false;
+29421:                 if (!isVisible(el)) return false;
+29422:                 const rect = el.getBoundingClientRect();
+29423:                 return (rect.width * rect.height) > 1200;
+29424:             });
+29425:         });
+29426:     }
+29427: 
+29428:     function refreshSuppression() {
+29429:         const control = document.getElementById(SCRIPT.controlId);
+29430:         if (!control) return;
+29431:         control.classList.toggle('mcms-hidden-by-menu', shouldSuppressControl());
+29432:     }
+29433: 
+29434:     function fitControlToMap() {
+29435:         runtimeClearTimeout(fitTimer);
+29436:         fitTimer = runtimeSetTimeout(() => {
+29437:             const panel = document.getElementById(SCRIPT.panelId);
+29438:             const mapEl = getLargestLeafletMap();
+29439:             if (!mapEl) {
+29440:                 if (!isTouchLayoutActive()) {
+29441:                     observeDesktopPanelWorkspace(null);
+29442:                     applyDesktopPanelSizing(panel, null);
+29443:                 }
+29444:                 return;
+29445:             }
+29446:             if (mobileModeActive) {
+29447:                 clearDesktopPanelSizing(panel);
+29448:                 applyMobileDockLayout(mapEl);
+29449:             } else if (tabletModeActive) {
+29450:                 clearDesktopPanelSizing(panel);
+29451:                 applyTabletDockLayout(mapEl);
+29452:             } else {
+29453:                 clearTabletDockSizing();
+29454:                 observeDesktopPanelWorkspace(mapEl);
+29455:                 applyDesktopPanelSizing(panel, mapEl);
+29456:             }
+29457:             if (!panel) return;
+29458:             const rect = mapEl.getBoundingClientRect();
+29459:             panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
+29460:         }, 60);
+29461:     }
+29462: 
+29463:     function setPanelCssPosition(left, top) {
+29464:         const panel = document.getElementById(SCRIPT.panelId);
+29465:         if (!panel) return;
+29466:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+29467:         clearTabletPanelSizing(panel);
+29468:         panel.style.setProperty('position', 'fixed', 'important');
+29469:         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
+29470:         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
+29471:         panel.style.setProperty('right', 'auto', 'important');
+29472:         panel.style.setProperty('bottom', 'auto', 'important');
+29473:         panel.style.setProperty('transform', 'none', 'important');
+29474:     }
+29475: 
+29476:     function clampPanelPosition(left, top) {
+29477:         const panel = document.getElementById(SCRIPT.panelId);
+29478:         if (!panel) return { left: 12, top: 12 };
+29479:         const mapEl = getLargestLeafletMap();
+29480:         const bounds = applyDesktopPanelSizing(panel, mapEl) || resolveDesktopPanelBounds(null);
+29481:         const panelWidth = Math.min(panel.offsetWidth || 318, Math.max(1, bounds.right - bounds.left));
+29482:         const panelHeight = Math.min(panel.offsetHeight || 500, bounds.maxHeight);
+29483:         return clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds);
+29484:     }
+29485: 
+29486:     function getDefaultPanelPosition() {
+29487:         const control = document.getElementById(SCRIPT.controlId);
+29488:         const panel = document.getElementById(SCRIPT.panelId);
+FUNCTION getDefaultPanelPosition around line 29487
+--- lines 29467-29546 ---
+29467:         clearTabletPanelSizing(panel);
+29468:         panel.style.setProperty('position', 'fixed', 'important');
+29469:         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
+29470:         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
+29471:         panel.style.setProperty('right', 'auto', 'important');
+29472:         panel.style.setProperty('bottom', 'auto', 'important');
+29473:         panel.style.setProperty('transform', 'none', 'important');
+29474:     }
+29475: 
+29476:     function clampPanelPosition(left, top) {
+29477:         const panel = document.getElementById(SCRIPT.panelId);
+29478:         if (!panel) return { left: 12, top: 12 };
+29479:         const mapEl = getLargestLeafletMap();
+29480:         const bounds = applyDesktopPanelSizing(panel, mapEl) || resolveDesktopPanelBounds(null);
+29481:         const panelWidth = Math.min(panel.offsetWidth || 318, Math.max(1, bounds.right - bounds.left));
+29482:         const panelHeight = Math.min(panel.offsetHeight || 500, bounds.maxHeight);
+29483:         return clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds);
+29484:     }
+29485: 
+29486:     function getDefaultPanelPosition() {
+29487:         const control = document.getElementById(SCRIPT.controlId);
+29488:         const panel = document.getElementById(SCRIPT.panelId);
+29489:         const margin = 12;
+29490:         if (!control || !panel) return { left: margin, top: margin };
+29491:         const controlRect = control.getBoundingClientRect();
+29492:         const panelWidth = panel.offsetWidth || 318;
+29493:         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
+29494:         const spaceRight = viewportWidth - controlRect.right - margin;
+29495:         const spaceLeft = controlRect.left - margin;
+29496:         return {
+29497:             left: (spaceRight >= panelWidth || spaceRight >= spaceLeft) ? controlRect.right + margin : controlRect.left - panelWidth - margin,
+29498:             top: controlRect.top
+29499:         };
+29500:     }
+29501: 
+29502:     function positionPanelOverlay(useSavedPosition = true) {
+29503:         if (dragState) return;
+29504:         const panel = document.getElementById(SCRIPT.panelId);
+29505:         if (!panel || !panel.classList.contains('mcms-open')) return;
+29506:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+29507:         clearTabletPanelSizing(panel);
+29508:         let left;
+29509:         let top;
+29510:         if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
+29511:             left = Number(state.panelPosition.left);
+29512:             top = Number(state.panelPosition.top);
+29513:         } else {
+29514:             const pos = getDefaultPanelPosition();
+29515:             left = pos.left;
+29516:             top = pos.top;
+29517:         }
+29518:         const clamped = clampPanelPosition(left, top);
+29519:         setPanelCssPosition(clamped.left, clamped.top);
+29520:     }
+29521: 
+29522:     function resetPanelPosition() {
+29523:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+29524:         state.panelPosition = null;
+29525:         saveState();
+29526:         positionPanelOverlay(false);
+29527:         showToast('Menu position reset');
+29528:     }
+29529: 
+29530:     function nudgePanel(dx, dy) {
+29531:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+29532:         const panel = document.getElementById(SCRIPT.panelId);
+29533:         if (!panel) return;
+29534:         const rect = panel.getBoundingClientRect();
+29535:         const pos = clampPanelPosition(rect.left + dx, rect.top + dy);
+29536:         setPanelCssPosition(pos.left, pos.top);
+29537:         state.panelPosition = { left: pos.left, top: pos.top };
+29538:         saveState();
+29539:         showToast(`Menu ${pos.left}, ${pos.top}`);
+29540:     }
+29541: 
+29542:     function startPanelDrag(event) {
+29543:         if (isTouchLayoutActive()) return;
+29544:         const isMouse = event.type === 'mousedown';
+29545:         const isTouch = event.type === 'touchstart';
+29546:         if (isMouse && event.button !== 0) return;
+FUNCTION createControl around line 30011
+--- lines 29991-30070 ---
+29991:                 <span class="mcms-float-key">${escapeHtml(shortcut)}</span>
+29992:                 <span class="mcms-float-label mcms-float-label-desktop">${escapeHtml(label)}</span>
+29993:                 <span class="mcms-float-label mcms-float-label-tablet">${escapeHtml(tabletLabel)}</span>
+29994:                 <span class="mcms-float-label mcms-float-label-mobile">${escapeHtml(mobileLabel)}</span>
+29995:             </button>
+29996:         `;
+29997:     }
+29998: 
+29999:     function createCleanExit() {
+30000:         if (document.getElementById(SCRIPT.cleanExitId)) return;
+30001:         const button = document.createElement('button');
+30002:         button.id = SCRIPT.cleanExitId;
+30003:         button.type = 'button';
+30004:         button.textContent = 'Exit Clean Mode';
+30005:         button.title = 'Exit clean mode. Shortcut: C or Esc.';
+30006:         button.addEventListener('click', () => toggleFeature('clean'));
+30007:         document.body.appendChild(button);
+30008:     }
+30009: 
+30010:     function createControl(mapEl) {
+30011:         if (!mapEl || document.getElementById(SCRIPT.controlId)) return;
+30012:         const control = document.createElement('div');
+30013:         control.id = SCRIPT.controlId;
+30014:         control.className = 'mcms-control';
+30015:         control.setAttribute('aria-label', `${SCRIPT.name} control`);
+30016:         control.innerHTML = `
+30017:             <div class="mcms-launch-row">
+30018:                 <div class="mcms-shell">
+30019:                     <button class="mcms-menu-btn" type="button" title="Open or close toolkit settings" aria-label="Open or close toolkit settings" aria-expanded="false" aria-controls="${SCRIPT.panelId}">🗺️</button>
+30020:                     <button class="mcms-dock-toggle-btn" type="button" title="Collapse command bar" aria-label="Collapse command bar" aria-expanded="true"><span class="mcms-dock-toggle-icon" aria-hidden="true">▴</span></button>
+30021:                 </div>
+30022:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+30023:             </div>
+30024:             <div class="mcms-floating-filter" title="Persistent map visibility filters">
+30025:                 ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
+30026:                 ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
+30027:                 ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+30028:                 ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
+30029:                 ${makeFloatButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally Credits', 'Ally £')}
+30030:                 ${makeFloatButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
+30031:                 ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
+30032:                 ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+30033:                 ${makeFloatButton('criticalView', '9', 'Crit View', 'Show only personal missions aged 8 hours or more and frame them on the map. Shortcut: 9', 'Critical View', 'Critical')}
+30034:                 ${makeActionFloatButton('open-vehicle-status', 'V', 'Veh Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Veh Codes', 'Codes')}
+30035:                 ${makeActionFloatButton('open-critical-drawer', 'W', 'Age Watch', 'Open or close Mission Age Watch. Shortcut: W', 'Age Watch', 'Watch')}
+30036:             </div>
+30037:             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
+30038:         `;
+30039:         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+30040:             control.addEventListener(eventName, stopMapInteraction, { passive: false });
+30041:         });
+30042:         let screenPinLongPressTimer = 0;
+30043:         let screenPinLongPressButton = null;
+30044:         const cancelScreenPinLongPress = () => {
+30045:             runtimeClearTimeout(screenPinLongPressTimer);
+30046:             screenPinLongPressTimer = 0;
+30047:             screenPinLongPressButton = null;
+30048:         };
+30049:         control.addEventListener('pointerdown', event => {
+30050:             const pinButton = closestEventTarget(event, '.mcms-screen-pin-btn[data-full-label]');
+30051:             if (!pinButton || event.pointerType === 'mouse') return;
+30052:             cancelScreenPinLongPress();
+30053:             screenPinLongPressButton = pinButton;
+30054:             screenPinLongPressTimer = runtimeSetTimeout(() => {
+30055:                 if (screenPinLongPressButton !== pinButton) return;
+30056:                 pinButton.dataset.mcmsLongPress = 'true';
+30057:                 showToast(pinButton.dataset.fullLabel || pinButton.textContent || 'Bookmark');
+30058:             }, 560);
+30059:         });
+30060:         control.addEventListener('pointermove', cancelScreenPinLongPress, { passive: true });
+30061:         control.addEventListener('pointercancel', cancelScreenPinLongPress, { passive: true });
+30062:         control.addEventListener('pointerup', () => {
+30063:             runtimeClearTimeout(screenPinLongPressTimer);
+30064:             screenPinLongPressTimer = 0;
+30065:             screenPinLongPressButton = null;
+30066:         }, { passive: true });
+30067:         control.addEventListener('click', event => {
+30068:             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
+30069:             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
+30070:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+FUNCTION updateUI around line 30794
+--- lines 30774-30853 ---
+30774:             return;
+30775:         }
+30776:         if (setting === 'payout-test-amount') return;
+30777:         if (setting === 'auto-night-start') state.autoNight.nightStart = target.value || '19:00';
+30778:         if (setting === 'auto-day-start') state.autoNight.dayStart = target.value || '07:00';
+30779:         if (setting === 'auto-night-theme') state.autoNight.nightTheme = normaliseTheme(target.value);
+30780:         if (setting === 'auto-day-theme') state.autoNight.dayTheme = normaliseTheme(target.value);
+30781:         if (setting.startsWith('auto-')) {
+30782:             state.autoNight.lastBucket = '';
+30783:             saveState();
+30784:             runAutoNight(true);
+30785:             updateUI();
+30786:         }
+30787:     }
+30788: 
+30789:     function updateUI() {
+30790:         applyRootAttributes();
+30791:         if (state.missionRequirements) scheduleMissionRequirementsScan(0);
+30792:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+30793:         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30794:         const control = document.getElementById(SCRIPT.controlId);
+30795:         const panel = document.getElementById(SCRIPT.panelId);
+30796:         if (control) {
+30797:             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
+30798:             control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
+30799:             control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+30800:             const controlToggleValues = {
+30801:                 allianceMissions: state.visibility.allianceMissions,
+30802:                 myMissions: state.visibility.myMissions,
+30803:                 vehicles: state.visibility.vehicles,
+30804:                 buildings: state.visibility.buildings,
+30805:                 allianceCredits: state.allianceCredits,
+30806:                 missionAge: state.missionAge,
+30807:                 transportWatcher: state.transportWatcher,
+30808:                 unitCommitment: state.unitCommitment,
+30809:                 criticalView: criticalViewActive
+30810:             };
+30811:             control.querySelectorAll('[data-toggle]').forEach(btn => {
+30812:                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
+30813:                 btn.classList.toggle('mcms-on', on);
+30814:                 btn.setAttribute('aria-pressed', String(on));
+30815:                 btn.dataset.mcmsState = on ? 'on' : 'off';
+30816:             });
+30817:             const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
+30818:             if (vehicleStatusButton) {
+30819:                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
+30820:                 vehicleStatusButton.classList.toggle('mcms-on', open);
+30821:                 vehicleStatusButton.setAttribute('aria-pressed', String(open));
+30822:                 vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
+30823:             }
+30824:             const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
+30825:             if (missionAgeWatchButton) {
+30826:                 const open = Boolean(document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open'));
+30827:                 missionAgeWatchButton.classList.toggle('mcms-on', open);
+30828:                 missionAgeWatchButton.setAttribute('aria-pressed', String(open));
+30829:                 missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
+30830:             }
+30831:             const economyButton = control.querySelector('.mcms-economy-btn');
+30832:             if (economyButton) {
+30833:                 const on = Boolean(state.economyMode);
+30834:                 const label = on ? 'Disable Economy Mode' : 'Enable Economy Mode';
+30835:                 economyButton.classList.toggle('mcms-on', on);
+30836:                 economyButton.setAttribute('aria-pressed', String(on));
+30837:                 economyButton.setAttribute('aria-label', label);
+30838:                 economyButton.title = label;
+30839:                 economyButton.dataset.mcmsState = on ? 'on' : 'off';
+30840:             }
+30841:             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+30842:             if (dockToggleButton) {
+30843:                 const open = state.commandBarOpen !== false;
+30844:                 const label = open ? 'Collapse command bar' : 'Expand command bar';
+30845:                 dockToggleButton.classList.toggle('mcms-open', open);
+30846:                 dockToggleButton.setAttribute('aria-expanded', String(open));
+30847:                 dockToggleButton.setAttribute('aria-label', label);
+30848:                 dockToggleButton.title = label;
+30849:                 const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
+30850:                 if (icon) icon.textContent = open ? '▴' : '▾';
+30851:             }
+30852:         }
+30853:         if (!panel) return;
+FUNCTION ensureUi around line 31006
+--- lines 30986-31065 ---
+30986:             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
+30987:             : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+30988:         const nudge = panel.querySelector('.mcms-nudge-value');
+30989:         if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+30990:         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+30991:         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+30992:     }
+30993: 
+30994:     function ensureUi() {
+30995:         const mapEl = getLargestLeafletMap();
+30996:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+30997:         if (mapEl) {
+30998:             createControl(mapEl);
+30999:             const map = findLeafletMapInstance(false);
+31000:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+31001:             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+31002:             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+31003:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+31004:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+31005:         }
+31006:         return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
+31007:     }
+31008: 
+31009:     function mutationBelongsToToolkit(mutation) {
+31010:         const target = mutation.target;
+31011:         const toolkitTarget = Boolean(
+31012:             target &&
+31013:             target.nodeType === 1 &&
+31014:             (
+31015:                 target.id === SCRIPT.controlId ||
+31016:                 target.id === SCRIPT.panelId ||
+31017:                 target.id === SCRIPT.toastId ||
+31018:                 target.id === SCRIPT.payoutFlashId ||
+31019:                 target.id === SCRIPT.criticalDrawerId ||
+31020:                 target.id === SCRIPT.vehicleStatusId ||
+31021:                 target.id === SCRIPT.majorIncidentFeedId ||
+31022:                 target.id === SCRIPT.missionInspectorId ||
+31023:                 target.id === SCRIPT.missionRequirementsPanelId ||
+31024:                 target.closest?.(`#${SCRIPT.controlId}`) ||
+31025:                 target.closest?.(`#${SCRIPT.panelId}`) ||
+31026:                 target.closest?.(`#${SCRIPT.toastId}`) ||
+31027:                 target.closest?.(`#${SCRIPT.payoutFlashId}`) ||
+31028:                 target.closest?.(`#${SCRIPT.criticalDrawerId}`) ||
+31029:                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
+31030:                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
+31031:                 target.closest?.(`#${SCRIPT.missionInspectorId}`) ||
+31032:                 target.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)
+31033:             )
+31034:         );
+31035:         if (toolkitTarget) return true;
+31036:         if (mutation.type === 'attributes' && mutation.attributeName === 'class' && target?.classList) {
+31037:             for (const className of target.classList) {
+31038:                 if (String(className).startsWith('mcms-')) return true;
+31039:             }
+31040:         }
+31041:         const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+31042:         let elementCount = 0;
+31043:         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
+31044:             if (!collection?.length) continue;
+31045:             for (const node of collection) {
+31046:                 if (!node || node.nodeType !== 1) continue;
+31047:                 elementCount += 1;
+31048:                 if (!(node.matches?.(toolkitSelector) || node.querySelector?.(toolkitSelector))) return false;
+31049:             }
+31050:         }
+31051:         return elementCount > 0;
+31052:     }
+31053: 
+31054:     function mutationAddsLeafletMarkerIcon(mutation) {
+31055:         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
+31056:         for (const node of mutation.addedNodes) {
+31057:             if (!node || node.nodeType !== 1) continue;
+31058:             if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
+31059:             if (node.matches?.('.leaflet-marker-icon')) return true;
+31060:             if (node.querySelector?.('.leaflet-marker-icon')) return true;
+31061:         }
+31062:         return false;
+31063:     }
+31064: 
+31065:     function mutationTouchesSelector(mutation, selector) {
+FUNCTION boot around line 31677
+--- lines 31657-31736 ---
+31657:             }
+31658:             if (!externalMutationFound) return;
+31659:             missionChanged ||= addedLeafletMarker;
+31660:             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+31661:             if (addedLeafletMarker) {
+31662:                 invalidateMarkerRegistryCaches('all');
+31663:                 scheduleMarkerStateSync(0, false);
+31664:                 if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+31665:             }
+31666:             if (layoutChanged) invalidateMapElementCache();
+31667:             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+31668:             runtimeClearTimeout(mutationTimer);
+31669:             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+31670:             const mutationDelay = startupSettling
+31671:                 ? STARTUP_MUTATION_DEBOUNCE_MS
+31672:                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+31673:             mutationTimer = runtimeSetTimeout(() => {
+31674:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+31675:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+31676:                 const mapElement = getLargestLeafletMap();
+31677:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+31678:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+31679:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+31680:                     connectMainMutationObserver();
+31681:                 }
+31682:                 if (layoutChanged) {
+31683:                     refreshSuppression();
+31684:                     fitControlToMap();
+31685:                     schedulePanelPosition(true, 50);
+31686:                     scheduleCriticalDrawerDock(60);
+31687:                 }
+31688:                 if (missionChanged) {
+31689:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31690:                     scheduleMissionRequirementsScan(35);
+31691:                 }
+31692:             }, mutationDelay);
+31693:         }));
+31694:         mainMutationObserver = observer;
+31695:         runtimeListen(document, 'keydown', handleKeyboard);
+31696:         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
+31697:         runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
+31698:         runtimeListen(document, 'pointerout', handleMissionInspectorPointerOut, true);
+31699:         runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+31700:         runtimeListen(document, 'click', event => {
+31701:             runtimeSetTimeout(refreshSuppression, 0);
+31702:             if (suppressNextOutsideClick) {
+31703:                 event.preventDefault();
+31704:                 event.stopPropagation();
+31705:                 suppressNextOutsideClick = false;
+31706:                 return;
+31707:             }
+31708:             const control = document.getElementById(SCRIPT.controlId);
+31709:             const panel = document.getElementById(SCRIPT.panelId);
+31710:             if (!panel || !panel.classList.contains('mcms-open')) return;
+31711:             if (control && control.contains(event.target)) return;
+31712:             if (panel.contains(event.target)) return;
+31713:             closePanel();
+31714:         }, true);
+31715:         runtimeListen(pageWindow, 'resize', () => {
+31716:             invalidateMapElementCache();
+31717:             applyRootAttributes();
+31718:             refreshTabletModeUi();
+31719:             scheduleTabletLayoutRefresh(20);
+31720:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+31721:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+31722:             if (dragState) return;
+31723:             refreshSuppression();
+31724:             fitControlToMap();
+31725:             schedulePanelPosition(true, 40);
+31726:             scheduleCriticalDrawerDock(30);
+31727:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+31728:             scheduleMajorIncidentFeedLayout();
+31729:         });
+31730:         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+31731:         runtimeListen(pageWindow, 'orientationchange', () => scheduleTabletLayoutRefresh(30));
+31732:         if (pageWindow.visualViewport) {
+31733:             runtimeListen(pageWindow.visualViewport, 'resize', () => scheduleTabletLayoutRefresh(20));
+31734:             runtimeListen(pageWindow.visualViewport, 'scroll', () => {
+31735:                 if (isTouchLayoutActive() && document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open')) scheduleTabletLayoutRefresh(20);
+31736:             });
+
+CONTROL_RELATED_FUNCTIONS
+17349: transportSweepVisibleDischargeButtons
+17365: findVisibleDischargePatientButton
+17447: transportSweepWindowCloseControl
+21004: elementDockRect
+21012: findMissionListDockRect
+21094: expandedCriticalDrawerDockRect
+21111: updateCriticalDrawerExpandButton
+21134: clearCriticalDrawerDock
+21180: scheduleCriticalDrawerDock
+21475: criticalDistanceOriginControlsHtml
+21481: criticalSortControlsHtml
+21491: criticalViewControlsSummary
+21516: setCriticalViewControlsOpen
+21528: closeCriticalViewControls
+21535: toggleCriticalViewControls
+26268: fitPayoutFlashAroundToolkitControls
+29151: nudgeControl
+29413: shouldSuppressControl
+29434: fitControlToMap
+29965: makeToggleButton
+29977: makeFloatButton
+29988: makeActionFloatButton
+30010: createControl
+
+NETWORK_HELPERS
+--- lines 12-43 ---
+00012: // @match        *://www.missionchief.com/*
+00013: // @match        *://*.missionchief.com/*
+00014: // @match        *://leitstellenspiel.de/*
+00015: // @match        *://www.leitstellenspiel.de/*
+00016: // @match        *://*.leitstellenspiel.de/*
+00017: // @match        *://meldkamerspel.com/*
+00018: // @match        *://www.meldkamerspel.com/*
+00019: // @match        *://*.meldkamerspel.com/*
+00020: // @grant        GM_xmlhttpRequest
+00021: // @grant        GM_getValue
+00022: // @grant        GM_setValue
+00023: // @grant        GM_deleteValue
+00024: // @grant        unsafeWindow
+00025: // @connect      discord.com
+00026: // @connect      discordapp.com
+00027: // @connect      raw.githubusercontent.com
+00028: // @run-at       document-start
+00029: // @downloadURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+00030: // @updateURL https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.meta.js
+00031: // ==/UserScript==
+00032: 
+00033: /*
+00034: MIT License
+00035: 
+00036: Copyright (c) 2026 Conroy1988
+00037: 
+00038: Permission is hereby granted, free of charge, to any person obtaining a copy
+00039: of this software and associated documentation files, to deal in the Software
+00040: without restriction, including without limitation the rights to use, copy,
+00041: modify, merge, publish, distribute, sublicense, and/or sell copies of the
+00042: Software, and to permit persons to whom the Software is furnished to do so.
+00043: 
+--- lines 761-792 ---
+00761:         metrics[name] = Math.round(elapsedMs * 10) / 10;
+00762:         Object.assign(metrics, extra);
+00763:         pageWindow.__MCMS_STARTUP_METRICS__ = metrics;
+00764:         return elapsedMs;
+00765:     }
+00766: 
+00767:     function runtimeFetch(input, init = {}) {
+00768:         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
+00769:         const Controller = pageWindow.AbortController || globalThis.AbortController;
+00770:         const controller = typeof Controller === 'function' ? new Controller() : null;
+00771:         if (controller) runtime.fetchControllers.add(controller);
+00772:         const fetchFunction = pageWindow.fetch || globalThis.fetch;
+00773:         if (typeof fetchFunction !== 'function') {
+00774:         if (controller) runtime.fetchControllers.delete(controller);
+00775:         return Promise.reject(new Error('Browser fetch is unavailable.'));
+00776:         }
+00777:         const options = controller ? { ...init, signal: controller.signal } : init;
+00778:         return Promise.resolve(fetchFunction.call(pageWindow, input, options))
+00779:         .finally(() => { if (controller) runtime.fetchControllers.delete(controller); });
+00780:     }
+00781: 
+00782:     runtimeOnCleanup(() => {
+00783:         runtimeTasks.clear();
+00784:         runtimeClearTimeout(runtimeTaskTimer);
+00785:         runtimeTaskTimer = null;
+00786:     });
+00787: 
+00788:     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V4100__ = true;
+00789:     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V3130__ = true;
+00790:     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V3121__ = true;
+00791:     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V380__ = true;
+00792:     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V341__ = true;
+--- lines 26962-26993 ---
+26962:     }
+26963: 
+26964:     function financeExternalRequest({ method = 'GET', url, body = null, headers = {}, timeoutMs = FINANCE_FEED_TIMEOUT_MS }) {
+26965:         return new Promise((resolve, reject) => {
+26966:             if (runtime.destroyed) {
+26967:                 reject(new Error('Toolkit runtime stopped.'));
+26968:                 return;
+26969:             }
+26970:             if (typeof GM_xmlhttpRequest !== 'function') {
+26971:                 reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+26972:                 return;
+26973:             }
+26974:             let request = null;
+26975:             let settled = false;
+26976:             const finish = (error, response = null) => {
+26977:                 if (settled) return;
+26978:                 settled = true;
+26979:                 if (request) runtime.requests.delete(request);
+26980:                 if (error) reject(error); else resolve(response);
+26981:             };
+26982:             try {
+26983:                 request = GM_xmlhttpRequest({
+26984:                     method,
+26985:                     url,
+26986:                     data: body,
+26987:                     headers,
+26988:                     timeout: timeoutMs,
+26989:                     responseType: 'text',
+26990:                     onload: response => finish(null, response),
+26991:                     onerror: () => finish(new Error('The GitHub financial-intelligence feed could not be reached.')),
+26992:                     ontimeout: () => finish(new Error('The GitHub financial-intelligence request timed out.')),
+26993:                     onabort: () => finish(new Error('The GitHub financial-intelligence request was cancelled.'))
+--- lines 26975-27006 ---
+26975:             let settled = false;
+26976:             const finish = (error, response = null) => {
+26977:                 if (settled) return;
+26978:                 settled = true;
+26979:                 if (request) runtime.requests.delete(request);
+26980:                 if (error) reject(error); else resolve(response);
+26981:             };
+26982:             try {
+26983:                 request = GM_xmlhttpRequest({
+26984:                     method,
+26985:                     url,
+26986:                     data: body,
+26987:                     headers,
+26988:                     timeout: timeoutMs,
+26989:                     responseType: 'text',
+26990:                     onload: response => finish(null, response),
+26991:                     onerror: () => finish(new Error('The GitHub financial-intelligence feed could not be reached.')),
+26992:                     ontimeout: () => finish(new Error('The GitHub financial-intelligence request timed out.')),
+26993:                     onabort: () => finish(new Error('The GitHub financial-intelligence request was cancelled.'))
+26994:                 });
+26995:                 if (!settled && request?.abort) runtime.requests.add(request);
+26996:             } catch (err) {
+26997:                 finish(err instanceof Error ? err : new Error('The GitHub financial-intelligence request could not be created.'));
+26998:             }
+26999:         });
+27000:     }
+27001: 
+27002:     function validateFinancialRule(rawRule) {
+27003:         if (!rawRule || typeof rawRule !== 'object') return null;
+27004:         const direction = rawRule.direction === 'income' ? 'income' : rawRule.direction === 'spending' ? 'spending' : '';
+27005:         const match = ['regex', 'contains', 'startsWith', 'equals'].includes(rawRule.match) ? rawRule.match : '';
+27006:         const pattern = String(rawRule.pattern || '').slice(0, 180);
+--- lines 27427-27458 ---
+27427:     }
+27428: 
+27429:     function discordHttpRequest({ method = 'GET', url, data = null, headers = {} }) {
+27430:         return new Promise((resolve, reject) => {
+27431:             if (runtime.destroyed) {
+27432:                 reject(new Error('Toolkit runtime stopped.'));
+27433:                 return;
+27434:             }
+27435:             if (typeof GM_xmlhttpRequest !== 'function') {
+27436:                 reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+27437:                 return;
+27438:             }
+27439:             let request = null;
+27440:             let settled = false;
+27441:             const finish = (error, response = null) => {
+27442:                 if (settled) return;
+27443:                 settled = true;
+27444:                 if (request) runtime.requests.delete(request);
+27445:                 if (error) reject(error);
+27446:                 else resolve(response);
+27447:             };
+27448:             try {
+27449:                 request = GM_xmlhttpRequest({
+27450:                     method,
+27451:                     url,
+27452:                     data,
+27453:                     headers,
+27454:                     timeout: DISCORD_REQUEST_TIMEOUT_MS,
+27455:                     responseType: 'text',
+27456:                     onload: response => finish(null, response),
+27457:                     onerror: () => finish(new Error('Discord could not be reached.')),
+27458:                     ontimeout: () => finish(new Error('Discord request timed out.')),
+--- lines 27441-27472 ---
+27441:             const finish = (error, response = null) => {
+27442:                 if (settled) return;
+27443:                 settled = true;
+27444:                 if (request) runtime.requests.delete(request);
+27445:                 if (error) reject(error);
+27446:                 else resolve(response);
+27447:             };
+27448:             try {
+27449:                 request = GM_xmlhttpRequest({
+27450:                     method,
+27451:                     url,
+27452:                     data,
+27453:                     headers,
+27454:                     timeout: DISCORD_REQUEST_TIMEOUT_MS,
+27455:                     responseType: 'text',
+27456:                     onload: response => finish(null, response),
+27457:                     onerror: () => finish(new Error('Discord could not be reached.')),
+27458:                     ontimeout: () => finish(new Error('Discord request timed out.')),
+27459:                     onabort: () => finish(new Error('Discord request was cancelled.'))
+27460:                 });
+27461:                 if (!settled && request?.abort) runtime.requests.add(request);
+27462:             } catch (err) {
+27463:                 finish(err instanceof Error ? err : new Error('Discord request could not be created.'));
+27464:             }
+27465:         });
+27466:     }
+27467: 
+27468:     function discordWebhookEndpoint(rawUrl, { wait = false, stripQuery = false } = {}) {
+27469:         const parsed = new URL(normaliseDiscordWebhookUrl(rawUrl));
+27470:         if (stripQuery) parsed.search = '';
+27471:         if (wait) parsed.searchParams.set('wait', 'true');
+27472:         return parsed.toString();
+--- lines 29675-29706 ---
+29675:                 const documentText = String(text || '').trim();
+29676:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29677:                     throw new Error('The Help Centre returned an invalid document.');
+29678:                 }
+29679:                 helpGuideDocumentCache = documentText;
+29680:                 helpGuideLoadedAt = Date.now();
+29681:                 return documentText;
+29682:             };
+29683:             if (typeof GM_xmlhttpRequest === 'function') {
+29684:                 let request = null;
+29685:                 let settled = false;
+29686:                 const finish = (error, response = null) => {
+29687:                     if (settled) return;
+29688:                     settled = true;
+29689:                     if (request) runtime.requests.delete(request);
+29690:                     try {
+29691:                         if (error) throw error;
+29692:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29693:                         resolve(validate(response.responseText));
+29694:                     } catch (err) {
+29695:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29696:                     }
+29697:                 };
+29698:                 try {
+29699:                     request = GM_xmlhttpRequest({
+29700:                         method: 'GET', url, timeout: HELP_CENTER.requestTimeoutMs, responseType: 'text',
+29701:                         headers: { Accept: 'text/html, text/plain;q=0.9, */*;q=0.8' },
+29702:                         onload: response => finish(null, response),
+29703:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29704:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29705:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29706:                     });
+--- lines 29691-29722 ---
+29691:                         if (error) throw error;
+29692:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29693:                         resolve(validate(response.responseText));
+29694:                     } catch (err) {
+29695:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29696:                     }
+29697:                 };
+29698:                 try {
+29699:                     request = GM_xmlhttpRequest({
+29700:                         method: 'GET', url, timeout: HELP_CENTER.requestTimeoutMs, responseType: 'text',
+29701:                         headers: { Accept: 'text/html, text/plain;q=0.9, */*;q=0.8' },
+29702:                         onload: response => finish(null, response),
+29703:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29704:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29705:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29706:                     });
+29707:                     if (!settled && request?.abort) runtime.requests.add(request);
+29708:                 } catch (err) {
+29709:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29710:                 }
+29711:                 return;
+29712:             }
+29713:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29714:                 .then(response => {
+29715:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29716:                     return response.text();
+29717:                 })
+29718:                 .then(text => resolve(validate(text)))
+29719:                 .catch(error => reject(error instanceof Error ? error : new Error('GitHub could not be reached.')));
+29720:         }).finally(() => { helpGuideLoadPromise = null; });
+29721:         return helpGuideLoadPromise;
+29722:     }
+
+LIFECYCLE_FUNCTIONS
+716: runtimeOnCleanup
+31595: startBootAttemptCoordinator
+31619: boot
+31927: scheduleBoot
+FUNCTION runtimeOnCleanup
+--- lines 711-785 ---
+00711:             console.debug(`[${SCRIPT.name}] Scheduled task ${task.name} failed.`, err);
+00712:         }
+00713:         }
+00714:         runtimeTaskTimer = runtimeSetTimeout(runtimeRunScheduledTasks, Math.max(50, Math.min(hidden ? 5 * 60 * 1000 : 60000, nextDelay)));
+00715:     }
+00716:     function runtimeOnCleanup(callback) {
+00717:         if (typeof callback === 'function') runtime.cleanupCallbacks.push(callback);
+00718:         return callback;
+00719:     }
+00720: 
+00721: 
+00722:     function runtimeRunWhenIdle(callback, timeout = STARTUP_IDLE_TIMEOUT_MS) {
+00723:         if (runtime.destroyed || typeof callback !== 'function') return null;
+00724:         const maxWait = Math.max(50, Number(timeout) || STARTUP_IDLE_TIMEOUT_MS);
+00725:         let settled = false;
+00726:         let idleId = null;
+00727:         let fallbackTimer = null;
+00728:         const run = deadline => {
+00729:         if (settled || runtime.destroyed) return;
+00730:         settled = true;
+00731:         if (fallbackTimer !== null) runtimeClearTimeout(fallbackTimer);
+00732:         fallbackTimer = null;
+00733:         callback(deadline || { didTimeout: true, timeRemaining: () => 0 });
+00734:         };
+00735:         if (typeof pageWindow.requestIdleCallback === 'function') {
+00736:         try {
+00737:             idleId = pageWindow.requestIdleCallback(run, { timeout: maxWait });
+00738:             fallbackTimer = runtimeSetTimeout(() => run(null), maxWait + 120);
+00739:             runtimeOnCleanup(() => {
+00740:                 if (settled || idleId === null || typeof pageWindow.cancelIdleCallback !== 'function') return;
+00741:                 try { pageWindow.cancelIdleCallback(idleId); } catch (err) {}
+00742:             });
+00743:             return idleId;
+00744:         } catch (err) {}
+00745:         }
+00746: 
+00747:         fallbackTimer = runtimeSetTimeout(() => run(null), Math.min(350, maxWait));
+00748:         return fallbackTimer;
+00749:     }
+00750: 
+00751:     function startupClock() {
+00752:         try { return Number(pageWindow.performance?.now?.()) || Date.now(); }
+00753:         catch (err) { return Date.now(); }
+00754:     }
+00755: 
+00756:     function recordStartupMetric(name, startedAt, extra = {}) {
+00757:         const finishedAt = startupClock();
+00758:         const elapsedMs = Math.max(0, finishedAt - Number(startedAt || finishedAt));
+00759:         const metrics = pageWindow.__MCMS_STARTUP_METRICS__ || {};
+00760:         metrics.version = SCRIPT.version;
+00761:         metrics[name] = Math.round(elapsedMs * 10) / 10;
+00762:         Object.assign(metrics, extra);
+00763:         pageWindow.__MCMS_STARTUP_METRICS__ = metrics;
+00764:         return elapsedMs;
+00765:     }
+00766: 
+00767:     function runtimeFetch(input, init = {}) {
+00768:         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
+00769:         const Controller = pageWindow.AbortController || globalThis.AbortController;
+00770:         const controller = typeof Controller === 'function' ? new Controller() : null;
+00771:         if (controller) runtime.fetchControllers.add(controller);
+00772:         const fetchFunction = pageWindow.fetch || globalThis.fetch;
+00773:         if (typeof fetchFunction !== 'function') {
+00774:         if (controller) runtime.fetchControllers.delete(controller);
+00775:         return Promise.reject(new Error('Browser fetch is unavailable.'));
+00776:         }
+00777:         const options = controller ? { ...init, signal: controller.signal } : init;
+00778:         return Promise.resolve(fetchFunction.call(pageWindow, input, options))
+00779:         .finally(() => { if (controller) runtime.fetchControllers.delete(controller); });
+00780:     }
+00781: 
+00782:     runtimeOnCleanup(() => {
+00783:         runtimeTasks.clear();
+00784:         runtimeClearTimeout(runtimeTaskTimer);
+00785:         runtimeTaskTimer = null;
+FUNCTION startBootAttemptCoordinator
+--- lines 31590-31664 ---
+31590:         scheduleAutoLoadAllVehiclesScan(0);
+31591:         return true;
+31592:     }
+31593: 
+31594: 
+31595:     function startBootAttemptCoordinator(bootPerformanceStartedAt) {
+31596:         let attempts = 0;
+31597:         const runBootAttempt = () => {
+31598:             attempts += 1;
+31599:             installMissionMarkerAddHook();
+31600:             installRadioMessageHook();
+31601:             installCreditsUpdateHook();
+31602:             observeCreditValue();
+31603:             const ready = ensureUi();
+31604:             const mapReady = Boolean(getLargestLeafletMap());
+31605:             if (ready && (mapReady || attempts >= 12)) {
+31606:                 recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
+31607:                 scheduleMarkerStateSync(0, false);
+31608:                 scheduleDeferredOperationalStartup();
+31609:                 runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+31610:                 return;
+31611:             }
+31612:             if (attempts >= 90 || runtime.destroyed) return;
+31613:             const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+31614:             runtimeSetTimeout(runBootAttempt, delay);
+31615:         };
+31616:         runtimeSetTimeout(runBootAttempt, 250);
+31617:     }
+31618: 
+31619:     function boot() {
+31620:         if (runtime.destroyed || bootStarted) return;
+31621:         bootStarted = true;
+31622:         bootStartedAt = Date.now();
+31623:         const bootPerformanceStartedAt = startupClock();
+31624:         applyRootAttributes();
+31625:         if (installAllianceBuildingsPageOptimisation()) return;
+31626:         createCleanExit();
+31627:         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+31628:         installMissionMarkerAddHook();
+31629:         installRadioMessageHook();
+31630:         lastObservedCredits = readCurrentCreditTotal();
+31631:         installCreditsUpdateHook();
+31632:         observeCreditValue();
+31633:         installMissionRequirementsWindows();
+31634:         installCustomVehicleBadges();
+31635:         startBootAttemptCoordinator(bootPerformanceStartedAt);
+31636:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+31637:             if (state.economyMode && economyMapMoving) {
+31638:                 economyDeferredDomMutation = true;
+31639:                 return;
+31640:             }
+31641:             let externalMutationFound = false;
+31642:             let addedLeafletMarker = false;
+31643:             let missionChanged = false;
+31644:             let layoutChanged = false;
+31645:             let toolkitUiRemoved = false;
+31646:             for (const mutation of mutations) {
+31647:                 if (mutationBelongsToToolkit(mutation)) continue;
+31648:                 externalMutationFound = true;
+31649:                 if (!addedLeafletMarker && mutationAddsLeafletMarkerIcon(mutation)) {
+31650:                     addedLeafletMarker = true;
+31651:                     missionChanged = true;
+31652:                 }
+31653:                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
+31654:                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
+31655:                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
+31656:                 if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
+31657:             }
+31658:             if (!externalMutationFound) return;
+31659:             missionChanged ||= addedLeafletMarker;
+31660:             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+31661:             if (addedLeafletMarker) {
+31662:                 invalidateMarkerRegistryCaches('all');
+31663:                 scheduleMarkerStateSync(0, false);
+31664:                 if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+FUNCTION boot
+--- lines 31614-31688 ---
+31614:             runtimeSetTimeout(runBootAttempt, delay);
+31615:         };
+31616:         runtimeSetTimeout(runBootAttempt, 250);
+31617:     }
+31618: 
+31619:     function boot() {
+31620:         if (runtime.destroyed || bootStarted) return;
+31621:         bootStarted = true;
+31622:         bootStartedAt = Date.now();
+31623:         const bootPerformanceStartedAt = startupClock();
+31624:         applyRootAttributes();
+31625:         if (installAllianceBuildingsPageOptimisation()) return;
+31626:         createCleanExit();
+31627:         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+31628:         installMissionMarkerAddHook();
+31629:         installRadioMessageHook();
+31630:         lastObservedCredits = readCurrentCreditTotal();
+31631:         installCreditsUpdateHook();
+31632:         observeCreditValue();
+31633:         installMissionRequirementsWindows();
+31634:         installCustomVehicleBadges();
+31635:         startBootAttemptCoordinator(bootPerformanceStartedAt);
+31636:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+31637:             if (state.economyMode && economyMapMoving) {
+31638:                 economyDeferredDomMutation = true;
+31639:                 return;
+31640:             }
+31641:             let externalMutationFound = false;
+31642:             let addedLeafletMarker = false;
+31643:             let missionChanged = false;
+31644:             let layoutChanged = false;
+31645:             let toolkitUiRemoved = false;
+31646:             for (const mutation of mutations) {
+31647:                 if (mutationBelongsToToolkit(mutation)) continue;
+31648:                 externalMutationFound = true;
+31649:                 if (!addedLeafletMarker && mutationAddsLeafletMarkerIcon(mutation)) {
+31650:                     addedLeafletMarker = true;
+31651:                     missionChanged = true;
+31652:                 }
+31653:                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
+31654:                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
+31655:                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
+31656:                 if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
+31657:             }
+31658:             if (!externalMutationFound) return;
+31659:             missionChanged ||= addedLeafletMarker;
+31660:             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+31661:             if (addedLeafletMarker) {
+31662:                 invalidateMarkerRegistryCaches('all');
+31663:                 scheduleMarkerStateSync(0, false);
+31664:                 if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+31665:             }
+31666:             if (layoutChanged) invalidateMapElementCache();
+31667:             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+31668:             runtimeClearTimeout(mutationTimer);
+31669:             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+31670:             const mutationDelay = startupSettling
+31671:                 ? STARTUP_MUTATION_DEBOUNCE_MS
+31672:                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+31673:             mutationTimer = runtimeSetTimeout(() => {
+31674:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+31675:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+31676:                 const mapElement = getLargestLeafletMap();
+31677:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+31678:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+31679:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+31680:                     connectMainMutationObserver();
+31681:                 }
+31682:                 if (layoutChanged) {
+31683:                     refreshSuppression();
+31684:                     fitControlToMap();
+31685:                     schedulePanelPosition(true, 50);
+31686:                     scheduleCriticalDrawerDock(60);
+31687:                 }
+31688:                 if (missionChanged) {
+FUNCTION scheduleBoot
+--- lines 31922-31937 ---
+31922:         runtimeSetTimeout(() => runAutoNight(true), 180);
+31923:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+31924:         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+31925:     }
+31926: 
+31927:     function scheduleBoot() {
+31928:         if (runtime.destroyed || bootStarted) return;
+31929:         runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+31930:     }
+31931: 
+31932:     if (document.readyState === 'loading') {
+31933:         runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+31934:     } else {
+31935:         scheduleBoot();
+31936:     }
+31937: })();
+
+LAST_260_LINES
+31678:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+31679:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+31680:                     connectMainMutationObserver();
+31681:                 }
+31682:                 if (layoutChanged) {
+31683:                     refreshSuppression();
+31684:                     fitControlToMap();
+31685:                     schedulePanelPosition(true, 50);
+31686:                     scheduleCriticalDrawerDock(60);
+31687:                 }
+31688:                 if (missionChanged) {
+31689:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31690:                     scheduleMissionRequirementsScan(35);
+31691:                 }
+31692:             }, mutationDelay);
+31693:         }));
+31694:         mainMutationObserver = observer;
+31695:         runtimeListen(document, 'keydown', handleKeyboard);
+31696:         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
+31697:         runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
+31698:         runtimeListen(document, 'pointerout', handleMissionInspectorPointerOut, true);
+31699:         runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+31700:         runtimeListen(document, 'click', event => {
+31701:             runtimeSetTimeout(refreshSuppression, 0);
+31702:             if (suppressNextOutsideClick) {
+31703:                 event.preventDefault();
+31704:                 event.stopPropagation();
+31705:                 suppressNextOutsideClick = false;
+31706:                 return;
+31707:             }
+31708:             const control = document.getElementById(SCRIPT.controlId);
+31709:             const panel = document.getElementById(SCRIPT.panelId);
+31710:             if (!panel || !panel.classList.contains('mcms-open')) return;
+31711:             if (control && control.contains(event.target)) return;
+31712:             if (panel.contains(event.target)) return;
+31713:             closePanel();
+31714:         }, true);
+31715:         runtimeListen(pageWindow, 'resize', () => {
+31716:             invalidateMapElementCache();
+31717:             applyRootAttributes();
+31718:             refreshTabletModeUi();
+31719:             scheduleTabletLayoutRefresh(20);
+31720:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+31721:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+31722:             if (dragState) return;
+31723:             refreshSuppression();
+31724:             fitControlToMap();
+31725:             schedulePanelPosition(true, 40);
+31726:             scheduleCriticalDrawerDock(30);
+31727:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+31728:             scheduleMajorIncidentFeedLayout();
+31729:         });
+31730:         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+31731:         runtimeListen(pageWindow, 'orientationchange', () => scheduleTabletLayoutRefresh(30));
+31732:         if (pageWindow.visualViewport) {
+31733:             runtimeListen(pageWindow.visualViewport, 'resize', () => scheduleTabletLayoutRefresh(20));
+31734:             runtimeListen(pageWindow.visualViewport, 'scroll', () => {
+31735:                 if (isTouchLayoutActive() && document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open')) scheduleTabletLayoutRefresh(20);
+31736:             });
+31737:         }
+31738:         try {
+31739:             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
+31740:             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
+31741:         } catch (err) {}
+31742:         runtimeListen(pageWindow, 'focus', () => {
+31743:             if (dragState) return;
+31744:             refreshSuppression();
+31745:             fitControlToMap();
+31746:             schedulePanelPosition(true, 40);
+31747:             installRadioMessageHook();
+31748:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+31749:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31750:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31751:             scheduleOperationalPanelsRender(500);
+31752:             scheduleMajorIncidentFeedRender(80);
+31753:         });
+31754:         const recoverUiAfterNavigation = event => {
+31755:             runtimeSetTimeout(() => {
+31756:                 if (runtime.destroyed || document.hidden) return;
+31757:                 invalidateMapElementCache();
+31758:                 ensureUi();
+31759:                 connectMainMutationObserver();
+31760:                 recoverMajorIncidentFeed(event?.type || 'navigation');
+31761:             }, 120);
+31762:             runtimeSetTimeout(() => {
+31763:                 if (runtime.destroyed || document.hidden) return;
+31764:                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+31765:             }, 650);
+31766:         };
+31767:         runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
+31768:         runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
+31769:         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+31770:         runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
+31771:             if (!vehicleDataNeeded()) return;
+31772:             installRadioMessageHook();
+31773:             return refreshPersonalVehicleData(false);
+31774:         }, {
+31775:             economyIntervalMs: 10 * 60 * 1000,
+31776:             economyIntervalResolver: () => operationalUiIsVisible() || document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 2 * 60 * 1000 : 10 * 60 * 1000
+31777:         });
+31778:         runtimeRegisterTask('auto-night', 60 * 1000, () => runAutoNight(false), { intervalResolver: () => state.autoNight.enabled ? 60 * 1000 : 15 * 60 * 1000, economyIntervalMs: 5 * 60 * 1000, economyIntervalResolver: () => state.autoNight.enabled ? 5 * 60 * 1000 : 30 * 60 * 1000 });
+31779:         runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
+31780:             if (state.economyMode && economyMapMoving) {
+31781:                 economyDeferredMapRefresh = true;
+31782:                 return;
+31783:             }
+31784:             installMissionMarkerAddHook();
+31785:             installRadioMessageHook();
+31786:             installCreditsUpdateHook();
+31787:             observeCreditValue();
+31788:             if (state.allianceCredits) scheduleAllianceCreditRefresh();
+31789:             if (state.unitCommitment) scheduleUnitCommitmentRefresh();
+31790:             if (state.resourceGap.enabled) scheduleResourceGapRefresh();
+31791:             if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh();
+31792:             const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+31793:             if (criticalDrawer?.classList.contains('mcms-open')) {
+31794:                 let hasClearingMission = false;
+31795:                 for (const snapshot of liveMissionSnapshots.values()) {
+31796:                     const progress = criticalMissionClearingProgress(snapshot);
+31797:                     const units = snapshot?.units || personalUnitCommitmentForMission(snapshot?.missionId);
+31798:                     if (progress && Math.max(0, Number(units?.onScene) || 0) > 0) {
+31799:                         hasClearingMission = true;
+31800:                         break;
+31801:                     }
+31802:                 }
+31803:                 const refreshInterval = hasClearingMission ? CRITICAL_PROGRESS_REFRESH_ACTIVE_MS : CRITICAL_PROGRESS_REFRESH_IDLE_MS;
+31804:                 return refreshMissionProgressFromPage(false, refreshInterval).then(refreshed => {
+31805:                     if (!refreshed || document.hidden || !criticalDrawer.classList.contains('mcms-open')) return;
+31806:                     refreshMissionSnapshots();
+31807:                     criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
+31808:                     renderOperationalPanels(true, { updateViewTime: false, preserveScroll: true });
+31809:                 });
+31810:             }
+31811:         }, {
+31812:             economyIntervalMs: 60 * 1000,
+31813:             economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 30 * 1000 : 60 * 1000
+31814:         });
+31815:         runtimeRegisterTask('critical-countdowns', 1000, () => {
+31816:             if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open')) refreshCriticalClearingCountdowns();
+31817:         }, {
+31818:             intervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 1000 : 60 * 1000,
+31819:             economyIntervalMs: 10000,
+31820:             economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 10000 : 60 * 1000
+31821:         });
+31822:         runtimeRegisterTask('minute-maintenance', 60 * 1000, () => {
+31823:             if (state.missionAge) scheduleMissionAgeRefresh();
+31824:             if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+31825:             refreshVisibleMissionInspector();
+31826:             scheduleOperationalPanelsRender(500);
+31827:             pruneRuntimeCaches();
+31828:         }, {
+31829:             economyIntervalMs: 5 * 60 * 1000,
+31830:             economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
+31831:         });
+31832:         runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
+31833:             if (!state.majorIncidentFeed.enabled) return;
+31834:             recoverMajorIncidentFeed('integrity check');
+31835:         }, {
+31836:             intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
+31837:             economyIntervalMs: 12000,
+31838:             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
+31839:         });
+31840:         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
+31841:             if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+31842:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31843:         }, {
+31844:             intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+31845:             economyIntervalMs: 45 * 1000,
+31846:             economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+31847:         });
+31848:         runtimeListen(document, 'visibilitychange', () => {
+31849:             if (document.hidden) return;
+31850:             runtimeWakeTaskScheduler(0);
+31851:             ensureUi();
+31852:             refreshSuppression();
+31853:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+31854:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31855:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+31856:             scheduleMajorIncidentFeedRender(80);
+31857:         });
+31858:         runtimeSetTimeout(() => {
+31859:             if (document.hidden || !operationalStartupComplete) return;
+31860:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+31861:         }, 2200);
+31862:         runtimeOnCleanup(() => {
+31863:             stopAutoLoadAllVehicles();
+31864:             transportSweepRuntime.stopRequested = true;
+31865:             document.removeEventListener('mousemove', movePanelDrag, true);
+31866:             document.removeEventListener('mouseup', endPanelDrag, true);
+31867:             document.removeEventListener('touchmove', movePanelDrag, true);
+31868:             document.removeEventListener('touchend', endPanelDrag, true);
+31869:             document.removeEventListener('touchcancel', endPanelDrag, true);
+31870:             document.documentElement.style.cursor = '';
+31871:             if (document.body) document.body.style.userSelect = '';
+31872:             restoreEconomyLayers();
+31873:             restoreLeafletEconomyPolicy();
+31874:             disposeEconomyCanvasRenderer();
+31875:             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+31876:             majorIncidentFeedLayoutTimer = null;
+31877:             const originalBuildingVisibility = state.visibility.buildings;
+31878:             try {
+31879:                 state.visibility.buildings = true;
+31880:                 synchronisePersonalBuildingVisibility(cachedMap);
+31881:             } catch (err) {
+31882:                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+31883:             } finally {
+31884:                 state.visibility.buildings = originalBuildingVisibility;
+31885:             }
+31886:             try { creditsValueObserver?.disconnect(); } catch (err) {}
+31887:             removeMajorIncidentFeed();
+31888:             clearMissionLockOnEffect();
+31889:             clearAllianceCreditLabels();
+31890:             clearMissionAgeLabels();
+31891:             clearUnitCommitmentLabels();
+31892:             clearTransportWatcherLabels();
+31893:             clearResourceGapLabels();
+31894:             clearStuckMissionLabels();
+31895:             clearCoverageHeatmap();
+31896:             if (coverageGroup) {
+31897:                 try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+31898:                 coverageGroup = null;
+31899:             }
+31900:             stopPayoutFlashAnimation();
+31901:             disposePayoutMediaAudio();
+31902:             try { payoutAudioContext?.close?.(); } catch (err) {}
+31903:             clearDiscordPreviewChartUrl();
+31904:             closeHelpCenter({ restoreFocus: false });
+31905:             helpGuideDocumentCache = '';
+31906:             helpGuideLoadedAt = 0;
+31907:             stopDesktopPanelWorkspaceObservation();
+31908:             runtimeUntrackObserver(desktopPanelResizeObserver);
+31909:             desktopPanelResizeObserver = null;
+31910:             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+31911:             majorIncidentFeedResizeObserver = null;
+31912:             majorIncidentFeedObservedElement = null;
+31913:             missionSnapshotCache.clear();
+31914:             missionPanelCache.clear();
+31915:             missionOverlayVersions.clear();
+31916:             markerRegistryCache.clear();
+31917:             criticalMissionStableCache.clear();
+31918:             removeOldInstances();
+31919:             const root = document.documentElement;
+31920:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+31921:         });
+31922:         runtimeSetTimeout(() => runAutoNight(true), 180);
+31923:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+31924:         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+31925:     }
+31926: 
+31927:     function scheduleBoot() {
+31928:         if (runtime.destroyed || bootStarted) return;
+31929:         runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+31930:     }
+31931: 
+31932:     if (document.readyState === 'loading') {
+31933:         runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+31934:     } else {
+31935:         scheduleBoot();
+31936:     }
+31937: })();

@@ -1,0 +1,44 @@
+name: v4.20.3 Performance Diagnostic
+
+on:
+  push:
+    branches:
+      - fix/v4.20.3-performance-budget
+    paths:
+      - .github/workflows/v4203-performance-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run exact package and capture first failure
+        shell: bash
+        run: |
+          set +e
+          LOG="$RUNNER_TEMP/v4203-performance.log"
+          python .github/development-packages/v4203-performance-budget.py > "$LOG" 2>&1
+          STATUS=$?
+          {
+            echo "package_status=$STATUS"
+            echo
+            grep -n -m 1 -A 14 -E 'AssertionError|SyntaxError|TypeError|ReferenceError|VALIDATION ERROR|CalledProcessError' "$LOG" || tail -n 30 "$LOG"
+          } > "$RUNNER_TEMP/v4203-performance-summary.log"
+      - name: Post concise diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          BODY_FILE="$RUNNER_TEMP/body.md"
+          {
+            echo '### v4.20.3 performance-package diagnostic'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/v4203-performance-summary.log"
+            echo '```'
+          } > "$BODY_FILE"
+          gh api "repos/${GITHUB_REPOSITORY}/issues/209/comments" --method POST --raw-field "body=$(cat "$BODY_FILE")"

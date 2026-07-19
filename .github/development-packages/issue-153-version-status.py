@@ -251,8 +251,10 @@ validator = replace_once(validator, '        if mission_requirements.returncode 
 VALIDATOR.write_text(validator, encoding="utf-8")
 
 release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
-release = replace_once(release, '           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"\n           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \\\n', '           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"\n           INSTALL_URL="$(jq -r \' .greasyFork.installUrl\' .github/release-settings.json)"\n           jq -n --arg version "$RELEASE_VERSION" --arg releaseNotesUrl "$RELEASE_URL" --arg updateUrl "$INSTALL_URL" --arg publishedAt "$NOW" \\\n             \'{schemaVersion:1,channel:"stable",version:$version,releaseNotesUrl:$releaseNotesUrl,updateUrl:$updateUrl,publishedAt:$publishedAt}\' \\\n             > status/update-manifest.json\n           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \\\n', "verified manifest generation")
-release = release.replace("INSTALL_URL=\"$(jq -r ' .greasyFork.installUrl'", "INSTALL_URL=\"$(jq -r '.greasyFork.installUrl'")
+release_anchor = '          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"\n'
+release_insert = release_anchor + '          INSTALL_URL="$(jq -r \' .greasyFork.installUrl\' .github/release-settings.json)"\n          jq -n --arg version "$RELEASE_VERSION" --arg releaseNotesUrl "$RELEASE_URL" --arg updateUrl "$INSTALL_URL" --arg publishedAt "$NOW" \\\n            \'{schemaVersion:1,channel:"stable",version:$version,releaseNotesUrl:$releaseNotesUrl,updateUrl:$updateUrl,publishedAt:$publishedAt}\' \\\n            > status/update-manifest.json\n'
+release_insert = release_insert.replace("jq -r ' .greasyFork.installUrl'", "jq -r '.greasyFork.installUrl'")
+release = replace_once(release, release_anchor, release_insert, "verified manifest generation")
 release = replace_once(release, '           git add status/release-dashboard.json status/README.md\n', '           git add status/release-dashboard.json status/README.md status/update-manifest.json\n', "release manifest commit")
 RELEASE_WORKFLOW.write_text(release, encoding="utf-8")
 

@@ -1,0 +1,47 @@
+name: Issues 206 207 Matrix Diagnostic
+
+on:
+  push:
+    branches:
+      - fix/issues-206-207-matrix-correctness
+    paths:
+      - .github/workflows/issues-206-207-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply package and capture validation
+        id: diagnose
+        shell: bash
+        run: |
+          set +e
+          LOG="$RUNNER_TEMP/issues-206-207-diagnostic.log"
+          python .github/development-packages/issues-206-207-matrix-correctness.py > "$LOG" 2>&1
+          echo "package_status=$?" >> "$LOG"
+          node .github/scripts/test_mission_requirements_runtime.js >> "$LOG" 2>&1
+          echo "runtime_status=$?" >> "$LOG"
+          python .github/scripts/test_mission_requirements_contract.py >> "$LOG" 2>&1
+          echo "contract_status=$?" >> "$LOG"
+          python .github/scripts/validate_userscript.py >> "$LOG" 2>&1
+          echo "validator_status=$?" >> "$LOG"
+          tail -c 12000 "$LOG" > "$RUNNER_TEMP/issues-206-207-tail.log"
+      - name: Post exact diagnostic to issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          BODY_FILE="$RUNNER_TEMP/issues-206-207-body.md"
+          {
+            echo '### v4.20.3 package diagnostic'
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/issues-206-207-tail.log"
+            echo '```'
+          } > "$BODY_FILE"
+          gh api "repos/${GITHUB_REPOSITORY}/issues/206/comments" --method POST --raw-field "body=$(cat "$BODY_FILE")"

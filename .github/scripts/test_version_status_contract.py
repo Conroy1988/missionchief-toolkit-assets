@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 RUNTIME = ROOT / ".github" / "scripts" / "test_version_status_runtime.js"
 WORKFLOW = ROOT / ".github" / "workflows" / "publish-update-manifest.yml"
+RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release-toolkit.yml"
 MANIFEST = ROOT / "status" / "update-manifest.json"
 DASHBOARD = ROOT / "status" / "release-dashboard.json"
 
@@ -23,6 +24,7 @@ def semver(value: str) -> tuple[int, int, int]:
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
+    release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
     start = source.index("    // Issue #153: stable live Toolkit version-status control.")
@@ -66,7 +68,9 @@ def main() -> int:
 
     for marker in [
         "workflow_run:",
+        "workflow_dispatch:",
         "- Release Toolkit",
+        "github.event_name == 'workflow_dispatch'",
         "github.event.workflow_run.conclusion == 'success'",
         "github.event.workflow_run.head_branch == 'main'",
         "Build manifest from verified release ledger",
@@ -79,10 +83,23 @@ def main() -> int:
     ]:
         assert marker in workflow, f"verified manifest workflow marker missing: {marker}"
     trigger_index = workflow.index("workflow_run:")
+    dispatch_index = workflow.index("workflow_dispatch:")
     build_index = workflow.index("Build manifest from verified release ledger")
     push_index = workflow.index("git push origin HEAD:main")
-    assert trigger_index < build_index < push_index, "manifest publication must follow successful release reconciliation"
+    assert trigger_index < dispatch_index < build_index < push_index, "manifest workflow triggers must precede verified publication"
 
+    for marker in [
+        "- name: Publish verified update manifest",
+        "gh workflow run publish-update-manifest.yml --ref main",
+        "gh run list --workflow publish-update-manifest.yml --event workflow_dispatch --branch main",
+        "gh run watch \"$RUN_ID\" --exit-status",
+        "MANIFEST_RUN_ID: ${{ steps.update_manifest.outputs.run_id }}",
+    ]:
+        assert marker in release_workflow, f"release workflow manifest dispatch marker missing: {marker}"
+    dashboard_index = release_workflow.index("- name: Record successful release in dashboard")
+    publish_index = release_workflow.index("- name: Publish verified update manifest")
+    pages_index = release_workflow.index("- name: Deploy verified documentation site")
+    assert dashboard_index < publish_index < pages_index, "manifest must publish after dashboard reconciliation and before release completion"
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)
     assert result.returncode == 0, "version status runtime fixtures failed"

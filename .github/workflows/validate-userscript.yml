@@ -7,8 +7,12 @@ on:
       - "CHANGELOG.md"
       - ".github/scripts/validate_userscript.py"
       - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/test_version_status_contract.py"
+      - ".github/workflows/publish-update-manifest.yml"
+      - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/validate-userscript.yml"
       - "status/source-baseline.json"
+      - "status/update-manifest.json"
   push:
     branches:
       - main
@@ -17,8 +21,12 @@ on:
       - "CHANGELOG.md"
       - ".github/scripts/validate_userscript.py"
       - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/test_version_status_contract.py"
+      - ".github/workflows/publish-update-manifest.yml"
+      - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/validate-userscript.yml"
       - "status/source-baseline.json"
+      - "status/update-manifest.json"
   workflow_dispatch:
 
 permissions:

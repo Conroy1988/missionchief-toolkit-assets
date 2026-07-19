@@ -217,6 +217,28 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
+      - name: Publish verified update manifest
+        id: update_manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          gh workflow run publish-update-manifest.yml --ref main
+
+          RUN_ID=""
+          for attempt in $(seq 1 60); do
+            RUN_ID="$(gh run list --workflow publish-update-manifest.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$RUN_ID" ]] || { echo "::error::The dispatched update-manifest run was not found."; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Waiting for update-manifest run ${RUN_ID} for Toolkit ${RELEASE_VERSION}."
+          gh run watch "$RUN_ID" --exit-status
+
       - name: Deploy verified documentation site
         id: pages_deploy
         env:
@@ -243,6 +265,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
+          MANIFEST_RUN_ID: ${{ steps.update_manifest.outputs.run_id }}
           PAGES_RUN_ID: ${{ steps.pages_deploy.outputs.run_id }}
         shell: bash
         run: |
@@ -259,5 +282,6 @@ jobs:
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
             echo "- ✅ Release dashboard and generated control panel updated"
+            echo "- ✅ Stable update manifest published: ${MANIFEST_RUN_ID}"
             echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -79,12 +80,14 @@ if "// @version      4.20.4" not in source or "version: '4.20.4'" not in source:
     raise AssertionError("Issue #215 package requires the verified v4.20.4 source")
 source = replace_once(source, "// @version      4.20.4", "// @version      4.20.5", "userscript metadata version")
 source = replace_once(source, "version: '4.20.4'", "version: '4.20.5'", "runtime version")
-source = replace_once(
+source, interval_count = re.subn(
+    r"(cacheMs:\s*30\s*\*\s*60\s*\*\s*1000\s*,)",
+    r"\1 autoIntervalMs: 30 * 60 * 1000,",
     source,
-    "        cacheMs: 30 * 60 * 1000,\n",
-    "        cacheMs: 30 * 60 * 1000,\n        autoIntervalMs: 30 * 60 * 1000,\n",
-    "automatic interval constant",
+    count=1,
 )
+if interval_count != 1:
+    raise AssertionError(f"automatic interval constant: expected one compact anchor, found {interval_count}")
 old_signature = "    function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false)"
 new_scheduler = """    function versionStatusAutomaticDelay(now = Date.now()) {
         if (versionStatusModel.state === 'error') return VERSION_STATUS.failureCooldownMs;
@@ -182,6 +185,11 @@ entry = """## [4.20.5] - 2026-07-19
 """
 changelog = replace_once(changelog, "## [Unreleased]\n\n", "## [Unreleased]\n\n" + entry, "v4.20.5 changelog")
 CHANGELOG.write_text(changelog, encoding="utf-8")
+
+for diagnostic in [
+    ROOT / ".github" / "diagnostics" / "issue-215-version-status-auto-refresh.txt",
+]:
+    diagnostic.unlink(missing_ok=True)
 
 for distribution in [
     ROOT / "dist" / "MissionChief_Map_Command_Toolkit.user.js",

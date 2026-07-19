@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+# Fresh guarded-package fingerprint after Issue #153 was reopened.
 import runpy
 from pathlib import Path
 

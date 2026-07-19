@@ -6,11 +6,11 @@
   "distribution": "Greasy Fork",
   "status": {
     "validation": "passed",
-    "githubRelease": "not-published",
-    "greasyForkSync": "pending-release",
-    "backup": "not-created",
+    "githubRelease": "published",
+    "greasyForkSync": "verified",
+    "backup": "private-repository-verified",
     "discordDevelopment": "configured",
-    "discordRelease": "not-posted",
+    "discordRelease": "posted",
     "assetAudit": "passed",
     "releaseReadiness": "passed"
   },
@@ -24,7 +24,7 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-19T20:36:12Z",
+  "lastUpdated": "2026-07-19T20:39:21Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
     "validatedSha256": "7aa048c8157da8ce27e3b7c25effe5db54a64e5962d23da60da03cb2ca202bb8",
@@ -45,21 +45,21 @@
     "completedAt": "2026-07-14T16:05:00Z"
   },
   "releaseReadiness": {
-    "version": "4.20.4",
+    "version": "4.20.5",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "greasyForkMetadataVerified": true,
     "publicReleaseCreated": false,
-    "completedAt": "2026-07-19T19:51:16Z"
+    "completedAt": "2026-07-19T20:39:21Z"
   },
   "latestRelease": {
-    "version": "4.20.4",
-    "sha256": "bd5930cc8e8551866b42bad486b98d05c78aff393ee46a78f4ce2a11c9a07bca",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.4",
+    "version": "4.20.5",
+    "sha256": "7aa048c8157da8ce27e3b7c25effe5db54a64e5962d23da60da03cb2ca202bb8",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.5",
     "greasyForkVerified": true,
-    "privateBackupCommit": "3558b96054853897b723f7efd479e6a2fc409b58",
+    "privateBackupCommit": "6dc0d381d82cf1ebe455997b92e2a07129de3f8f",
     "discordPosted": true,
-    "completedAt": "2026-07-19T19:51:16Z"
+    "completedAt": "2026-07-19T20:39:21Z"
   }
 }

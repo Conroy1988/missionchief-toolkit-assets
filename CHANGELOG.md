@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.19.2] - 2026-07-19
+
+### Fixed
+- Classified HEMS as Ambulance-capable in the Mission Requirements Matrix, so a selected, responding or on-site HEMS now contributes one unit to the Ambulance row while retaining its HEMS capability.
+- Preserved contribution-key de-duplication so the same HEMS cannot be counted twice within one requirement row, and normal road ambulances still do not satisfy HEMS requirements.
+
+### Validation
+- Added deterministic aggregate fixtures covering HEMS-to-Ambulance capability inheritance, retained HEMS capability, duplicate suppression and the one-way road-Ambulance boundary.
+
 ## [4.19.1] - 2026-07-19
 
 ### Fixed

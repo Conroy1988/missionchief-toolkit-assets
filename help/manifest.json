@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.19.1",
-  "toolkitVersion": "4.19.1",
+  "guideVersion": "4.19.2",
+  "toolkitVersion": "4.19.2",
   "updated": "2026-07-19",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.19.1 restores live patient discovery outside the mission form, enforces one ambulance per patient, and adds affirmative Critical Care, HEMS and transport conditions to the Mission Requirements Matrix."
+  "runtimeGuidePatch": "Toolkit v4.19.2 makes HEMS contribute Ambulance capacity in every Mission Requirements unit state while retaining its dedicated HEMS capability and existing de-duplication."
 }

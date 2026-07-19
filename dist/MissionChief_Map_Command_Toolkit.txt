@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.19.1
+// @version      4.19.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.19.1',
+        version: '4.19.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22144,7 +22144,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         { key: 'water-carrier', label: 'Water Carrier', aliases: ['Water Carrier', 'Water Carriers'], types: [6, 26, 36, 41, 50] },
         { key: 'drone', label: 'Drone', aliases: ['Drone', 'Drones'], types: [89, 90, 91], equipment: ['drone'] },
         { key: 'control-van', label: 'Control Van', aliases: ['Control Van', 'Control Vans'], types: [85] },
-        { key: 'ambulance', label: 'Ambulance', aliases: ['Ambulance', 'Ambulances'], types: [5] },
+        { key: 'ambulance', label: 'Ambulance', aliases: ['Ambulance', 'Ambulances'], types: [5, 9] },
         { key: 'police-car', label: 'Police Car', aliases: ['Police car', 'Police cars'], types: [8, 12, 13, 19, 24, 25, 51, 52, 56, 82, 116] },
         { key: 'hems', label: 'HEMS', aliases: ['HEMS'], types: [9] },
         { key: 'critical-care-patient', label: 'Critical Care', aliases: ['Critical Care'], group: 'other', types: [], countable: true, patientCondition: true },

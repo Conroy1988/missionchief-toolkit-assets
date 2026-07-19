@@ -108,6 +108,7 @@
           "details": [
             "Mounted in normal document flow above dispatch controls",
             "One ambulance per current patient plus affirmative Critical Care, HEMS and transport conditions",
+            "HEMS contributes to both HEMS and Ambulance capacity without duplicate counting",
             "Updates immediately from normal and occupied vehicle selections",
             "Range-aware personnel, equipment, trailer and capacity-factor handling",
             "Fails safely on unknown wording and yields to an active LSSM equivalent"

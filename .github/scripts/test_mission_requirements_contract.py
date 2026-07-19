@@ -139,7 +139,8 @@ def main() -> int:
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
     assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
-    assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5\]", source), "patient demand must use the conservative UK transport ambulance mapping"
+    assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5,\s*9\]", source), "Ambulance capability must include road Ambulance and HEMS vehicle types"
+    assert re.search(r"key:\s*['\"]hems['\"][^\n]*types:\s*\[9\]", source), "HEMS must retain its dedicated capability mapping"
 
     for alias in data["requiredAliases"]:
         assert alias in source, f"Required UK requirement alias missing: {alias}"

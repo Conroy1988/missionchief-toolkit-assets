@@ -186,7 +186,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.19.1'
+        version: '4.19.2'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -338,6 +338,18 @@ assert.deepStrictEqual(
     { min: 4, max: 4, known: true, value: 4 },
     'exact personnel capacity'
 );
+
+const issue191AmbulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
+const issue191HemsDefinition = api.definitions.find(item => item.key === 'hems');
+const issue191SelectedHemsUnit = { typeId: 9, equipment: new Set(), staff: null, contributionKey: 'vehicle:hems-9001' };
+const issue191DuplicateSelectedHemsUnit = { ...issue191SelectedHemsUnit };
+const issue191SelectedRoadAmbulance = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:ambulance-5001' };
+const issue191HemsAsAmbulance = api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit]);
+assert.strictEqual(issue191HemsAsAmbulance.min, 1, 'selected HEMS contributes one Ambulance capability');
+assert.strictEqual(issue191HemsAsAmbulance.max, 1, 'selected HEMS has exact Ambulance capacity');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedHemsUnit]).min, 1, 'selected HEMS retains HEMS capability');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit, issue191DuplicateSelectedHemsUnit]).min, 1, 'same HEMS contribution key is not duplicated within the Ambulance row');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedRoadAmbulance]).min, 0, 'road Ambulance does not satisfy HEMS');
 
 const factorRequirement = { group: 'vehicles', definition: { types: [5], equipment: [], factors: { 5: 2 } } };
 const factorUnit = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:1' };

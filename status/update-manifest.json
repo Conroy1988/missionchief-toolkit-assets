@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "channel": "stable",
-  "version": "4.20.6",
-  "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.6",
+  "version": "4.20.7",
+  "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.7",
   "updateUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
-  "publishedAt": "2026-07-19T22:02:06Z",
-  "sha256": "13ce6401ab20b8a8974d1041a6fe2b2edfee698b6cbf91b356c2eb868da8c93e"
+  "publishedAt": "2026-07-19T22:46:37Z",
+  "sha256": "9fdb11cfb421a5a60cfa75973fa01e3672f9b4341a0f6b46fcf7040bf6753fe9"
 }

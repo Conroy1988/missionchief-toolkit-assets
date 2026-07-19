@@ -14,6 +14,7 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 HELP_INDEX = ROOT / "help" / "index.html"
 HELP_MANIFEST = ROOT / "help" / "manifest.json"
 SITE_DATA = ROOT / "docs" / "site-data.json"
+DIAGNOSTIC_WORKFLOW = ROOT / ".github" / "workflows" / "issue-191-diagnostic.yml"
 
 PREVIOUS = "4.19.1"
 VERSION = "4.19.2"
@@ -42,17 +43,17 @@ DIST_TEXT.write_text(source, encoding="utf-8")
 runtime = RUNTIME.read_text(encoding="utf-8")
 runtime = replace_once(runtime, "version: '4.19.1'", "version: '4.19.2'", "runtime fixture version")
 fixture_anchor = "const factorRequirement = { group: 'vehicles', definition: { types: [5], equipment: [], factors: { 5: 2 } } };"
-fixture_block = """const ambulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
-const hemsDefinition = api.definitions.find(item => item.key === 'hems');
-const selectedHemsUnit = { typeId: 9, equipment: new Set(), staff: null, contributionKey: 'vehicle:hems-9001' };
-const duplicateSelectedHemsUnit = { ...selectedHemsUnit };
-const selectedRoadAmbulance = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:ambulance-5001' };
-const hemsAsAmbulance = api.aggregate({ group: 'vehicles', definition: ambulanceDefinition }, [selectedHemsUnit]);
-assert.strictEqual(hemsAsAmbulance.min, 1, 'selected HEMS contributes one Ambulance capability');
-assert.strictEqual(hemsAsAmbulance.max, 1, 'selected HEMS has exact Ambulance capacity');
-assert.strictEqual(api.aggregate({ group: 'vehicles', definition: hemsDefinition }, [selectedHemsUnit]).min, 1, 'selected HEMS retains HEMS capability');
-assert.strictEqual(api.aggregate({ group: 'vehicles', definition: ambulanceDefinition }, [selectedHemsUnit, duplicateSelectedHemsUnit]).min, 1, 'same HEMS contribution key is not duplicated within the Ambulance row');
-assert.strictEqual(api.aggregate({ group: 'vehicles', definition: hemsDefinition }, [selectedRoadAmbulance]).min, 0, 'road Ambulance does not satisfy HEMS');
+fixture_block = """const issue191AmbulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
+const issue191HemsDefinition = api.definitions.find(item => item.key === 'hems');
+const issue191SelectedHemsUnit = { typeId: 9, equipment: new Set(), staff: null, contributionKey: 'vehicle:hems-9001' };
+const issue191DuplicateSelectedHemsUnit = { ...issue191SelectedHemsUnit };
+const issue191SelectedRoadAmbulance = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:ambulance-5001' };
+const issue191HemsAsAmbulance = api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit]);
+assert.strictEqual(issue191HemsAsAmbulance.min, 1, 'selected HEMS contributes one Ambulance capability');
+assert.strictEqual(issue191HemsAsAmbulance.max, 1, 'selected HEMS has exact Ambulance capacity');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedHemsUnit]).min, 1, 'selected HEMS retains HEMS capability');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit, issue191DuplicateSelectedHemsUnit]).min, 1, 'same HEMS contribution key is not duplicated within the Ambulance row');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedRoadAmbulance]).min, 0, 'road Ambulance does not satisfy HEMS');
 
 """
 runtime = replace_once(runtime, fixture_anchor, fixture_block + fixture_anchor, "HEMS capability runtime fixtures")
@@ -104,5 +105,6 @@ for category in site_data.get("featureCategories", []):
                 details.insert(2, detail)
 SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
 
+DIAGNOSTIC_WORKFLOW.unlink(missing_ok=True)
 Path(__file__).unlink(missing_ok=True)
 print(f"Prepared Toolkit {VERSION} HEMS Ambulance-capability patch")

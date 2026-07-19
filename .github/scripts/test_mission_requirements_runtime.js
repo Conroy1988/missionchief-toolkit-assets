@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
 const fixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-requirements-contract.json'), 'utf8'));
 const catalogueFixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-catalogue-pages.json'), 'utf8'));
+const ukCapabilityFixture = JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', 'mission-requirements-en_GB.json'), 'utf8'));
 const startMarker = '    // Issue #133 clean-room live mission requirements matrix.';
 const endMarker = '    function criticalMissionValueForEntry(entry) {';
 const start = source.indexOf(startMarker);
@@ -187,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.4'
+        version: '4.20.6'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -288,6 +289,32 @@ for (const testCase of fixture.parserCases) {
         testCase.name
     );
     assert.strictEqual(result.remaining, testCase.remaining, testCase.name);
+}
+
+
+for (const [group, entries] of [
+    ['vehicles', ukCapabilityFixture.vehicleRequirements],
+    ['staff', ukCapabilityFixture.staffRequirements]
+]) {
+    for (const entry of entries) {
+        for (const alias of entry.aliases) {
+            const parsed = api.parseText(`1 ${alias}`, group);
+            const parsedRequirement = parsed.requirements.find(requirement => requirement.missing === 1);
+            assert.ok(parsedRequirement, `${group}:${entry.key}: parser handles ${alias}`);
+            assert.strictEqual(parsed.remaining, '', `${group}:${entry.key}: parser consumes ${alias}`);
+            const definition = api.definitions.find(candidate =>
+                candidate.group === group && candidate.key === parsedRequirement.key
+            );
+            assert.ok(definition, `${group}:${entry.key}: parsed definition exists for ${alias}`);
+            assert.ok((definition.aliases || []).some(value => String(value).trim().toLowerCase() === String(alias).trim().toLowerCase()), `${group}:${entry.key}: parsed alias ${alias}`);
+            for (const typeId of entry.types) {
+                assert.ok((definition.types || []).includes(typeId), `${group}:${entry.key}: ${alias} supports vehicle type ${typeId}`);
+            }
+            for (const equipment of entry.equipment || []) {
+                assert.ok((definition.equipment || []).includes(equipment), `${group}:${entry.key}: ${alias} supports equipment ${equipment}`);
+            }
+        }
+    }
 }
 
 for (const testCase of fixture.coverageCases) {

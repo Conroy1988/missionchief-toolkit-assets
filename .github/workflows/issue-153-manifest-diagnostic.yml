@@ -1,0 +1,33 @@
+name: Issue 153 Manifest Diagnostic
+
+on:
+  push:
+    branches:
+      - diagnostic/issue-153-manifest
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Report post-release manifest workflow state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$RUNNER_TEMP/manifest-runs.json"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/publish-update-manifest.yml/runs?per_page=10" > "$report"
+          body="$RUNNER_TEMP/manifest-diagnostic.md"
+          {
+            echo '### v4.20.0 update-manifest workflow diagnostic'
+            echo
+            echo '```json'
+            jq '{total_count, workflow_runs: [.workflow_runs[] | {id, event, status, conclusion, head_branch, head_sha, run_number, created_at, updated_at, html_url}]}' "$report"
+            echo '```'
+          } > "$body"
+          gh issue comment 197 --repo "$GITHUB_REPOSITORY" --body-file "$body"

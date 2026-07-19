@@ -9,6 +9,10 @@
     {
       "title": "Fire in Hospital - Major Incident",
       "href": "/einsaetze/34?overlay_index=0"
+    },
+    {
+      "title": "Fight on Train",
+      "href": "/einsaetze/465"
     }
   ],
   "pages": [
@@ -211,6 +215,41 @@
       },
       "conditional": {
         "police-car": 50
+      }
+    },
+    {
+      "name": "fight on train",
+      "sourceUrl": "https://www.missionchief.co.uk/einsaetze/465",
+      "id": 465,
+      "title": "Fight on Train",
+      "sections": {
+        "reward": [
+          [
+            "Average credits",
+            "2500"
+          ],
+          [
+            "Required Personnel Available",
+            "8x Railway Police Officer"
+          ]
+        ],
+        "requirements": [
+          [
+            "Required Police Cars",
+            "4"
+          ],
+          [
+            "Required Dog Support Units (DSUs)",
+            "1"
+          ]
+        ],
+        "other": []
+      },
+      "variations": [],
+      "expected": {
+        "police-car": 4,
+        "dsu": 1,
+        "railway-police-officer": 8
       }
     }
   ]

@@ -104,14 +104,14 @@
         },
         {
           "name": "Mission Requirements",
-          "summary": "Shows live required, on-site, responding, selected and still-needed capacity, including patient-derived ambulance and direct patient requirements.",
+          "summary": "Shows authoritative required, on-site, responding, selected and still-needed capacity, including trained personnel and patient-derived demand.",
           "details": [
-            "Mounted in normal document flow above dispatch controls",
+            "Mission-specific Requirements for this Mission baseline with safe live-source precedence",
+            "Responding and on-site units discovered across normal and AJAX/lightbox table variants",
+            "Stable vehicle de-duplication across Selected, Responding and On-site transitions",
             "One ambulance per current patient plus affirmative Critical Care, HEMS and transport conditions",
-            "HEMS contributes to both HEMS and Ambulance capacity without duplicate counting",
-            "Updates immediately from normal and occupied vehicle selections",
-            "Range-aware personnel, equipment, trailer and capacity-factor handling",
-            "Fails safely on unknown wording and yields to an active LSSM equivalent"
+            "Explicit trained-personnel, equipment, trailer and capacity-factor reconciliation",
+            "Unknown classifications fail closed as unresolved rather than false complete or false shortage"
           ],
           "visual": "mission-requirements",
           "tags": [

@@ -104,9 +104,10 @@
         },
         {
           "name": "Mission Requirements",
-          "summary": "Shows live missing, en-route, still-needed and selected capacity inside opened MissionChief mission windows.",
+          "summary": "Shows live required, on-site, responding, selected and still-needed capacity, including patient-derived ambulance and direct patient requirements.",
           "details": [
             "Mounted in normal document flow above dispatch controls",
+            "One ambulance per current patient plus affirmative Critical Care, HEMS and transport conditions",
             "Updates immediately from normal and occupied vehicle selections",
             "Range-aware personnel, equipment, trailer and capacity-factor handling",
             "Fails safely on unknown wording and yields to an active LSSM equivalent"

@@ -48,7 +48,9 @@ def main() -> int:
         "const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([",
         "function missionRequirementsParseText(rawText, group = 'vehicles')",
         "function missionRequirementsParseSource(source)",
+        "function missionRequirementsPatientContext(candidate)",
         "function missionRequirementsPatientCount(candidate)",
+        "function missionRequirementsPatientDetails(candidate)",
         "function missionRequirementsPatientState(record, now = Date.now())",
         "function missionRequirementsReconcilePatientDemand(parsed, patientState)",
         "function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)",
@@ -126,8 +128,13 @@ def main() -> int:
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
     assert "missionRequirementsPlacementBlock(root, operational)" not in source
     assert "const operational = root.querySelector?." not in source
+    assert source.count("function missionRequirementsPatientContext(candidate)") == 1
     assert source.count("function missionRequirementsPatientCount(candidate)") == 1
+    assert source.count("function missionRequirementsPatientDetails(candidate)") == 1
     assert source.count("function missionRequirementsReconcilePatientDemand(parsed, patientState)") == 1
+    assert "patientConditionFulfilledKnown" in source
+    assert "critical-care-patient" in source
+    assert "patient-transport" in source
     assert source.count("function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)") == 1
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"

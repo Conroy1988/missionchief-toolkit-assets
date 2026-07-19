@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.7
+// @version      4.20.8
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.7',
+        version: '4.20.8',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -23228,34 +23228,40 @@ function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!
     }
 
     function missionRequirementsPanelHtml(rows, unresolved) {
-        const definiteOutstanding = rows.filter(row => row.definitelyOpen).length;
-        const uncertain = rows.filter(row => row.uncertain).length + unresolved.length;
-        const fulfilled = rows.filter(row => row.covered).length;
+        const visibleRows = rows.filter(row => !row.covered);
+        const definiteOutstanding = visibleRows.filter(row => row.definitelyOpen).length;
+        const uncertain = visibleRows.filter(row => row.uncertain).length + unresolved.length;
+        const fulfilled = rows.length - visibleRows.length;
         const stateName = missionRequirementsOverallState(rows, unresolved);
         const summary = stateName === 'success'
             ? `All ${rows.length} covered`
             : stateName === 'warning'
                 ? `${uncertain} need confirmation · ${fulfilled}/${rows.length} covered`
                 : `${definiteOutstanding} outstanding · ${fulfilled}/${rows.length} covered`;
-        const rowHtml = rows.map(row => {
-            const rowState = row.covered ? 'covered' : row.uncertain ? 'unresolved' : row.partial ? 'partial' : 'open';
-            const prefix = row.covered ? '✓ ' : '';
+        const rowHtml = visibleRows.map(row => {
+            const rowState = row.uncertain ? 'unresolved' : row.partial ? 'partial' : 'open';
             const requiredText = row.requiredText || (Number.isFinite(Number(row.missing)) ? Number(row.missing).toLocaleString('en-GB') : '?');
             const onSiteText = row.onSiteText || '?';
             const respondingText = row.respondingText || row.enRouteText || '?';
             const selectedText = row.selectedText || '?';
             const stillText = row.stillNeededText || '?';
-            const status = row.covered ? 'fulfilled' : row.uncertain ? 'requires confirmation' : row.partial ? 'partially fulfilled' : 'outstanding';
+            const status = row.uncertain ? 'requires confirmation' : row.partial ? 'partially fulfilled' : 'outstanding';
             const sourceBadge = row.requirementSource ? `<small class="mcms-req-source">${escapeHtml(row.requirementSource)}</small>` : '';
-            return `<tr data-row-state="${rowState}" title="${escapeHtml(`${row.requirement}: ${status}`)}"><td><span>${escapeHtml(prefix + row.requirement)}</span>${sourceBadge}</td><td data-label="Required">${escapeHtml(requiredText)}</td><td data-label="On site">${escapeHtml(onSiteText)}</td><td data-label="Respond.">${escapeHtml(respondingText)}</td><td data-label="Selected">${escapeHtml(selectedText)}</td><td class="mcms-req-still" data-label="Need">${escapeHtml(stillText)}</td></tr>`;
+            return `<tr data-row-state="${rowState}" title="${escapeHtml(`${row.requirement}: ${status}`)}"><td><span>${escapeHtml(row.requirement)}</span>${sourceBadge}</td><td data-label="Required">${escapeHtml(requiredText)}</td><td data-label="On site">${escapeHtml(onSiteText)}</td><td data-label="Respond.">${escapeHtml(respondingText)}</td><td data-label="Selected">${escapeHtml(selectedText)}</td><td class="mcms-req-still" data-label="Need">${escapeHtml(stillText)}</td></tr>`;
         }).join('');
+        const tableHtml = visibleRows.length
+            ? `<table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Required</th><th scope="col">On site</th><th scope="col">Responding</th><th scope="col">Selected</th><th scope="col">Still needed</th></tr></thead><tbody>${rowHtml}</tbody></table>`
+            : '';
+        const allCoveredHtml = rows.length && !visibleRows.length && !unresolved.length
+            ? '<div class="mcms-req-fallback mcms-req-all-covered" role="status"><span class="mcms-req-fallback-message">All currently known requirements are covered.</span></div>'
+            : '';
         const unknownHtml = unresolved.length
             ? `<div class="mcms-req-unknown"><b>Unresolved MissionChief requirement</b>${unresolved.map(item => `<span>${escapeHtml(item.text)}</span>`).join('')}<button type="button" class="mcms-req-report" data-mcms-report-mission>Report Mission</button></div>`
             : '';
         return {
             stateName,
-            widthMode: missionRequirementsWidthMode(rows, unresolved),
-            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body"><table aria-label="Live mission requirements"><colgroup><col class="mcms-req-name-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"><col class="mcms-req-number-col"></colgroup><thead><tr><th scope="col">Requirement</th><th scope="col">Required</th><th scope="col">On site</th><th scope="col">Responding</th><th scope="col">Selected</th><th scope="col">Still needed</th></tr></thead><tbody>${rowHtml}</tbody></table>${unknownHtml}</div>`
+            widthMode: missionRequirementsWidthMode(visibleRows, unresolved),
+            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body">${tableHtml}${allCoveredHtml}${unknownHtml}</div>`
         };
     }
 

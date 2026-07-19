@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.7'
+        version: '4.20.8'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -478,15 +478,44 @@ const lssmSource = {
 };
 assert.strictEqual(api.lssmActive({ root: null }, lssmSource), true, 'active LSSM panel is detected by explicit ownership metadata');
 
-const html = api.panelHtml([
-    api.coverageRow(
-        { key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: {} },
-        { min: 1, max: 1, known: true },
-        { min: 0, max: 0, known: true }
-    )
-], []);
-for (const header of fixture.layout.requiredHeaders) assert(html.html.includes(header), `missing table header: ${header}`);
-assert.strictEqual(html.stateName, 'success', 'covered panel state');
+const fulfilledAmbulanceRow = api.coverageRow(
+    { key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: {} },
+    { min: 1, max: 1, known: true },
+    { min: 0, max: 0, known: true }
+);
+const openPoliceRow = api.coverageRow(
+    { key: 'police-car', requirement: 'Police Car', missing: 2, group: 'vehicles', definition: {} },
+    { min: 0, max: 0, known: true },
+    { min: 0, max: 0, known: true }
+);
+const coveredPanel = api.panelHtml([fulfilledAmbulanceRow], []);
+assert.strictEqual(coveredPanel.stateName, 'success', 'covered panel state');
+assert(coveredPanel.html.includes('All currently known requirements are covered.'), 'all-covered panel retains explicit success state');
+assert(!coveredPanel.html.includes('<table'), 'all-covered panel hides the empty requirement table');
+assert(!coveredPanel.html.includes('Ambulance'), 'fulfilled row is hidden from the rendered list');
+
+const mixedPanel = api.panelHtml([fulfilledAmbulanceRow, openPoliceRow], []);
+for (const header of fixture.layout.requiredHeaders) assert(mixedPanel.html.includes(header), `missing table header: ${header}`);
+assert(mixedPanel.html.includes('Police Car'), 'outstanding requirement remains visible');
+assert(!mixedPanel.html.includes('Ambulance'), 'fulfilled requirement is hidden beside an outstanding row');
+assert(!mixedPanel.html.includes('All currently known requirements are covered.'), 'mixed panel does not show all-covered success');
+
+const renewedAmbulanceRow = api.coverageRow(
+    { key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: {} },
+    { min: 1, max: 1, known: true },
+    { min: 0, max: 0, known: true }
+);
+const renewedPanel = api.panelHtml([renewedAmbulanceRow], []);
+assert(renewedPanel.html.includes('Ambulance'), 'hidden row returns when an upgrade or re-entry creates a positive shortage');
+assert(renewedPanel.html.includes('data-row-state="partial"'), 'renewed shortage keeps its live partial state');
+
+const unresolvedPanel = api.panelHtml(
+    [fulfilledAmbulanceRow],
+    [{ group: 'vehicles', text: 'Unknown specialist response requirement' }]
+);
+assert(unresolvedPanel.html.includes('Unknown specialist response requirement'), 'unresolved authority remains visible');
+assert(!unresolvedPanel.html.includes('All currently known requirements are covered.'), 'unresolved authority overrides all-covered success');
+assert.strictEqual(unresolvedPanel.stateName, 'warning', 'unresolved authority remains warning state');
 
 const css = api.documentCss().replace(/\s+/g, '').toLowerCase();
 const normalPanelRule = css.split('.mcms-req-head', 1)[0];

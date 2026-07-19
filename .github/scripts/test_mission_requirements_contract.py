@@ -158,6 +158,9 @@ def main() -> int:
     assert "missionRequirementsPlacementBlock(root, operational)" not in source
     assert "const operational = root.querySelector?." not in source
     assert source.count("function missionRequirementsPatientContext(candidate)") == 1
+    assert "const visibleRows = rows.filter(row => !row.covered);" in source, "fulfilled Matrix rows must be presentation-filtered"
+    assert "All currently known requirements are covered." in source, "all-covered Matrix state must remain explicit"
+    assert "missionRequirementsWidthMode(visibleRows, unresolved)" in source, "fulfilled rows must not inflate rendered width"
     assert source.count("function missionRequirementsPatientCount(candidate)") == 1
     assert source.count("function missionRequirementsPatientDetails(candidate)") == 1
     assert source.count("function missionRequirementsReconcilePatientDemand(parsed, patientState)") == 1

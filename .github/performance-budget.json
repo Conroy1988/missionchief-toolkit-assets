@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-18-v4.16.0",
-  "rationale": "Recalibrated after v4.15.5 exhausted the initial v4.11.2 source envelope; all runtime-workload, CSS and relative regression limits remain unchanged.",
+  "revision": "2026-07-19-v4.20.3",
+  "rationale": "Owner-authorized 50% expansion of the absolute source-byte envelope from 2,000,000 to 3,000,000 bytes after the v4.20.3 Mission Matrix correctness hotfix exceeded the previous static ceiling by 2,024 bytes. All line, CSS, runtime-workload and relative regression limits remain unchanged.",
   "requiredSourceFragments": [
     "@run-at       document-start",
     "__MCMS_STARTUP_METRICS__"
   ],
   "absoluteLimits": {
-    "bytes": 2000000,
+    "bytes": 3000000,
     "lines": 32000,
     "css_bytes": 950000,
     "css_rule_blocks": 7000,

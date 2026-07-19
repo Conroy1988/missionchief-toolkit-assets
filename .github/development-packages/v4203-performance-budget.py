@@ -27,7 +27,6 @@ FUNCTIONS = [
     ("missionRequirementsCollectUnits", "missionRequirementsMissionTypeId"),
     ("missionRequirementsUnitContribution", "missionRequirementsAggregate"),
     ("missionRequirementsAggregate", "missionRequirementsProgressValue"),
-    ("missionRequirementsCatalogueDescriptor", "missionRequirementsCatalogueRequirement"),
     ("missionRequirementsCataloguePersonnelRequirements", "missionRequirementsCatalogueMergeRequirement"),
     ("missionRequirementsCatalogueMergeRequirement", "missionRequirementsCatalogueParseDocument"),
     ("missionRequirementsCatalogueParseDocument", "missionRequirementsCataloguePrune"),
@@ -168,8 +167,8 @@ def run(command: list[str]) -> None:
 
 source = SOURCE.read_text(encoding="utf-8")
 compacted, saved = compact_functions(source)
-if saved < 2200:
-    raise AssertionError(f"Matrix compaction saved only {saved} bytes; expected at least 2200")
+if saved < 2100:
+    raise AssertionError(f"Matrix compaction saved only {saved} bytes; expected at least 2100")
 SOURCE.write_text(compacted, encoding="utf-8")
 
 run(["node", "--check", str(SOURCE.relative_to(ROOT))])

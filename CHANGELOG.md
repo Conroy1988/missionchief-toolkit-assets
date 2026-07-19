@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.2] - 2026-07-19
+
+### Fixed
+- Eliminated live `LATEST`, `UPDATE`, `CHECK` and `RETRY` label wrapping by moving visible status text out of the raw button text node and into a dedicated single-line label layer.
+- Added selector-strength safeguards against MissionChief and theme-level `white-space`, word-break and overflow-wrap rules.
+
+### Changed
+- Rebuilt the version-status control to match the existing Menu and Economy control family with the same dark surface, footprint, radius, shadow rhythm and icon-over-label composition, without reusing Economy's behavioural selector.
+- Removed the v4.20.1 standalone tile class, grid geometry and bottom accent rail while retaining compact state-specific circular indicators.
+
+### Validation
+- Extended runtime and contract fixtures to verify control-family class reuse, empty raw text, pseudo-label rendering, nowrap enforcement and Desktop, Tablet and iOS geometry.
+
 ## [4.20.1] - 2026-07-19
 
 ### Changed

@@ -1,0 +1,2384 @@
+
+===== missionRequirementsCatalogueDescriptor =====
+function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+                if (!match) continue;
+                matched = { id: Number(match[1]), overlayIndex: match[2] === undefined ? null : Number(match[2]) };
+                break;
+            }
+            if (matched) break;
+        }
+        if (!matched) {
+            const id = missionRequirementsMissionTypeId(candidate);
+            if (id === null || id === undefined || !Number.isFinite(Number(id)) || Number(id) < 0) return null;
+            matched = { id: Number(id), overlayIndex: null };
+        }
+        const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument;
+        const location = doc?.defaultView?.location || pageWindow.location || {};
+        const origin = location.origin || `${location.protocol || 'https:'}//${location.host || 'www.missionchief.co.uk'}`;
+        const path = `/einsaetze/${matched.id}${matched.overlayIndex === null ? '' : `?overlay_index=${matched.overlayIndex}`}`;
+        return { ...matched, origin, path, url: `${origin}${path}`, key: `${origin}${path}` };
+    }
+
+===== missionRequirementsCatalogueParse =====
+[NOT FOUND] missionRequirementsCatalogueParse
+
+===== missionRequirementsCatalogueRequest =====
+[NOT FOUND] missionRequirementsCatalogueRequest
+
+===== missionRequirementsCatalogueCompare =====
+function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+        const baseline = new Map(catalogue.requirements.map(item => [item.key, Number(item.baseline ?? item.missing) || 0]));
+        const issues = [];
+        for (const live of parsed?.requirements || []) {
+            if (!baseline.has(live.key)) issues.push(`Live-only requirement: ${live.requirement}`);
+            else if ((Number(live.missing) || 0) > baseline.get(live.key)) issues.push(`Live quantity exceeds catalogue: ${live.requirement}`);
+        }
+        if (parsed?.unresolved?.length) issues.push(`${parsed.unresolved.length} unresolved live fragment${parsed.unresolved.length === 1 ? '' : 's'}`);
+        return { state: issues.length ? 'mismatch' : 'compatible', summary: issues.length ? issues.join('; ') : 'Live requirements are compatible with the catalogue baseline', issues };
+    }
+
+===== missionRequirementsCatalogueBaselineRender =====
+[NOT FOUND] missionRequirementsCatalogueBaselineRender
+
+===== missionRequirementsCatalogueDiagnosticLines =====
+function missionRequirementsCatalogueDiagnosticLines(record, parsed) {
+        const descriptor = record?.catalogueDescriptor || missionRequirementsCatalogueDescriptor(record?.candidate);
+        const catalogue = record?.catalogue;
+        const comparison = missionRequirementsCatalogueCompare(parsed, catalogue);
+        const rows = Array.from(catalogue?.requirements || []).slice(0, 24).map(item => `  - ${item.requirement}: ${item.baselineText || item.baseline || item.missing}`);
+        return [
+            '### Official MissionChief catalogue',
+            `- State: ${missionRequirementsSafeDiagnostic(record?.catalogueState || 'not requested', 40)}`,
+            `- Definition ID: ${descriptor?.id ?? 'Unavailable'}`,
+            `- Overlay index: ${descriptor?.overlayIndex ?? 'None'}`,
+            `- Path: ${missionRequirementsSafeDiagnostic(descriptor?.path || '', 180) || 'Unavailable'}`,
+            `- Catalogue title: ${missionRequirementsSafeDiagnostic(catalogue?.title || '', 140) || 'Unavailable'}`,
+            `- Parsed catalogue rows: ${catalogue?.requirements?.length || 0}`,
+            `- Unmapped catalogue rows: ${catalogue?.unresolved?.length || 0}`,
+            `- Average credits: ${catalogue?.averageCredits ?? 'Unavailable'}`,
+            `- Max patients: ${catalogue?.maxPatients ?? 'Unavailable'}`,
+            `- Mission variations: ${catalogue?.variations?.length || 0}`,
+            `- Live/catalogue comparison: ${missionRequirementsSafeDiagnostic(comparison.summary, 500)}`,
+            ...(rows.length ? ['', 'Catalogue requirement summary:', ...rows] : []),
+            ''
+        ];
+    }
+
+===== missionRequirementsEnsureCatalogue =====
+[NOT FOUND] missionRequirementsEnsureCatalogue
+
+===== missionRequirementsParseSource =====
+function missionRequirementsParseSource(source) {
+        const requirements = [];
+        const unresolved = [];
+        const parseSection = (rawText, requestedGroup) => {
+        const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
+        const cleaned = missionRequirementsStripGroupHeading(rawText);
+        if (!cleaned) return;
+        const parsed = missionRequirementsParseText(cleaned, group);
+        requirements.push(...parsed.requirements);
+        const generic = missionRequirementsParseGenericText(parsed.remaining, group);
+        requirements.push(...generic.requirements);
+        if (generic.remaining) unresolved.push({ group, text: generic.remaining });
+        };
+
+        const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []);
+        const groupElements = allGroups.filter(element => {
+        const closest = element.closest?.('#missing_text');
+        return !closest || closest === source;
+        });
+        if (groupElements.length) {
+        for (const element of groupElements) {
+            const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
+            parseSection(missionRequirementsElementText(element), rawGroup);
+        }
+        } else {
+        const raw = missionRequirementsElementText(source);
+        for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
+        }
+        return { requirements, unresolved };
+    }
+
+===== missionRequirementsResolveRequirements =====
+[NOT FOUND] missionRequirementsResolveRequirements
+
+===== missionRequirementsResolveRequirement =====
+[NOT FOUND] missionRequirementsResolveRequirement
+
+===== missionRequirementsRender =====
+[NOT FOUND] missionRequirementsRender
+
+===== missionRequirementsRenderRecord =====
+function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+
+===== missionRequirementsUpdateRecord =====
+[NOT FOUND] missionRequirementsUpdateRecord
+
+===== missionRequirementsCreateRecord =====
+[NOT FOUND] missionRequirementsCreateRecord
+
+===== missionRequirementsScheduleRecord =====
+function missionRequirementsScheduleRecord(record) {
+        if (!record || record.frame || runtime.destroyed) return;
+        record.frame = runtimeRequestAnimationFrame(() => {
+            record.frame = null;
+            missionRequirementsRenderRecord(record);
+        });
+    }
+
+===== missionRequirementsObserveRecord =====
+[NOT FOUND] missionRequirementsObserveRecord
+
+===== missionRequirementsSourceForCandidate =====
+function missionRequirementsSourceForCandidate(candidate) {
+        const root = missionRequirementsCandidateRoot(candidate) || candidate?.root;
+        const supplied = candidate?.source;
+        const native = root?.matches?.('#missing_text') ? root : root?.querySelector?.('#missing_text');
+        if (native && native.isConnected !== false) return native;
+        if (supplied?.getAttribute?.('data-mcms-requirements-anchor') === '1' && supplied.isConnected !== false) {
+            const placement = missionRequirementsPlacement({ ...candidate, root, mount: root }, supplied);
+            if (placement?.parent) return supplied;
+            supplied.remove?.();
+        }
+        return missionRequirementsExplicitSource(supplied) ? supplied : null;
+    }
+
+===== missionRequirementsCandidateFromSource =====
+function missionRequirementsCandidateFromSource(source) {
+        if (!source?.ownerDocument || source.isConnected === false) return null;
+        const rootSelector = [
+            '#mission_form',
+            'form[action*="/missions/"]',
+            '#mission_content',
+            '#lightbox_box',
+            '#lightbox',
+            '.lightbox_content',
+            '.modal',
+            '[role="dialog"]',
+            '.ui-dialog'
+        ].join(', ');
+        const root = source.closest?.(rootSelector) || source.parentNode || source.ownerDocument.body;
+        if (!root) return null;
+        return { root, mount: root, source, directMissionRequirements: true };
+    }
+
+===== missionRequirementsWindowCandidates =====
+function missionRequirementsWindowCandidates() {
+        const candidates = [];
+        const seenSources = new Set();
+        const seenRoots = new Set();
+        const add = (candidate, trusted = false) => {
+            const root = missionRequirementsCandidateRoot(candidate);
+            if (!root || seenRoots.has(root)) return;
+            let source = missionRequirementsSourceForCandidate({ ...candidate, root, mount: root });
+            if (!source) {
+                if (!trusted && !missionRequirementsLooksLikeWindow({ ...candidate, root, mount: root })) return;
+                source = missionRequirementsAnchorForCandidate({ ...candidate, root, mount: root });
+            }
+            if (!source || source.isConnected === false || seenSources.has(source)) return;
+            seenRoots.add(root);
+            seenSources.add(source);
+            candidates.push({ ...candidate, root, mount: root, source });
+        };
+        missionValueWindowCandidates().forEach(candidate => add(candidate, true));
+        for (const context of transportSweepDocumentContexts()) {
+            const doc = context?.doc;
+            if (!doc?.querySelectorAll) continue;
+            for (const source of doc.querySelectorAll('#missing_text')) add(missionRequirementsCandidateFromSource(source), true);
+            for (const root of doc.querySelectorAll('#mission_form, form[action*="/missions/"], #mission_content')) add({ root, mount: root }, false);
+        }
+        const priority = candidate => {
+            const source = candidate?.source;
+            return (isVisible(candidate?.root) ? 100 : 0)
+                + (source?.id === 'missing_text' || source?.matches?.('#missing_text') ? 20 : 0)
+                + (source?.getAttribute?.('data-mcms-requirements-anchor') === '1' ? 0 : 5)
+                + (missionRequirementsRecords.has(source) ? 1 : 0);
+        };
+        const missionIds = new Set();
+        return candidates.sort((left, right) => priority(right) - priority(left)).filter(candidate => {
+            const missionId = missionRequirementsMissionIdentity(candidate, candidate.source);
+            if (!missionId) return true;
+            if (missionIds.has(missionId)) return false;
+            missionIds.add(missionId);
+            return true;
+        });
+    }
+
+===== CONTEXT MISSION_REQUIREMENTS_CATALOGUE_TTL_MS =====
+
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+---
+
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+---
+
+===== CONTEXT MISSION_REQUIREMENTS_CATALOGUE_STALE_MS =====
+
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+                if (!match) continue;
+---
+
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+---
+
+===== CONTEXT MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS =====
+
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+                if (!match) continue;
+                matched = { id: Number(match[1]), overlayIndex: match[2] === undefined ? null : Number(match[2]) };
+---
+
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                if (!stillCurrent()) return null;
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+---
+
+===== CONTEXT missionRequirementsCatalogueCache =====
+
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+    function missionRequirementsCatalogueDescriptor(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        let matched = null;
+        for (const scope of scopes) {
+            const links = Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || []);
+            for (const link of links) {
+                const href = String(link.getAttribute?.('href') || link.href || '');
+                const match = href.match(/\/einsaetze\/(\d+)(?:\?[^#]*\boverlay_index=(\d+))?/iu);
+                if (!match) continue;
+                matched = { id: Number(match[1]), overlayIndex: match[2] === undefined ? null : Number(match[2]) };
+                break;
+            }
+            if (matched) break;
+---
+
+            title,
+            requirements,
+            unresolved,
+            preconditions,
+            other,
+            averageCredits: missionRequirementsOptionalNumber(findValue(preconditions, /Average\s+credits/iu)),
+            maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)),
+            patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)),
+            variations,
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+---
+
+            averageCredits: missionRequirementsOptionalNumber(findValue(preconditions, /Average\s+credits/iu)),
+            maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)),
+            patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)),
+            variations,
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+---
+
+            maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)),
+            patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)),
+            variations,
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+---
+
+            patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)),
+            variations,
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+---
+
+            fetchedAt: Date.now(),
+            stale: false
+        };
+    }
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+---
+
+    function missionRequirementsCataloguePrune() {
+        if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;
+        const ordered = Array.from(missionRequirementsCatalogueCache.entries()).sort((a, b) => (a[1]?.touchedAt || 0) - (b[1]?.touchedAt || 0));
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+---
+
+        while (ordered.length && missionRequirementsCatalogueCache.size > MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) {
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+---
+
+            missionRequirementsCatalogueCache.delete(ordered.shift()[0]);
+        }
+    }
+
+    function missionRequirementsCatalogueCacheStore(key, value, now = Date.now()) {
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+---
+
+        missionRequirementsCatalogueCache.set(key, {
+            value,
+            expiresAt: now + MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+            staleUntil: now + MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+            retryAt: 0,
+            promise: null,
+            touchedAt: now
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+---
+
+        });
+        missionRequirementsCataloguePrune();
+        return value;
+    }
+
+    function missionRequirementsCatalogueCacheLookup(key, now = Date.now()) {
+        const entry = missionRequirementsCatalogueCache.get(key);
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+---
+
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+---
+
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+        const DOMParserCtor = view?.DOMParser || pageWindow.DOMParser;
+        if (!fetcher || typeof DOMParserCtor !== 'function') {
+            record.catalogueState = record.catalogue ? 'stale' : 'unavailable';
+---
+
+        record.catalogueState = record.catalogue ? 'stale' : 'loading';
+        const promise = Promise.resolve(fetcher(descriptor.url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }))
+            .then(response => {
+                if (!response || response.ok === false) throw new Error(`catalogue HTTP ${response?.status || 'failure'}`);
+                return response.text();
+            })
+            .then(html => {
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                if (!stillCurrent()) return null;
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+---
+
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                if (!stillCurrent()) return null;
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+---
+
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                if (!stillCurrent()) return null;
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+---
+
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+        const baseline = new Map(catalogue.requirements.map(item => [item.key, Number(item.baseline ?? item.missing) || 0]));
+        const issues = [];
+        for (const live of parsed?.requirements || []) {
+            if (!baseline.has(live.key)) issues.push(`Live-only requirement: ${live.requirement}`);
+            else if ((Number(live.missing) || 0) > baseline.get(live.key)) issues.push(`Live quantity exceeds catalogue: ${live.requirement}`);
+        }
+        if (parsed?.unresolved?.length) issues.push(`${parsed.unresolved.length} unresolved live fragment${parsed.unresolved.length === 1 ? '' : 's'}`);
+---
+
+===== CONTEXT catalogueState =====
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+---
+
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+---
+
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+        const DOMParserCtor = view?.DOMParser || pageWindow.DOMParser;
+---
+
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+        const DOMParserCtor = view?.DOMParser || pageWindow.DOMParser;
+        if (!fetcher || typeof DOMParserCtor !== 'function') {
+            record.catalogueState = record.catalogue ? 'stale' : 'unavailable';
+            return record.catalogue || null;
+        }
+        record.catalogueState = record.catalogue ? 'stale' : 'loading';
+        const promise = Promise.resolve(fetcher(descriptor.url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }))
+            .then(response => {
+                if (!response || response.ok === false) throw new Error(`catalogue HTTP ${response?.status || 'failure'}`);
+                return response.text();
+            })
+            .then(html => {
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+---
+
+        const doc = record?.source?.ownerDocument || record?.candidate?.root?.ownerDocument || record?.candidate?.mount?.ownerDocument;
+        const view = doc?.defaultView || pageWindow;
+        const fetcher = typeof view?.fetch === 'function' ? view.fetch.bind(view) : typeof pageWindow.fetch === 'function' ? pageWindow.fetch.bind(pageWindow) : null;
+        const DOMParserCtor = view?.DOMParser || pageWindow.DOMParser;
+        if (!fetcher || typeof DOMParserCtor !== 'function') {
+            record.catalogueState = record.catalogue ? 'stale' : 'unavailable';
+            return record.catalogue || null;
+        }
+        record.catalogueState = record.catalogue ? 'stale' : 'loading';
+        const promise = Promise.resolve(fetcher(descriptor.url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }))
+            .then(response => {
+                if (!response || response.ok === false) throw new Error(`catalogue HTTP ${response?.status || 'failure'}`);
+                return response.text();
+            })
+            .then(html => {
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+---
+
+                if (!response || response.ok === false) throw new Error(`catalogue HTTP ${response?.status || 'failure'}`);
+                return response.text();
+            })
+            .then(html => {
+                const parsedDoc = new DOMParserCtor().parseFromString(String(html || ''), 'text/html');
+                const catalogue = missionRequirementsCatalogueParseDocument(parsedDoc, descriptor);
+                missionRequirementsCatalogueCacheStore(descriptor.key, catalogue);
+                if (!stillCurrent()) return null;
+                record.catalogue = catalogue;
+                record.catalogueState = 'ready';
+                return catalogue;
+            })
+            .catch(error => {
+                if (!stillCurrent()) return null;
+                const fallback = missionRequirementsCatalogueFailureFallback(descriptor.key);
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+---
+
+                const current = missionRequirementsCatalogueCache.get(descriptor.key) || entry;
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+        const baseline = new Map(catalogue.requirements.map(item => [item.key, Number(item.baseline ?? item.missing) || 0]));
+        const issues = [];
+        for (const live of parsed?.requirements || []) {
+            if (!baseline.has(live.key)) issues.push(`Live-only requirement: ${live.requirement}`);
+---
+
+                current.retryAt = Date.now() + MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS;
+                current.promise = null;
+                current.touchedAt = Date.now();
+                missionRequirementsCatalogueCache.set(descriptor.key, current);
+                record.catalogueError = missionRequirementsSafeDiagnostic(error?.message || 'catalogue request failed', 160);
+                if (fallback) {
+                    record.catalogue = { ...fallback.value, stale: true };
+                    record.catalogueState = 'stale';
+                    return record.catalogue;
+                }
+                record.catalogueState = 'error';
+                return null;
+            })
+            .finally(() => { if (stillCurrent()) missionRequirementsScheduleRecord(record); });
+        entry.promise = promise;
+        entry.touchedAt = now;
+        missionRequirementsCatalogueCache.set(descriptor.key, entry);
+        return record.catalogue || null;
+    }
+
+    function missionRequirementsCatalogueCompare(parsed, catalogue) {
+        if (!catalogue?.requirements?.length) return { state: 'unavailable', summary: 'No catalogue requirements available', issues: [] };
+        const baseline = new Map(catalogue.requirements.map(item => [item.key, Number(item.baseline ?? item.missing) || 0]));
+        const issues = [];
+        for (const live of parsed?.requirements || []) {
+            if (!baseline.has(live.key)) issues.push(`Live-only requirement: ${live.requirement}`);
+            else if ((Number(live.missing) || 0) > baseline.get(live.key)) issues.push(`Live quantity exceeds catalogue: ${live.requirement}`);
+---
+
+    function missionRequirementsCatalogueDiagnosticLines(record, parsed) {
+        const descriptor = record?.catalogueDescriptor || missionRequirementsCatalogueDescriptor(record?.candidate);
+        const catalogue = record?.catalogue;
+        const comparison = missionRequirementsCatalogueCompare(parsed, catalogue);
+        const rows = Array.from(catalogue?.requirements || []).slice(0, 24).map(item => `  - ${item.requirement}: ${item.baselineText || item.baseline || item.missing}`);
+        return [
+            '### Official MissionChief catalogue',
+            `- State: ${missionRequirementsSafeDiagnostic(record?.catalogueState || 'not requested', 40)}`,
+            `- Definition ID: ${descriptor?.id ?? 'Unavailable'}`,
+            `- Overlay index: ${descriptor?.overlayIndex ?? 'None'}`,
+            `- Path: ${missionRequirementsSafeDiagnostic(descriptor?.path || '', 180) || 'Unavailable'}`,
+            `- Catalogue title: ${missionRequirementsSafeDiagnostic(catalogue?.title || '', 140) || 'Unavailable'}`,
+            `- Parsed catalogue rows: ${catalogue?.requirements?.length || 0}`,
+            `- Unmapped catalogue rows: ${catalogue?.unresolved?.length || 0}`,
+            `- Average credits: ${catalogue?.averageCredits ?? 'Unavailable'}`,
+            `- Max patients: ${catalogue?.maxPatients ?? 'Unavailable'}`,
+            `- Mission variations: ${catalogue?.variations?.length || 0}`,
+            `- Live/catalogue comparison: ${missionRequirementsSafeDiagnostic(comparison.summary, 500)}`,
+            ...(rows.length ? ['', 'Catalogue requirement summary:', ...rows] : []),
+---
+
+    function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+---
+
+    function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+---
+
+    function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+---
+
+    function missionRequirementsRenderRecord(record) { if (!record?.source?.isConnected || !record?.candidate?.mount?.isConnected || !record?.panel?.isConnected) { scheduleMissionRequirementsScan(0); return; } if (missionRequirementsLssmActive(record.candidate, record.source)) { missionRequirementsRemoveRecord(record.source); return; } missionRequirementsCatalogueEnsure(record); const presentCatalogue = reason => { if (!record.catalogue) return false; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsCataloguePanelHtml({ ...record.catalogue, stale: record.catalogueState === 'stale' }), reason); return true; }; const patientState = missionRequirementsPatientState(record); const reconcile = parsed => missionRequirementsReconcilePatientDemand(parsed, patientState); const presentLive = parsed => { const reconciled = reconcile(parsed); if (!reconciled.requirements.length) return false; if (record.source.getAttribute?.('data-mcms-requirements-anchor') !== '1') missionRequirementsHideSource(record.source); else missionRequirementsRestoreSource(record.source); missionRequirementsPresent( record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : '' ); return true; }; const age = Date.now() - (record.startedAt || Date.now()); const anchor = record.source.getAttribute?.('data-mcms-requirements-anchor') === '1'; if (anchor) { if (presentLive({ requirements: [], unresolved: [] })) return; if (presentCatalogue('live requirement source absent; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); const loading = record.catalogueState === 'loading' || age < 1200; missionRequirementsPresent(record, missionRequirementsFallbackHtml(loading ? 'loading' : 'error'), loading ? '' : 'requirement source and catalogue unavailable'); return; } const raw = missionRequirementsElementText(record.source); if (!raw) { if (presentLive({ requirements: [], unresolved: [] })) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(age < 1200 ? 'loading' : 'empty')); return; } let parsed; try { parsed = missionRequirementsParseSource(record.source); } catch (err) { const patientOnly = reconcile({ requirements: [], unresolved: [{ group: 'vehicles', text: `Requirement parser failed: ${err?.message || 'unknown'}` }] }); if (patientOnly.requirements.length) { missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, patientOnly, record.catalogue), patientOnly.unresolved), 'parser exception with patient demand preserved'); return; } if (presentCatalogue(`parser exception; official catalogue baseline shown: ${err?.message || 'unknown'}`)) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), `parser exception: ${err?.message || 'unknown'}`); return; } const reconciled = reconcile(parsed); if (!reconciled.requirements.length) { if (presentCatalogue(reconciled.unresolved.length ? 'live requirement text unparseable; official catalogue baseline shown' : 'no quantified live requirements; official catalogue baseline shown')) return; missionRequirementsRestoreSource(record.source); missionRequirementsPresent(record, missionRequirementsFallbackHtml(record.catalogueState === 'loading' ? 'loading' : 'error'), reconciled.unresolved.length ? 'requirement text unparseable' : 'no quantified requirements detected'); return; } missionRequirementsHideSource(record.source); missionRequirementsPresent(record, missionRequirementsPanelHtml(missionRequirementsResolve(record.candidate, reconciled, record.catalogue), reconciled.unresolved), reconciled.unresolved.length ? 'partially unresolved requirement or patient data' : ''); }
+
+    function missionRequirementsScheduleRecord(record) {
+        if (!record || record.frame || runtime.destroyed) return;
+        record.frame = runtimeRequestAnimationFrame(() => {
+            record.frame = null;
+            missionRequirementsRenderRecord(record);
+        });
+    }
+
+    function missionRequirementsMutationRelevant(record, mutation) {
+        const panel = record?.panel;
+        const target = mutation?.target;
+        if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
+---
+
+        let panel = missionRequirementsCanonicalPanel(source, record?.panel?.isConnected ? record.panel : null);
+        const root = missionRequirementsCandidateRoot(candidate);
+        const scopedCandidate = { ...candidate, root, mount: root };
+        const missionIdentity = missionRequirementsMissionIdentity(scopedCandidate, source);
+        if (record && panel) {
+            if (record.missionIdentity && missionIdentity && record.missionIdentity !== missionIdentity) {
+                record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+                record.catalogue = null;
+                record.catalogueDescriptor = null;
+                record.catalogueState = 'idle';
+                record.startedAt = Date.now();
+                if (record.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer);
+                record.patientTransitionTimer = null;
+            }
+            record.missionIdentity = missionIdentity;
+            record.panel = panel;
+            record.candidate = scopedCandidate;
+            missionRequirementsPlacePanel(scopedCandidate, source, panel);
+            missionRequirementsBindPanel(panel);
+            missionRequirementsScheduleRecord(record);
+            return record;
+        }
+        if (record) missionRequirementsRemoveRecord(source);
+        const doc = source.ownerDocument || document;
+        for (const [otherSource] of missionRequirementsRecords) {
+            if (otherSource !== source && otherSource.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+        }
+        ensureMissionRequirementsDocumentStyle(doc);
+---
+
+===== CONTEXT catalogueDescriptor =====
+
+        if (!entry?.value) return null;
+        if (now > entry.staleUntil) {
+            missionRequirementsCatalogueCache.delete(key);
+            return null;
+        }
+        entry.touchedAt = now;
+        return { value: entry.value, stale: now > entry.expiresAt };
+    }
+
+    function missionRequirementsCatalogueFailureFallback(key, now = Date.now()) {
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+---
+
+        return missionRequirementsCatalogueCacheLookup(key, now);
+    }
+
+    function missionRequirementsCatalogueEnsure(record) {
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+---
+
+        const descriptor = missionRequirementsCatalogueDescriptor(record?.candidate);
+        const previousKey = record?.catalogueDescriptor?.key || '';
+        const nextKey = descriptor?.key || '';
+        if (previousKey !== nextKey) {
+            record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+            record.catalogue = null;
+            record.catalogueState = nextKey ? 'idle' : 'unavailable';
+            record.catalogueError = '';
+        }
+        record.catalogueDescriptor = descriptor;
+        const requestToken = Number(record.catalogueRequestToken) || 0;
+        const stillCurrent = () => record?.catalogueDescriptor?.key === descriptor?.key && (Number(record.catalogueRequestToken) || 0) === requestToken;
+        if (!descriptor) {
+            record.catalogueState = 'unavailable';
+            return null;
+        }
+        const now = Date.now();
+        const cached = missionRequirementsCatalogueCacheLookup(descriptor.key, now);
+        if (cached) {
+            record.catalogue = { ...cached.value, stale: cached.stale };
+            record.catalogueState = cached.stale ? 'stale' : 'ready';
+            if (!cached.stale) return record.catalogue;
+        }
+        let entry = missionRequirementsCatalogueCache.get(descriptor.key) || { value: cached?.value || null, retryAt: 0, promise: null, touchedAt: now };
+        if (entry.promise) {
+            entry.promise.finally(() => missionRequirementsScheduleRecord(record));
+            return record.catalogue || null;
+        }
+        if (entry.retryAt > now) return record.catalogue || null;
+---
+
+            html: `<div class="mcms-req-head"><div class="mcms-req-title"><i aria-hidden="true"></i><span>Mission Requirements</span></div><span class="mcms-req-summary">${escapeHtml(summary)}</span><button type="button" class="mcms-req-collapse" data-mcms-requirements-collapse aria-label="Collapse mission requirements" aria-expanded="true">⌃</button></div><div class="mcms-req-body">${table}<div class="mcms-req-unknown"><b>Baseline planning data</b><span>${escapeHtml(note)}</span></div>${unresolvedHtml}</div>`
+        };
+    }
+
+    function missionRequirementsCatalogueDiagnosticLines(record, parsed) {
+        const descriptor = record?.catalogueDescriptor || missionRequirementsCatalogueDescriptor(record?.candidate);
+        const catalogue = record?.catalogue;
+        const comparison = missionRequirementsCatalogueCompare(parsed, catalogue);
+        const rows = Array.from(catalogue?.requirements || []).slice(0, 24).map(item => `  - ${item.requirement}: ${item.baselineText || item.baseline || item.missing}`);
+        return [
+            '### Official MissionChief catalogue',
+            `- State: ${missionRequirementsSafeDiagnostic(record?.catalogueState || 'not requested', 40)}`,
+            `- Definition ID: ${descriptor?.id ?? 'Unavailable'}`,
+            `- Overlay index: ${descriptor?.overlayIndex ?? 'None'}`,
+            `- Path: ${missionRequirementsSafeDiagnostic(descriptor?.path || '', 180) || 'Unavailable'}`,
+            `- Catalogue title: ${missionRequirementsSafeDiagnostic(catalogue?.title || '', 140) || 'Unavailable'}`,
+            `- Parsed catalogue rows: ${catalogue?.requirements?.length || 0}`,
+---
+
+        let panel = missionRequirementsCanonicalPanel(source, record?.panel?.isConnected ? record.panel : null);
+        const root = missionRequirementsCandidateRoot(candidate);
+        const scopedCandidate = { ...candidate, root, mount: root };
+        const missionIdentity = missionRequirementsMissionIdentity(scopedCandidate, source);
+        if (record && panel) {
+            if (record.missionIdentity && missionIdentity && record.missionIdentity !== missionIdentity) {
+                record.catalogueRequestToken = (Number(record.catalogueRequestToken) || 0) + 1;
+                record.catalogue = null;
+                record.catalogueDescriptor = null;
+                record.catalogueState = 'idle';
+                record.startedAt = Date.now();
+                if (record.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer);
+                record.patientTransitionTimer = null;
+            }
+            record.missionIdentity = missionIdentity;
+            record.panel = panel;
+            record.candidate = scopedCandidate;
+            missionRequirementsPlacePanel(scopedCandidate, source, panel);
+            missionRequirementsBindPanel(panel);
+            missionRequirementsScheduleRecord(record);
+            return record;
+        }
+        if (record) missionRequirementsRemoveRecord(source);
+        const doc = source.ownerDocument || document;
+        for (const [otherSource] of missionRequirementsRecords) {
+            if (otherSource !== source && otherSource.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+---
+
+===== CONTEXT catalogueBaseline =====
+
+===== RUNTIME FIXTURE RELEVANT BLOCKS =====
+
+--- catalogue ---
+
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const root = path.resolve(__dirname, '..', '..');
+const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
+const fixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-requirements-contract.json'), 'utf8'));
+const catalogueFixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-catalogue-pages.json'), 'utf8'));
+const startMarker = '    // Issue #133 clean-room live mission requirements matrix.';
+const endMarker = '    function criticalMissionValueForEntry(entry) {';
+const start = source.indexOf(startMarker);
+const end = source.indexOf(endMarker, start);
+assert(start >= 0 && end > start, 'unable to extract Issue #133 runtime block');
+const block = source.slice(start, end);
+
+const escapeHtml = value => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+class FakeClassList {
+    constructor() { this.values = new Set(); }
+    contains(value) { return this.values.has(value); }
+    toggle(value, force) {
+        const enabled = force === undefined ? !this.values.has(value) : Boolean(force);
+        if (enabled) this.values.add(value);
+
+    aggregate: missionRequirementsAggregate,
+    resolve: missionRequirementsResolve,
+    overallState: missionRequirementsOverallState,
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+
+    aggregate: missionRequirementsAggregate,
+    resolve: missionRequirementsResolve,
+    overallState: missionRequirementsOverallState,
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+
+    resolve: missionRequirementsResolve,
+    overallState: missionRequirementsOverallState,
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+
+    overallState: missionRequirementsOverallState,
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+    const result = api.parseText(testCase.input, testCase.group);
+
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+    const result = api.parseText(testCase.input, testCase.group);
+    assert.deepStrictEqual(
+        JSON.parse(JSON.stringify(result.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+        testCase.expected,
+        testCase.name
+    );
+    assert.strictEqual(result.remaining, testCase.remaining, testCase.name);
+
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+    const result = api.parseText(testCase.input, testCase.group);
+    assert.deepStrictEqual(
+        JSON.parse(JSON.stringify(result.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+        testCase.expected,
+        testCase.name
+    );
+    assert.strictEqual(result.remaining, testCase.remaining, testCase.name);
+}
+
+for (const testCase of fixture.coverageCases) {
+
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+    const result = api.parseText(testCase.input, testCase.group);
+    assert.deepStrictEqual(
+        JSON.parse(JSON.stringify(result.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+        testCase.expected,
+        testCase.name
+    );
+    assert.strictEqual(result.remaining, testCase.remaining, testCase.name);
+}
+
+for (const testCase of fixture.coverageCases) {
+
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,
+    scan: scanMissionRequirementsWindows,
+    clear: clearMissionRequirementsPanels,
+    observeDocument: observeMissionRequirementsDocument,
+    records: missionRequirementsRecords
+};`,
+    context,
+    { filename: 'mission-requirements-runtime.js' }
+);
+const api = context.__mcmsRequirements;
+
+for (const testCase of fixture.parserCases) {
+    const result = api.parseText(testCase.input, testCase.group);
+    assert.deepStrictEqual(
+        JSON.parse(JSON.stringify(result.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+        testCase.expected,
+        testCase.name
+    );
+    assert.strictEqual(result.remaining, testCase.remaining, testCase.name);
+}
+
+for (const testCase of fixture.coverageCases) {
+    const row = api.coverageRow(
+
+transitionDoc.defaultView = { location: { origin: 'https://www.missionchief.co.uk', protocol: 'https:', host: 'www.missionchief.co.uk' } };
+const transitionRoot = new FakeElement('div', transitionDoc);
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+
+const transitionRoot = new FakeElement('div', transitionDoc);
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+
+transitionRoot.queryAllMap.set('a[href*="/einsaetze/"]', [{ getAttribute(name) { return name === 'href' ? '/einsaetze/202' : null; } }]);
+const transitionSource = new FakeElement('div', transitionDoc);
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+
+transitionRoot.appendChild(transitionSource);
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+let resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+
+const transitionRecord = {
+    candidate: { root: transitionRoot, mount: transitionRoot },
+    source: transitionSource,
+    catalogueDescriptor: { key: 'https://www.missionchief.co.uk/einsaetze/101' },
+    catalogue: { title: 'Previous mission baseline' },
+    catalogueState: 'ready'
+};
+api.catalogueEnsure(transitionRecord);
+assert.strictEqual(transitionRecord.catalogueDescriptor.path, '/einsaetze/202', 'new mission descriptor is resolved');
+assert.strictEqual(transitionRecord.catalogue, null, 'previous mission catalogue is cleared');
+
+const unitDoc = new FakeDocument();
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+let resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.requiredText, '2', 'catalogue baseline supplies total required capacity');
+
+unitDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const unitCandidate = makeMissionCandidate(unitDoc, '2 Ambulances');
+const firstAmbulance = makeVehicleElement(unitDoc, 101, 5);
+const secondAmbulance = makeVehicleElement(unitDoc, 102, 5);
+const ambulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const ambulanceParsed = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 2, group: 'vehicles', definition: ambulanceDefinition }],
+    unresolved: []
+};
+const ambulanceCatalogue = { requirements: [{ key: 'ambulance', baseline: 2, missing: 2 }] };
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle];
+let resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.requiredText, '2', 'catalogue baseline supplies total required capacity');
+assert.strictEqual(resolved.selectedMin, 1, 'selected vehicle is counted');
+assert.strictEqual(resolved.stillNeededText, '1', 'selected capacity immediately reduces still needed');
+
+unitCandidate.root.selectedUnits = [firstAmbulance.vehicle, secondAmbulance.vehicle];
+resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
+assert.strictEqual(resolved.stillNeededText, '0', 'second selected vehicle fulfils the requirement');
+assert.strictEqual(resolved.covered, true, 'selected vehicles can produce a green fulfilled row');
+
+--- patientAmbulanceDefinition ---
+
+assert.strictEqual(patientResolved.onSiteText, '1', 'on-site ambulance capacity is counted');
+assert.strictEqual(patientResolved.respondingText, '1', 'responding ambulance capacity is counted');
+assert.strictEqual(patientResolved.selectedText, '1', 'selected ambulance capacity is counted separately');
+assert.strictEqual(patientResolved.stillNeededText, '0', 'committed and selected ambulances cover patient demand');
+assert.strictEqual(patientResolved.covered, true, 'covered patient demand allows a green row');
+
+const patientAmbulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const statedLower = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: patientAmbulanceDefinition }],
+    unresolved: []
+};
+const mergedDemand = api.reconcilePatientDemand(statedLower, patientState);
+assert.strictEqual(mergedDemand.requirements.filter(item => item.key === 'ambulance').length, 1, 'stated and patient demand never duplicate the Ambulance row');
+assert.strictEqual(mergedDemand.requirements[0].missing, 1, 'stated missing quantity is retained for live reconstruction');
+assert.strictEqual(mergedDemand.requirements[0].patientRequired, 3, 'patient total remains the minimum authoritative requirement');
+patientCandidate.root.onSiteRows = [];
+patientCandidate.root.enRouteRows = [];
+patientCandidate.root.selectedUnits = [];
+
+assert.strictEqual(patientResolved.selectedText, '1', 'selected ambulance capacity is counted separately');
+assert.strictEqual(patientResolved.stillNeededText, '0', 'committed and selected ambulances cover patient demand');
+assert.strictEqual(patientResolved.covered, true, 'covered patient demand allows a green row');
+
+const patientAmbulanceDefinition = api.definitions.find(definition => definition.key === 'ambulance');
+const statedLower = {
+    requirements: [{ key: 'ambulance', requirement: 'Ambulance', missing: 1, group: 'vehicles', definition: patientAmbulanceDefinition }],
+    unresolved: []
+};
+const mergedDemand = api.reconcilePatientDemand(statedLower, patientState);
+assert.strictEqual(mergedDemand.requirements.filter(item => item.key === 'ambulance').length, 1, 'stated and patient demand never duplicate the Ambulance row');
+assert.strictEqual(mergedDemand.requirements[0].missing, 1, 'stated missing quantity is retained for live reconstruction');
+assert.strictEqual(mergedDemand.requirements[0].patientRequired, 3, 'patient total remains the minimum authoritative requirement');
+patientCandidate.root.onSiteRows = [];
+patientCandidate.root.enRouteRows = [];
+patientCandidate.root.selectedUnits = [];
+patientResolved = api.resolve(patientCandidate, mergedDemand)[0];
+assert.strictEqual(patientResolved.requiredText, '3', 'lower stated requirement does not reduce patient-derived demand');
+
+patientNodes.strong.textContent = patientNodes.strong.innerText = '0 Patients';
+
+--- missionRequirementsResolveRequirements ---
+
+--- missionRequirementsCatalogueParse ---
+
+    overallState: missionRequirementsOverallState,
+    lssmActive: missionRequirementsLssmActive,
+    panelHtml: missionRequirementsPanelHtml,
+    documentCss: missionRequirementsDocumentCss,
+    windowCandidates: missionRequirementsWindowCandidates,
+    primaryRuntime: missionRequirementsPrimaryRuntime,
+    canonicalPanel: missionRequirementsCanonicalPanel,
+    fallbackHtml: missionRequirementsFallbackHtml,
+    catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
+    cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
+    catalogueCompare: missionRequirementsCatalogueCompare,
+    catalogueCacheStore: missionRequirementsCatalogueCacheStore,
+    catalogueCacheLookup: missionRequirementsCatalogueCacheLookup,
+    catalogueFailureFallback: missionRequirementsCatalogueFailureFallback,
+    catalogueEnsure: missionRequirementsCatalogueEnsure,
+    sourceForCandidate: missionRequirementsSourceForCandidate,
+    candidateRoot: missionRequirementsCandidateRoot,
+    placement: missionRequirementsPlacement,
+    anchorForCandidate: missionRequirementsAnchorForCandidate,
+    widthMode: missionRequirementsWidthMode,
+    catalogueTtl: MISSION_REQUIREMENTS_CATALOGUE_TTL_MS,
+    catalogueStale: MISSION_REQUIREMENTS_CATALOGUE_STALE_MS,
+    reportUrl: missionRequirementsReportUrl,
+    sanitize: missionRequirementsSafeDiagnostic,

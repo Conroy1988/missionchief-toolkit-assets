@@ -1,0 +1,46 @@
+name: Issue 153 Package Fix
+
+on:
+  push:
+    branches:
+      - feature/issue-153-version-status
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: feature/issue-153-version-status
+          fetch-depth: 0
+      - name: Replace brittle release-workflow anchor
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/development-packages/issue-153-version-status.py')
+          text = path.read_text(encoding='utf-8')
+          start_marker = "release = replace_once(release, '           RELEASE_URL="
+          end_marker = 'release = replace_once(release, \'           git add status/release-dashboard.json status/README.md\\n\''
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          replacement = '''release_anchor = '          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"\\n'
+          release_insert = release_anchor + ''' + repr('          INSTALL_URL="$(jq -r \' .greasyFork.installUrl\' .github/release-settings.json)"\n          jq -n --arg version "$RELEASE_VERSION" --arg releaseNotesUrl "$RELEASE_URL" --arg updateUrl "$INSTALL_URL" --arg publishedAt "$NOW" \\\n            \'{schemaVersion:1,channel:"stable",version:$version,releaseNotesUrl:$releaseNotesUrl,updateUrl:$updateUrl,publishedAt:$publishedAt}\' \\\n            > status/update-manifest.json\n') + '''
+          release_insert = release_insert.replace("jq -r ' .greasyFork.installUrl'", "jq -r '.greasyFork.installUrl'")
+          release = replace_once(release, release_anchor, release_insert, "verified manifest generation")
+          '''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm -f .github/workflows/issue-153-package-fix.yml .github/workflows/issue-153-package-diagnostic.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/development-packages/issue-153-version-status.py .github/workflows
+          git commit -m "Fix Issue 153 release manifest package anchor"
+          git push origin HEAD:feature/issue-153-version-status

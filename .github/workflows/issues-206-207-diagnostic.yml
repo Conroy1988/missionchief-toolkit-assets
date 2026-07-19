@@ -11,6 +11,9 @@ permissions:
   contents: read
   issues: write
 
+env:
+  DIAGNOSTIC_REVISION: "2"
+
 jobs:
   diagnose:
     runs-on: ubuntu-latest
@@ -38,7 +41,7 @@ jobs:
         run: |
           BODY_FILE="$RUNNER_TEMP/issues-206-207-body.md"
           {
-            echo '### v4.20.3 package diagnostic'
+            echo '### v4.20.3 package diagnostic — revision 2'
             echo
             echo '```text'
             cat "$RUNNER_TEMP/issues-206-207-tail.log"

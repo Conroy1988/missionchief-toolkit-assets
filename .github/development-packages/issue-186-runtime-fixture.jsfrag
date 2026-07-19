@@ -1,0 +1,63 @@
+
+// Issue #186: live patient nodes outside #mission_form and direct patient flags.
+{
+const externalDoc = new FakeDocument();
+externalDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/18601' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };
+const externalCandidate = makeMissionCandidate(externalDoc, '');
+externalCandidate.missionId = 18601;
+const externalPanel = new FakeElement('div', externalDoc);
+externalPanel.textContent = externalPanel.innerText = '1 Patient Critical Care required: Yes HEMS required: Yes Requires Transport: Yes Ambulance with the patient: Yes Critical Care with the patient: No';
+const externalForm = new FakeElement('div', externalDoc);
+externalForm.id = 'patient_button_form';
+const externalText = new FakeElement('span', externalDoc);
+externalText.id = 'patient_button_text';
+externalText.textContent = externalText.innerText = '1 Patient - 1 Untreated patients';
+const externalStrong = new FakeElement('strong', externalDoc);
+externalStrong.textContent = externalStrong.innerText = '1 Patient';
+externalText.queryMap.set('strong', externalStrong);
+externalForm.queryMap.set('#patient_button_text strong, strong', externalStrong);
+externalForm.queryMap.set('#patient_button_text', externalText);
+externalDoc.body.appendChild(externalPanel);
+externalPanel.appendChild(externalForm);
+externalForm.appendChild(externalText);
+externalText.appendChild(externalStrong);
+
+const externalCount = api.patientCount(externalCandidate);
+assert.strictEqual(externalCount.count, 1, 'document-context fallback reads a patient summary outside #mission_form');
+const externalDetails = api.patientDetails(externalCandidate);
+assert.strictEqual(externalDetails.criticalCareRequired.yes, 1, 'affirmative Critical Care requirement is parsed');
+assert.strictEqual(externalDetails.hemsRequired.yes, 1, 'affirmative HEMS requirement is parsed');
+assert.strictEqual(externalDetails.transportRequired.yes, 1, 'affirmative transport requirement is parsed');
+assert.strictEqual(externalDetails.ambulanceWithPatient.yes, 1, 'ambulance-with-patient fulfilment is parsed');
+assert.strictEqual(externalDetails.criticalCareWithPatient.no, 1, 'negative Critical Care fulfilment is parsed without becoming a requirement');
+
+const externalReconciled = api.reconcilePatientDemand(
+    { requirements: [], unresolved: [] },
+    { ...externalCount, details: externalDetails }
+);
+assert.strictEqual(externalReconciled.requirements.filter(item => item.key === 'ambulance').length, 1, 'outside-form patient count creates one Ambulance row');
+assert.strictEqual(externalReconciled.requirements.find(item => item.key === 'ambulance').patientRequired, 1, 'outside-form patient count requires one Ambulance');
+assert.strictEqual(externalReconciled.requirements.filter(item => item.key === 'hems').length, 1, 'affirmative HEMS creates one HEMS row');
+assert.strictEqual(externalReconciled.requirements.filter(item => item.key === 'critical-care-patient').length, 1, 'affirmative Critical Care creates one condition row');
+assert.strictEqual(externalReconciled.requirements.filter(item => item.key === 'patient-transport').length, 1, 'affirmative transport creates one condition row');
+
+const externalRows = api.resolve(externalCandidate, externalReconciled);
+const transportRow = externalRows.find(item => item.key === 'patient-transport');
+const criticalCareRow = externalRows.find(item => item.key === 'critical-care-patient');
+assert.strictEqual(transportRow.covered, true, 'Ambulance with the patient fulfils Patient Transport');
+assert.strictEqual(transportRow.stillNeededText, '0', 'fulfilled Patient Transport needs zero');
+assert.strictEqual(criticalCareRow.definitelyOpen, true, 'explicit Critical Care with patient No leaves Critical Care outstanding');
+assert.strictEqual(criticalCareRow.stillNeededText, '1', 'unfulfilled Critical Care still needs one');
+assert.strictEqual(api.overallState(externalRows, []), 'danger', 'patient conditions prevent a false green Matrix');
+
+externalPanel.textContent = externalPanel.innerText = '1 Patient Critical Care required: No HEMS required: No Requires Transport: No Ambulance with the patient: No Critical Care with the patient: No';
+const negativeDetails = api.patientDetails(externalCandidate);
+const negativeReconciled = api.reconcilePatientDemand(
+    { requirements: [], unresolved: [] },
+    { ...externalCount, details: negativeDetails }
+);
+assert.strictEqual(negativeReconciled.requirements.filter(item => item.key === 'hems').length, 0, 'No HEMS flag creates no HEMS requirement');
+assert.strictEqual(negativeReconciled.requirements.filter(item => item.key === 'critical-care-patient').length, 0, 'No Critical Care flag creates no Critical Care requirement');
+assert.strictEqual(negativeReconciled.requirements.filter(item => item.key === 'patient-transport').length, 0, 'No transport flag creates no Patient Transport condition');
+assert.strictEqual(negativeReconciled.requirements.find(item => item.key === 'ambulance').patientRequired, 1, 'patient total remains authoritative when all direct flags are No');
+}

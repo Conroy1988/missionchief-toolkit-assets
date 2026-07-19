@@ -1,36 +1,26 @@
-UK requirement capability v2 diagnostic
+UK requirement capability v3 diagnostic
 exit_status=1
 
 STDOUT:
+Mission requirements runtime fixtures passed
+Mission requirements runtime fixtures passed
+Custom Vehicle Badges runtime fixtures passed
+Custom Vehicle Badges contract passed
 
 
 STDERR:
-node:internal/assert/utils:77
-    throw err;
-    ^
-
-AssertionError [ERR_ASSERTION]: vehicles:hovercraft-trailer: parsed alias hovercrafts (trailer)
-    at Object.<anonymous> (/tmp/uk-capability-v2-diagnostic-4wkqxm_q/repo/.github/scripts/test_mission_requirements_runtime.js:309:20)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.1
 Traceback (most recent call last):
-  File "/tmp/uk-capability-v2-diagnostic-4wkqxm_q/repo/.github/development-packages/uk-requirement-capability-port.py", line 353, in <module>
-    subprocess.run(["node", str(RUNTIME.relative_to(ROOT))], cwd=ROOT, check=True)
+  File "/tmp/uk-capability-v3-diagnostic-na09xon_/repo/.github/scripts/test_mission_requirements_contract.py", line 210, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/uk-capability-v3-diagnostic-na09xon_/repo/.github/scripts/test_mission_requirements_contract.py", line 170, in main
+    assert re.search(r"key:\s*['\"]railway-police-officer['\"][^\n]*training:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Railway Police personnel must require explicit training evidence
+Traceback (most recent call last):
+  File "/tmp/uk-capability-v3-diagnostic-na09xon_/repo/.github/development-packages/uk-requirement-capability-port.py", line 354, in <module>
+    subprocess.run([sys.executable, str(CONTRACT.relative_to(ROOT))], cwd=ROOT, check=True)
   File "/usr/lib/python3.12/subprocess.py", line 571, in run
     raise CalledProcessError(retcode, process.args,
-subprocess.CalledProcessError: Command '['node', '.github/scripts/test_mission_requirements_runtime.js']' returned non-zero exit status 1.
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '.github/scripts/test_mission_requirements_contract.py']' returned non-zero exit status 1.
 

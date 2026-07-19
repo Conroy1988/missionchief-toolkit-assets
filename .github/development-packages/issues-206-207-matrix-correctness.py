@@ -12,7 +12,8 @@ parts = [
     PACKAGE_DIR / "issues-206-207-source-authority-compat.py",
     PACKAGE_DIR / "issues-206-207-tests.py",
     PACKAGE_DIR / "issues-206-207-docs.py",
-    PACKAGE_DIR / "issues-206-207-self-test.py",
+    PACKAGE_DIR / "issues-206-207-debug.py",
+    PACKAGE_DIR / "issues-206-207-self-test.py"
 ]
 for part in parts:
     runpy.run_path(str(part), run_name="__main__")

@@ -406,12 +406,12 @@
       "features": [
         {
           "name": "Live Version Status",
-          "summary": "Shows LATEST or UPDATE in a compact vertical HUD tile beside the main map control using the verified production release contract.",
+          "summary": "Shows LATEST or UPDATE as a unified Menu/Economy-family map control with a guaranteed single-line status label.",
           "details": [
-            "Theme-neutral status tile with distinct check, update, checking and retry indicators",
+            "Economy-family dark surface and icon-over-label control composition",
+            "Dedicated nowrap label layer resistant to MissionChief and theme CSS",
             "30-minute successful cache and 10-minute failure cooldown",
-            "15-second delayed boot check with visibility-based stale refresh",
-            "Dedicated Desktop, Tablet and iOS geometry with manual rechecking"
+            "Desktop, Tablet and iOS placement with manual rechecking"
           ],
           "visual": "version-status",
           "tags": [

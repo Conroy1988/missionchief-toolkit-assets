@@ -37,14 +37,20 @@ def main() -> int:
     assert "requestTimeoutMs: 8 * 1000" in block
     assert "bootDelayMs: 15 * 1000" in block
     assert "setInterval(" not in block, "version checker must not poll continuously"
-    assert "mcms-version-btn--tile" in block
-    assert "data-variant = 'status-tile'" not in block  # dataset assignment remains property-based
-    assert "button.dataset.variant = 'status-tile'" in block
-    assert "width:48px;min-width:48px;height:48px" in block
-    assert "grid-template-rows:20px auto" in block
-    assert "[data-state=\"latest\"]::before{content:\"✓\"" in block
-    assert "[data-state=\"update\"]::before{content:\"↑\"" in block
-    assert "min-width:56px;height:34px" not in block
+    assert "mcms-version-btn--unified" in block
+    assert "button.className = 'mcms-version-btn mcms-version-btn--unified'" in block
+    assert "button.className = 'mcms-economy-btn mcms-version-btn mcms-version-btn--unified'" not in block
+    assert "button.dataset.variant = 'control-family'" in block
+    assert "button.dataset.label = label" in block
+    assert "button.textContent = ''" in block
+    assert "content:attr(data-label)!important" in block
+    assert "white-space:nowrap!important" in block
+    assert "word-break:keep-all!important" in block
+    assert "width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important" in block
+    assert '[data-state="latest"]::before{content:"✓"!important' in block
+    assert '[data-state="update"]::before{content:"↑"!important' in block
+    assert "grid-template-rows:20px auto" not in block
+    assert "mcms-version-btn--tile" not in block
     for marker in [
         "function versionStatusCompare(left, right)",
         "function versionStatusValidateManifest(payload)",

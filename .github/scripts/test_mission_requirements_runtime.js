@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.6'
+        version: '4.20.7'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -371,6 +371,61 @@ assert.deepStrictEqual(
     { min: 4, max: 4, known: true, value: 4 },
     'exact personnel capacity'
 );
+
+
+const railwayRegressionAmbiguousCell = {
+    textContent: '239',
+    getAttribute(name) { return name === 'sortvalue' ? '239' : null; }
+};
+const railwayRegressionCrewCell = {
+    textContent: '1 / 1',
+    getAttribute(name) { return name === 'data-current-personnel' ? '1' : null; }
+};
+const railwayRegressionRow = {
+    getAttribute() { return null; },
+    querySelector(selector) {
+        if (selector === '[data-current-personnel]') return railwayRegressionCrewCell;
+        if (selector === 'td:nth-of-type(4)' || selector === 'td:nth-of-type(5)[sortvalue]') return railwayRegressionAmbiguousCell;
+        return null;
+    },
+    querySelectorAll() { return [railwayRegressionAmbiguousCell, railwayRegressionCrewCell]; }
+};
+const railwayRegressionCheckbox = {
+    getAttribute() { return null; },
+    closest(selector) { return selector === 'tr' ? railwayRegressionRow : null; }
+};
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(api.staffCapacity(railwayRegressionCheckbox))),
+    { min: 1, max: 1, known: true, value: 1 },
+    'Railway Police semantic crew count wins over unrelated sortvalue 239'
+);
+const railwayRegressionUnlabelledRow = {
+    getAttribute() { return null; },
+    querySelector() { return null; },
+    querySelectorAll() { return [railwayRegressionAmbiguousCell]; }
+};
+const railwayRegressionUnlabelledCheckbox = {
+    getAttribute() { return null; },
+    closest(selector) { return selector === 'tr' ? railwayRegressionUnlabelledRow : null; }
+};
+assert.strictEqual(
+    api.staffCapacity(railwayRegressionUnlabelledCheckbox),
+    null,
+    'unlabelled numeric table metadata must not become personnel capacity'
+);
+const railwayPoliceDefinition = api.definitions.find(item => item.key === 'railway-police-officer');
+const railwaySelectedUnit = {
+    typeId: -1,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(['railway police officer']),
+    knownDefinitionKeys: new Set(['railway-police-officer']),
+    staff: api.staffCapacity(railwayRegressionCheckbox),
+    contributionKey: 'vehicle:239'
+};
+const railwaySelectedCapacity = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [railwaySelectedUnit]);
+assert.strictEqual(railwaySelectedCapacity.min, 1, 'one selected Railway Police Officer contributes one');
+assert.strictEqual(railwaySelectedCapacity.max, 1, 'one selected Railway Police Officer remains exact');
 
 const issue191AmbulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
 const issue191HemsDefinition = api.definitions.find(item => item.key === 'hems');

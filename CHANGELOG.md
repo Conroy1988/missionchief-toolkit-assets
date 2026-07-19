@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.4] - 2026-07-19
+
+### Fixed
+- Restored live **Selected** counts when MissionChief renders **Available Units** outside the nested mission content root but inside the same active lightbox.
+- Selected Police Cars, Dog Support Units and trained Railway Police crew now contribute immediately, including hidden duplicate table representations, while vehicle-ID de-duplication and mission-window isolation remain intact.
+- Added visible-row training badge fallback so `[Railway Police Officer]` personnel labels contribute their current selected crew when MissionChief does not expose a dedicated training attribute.
+
+### Validation
+- Added deterministic nested-lightbox fixtures covering sibling Available Units tables, checked-but-hidden checkbox representations, Police Car/DSU/Railway Police classification and live deselection.
+
 ## [4.20.3] - 2026-07-19
 
 ### Fixed

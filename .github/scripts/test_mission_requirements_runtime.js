@@ -61,6 +61,7 @@ class FakeElement {
         this.closestMap = new Map();
     }
     get firstChild() { return this.children[0] || null; }
+    get parentElement() { return this.parentNode?.tagName ? this.parentNode : null; }
     get nextSibling() { const index = this.parentNode?.children?.indexOf(this) ?? -1; return index >= 0 ? (this.parentNode.children[index + 1] || null) : null; }
     setAttribute(name, value) {
         this.attributes.set(name, String(value));
@@ -186,7 +187,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.3'
+        version: '4.20.4'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -982,6 +983,61 @@ assert.strictEqual(policeResolved.covered, true, 'two selected police cars cover
 policeCandidate.root.selectedUnits = [secondPolice.vehicle];
 policeResolved = api.resolve(policeCandidate, policeParsed)[0];
 assert.strictEqual(policeResolved.selectedMin, 1, 'deselecting one police car updates Selected back to one');
+
+
+// Issue #212: checked Available Units can be siblings of the narrow mission content root.
+{
+const issue212Doc = new FakeDocument();
+issue212Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { origin: 'https://www.missionchief.co.uk', protocol: 'https:', host: 'www.missionchief.co.uk', pathname: '/missions/21201' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };
+const issue212Candidate = makeMissionCandidate(issue212Doc, '');
+issue212Candidate.missionId = 21201;
+const issue212WindowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog';
+const issue212OuterWindow = new FakeElement('div', issue212Doc);
+issue212OuterWindow.id = 'lightbox_box';
+const issue212InnerWindow = new FakeElement('div', issue212Doc);
+issue212InnerWindow.className = 'lightbox_content';
+issue212OuterWindow.closestMap.set(issue212WindowSelector, issue212OuterWindow);
+issue212InnerWindow.closestMap.set(issue212WindowSelector, issue212InnerWindow);
+issue212Candidate.root.closestMap.set(issue212WindowSelector, issue212InnerWindow);
+issue212Candidate.source.closestMap.set(issue212WindowSelector, issue212InnerWindow);
+issue212Doc.body.appendChild(issue212OuterWindow);
+issue212OuterWindow.appendChild(issue212InnerWindow);
+issue212InnerWindow.appendChild(issue212Candidate.root);
+const issue212Available = new FakeElement('tbody', issue212Doc);
+issue212Available.id = 'vehicle_show_table_body_all';
+issue212OuterWindow.appendChild(issue212Available);
+const issue212Police = makeVehicleElement(issue212Doc, 212011, 8, { typeOnRow: true });
+const issue212DsuDefinition = api.definitions.find(definition => definition.key === 'dsu');
+const issue212Dsu = makeVehicleElement(issue212Doc, 212012, issue212DsuDefinition.types[0], { typeOnRow: true });
+const issue212Railway = makeVehicleElement(issue212Doc, 212013, 116, { typeOnRow: true, staff: 2 });
+for (const item of [issue212Police, issue212Dsu, issue212Railway]) {
+    item.vehicle.checked = true;
+    item.vehicle._visible = false;
+    item.row.appendChild(item.vehicle);
+    issue212Available.appendChild(item.row);
+}
+issue212Railway.row.setAttribute('data-current-personnel', '2');
+issue212Railway.row.textContent = issue212Railway.row.innerText = 'Craigleith Railway-PC-5 [Railway Police Officer]';
+let issue212Selected = [issue212Police.vehicle, issue212Dsu.vehicle, issue212Railway.vehicle];
+issue212OuterWindow.queryHandler = selector => selector.includes('#vehicle_show_table_body_all') || selector.includes('.vehicle_checkbox') ? issue212Available : null;
+issue212OuterWindow.queryAllHandler = selector => selector.includes('.vehicle_checkbox:checked') ? issue212Selected : [];
+const issue212Requirements = [
+    ['police-car', 'Police Car', 4],
+    ['dsu', 'Dog Support Unit (DSU)', 1],
+    ['railway-police-officer', 'Railway Police Officer', 8]
+].map(([key, requirement, missing]) => ({ key, requirement, missing, group: key === 'railway-police-officer' ? 'staff' : 'vehicles', definition: api.definitions.find(item => item.key === key) }));
+const issue212Parsed = { requirements: issue212Requirements, unresolved: [] };
+const issue212Catalogue = { requirements: issue212Requirements.map(item => ({ key: item.key, baseline: item.missing, missing: item.missing })) };
+let issue212Rows = api.resolve(issue212Candidate, issue212Parsed, issue212Catalogue);
+assert.strictEqual(issue212Rows.find(item => item.key === 'police-car').selectedMin, 3, 'all selected police-family vehicles contribute to the broad Police Car requirement');
+assert.strictEqual(issue212Rows.find(item => item.key === 'dsu').selectedMin, 1, 'outer Available Units DSU is selected');
+assert.strictEqual(issue212Rows.find(item => item.key === 'railway-police-officer').selectedMin, 2, 'Railway Police badge and current crew contribute selected trained personnel');
+issue212Police.vehicle.checked = false;
+issue212Selected = [issue212Dsu.vehicle, issue212Railway.vehicle];
+issue212Rows = api.resolve(issue212Candidate, issue212Parsed, issue212Catalogue);
+assert.strictEqual(issue212Rows.find(item => item.key === 'police-car').selectedMin, 2, 'deselecting the IRV immediately removes one broad Police Car contribution');
+assert.strictEqual(issue212Rows.find(item => item.key === 'dsu').selectedMin, 1, 'other selected units remain stable after deselection');
+}
 
 
 

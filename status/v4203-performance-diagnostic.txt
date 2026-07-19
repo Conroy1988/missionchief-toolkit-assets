@@ -1,0 +1,7 @@
+v4.20.3 performance optimisation diagnostic
+exit_status=1
+
+Traceback (most recent call last):
+  File "/tmp/v4203-performance-t9_shg0u/repo/.github/development-packages/v4203-performance-budget.py", line 171, in <module>
+    raise AssertionError(f"Matrix compaction saved only {saved} bytes; expected at least 2100")
+AssertionError: Matrix compaction saved only 1660 bytes; expected at least 2100

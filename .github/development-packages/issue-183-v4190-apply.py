@@ -34,3 +34,5 @@ for path in [
     ROOT / '.github' / 'diagnostics' / 'issue-183-v4190-result.txt',
 ]:
     path.unlink(missing_ok=True)
+
+# This commit intentionally re-anchors the validated package at the current branch head.

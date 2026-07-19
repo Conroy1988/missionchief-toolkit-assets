@@ -50,7 +50,7 @@ const context = {
 };
 context.globalThis = context;
 vm.createContext(context);
-vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, nextDelay: versionStatusAutomaticDelay, schedule: scheduleVersionStatusCheck, setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; }, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
+vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, nextDelay: versionStatusAutomaticDelay, schedule: scheduleVersionStatusCheck, setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; }, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
 const api = context.__versionStatusApi;
 const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`, updateUrl: 'https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js', publishedAt: '2026-07-19T13:08:02Z' });
 
@@ -79,8 +79,8 @@ const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, rel
     assert.strictEqual(api.constants.autoIntervalMs, 30 * 60 * 1000, 'automatic active-tab cadence is 30 minutes');
     api.setModel({ state: 'latest', manifest: current, checkedAt: now - (29 * 60 * 1000), error: '' });
     assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic scheduler waits only for the remaining successful-cache lifetime');
-    api.setModel({ state: 'error', manifest: null, checkedAt: 0, error: 'offline' });
-    assert.strictEqual(api.nextDelay(now), 10 * 60 * 1000, 'failed automatic checks retry after the existing cooldown');
+    api.setModel({ state: 'error', manifest: null, checkedAt: 0, failedAt: now - (9 * 60 * 1000), error: 'offline' });
+    assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic failure retry waits only for the remaining cooldown');
     const scheduledTimers = [];
     const originalRuntimeSetTimeout = context.runtimeSetTimeout;
     const originalRuntimeClearTimeout = context.runtimeClearTimeout;

@@ -40,6 +40,9 @@ def main() -> int:
     assert "setInterval(" not in block, "version checker must use a non-overlapping recursive timeout"
     assert "scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false)" in block
     assert "document.visibilityState === 'hidden'" in block
+    assert "Number(versionStatusModel.failedAt)" in block
+    assert "ensureVersionStatusButton();" in block
+    assert "Number(delay) === VERSION_STATUS.bootDelayMs" in block
     assert "mcms-version-btn--unified" in block
     assert "button.className = 'mcms-version-btn mcms-version-btn--unified'" in block
     assert "button.className = 'mcms-economy-btn mcms-version-btn mcms-version-btn--unified'" not in block

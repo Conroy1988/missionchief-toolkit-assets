@@ -1,0 +1,9 @@
+exit_code=1
+
+--- STDOUT ---
+
+--- STDERR ---
+  File "/tmp/issue-183-v4190-_0ezh9dj/repository/.github/development-packages/issue-183-authoritative-requirements.py", line 39
+    insert_at = source.index('
+                             ^
+SyntaxError: unterminated string literal (detected at line 39)

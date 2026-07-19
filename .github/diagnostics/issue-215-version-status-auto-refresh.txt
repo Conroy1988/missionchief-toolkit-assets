@@ -1,0 +1,10 @@
+Issue #215 package diagnostic
+exit_status=1
+
+Traceback (most recent call last):
+  File "/tmp/issue-215-v1mmtiox/repo/.github/development-packages/issue-215-version-status-auto-refresh.py", line 82, in <module>
+    source = replace_once(
+             ^^^^^^^^^^^^^
+  File "/tmp/issue-215-v1mmtiox/repo/.github/development-packages/issue-215-version-status-auto-refresh.py", line 18, in replace_once
+    raise AssertionError(f"{label}: expected one exact anchor, found {count}")
+AssertionError: automatic interval constant: expected one exact anchor, found 0

@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-07-19
+
+### Added
+- Added a compact live **LATEST / UPDATE** control beside the main Toolkit map button.
+- Added a guarded repository-owned stable update manifest that is reconciled only after GitHub Release, Greasy Fork, private backup and Discord publication succeed.
+- Added semantic numeric version comparison, canonical release/update destinations and accessible installed/available version labels.
+
+### Behaviour
+- Delays the first automatic check by 15 seconds, caches successful results for 30 minutes and applies a 10-minute cooldown after failures.
+- Rechecks a stale cache when MissionChief becomes visible again, supports Shift-click, right-click and touch long-press manual refresh, and never polls continuously.
+- Fails safely as **RETRY** rather than falsely reporting **LATEST** when the network or manifest is unavailable.
+
+### Validation
+- Added deterministic semantic-version, cache, cooldown, timeout, failure, destination, duplicate-control and responsive-layout fixtures.
+
 ## [4.19.2] - 2026-07-19
 
 ### Fixed

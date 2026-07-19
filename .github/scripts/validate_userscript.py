@@ -24,6 +24,7 @@ INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
 MISSION_REQUIREMENTS_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
+VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -139,7 +140,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT, VERSION_STATUS_CONTRACT]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -213,6 +214,13 @@ def run_integrity_gate() -> None:
         )
         if mission_requirements.returncode != 0:
             fail("live mission requirements contract failed")
+
+        version_status = subprocess.run(
+            [sys.executable, str(VERSION_STATUS_CONTRACT)],
+            cwd=ROOT,
+        )
+        if version_status.returncode != 0:
+            fail("live version-status contract failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

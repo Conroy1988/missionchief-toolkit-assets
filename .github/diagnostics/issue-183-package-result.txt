@@ -1,0 +1,12 @@
+exit_code=1
+
+--- STDOUT ---
+
+--- STDERR ---
+Traceback (most recent call last):
+  File "/tmp/issue-183-package-meuy0yjl/repository/.github/development-packages/issue-183-authoritative-requirements.py", line 73, in <module>
+    source = replace_once(source, anchor, addition, 'authoritative reconciliation insertion')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/issue-183-package-meuy0yjl/repository/.github/development-packages/issue-183-authoritative-requirements.py", line 28, in replace_once
+    raise AssertionError(f'{label}: expected one match, found {count}')
+AssertionError: authoritative reconciliation insertion: expected one match, found 0

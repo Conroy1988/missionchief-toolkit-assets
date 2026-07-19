@@ -1,0 +1,249 @@
+Railway Police selected-capacity diagnostic
+==========================================
+
+## railway definition
+ Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"countable":false},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":false},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[],"training":["Railway Police Officer","Railway Police"],"countable":true},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"countable":false},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[],"countable":false},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases"
+
+
+## staff capacity
+function missionRequirementsStaffCapacity(element) { const row = element?.closest?.('tr') || element; const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) { for (const attribute of exactAttributes) { const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute)); if (value !== null) return missionRequirementsCapacity(value, value, true); } } let min = null; let max = null; for (const scope of scopes) { if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew')); if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew')); } if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max); const text = String(crewCell?.textContent || '').trim(); const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u); if (currentMaximum) { const current = missionRequirementsNumber(currentMaximum[1]); return missionRequirementsCapacity(current, current, true); } const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu); if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false); const visible = missionRequirementsOptionalNumber(text); if (visible !== null) return missionRequirementsCapacity(visible, visible, true); const sortValue = missionRequirementsOptionalNumber(crewCell?.getAttribute?.('sortvalue')); if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true); return null; }
+
+
+## metadata values
+function missionRequirementsMetadataValues(element, kind = 'labels') { const values = new Set(); const add = raw => String(raw || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const attributes = kind === 'training' ? ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name'] : ['data-mcms-custom-vehicle-category', 'data-custom-vehicle-category', 'data-vehicle-category', 'data-vehicle-type-name', 'data-vehicle-type']; for (const scope of scopes) { for (const attribute of attributes) add(scope?.getAttribute?.(attribute)); scope?.querySelectorAll?.(attributes.map(attribute => `[${attribute}]`).join(', ')).forEach(node => attributes.forEach(attribute => add(node.getAttribute?.(attribute)))); } if (kind === 'labels') { const typeCell = row?.querySelector?.('[data-column="vehicle-type"], [data-vehicle-type-name], td:nth-of-type(2)'); add(missionRequirementsElementText(typeCell)); const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; add(custom?.category); } return values; }
+
+
+## aggregate
+function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+
+
+## collect units
+function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const typeId = missionRequirementsVehicleType(vehicleElement); const vehicleId = missionRequirementsVehicleId(vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsMetadataValues(vehicleElement, 'training'); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const rowText = missionRequirementsCapabilityLabel(`${row?.textContent || ''} ${row?.innerText || ''}`); if (rowText) { for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const aliases = Array.from(definition?.training || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (!aliases.some(alias => rowText.includes(alias))) continue; aliases.forEach(alias => training.add(alias)); knownDefinitionKeys.add(definition.key); } } const unit = { typeId, vehicleId, tractiveId, equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsStaffCapacity(vehicleElement), labels, training, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
+
+
+## vehicle id
+function missionRequirementsVehicleId(element) {
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+        for (const scope of scopes) {
+        for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+            const value = Number.parseInt(raw, 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
+        if (idMatch) return Number(idMatch[1]);
+        const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
+        const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+        if (hrefMatch) return Number(hrefMatch[1]);
+        }
+        return -1;
+    }
+
+
+## numeric metadata contexts
+--- data-current-personnel hit 1 ---
+mentsDefinitionMatchesValues(definition, labels)) keys.add(definition.key); } return keys; }
+
+function missionRequirementsStaffCapacity(element) { const row = element?.closest?.('tr') || element; const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (co
+
+--- data-current-personnel hit 2 ---
+], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) { for (const attribute of exactAttributes) { const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute)); if (value !== null) return missionRequirementsCapacity(value, value, true); } } let min = null; let max = null; for (const scope of scopes) { if (min === nu
+
+--- data-current-personnel hit 3 ---
+ient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getA
+
+--- data-current-personnel hit 4 ---
+d.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+        }
+        missionRequirementsRecords.set(source, record);
+        missionRequirementsScheduleRecord(record);
+
+--- data-current-personnel hit 5 ---
+ient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.M
+
+--- data-personnel hit 1 ---
+;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const attributes = kind === 'training' ? ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name'] : ['data-mcms-custom-vehicle-category', 'data-custom-vehicle-category', 'data-vehicle-category', 'data-vehicle-type-name', 'data-vehicle-type']; for (const scope of scopes) { for (const attribute of attributes) add(scope?.getAttribute?.(attribute)); sco
+
+--- data-personnel hit 2 ---
+NS) { if (missionRequirementsDefinitionMatchesValues(definition, labels)) keys.add(definition.key); } return keys; }
+
+function missionRequirementsStaffCapacity(element) { const row = element?.closest?.('tr') || element; const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'da
+
+--- data-personnel hit 3 ---
+el], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) { for (const attribute of exactAttributes) { const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute)); if (value !== null) return missionRequirementsCapacity(value, value, true); } } let min = null; let max = null; for (const s
+
+--- data-personnel hit 4 ---
+data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) { for (const attribute of exactAttributes) { const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute)); if (value !== null) return missionRequirementsCapacity(value, value, true); } } let min = null; let max = null; for (const scope of scopes) { if (min === null) min = missionR
+
+--- data-max-personnel hit 1 ---
+) keys.add(definition.key); } return keys; }
+
+function missionRequirementsStaffCapacity(element) { const row = element?.closest?.('tr') || element; const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) { for (const attribute 
+
+--- data-max-personnel hit 2 ---
+null; for (const scope of scopes) { if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew')); if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew')); } if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max); const text = String(crewCell?.textContent || '').trim(); const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u); if (currentMaximum) { const current = missionRequiremen
+
+--- data-max-personnel hit 3 ---
+riving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==
+
+--- data-max-personnel hit 4 ---
+ree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+        }
+        missionRequirementsRecords.set(source, record);
+        missionRequirementsScheduleRecord(record);
+        return record;
+    }
+
+    function 
+
+--- data-max-personnel hit 5 ---
+riving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+       
+
+--- data-min-personnel hit 1 ---
+es(definition, labels)) keys.add(definition.key); } return keys; }
+
+function missionRequirementsStaffCapacity(element) { const row = element?.closest?.('tr') || element; const crewCell = row?.querySelector?.('[data-personnel-count], [data-current-personnel], [data-min-personnel], [data-max-personnel], [data-min-crew], [data-max-crew], [data-column="crew"], td:nth-of-type(4), td:nth-of-type(5)[sortvalue]'); const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean))); const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew']; for (const scope of scopes) {
+
+--- data-min-personnel hit 2 ---
+ber(scope.getAttribute?.(attribute)); if (value !== null) return missionRequirementsCapacity(value, value, true); } } let min = null; let max = null; for (const scope of scopes) { if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew')); if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew')); } if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max); const text = String(crewCell?.textCont
+
+--- data-min-personnel hit 3 ---
+s], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+        return mutationTouchesSelector(mutation, selector);
+    }
+
+    function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-
+
+--- data-min-personnel hit 4 ---
+ childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+        }
+        missionRequirementsRecords.set(source, record);
+        missionRequirementsScheduleRecord(record);
+        return record
+
+--- data-min-personnel hit 5 ---
+s], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || Mut
+
+--- data-vehicle-id hit 1 ---
+ICLE_BADGE_SELECTOR = '[data-mcms-custom-vehicle-badge="1"]';
+    const CUSTOM_VEHICLE_AVAILABLE_SELECTOR = [
+        '#vehicle_show_table_body_all .vehicle_checkbox',
+        '#vehicle_show_table_body_all [vehicle_id]',
+        '#vehicle_show_table_body_all [data-vehicle-id]',
+        '#vehicle_show_table_body_all [data-vehicle_id]',
+        '#occupied .vehicle_checkbox',
+        '#occupied [vehicle_id]',
+        '#occupied [data-vehicle-id]',
+        '#occupied [data-vehicle_id]'
+    ].join(', ');
+    const CUSTOM_VEHICLE_ROW_SELECTOR = 'tr, li, .vehicle_select_table_tr, .vehicle_select_table_body_tr, .vehicle-row, .vehicle_r
+
+--- data-vehicle-id hit 2 ---
+      '#vehicle_show_table_body_all [vehicle_id]',
+        '#vehicle_show_table_body_all [data-vehicle-id]',
+        '#vehicle_show_table_body_all [data-vehicle_id]',
+        '#occupied .vehicle_checkbox',
+        '#occupied [vehicle_id]',
+        '#occupied [data-vehicle-id]',
+        '#occupied [data-vehicle_id]'
+    ].join(', ');
+    const CUSTOM_VEHICLE_ROW_SELECTOR = 'tr, li, .vehicle_select_table_tr, .vehicle_select_table_body_tr, .vehicle-row, .vehicle_row, .vehicle';
+
+    function customVehicleCategoryText(value) {
+        return String(value ?? '').replace(/\s+/g, ' ').trim();
+    }
+
+    function customVehicleClassific
+
+--- data-vehicle-id hit 3 ---
+ision;
+        }
+    });
+
+    function customVehicleBadgeVehicleId(row) {
+        if (!row) return '';
+        const checkbox = row.matches?.('.vehicle_checkbox')
+            ? row
+            : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+        const resolved = missionRequirementsVehicleId(checkbox || row);
+        if (Number.isFinite(Number(resolved)) && Number(resolved) >= 0) return String(Number(resolved));
+        const link = row.matches?.('a[href*="/vehicles/"]') ? row : row.querySelector?.('a[href*="/vehicles/"]');
+        const match = String(link?.getAt
+
+--- data-vehicle-id hit 4 ---
+urn Array.from(rows);
+    }
+
+    function customVehicleBadgeHost(row) {
+        if (!row) return null;
+        const checkbox = row.matches?.('.vehicle_checkbox')
+            ? row
+            : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+        const directLabel = checkbox?.closest?.('label');
+        if (directLabel) return directLabel;
+        if (checkbox?.id) {
+            for (const label of Array.from(row.querySelectorAll?.('label') || [])) {
+                if (String(label.getAttribute?.('for') || label.htmlFor || '') === String(checkbox.id)) return labe
+
+--- data-vehicle-id hit 5 ---
+mVehicleBadgeMutationRelevant(mutation) {
+        const target = mutation?.target;
+        if (target?.closest?.(CUSTOM_VEHICLE_BADGE_SELECTOR)) return false;
+        const selector = '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_id], [data-vehicle-id], [data-vehicle_id], a[href*="/vehicles/"]';
+        if (target?.matches?.(selector) || target?.closest?.('#vehicle_show_table_body_all, #occupied')) return true;
+        for (const node of Array.from(mutation?.addedNodes || [])) {
+            if (node?.nodeType !== 1) continue;
+            if (node.matches?.(selector) || node.querySelector?.(selector)) ret
+
+--- data-vehicle-id hit 6 ---
+); } catch (err) {}
+            scheduleCustomVehicleBadgeScan(25);
+        }));
+        observer.observe(root, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['id', 'class', 'vehicle_id', 'data-vehicle-id', 'data-vehicle_id', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id']
+        });
+    }
+
+    function clearCustomVehicleBadges() {
+        runtimeClearTimeout(customVehicleBadgeScanTimer);
+        customVehicleBadgeScanTimer = null;
+        for (const doc of customVehicleBadgeDocumentContexts()) {
+            try { doc.querySelectorAll?.(C
+
+--- data-vehicle-id hit 7 ---
+eturn customType !== null && customType >= 0 ? customType : -1; }
+
+    function missionRequirementsVehicleId(element) {
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+        for (const scope of scopes) {
+        for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+            const value = Number.parseInt(raw, 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        for (const attribute of attrib
+
+--- data-vehicle-id hit 8 ---
+lements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const typeId = missionRequirementsVehicleType(vehicleElement); const vehicleId = missionRequirementsVehicleId(vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('

@@ -5,7 +5,9 @@ import runpy
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_DIR = ROOT / ".github" / "development-packages"
 parts = [
-    PACKAGE_DIR / "issues-206-207-source-units.py",
+    PACKAGE_DIR / "issues-206-207-source-capabilities.py",
+    PACKAGE_DIR / "issues-206-207-source-operational.py",
+    PACKAGE_DIR / "issues-206-207-source-coverage.py",
     PACKAGE_DIR / "issues-206-207-source-authority.py",
     PACKAGE_DIR / "issues-206-207-tests.py",
     PACKAGE_DIR / "issues-206-207-docs.py",

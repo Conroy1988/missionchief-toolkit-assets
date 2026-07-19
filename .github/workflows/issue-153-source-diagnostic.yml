@@ -6,21 +6,22 @@ on:
       - feature/issue-153-version-status
 
 permissions:
-  contents: read
-  issues: write
+  contents: write
 
 jobs:
   inspect:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - name: Inspect compact Toolkit anchors
-        env:
-          GH_TOKEN: ${{ github.token }}
+        with:
+          ref: feature/issue-153-version-status
+      - name: Commit compact Toolkit architecture diagnostic
         shell: bash
         run: |
-          python3 - <<'PY' > "$RUNNER_TEMP/issue-153-targeted.txt"
+          mkdir -p .github/development-packages
+          python3 - <<'PY' > .github/development-packages/issue-153-diagnostic.txt
           from pathlib import Path
           import re
 
@@ -28,13 +29,13 @@ jobs:
           lines = source.splitlines()
 
           def containing_function(index):
-              for pos in range(index, max(-1, index - 500), -1):
+              for pos in range(index, max(-1, index - 600), -1):
                   match = re.match(r'\s*(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(', lines[pos])
                   if match:
                       return pos, match.group(1)
               return None, 'unknown'
 
-          def excerpt(index, before=25, after=70):
+          def excerpt(index, before=20, after=60):
               start=max(0,index-before); end=min(len(lines),index+after)
               print(f'--- lines {start+1}-{end} ---')
               for n in range(start,end): print(f'{n+1:05d}: {lines[n]}')
@@ -42,7 +43,7 @@ jobs:
           runtime_hits=[]
           for i,line in enumerate(lines):
               if i < 15000: continue
-              if re.search(r'\.id\s*=\s*SCRIPT\.controlId|getElementById\(SCRIPT\.controlId\)|SCRIPT\.controlId\)\.remove|SCRIPT\.controlId\}\b', line):
+              if re.search(r'\.id\s*=\s*SCRIPT\.controlId|getElementById\(SCRIPT\.controlId\)|SCRIPT\.controlId\)\.remove', line):
                   runtime_hits.append(i)
           print('CONTROL_RUNTIME_HITS')
           seen=set()
@@ -57,12 +58,11 @@ jobs:
           print('\nCONTROL_RELATED_FUNCTIONS')
           for i,line in enumerate(lines):
               match=re.match(r'\s*function\s+([A-Za-z0-9_$]*(?:Control|Dock|Shell|Button)[A-Za-z0-9_$]*)\s*\(',line,re.I)
-              if match and i > 15000:
-                  print(f'{i+1}: {match.group(1)}')
+              if match and i > 15000: print(f'{i+1}: {match.group(1)}')
 
           print('\nNETWORK_HELPERS')
           network=[i for i,line in enumerate(lines) if 'GM_xmlhttpRequest' in line or 'AbortController' in line or re.search(r'\bfetch\s*\(',line)]
-          for index in network[:8]: excerpt(index,10,25)
+          for index in network[:10]: excerpt(index,8,24)
 
           print('\nLIFECYCLE_FUNCTIONS')
           life=[]
@@ -70,20 +70,15 @@ jobs:
               match=re.match(r'\s*(?:async\s+)?function\s+([A-Za-z0-9_$]*(?:boot|teardown|destroy|cleanup|shutdown)[A-Za-z0-9_$]*)\s*\(',line,re.I)
               if match: life.append((i,match.group(1)))
           for i,name in life: print(f'{i+1}: {name}')
-          for i,name in life[-5:]:
+          for i,name in life[-6:]:
               print(f'FUNCTION {name}')
-              excerpt(i,5,65)
+              excerpt(i,5,70)
 
-          print('\nLAST_220_LINES')
-          for n in range(max(0,len(lines)-220),len(lines)): print(f'{n+1:05d}: {lines[n]}')
+          print('\nLAST_260_LINES')
+          for n in range(max(0,len(lines)-260),len(lines)): print(f'{n+1:05d}: {lines[n]}')
           PY
-
-          body="$RUNNER_TEMP/issue-153-targeted-comment.md"
-          {
-            echo '### Issue #153 targeted runtime diagnostic'
-            echo
-            echo '```text'
-            cat "$RUNNER_TEMP/issue-153-targeted.txt"
-            echo '```'
-          } > "$body"
-          gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/development-packages/issue-153-diagnostic.txt
+          git commit -m "Record issue 153 source architecture diagnostic"
+          git push origin HEAD:feature/issue-153-version-status

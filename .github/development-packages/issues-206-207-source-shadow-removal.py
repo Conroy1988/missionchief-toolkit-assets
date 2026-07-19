@@ -31,7 +31,6 @@ def remove_shadowed_function(name: str, next_name: str) -> None:
     source = source[:line_start] + source[next_line_start:]
 
 remove_shadowed_function("missionRequirementsCollectUnits", "missionRequirementsMissionTypeId")
-remove_shadowed_function("missionRequirementsAggregate", "missionRequirementsProgressValue")
 
 if len(function_starts("missionRequirementsCollectUnits")) != 1:
     raise AssertionError("responding-unit collector must have one active declaration")
@@ -41,4 +40,4 @@ if len(function_starts("missionRequirementsAggregate")) != 1:
 SOURCE.write_text(source, encoding="utf-8")
 DIST_USER.write_text(source, encoding="utf-8")
 DIST_TEXT.write_text(source, encoding="utf-8")
-print("Removed indentation-independent legacy declarations shadowing the v4.20.3 Matrix runtime")
+print("Removed the legacy collector shadowing the v4.20.3 Matrix runtime")

@@ -12,7 +12,7 @@ permissions:
   issues: write
 
 env:
-  DIAGNOSTIC_REVISION: "6"
+  DIAGNOSTIC_REVISION: "7"
 
 jobs:
   diagnose:
@@ -20,31 +20,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Apply package and capture validation
-        id: diagnose
         shell: bash
         run: |
           set +e
           LOG="$RUNNER_TEMP/issues-206-207-diagnostic.log"
           python .github/development-packages/issues-206-207-matrix-correctness.py > "$LOG" 2>&1
-          echo "package_status=$?" >> "$LOG"
+          PACKAGE_STATUS=$?
           node .github/scripts/test_mission_requirements_runtime.js >> "$LOG" 2>&1
-          echo "runtime_status=$?" >> "$LOG"
+          RUNTIME_STATUS=$?
           python .github/scripts/test_mission_requirements_contract.py >> "$LOG" 2>&1
-          echo "contract_status=$?" >> "$LOG"
+          CONTRACT_STATUS=$?
           python .github/scripts/validate_userscript.py >> "$LOG" 2>&1
-          echo "validator_status=$?" >> "$LOG"
-          tail -c 12000 "$LOG" > "$RUNNER_TEMP/issues-206-207-tail.log"
-      - name: Post exact diagnostic to issue
+          VALIDATOR_STATUS=$?
+          {
+            echo "package_status=$PACKAGE_STATUS"
+            echo "runtime_status=$RUNTIME_STATUS"
+            echo "contract_status=$CONTRACT_STATUS"
+            echo "validator_status=$VALIDATOR_STATUS"
+            echo
+            grep -n -m 1 -A 12 -E 'AssertionError|TypeError|ReferenceError|SyntaxError|VALIDATION ERROR|CalledProcessError' "$LOG" || true
+          } > "$RUNNER_TEMP/issues-206-207-summary.log"
+      - name: Post concise diagnostic to issue
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           BODY_FILE="$RUNNER_TEMP/issues-206-207-body.md"
           {
-            echo '### v4.20.3 package diagnostic — revision 6'
+            echo '### v4.20.3 package diagnostic — revision 7'
             echo
             echo '```text'
-            cat "$RUNNER_TEMP/issues-206-207-tail.log"
+            cat "$RUNNER_TEMP/issues-206-207-summary.log"
             echo '```'
           } > "$BODY_FILE"
           gh api "repos/${GITHUB_REPOSITORY}/issues/206/comments" --method POST --raw-field "body=$(cat "$BODY_FILE")"

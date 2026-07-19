@@ -1,0 +1,40 @@
+name: Issue 153 Package Diagnostic
+
+on:
+  push:
+    branches:
+      - feature/issue-153-version-status
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          ref: feature/issue-153-version-status
+          fetch-depth: 0
+      - name: Run package and report exact failure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set +e
+          report="$RUNNER_TEMP/issue-153-package.log"
+          python3 .github/development-packages/issue-153-version-status.py >"$report" 2>&1
+          status=$?
+          body="$RUNNER_TEMP/issue-153-package-comment.md"
+          {
+            echo '### Issue #153 package diagnostic'
+            echo
+            echo "- Package exit status: \`$status\`"
+            echo
+            echo '```text'
+            tail -n 160 "$report"
+            echo '```'
+          } >"$body"
+          gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"

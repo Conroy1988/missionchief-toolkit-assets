@@ -1,19 +1,16 @@
-UK requirement capability port diagnostic
+UK requirement capability v2 diagnostic
 exit_status=1
 
 STDOUT:
 
 
 STDERR:
-node:assert:150
-  throw new AssertionError(obj);
-  ^
+node:internal/assert/utils:77
+    throw err;
+    ^
 
-AssertionError [ERR_ASSERTION]: vehicles:fire-engine: one canonical definition
-
-2 !== 1
-
-    at Object.<anonymous> (/tmp/uk-capability-diagnostic-b9wwk0wz/repo/.github/scripts/test_mission_requirements_runtime.js:306:16)
+AssertionError [ERR_ASSERTION]: vehicles:hovercraft-trailer: parsed alias hovercrafts (trailer)
+    at Object.<anonymous> (/tmp/uk-capability-v2-diagnostic-4wkqxm_q/repo/.github/scripts/test_mission_requirements_runtime.js:309:20)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
@@ -23,15 +20,15 @@ AssertionError [ERR_ASSERTION]: vehicles:fire-engine: one canonical definition
     at node:internal/main/run_main_module:36:49 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
-  actual: 2,
-  expected: 1,
-  operator: 'strictEqual',
+  actual: false,
+  expected: true,
+  operator: '==',
   diff: 'simple'
 }
 
 Node.js v22.23.1
 Traceback (most recent call last):
-  File "/tmp/uk-capability-diagnostic-b9wwk0wz/repo/.github/development-packages/uk-requirement-capability-port.py", line 359, in <module>
+  File "/tmp/uk-capability-v2-diagnostic-4wkqxm_q/repo/.github/development-packages/uk-requirement-capability-port.py", line 353, in <module>
     subprocess.run(["node", str(RUNTIME.relative_to(ROOT))], cwd=ROOT, check=True)
   File "/usr/lib/python3.12/subprocess.py", line 571, in run
     raise CalledProcessError(retcode, process.args,

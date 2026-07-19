@@ -1,4 +1,5 @@
 name: Issue 153 Build Runtime Package
+# Retriggered after the manifest pipeline became canonical.
 
 on:
   push:

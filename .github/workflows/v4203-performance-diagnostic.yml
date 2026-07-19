@@ -11,6 +11,9 @@ permissions:
   contents: read
   issues: write
 
+env:
+  DIAGNOSTIC_REVISION: "2"
+
 jobs:
   diagnose:
     runs-on: ubuntu-latest
@@ -29,13 +32,14 @@ jobs:
             grep -n -m 1 -A 14 -E 'AssertionError|SyntaxError|TypeError|ReferenceError|VALIDATION ERROR|CalledProcessError' "$LOG" || tail -n 30 "$LOG"
           } > "$RUNNER_TEMP/v4203-performance-summary.log"
       - name: Post concise diagnostic
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           BODY_FILE="$RUNNER_TEMP/body.md"
           {
-            echo '### v4.20.3 performance-package diagnostic'
+            echo '### v4.20.3 performance-package diagnostic — revision 2'
             echo
             echo '```text'
             cat "$RUNNER_TEMP/v4203-performance-summary.log"

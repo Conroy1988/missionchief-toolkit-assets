@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.6] - 2026-07-19
+
+### Added
+- Added the complete current UK MissionChief vehicle and personnel requirement capability dataset to the Mission Requirements Matrix.
+- Added explicit capability coverage for specialist fire, ambulance, police, coastguard, airfield, mountain rescue, railway and specialist response assets.
+- Added dataset-driven parser and vehicle-type regression coverage for every imported UK requirement alias.
+
+### Changed
+- Requirement parsing now prioritises the longest recognised phrase so combined requirements are not consumed by shorter generic aliases.
+- Existing Toolkit selected, responding, on-site, authoritative-catalogue and patient-demand reconciliation remains unchanged.
+- The capability dataset is compiled into the userscript; no external manager service or mission-catalogue host is used at runtime.
+
 ## [4.20.5] - 2026-07-19
 
 ### Changed

@@ -13,6 +13,7 @@ FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
 RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
 CUSTOM_VEHICLE_BADGES_CONTRACT = ROOT / ".github/scripts/test_custom_vehicle_badges_contract.py"
 CATALOGUE_FIXTURE = ROOT / ".github/fixtures/mission-catalogue-pages.json"
+UK_CAPABILITY_FIXTURE = ROOT / "src/data/mission-requirements-en_GB.json"
 REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
 
 
@@ -20,6 +21,11 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
     catalogue_fixture = json.loads(CATALOGUE_FIXTURE.read_text(encoding="utf-8"))
+    uk_capabilities = json.loads(UK_CAPABILITY_FIXTURE.read_text(encoding="utf-8"))
+    assert uk_capabilities["schemaVersion"] == 1
+    assert uk_capabilities["locale"] == "en_GB"
+    assert len(uk_capabilities["vehicleRequirements"]) >= 68
+    assert len(uk_capabilities["staffRequirements"]) >= 2
     assert len(catalogue_fixture["pages"]) >= 3
     assert any(page.get("variations") for page in catalogue_fixture["pages"])
     assert any(page.get("conditional") for page in catalogue_fixture["pages"])
@@ -46,6 +52,7 @@ def main() -> int:
         "missionRequirements: true",
         "merged.missionRequirements = merged.missionRequirements !== false",
         "const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([",
+        "const MISSION_REQUIREMENT_PARSE_DEFINITIONS = Object.freeze(",
         "function missionRequirementsParseText(rawText, group = 'vehicles')",
         "function missionRequirementsParseSource(source)",
         "function missionRequirementsPatientContext(candidate)",
@@ -135,6 +142,19 @@ def main() -> int:
     assert compact_source.count("missionRequirementsPlacePanel(scopedCandidate,source,panel)") == 2
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
+    assert "v4.lss-manager.de" not in source
+    assert "LSS-Manager" not in source
+    aliases_seen = set()
+    for group_name in ("vehicleRequirements", "staffRequirements"):
+        for entry in uk_capabilities[group_name]:
+            assert entry["aliases"] and entry["types"]
+            for alias in entry["aliases"]:
+                folded = re.sub(r"\s+", " ", alias).strip().casefold()
+                assert folded not in aliases_seen, f"duplicate UK capability alias: {alias}"
+                aliases_seen.add(folded)
+                assert alias in source, f"UK capability alias missing from source: {alias}"
+            for vehicle_type in entry["types"]:
+                assert isinstance(vehicle_type, int) and vehicle_type >= 0
     assert "missionRequirementsPlacementBlock(root, operational)" not in source
     assert "const operational = root.querySelector?." not in source
     assert source.count("function missionRequirementsPatientContext(candidate)") == 1
@@ -147,20 +167,20 @@ def main() -> int:
     assert source.count("function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)") == 1
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
-    assert re.search(r"key:\s*['\"]railway-police-officer['\"][^\n]*training:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
+    assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]railway-police-officer['\"][^\n]*(?:training|['\"]training['\"])\s*:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
     assert "!reconciled.requirements.length && !reconciled.unresolved.length" in source, "unresolved authority must not collapse to an empty success state"
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
     assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"
     assert "missionRequirementsOperationalWindowScopes(candidate, context)" in source, "selected-unit acquisition must expand beyond the narrow mission root"
     assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
-    assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5,\s*9\]", source), "Ambulance capability must include road Ambulance and HEMS vehicle types"
-    assert re.search(r"key:\s*['\"]hems['\"][^\n]*types:\s*\[9\]", source), "HEMS must retain its dedicated capability mapping"
+    assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]ambulance['\"][^\n]*(?:types|['\"]types['\"])\s*:\s*\[5,\s*9\]", source), "Ambulance capability must include road Ambulance and HEMS vehicle types"
+    assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]hems['\"][^\n]*(?:types|['\"]types['\"])\s*:\s*\[9\]", source), "HEMS must retain its dedicated capability mapping"
 
     for alias in data["requiredAliases"]:
         assert alias in source, f"Required UK requirement alias missing: {alias}"
     for label, vehicle_types in data["requiredVehicleTypes"].items():
         for vehicle_type in vehicle_types:
-            assert re.search(rf"types:\s*\[[^\]]*\b{vehicle_type}\b", source), f"{label}: vehicle type {vehicle_type} is absent"
+            assert re.search(rf"(?:types|['\"]types['\"])\s*:\s*\[[^\]]*\b{vehicle_type}\b", source), f"{label}: vehicle type {vehicle_type} is absent"
 
     css = re.search(r"function missionRequirementsDocumentCss\(\) \{([\s\S]*?)\n    \}\n\n    function ensureMissionRequirementsDocumentStyle", source)
     assert css, "Mission requirements document CSS helper is missing"

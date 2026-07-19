@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.3] - 2026-07-19
+
+### Fixed
+- Restored live responding-unit reconciliation across MissionChief table and lightbox variants, including tbody-ID layouts, stable vehicle de-duplication, current crew capacity and explicit trained-personnel metadata.
+- Prevented unreadable responding units from being silently treated as zero capacity; affected Matrix rows now remain bounded and unresolved instead of producing false red or green states.
+- Restored the authoritative **Fight on Train** baseline: 4 Police Cars, 1 Dog Support Unit and 8 Railway Police Officers.
+- Parsed `Required Personnel Available` and `Required Personnel` rows outside the main vehicle table and preserved mission variation keys including additive overlays.
+- Prevented empty live missing text from overwriting a loading, failed or non-empty **Requirements for this Mission** authority.
+
+### Validation
+- Added deterministic fixtures for responding table variants, active-lightbox discovery, duplicate and state-transition handling, trained Railway Police crew, Fight on Train authority, additive overlays and unresolved authority rendering.
+
 ## [4.20.2] - 2026-07-19
 
 ### Fixed

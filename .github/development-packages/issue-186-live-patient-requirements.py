@@ -125,4 +125,5 @@ SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
 
 PATIENT_FRAGMENT.unlink(missing_ok=True)
 FIXTURE_FRAGMENT.unlink(missing_ok=True)
+Path(__file__).unlink(missing_ok=True)
 print(f"Prepared Toolkit {VERSION} patient requirements patch")

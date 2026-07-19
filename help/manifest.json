@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "4.20.0",
-  "toolkitVersion": "4.20.0",
+  "guideVersion": "4.20.1",
+  "toolkitVersion": "4.20.1",
   "updated": "2026-07-19",
   "path": "help/index.html",
   "sections": 19,
@@ -15,5 +15,5 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v4.20.0 adds a live LATEST / UPDATE map control using a verified stable manifest, a 30-minute success cache, a 10-minute failure cooldown and manual rechecking."
+  "runtimeGuidePatch": "Toolkit v4.20.1 redesigns the live version control as a compact vertical HUD tile with state icons and dedicated Desktop, Tablet and iOS geometry while retaining the 30-minute update-check contract."
 }

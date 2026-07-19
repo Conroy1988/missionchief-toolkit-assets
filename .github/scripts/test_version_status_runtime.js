@@ -39,7 +39,7 @@ const context = {
     console, URL, Promise, Date, Object, Array, Number, String, Error, JSON, RegExp, Math, Set,
     queueMicrotask,
     globalThis: null,
-    SCRIPT: { name: 'MissionChief Map Command Toolkit', version: '4.20.0', controlId: 'mc-map-command-toolkit-control' },
+    SCRIPT: { name: 'MissionChief Map Command Toolkit', version: '4.20.1', controlId: 'mc-map-command-toolkit-control' },
     pageWindow: { localStorage: { getItem: key => localValues.has(key) ? localValues.get(key) : null, setItem: (key, value) => localValues.set(key, String(value)), removeItem: key => localValues.delete(key) }, open: url => { openedUrls.push(url); return { opener: {} }; }, fetch: null, AbortController },
     document,
     runtime: { destroyed: false, requests: new Set(), fetchControllers: new Set() },
@@ -85,7 +85,16 @@ const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, rel
     assert.strictEqual(first, second, 'repeated Toolkit UI recovery does not duplicate version control');
     assert.strictEqual(document.getElementById(api.constants.buttonId), first, 'version control uses one collision-resistant ID');
     assert.strictEqual(row.children.indexOf(first), row.children.indexOf(economy) - 1, 'version control is placed immediately before Economy beside the main Toolkit shell');
+    assert(first.className.includes('mcms-version-btn--tile'), 'version control uses the compact tile variant');
+    assert.strictEqual(first.dataset.variant, 'status-tile', 'version control exposes its visual variant');
+    assert.strictEqual(first.getAttribute('aria-live'), 'polite', 'version state changes are announced accessibly');
     const styleText = document.getElementById(api.constants.styleId).textContent;
+    assert(styleText.includes('grid-template-rows:20px auto'), 'Desktop version control uses vertical tile geometry');
+    assert(styleText.includes('width:48px;min-width:48px;height:48px'), 'Desktop version tile has aligned 48px dimensions');
+    assert(styleText.includes('[data-state="latest"]::before{content:"✓"'), 'LATEST state includes a check indicator');
+    assert(styleText.includes('[data-state="update"]::before{content:"↑"'), 'UPDATE state includes an update indicator');
+    assert(styleText.includes('[data-state="error"]::before{content:"!"'), 'RETRY state includes an error indicator');
+    assert(!styleText.includes('min-width:56px;height:34px'), 'legacy horizontal status pill is removed');
     assert(styleText.includes('data-mcms-tablet-active'), 'Tablet-specific version-control styling is present');
     assert(styleText.includes('data-mcms-mobile-active'), 'iOS/Mobile-specific version-control styling is present');
 
@@ -93,7 +102,7 @@ const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, rel
     await assert.rejects(api.requestManifest(), /timed out/, 'network timeout rejects without reporting LATEST');
     context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onerror()); return { abort() {} }; };
     api.reset(); await api.runCheck(true); assert.strictEqual(api.model().state, 'error', 'rejected request renders retry/error state');
-    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('4.20.1')) })); return { abort() {} }; };
+    context.GM_xmlhttpRequest = options => { queueMicrotask(() => options.onload({ status: 200, responseText: JSON.stringify(manifest('4.20.2')) })); return { abort() {} }; };
     api.reset(); await api.runCheck(true); assert.strictEqual(api.model().state, 'update', 'successful live response renders UPDATE');
 
     console.log('Version status runtime fixtures passed');

@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.1] - 2026-07-19
+
+### Changed
+- Replaced the wide horizontal version-status pill with a compact vertical HUD tile aligned to the primary Toolkit and Economy map controls.
+- Moved state emphasis from a large coloured background to a dark theme-neutral surface with a small status badge, accent border and bottom status rail.
+- Added distinct non-colour indicators for **LATEST**, **UPDATE**, **CHECK** and **RETRY** while preserving all v4.20.0 checking, caching and manual-refresh behaviour.
+
+### Responsive
+- Added dedicated 48px Desktop, 43px Tablet and 46px iOS/Mobile tile geometry with nowrap labels and reliable touch targets.
+- Added reduced-motion handling and retained keyboard focus, accessible labels and polite state announcements.
+
+### Validation
+- Added deterministic visual-contract fixtures for tile dimensions, state icons, placement, accessibility and removal of the legacy horizontal pill.
+
 ## [4.20.0] - 2026-07-19
 
 ### Added

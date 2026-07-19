@@ -50,7 +50,7 @@ const context = {
 };
 context.globalThis = context;
 vm.createContext(context);
-vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
+vm.runInContext(block + `\nthis.__versionStatusApi = { constants: VERSION_STATUS, parse: versionStatusParse, compare: versionStatusCompare, validate: versionStatusValidateManifest, presentation: versionStatusPresentation, cacheFresh: versionStatusCacheIsFresh, failureCooling: versionStatusFailureCooling, ensureButton: ensureVersionStatusButton, requestManifest: versionStatusRequestManifest, runCheck: runVersionStatusCheck, render: versionStatusRender, model: () => versionStatusModel, nextDelay: versionStatusAutomaticDelay, schedule: scheduleVersionStatusCheck, setModel: value => { versionStatusModel = { ...versionStatusModel, ...value }; }, reset: () => { versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; versionStatusCheckPromise = null; versionStatusHydrationPromise = null; versionStatusTimer = null; versionStatusRequest = null; } };` , context);
 const api = context.__versionStatusApi;
 const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: `https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`, updateUrl: 'https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js', publishedAt: '2026-07-19T13:08:02Z' });
 
@@ -76,6 +76,24 @@ const manifest = version => ({ schemaVersion: 1, channel: 'stable', version, rel
     assert.strictEqual(api.cacheFresh({ checkedAt: now - (30 * 60 * 1000), manifest: current }, now), false, '30-minute successful cache is stale');
     assert.strictEqual(api.failureCooling({ failedAt: now - (9 * 60 * 1000) }, now), true, '9-minute failure remains in cooldown');
     assert.strictEqual(api.failureCooling({ failedAt: now - (10 * 60 * 1000) }, now), false, '10-minute failure cooldown expires');
+    assert.strictEqual(api.constants.autoIntervalMs, 30 * 60 * 1000, 'automatic active-tab cadence is 30 minutes');
+    api.setModel({ state: 'latest', manifest: current, checkedAt: now - (29 * 60 * 1000), error: '' });
+    assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic scheduler waits only for the remaining successful-cache lifetime');
+    api.setModel({ state: 'error', manifest: null, checkedAt: 0, failedAt: now - (9 * 60 * 1000), error: 'offline' });
+    assert.strictEqual(api.nextDelay(now), 60 * 1000, 'automatic failure retry waits only for the remaining cooldown');
+    const scheduledTimers = [];
+    const originalRuntimeSetTimeout = context.runtimeSetTimeout;
+    const originalRuntimeClearTimeout = context.runtimeClearTimeout;
+    context.runtimeSetTimeout = (callback, delay) => { scheduledTimers.push({ callback, delay }); return scheduledTimers.length; };
+    context.runtimeClearTimeout = () => {};
+    document.visibilityState = 'hidden';
+    api.reset(); api.schedule(1234, false);
+    assert.strictEqual(scheduledTimers[0].delay, 1234, 'automatic scheduler honours the requested delay');
+    await scheduledTimers[0].callback();
+    assert.strictEqual(scheduledTimers.length, 1, 'hidden tabs defer without creating a background polling timer');
+    document.visibilityState = 'visible';
+    context.runtimeSetTimeout = originalRuntimeSetTimeout;
+    context.runtimeClearTimeout = originalRuntimeClearTimeout;
 
     const control = document.createElement('div'); control.id = context.SCRIPT.controlId;
     const row = document.createElement('div'); const shell = document.createElement('div'); const economy = document.createElement('button'); economy.className = 'mcms-economy-btn';

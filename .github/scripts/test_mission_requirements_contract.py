@@ -63,6 +63,9 @@ def main() -> int:
         "function missionRequirementsLssmActive(candidate, source)",
         "function missionRequirementsCollectUnits(candidate, mode)",
         "function missionRequirementsOperationalSelectors(mode)",
+        "function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate))",
+        "mode !== 'selected' && !isVisible(element)",
+        "missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)",
         "tbody#mission_vehicle_driving > tr",
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
         "data-personnel-training",
@@ -147,6 +150,8 @@ def main() -> int:
     assert re.search(r"key:\s*['\"]railway-police-officer['\"][^\n]*training:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
     assert "!reconciled.requirements.length && !reconciled.unresolved.length" in source, "unresolved authority must not collapse to an empty success state"
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
+    assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"
+    assert "missionRequirementsOperationalWindowScopes(candidate, context)" in source, "selected-unit acquisition must expand beyond the narrow mission root"
     assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
     assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5,\s*9\]", source), "Ambulance capability must include road Ambulance and HEMS vehicle types"
     assert re.search(r"key:\s*['\"]hems['\"][^\n]*types:\s*\[9\]", source), "HEMS must retain its dedicated capability mapping"

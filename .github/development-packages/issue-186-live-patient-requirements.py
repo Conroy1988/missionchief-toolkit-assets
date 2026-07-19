@@ -6,6 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
+DIST_USER = ROOT / "dist" / "MissionChief_Map_Command_Toolkit.user.js"
+DIST_TEXT = ROOT / "dist" / "MissionChief_Map_Command_Toolkit.txt"
 RUNTIME = ROOT / ".github" / "scripts" / "test_mission_requirements_runtime.js"
 CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
 CHANGELOG = ROOT / "CHANGELOG.md"
@@ -14,6 +16,7 @@ HELP_MANIFEST = ROOT / "help" / "manifest.json"
 SITE_DATA = ROOT / "docs" / "site-data.json"
 PATIENT_FRAGMENT = ROOT / ".github" / "development-packages" / "issue-186-patient-runtime.jsfrag"
 FIXTURE_FRAGMENT = ROOT / ".github" / "development-packages" / "issue-186-runtime-fixture.jsfrag"
+DIAGNOSTIC_WORKFLOW = ROOT / ".github" / "workflows" / "issue-186-diagnostic.yml"
 
 PREVIOUS = "4.19.0"
 VERSION = "4.19.1"
@@ -53,6 +56,8 @@ if mutation_anchor not in source:
     raise AssertionError("patient mutation selector: no matches")
 source = source.replace(mutation_anchor, mutation_replacement)
 SOURCE.write_text(source, encoding="utf-8")
+DIST_USER.write_text(source, encoding="utf-8")
+DIST_TEXT.write_text(source, encoding="utf-8")
 
 runtime = RUNTIME.read_text(encoding="utf-8")
 runtime = replace_once(runtime, "version: '4.19.0'", "version: '4.19.1'", "runtime fixture version")
@@ -125,5 +130,6 @@ SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
 
 PATIENT_FRAGMENT.unlink(missing_ok=True)
 FIXTURE_FRAGMENT.unlink(missing_ok=True)
+DIAGNOSTIC_WORKFLOW.unlink(missing_ok=True)
 Path(__file__).unlink(missing_ok=True)
 print(f"Prepared Toolkit {VERSION} patient requirements patch")

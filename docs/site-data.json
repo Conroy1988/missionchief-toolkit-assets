@@ -406,12 +406,12 @@
       "features": [
         {
           "name": "Live Version Status",
-          "summary": "Shows LATEST or UPDATE beside the main map control using the verified production release contract.",
+          "summary": "Shows LATEST or UPDATE in a compact vertical HUD tile beside the main map control using the verified production release contract.",
           "details": [
+            "Theme-neutral status tile with distinct check, update, checking and retry indicators",
             "30-minute successful cache and 10-minute failure cooldown",
             "15-second delayed boot check with visibility-based stale refresh",
-            "GitHub release notes for LATEST and Greasy Fork installation for UPDATE",
-            "Desktop, Tablet and iOS-safe placement with manual rechecking"
+            "Dedicated Desktop, Tablet and iOS geometry with manual rechecking"
           ],
           "visual": "version-status",
           "tags": [

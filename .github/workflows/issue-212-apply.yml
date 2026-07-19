@@ -1,0 +1,42 @@
+name: Issue 212 Selected Units Apply
+
+on:
+  push:
+    branches:
+      - fix/issue-212-selected-units
+
+permissions:
+  contents: write
+
+concurrency:
+  group: issue-212-selected-units-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: fix/issue-212-selected-units
+          fetch-depth: 0
+
+      - name: Apply and validate v4.20.4 hotfix
+        run: python3 .github/development-packages/issue-212-selected-units-hotfix-v2.py
+
+      - name: Remove temporary branch workflow
+        run: rm -f .github/workflows/issue-212-apply.yml
+
+      - name: Commit validated result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No validated changes were produced."; exit 1; }
+          git commit -m "Fix live selected-unit reconciliation"
+          git push origin HEAD:fix/issue-212-selected-units

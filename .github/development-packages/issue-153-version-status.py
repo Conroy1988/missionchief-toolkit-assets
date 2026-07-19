@@ -255,7 +255,7 @@ release_anchor = '          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITOR
 release_insert = release_anchor + '          INSTALL_URL="$(jq -r \' .greasyFork.installUrl\' .github/release-settings.json)"\n          jq -n --arg version "$RELEASE_VERSION" --arg releaseNotesUrl "$RELEASE_URL" --arg updateUrl "$INSTALL_URL" --arg publishedAt "$NOW" \\\n            \'{schemaVersion:1,channel:"stable",version:$version,releaseNotesUrl:$releaseNotesUrl,updateUrl:$updateUrl,publishedAt:$publishedAt}\' \\\n            > status/update-manifest.json\n'
 release_insert = release_insert.replace("jq -r ' .greasyFork.installUrl'", "jq -r '.greasyFork.installUrl'")
 release = replace_once(release, release_anchor, release_insert, "verified manifest generation")
-release = replace_once(release, '           git add status/release-dashboard.json status/README.md\n', '           git add status/release-dashboard.json status/README.md status/update-manifest.json\n', "release manifest commit")
+release = replace_once(release, '          git add status/release-dashboard.json status/README.md\n', '          git add status/release-dashboard.json status/README.md status/update-manifest.json\n', "release manifest commit")
 RELEASE_WORKFLOW.write_text(release, encoding="utf-8")
 
 release_dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))

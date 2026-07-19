@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.4
+// @version      4.20.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.4',
+        version: '4.20.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -29756,7 +29756,7 @@ Create the private backup now?`);
     }
 
     // Issue #153: stable live Toolkit version-status control.
-    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 30 * 60 * 1000, failureCooldownMs: 10 * 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 15 * 1000, longPressMs: 650, styleId: 'mcms-version-status-style', buttonId: 'mcms-version-status-control' });
+    const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 30 * 60 * 1000, autoIntervalMs: 30 * 60 * 1000, failureCooldownMs: 10 * 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 15 * 1000, longPressMs: 650, styleId: 'mcms-version-status-style', buttonId: 'mcms-version-status-control' });
     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false;
     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
@@ -29775,7 +29775,30 @@ Create the private backup now?`);
     async function hydrateVersionStatus() { if (versionStatusHydrationPromise) return versionStatusHydrationPromise; versionStatusHydrationPromise = (async () => { const now = Date.now(); const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, error: 'cooldown' }; versionStatusRender(); } })().finally(() => { versionStatusHydrationPromise = null; }); return versionStatusHydrationPromise; }
     function versionStatusRequestManifest() { return new Promise((resolve, reject) => { let settled = false; let timeoutTimer = null; const finish = (error, text) => { if (settled) return; settled = true; runtimeClearTimeout(timeoutTimer); if (versionStatusRequest?.abort) runtime.requests?.delete?.(versionStatusRequest); versionStatusRequest = null; if (error) { reject(error); return; } try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); } catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); } }; const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}`; if (typeof GM_xmlhttpRequest === 'function') { try { versionStatusRequest = GM_xmlhttpRequest({ method: 'GET', url, timeout: VERSION_STATUS.requestTimeoutMs, responseType: 'text', headers: { Accept: 'application/json' }, onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300 ? finish(null, response.responseText) : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)), onerror: () => finish(new Error('Version endpoint could not be reached.')), ontimeout: () => finish(new Error('Version check timed out.')), onabort: () => finish(new Error('Version check was cancelled.')) }); if (versionStatusRequest?.abort) runtime.requests?.add?.(versionStatusRequest); } catch (err) { finish(err); } return; } const Controller = pageWindow.AbortController || globalThis.AbortController; const controller = typeof Controller === 'function' ? new Controller() : null; if (controller) runtime.fetchControllers?.add?.(controller); timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs); Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, { cache: 'no-store', credentials: 'omit', signal: controller?.signal, headers: { Accept: 'application/json' } })).then(response => { if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`); return response.text(); }).then(text => finish(null, text)).catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.'))).finally(() => { if (controller) runtime.fetchControllers?.delete?.(controller); }); }); }
     async function runVersionStatusCheck(force = false) { ensureVersionStatusButton(); if (versionStatusCheckPromise) return versionStatusCheckPromise; versionStatusCheckPromise = (async () => { const now = Date.now(); if (!force) { const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return versionStatusModel; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, error: 'cooldown' }; versionStatusRender(); return versionStatusModel; } } versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, error: '' }; versionStatusRender(); try { const manifest = await versionStatusRequestManifest(); const checkedAt = Date.now(); const presentation = versionStatusPresentation(SCRIPT.version, manifest); versionStatusModel = { state: presentation.state, manifest, checkedAt, error: '' }; await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest }); await versionStatusStorageDelete(VERSION_STATUS.failureKey); } catch (err) { const failedAt = Date.now(); versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, error: String(err?.message || err || 'failed') }; await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt }); } versionStatusRender(); return versionStatusModel; })().finally(() => { versionStatusCheckPromise = null; }); return versionStatusCheckPromise; }
-    function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) { if (runtime.destroyed) return; ensureVersionStatusButton(); if (versionStatusTimer !== null) { if (!force) return; runtimeClearTimeout(versionStatusTimer); } versionStatusTimer = runtimeSetTimeout(() => { versionStatusTimer = null; void runVersionStatusCheck(force); }, Math.max(0, Number(delay) || 0)); }
+    function versionStatusAutomaticDelay(now = Date.now()) {
+        if (versionStatusModel.state === 'error') return VERSION_STATUS.failureCooldownMs;
+        const checkedAt = Number(versionStatusModel.checkedAt) || 0;
+        if (checkedAt > 0 && versionStatusModel.manifest) {
+            const elapsed = Math.max(0, Number(now) - checkedAt);
+            return Math.max(1000, VERSION_STATUS.cacheMs - Math.min(VERSION_STATUS.cacheMs, elapsed));
+        }
+        return VERSION_STATUS.autoIntervalMs;
+    }
+    function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) {
+        runtimeClearTimeout(versionStatusTimer);
+        versionStatusTimer = runtimeSetTimeout(async () => {
+            versionStatusTimer = null;
+            if (runtime.destroyed) return;
+            if (!force && document.visibilityState === 'hidden') return;
+            try {
+                await runVersionStatusCheck(force);
+            } finally {
+                if (!runtime.destroyed && document.visibilityState !== 'hidden') {
+                    scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false);
+                }
+            }
+        }, Math.max(0, Number(delay) || 0));
+    }
     function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); }
 
     function createCleanExit() {

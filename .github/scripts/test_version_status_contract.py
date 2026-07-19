@@ -33,10 +33,13 @@ def main() -> int:
 
     assert source.count("// Issue #153: stable live Toolkit version-status control.") == 1
     assert "cacheMs: 30 * 60 * 1000" in block
+    assert "autoIntervalMs: 30 * 60 * 1000" in block
     assert "failureCooldownMs: 10 * 60 * 1000" in block
     assert "requestTimeoutMs: 8 * 1000" in block
     assert "bootDelayMs: 15 * 1000" in block
-    assert "setInterval(" not in block, "version checker must not poll continuously"
+    assert "setInterval(" not in block, "version checker must use a non-overlapping recursive timeout"
+    assert "scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false)" in block
+    assert "document.visibilityState === 'hidden'" in block
     assert "mcms-version-btn--unified" in block
     assert "button.className = 'mcms-version-btn mcms-version-btn--unified'" in block
     assert "button.className = 'mcms-economy-btn mcms-version-btn mcms-version-btn--unified'" not in block
@@ -57,6 +60,7 @@ def main() -> int:
         "function versionStatusCacheIsFresh(cache, now = Date.now())",
         "function ensureVersionStatusButton()",
         "function versionStatusRequestManifest()",
+        "function versionStatusAutomaticDelay(now = Date.now())",
         "function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false)",
         "function disposeVersionStatus()",
         "data-mcms-tablet-active",

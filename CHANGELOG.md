@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.5] - 2026-07-19
+
+### Changed
+- Added a lightweight automatic version check every 30 minutes while MissionChief remains visible, using a single recursive timeout rather than continuous polling.
+- Deferred scheduled checks while the tab is hidden and retained the existing visibility-based stale refresh when play resumes.
+- Based the next automatic timeout on the remaining successful-cache lifetime, preventing a manual force-check from causing a redundant network ping.
+- Retained the 10-minute automatic retry cooldown after network or manifest failures.
+
+### Validation
+- Added deterministic scheduler fixtures for the 30-minute cadence, remaining-cache calculation, failure cooldown and hidden-tab deferral.
+
 ## [4.20.4] - 2026-07-19
 
 ### Fixed

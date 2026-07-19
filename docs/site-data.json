@@ -399,6 +399,28 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Toolkit and releases",
+      "description": "Keep the Toolkit current and verify release state without leaving the MissionChief map.",
+      "features": [
+        {
+          "name": "Live Version Status",
+          "summary": "Shows LATEST or UPDATE beside the main map control using the verified production release contract.",
+          "details": [
+            "30-minute successful cache and 10-minute failure cooldown",
+            "15-second delayed boot check with visibility-based stale refresh",
+            "GitHub release notes for LATEST and Greasy Fork installation for UPDATE",
+            "Desktop, Tablet and iOS-safe placement with manual rechecking"
+          ],
+          "visual": "version-status",
+          "tags": [
+            "updates",
+            "releases",
+            "status"
+          ]
+        }
+      ]
     }
   ],
   "themes": [

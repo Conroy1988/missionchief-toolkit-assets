@@ -51,6 +51,7 @@ def main() -> int:
         "function missionRequirementsPatientCount(candidate)",
         "function missionRequirementsPatientState(record, now = Date.now())",
         "function missionRequirementsReconcilePatientDemand(parsed, patientState)",
+        "function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)",
         "MISSION_REQUIREMENTS_PATIENT_TRANSITION_MS = 1400",
         "function missionRequirementsCapacity(min = 0, max = min, known = null)",
         "function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null)",
@@ -73,6 +74,8 @@ def main() -> int:
         "function missionRequirementsCatalogueDescriptor(candidate)",
         "function missionRequirementsCatalogueParseDocument(doc, descriptor = {})",
         "function missionRequirementsCatalogueEnsure(record)",
+        "Loading Requirements for this Mission",
+        "Mission info",
         "function missionRequirementsCataloguePanelHtml(catalogue)",
         "function missionRequirementsCatalogueCompare(parsed, catalogue)",
         "Official MissionChief catalogue baseline only",
@@ -125,6 +128,9 @@ def main() -> int:
     assert "const operational = root.querySelector?." not in source
     assert source.count("function missionRequirementsPatientCount(candidate)") == 1
     assert source.count("function missionRequirementsReconcilePatientDemand(parsed, patientState)") == 1
+    assert source.count("function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)") == 1
+    assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
+    assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
     assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
     assert re.search(r"key:\s*['\"]ambulance['\"][^\n]*types:\s*\[5\]", source), "patient demand must use the conservative UK transport ambulance mapping"
 

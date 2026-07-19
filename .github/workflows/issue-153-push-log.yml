@@ -1,0 +1,32 @@
+name: Issue 153 Push Log
+
+on:
+  push:
+    branches:
+      - feature/issue-153-version-status
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Extract failed commit/push log tail
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          report="$RUNNER_TEMP/issue-153-push.log"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/jobs/88202140685/logs" -o "$report"
+          body="$RUNNER_TEMP/issue-153-push-comment.md"
+          {
+            echo '### Issue #153 commit/push diagnostic'
+            echo
+            echo '```text'
+            tail -n 100 "$report"
+            echo '```'
+          } > "$body"
+          gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"

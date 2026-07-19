@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-      - name: Inspect exact Toolkit control and lifecycle anchors
+      - name: Inspect compact Toolkit anchors
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -27,48 +27,63 @@ jobs:
           source = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
           lines = source.splitlines()
 
-          def emit(title, indexes, before=18, after=36, limit=12):
-              print(f'\n## {title}')
-              emitted=[]
-              for index in indexes:
-                  start=max(0,index-before); end=min(len(lines),index+after)
-                  if emitted and start <= emitted[-1][1]:
-                      emitted[-1]=(emitted[-1][0],max(emitted[-1][1],end))
-                  else:
-                      emitted.append((start,end))
-              for start,end in emitted[:limit]:
-                  print(f'--- lines {start+1}-{end} ---')
-                  for n in range(start,end): print(f'{n+1:05d}: {lines[n]}')
+          def containing_function(index):
+              for pos in range(index, max(-1, index - 500), -1):
+                  match = re.match(r'\s*(?:async\s+)?function\s+([A-Za-z0-9_$]+)\s*\(', lines[pos])
+                  if match:
+                      return pos, match.group(1)
+              return None, 'unknown'
 
-          exact_patterns = {
-              'CONTROL_ID_RUNTIME': re.compile(r'(?:getElementById\(SCRIPT\.controlId\)|\.id\s*=\s*SCRIPT\.controlId|id:\s*SCRIPT\.controlId)'),
-              'CONTROL_CLASSES': re.compile(r'(?:leaflet-control|mcms-shell|mcms-main-button|mcms-control)', re.I),
-              'CONTROL_FUNCTIONS': re.compile(r'^\s*function\s+\w*(?:Control|control|Dock|dock|Shell|shell|Button|button)\w*\s*\('),
-              'BOOT_LIFECYCLE': re.compile(r'^\s*(?:async\s+)?function\s+\w*(?:boot|Boot|teardown|Teardown|destroy|Destroy|cleanup|Cleanup|shutdown|Shutdown)\w*\s*\('),
-              'VISIBILITY': re.compile(r'visibilitychange|document\.visibilityState'),
-              'RUNTIME_REPLACEMENT': re.compile(r'runtime replacement|runtimeReplacement|__mcms|destroy\s*:\s*|teardown\s*:\s*', re.I),
-              'STORAGE_HELPERS': re.compile(r'^\s*(?:async\s+)?function\s+\w*(?:Storage|storage|Persist|persist|Setting|setting|Value|value)\w*\s*\('),
-              'NETWORK_HELPERS': re.compile(r'GM_xmlhttpRequest|AbortController|fetch\s*\('),
-          }
-          for title, pattern in exact_patterns.items():
-              indexes=[i for i,line in enumerate(lines) if pattern.search(line)]
-              if title == 'CONTROL_CLASSES': indexes=[i for i in indexes if i > 15000]
-              emit(title,indexes,limit=18)
+          def excerpt(index, before=25, after=70):
+              start=max(0,index-before); end=min(len(lines),index+after)
+              print(f'--- lines {start+1}-{end} ---')
+              for n in range(start,end): print(f'{n+1:05d}: {lines[n]}')
 
-          print('\n## LAST_900_LINES')
-          for n in range(max(0,len(lines)-900),len(lines)):
-              print(f'{n+1:05d}: {lines[n]}')
+          runtime_hits=[]
+          for i,line in enumerate(lines):
+              if i < 15000: continue
+              if re.search(r'\.id\s*=\s*SCRIPT\.controlId|getElementById\(SCRIPT\.controlId\)|SCRIPT\.controlId\)\.remove|SCRIPT\.controlId\}\b', line):
+                  runtime_hits.append(i)
+          print('CONTROL_RUNTIME_HITS')
+          seen=set()
+          for index in runtime_hits:
+              fn_index,fn_name=containing_function(index)
+              key=fn_index if fn_index is not None else index
+              if key in seen: continue
+              seen.add(key)
+              print(f'FUNCTION {fn_name} around line {index+1}')
+              excerpt(index)
+
+          print('\nCONTROL_RELATED_FUNCTIONS')
+          for i,line in enumerate(lines):
+              match=re.match(r'\s*function\s+([A-Za-z0-9_$]*(?:Control|Dock|Shell|Button)[A-Za-z0-9_$]*)\s*\(',line,re.I)
+              if match and i > 15000:
+                  print(f'{i+1}: {match.group(1)}')
+
+          print('\nNETWORK_HELPERS')
+          network=[i for i,line in enumerate(lines) if 'GM_xmlhttpRequest' in line or 'AbortController' in line or re.search(r'\bfetch\s*\(',line)]
+          for index in network[:8]: excerpt(index,10,25)
+
+          print('\nLIFECYCLE_FUNCTIONS')
+          life=[]
+          for i,line in enumerate(lines):
+              match=re.match(r'\s*(?:async\s+)?function\s+([A-Za-z0-9_$]*(?:boot|teardown|destroy|cleanup|shutdown)[A-Za-z0-9_$]*)\s*\(',line,re.I)
+              if match: life.append((i,match.group(1)))
+          for i,name in life: print(f'{i+1}: {name}')
+          for i,name in life[-5:]:
+              print(f'FUNCTION {name}')
+              excerpt(i,5,65)
+
+          print('\nLAST_220_LINES')
+          for n in range(max(0,len(lines)-220),len(lines)): print(f'{n+1:05d}: {lines[n]}')
           PY
 
           body="$RUNNER_TEMP/issue-153-targeted-comment.md"
           {
             echo '### Issue #153 targeted runtime diagnostic'
             echo
-            echo '<details><summary>Exact control, lifecycle and network anchors</summary>'
-            echo
             echo '```text'
             cat "$RUNNER_TEMP/issue-153-targeted.txt"
             echo '```'
-            echo '</details>'
           } > "$body"
           gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"

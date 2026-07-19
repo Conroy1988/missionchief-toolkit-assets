@@ -1,0 +1,83 @@
+name: Issue 153 Source Diagnostic
+
+on:
+  push:
+    branches:
+      - feature/issue-153-version-status
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: Inspect Toolkit control and release architecture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY' > "$RUNNER_TEMP/issue-153-source.txt"
+          from pathlib import Path
+          import re
+
+          source_path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
+          source = source_path.read_text(encoding='utf-8')
+          lines = source.splitlines()
+
+          patterns = [
+              r'controlId', r'panelId', r'leaflet-control', r'L\.Control', r'L\.control',
+              r'createElement\(["\']button', r'addEventListener\(["\']click',
+              r'function .*Control', r'function .*control', r'function .*teardown',
+              r'function .*destroy', r'function .*cleanup', r'function .*boot',
+              r'GM_getValue', r'GM_setValue', r'localStorage', r'visibilitychange',
+              r'pagehide', r'beforeunload', r'AbortController', r'GM_xmlhttpRequest'
+          ]
+          regex = re.compile('|'.join(f'(?:{p})' for p in patterns), re.I)
+          hits = [i for i, line in enumerate(lines) if regex.search(line)]
+
+          groups = []
+          for index in hits:
+              start = max(0, index - 8)
+              end = min(len(lines), index + 18)
+              if groups and start <= groups[-1][1] + 8:
+                  groups[-1] = (groups[-1][0], max(groups[-1][1], end))
+              else:
+                  groups.append((start, end))
+
+          print('SOURCE_LINES', len(lines))
+          print('SOURCE_EXCERPTS')
+          for start, end in groups[:35]:
+              print(f'--- lines {start + 1}-{end} ---')
+              for number in range(start, end):
+                  print(f'{number + 1:05d}: {lines[number]}')
+
+          print('\nRELEASE_FILES')
+          for path in sorted(Path('.github').rglob('*')):
+              if not path.is_file():
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except Exception:
+                  continue
+              if re.search(r'release-dashboard|latestRelease|Greasy Fork|release manifest|site-data|release-toolkit', text, re.I):
+                  print(path)
+          PY
+
+          body="$RUNNER_TEMP/issue-153-comment.md"
+          {
+            echo '### Issue #153 source architecture diagnostic'
+            echo
+            echo 'The temporary branch diagnostic captured control creation, lifecycle, persistence and release-pipeline anchors required for implementation.'
+            echo
+            echo '<details><summary>Source and release excerpts</summary>'
+            echo
+            echo '```text'
+            tail -n 900 "$RUNNER_TEMP/issue-153-source.txt"
+            echo '```'
+            echo '</details>'
+          } > "$body"
+          gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"

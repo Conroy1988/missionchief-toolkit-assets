@@ -14,19 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Extract failed commit/push log tail
+      - name: Extract Git server rejection
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           report="$RUNNER_TEMP/issue-153-push.log"
           curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/jobs/88202140685/logs" -o "$report"
+          filtered="$RUNNER_TEMP/issue-153-filtered.log"
+          grep -Ei 'remote:|error:|fatal:|rejected|refusing|workflow|permission|denied|protected|force-with-lease|git push' "$report" | tail -n 40 > "$filtered" || true
           body="$RUNNER_TEMP/issue-153-push-comment.md"
           {
-            echo '### Issue #153 commit/push diagnostic'
+            echo '### Issue #153 Git rejection diagnostic'
             echo
             echo '```text'
-            tail -n 100 "$report"
+            cat "$filtered"
             echo '```'
           } > "$body"
           gh issue comment 153 --repo "$GITHUB_REPOSITORY" --body-file "$body"

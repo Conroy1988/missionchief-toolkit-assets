@@ -6,6 +6,7 @@ on:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/scripts/deep_performance_audit.mjs"
       - ".github/scripts/reconcile_deep_performance_audit.mjs"
+      - ".github/scripts/extract_deep_performance_evidence.mjs"
       - ".github/scripts/test_deep_performance_audit.mjs"
       - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
@@ -17,6 +18,7 @@ on:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/scripts/deep_performance_audit.mjs"
       - ".github/scripts/reconcile_deep_performance_audit.mjs"
+      - ".github/scripts/extract_deep_performance_evidence.mjs"
       - ".github/scripts/test_deep_performance_audit.mjs"
       - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
@@ -77,6 +79,7 @@ jobs:
         run: |
           node --check .github/scripts/deep_performance_audit.mjs
           node --check .github/scripts/reconcile_deep_performance_audit.mjs
+          node --check .github/scripts/extract_deep_performance_evidence.mjs
           node --check .github/scripts/test_deep_performance_audit.mjs
           node --check .github/scripts/test_reconcile_deep_performance_audit.mjs
 
@@ -95,6 +98,20 @@ jobs:
           node .github/scripts/reconcile_deep_performance_audit.mjs \
             deep-performance-audit.json \
             deep-performance-audit.md
+
+      - name: Extract exact shortlisted source evidence
+        run: |
+          node .github/scripts/extract_deep_performance_evidence.mjs \
+            src/MissionChief_Map_Command_Toolkit.user.js \
+            deep-performance-source-evidence.md \
+            updateUI \
+            applyRootAttributes \
+            triggerPayoutFlash \
+            stopPayoutFlashAnimation \
+            createMissionLockOnReticle \
+            toggleCommandBar \
+            connectMainMutationObserver \
+            boot
 
       - name: Cross-check trusted v4.20.17 observer baseline
         shell: bash
@@ -116,5 +133,6 @@ jobs:
           path: |
             deep-performance-audit.json
             deep-performance-audit.md
+            deep-performance-source-evidence.md
           if-no-files-found: error
           retention-days: 30

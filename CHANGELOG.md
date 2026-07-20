@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.17] - 2026-07-20
+
+### Fixed
+- Level 2 Public Order Officer ARR selections now use each vehicle's exact MissionChief `assigned_personnel_count` from the Toolkit's shared vehicle cache when available, so two nine-officer carriers clear an eighteen-officer requirement.
+- Generic Police Officers now use exact assigned personnel across Selected, Responding and On Site units instead of remaining at vehicle-type minimum ranges such as `7+`.
+- Live required totals reconstructed from current shortages now become exact as soon as on-scene personnel is known.
+- Native exact crew metadata remains authoritative; inaccessible or alliance vehicles retain the reviewed fail-closed type range.
+
+### Validation
+- Added deterministic 9 + 9 public-order, deselection, eleven-on-scene police, selected traffic-car, native-priority and zero-personnel regressions.
+
 ## [4.20.16] - 2026-07-20
 
 ### Fixed

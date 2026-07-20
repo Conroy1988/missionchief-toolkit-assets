@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.16'
+        version: '4.20.17'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -202,6 +202,10 @@ const context = {
     missionRequirementsObservedDocuments: new WeakSet(),
     missionRequirementsObservedFrames: new WeakSet(),
     missionRequirementsRecords: new Map(),
+    personalVehicleApiCache: new Map(),
+    vehicleApiReady: true,
+    vehicleApiFetchPromise: null,
+    refreshPersonalVehicleData: () => Promise.resolve(true),
     runtimeSetTimeout: () => 1,
     runtimeClearTimeout: () => {},
     runtimeRequestAnimationFrame: callback => {
@@ -241,6 +245,10 @@ this.__mcmsRequirements = {
     progressValue: missionRequirementsProgressValue,
     metadataValues: missionRequirementsMetadataValues,
     arrCapabilityState: missionRequirementsArrCapabilityState,
+    vehicleApiCache: personalVehicleApiCache,
+    vehicleApiRecord: missionRequirementsVehicleApiRecord,
+    vehicleApiStaff: missionRequirementsVehicleApiStaff,
+    resolvedStaffCapacity: missionRequirementsResolvedStaffCapacity,
     operationalSelectors: missionRequirementsOperationalSelectors,
     operationalActive: missionRequirementsOperationalElementActive,
     cataloguePersonnel: missionRequirementsCataloguePersonnelRequirements,
@@ -504,6 +512,87 @@ for (const [text, key, label] of [['2 PRVs', 'primary-response', 'Primary Respon
 }
 }
 
+
+
+// Issue #273: exact assigned personnel clears trained and generic police requirements.
+{
+const issue273Doc = new FakeDocument();
+issue273Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1);
+    sceneUnits.push(unit.row);
+}
+issue273Candidate.root.selectedUnits = [];
+issue273Candidate.root.onSiteRows = sceneUnits;
+let policeRows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'police-officers', requirement: 'Police Officers', missing: 2, group: 'staff', definition: policeDefinition, statedRequirement: true }],
+    unresolved: []
+});
+let policeRow = policeRows.find(row => row.key === 'police-officers');
+assert.strictEqual(policeRow.onSiteText, '11', 'eleven on-scene police personnel are exact rather than 7+');
+assert.strictEqual(policeRow.requiredText, '13', 'live missing two plus exact on-scene eleven reconstructs required thirteen');
+assert.strictEqual(policeRow.stillNeededText, '2', 'generic Police Officers shortage remains accurate');
+const selectedTrafficCar = makeVehicleElement(issue273Doc, 273200, 24, { typeOnRow: true });
+selectedTrafficCar.vehicle.checked = true;
+selectedTrafficCar.vehicle.matchSet.add('.vehicle_checkbox');
+selectedTrafficCar.vehicle.classList.values.add('vehicle_checkbox');
+cacheVehicle(273200, 24, 2);
+issue273Candidate.root.selectedUnits = [selectedTrafficCar.vehicle];
+policeRows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'police-officers', requirement: 'Police Officers', missing: 2, group: 'staff', definition: policeDefinition, statedRequirement: true }],
+    unresolved: []
+});
+policeRow = policeRows.find(row => row.key === 'police-officers');
+assert.strictEqual(policeRow.selectedText, '2', 'any eligible selected police vehicle contributes exact assigned officers');
+assert.strictEqual(policeRow.stillNeededText, '0', 'selected police officers clear the remaining generic shortage');
+assert.strictEqual(policeRow.covered, true, 'generic Police Officers row clears when exact total is met');
+
+const nativeExact = makeVehicleElement(issue273Doc, 273300, 51, { staff: 4 });
+cacheVehicle(273300, 51, 9);
+assert.strictEqual(api.resolvedStaffCapacity(273300, 51, nativeExact.vehicle).min, 4, 'native exact crew metadata remains higher priority than cached API data');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(api.vehicleApiStaff({ assigned_personnel_count: 0 }))), { min: 0, max: 0, known: true, value: 0 }, 'zero assigned personnel remains exact');
+}
 
 // Issue #271: ARR specialist capabilities reconcile Search Advisor and SAR Commander personnel.
 {

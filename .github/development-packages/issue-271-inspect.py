@@ -2,6 +2,7 @@
 from pathlib import Path
 
 source = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
+parts = []
 for marker in [
     'function missionRequirementsMetadataValues',
     'function missionRequirementsCollectUnits',
@@ -10,7 +11,7 @@ for marker in [
     'function missionRequirementsStaffCapacity',
 ]:
     index = source.find(marker)
-    print(f'\n===== {marker} @ {index} =====')
+    parts.append(f'\n===== {marker} @ {index} =====\n')
     if index >= 0:
-        print(source[index:index + 9000])
-raise RuntimeError('inspection-only package; no repository changes requested')
+        parts.append(source[index:index + 12000])
+Path('docs/issue-271-runtime-snippets.txt').write_text(''.join(parts), encoding='utf-8')

@@ -12,6 +12,7 @@ SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github/fixtures/mission-requirements-contract.json"
 RUNTIME_TEST = ROOT / ".github/scripts/test_mission_requirements_runtime.js"
 CUSTOM_VEHICLE_BADGES_CONTRACT = ROOT / ".github/scripts/test_custom_vehicle_badges_contract.py"
+LSSM_COMPATIBILITY_AUDIT = ROOT / ".github/scripts/audit_lssm_requirement_compatibility.py"
 CATALOGUE_FIXTURE = ROOT / ".github/fixtures/mission-catalogue-pages.json"
 UK_CAPABILITY_FIXTURE = ROOT / "src/data/mission-requirements-en_GB.json"
 REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
@@ -46,6 +47,14 @@ def main() -> int:
             print(custom_badges.stderr, end="")
         raise SystemExit("Custom Vehicle Badges contract failed")
 
+    lssm_audit = subprocess.run(["python3", str(LSSM_COMPATIBILITY_AUDIT)], cwd=ROOT, text=True, capture_output=True)
+    if lssm_audit.stdout:
+        print(lssm_audit.stdout, end="")
+    if lssm_audit.returncode != 0:
+        if lssm_audit.stderr:
+            print(lssm_audit.stderr, end="")
+        raise SystemExit("LSSM compatibility audit failed")
+
     required_markers = [
         "missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'",
         "missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style'",
@@ -69,6 +78,8 @@ def main() -> int:
         "function missionRequirementsOverallState(rows, unresolved)",
         "function missionRequirementsLssmActive(candidate, source)",
         "function missionRequirementsCollectUnits(candidate, mode)",
+        "MISSION_REQUIREMENTS_TRACTIVE_TYPES",
+        "missionRequirementsProgressValue(candidate, requirement.definition.bar, 'missing')",
         "function missionRequirementsOperationalSelectors(mode)",
         "function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate))",
         "function missionRequirementsOperationalCanonicalStateContainer(element, mode)",
@@ -145,6 +156,7 @@ def main() -> int:
     assert source.count("missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements'") == 1
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
     assert "v4.lss-manager.de" not in source
+    assert "const rowText = missionRequirementsCapabilityLabel" not in source, "whole-row captions must not prove personnel training"
     assert "LSS-Manager" not in source
     aliases_seen = set()
     for group_name in ("vehicleRequirements", "staffRequirements"):

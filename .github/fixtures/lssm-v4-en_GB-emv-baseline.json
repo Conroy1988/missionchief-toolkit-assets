@@ -1,0 +1,1038 @@
+{
+  "schemaVersion": 1,
+  "locale": "en_GB",
+  "pinnedCommit": "4f731e1d6d009cbf2129530fb31d10177b21a52a",
+  "files": {
+    "catalogue": {
+      "path": "src/modules/extendedCallWindow/i18n/en_GB.json",
+      "sha256": "ead0cb0e7f215ab843496d65ff90209044c736a08eeed6d5e19a312d775b5c8f"
+    },
+    "requirements": {
+      "path": "src/modules/extendedCallWindow/assets/emv/getMissingRequirements.ts",
+      "sha256": "8739f5216804a18c6d17da93b5c83d2acf008846f36cf40bdb22419147243b77"
+    },
+    "selection": {
+      "path": "src/modules/extendedCallWindow/assets/emv/getVehicleListObserveHandler.ts",
+      "sha256": "7bb529382c1cf11bee2f4bb88368c1b1820075ad3fb947c5a6018e519b7d0809"
+    },
+    "vehicles": {
+      "path": "src/i18n/en_GB/vehicles.ts",
+      "sha256": "76dac4116b0c8b85d73eb879ed9521c2acdad787360a174cddfedee2d9c96cd1"
+    }
+  },
+  "vehicleRequirements": [
+    {
+      "texts": [
+        "Fire engine",
+        "Fire engines"
+      ],
+      "vehicles": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Fire Engine or RIV",
+        "Fire Engines or RIVs"
+      ],
+      "vehicles": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        76
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Aerial Appliance Truck",
+        "Aerial Appliance Trucks"
+      ],
+      "vehicles": [
+        2,
+        17
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Aerial Appliance Truck or Rescue Stairs",
+        "Aerial Appliance Trucks or Rescue Stairs"
+      ],
+      "vehicles": [
+        2,
+        17,
+        78
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Fire Officer",
+        "Fire Officers"
+      ],
+      "vehicles": [
+        3,
+        15,
+        44,
+        77
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Rescue Support Unit or Rescue Pump",
+        "Rescue Support Units or Rescue Pumps"
+      ],
+      "vehicles": [
+        4,
+        16,
+        38,
+        43
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Fire engine, Rescue Support Vehicle or Aerial Appliance Truck",
+        "Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"
+      ],
+      "vehicles": [
+        0,
+        1,
+        2,
+        4,
+        16,
+        17,
+        26,
+        37,
+        38,
+        43,
+        47
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Fire engine or Rescue Support Vehicle",
+        "Fire engines or Rescue Support Vehicles"
+      ],
+      "vehicles": [
+        0,
+        1,
+        4,
+        16,
+        17,
+        26,
+        37,
+        38,
+        43,
+        47
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "BASU",
+        "BASUs"
+      ],
+      "vehicles": [
+        14,
+        39,
+        46,
+        49
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Water Carrier",
+        "Water Carriers"
+      ],
+      "vehicles": [
+        6,
+        26,
+        36,
+        41,
+        50
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Drone",
+        "Drones"
+      ],
+      "vehicles": [
+        89,
+        90,
+        91
+      ],
+      "equipment": [
+        "drone"
+      ],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Operational Support Van, Trailer or Personal SAR Vehicle"
+      ],
+      "vehicles": [
+        86,
+        87,
+        92
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Control Van",
+        "Control Vans"
+      ],
+      "vehicles": [
+        85
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "ICCU or Ambulance Control Unit",
+        "ICCU or Ambulance Control Units"
+      ],
+      "vehicles": [
+        15,
+        31,
+        44,
+        77
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "HazMat Unit or CBRN Vehicle",
+        "HazMat Units or CBRN Vehicles"
+      ],
+      "vehicles": [
+        7,
+        32,
+        39,
+        48,
+        49
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Ambulance",
+        "Ambulances"
+      ],
+      "vehicles": [
+        5
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Police car",
+        "Police cars"
+      ],
+      "vehicles": [
+        8,
+        12,
+        13,
+        19,
+        24,
+        25,
+        51,
+        52,
+        56,
+        82,
+        116
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Police Car or Armed Response Vehicle (ARV)",
+        "Police Cars or Armed Response Vehicles (ARVs)"
+      ],
+      "vehicles": [
+        8,
+        12,
+        13,
+        19,
+        24,
+        25,
+        51,
+        52,
+        56,
+        82,
+        116
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "HEMS"
+      ],
+      "vehicles": [
+        9
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Policehelicopter",
+        "Policehelicopters"
+      ],
+      "vehicles": [
+        11
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Armed Response"
+      ],
+      "vehicles": [
+        13,
+        25,
+        52,
+        56,
+        82
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Dog Support Unit (DSU)",
+        "Dog Support Units (DSUs)"
+      ],
+      "vehicles": [
+        12,
+        53
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Operational Team Leader",
+        "Operational Team Leaders"
+      ],
+      "vehicles": [
+        20,
+        31,
+        34
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Traffic Car",
+        "Traffic Cars"
+      ],
+      "vehicles": [
+        24,
+        25
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "ATV Carrier",
+        "ATV Carriers"
+      ],
+      "vehicles": [
+        30
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Primary Response Vehicle",
+        "Primary Response Vehicles"
+      ],
+      "vehicles": [
+        27
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Secondary Response Vehicle",
+        "Secondary Response Vehicles"
+      ],
+      "vehicles": [
+        28
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Welfare Vehicle",
+        "Welfare Vehicles"
+      ],
+      "vehicles": [
+        29,
+        39,
+        45,
+        49,
+        115
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Ambulance Officer",
+        "Ambulance Officers"
+      ],
+      "vehicles": [
+        34
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Foam Unit",
+        "Foam Units"
+      ],
+      "vehicles": [
+        35,
+        36,
+        37,
+        38,
+        42,
+        75
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Mass Casualty Equipment"
+      ],
+      "vehicles": [
+        33
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Mounted Unit",
+        "Mounted Units"
+      ],
+      "vehicles": [
+        55
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "4x4 Vehicle",
+        "4x4 Vehicles"
+      ],
+      "vehicles": [
+        66,
+        73,
+        93
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Coastguard Rope Rescue Unit",
+        "Coastguard Rope Rescue Units"
+      ],
+      "vehicles": [
+        59
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Flood Rescue Unit",
+        "Flood Rescue Units"
+      ],
+      "vehicles": [
+        61
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "CRV",
+        "CRVs"
+      ],
+      "vehicles": [
+        57,
+        58,
+        59
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Coastguard Commander",
+        "Coastguard Commanders"
+      ],
+      "vehicles": [
+        60
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Boat Trailer or Inland Rescue Boat",
+        "Boat Trailers or Inland Rescue Boats"
+      ],
+      "vehicles": [
+        67,
+        74
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "ILB or ALB",
+        "ILBs or ALBs"
+      ],
+      "vehicles": [
+        68,
+        69
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "ILB",
+        "ILBs"
+      ],
+      "vehicles": [
+        68,
+        69
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Coastguard Rescue Helicopter",
+        "Coastguard Rescue Helicopters"
+      ],
+      "vehicles": [
+        64,
+        65
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "ALB",
+        "ALBs"
+      ],
+      "vehicles": [
+        69
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Mud Decontamination Unit",
+        "Mud Decontamination Units"
+      ],
+      "vehicles": [
+        62
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Support Unit",
+        "Support Units"
+      ],
+      "vehicles": [
+        63
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Rescue Watercraft (Trailer)",
+        "Rescue Watercraft (Trailers)"
+      ],
+      "vehicles": [
+        70
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Coastguard Mud Rescue Unit",
+        "Coastguard Mud Rescue Units"
+      ],
+      "vehicles": [
+        58
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Hovercraft (trailer)",
+        "hovercrafts (trailer)"
+      ],
+      "vehicles": [
+        71
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Major Foam Tender",
+        "Major Foam Tenders"
+      ],
+      "vehicles": [
+        75
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Rescue Stair",
+        "Rescue Stairs"
+      ],
+      "vehicles": [
+        78,
+        2,
+        17
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Airfield Firefighting Command Vehicle",
+        "Airfield Firefighting Command Vehicles"
+      ],
+      "vehicles": [
+        77
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Airfield Operations Vehicle",
+        "Airfield Operations Vehicles"
+      ],
+      "vehicles": [
+        79,
+        80
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "RIV",
+        "RIVs"
+      ],
+      "vehicles": [
+        76
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Medical equipment trailer",
+        "Medical equipment trailers"
+      ],
+      "vehicles": [
+        81
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Airfield Operations Supervisor",
+        "Airfield Operations Supervisors"
+      ],
+      "vehicles": [
+        80
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Armed Cell Van",
+        "Armed Cell Vans"
+      ],
+      "vehicles": [
+        82
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Medical cycle responder",
+        "Medical cycle responders"
+      ],
+      "vehicles": [
+        83
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Community Midwife",
+        "Community Midwifes"
+      ],
+      "vehicles": [
+        95
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Specialist Paramedic RRV",
+        "Specialist Paramedic RRVs"
+      ],
+      "vehicles": [
+        96
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Rescue Dog",
+        "Rescue Dogs"
+      ],
+      "vehicles": [
+        101,
+        102
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Mountain Rescue 4x4"
+      ],
+      "vehicles": [
+        99
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Road Rail Unit"
+      ],
+      "vehicles": [
+        107
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "EIU"
+      ],
+      "vehicles": [
+        108
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "EOD Commander",
+        "EOD Commanders"
+      ],
+      "vehicles": [
+        109
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "EOD Response Vehicle",
+        "EOD Response Vehicles"
+      ],
+      "vehicles": [
+        110
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "EOD Medium Equipment Van",
+        "EOD Medium Equipment Vans"
+      ],
+      "vehicles": [
+        111
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "EOD Heavy Equipment Vehicle",
+        "EOD Heavy Equipment Vehicles"
+      ],
+      "vehicles": [
+        112
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Marine EOD Response Vehicle",
+        "Marine EOD Response Vehicles"
+      ],
+      "vehicles": [
+        113
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "Marine EOD Equipment Van",
+        "Marine EOD Equipment Vans"
+      ],
+      "vehicles": [
+        114
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    }
+  ],
+  "staffRequirements": [
+    {
+      "texts": [
+        "Armed Response Personnel (In Armed Vehicles)"
+      ],
+      "vehicles": [
+        13,
+        25,
+        52,
+        56,
+        82
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    },
+    {
+      "texts": [
+        "more firefighter",
+        "more firefighters"
+      ],
+      "vehicles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        26,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {}
+    }
+  ],
+  "tractiveVehicles": {
+    "84": [
+      0,
+      1,
+      4
+    ],
+    "87": [
+      85,
+      86,
+      89,
+      94
+    ],
+    "88": [
+      85,
+      86,
+      89,
+      94
+    ]
+  },
+  "contracts": {
+    "requirementSelectors": [
+      "[data-requirement-type=\"vehicles\"]",
+      "[data-requirement-type=\"personnel\"]",
+      "[data-requirement-type=\"other\"]"
+    ],
+    "selectedRoots": [
+      "vehicle_show_table_body_all",
+      "occupied"
+    ],
+    "respondingRoot": "#mission_vehicle_driving tbody tr",
+    "selectedAttributes": [
+      "vehicle_type_id",
+      "value",
+      "data-equipment-types",
+      "tractive_vehicle_id",
+      "tractive_random"
+    ],
+    "nestedEquipment": "[data-equipment-type]",
+    "resourceMetrics": [
+      "driving",
+      "missing",
+      "selected"
+    ]
+  }
+}

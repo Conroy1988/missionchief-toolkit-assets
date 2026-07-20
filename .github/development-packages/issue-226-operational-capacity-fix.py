@@ -135,7 +135,7 @@ issue226Candidate.root.closestMap.set(issue226WindowSelector, issue226Window);
 issue226Candidate.source.closestMap.set(issue226WindowSelector, issue226Window);
 issue226Window.appendChild(issue226Candidate.root);
 const issue226PoliceDefinition = api.definitions.find(definition => definition.key === 'police-car');
-const issue226Parsed = { requirements: [{ key: 'police-car', requirement: 'Police Car', missing: 1, group: 'vehicles', definition: issue226PoliceDefinition }], unresolved: [] };
+const issue226Parsed = { requirements: [{ key: 'police-car', requirement: 'Police Car', missing: 1, group: 'vehicles', definition: issue226PoliceDefinition, statedRequirement: false, catalogueDerived: true, catalogueProbability: 100 }], unresolved: [] };
 const issue226Catalogue = { requirements: [{ key: 'police-car', baseline: 1, missing: 1 }] };
 
 const issue226RespondingBody = new FakeElement('tbody', issue226Doc);

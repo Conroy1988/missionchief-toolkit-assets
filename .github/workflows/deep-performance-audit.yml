@@ -5,7 +5,9 @@ on:
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/scripts/deep_performance_audit.mjs"
+      - ".github/scripts/reconcile_deep_performance_audit.mjs"
       - ".github/scripts/test_deep_performance_audit.mjs"
+      - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
       - "docs/audits/deep-performance-audit-v4.20.17.md"
   push:
@@ -14,7 +16,9 @@ on:
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/scripts/deep_performance_audit.mjs"
+      - ".github/scripts/reconcile_deep_performance_audit.mjs"
       - ".github/scripts/test_deep_performance_audit.mjs"
+      - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
       - "docs/audits/deep-performance-audit-v4.20.17.md"
   workflow_dispatch:
@@ -72,8 +76,11 @@ jobs:
       - name: Run deep-audit fixtures
         run: |
           node --check .github/scripts/deep_performance_audit.mjs
+          node --check .github/scripts/reconcile_deep_performance_audit.mjs
           node --check .github/scripts/test_deep_performance_audit.mjs
+          node --check .github/scripts/test_reconcile_deep_performance_audit.mjs
           node .github/scripts/test_deep_performance_audit.mjs
+          node .github/scripts/test_reconcile_deep_performance_audit.mjs
 
       - name: Generate deep performance inventory
         run: |
@@ -81,6 +88,19 @@ jobs:
             --source src/MissionChief_Map_Command_Toolkit.user.js \
             --json-output deep-performance-audit.json \
             --markdown-output deep-performance-audit.md
+          node .github/scripts/reconcile_deep_performance_audit.mjs \
+            deep-performance-audit.json \
+            deep-performance-audit.md
+
+      - name: Cross-check trusted v4.20.17 observer baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .baselineCrossCheck.measuredMutationObserverConstructions == .baselineCrossCheck.expectedMutationObserverConstructions and
+            .baselineCrossCheck.measuredResizeObserverConstructions == .baselineCrossCheck.expectedResizeObserverConstructions and
+            .baselineCrossCheck.measuredBroadSubtreeObservers == .baselineCrossCheck.expectedBroadSubtreeObservers
+          ' deep-performance-audit.json > /dev/null
 
       - name: Publish audit summary
         run: cat deep-performance-audit.md >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,28 @@
+RETURN CODE: 1
+
+STDOUT:
+
+
+STDERR:
+Traceback (most recent call last):
+  File "/tmp/mcms-issue-279-v5-aulq58k9/issue-279-root-attribute-write-suppression.py", line 168, in <module>
+    main()
+  File "/tmp/mcms-issue-279-v5-aulq58k9/issue-279-root-attribute-write-suppression.py", line 71, in main
+    source = SOURCE.read_text(encoding="utf-8")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/src/MissionChief_Map_Command_Toolkit.user.js'
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-279-root-attribute-write-suppression-v5.py", line 61, in <module>
+    main()
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-279-root-attribute-write-suppression-v5.py", line 54, in main
+    subprocess.run([sys.executable, str(corrected)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '/tmp/mcms-issue-279-v5-aulq58k9/issue-279-root-attribute-write-suppression.py']' returned non-zero exit status 1.
+

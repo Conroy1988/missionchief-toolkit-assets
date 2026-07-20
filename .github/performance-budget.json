@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-19-v4.20.3",
-  "rationale": "Owner-authorized 50% expansion of the absolute source-byte envelope from 2,000,000 to 3,000,000 bytes after the v4.20.3 Mission Matrix correctness hotfix exceeded the previous static ceiling by 2,024 bytes. All line, CSS, runtime-workload and relative regression limits remain unchanged.",
+  "revision": "2026-07-20-v4.20.10-runtime-audit",
+  "rationale": "Issue #247 measurement-only reconciliation. Preserve the existing source, CSS and direct-browser primitive ceilings while adding explicit v4.20.10 baselines for lifecycle-managed wrapper call sites, alias-resolved observer constructions, broad subtree observation and DOM/network workload indicators. New corrected metrics are intentionally baseline-locked: increases require an explicit reviewed policy change rather than remaining invisible to CI.",
   "requiredSourceFragments": [
     "@run-at       document-start",
     "__MCMS_STARTUP_METRICS__"
@@ -18,7 +18,29 @@
     "request_animation_frame_calls": 20,
     "event_listener_calls": 120,
     "query_selector_calls": 400,
-    "startup_hook_calls": 10
+    "startup_hook_calls": 10,
+    "runtime_interval_calls": 1,
+    "runtime_timeout_calls": 99,
+    "runtime_animation_frame_calls": 14,
+    "runtime_listener_calls": 31,
+    "runtime_observer_track_calls": 15,
+    "runtime_idle_calls": 3,
+    "mutation_observer_constructions": 12,
+    "resize_observer_constructions": 4,
+    "broad_subtree_observers": 10,
+    "document_wide_subtree_observers": 3,
+    "get_element_by_id_calls": 113,
+    "inner_html_writes": 22,
+    "network_request_calls": 4
+  },
+  "absoluteReviewPercent": {
+    "lines": 95,
+    "css_bytes": 85,
+    "css_rule_blocks": 90,
+    "mutation_observer_constructions": 100,
+    "resize_observer_constructions": 100,
+    "broad_subtree_observers": 100,
+    "document_wide_subtree_observers": 100
   },
   "relativeLimits": {
     "bytes": {
@@ -70,6 +92,58 @@
     "startup_hook_calls": {
       "warnDelta": 2,
       "failDelta": 6
+    },
+    "runtime_interval_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "runtime_timeout_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "runtime_animation_frame_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "runtime_listener_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "runtime_observer_track_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "runtime_idle_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "mutation_observer_constructions": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "resize_observer_constructions": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "broad_subtree_observers": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "document_wide_subtree_observers": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "get_element_by_id_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "inner_html_writes": {
+      "warnDelta": 0,
+      "failDelta": 0
+    },
+    "network_request_calls": {
+      "warnDelta": 0,
+      "failDelta": 0
     }
   }
 }

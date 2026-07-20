@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.10'
+        version: '4.20.11'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },

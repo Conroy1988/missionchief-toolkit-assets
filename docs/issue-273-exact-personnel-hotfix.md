@@ -8,3 +8,4 @@ Toolkit v4.20.17 resolves the exact assigned personnel count for each visible Mi
 - Exact capacity is retained through Selected, Responding and On Site deduplication.
 - Level 2 Public Order Officer and generic Police Officers therefore clear only when their real personnel total meets demand.
 - Vehicles that cannot be read retain the reviewed minimum/maximum range rather than being guessed.
+- Regression coverage reproduces the recorded 9 + 9 public-order selection, eleven on-scene police personnel, generic selected police capacity and deselection paths.

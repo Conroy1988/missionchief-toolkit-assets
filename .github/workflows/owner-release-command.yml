@@ -82,16 +82,25 @@ jobs:
           fi
 
           gh issue comment "$ISSUE_NUMBER" --body "Release readiness for Toolkit v${VERSION} is being validated automatically before production dispatch."
-          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          gh workflow run release-readiness-check.yml --ref main -f version="$VERSION"
+          STARTED_AT="$(date -u -d '10 seconds ago' +'%Y-%m-%dT%H:%M:%SZ')"
+          WORKFLOW_PATH="release-readiness-check.yml"
+          RUNS_API="repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/runs?event=workflow_dispatch&per_page=50"
+          PAYLOAD="$(jq -nc --arg version "$VERSION" '{ref:"main",inputs:{version:$version}}')"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/dispatches" --input - <<<"$PAYLOAD"
 
           RUN_ID=""
+          RUN_JSON='{"workflow_runs":[]}'
           for attempt in {1..60}; do
-            RUN_ID="$(gh run list --workflow release-readiness-check.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            RUN_JSON="$(gh api "$RUNS_API")"
+            RUN_ID="$(jq -r --arg started "$STARTED_AT" '.workflow_runs | map(select(.created_at >= $started)) | sort_by(.created_at) | reverse | .[0].id // empty' <<<"$RUN_JSON")"
             [[ -n "$RUN_ID" ]] && break
             sleep 2
           done
-          [[ -n "$RUN_ID" ]] || { echo "::error::The newly dispatched release-readiness run was not found."; exit 1; }
+          if [[ -z "$RUN_ID" ]]; then
+            RECENT_RUNS="$(jq -r '.workflow_runs[:5] | map("id=\(.id), created=\(.created_at), status=\(.status), conclusion=\(.conclusion // \"pending\")") | join("; ")' <<<"$RUN_JSON")"
+            echo "::error::The newly dispatched release-readiness run was not found through the workflow-specific Actions endpoint. Recent runs: ${RECENT_RUNS:-none}"
+            exit 1
+          fi
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
           gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} release readiness is running as Actions run \`${RUN_ID}\`."
           gh run watch "$RUN_ID" --exit-status
@@ -104,16 +113,25 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          gh workflow run release-toolkit.yml --ref main -f version="$VERSION" -f confirmation=RELEASE
+          STARTED_AT="$(date -u -d '10 seconds ago' +'%Y-%m-%dT%H:%M:%SZ')"
+          WORKFLOW_PATH="release-toolkit.yml"
+          RUNS_API="repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/runs?event=workflow_dispatch&per_page=50"
+          PAYLOAD="$(jq -nc --arg version "$VERSION" '{ref:"main",inputs:{version:$version,confirmation:"RELEASE"}}')"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/dispatches" --input - <<<"$PAYLOAD"
 
           RUN_ID=""
+          RUN_JSON='{"workflow_runs":[]}'
           for attempt in {1..30}; do
-            RUN_ID="$(gh run list --workflow release-toolkit.yml --event workflow_dispatch --branch main --limit 20 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            RUN_JSON="$(gh api "$RUNS_API")"
+            RUN_ID="$(jq -r --arg started "$STARTED_AT" '.workflow_runs | map(select(.created_at >= $started)) | sort_by(.created_at) | reverse | .[0].id // empty' <<<"$RUN_JSON")"
             [[ -n "$RUN_ID" ]] && break
             sleep 2
           done
-          [[ -n "$RUN_ID" ]] || { echo "::error::The newly dispatched production release run was not found."; exit 1; }
+          if [[ -z "$RUN_ID" ]]; then
+            RECENT_RUNS="$(jq -r '.workflow_runs[:5] | map("id=\(.id), created=\(.created_at), status=\(.status), conclusion=\(.conclusion // \"pending\")") | join("; ")' <<<"$RUN_JSON")"
+            echo "::error::The newly dispatched production release run was not found through the workflow-specific Actions endpoint. Recent runs: ${RECENT_RUNS:-none}"
+            exit 1
+          fi
           echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
 
       - name: Record release dispatch

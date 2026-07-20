@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.9] - 2026-07-20
+
+### Fixed
+- Restored Mission Requirements Matrix capacity from active **Units Responding** and **Vehicles on Scene** tables when those MissionChief sections are collapsed or relocated within the active mission window.
+- Responding and on-site vehicles now fulfil and hide completed requirement rows exactly as selected vehicles do.
+- Hidden rows return immediately when a unit is cancelled, redirected, removed from scene or no longer satisfies the requirement.
+
+### Safety
+- Visibility is bypassed only for canonical MissionChief operational tables proven to belong to the active mission.
+- Hidden stale lightboxes, mismatched mission IDs, template rows and unrelated operational content remain excluded.
+- On site, Responding and Selected de-duplication and precedence remain unchanged.
+
+### Validation
+- Added deterministic collapsed-table, relocated-lightbox, fulfilled-row, renewed-shortage and stale-mission regression fixtures.
+
 ## [4.20.8] - 2026-07-20
 
 ### Fixed

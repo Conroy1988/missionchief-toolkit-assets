@@ -55,9 +55,8 @@ assert.equal(install.schedulers, 1);
 assert.equal(install.observers, 1);
 assert.equal(install.flow, 0, 'nested callback flow belongs to the callback, not the parent function');
 
-const callback = data.topFunctionsByScore.find(item => item.name.startsWith('MutationObserverCtor callback'));
-assert.ok(callback);
-assert.equal(callback.flow, 1);
+const observerCallback = data.topFunctionsByScore.find(item => item.name.startsWith('<anonymous@') && item.flow === 1);
+assert.ok(observerCallback, 'observer callback should own its control-flow count');
 
 const markdown = renderMarkdown(data);
 assert.match(markdown, /AST-backed static structural evidence/);

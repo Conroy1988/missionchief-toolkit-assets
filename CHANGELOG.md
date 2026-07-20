@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.18] - 2026-07-21
+
+### Performance
+- Root Toolkit state attributes now mutate only when their string value changes, eliminating 22 redundant DOM mutations from unchanged `updateUI()` passes while preserving every calculation and output value.
+
+### Validation
+- Added fixture-backed first-write, unchanged-repeat, changed-state, external-repair, layout-orientation and helper return-value regressions against the extracted production functions.
+
 ## [4.20.17] - 2026-07-20
 
 ### Fixed

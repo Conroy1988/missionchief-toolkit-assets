@@ -244,7 +244,7 @@ assert "workflow_call:" in release_text and "workflow_dispatch:" in release_text
 assert "DISCORD_RELEASE_WEBHOOK:" in readiness_text and "MIGRATION_REPO_TOKEN:" in readiness_text
 assert "DISCORD_RELEASE_WEBHOOK:" in release_text and "MIGRATION_REPO_TOKEN:" in release_text
 
-subprocess.run([sys.executable, ".github/scripts/audit_action_security.py"], cwd=ROOT, check=True)
+subprocess.run([sys.executable, ".github/scripts/audit_actions_security.py"], cwd=ROOT, check=True)
 subprocess.run([sys.executable, ".github/scripts/validate_userscript.py"], cwd=ROOT, check=True)
 subprocess.run(["node", "--check", "src/MissionChief_Map_Command_Toolkit.user.js"], cwd=ROOT, check=True)
 subprocess.run(["cmp", "--silent", "dist/MissionChief_Map_Command_Toolkit.user.js", "dist/MissionChief_Map_Command_Toolkit.txt"], cwd=ROOT, check=True)

@@ -71,7 +71,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: \`${GITHUB_RUN_ID}\`."
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Toolkit v${VERSION} passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: \`${GITHUB_RUN_ID}\`."
 
   readiness:
     name: Run mandatory release readiness
@@ -116,7 +116,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} completed mandatory readiness and the guarded production release as native reusable workflows in Actions run \`${GITHUB_RUN_ID}\`. GitHub Release, Greasy Fork verification, private backup, Discord publication, dashboard reconciliation, stable manifest publication and documentation deployment are owned by the completed production workflow."
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Toolkit v${VERSION} completed mandatory readiness and the guarded production release as native reusable workflows in Actions run \`${GITHUB_RUN_ID}\`. GitHub Release, Greasy Fork verification, private backup, Discord publication, dashboard reconciliation, stable manifest publication and documentation deployment are owned by the completed production workflow."
 
       - name: Record guarded failure
         if: needs.readiness.result != 'success' || needs.production.result != 'success'
@@ -128,4 +128,4 @@ jobs:
           PRODUCTION_RESULT: ${{ needs.production.result }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} release stopped fail-closed. Readiness result: \`${READINESS_RESULT}\`; production result: \`${PRODUCTION_RESULT}\`. No safeguard was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Toolkit v${VERSION} release stopped fail-closed. Readiness result: \`${READINESS_RESULT}\`; production result: \`${PRODUCTION_RESULT}\`. No safeguard was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

@@ -14,7 +14,7 @@
     ".github/workflows/github-pages.yml": ["id-token", "pages"],
     ".github/workflows/greasyfork-release-monitor.yml": ["contents"],
     ".github/workflows/import-canonical-userscript.yml": ["contents"],
-    ".github/workflows/owner-release-command.yml": ["actions", "issues"],
+    ".github/workflows/owner-release-command.yml": ["actions", "contents", "issues"],
     ".github/workflows/pages-production-monitor.yml": ["issues"],
     ".github/workflows/prepare-release-rollback.yml": ["contents", "issues", "pull-requests"],
     ".github/workflows/publish-update-manifest.yml": ["contents"],

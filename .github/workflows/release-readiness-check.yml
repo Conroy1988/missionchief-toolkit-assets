@@ -1,6 +1,17 @@
 name: Release Readiness Check
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Toolkit version to validate without publishing"
+        required: true
+        type: string
+    secrets:
+      DISCORD_RELEASE_WEBHOOK:
+        required: true
+      MIGRATION_REPO_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       version:

@@ -1,6 +1,21 @@
 name: Release Toolkit
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Validated Toolkit version to publish"
+        required: true
+        type: string
+      confirmation:
+        description: "Type RELEASE to confirm a public release"
+        required: true
+        type: string
+    secrets:
+      DISCORD_RELEASE_WEBHOOK:
+        required: true
+      MIGRATION_REPO_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       version:

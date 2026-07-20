@@ -6,7 +6,7 @@ on:
 
 permissions:
   actions: write
-  contents: read
+  contents: write
   issues: write
 
 concurrency:
@@ -14,13 +14,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Prepare and dispatch verified Toolkit release
+  authorize:
+    name: Authorize and validate owner release command
     if: >-
       github.event.issue.pull_request == null &&
       startsWith(github.event.comment.body, '/release-toolkit ')
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.command.outputs.version }}
 
     steps:
       - name: Authorize owner command
@@ -62,95 +64,68 @@ jobs:
           test "$(jq -r '.distributionCandidate.version' status/release-dashboard.json)" = "$VERSION"
           test "$(jq -r '.distributionCandidate.state' status/release-dashboard.json)" = "validated"
 
-      - name: Ensure readiness belongs to the requested version
-        id: readiness
+      - name: Record guarded release start
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.command.outputs.version }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          set -euo pipefail
-          RECORDED_VERSION="$(jq -r '.releaseReadiness.version // empty' status/release-dashboard.json)"
-          RECORDED_STATE="$(jq -r '.releaseReadiness.state // empty' status/release-dashboard.json)"
-          SUMMARY_STATE="$(jq -r '.status.releaseReadiness // empty' status/release-dashboard.json)"
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: \`${GITHUB_RUN_ID}\`."
 
-          if [[ "$RECORDED_VERSION" == "$VERSION" && "$RECORDED_STATE" == "passed" && "$SUMMARY_STATE" == "passed" ]]; then
-            echo "Current-version release readiness is already recorded."
-            echo "run_id=already-verified" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+  readiness:
+    name: Run mandatory release readiness
+    needs: authorize
+    permissions:
+      actions: write
+      contents: read
+    uses: ./.github/workflows/release-readiness-check.yml
+    with:
+      version: ${{ needs.authorize.outputs.version }}
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
 
-          gh issue comment "$ISSUE_NUMBER" --body "Release readiness for Toolkit v${VERSION} is being validated automatically before production dispatch."
-          STARTED_AT="$(date -u -d '10 seconds ago' +'%Y-%m-%dT%H:%M:%SZ')"
-          WORKFLOW_PATH="release-readiness-check.yml"
-          RUNS_API="repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/runs?event=workflow_dispatch&per_page=50"
-          PAYLOAD="$(jq -nc --arg version "$VERSION" '{ref:"main",inputs:{version:$version}}')"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/dispatches" --input - <<<"$PAYLOAD"
+  production:
+    name: Run guarded production release
+    needs: [authorize, readiness]
+    permissions:
+      actions: write
+      contents: write
+    uses: ./.github/workflows/release-toolkit.yml
+    with:
+      version: ${{ needs.authorize.outputs.version }}
+      confirmation: RELEASE
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
 
-          RUN_ID=""
-          RUN_JSON='{"workflow_runs":[]}'
-          for attempt in {1..60}; do
-            RUN_JSON="$(gh api "$RUNS_API")"
-            RUN_ID="$(jq -r --arg started "$STARTED_AT" '.workflow_runs | map(select(.created_at >= $started)) | sort_by(.created_at) | reverse | .[0].id // empty' <<<"$RUN_JSON")"
-            [[ -n "$RUN_ID" ]] && break
-            sleep 2
-          done
-          if [[ -z "$RUN_ID" ]]; then
-            RECENT_RUNS="$(jq -r '.workflow_runs[:5] | map("id=\(.id), created=\(.created_at), status=\(.status), conclusion=\(.conclusion // \"pending\")") | join("; ")' <<<"$RUN_JSON")"
-            echo "::error::The newly dispatched release-readiness run was not found through the workflow-specific Actions endpoint. Recent runs: ${RECENT_RUNS:-none}"
-            exit 1
-          fi
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} release readiness is running as Actions run \`${RUN_ID}\`."
-          gh run watch "$RUN_ID" --exit-status
+  report:
+    name: Record owner release result
+    needs: [authorize, readiness, production]
+    if: always() && needs.authorize.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
-      - name: Dispatch production release
-        id: dispatch
+    steps:
+      - name: Record verified completion
+        if: needs.readiness.result == 'success' && needs.production.result == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.command.outputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          STARTED_AT="$(date -u -d '10 seconds ago' +'%Y-%m-%dT%H:%M:%SZ')"
-          WORKFLOW_PATH="release-toolkit.yml"
-          RUNS_API="repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/runs?event=workflow_dispatch&per_page=50"
-          PAYLOAD="$(jq -nc --arg version "$VERSION" '{ref:"main",inputs:{version:$version,confirmation:"RELEASE"}}')"
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/workflows/${WORKFLOW_PATH}/dispatches" --input - <<<"$PAYLOAD"
-
-          RUN_ID=""
-          RUN_JSON='{"workflow_runs":[]}'
-          for attempt in {1..30}; do
-            RUN_JSON="$(gh api "$RUNS_API")"
-            RUN_ID="$(jq -r --arg started "$STARTED_AT" '.workflow_runs | map(select(.created_at >= $started)) | sort_by(.created_at) | reverse | .[0].id // empty' <<<"$RUN_JSON")"
-            [[ -n "$RUN_ID" ]] && break
-            sleep 2
-          done
-          if [[ -z "$RUN_ID" ]]; then
-            RECENT_RUNS="$(jq -r '.workflow_runs[:5] | map("id=\(.id), created=\(.created_at), status=\(.status), conclusion=\(.conclusion // \"pending\")") | join("; ")' <<<"$RUN_JSON")"
-            echo "::error::The newly dispatched production release run was not found through the workflow-specific Actions endpoint. Recent runs: ${RECENT_RUNS:-none}"
-            exit 1
-          fi
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-
-      - name: Record release dispatch
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.command.outputs.version }}
+          VERSION: ${{ needs.authorize.outputs.version }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
-          READINESS_RUN_ID: ${{ steps.readiness.outputs.run_id }}
-          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Production release v${VERSION} has been authorized after current-version readiness and dispatched as Actions run \`${RUN_ID}\`. Readiness reference: \`${READINESS_RUN_ID}\`. The permanent production workflow now owns GitHub Release publication, Greasy Fork verification, private backup, Discord announcement and dashboard reconciliation."
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} completed mandatory readiness and the guarded production release as native reusable workflows in Actions run \`${GITHUB_RUN_ID}\`. GitHub Release, Greasy Fork verification, private backup, Discord publication, dashboard reconciliation, stable manifest publication and documentation deployment are owned by the completed production workflow."
 
       - name: Record guarded failure
-        if: failure()
+        if: needs.readiness.result != 'success' || needs.production.result != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.command.outputs.version }}
+          VERSION: ${{ needs.authorize.outputs.version }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          READINESS_RESULT: ${{ needs.readiness.result }}
+          PRODUCTION_RESULT: ${{ needs.production.result }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION:-unknown} release preparation stopped at a guarded check. No publication safeguard was bypassed. Command diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment "$ISSUE_NUMBER" --body "Toolkit v${VERSION} release stopped fail-closed. Readiness result: \`${READINESS_RESULT}\`; production result: \`${PRODUCTION_RESULT}\`. No safeguard was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

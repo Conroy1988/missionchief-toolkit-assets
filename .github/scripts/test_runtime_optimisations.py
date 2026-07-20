@@ -28,6 +28,18 @@ def main() -> int:
     assert "autoLoadAllVehiclesElementVisible(autoLoadAllVehiclesMissionRoot)" in auto_load
     assert "queryRoot.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR)" in auto_load
     assert "document.querySelectorAll(AUTO_LOAD_ALL_VEHICLES_SELECTOR)" not in auto_load
+
+
+    alliance_watcher = section(
+        text,
+        "function installAllianceBuildingsContextWatcherEarly",
+        "const earlyAllianceBuildingsPage",
+    )
+    assert "mutation.addedNodes" in alliance_watcher
+    assert "mutation.removedNodes" in alliance_watcher
+    assert "observer.observe(root, { childList: true, subtree: true });" in alliance_watcher
+    assert "attributes: true" not in alliance_watcher
+    assert "attributeFilter" not in alliance_watcher
     print("Runtime optimisation invariants passed.")
     return 0
 

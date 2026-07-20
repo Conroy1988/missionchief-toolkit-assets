@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.11] - 2026-07-20
+
+### Performance
+- Removed redundant presentation-attribute notifications from the document-wide early Alliance Buildings page watcher.
+- Child additions and removals, relevant-element matching, navigation detection, map suppression and repair behaviour remain unchanged.
+
+### Validation
+- Added an exact production-source invariant proving the watcher remains child-list based and no longer subscribes to attribute-only mutation records.
+
 ## [4.20.10] - 2026-07-20
 
 ### Fixed

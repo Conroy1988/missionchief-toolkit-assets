@@ -19,7 +19,7 @@ const report = {
     { options: '{ childList: true, subtree: true }' },
     { options: '{ childList: true, subtree: false }' }
   ],
-  findings: [{ category: 'observer-scope', message: 'old' }],
+  findings: [{ risk: 'medium', category: 'observer-scope', message: 'old' }],
   parser: 'acorn',
   source: { version: '4.20.17', sha256: 'fixture', bytes: 1, lines: 1 },
   topFunctionsByScore: [],

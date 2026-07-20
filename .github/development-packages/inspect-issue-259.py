@@ -7,33 +7,28 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 
 
-def function_slice(source: str, name: str) -> str:
-    marker = f"    function {name}("
-    start = source.index(marker)
-    next_function = source.find("\n    function ", start + len(marker))
-    next_section = source.find("\n    const ", start + len(marker))
-    candidates = [value for value in (next_function, next_section) if value > start]
-    end = min(candidates) if candidates else min(len(source), start + 12000)
-    return source[start:end].rstrip()
-
-
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    names = [
+    markers = [
         "missionRequirementsEquipmentTypes",
         "missionRequirementsStaffCapacity",
         "missionRequirementsCollectUnits",
         "missionRequirementsAggregate",
         "missionRequirementsResolve",
+        "water-resource",
+        "tractive_vehicle_id",
+        "data-equipment-type",
+        "max_personnel_override",
+        "mission_water_bar_",
     ]
-    sections = ["## Issue #259 disposable source inspection", "", "No branch or production files were changed by this inspection."]
-    for name in names:
-        sections.extend(["", f"### `{name}`", "```javascript", function_slice(source, name)[:9000], "```"])
-    resource_pos = source.index("water-resource")
-    sections.extend(["", "### `water-resource` definition context", "```javascript", source[max(0, resource_pos - 900):resource_pos + 1800], "```"])
+    sections = ["## Issue #259 marker inspection", "", "No branch or production files were changed."]
+    for marker in markers:
+        pos = source.find(marker)
+        sample = "NOT FOUND" if pos < 0 else source[max(0, pos - 240):pos + 900]
+        sections.extend(["", f"### `{marker}` — position `{pos}`", "```text", sample, "```"])
     body_file = ROOT / ".issue-259-inspection.md"
     body_file.write_text("\n".join(sections), encoding="utf-8")
-    subprocess.run(["gh", "issue", "comment", "259", "--repo", os.environ["GITHUB_REPOSITORY"], "--body-file", str(body_file)], check=True)
+    subprocess.run(["gh", "issue", "comment", "259", "--repo", os.environ.get("GITHUB_REPOSITORY", "Conroy1988/missionchief-toolkit-assets"), "--body-file", str(body_file)], check=True)
     body_file.unlink()
 
 

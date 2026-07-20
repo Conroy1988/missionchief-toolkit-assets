@@ -4,8 +4,8 @@ on:
   pull_request:
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/scripts/deep_performance_audit.py"
-      - ".github/scripts/test_deep_performance_audit.py"
+      - ".github/scripts/deep_performance_audit.mjs"
+      - ".github/scripts/test_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
       - "docs/audits/deep-performance-audit-v4.20.17.md"
   push:
@@ -13,8 +13,8 @@ on:
       - main
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/scripts/deep_performance_audit.py"
-      - ".github/scripts/test_deep_performance_audit.py"
+      - ".github/scripts/deep_performance_audit.mjs"
+      - ".github/scripts/test_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
       - "docs/audits/deep-performance-audit-v4.20.17.md"
   workflow_dispatch:
@@ -52,14 +52,32 @@ jobs:
             exit 1
           fi
 
+      - name: Restore Acorn package cache
+        id: acorn-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
+
+      - name: Install exact JavaScript parser
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Save Acorn package cache
+        if: steps.acorn-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
+
       - name: Run deep-audit fixtures
         run: |
-          python3 -m py_compile .github/scripts/deep_performance_audit.py
-          python3 .github/scripts/test_deep_performance_audit.py
+          node --check .github/scripts/deep_performance_audit.mjs
+          node --check .github/scripts/test_deep_performance_audit.mjs
+          node .github/scripts/test_deep_performance_audit.mjs
 
       - name: Generate deep performance inventory
         run: |
-          python3 .github/scripts/deep_performance_audit.py \
+          node .github/scripts/deep_performance_audit.mjs \
             --source src/MissionChief_Map_Command_Toolkit.user.js \
             --json-output deep-performance-audit.json \
             --markdown-output deep-performance-audit.md

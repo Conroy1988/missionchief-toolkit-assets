@@ -7,5 +7,6 @@ Toolkit v4.20.14 separates operational labels from provenance and mission-genera
 - `Required Personnel Available` is a `spawn-prerequisite` and cannot enter rows, unresolved output, totals or panel colour.
 - `Other information → Required Personnel` is operational and produces normal trained-personnel rows.
 - Level 2 Public Order Officer and Police Sergeant use explicit MissionChief training evidence for live reconciliation.
+- Training-defined capabilities satisfy the repository contract without requiring a fabricated vehicle-type mapping.
 - Unsupported operational personnel remain visible without a `Mission info:` prefix.
 - Precondition station, extension and organisational unlock metadata remains outside the operational model.

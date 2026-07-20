@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.11'
+        version: '4.20.12'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -241,6 +241,7 @@ this.__mcmsRequirements = {
     operationalSelectors: missionRequirementsOperationalSelectors,
     operationalActive: missionRequirementsOperationalElementActive,
     cataloguePersonnel: missionRequirementsCataloguePersonnelRequirements,
+    catalogueRequirement: missionRequirementsCatalogueRequirement,
     vehicleId: missionRequirementsVehicleId,
     vehicleType: missionRequirementsVehicleType,
     collectUnits: missionRequirementsCollectUnits,
@@ -1638,6 +1639,113 @@ const pendingRecord = api.records.get(pendingCandidate.source);
 assert(pendingRecord.panel.innerHTML.includes('Requirements for this Mission could not be loaded'), 'unavailable authority renders unresolved amber content');
 assert(!pendingRecord.panel.innerHTML.includes('No outstanding requirements reported by MissionChief'), 'empty live text cannot overwrite pending or failed authoritative source');
 api.clear();
+}
+
+
+// Issue #257: official combined Mission Info labels use capability unions.
+{
+const combinedCapabilities = fixture.combinedVehicleCapabilities;
+for (const capability of combinedCapabilities) {
+    const definition = api.definitions.find(item => item.key === capability.key);
+    assert(definition, `${capability.key}: runtime definition exists`);
+    assert.deepStrictEqual(
+        Array.from(definition.types || []).sort((a, b) => a - b),
+        Array.from(capability.types || []).sort((a, b) => a - b),
+        `${capability.key}: accepted vehicle types`
+    );
+    assert.deepStrictEqual(
+        Array.from(definition.equipment || []).sort(),
+        Array.from(capability.equipment || []).sort(),
+        `${capability.key}: accepted equipment`
+    );
+    for (const alias of capability.aliases) {
+        const parsed = api.parseText(`1 ${alias}`, 'vehicles');
+        assert.strictEqual(parsed.remaining, '', `${capability.key}: parser consumes ${alias}`);
+        assert.strictEqual(parsed.requirements.length, 1, `${capability.key}: parser creates one row for ${alias}`);
+        assert.strictEqual(parsed.requirements[0].key, capability.key, `${capability.key}: parser selects the capability union for ${alias}`);
+        const catalogueRequirement = api.catalogueRequirement(alias, '1');
+        assert(catalogueRequirement, `${capability.key}: catalogue requirement exists for ${alias}`);
+        assert.strictEqual(catalogueRequirement.key, capability.key, `${capability.key}: catalogue requirement uses capability union for ${alias}`);
+        assert.strictEqual(catalogueRequirement.catalogueKnown, true, `${capability.key}: catalogue requirement is countable for ${alias}`);
+        assert.notStrictEqual(catalogueRequirement.definition.countable, false, `${capability.key}: catalogue requirement is not forced unknown for ${alias}`);
+    }
+    for (const typeId of capability.types || []) {
+        const capacity = api.aggregate(
+            { group: 'vehicles', definition },
+            [{ typeId, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), staff: null, contributionKey: `vehicle:${capability.key}:${typeId}` }]
+        );
+        assert.strictEqual(capacity.min, 1, `${capability.key}: vehicle type ${typeId} contributes one`);
+        assert.strictEqual(capacity.max, 1, `${capability.key}: vehicle type ${typeId} remains exact`);
+    }
+    for (const equipment of capability.equipment || []) {
+        const capacity = api.aggregate(
+            { group: 'vehicles', definition },
+            [{ typeId: -1, equipment: new Set([equipment]), labels: new Set(), knownDefinitionKeys: new Set(), staff: null, contributionKey: `equipment:${capability.key}:${equipment}` }]
+        );
+        assert.strictEqual(capacity.min, 1, `${capability.key}: equipment ${equipment} contributes one`);
+        assert.strictEqual(capacity.max, 1, `${capability.key}: equipment ${equipment} remains exact`);
+    }
+}
+
+const doc = new FakeDocument();
+doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/25701' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };
+const candidate = makeMissionCandidate(doc, '');
+candidate.missionId = 25701;
+const definition = api.definitions.find(item => item.key === 'police-helicopter-or-drone');
+const requirement = { ...api.catalogueRequirement('Police Helicopters or Drones', '1'), statedRequirement: true };
+const parsed = { requirements: [requirement], unresolved: [] };
+const catalogue = { requirements: [{ key: requirement.key, baseline: 1, missing: 1 }] };
+const resolveRow = () => api.resolve(candidate, parsed, catalogue).find(item => item.key === requirement.key);
+
+for (const typeId of [11, 89, 90, 91]) {
+    const selected = makeVehicleElement(doc, 2570100 + typeId, typeId);
+    candidate.root.selectedUnits = [selected.vehicle];
+    const row = resolveRow();
+    assert.strictEqual(row.selectedMin, 1, `selected vehicle type ${typeId} fulfils the combined row`);
+    assert.strictEqual(row.selectedMax, 1, `selected vehicle type ${typeId} remains exact`);
+    assert.strictEqual(row.stillNeededText, '0', `selected vehicle type ${typeId} clears the shortage`);
+}
+
+const equipmentOnly = makeVehicleElement(doc, 2570198, -1, { equipment: ['drone'] });
+candidate.root.selectedUnits = [equipmentOnly.vehicle];
+let row = resolveRow();
+assert.strictEqual(row.selectedMin, 1, 'selected drone equipment fulfils the combined row without a known vehicle type');
+assert.strictEqual(row.stillNeededText, '0', 'selected drone equipment clears the shortage');
+
+const dualEvidence = makeVehicleElement(doc, 2570191, 91, { equipment: ['drone'] });
+candidate.root.selectedUnits = [dualEvidence.vehicle];
+row = resolveRow();
+assert.strictEqual(row.selectedMin, 1, 'one police drone with both type and equipment evidence counts once');
+assert.strictEqual(row.selectedMax, 1, 'dual police-drone evidence does not widen or double-count capacity');
+
+candidate.root.selectedUnits = [];
+row = resolveRow();
+assert.strictEqual(row.selectedMin, 0, 'deselecting the combined-capability unit removes Selected capacity');
+assert.strictEqual(row.stillNeededText, '1', 'deselecting restores the shortage');
+
+const responding = makeVehicleElement(doc, 2570211, 11, { typeOnRow: true });
+responding.row.matchSet.add('tr');
+responding.row.setAttribute('data-vehicle-id', '2570211');
+candidate.root.enRouteRows = [responding.row];
+row = resolveRow();
+assert.strictEqual(row.respondingMin, 1, 'responding Police Helicopter fulfils the combined row');
+assert.strictEqual(row.stillNeededText, '0', 'responding Police Helicopter clears the shortage');
+
+candidate.root.enRouteRows = [];
+const onSite = makeVehicleElement(doc, 2570291, 91, { typeOnRow: true, equipment: ['drone'] });
+onSite.row.matchSet.add('tr');
+onSite.row.setAttribute('data-vehicle-id', '2570291');
+candidate.root.onSiteRows = [onSite.row];
+row = resolveRow();
+assert.strictEqual(row.onSiteMin, 1, 'on-site Police Drone fulfils the combined row');
+assert.strictEqual(row.onSiteMax, 1, 'on-site Police Drone remains exact');
+assert.strictEqual(row.stillNeededText, '1', 'live MissionChief shortage remains authoritative after recognising the on-site Police Drone');
+
+candidate.root.onSiteRows = [];
+row = resolveRow();
+assert.strictEqual(row.onSiteMin, 0, 'removing the on-site Police Drone removes recognised on-site capacity');
+assert.strictEqual(row.stillNeededText, '1', 'live MissionChief shortage remains unchanged when the on-site unit is removed');
+assert.strictEqual(definition.equipment.includes('drone'), true, 'combined Police Helicopter or Drone definition retains drone equipment capability');
 }
 
 console.log('Mission requirements runtime fixtures passed');

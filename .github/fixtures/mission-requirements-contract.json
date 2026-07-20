@@ -362,5 +362,126 @@
       "wide",
       "fluid"
     ]
-  }
+  },
+  "combinedVehicleCapabilities": [
+    {
+      "key": "police-helicopter-or-drone",
+      "label": "Police Helicopter or Drone",
+      "aliases": [
+        "Police Helicopter or Drone",
+        "Police Helicopters or Drones"
+      ],
+      "types": [
+        11,
+        89,
+        90,
+        91
+      ],
+      "equipment": [
+        "drone"
+      ]
+    },
+    {
+      "key": "riv-or-major-foam",
+      "label": "RIV or Major Foam Tender",
+      "aliases": [
+        "RIV or Major Foam Tender",
+        "RIVs or Major Foam Tenders"
+      ],
+      "types": [
+        75,
+        76
+      ]
+    },
+    {
+      "key": "fire-engine-or-major-foam",
+      "label": "Fire Engine or Major Foam Tender",
+      "aliases": [
+        "Fire Engine or Major Foam Tender",
+        "Fire Engines or Major Foam Tenders"
+      ],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        75
+      ]
+    },
+    {
+      "key": "fire-engine-riv-or-major-foam",
+      "label": "Fire Engine, RIV or Major Foam Tender",
+      "aliases": [
+        "Fire Engine, RIV or Major Foam Tender",
+        "Fire Engines, RIVs or Major Foam Tenders"
+      ],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        75,
+        76
+      ]
+    },
+    {
+      "key": "mountain-or-sar-4x4",
+      "label": "Mountain Rescue 4x4 or SAR 4x4",
+      "aliases": [
+        "Mountain Rescue 4x4 or SAR 4x4",
+        "Mountain Rescue 4x4s or SAR 4x4s"
+      ],
+      "types": [
+        93,
+        99
+      ]
+    },
+    {
+      "key": "rrv-or-specialist-paramedic",
+      "label": "RRV or Specialist Paramedic RRV",
+      "aliases": [
+        "RRV or Specialist Paramedic RRV",
+        "RRVs or Specialist Paramedic RRVs"
+      ],
+      "types": [
+        10,
+        94,
+        96
+      ]
+    },
+    {
+      "key": "fire-officer",
+      "aliases": [
+        "Fire Officer or Airfield Firefighting Command Vehicle",
+        "Fire Officers or Airfield Firefighting Command Vehicles"
+      ],
+      "types": [
+        3,
+        15,
+        44,
+        77
+      ]
+    },
+    {
+      "key": "iccu-or-control",
+      "aliases": [
+        "ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle",
+        "ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"
+      ],
+      "types": [
+        15,
+        31,
+        44,
+        77
+      ]
+    }
+  ]
 }

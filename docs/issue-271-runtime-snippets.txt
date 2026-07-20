@@ -1,0 +1,488 @@
+
+===== function missionRequirementsMetadataValues @ 1399757 =====
+function missionRequirementsMetadataValues(element, kind = 'labels') { const values = new Set(); const add = raw => String(raw || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const attributes = kind === 'training' ? ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name'] : ['data-mcms-custom-vehicle-category', 'data-custom-vehicle-category', 'data-vehicle-category', 'data-vehicle-type-name', 'data-vehicle-type']; for (const scope of scopes) { for (const attribute of attributes) add(scope?.getAttribute?.(attribute)); scope?.querySelectorAll?.(attributes.map(attribute => `[${attribute}]`).join(', ')).forEach(node => attributes.forEach(attribute => add(node.getAttribute?.(attribute)))); } if (kind === 'labels') { const typeCell = row?.querySelector?.('[data-column="vehicle-type"], [data-vehicle-type-name], td:nth-of-type(2)'); add(missionRequirementsElementText(typeCell)); const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; add(custom?.category); } return values; } function missionRequirementsDefinitionTokens(definition, property = 'aliases') { const raw = property === 'training' ? Array.from(definition?.training || []) : [definition?.label, ...(definition?.aliases || [])]; return new Set(raw.map(missionRequirementsCapabilityLabel).filter(Boolean)); } function missionRequirementsDefinitionMatchesValues(definition, values, property = 'aliases') { if (!values?.size) return false; const tokens = missionRequirementsDefinitionTokens(definition, property); for (const value of values) if (tokens.has(value)) return true; return false; } function missionRequirementsKnownDefinitionKeys(labels) { const keys = new Set(); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { if (missionRequirementsDefinitionMatchesValues(definition, labels)) keys.add(definition.key); } return keys; }
+
+const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"101":[1,1],"102":[1,1],"116":[1,5]});
+function missionRequirementsDefaultStaffCapacity(typeId, element = null) { const range = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[typeId] || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[String(typeId)]; if (!Array.isArray(range) || range.length < 2) return null; const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const overrideAttributes = ['data-max-personnel-override', 'data-personnel-max-override', 'data-max-crew-override']; let maximumOverride = null; for (const scope of scopes) { for (const attribute of overrideAttributes) { const value = missionRequirementsOptionalNumber(scope?.getAttribute?.(attribute)); if (value !== null) { maximumOverride = value; break; } } if (maximumOverride !== null) break; } const minimum = Math.max(0, Number(range[0]) || 0); const configuredMaximum = Math.max(minimum, Number(range[1]) || 0); const maximum = maximumOverride === null ? configuredMaximum : Math.max(minimum, maximumOverride); return missionRequirementsCapacity(minimum, maximum, minimum === maximum); }
+function missionRequirementsStaffCapacity(element) {
+        const row = element?.closest?.('tr') || element;
+        const semanticSelectors = [
+            '[data-personnel-count]',
+            '[data-current-personnel]',
+            '[data-min-personnel]',
+            '[data-max-personnel]',
+            '[data-min-crew]',
+            '[data-max-crew]',
+            '[data-column="crew"]',
+            '[data-column="personnel"]',
+            '[data-column="staff"]'
+        ];
+        let crewCell = null;
+        for (const selector of semanticSelectors) {
+            crewCell = row?.querySelector?.(selector) || null;
+            if (crewCell) break;
+        }
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
+            }
+        }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const parseCrewText = cell => {
+            const text = String(cell?.textContent || '').trim();
+            const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+            if (currentMaximum) {
+                const current = missionRequirementsNumber(currentMaximum[1]);
+                return missionRequirementsCapacity(current, current, true);
+            }
+            const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+            if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+            return null;
+        };
+        const semanticTextCapacity = parseCrewText(crewCell);
+        if (semanticTextCapacity) return semanticTextCapacity;
+        for (const cell of Array.from(row?.querySelectorAll?.('td, th') || [])) {
+            const capacity = parseCrewText(cell);
+            if (capacity) return capacity;
+        }
+        if (crewCell) {
+            const visible = missionRequirementsOptionalNumber(String(crewCell.textContent || '').trim());
+            if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+            const sortValue = missionRequirementsOptionalNumber(crewCell.getAttribute?.('sortvalue'));
+            if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+        }
+        return null;
+    } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
+function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
+function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+        if (mode === 'selected') return null;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+        if (!row) return null;
+        const selectors = mode === 'onsite'
+            ? ['#mission_vehicle_at_mission', 'tbody#mission_vehicle_at_mission']
+            : ['#mission_vehicle_driving', 'tbody#mission_vehicle_driving'];
+        for (const selector of selectors) {
+            if (row.matches?.(selector)) return row;
+            const container = row.closest?.(selector);
+            if (container) return container;
+        }
+        return null;
+    }
+
+    function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') {
+        if (!element || element.isConnected === false) return false;
+        if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false;
+        const row = element.matches?.('tr') ? element : element.closest?.('tr') || element;
+        const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source);
+        const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode);
+        const candidateRoot = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        const canonicalId = mode === 'onsite' ? 'mission_vehicle_at_mission' : 'mission_vehicle_driving';
+        const documentCanonical = mode === 'selected' ? null : context?.doc?.getElementById?.(canonicalId);
+        const pathname = String(context?.doc?.defaultView?.location?.pathname || '');
+        const pathMission = missionRequirementsOptionalNumber(pathname.match(/\/missions\/(\d+)/u)?.[1]);
+        const canonicalOwned = Boolean(canonicalContainer && (
+            context?.activeWindow?.contains?.(row)
+            || candidateRoot?.contains?.(row)
+            || candidate?.root?.contains?.(row)
+            || candidate?.mount?.contains?.(row)
+            || (
+                expectedMission > 0
+                && pathMission === expectedMission
+                && documentCanonical
+                && (documentCanonical === canonicalContainer || documentCanonical.contains?.(row))
+            )
+        ));
+        if (mode !== 'selected' && !canonicalOwned && !isVisible(element)) return false;
+        if (context.activeWindow && !(
+            context.activeWindow === row
+            || context.activeWindow.contains?.(row)
+            || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow
+        )) return false;
+        const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId);
+        if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false;
+        const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]');
+        if (expectedMission > 0 && missionRoot) {
+            const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null);
+            if (actualMission > 0 && actualMission !== expectedMission) return false;
+        }
+        return true;
+    }
+const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[8
+===== function missionRequirementsCollectUnits @ 1411772 =====
+function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const typeId = missionRequirementsVehicleType(vehicleElement); const vehicleId = missionRequirementsVehicleId(vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); const tractiveRandom = String(vehicleElement?.getAttribute?.('tractive_random') ?? vehicleElement?.getAttribute?.('data-tractive-random') ?? row?.getAttribute?.('tractive_random') ?? row?.getAttribute?.('data-tractive-random') ?? row?.dataset?.tractiveRandom ?? '') === '1'; const explicitTractiveType = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_type_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.getAttribute?.('tractive_vehicle_type_id') ?? row?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.dataset?.tractiveVehicleTypeId); const compatibleTractiveTypes = explicitTractiveType !== null ? [explicitTractiveType] : (tractiveRandom ? Array.from(MISSION_REQUIREMENTS_TRACTIVE_TYPES[typeId] || MISSION_REQUIREMENTS_TRACTIVE_TYPES[String(typeId)] || []) : []); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsMetadataValues(vehicleElement, 'training'); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const badgeTexts = Array.from(String(row?.textContent || row?.innerText || '').matchAll(/\[([^\]]+)\]/gu)).map(match => missionRequirementsCapabilityLabel(match[1])).filter(Boolean); for (const badgeText of badgeTexts) { for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const aliases = Array.from(definition?.training || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (!aliases.includes(badgeText)) continue; training.add(badgeText); knownDefinitionKeys.add(definition.key); } } const unit = { typeId, vehicleId, tractiveId, tractiveRandom, compatibleTractiveTypes: new Set(compatibleTractiveTypes), equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsStaffCapacity(vehicleElement) || missionRequirementsDefaultStaffCapacity(typeId, vehicleElement), labels, training, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const tractiveType of unit.compatibleTractiveTypes) existing.compatibleTractiveTypes.add(tractiveType); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
+
+    function missionRequirementsMissionTypeId(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
+        for (const scope of scopes) {
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
+        if (node) {
+            for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
+                const value = Number.parseInt(raw, 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+        }
+        }
+        const runtimeValue = Number.parseInt(pageWindow.missionTypeId ?? pageWindow.mission_type_id, 10);
+        return Number.isFinite(runtimeValue) && runtimeValue >= 0 ? runtimeValue : null;
+    }
+
+    function missionRequirementsDefinitionCondition(definition, candidate) {
+        const included = Array.from(definition?.missionTypes || []).map(Number).filter(Number.isFinite);
+        const excluded = Array.from(definition?.excludedMissionTypes || []).map(Number).filter(Number.isFinite);
+        if (!included.length && !excluded.length) return true;
+        const missionTypeId = missionRequirementsMissionTypeId(candidate);
+        if (missionTypeId === null) return null;
+        if (included.length && !included.includes(missionTypeId)) return false;
+        if (excluded.includes(missionTypeId)) return false;
+        return true;
+    }
+
+function missionRequirementsUnitContribution(requirement, unit) { const definition = requirement.definition || {}; const definitionTypes = Array.from(definition.types || []); const typeEligible = definitionTypes.includes(unit.typeId); const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase())); const labelEligible = unit.knownDefinitionKeys?.has?.(definition.key) || missionRequirementsDefinitionMatchesValues(definition, unit.labels); const compatibleTractiveTypes = Array.from(unit.compatibleTractiveTypes || []).map(Number).filter(Number.isFinite); const tractiveEligible = compatibleTractiveTypes.length > 0 && compatibleTractiveTypes.every(type => definitionTypes.includes(type)); const trainingRequired = Array.from(definition.training || []).length > 0; const trainingEligible = trainingRequired && missionRequirementsDefinitionMatchesValues(definition, unit.training, 'training'); const eligible = requirement.group === 'staff' && trainingRequired ? trainingEligible : typeEligible || equipmentEligible || labelEligible || tractiveEligible; const classificationUnknown = requirement.group === 'staff' && trainingRequired ? Boolean(unit.staff && !unit.training?.size) : unit.typeId < 0 && !unit.knownDefinitionKeys?.size && !unit.equipment?.size && !compatibleTractiveTypes.length; if (!eligible) return { eligible: false, unknown: classificationUnknown, capacity: missionRequirementsCapacity(0, classificationUnknown ? null : 0, !classificationUnknown) }; if (requirement.group === 'staff') { const capacity = unit.staff ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known) : missionRequirementsCapacity(0, null, false); return { eligible: true, unknown: capacity.max === null, capacity }; } const factor = tractiveEligible && !typeEligible ? 1 : Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1); const value = Number.isFinite(factor) && factor > 0 ? factor : 1; return { eligible: true, unknown: false, capacity: missionRequirementsCapacity(value, value, true) }; }
+
+function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+
+    function missionRequirementsProgressValue(candidate, bar, metric) {
+        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+        const holder = root?.querySelector?.(`[id^="mission_${bar}_holder"]`);
+        if (!holder) return null;
+        const node = holder.querySelector?.(`[class*="mission_${bar}_bar_${metric}_"], [class*="mission_water_bar_${metric}_"]`);
+        return node ? missionRequirementsNumber(node.textContent) : null;
+    }
+
+    function missionRequirementsUnknownCoverageRow(requirement) {
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRoute
+===== function missionRequirementsAggregate @ 1421574 =====
+function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+
+    function missionRequirementsProgressValue(candidate, bar, metric) {
+        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+        const holder = root?.querySelector?.(`[id^="mission_${bar}_holder"]`);
+        if (!holder) return null;
+        const node = holder.querySelector?.(`[class*="mission_${bar}_bar_${metric}_"], [class*="mission_water_bar_${metric}_"]`);
+        return node ? missionRequirementsNumber(node.textContent) : null;
+    }
+
+    function missionRequirementsUnknownCoverageRow(requirement) {
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+function missionRequirementsCatalogueDescriptor(candidate) { const context = missionRequirementsPatientContext(candidate); const scopes = Array.from(new Set([candidate?.root, candidate?.mount, context.activeWindow, context.doc].filter(scope => scope?.querySelectorAll))); const links = []; const seen = new Set(); for (const scope of scopes) { for (const link of Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || [])) { if (seen.has(link)) continue; seen.add(link); links.push(link); } } links.sort((left, right) => Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(right))) - Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(left)))); const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument || context.doc; const location = doc?.defaultView?.location || pageWindow.location || {}; const origin = location.origin || `${location.protocol || 'https:'}//${location.host || 'www.missionchief.co.uk'}`; let matched = null; for (const link of links) { const href = String(link.getAttribute?.('href') || link.href || ''); let parsed; try { parsed = new URL(href, origin); } catch (err) { continue; } const match = parsed.pathname.match(/^\/einsaetze\/(\d+)\/?$/iu); if (!match) continue; const parameters = new URLSearchParams(); for (const name of ['overlay_index', 'additive_overlays']) { for (const value of parsed.searchParams.getAll(name)) if (value !== '') parameters.append(name, value); } const query = parameters.toString(); matched = { id: Number(match[1]), overlayIndex: missionRequirementsOptionalNumber(parsed.searchParams.get('overlay_index')), additiveOverlays: parsed.searchParams.getAll('additive_overlays'), path: `${parsed.pathname}${query ? `?${query}` : ''}` }; break; } if (!matched) { const id = missionRequirementsMissionTypeId(candidate); if (id === null || id === undefined || !Number.isFinite(Number(id)) || Number(id) < 0) return null; matched = { id: Number(id), overlayIndex: null, additiveOverlays: [], path: `/einsaetze/${Number(id)}` }; } return { ...matched, origin, url: `${origin}${matched.path}`, key: `${origin}${matched.path}` }; }
+
+    function missionRequirementsCatalogueRequirement(label, value) {
+        const rawLabel = missionRequirementsCatalogueText({ textContent: label });
+        const rawValue = missionRequirementsCatalogueText({ textContent: value });
+        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
+        const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
+        if (quantity === null) return null;
+        const cleanedLabel = rawLabel
+            .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '')
+            .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '')
+            .trim();
+        if (!cleanedLabel) return null;
+        const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u);
+        const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100;
+        const sourceText = `${quantity} ${cleanedLabel}`;
+        for (const group of ['vehicles', 'staff', 'other']) {
+            const parsed = missionRequirementsParseText(sourceText, group);
+            if (!parsed.requirements.length) continue;
+            const requirement = parsed.requirements[0];
+            return {
+                ...requirement,
+                missing: quantity,
+                baseline: quantity,
+                baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+                probability,
+                catalogueLabel: rawLabel,
+                catalogueValue: rawValue,
+                catalogueKnown: true
+            };
+        }
+        const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles');
+        const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`;
+        return {
+            key,
+            requirement: cleanedLabel,
+            missing: quantity,
+            baseline: quantity,
+            baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+            probability,
+            group: inferredGroup,
+            definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false },
+            catalogueLabel: rawLabel,
+            catalogueValue: rawValue,
+            catalogueKnown: false
+        };
+    }
+
+function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null) { const rawLabel = missionRequirementsCatalogueText({ textContent: label }); const available = /^Required\s+Personnel\s+Available$/iu.test(rawLabel); const required = /^Required\s+Personnel$/iu.test(rawLabel); if (!available && !required) return { recognized: false, classification: null, requirements: [], unresolved: [] }; if (available || kind === 'preconditions') return { recognized: true, classification: 'spawn-prerequisite', requirements: [], unresolved: [] }; const text = missionRequirementsCatalogueText({ textContent: value }).replace(/\s+(?=(?:\d+\s*x|x\s*\d+)\s*[A-Za-z])/giu, '; ').replace(/\s*(?:\+|\/|\band\b)\s*(?=\d+\s*x?\s*[A-Za-z])/giu, '; '); const parsed = missionRequirementsParseText(text, 'staff'); return { recognized: true, classification: 'operational', requirements: parsed.requirements.map(requirement => ({ ...requirement, baseline: requirement.missing, baselineText: requirement.missing.toLocaleString('en-GB'), probability: 100, catalogueLabel: rawLabel, catalogueValue: value, catalogueKnown: true, catalogueClassification: 'operational' })), unresolved: parsed.remaining ? [{ label: parsed.remaining, value: '', group: 'staff', classification: 'operational' }] : [] }; } function missionRequirementsCatalogueMergeRequirement(target, requirement) { if (!requirement) return; const existing = target.find(item => item.key === requirement.key); if (!existing) { target.push(requirement); return; } const baseline = Math.max(missionRequirementsOptionalNumber(existing.baseline ?? existing.missing) ?? 0, missionRequirementsOptionalNumber(requirement.baseline ?? requirement.missing) ?? 0); existing.missing = baseline; existing.baseline = baseline; existing.baselineText = baseline.toLocaleString('en-GB'); existing.catalogueKnown = existing.catalogueKnown !== false && requirement.catalogueKnown !== false; }
+
+function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!doc?.querySelectorAll) throw new Error('catalogue document unavailable'); const requirements = []; const unresolved = []; const preconditions = {}; const other = {}; let sawAuthoritativeRequirement = false; const tables = Array.from(doc.querySelectorAll('table') || []); for (const table of tables) { const tableText = missionRequirementsCatalogueText(table); let kind = /Vehicle\s+and\s+Personnel\s+Requirements/iu.test(tableText) ? 'requirements' : /Reward\s+and\s+Precondition/iu.test(tableText) ? 'preconditions' : /Other\s+information/iu.test(tableText) ? 'other' : null; if (kind === 'requirements') sawAuthoritativeRequirement = true; const rows = Array.from(table.querySelectorAll?.('tr') || []); for (const row of rows) { const cells = Array.from(row.querySelectorAll?.('th, td') || []); if (cells.length < 2) continue; const label = missionRequirementsCatalogueText(cells[0]); const value = missionRequirementsCatalogueText(cells[1]); if (!label || /^(?:Value|Vehicle\s+and\s+Personnel\s+Requirements|Reward\s+and\s+Precondition|Other\s+information)$/iu.test(label)) continue; const personnel = missionRequirementsCataloguePersonnelRequirements(label, value, kind); if (personnel.recognized) { if (personnel.classification === 'spawn-prerequisite') { if (kind === 'preconditions') preconditions[label] = value; continue; } sawAuthoritativeRequirement = true; personnel.requirements.forEach(requirement => missionRequirementsCatalogueMergeRequirement(requirements, requirement)); unresolved.push(...personnel.unresolved); if (kind === 'other') other[label] = value; continue; } if (!kind && /^(?:Required|Requirement\s+of|Needed)\b/iu.test(label)) kind = 'requirements'; if (kind === 'requirements') { sawAuthoritativeRequirement = true; const parsed = missionRequirementsCatalogueRequirement(label, value); if (parsed) missionRequirementsCatalogueMergeRequirement(requirements, parsed); else unresolved.push({ label, value, classification: 'operational' }); } else if (kind === 'preconditions') preconditions[label] = value; else if (kind === 'other') other[label] = value; } } if (sawAuthoritativeRequirement && !requirements.length && !unresolved.length) unresolved.push({ label: 'Requirements for this Mission', value: 'No quantified vehicle or trained-personnel requirements could be parsed.' }); const titleNode = doc.querySelector?.('h1, [data-mission-title], .mission-title'); const title = missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(titleNode), 140) || `Mission ${descri
+===== function missionRequirementsUnitContribution @ 1419425 =====
+function missionRequirementsUnitContribution(requirement, unit) { const definition = requirement.definition || {}; const definitionTypes = Array.from(definition.types || []); const typeEligible = definitionTypes.includes(unit.typeId); const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase())); const labelEligible = unit.knownDefinitionKeys?.has?.(definition.key) || missionRequirementsDefinitionMatchesValues(definition, unit.labels); const compatibleTractiveTypes = Array.from(unit.compatibleTractiveTypes || []).map(Number).filter(Number.isFinite); const tractiveEligible = compatibleTractiveTypes.length > 0 && compatibleTractiveTypes.every(type => definitionTypes.includes(type)); const trainingRequired = Array.from(definition.training || []).length > 0; const trainingEligible = trainingRequired && missionRequirementsDefinitionMatchesValues(definition, unit.training, 'training'); const eligible = requirement.group === 'staff' && trainingRequired ? trainingEligible : typeEligible || equipmentEligible || labelEligible || tractiveEligible; const classificationUnknown = requirement.group === 'staff' && trainingRequired ? Boolean(unit.staff && !unit.training?.size) : unit.typeId < 0 && !unit.knownDefinitionKeys?.size && !unit.equipment?.size && !compatibleTractiveTypes.length; if (!eligible) return { eligible: false, unknown: classificationUnknown, capacity: missionRequirementsCapacity(0, classificationUnknown ? null : 0, !classificationUnknown) }; if (requirement.group === 'staff') { const capacity = unit.staff ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known) : missionRequirementsCapacity(0, null, false); return { eligible: true, unknown: capacity.max === null, capacity }; } const factor = tractiveEligible && !typeEligible ? 1 : Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1); const value = Number.isFinite(factor) && factor > 0 ? factor : 1; return { eligible: true, unknown: false, capacity: missionRequirementsCapacity(value, value, true) }; }
+
+function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+
+    function missionRequirementsProgressValue(candidate, bar, metric) {
+        const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+        const holder = root?.querySelector?.(`[id^="mission_${bar}_holder"]`);
+        if (!holder) return null;
+        const node = holder.querySelector?.(`[class*="mission_${bar}_bar_${metric}_"], [class*="mission_water_bar_${metric}_"]`);
+        return node ? missionRequirementsNumber(node.textContent) : null;
+    }
+
+    function missionRequirementsUnknownCoverageRow(requirement) {
+        const missing = Math.max(0, missionRequirementsNumber(requirement?.missing));
+        return {
+        ...requirement,
+        missing,
+        missingText: missing.toLocaleString('en-GB'),
+        selectedMin: 0,
+        selectedMax: null,
+        selectedKnown: false,
+        selectedText: '?',
+        enRouteMin: 0,
+        enRouteMax: null,
+        enRouteKnown: false,
+        enRouteText: '?',
+        stillNeededMin: 0,
+        stillNeededMax: missing,
+        stillNeededText: '?',
+        covered: false,
+        definitelyOpen: false,
+        uncertain: true
+        };
+    }
+
+
+    const MISSION_REQUIREMENTS_CATALOGUE_TTL_MS = 6 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_RETRY_MS = 60 * 1000;
+    const MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT = 96;
+    const missionRequirementsCatalogueCache = new Map();
+
+    function missionRequirementsCatalogueText(node) {
+        return String(node?.textContent || node?.innerText || '').replace(/\s+/gu, ' ').trim();
+    }
+
+function missionRequirementsCatalogueDescriptor(candidate) { const context = missionRequirementsPatientContext(candidate); const scopes = Array.from(new Set([candidate?.root, candidate?.mount, context.activeWindow, context.doc].filter(scope => scope?.querySelectorAll))); const links = []; const seen = new Set(); for (const scope of scopes) { for (const link of Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || [])) { if (seen.has(link)) continue; seen.add(link); links.push(link); } } links.sort((left, right) => Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(right))) - Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(left)))); const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument || context.doc; const location = doc?.defaultView?.location || pageWindow.location || {}; const origin = location.origin || `${location.protocol || 'https:'}//${location.host || 'www.missionchief.co.uk'}`; let matched = null; for (const link of links) { const href = String(link.getAttribute?.('href') || link.href || ''); let parsed; try { parsed = new URL(href, origin); } catch (err) { continue; } const match = parsed.pathname.match(/^\/einsaetze\/(\d+)\/?$/iu); if (!match) continue; const parameters = new URLSearchParams(); for (const name of ['overlay_index', 'additive_overlays']) { for (const value of parsed.searchParams.getAll(name)) if (value !== '') parameters.append(name, value); } const query = parameters.toString(); matched = { id: Number(match[1]), overlayIndex: missionRequirementsOptionalNumber(parsed.searchParams.get('overlay_index')), additiveOverlays: parsed.searchParams.getAll('additive_overlays'), path: `${parsed.pathname}${query ? `?${query}` : ''}` }; break; } if (!matched) { const id = missionRequirementsMissionTypeId(candidate); if (id === null || id === undefined || !Number.isFinite(Number(id)) || Number(id) < 0) return null; matched = { id: Number(id), overlayIndex: null, additiveOverlays: [], path: `/einsaetze/${Number(id)}` }; } return { ...matched, origin, url: `${origin}${matched.path}`, key: `${origin}${matched.path}` }; }
+
+    function missionRequirementsCatalogueRequirement(label, value) {
+        const rawLabel = missionRequirementsCatalogueText({ textContent: label });
+        const rawValue = missionRequirementsCatalogueText({ textContent: value });
+        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
+        const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
+        if (quantity === null) return null;
+        const cleanedLabel = rawLabel
+            .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '')
+            .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '')
+            .trim();
+        if (!cleanedLabel) return null;
+        const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u);
+        const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100;
+        const sourceText = `${quantity} ${cleanedLabel}`;
+        for (const group of ['vehicles', 'staff', 'other']) {
+            const parsed = missionRequirementsParseText(sourceText, group);
+            if (!parsed.requirements.length) continue;
+            const requirement = parsed.requirements[0];
+            return {
+                ...requirement,
+                missing: quantity,
+                baseline: quantity,
+                baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+                probability,
+                catalogueLabel: rawLabel,
+                catalogueValue: rawValue,
+                catalogueKnown: true
+            };
+        }
+        const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles');
+        const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`;
+        return {
+            key,
+            requirement: cleanedLabel,
+            missing: quantity,
+            baseline: quantity,
+            baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+            probability,
+            group: inferredGroup,
+            definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false },
+            catalogueLabel: rawLabel,
+            catalogueValue: rawValue,
+            catalogueKnown: false
+        };
+    }
+
+function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null) { const rawLabel = missionRequirementsCatalogueText({ textContent: label }); const available = /^Required\s+Personnel\s+Available$/iu.test(rawLabel); const required = /^Required\s+Personnel$/iu.test(rawLabel); if (!available && !required) return { recognized: false, classification: null, requirements: [], unresolved: [] }; if (available || kind === 'preconditions') return { recognized: true, classification: 'spawn-prerequisite', requirements: [], unresolved: [] }; const text = missionRequirementsCatalogueText({ textContent: value }).replace(/\s+(?=(?:\d+\s*x|x\s*\d+)\s*[A-Za-z])/giu, '; ').replace(/\s*(?:\+|\/|\band\b)\s*(?=\d+\s*x?\s*[A-Za-z])/giu, '; '); const parsed = missionRequirementsParseText(text, 'staff'); return { recognized: true, classification: 'operational', requirements: parsed.requirements.map(requirement => ({ ...requirement, baseline: requirement.missing, baselineText: requirement.missing.toLocaleString('en-GB'), probability: 100, catalogueLabel: rawLabel, catalogueValue: value, catalogueKnown: true, catalogueClassification: 'operational' })), unresolved: parsed.remaining ? [{ label: parsed.remaining, value: '', group: 'staff', classification: 'operational' }] : [] }; } function missionRequirementsCatalogueMergeRequirement(target, requirement) { if (!requirement) return; const existing = target.find(item => item.key === requirement.key); if (!existing) { target.push(requirement); return; } const baseline = Math.max(missionRequirementsOptionalNumber(existing.baseline ?? existing.missing) ?? 0, missionRequirementsOptionalNumber(requirement.baseline ?? requirement.missing) ?? 0); existing.missing = baseline; existing.baseline = baseline; existing.baselineText = baseline.toLocaleString('en-GB'); existing.catalogueKnown = existing.catalogueKnown !== false && requirement.catalogueKnown !== false; }
+
+function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!doc?.querySelectorAll) throw new Error('catalogue document unavailable'); const requirements = []; const unresolved = []; const preconditions = {}; const other = {}; let sawAuthoritativeRequirement = false; const tables = Array.from(doc.querySelectorAll('table') || []); for (const table of tables) { const tableText = missionRequirementsCatalogueText(table); let
+===== function missionRequirementsStaffCapacity @ 1403663 =====
+function missionRequirementsStaffCapacity(element) {
+        const row = element?.closest?.('tr') || element;
+        const semanticSelectors = [
+            '[data-personnel-count]',
+            '[data-current-personnel]',
+            '[data-min-personnel]',
+            '[data-max-personnel]',
+            '[data-min-crew]',
+            '[data-max-crew]',
+            '[data-column="crew"]',
+            '[data-column="personnel"]',
+            '[data-column="staff"]'
+        ];
+        let crewCell = null;
+        for (const selector of semanticSelectors) {
+            crewCell = row?.querySelector?.(selector) || null;
+            if (crewCell) break;
+        }
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
+            }
+        }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const parseCrewText = cell => {
+            const text = String(cell?.textContent || '').trim();
+            const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+            if (currentMaximum) {
+                const current = missionRequirementsNumber(currentMaximum[1]);
+                return missionRequirementsCapacity(current, current, true);
+            }
+            const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+            if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+            return null;
+        };
+        const semanticTextCapacity = parseCrewText(crewCell);
+        if (semanticTextCapacity) return semanticTextCapacity;
+        for (const cell of Array.from(row?.querySelectorAll?.('td, th') || [])) {
+            const capacity = parseCrewText(cell);
+            if (capacity) return capacity;
+        }
+        if (crewCell) {
+            const visible = missionRequirementsOptionalNumber(String(crewCell.textContent || '').trim());
+            if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+            const sortValue = missionRequirementsOptionalNumber(crewCell.getAttribute?.('sortvalue'));
+            if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+        }
+        return null;
+    } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
+function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
+function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+        if (mode === 'selected') return null;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+        if (!row) return null;
+        const selectors = mode === 'onsite'
+            ? ['#mission_vehicle_at_mission', 'tbody#mission_vehicle_at_mission']
+            : ['#mission_vehicle_driving', 'tbody#mission_vehicle_driving'];
+        for (const selector of selectors) {
+            if (row.matches?.(selector)) return row;
+            const container = row.closest?.(selector);
+            if (container) return container;
+        }
+        return null;
+    }
+
+    function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') {
+        if (!element || element.isConnected === false) return false;
+        if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false;
+        const row = element.matches?.('tr') ? element : element.closest?.('tr') || element;
+        const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source);
+        const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode);
+        const candidateRoot = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        const canonicalId = mode === 'onsite' ? 'mission_vehicle_at_mission' : 'mission_vehicle_driving';
+        const documentCanonical = mode === 'selected' ? null : context?.doc?.getElementById?.(canonicalId);
+        const pathname = String(context?.doc?.defaultView?.location?.pathname || '');
+        const pathMission = missionRequirementsOptionalNumber(pathname.match(/\/missions\/(\d+)/u)?.[1]);
+        const canonicalOwned = Boolean(canonicalContainer && (
+            context?.activeWindow?.contains?.(row)
+            || candidateRoot?.contains?.(row)
+            || candidate?.root?.contains?.(row)
+            || candidate?.mount?.contains?.(row)
+            || (
+                expectedMission > 0
+                && pathMission === expectedMission
+                && documentCanonical
+                && (documentCanonical === canonicalContainer || documentCanonical.contains?.(row))
+            )
+        ));
+        if (mode !== 'selected' && !canonicalOwned && !isVisible(element)) return false;
+        if (context.activeWindow && !(
+            context.activeWindow === row
+            || context.activeWindow.contains?.(row)
+            || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow
+        )) return false;
+        const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId);
+        if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false;
+        const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]');
+        if (expectedMission > 0 && missionRoot) {
+            const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null);
+            if (actualMission > 0 && actualMission !== expectedMission) return false;
+        }
+        return true;
+    }
+const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
+function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const typeId = missionRequirementsVehicleType(vehicleElement); const vehicleId = missionRequirementsVehicleId(vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); const tractiveRandom = String(vehicleElement?.getAttribute?.('tractive_random') ?? vehicleElement?.getAttribute?.('data-tractive-random') ?? row?.getAttribute?.('tractive_random') ?? row?.getAttribute?.('data-tractive-random') ?? row?.dataset?.tractiveRandom ?? '') === '1'; const explicitTractiveType = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_type_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.getAttribute?.('tractive_vehicle_type_id') ?? row?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.dataset?.tractiveVehicleTypeId); const compatibleTractiveTypes = explicitTractiveType !== null ? [explicitTractiveType] : (tractiveRandom ? Array.from(MISSION_REQUIREMENTS_TRACTIVE_TYPES[typeId] || MISSION_REQUIREMENTS_TRACTIVE_TYPES[String(typeId)] || []) : []); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadata

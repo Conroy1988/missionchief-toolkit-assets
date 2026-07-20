@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 DATA = ROOT / "src/data/mission-requirements-en_GB.json"
+OUTPUT = ROOT / "docs/issue-273-runtime-snippets.txt"
 
 
 def function_block(text: str, name: str) -> str:
@@ -39,27 +40,31 @@ def function_block(text: str, name: str) -> str:
 
 def main() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    print("=== PUBLIC ORDER DEFINITION ===")
+    sections = []
     key = '"key":"public-order-level-2"'
     pos = source.find(key)
-    print(source[max(0, pos - 80):pos + 520])
-    print("=== STAFF RANGES ===")
+    sections += ["=== PUBLIC ORDER DEFINITION ===", source[max(0, pos - 120):pos + 700]]
+    police_key = '"key":"police-officers"'
+    pos = source.find(police_key)
+    sections += ["=== POLICE OFFICERS DEFINITION ===", source[max(0, pos - 120):pos + 700]]
     staff_marker = "const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE"
     pos = source.find(staff_marker)
-    print(source[pos:pos + 1200])
+    sections += ["=== STAFF RANGES ===", source[pos:pos + 2400]]
     for name in [
+        "missionRequirementsStaffCapacity",
+        "missionRequirementsDefaultStaffCapacity",
         "missionRequirementsCollectUnits",
         "missionRequirementsUnitContribution",
         "missionRequirementsAggregate",
         "missionRequirementsCoverageRow",
         "missionRequirementsResolve",
     ]:
-        print(f"=== {name} ===")
-        print(function_block(source, name))
-    print("=== DATASET STAFF REQUIREMENTS ===")
+        sections += [f"=== {name} ===", function_block(source, name)]
     data = DATA.read_text(encoding="utf-8")
     pos = data.find('"key":"public-order-level-2"')
-    print(data[pos:pos + 500])
+    sections += ["=== DATASET STAFF REQUIREMENTS ===", data[pos:pos + 1000]]
+    OUTPUT.write_text("\n\n".join(sections) + "\n", encoding="utf-8")
+    print(f"wrote {OUTPUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

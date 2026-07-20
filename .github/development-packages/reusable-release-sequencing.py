@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import json
 import subprocess
 import sys
 
@@ -7,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OWNER = ROOT / ".github" / "workflows" / "owner-release-command.yml"
 READINESS = ROOT / ".github" / "workflows" / "release-readiness-check.yml"
 RELEASE = ROOT / ".github" / "workflows" / "release-toolkit.yml"
+POLICY = ROOT / ".github" / "actions-security-policy.json"
 
 
 def replace_once(text: str, old: str, new: str, label: str) -> str:
@@ -176,7 +178,9 @@ jobs:
     uses: ./.github/workflows/release-readiness-check.yml
     with:
       version: ${{ needs.authorize.outputs.version }}
-    secrets: inherit
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
 
   production:
     name: Run guarded production release
@@ -188,7 +192,9 @@ jobs:
     with:
       version: ${{ needs.authorize.outputs.version }}
       confirmation: RELEASE
-    secrets: inherit
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
 
   report:
     name: Record owner release result
@@ -222,7 +228,15 @@ jobs:
 '''
 OWNER.write_text(owner, encoding="utf-8")
 
-for path in (OWNER, READINESS, RELEASE):
+policy = json.loads(POLICY.read_text(encoding="utf-8"))
+policy.setdefault("allowedWritePermissions", {})[".github/workflows/owner-release-command.yml"] = [
+    "actions",
+    "contents",
+    "issues",
+]
+POLICY.write_text(json.dumps(policy, indent=2) + "\n", encoding="utf-8")
+
+for path in (OWNER, READINESS, RELEASE, POLICY):
     text = path.read_text(encoding="utf-8")
     if "\t" in text:
         raise AssertionError(f"tab indentation found in {path}")
@@ -232,6 +246,7 @@ for path in (OWNER, READINESS, RELEASE):
 owner_text = OWNER.read_text(encoding="utf-8")
 readiness_text = READINESS.read_text(encoding="utf-8")
 release_text = RELEASE.read_text(encoding="utf-8")
+policy_text = POLICY.read_text(encoding="utf-8")
 assert "uses: ./.github/workflows/release-readiness-check.yml" in owner_text
 assert "uses: ./.github/workflows/release-toolkit.yml" in owner_text
 assert "needs: [authorize, readiness]" in owner_text
@@ -239,10 +254,15 @@ assert "confirmation: RELEASE" in owner_text
 assert owner_text.index("uses: ./.github/workflows/release-readiness-check.yml") < owner_text.index("uses: ./.github/workflows/release-toolkit.yml")
 assert "gh workflow run release-readiness-check.yml" not in owner_text
 assert "actions/workflows/release-readiness-check.yml/dispatches" not in owner_text
+assert "secrets: inherit" not in owner_text
+assert owner_text.count("DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}") == 2
+assert owner_text.count("MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}") == 2
 assert "workflow_call:" in readiness_text and "workflow_dispatch:" in readiness_text
 assert "workflow_call:" in release_text and "workflow_dispatch:" in release_text
 assert "DISCORD_RELEASE_WEBHOOK:" in readiness_text and "MIGRATION_REPO_TOKEN:" in readiness_text
 assert "DISCORD_RELEASE_WEBHOOK:" in release_text and "MIGRATION_REPO_TOKEN:" in release_text
+assert '".github/workflows/owner-release-command.yml": [' in policy_text
+assert '"contents"' in policy_text
 
 subprocess.run([sys.executable, ".github/scripts/audit_actions_security.py"], cwd=ROOT, check=True)
 subprocess.run([sys.executable, ".github/scripts/validate_userscript.py"], cwd=ROOT, check=True)

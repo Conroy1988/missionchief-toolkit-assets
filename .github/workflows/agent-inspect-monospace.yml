@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - agent-inspection.txt
       - agent-targeted.txt
+      - agent-ui-sync.txt
 
 permissions:
   contents: write
@@ -18,14 +19,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: agent/monospaced-mission-notes
-      - name: Persist targeted userscript anchors
+      - name: Persist UI synchronisation anchors
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
           source_path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          output_path = Path('agent-targeted.txt')
+          output_path = Path('agent-ui-sync.txt')
           lines = source_path.read_text(encoding='utf-8').splitlines()
           report = []
 
@@ -35,39 +36,28 @@ jobs:
                   report.append(f"{n:06d}: {lines[n - 1]}")
 
           for start, end, title in [
-              (1325, 1495, 'state defaults and normalisation'),
-              (14715, 14775, 'root attributes'),
-              (28995, 29220, 'feature toggle routing'),
-              (29880, 30280, 'panel feature markup'),
-              (30281, 30680, 'panel settings markup'),
-              (30681, 31120, 'panel event routing'),
-              (31121, 31785, 'startup and observers'),
+              (29210, 29550, 'post-toggle and UI state'),
+              (29551, 29879, 'UI update and control creation'),
+              (30420, 30780, 'setting changes and UI refresh'),
           ]:
               add_range(start, end, title)
 
           patterns = [
-              "function makeToggleButton",
-              "makeToggleButton(",
-              "dataset.feature",
-              "data-feature",
-              "closest('[data-feature",
-              'closest("[data-feature',
-              "activeTab === 'settings'",
-              'data-tab="settings"',
-              "state = loadState",
-              "applyRootAttributes()",
-              "saveState()",
-              "renderPanel()",
-              "style.textContent",
-              "document.createElement('style')",
+              'function updateUI',
+              'dataset.toggle',
+              "querySelectorAll('[data-toggle]')",
+              'querySelectorAll("[data-toggle]")',
+              'toggleButton.dataset.toggle',
+              "feature === 'shortcuts'",
+              'mcms-pill',
           ]
           seen = set()
           for pattern in patterns:
               matches = [i for i, line in enumerate(lines) if pattern in line]
               report.append(f"\n===== MATCH {pattern!r} · {len(matches)} =====")
-              for i in matches[:50]:
-                  start = max(0, i - 10)
-                  end = min(len(lines), i + 11)
+              for i in matches[:40]:
+                  start = max(0, i - 14)
+                  end = min(len(lines), i + 15)
                   key = (start, end)
                   if key in seen:
                       continue
@@ -78,8 +68,8 @@ jobs:
           PY
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add agent-targeted.txt
+          git add agent-ui-sync.txt
           if ! git diff --cached --quiet; then
-            git commit -m "Record targeted monospaced notes anchors [skip ci]"
+            git commit -m "Record monospaced notes UI anchors [skip ci]"
             git push origin HEAD:agent/monospaced-mission-notes
           fi

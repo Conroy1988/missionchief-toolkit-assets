@@ -1,26 +1,31 @@
 name: Agent inspect monospaced notes integration
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/monospaced-mission-notes
+    paths-ignore:
+      - agent-inspection.txt
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect userscript integration anchors
+        with:
+          ref: agent/monospaced-mission-notes
+      - name: Persist userscript integration anchors
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          lines = path.read_text(encoding='utf-8').splitlines()
+          source_path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
+          output_path = Path('agent-inspection.txt')
+          lines = source_path.read_text(encoding='utf-8').splitlines()
           patterns = [
               "allianceBuildingsMap",
               "allianceBuildingsMapBlocker",
@@ -40,18 +45,27 @@ jobs:
               "Settings",
           ]
 
+          report = []
           seen = set()
           for pattern in patterns:
               matches = [i for i, line in enumerate(lines) if pattern in line]
-              print(f'\n===== PATTERN: {pattern!r} ({len(matches)} matches) =====')
-              for i in matches[:30]:
-                  start = max(0, i - 12)
-                  end = min(len(lines), i + 13)
+              report.append(f"\n===== PATTERN: {pattern!r} ({len(matches)} matches) =====")
+              for i in matches[:40]:
+                  start = max(0, i - 18)
+                  end = min(len(lines), i + 19)
                   key = (start, end)
                   if key in seen:
                       continue
                   seen.add(key)
-                  print(f'--- lines {start + 1}-{end} ---')
-                  for n in range(start, end):
-                      print(f'{n + 1:06d}: {lines[n]}')
+                  report.append(f"--- lines {start + 1}-{end} ---")
+                  report.extend(f"{n + 1:06d}: {lines[n]}" for n in range(start, end))
+
+          output_path.write_text("\n".join(report) + "\n", encoding='utf-8')
           PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add agent-inspection.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Record monospaced notes integration anchors [skip ci]"
+            git push origin HEAD:agent/monospaced-mission-notes
+          fi

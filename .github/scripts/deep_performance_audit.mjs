@@ -2,7 +2,8 @@
 /**
  * AST-backed structural performance inventory for the MissionChief Toolkit.
  *
- * This tool identifies profiling targets. It does not claim live runtime gains.
+ * The report identifies profiling targets. It is not a browser benchmark and
+ * must never be used alone to justify a production runtime change.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -36,10 +37,11 @@ function parseArguments(argv) {
 
 function propertyName(node) {
   if (!node) return null;
-  if (!node.computed && node.property?.type === 'Identifier') return node.property.name;
-  if (node.computed && node.property?.type === 'Literal') return String(node.property.value);
   if (node.type === 'Identifier') return node.name;
   if (node.type === 'Literal') return String(node.value);
+  if (node.type !== 'MemberExpression') return null;
+  if (!node.computed && node.property?.type === 'Identifier') return node.property.name;
+  if (node.computed && node.property?.type === 'Literal') return String(node.property.value);
   return null;
 }
 
@@ -47,6 +49,7 @@ function expressionName(node) {
   if (!node) return '';
   if (node.type === 'Identifier') return node.name;
   if (node.type === 'ThisExpression') return 'this';
+  if (node.type === 'ChainExpression') return expressionName(node.expression);
   if (node.type === 'MemberExpression') {
     const object = expressionName(node.object);
     const property = propertyName(node);
@@ -60,10 +63,8 @@ function functionBaseName(node, parent) {
   if (parent?.type === 'VariableDeclarator' && parent.id?.type === 'Identifier') return parent.id.name;
   if (parent?.type === 'AssignmentExpression') return expressionName(parent.left) || null;
   if (parent?.type === 'Property' || parent?.type === 'MethodDefinition') return propertyName(parent.key) || null;
-  if (parent?.type === 'CallExpression') {
-    const callee = expressionName(parent.callee) || 'callback';
-    return `${callee} callback`;
-  }
+  if (parent?.type === 'CallExpression') return `${expressionName(parent.callee) || 'callback'} callback`;
+  if (parent?.type === 'NewExpression') return `${expressionName(parent.callee) || 'constructor'} callback`;
   return null;
 }
 
@@ -83,38 +84,32 @@ function byteLength(value) {
   return Buffer.byteLength(value, 'utf8');
 }
 
-function makeWalker(visitor) {
-  function walk(node, parent = null, owner = null) {
-    if (!node || typeof node !== 'object' || typeof node.type !== 'string') return;
-    const nextOwner = visitor(node, parent, owner) ?? owner;
-    for (const [key, value] of Object.entries(node)) {
-      if (['start', 'end', 'loc', 'range'].includes(key)) continue;
-      if (Array.isArray(value)) {
-        for (const child of value) walk(child, node, nextOwner);
-      } else if (value && typeof value === 'object' && typeof value.type === 'string') {
-        walk(value, node, nextOwner);
-      }
-    }
-  }
-  return walk;
-}
-
-function detectObserverKind(node, aliases) {
-  if (!node || typeof node !== 'object') return null;
-  if (node.type === 'Identifier') return aliases.get(node.name) || null;
-  if (node.type === 'MemberExpression') {
-    const name = propertyName(node);
-    if (name === 'MutationObserver' || name === 'ResizeObserver') return name;
-  }
+function walk(node, visitor, parent = null, owner = null) {
+  if (!node || typeof node !== 'object' || typeof node.type !== 'string') return;
+  const nextOwner = visitor(node, parent, owner) ?? owner;
   for (const [key, value] of Object.entries(node)) {
     if (['start', 'end', 'loc', 'range'].includes(key)) continue;
     if (Array.isArray(value)) {
-      for (const child of value) {
-        const kind = detectObserverKind(child, aliases);
-        if (kind) return kind;
-      }
-    } else if (value && typeof value === 'object') {
-      const kind = detectObserverKind(value, aliases);
+      for (const child of value) walk(child, visitor, node, nextOwner);
+    } else if (value && typeof value === 'object' && typeof value.type === 'string') {
+      walk(value, visitor, node, nextOwner);
+    }
+  }
+}
+
+function directObserverKind(node, aliases) {
+  if (!node) return null;
+  if (node.type === 'Identifier') return aliases.get(node.name) || null;
+  if (node.type === 'MemberExpression') {
+    const name = propertyName(node);
+    return name === 'MutationObserver' || name === 'ResizeObserver' ? name : null;
+  }
+  if (node.type === 'ChainExpression' || node.type === 'AwaitExpression') return directObserverKind(node.expression || node.argument, aliases);
+  if (node.type === 'LogicalExpression' || node.type === 'BinaryExpression') return directObserverKind(node.left, aliases) || directObserverKind(node.right, aliases);
+  if (node.type === 'ConditionalExpression') return directObserverKind(node.consequent, aliases) || directObserverKind(node.alternate, aliases);
+  if (node.type === 'SequenceExpression') {
+    for (const expression of node.expressions) {
+      const kind = directObserverKind(expression, aliases);
       if (kind) return kind;
     }
   }
@@ -122,19 +117,16 @@ function detectObserverKind(node, aliases) {
 }
 
 function assignmentProperty(node) {
-  if (!node || node.type !== 'MemberExpression') return null;
-  const name = propertyName(node);
-  if (name) return name;
-  return null;
+  return node?.type === 'MemberExpression' ? propertyName(node) : null;
 }
 
 function isStyleAssignment(left) {
   if (!left || left.type !== 'MemberExpression') return false;
-  if (propertyName(left.object) === 'style') return true;
-  return expressionName(left).includes('.style.');
+  return propertyName(left.object) === 'style' || expressionName(left).includes('.style.');
 }
 
 function markdownTable(headers, rows) {
+  if (!rows.length) return ['_None._'];
   return [
     `| ${headers.join(' | ')} |`,
     `|${headers.map(() => '---').join('|')}|`,
@@ -151,29 +143,35 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
     ranges: true
   });
 
-  const functionRecords = [];
-  const functionByNode = new Map();
-  const namesUsed = new Map();
+  const parents = new Map();
+  walk(ast, (node, parent) => {
+    if (parent) parents.set(node, parent);
+    return null;
+  });
+
   const aliases = new Map([
     ['MutationObserver', 'MutationObserver'],
     ['ResizeObserver', 'ResizeObserver']
   ]);
-
-  const collectAliases = makeWalker((node) => {
-    if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier' && node.init) {
-      const kind = detectObserverKind(node.init, aliases);
+  for (let pass = 0; pass < 4; pass += 1) {
+    walk(ast, (node) => {
+      if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier' || !node.init) return null;
+      const kind = directObserverKind(node.init, aliases);
       if (kind) aliases.set(node.id.name, kind);
-    }
-    return null;
-  });
-  for (let pass = 0; pass < 4; pass += 1) collectAliases(ast);
+      return null;
+    });
+  }
 
-  const collectFunctions = makeWalker((node, parent, owner) => {
+  const functionRecords = [];
+  const functionByNode = new Map();
+  const namesUsed = new Map();
+  walk(ast, (node, parent, owner) => {
     if (!FUNCTION_TYPES.has(node.type)) return owner;
     const base = functionBaseName(node, parent) || `<anonymous@${node.loc.start.line}>`;
     const count = (namesUsed.get(base) || 0) + 1;
     namesUsed.set(base, count);
     const name = count === 1 ? base : `${base}@${node.loc.start.line}`;
+    const wrapper = node.start < 5000 && node.end > source.length * 0.95;
     const record = {
       id: functionRecords.length,
       name,
@@ -187,18 +185,48 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
       schedulers: 0,
       observers: 0,
       network: 0,
-      score: 0
+      score: 0,
+      wrapper
     };
     functionRecords.push(record);
     functionByNode.set(node, record);
     return record.id;
   });
-  collectFunctions(ast);
 
-  const observers = [];
-  const observerByOwnerVariable = new Map();
-  const observerSignals = new Map();
-  const registrations = [];
+  const objectBindings = new Map();
+  walk(ast, (node, _parent, owner) => {
+    if (node.type === 'VariableDeclarator' && node.id?.type === 'Identifier' && node.init?.type === 'ObjectExpression') {
+      objectBindings.set(`${owner ?? 'top'}:${node.id.name}`, sourceText(source, node.init, 700));
+    }
+    return FUNCTION_TYPES.has(node.type) ? functionByNode.get(node)?.id ?? owner : owner;
+  });
+
+  function assignedName(node) {
+    let current = node;
+    while (current) {
+      const parent = parents.get(current);
+      if (!parent || FUNCTION_TYPES.has(parent)) return null;
+      if (parent.type === 'VariableDeclarator' && parent.init === current) return expressionName(parent.id);
+      if (parent.type === 'AssignmentExpression' && parent.right === current) return expressionName(parent.left);
+      current = parent;
+    }
+    return null;
+  }
+
+  function hasAncestorCall(node, callName) {
+    let current = node;
+    while (current) {
+      const parent = parents.get(current);
+      if (!parent || FUNCTION_TYPES.has(parent)) return false;
+      if (parent.type === 'CallExpression' && expressionName(parent.callee) === callName) return true;
+      current = parent;
+    }
+    return false;
+  }
+
+  const observerConstructions = [];
+  const rawObserveCalls = [];
+  const signalMap = new Map();
   const schedulerCalls = [];
   const largeTemplates = [];
   const selectorIndex = new Map();
@@ -212,15 +240,16 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
     return `${owner ?? 'top'}:${variable}`;
   }
 
-  function nearestObserver(owner, variable, beforeLine) {
-    const direct = observerByOwnerVariable.get(ownerVariableKey(owner, variable));
-    if (direct) return direct;
-    return observers.filter(item => item.variable === variable && item.line <= beforeLine).at(-1) || null;
+  function recordSignal(owner, variable, key) {
+    if (!variable) return;
+    const id = ownerVariableKey(owner, variable);
+    const signal = signalMap.get(id) || { tracked: false, disconnected: false, registry: false };
+    signal[key] = true;
+    signalMap.set(id, signal);
   }
 
-  const analyse = makeWalker((node, parent, inheritedOwner) => {
+  walk(ast, (node, parent, inheritedOwner) => {
     const owner = FUNCTION_TYPES.has(node.type) ? functionByNode.get(node)?.id ?? inheritedOwner : inheritedOwner;
-
     if (FLOW_TYPES.has(node.type)) metric(owner, 'flow');
 
     if (node.type === 'TemplateLiteral') {
@@ -242,32 +271,23 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
       const property = assignmentProperty(node.left);
       if ((property && DOM_WRITE_PROPERTIES.has(property)) || isStyleAssignment(node.left)) metric(owner, 'writes');
     }
-
-    if (node.type === 'UpdateExpression' && node.argument?.type === 'MemberExpression') {
-      metric(owner, 'writes');
-    }
+    if (node.type === 'UpdateExpression' && node.argument?.type === 'MemberExpression') metric(owner, 'writes');
 
     if (node.type === 'NewExpression') {
-      const kind = detectObserverKind(node.callee, aliases);
+      const kind = directObserverKind(node.callee, aliases);
       if (kind) {
-        let variable = null;
-        if (parent?.type === 'VariableDeclarator' && parent.id?.type === 'Identifier') variable = parent.id.name;
-        else if (parent?.type === 'AssignmentExpression' && parent.left?.type === 'Identifier') variable = parent.left.name;
-        const item = {
-          id: observers.length,
+        const variable = assignedName(node);
+        observerConstructions.push({
+          id: observerConstructions.length,
           constructor: kind,
           variable,
           line: node.loc.start.line,
           function: owner === null || owner === undefined ? '<top-level>' : functionRecords[owner].name,
           owner,
-          tracked: false,
-          disconnectSignal: false,
-          registrySignal: false,
+          trackedByWrapper: hasAncestorCall(node, 'runtimeTrackObserver'),
           registrations: []
-        };
-        observers.push(item);
+        });
         metric(owner, 'observers');
-        if (variable) observerByOwnerVariable.set(ownerVariableKey(owner, variable), item);
       }
       if (propertyName(node.callee) === 'XMLHttpRequest') metric(owner, 'network');
     }
@@ -282,12 +302,11 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
 
       if (SCHEDULERS.has(method)) {
         metric(owner, 'schedulers');
-        const delayOrMode = method.includes('AnimationFrame') ? 'frame' : method === 'runtimeRunWhenIdle' ? 'idle' : node.arguments[1] ? sourceText(source, node.arguments[1], 100) : '';
         schedulerCalls.push({
           scheduler: method,
           line: node.loc.start.line,
           function: owner === null || owner === undefined ? '<top-level>' : functionRecords[owner].name,
-          delayOrMode
+          delayOrMode: method.includes('AnimationFrame') ? 'frame' : method === 'runtimeRunWhenIdle' ? 'idle' : node.arguments[1] ? sourceText(source, node.arguments[1], 100) : ''
         });
       }
 
@@ -304,77 +323,88 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
         }
       }
 
-      if (method === 'runtimeTrackObserver' && node.arguments[0]?.type === 'Identifier') {
-        const variable = node.arguments[0].name;
-        const signal = observerSignals.get(ownerVariableKey(owner, variable)) || {};
-        signal.tracked = true;
-        observerSignals.set(ownerVariableKey(owner, variable), signal);
+      if (method === 'runtimeTrackObserver') {
+        const variable = expressionName(node.arguments[0]);
+        if (variable) recordSignal(owner, variable, 'tracked');
       }
 
-      if (node.callee?.type === 'MemberExpression' && node.callee.object?.type === 'Identifier') {
-        const variable = node.callee.object.name;
-        if (method === 'disconnect') {
-          const signal = observerSignals.get(ownerVariableKey(owner, variable)) || {};
-          signal.disconnected = true;
-          observerSignals.set(ownerVariableKey(owner, variable), signal);
-        }
+      if (node.callee?.type === 'MemberExpression') {
+        const object = expressionName(node.callee.object);
+        if (method === 'disconnect') recordSignal(owner, object, 'disconnected');
         if (method === 'observe') {
-          const linked = nearestObserver(owner, variable, node.loc.start.line);
-          const target = node.arguments[0] ? sourceText(source, node.arguments[0], 180) : '';
-          const options = node.arguments[1] ? sourceText(source, node.arguments[1], 700) : '';
-          const registration = {
+          rawObserveCalls.push({
             line: node.loc.start.line,
+            owner,
             function: owner === null || owner === undefined ? '<top-level>' : functionRecords[owner].name,
-            observer: variable,
-            constructor: linked?.constructor || 'unknown',
-            target,
-            options,
-            subtree: /\bsubtree\s*:\s*true\b/u.test(options),
-            childList: /\bchildList\s*:\s*true\b/u.test(options),
-            attributes: /\battributes\s*:\s*true\b/u.test(options),
-            tracked: false,
-            disconnectSignal: false,
-            registrySignal: false
-          };
-          registrations.push(registration);
-          if (linked) linked.registrations.push(registration);
+            observer: object,
+            target: node.arguments[0] ? sourceText(source, node.arguments[0], 180) : '',
+            optionsNode: node.arguments[1] || null
+          });
         }
-      }
-
-      if (node.callee?.type === 'MemberExpression' && ['add', 'push', 'set'].includes(method) && node.arguments[0]?.type === 'Identifier') {
-        const variable = node.arguments[0].name;
-        const text = calleeName.toLowerCase();
-        if (text.includes('observer')) {
-          const signal = observerSignals.get(ownerVariableKey(owner, variable)) || {};
-          signal.registry = true;
-          observerSignals.set(ownerVariableKey(owner, variable), signal);
+        if (['add', 'push', 'set'].includes(method) && node.arguments[0]) {
+          const variable = expressionName(node.arguments[0]);
+          if (variable && calleeName.toLowerCase().includes('observer')) recordSignal(owner, variable, 'registry');
         }
       }
     }
 
     return owner;
   });
-  analyse(ast);
 
-  for (const observer of observers) {
-    if (!observer.variable) continue;
-    const signal = observerSignals.get(ownerVariableKey(observer.owner, observer.variable)) || {};
-    observer.tracked = Boolean(signal.tracked);
-    observer.disconnectSignal = Boolean(signal.disconnected || signal.tracked);
-    observer.registrySignal = Boolean(signal.registry);
-    for (const registration of observer.registrations) {
-      registration.tracked = observer.tracked;
-      registration.disconnectSignal = observer.disconnectSignal;
-      registration.registrySignal = observer.registrySignal;
+  function findConstruction(owner, variable, line) {
+    const exact = observerConstructions.filter(item => item.owner === owner && item.variable === variable && item.line <= line).at(-1);
+    if (exact) return exact;
+    return observerConstructions.filter(item => item.variable === variable && item.line <= line).at(-1) || null;
+  }
+
+  function resolveOptions(owner, node) {
+    if (!node) return '';
+    if (node.type === 'Identifier') return objectBindings.get(ownerVariableKey(owner, node.name)) || objectBindings.get(`top:${node.name}`) || sourceText(source, node, 700);
+    return sourceText(source, node, 700);
+  }
+
+  const unresolvedObserveCalls = [];
+  const observerRegistrations = [];
+  for (const item of rawObserveCalls) {
+    const construction = findConstruction(item.owner, item.observer, item.line);
+    if (!construction) {
+      unresolvedObserveCalls.push({ line: item.line, function: item.function, observer: item.observer, target: item.target, options: resolveOptions(item.owner, item.optionsNode) });
+      continue;
     }
+    const ownSignal = signalMap.get(ownerVariableKey(construction.owner, construction.variable)) || {};
+    const callSignal = signalMap.get(ownerVariableKey(item.owner, item.observer)) || {};
+    const options = resolveOptions(item.owner, item.optionsNode);
+    const registration = {
+      line: item.line,
+      function: item.function,
+      observer: item.observer,
+      constructor: construction.constructor,
+      target: item.target,
+      options,
+      subtree: /\bsubtree\s*:\s*true\b/u.test(options),
+      childList: /\bchildList\s*:\s*true\b/u.test(options),
+      attributes: /\battributes\s*:\s*true\b/u.test(options),
+      tracked: Boolean(construction.trackedByWrapper || ownSignal.tracked || callSignal.tracked),
+      registrySignal: Boolean(ownSignal.registry || callSignal.registry),
+      disconnectSignal: Boolean(construction.trackedByWrapper || ownSignal.tracked || callSignal.tracked || ownSignal.disconnected || callSignal.disconnected)
+    };
+    observerRegistrations.push(registration);
+    construction.registrations.push(registration);
+  }
+
+  for (const construction of observerConstructions) {
+    const signal = construction.variable ? signalMap.get(ownerVariableKey(construction.owner, construction.variable)) || {} : {};
+    construction.tracked = Boolean(construction.trackedByWrapper || signal.tracked);
+    construction.registrySignal = Boolean(signal.registry);
+    construction.disconnectSignal = Boolean(construction.trackedByWrapper || signal.tracked || signal.disconnected);
   }
 
   for (const record of functionRecords) {
     record.score = record.lines + record.flow * 6 + record.reads * 5 + record.writes * 8 + record.schedulers * 6 + record.observers * 10 + record.network * 12;
   }
 
-  const byScheduler = new Map();
-  for (const item of schedulerCalls) byScheduler.set(item.function, (byScheduler.get(item.function) || 0) + 1);
+  const schedulerByFunction = new Map();
+  for (const item of schedulerCalls) schedulerByFunction.set(item.function, (schedulerByFunction.get(item.function) || 0) + 1);
   const repeatedSelectors = [...selectorIndex.values()]
     .filter(item => item.count >= 2)
     .map(item => ({ selector: item.selector, count: item.count, functions: [...item.functions].sort(), lines: item.lines.slice(0, 20) }))
@@ -382,39 +412,58 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
 
   largeTemplates.sort((a, b) => b.bytes - a.bytes || a.line - b.line);
   schedulerCalls.sort((a, b) => a.line - b.line || a.scheduler.localeCompare(b.scheduler));
-  registrations.sort((a, b) => a.line - b.line);
+  observerRegistrations.sort((a, b) => a.line - b.line);
+  unresolvedObserveCalls.sort((a, b) => a.line - b.line);
 
-  const lines = source.split(/\r?\n/u);
+  const splitLines = source.split(/\r?\n/u);
+  const lineCount = source.endsWith('\n') ? splitLines.length - 1 : splitLines.length;
   const sourceSummary = {
     path: sourcePath,
     version: source.match(/^\/\/\s*@version\s+([^\s]+)/mu)?.[1] || 'unknown',
     sha256: crypto.createHash('sha256').update(source, 'utf8').digest('hex'),
     bytes: byteLength(source),
-    lines: lines.length,
-    nonemptyLines: lines.filter(value => value.trim()).length
+    lines: lineCount,
+    nonemptyLines: splitLines.filter(value => value.trim()).length
   };
-  const broadSubtreeObservers = registrations.filter(item => item.subtree).length;
-  const visibleOwnershipSignals = registrations.filter(item => item.disconnectSignal || item.registrySignal).length;
+
+  const broadSubtreeObservers = observerRegistrations.filter(item => item.subtree).length;
+  const visibleOwnershipSignals = observerRegistrations.filter(item => item.disconnectSignal || item.registrySignal).length;
+  const mutationConstructions = observerConstructions.filter(item => item.constructor === 'MutationObserver').length;
+  const resizeConstructions = observerConstructions.filter(item => item.constructor === 'ResizeObserver').length;
   const findings = [];
   const remaining = 32000 - sourceSummary.lines;
   if (remaining < 500) findings.push({ risk: 'high', category: 'source-headroom', message: `Only ${remaining} lines remain before the existing 32,000-line ceiling.` });
   if (largeTemplates[0]?.classification === 'css' && largeTemplates[0].bytes > 500000) findings.push({ risk: 'high', category: 'style-parse', message: 'The largest embedded CSS template exceeds 500 KB; live timing and visual contracts are required before changing style delivery.' });
-  if (broadSubtreeObservers) findings.push({ risk: 'medium', category: 'observer-scope', message: `${broadSubtreeObservers} observer registrations use subtree:true; ownership and callback evidence are required before narrowing or merging them.` });
-  if (visibleOwnershipSignals < registrations.length) findings.push({ risk: 'medium', category: 'observer-ownership', message: `${registrations.length - visibleOwnershipSignals} registrations lack an AST-visible disconnect, runtimeTrackObserver or observer-registry signal and require manual lifecycle verification.` });
+  if (broadSubtreeObservers) findings.push({ risk: 'medium', category: 'observer-scope', message: `${broadSubtreeObservers} resolved observer registrations use subtree:true; ownership and callback evidence are required before narrowing or merging them.` });
+  if (visibleOwnershipSignals < observerRegistrations.length) findings.push({ risk: 'medium', category: 'observer-ownership', message: `${observerRegistrations.length - visibleOwnershipSignals} resolved registrations lack an AST-visible disconnect, runtimeTrackObserver or observer-registry signal and require manual lifecycle verification.` });
+  if (unresolvedObserveCalls.length) findings.push({ risk: 'review', category: 'observer-linkage', message: `${unresolvedObserveCalls.length} .observe() calls could not be linked to a constructor by local AST ownership and remain manual-review items.` });
   if (repeatedSelectors[0]?.count >= 4) findings.push({ risk: 'low', category: 'selector-repetition', message: 'Repeated literal selectors exist; cache only inside proven document/window lifetimes with invalidation fixtures.' });
 
-  const sortRecords = (key, limit = 30) => [...functionRecords].filter(record => record.name !== '<anonymous@47>').sort((a, b) => b[key] - a[key] || b.lines - a.lines || a.name.localeCompare(b.name)).slice(0, limit);
+  const rankedFunctions = functionRecords.filter(record => !record.wrapper);
+  const sortRecords = (key, limit = 30) => [...rankedFunctions].sort((a, b) => b[key] - a[key] || b.lines - a.lines || a.name.localeCompare(b.name)).slice(0, limit).map(({ wrapper, ...item }) => item);
 
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     tool: 'mcms-deep-performance-audit',
     parser: 'acorn',
     source: sourceSummary,
+    baselineCrossCheck: {
+      expectedMutationObserverConstructions: 12,
+      measuredMutationObserverConstructions: mutationConstructions,
+      expectedResizeObserverConstructions: 4,
+      measuredResizeObserverConstructions: resizeConstructions,
+      expectedBroadSubtreeObservers: 10,
+      measuredResolvedBroadSubtreeObservers: broadSubtreeObservers,
+      unresolvedObserveCalls: unresolvedObserveCalls.length
+    },
     summary: {
-      namedFunctions: functionRecords.length,
+      functionsAndCallbacks: functionRecords.length,
+      rankedFunctions: rankedFunctions.length,
       largeTemplates: largeTemplates.length,
-      observerConstructions: observers.length,
-      observerRegistrations: registrations.length,
+      mutationObserverConstructions: mutationConstructions,
+      resizeObserverConstructions: resizeConstructions,
+      observerConstructions: observerConstructions.length,
+      observerRegistrations: observerRegistrations.length,
       broadSubtreeObservers,
       schedulerCalls: schedulerCalls.length,
       repeatedSelectors: repeatedSelectors.length
@@ -423,9 +472,10 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
     topFunctionsByLines: sortRecords('lines'),
     topDomReaders: sortRecords('reads', 25).filter(item => item.reads),
     topDomWriters: sortRecords('writes', 25).filter(item => item.writes),
-    topSchedulerFunctions: [...byScheduler.entries()].map(([functionName, calls]) => ({ function: functionName, calls })).sort((a, b) => b.calls - a.calls || a.function.localeCompare(b.function)).slice(0, 30),
-    observerConstructions: observers.map(({ owner, ...item }) => item),
-    observerRegistrations: registrations,
+    topSchedulerFunctions: [...schedulerByFunction.entries()].map(([functionName, calls]) => ({ function: functionName, calls })).sort((a, b) => b.calls - a.calls || a.function.localeCompare(b.function)).slice(0, 30),
+    observerConstructions: observerConstructions.map(({ owner, trackedByWrapper, ...item }) => item),
+    observerRegistrations,
+    unresolvedObserveCalls,
     schedulerCalls,
     largeTemplates: largeTemplates.slice(0, 40),
     repeatedSelectors: repeatedSelectors.slice(0, 50),
@@ -439,7 +489,7 @@ export function analyseSource(source, sourcePath = 'src/MissionChief_Map_Command
 }
 
 export function renderMarkdown(data) {
-  const { source, summary } = data;
+  const { source, summary, baselineCrossCheck } = data;
   const lines = [
     '# MissionChief Toolkit deep performance audit',
     '',
@@ -451,11 +501,24 @@ export function renderMarkdown(data) {
     `- Version: \`${source.version}\``,
     `- SHA-256: \`${source.sha256}\``,
     `- Source: \`${source.bytes.toLocaleString('en-GB')}\` bytes, \`${source.lines.toLocaleString('en-GB')}\` lines`,
-    `- Functions/callbacks: \`${summary.namedFunctions}\``,
+    `- Functions/callbacks: \`${summary.functionsAndCallbacks}\``,
     `- Scheduler calls: \`${summary.schedulerCalls}\``,
-    `- Observer constructions: \`${summary.observerConstructions}\``,
-    `- Observer registrations: \`${summary.observerRegistrations}\``,
-    `- Broad subtree registrations: \`${summary.broadSubtreeObservers}\``,
+    `- MutationObserver constructions: \`${summary.mutationObserverConstructions}\``,
+    `- ResizeObserver constructions: \`${summary.resizeObserverConstructions}\``,
+    `- Resolved observer registrations: \`${summary.observerRegistrations}\``,
+    `- Resolved broad subtree registrations: \`${summary.broadSubtreeObservers}\``,
+    '',
+    '## Trusted-baseline cross-check',
+    '',
+    ...markdownTable(
+      ['Metric', 'Trusted baseline', 'AST inventory'],
+      [
+        ['MutationObserver constructions', baselineCrossCheck.expectedMutationObserverConstructions, baselineCrossCheck.measuredMutationObserverConstructions],
+        ['ResizeObserver constructions', baselineCrossCheck.expectedResizeObserverConstructions, baselineCrossCheck.measuredResizeObserverConstructions],
+        ['Broad subtree registrations', baselineCrossCheck.expectedBroadSubtreeObservers, baselineCrossCheck.measuredResolvedBroadSubtreeObservers],
+        ['Unresolved observe calls', 'manual review', baselineCrossCheck.unresolvedObserveCalls]
+      ]
+    ),
     '',
     '## Findings',
     '',
@@ -463,35 +526,27 @@ export function renderMarkdown(data) {
     '',
     '## Highest structural hotspot scores',
     '',
-    ...markdownTable(
-      ['Function', 'Lines', 'Bytes', 'Flow', 'Reads', 'Writes', 'Schedulers', 'Observers', 'Network', 'Score'],
-      data.topFunctionsByScore.slice(0, 20).map(item => [item.name, item.lines, item.bytes, item.flow, item.reads, item.writes, item.schedulers, item.observers, item.network, item.score])
-    ),
+    ...markdownTable(['Function', 'Lines', 'Bytes', 'Flow', 'Reads', 'Writes', 'Schedulers', 'Observers', 'Network', 'Score'], data.topFunctionsByScore.slice(0, 20).map(item => [item.name, item.lines, item.bytes, item.flow, item.reads, item.writes, item.schedulers, item.observers, item.network, item.score])),
     '',
     '## DOM-write concentration',
     '',
-    ...markdownTable(
-      ['Function', 'Lines', 'Reads', 'Writes', 'Schedulers', 'Score'],
-      data.topDomWriters.slice(0, 20).map(item => [item.name, item.lines, item.reads, item.writes, item.schedulers, item.score])
-    ),
+    ...markdownTable(['Function', 'Lines', 'Reads', 'Writes', 'Schedulers', 'Score'], data.topDomWriters.slice(0, 20).map(item => [item.name, item.lines, item.reads, item.writes, item.schedulers, item.score])),
     '',
     '## Scheduler concentration',
     '',
     ...markdownTable(['Function', 'Calls'], data.topSchedulerFunctions.slice(0, 20).map(item => [item.function, item.calls])),
     '',
-    '## Observer registrations',
+    '## Resolved observer registrations',
     '',
-    ...markdownTable(
-      ['Line', 'Function', 'Type', 'Target', 'Options', 'Tracked', 'Registry', 'Disconnect'],
-      data.observerRegistrations.map(item => [item.line, item.function, item.constructor, item.target, item.options, item.tracked, item.registrySignal, item.disconnectSignal])
-    ),
+    ...markdownTable(['Line', 'Function', 'Type', 'Target', 'Options', 'Tracked', 'Registry', 'Disconnect'], data.observerRegistrations.map(item => [item.line, item.function, item.constructor, item.target, item.options, item.tracked, item.registrySignal, item.disconnectSignal])),
+    '',
+    '## Unresolved observe calls',
+    '',
+    ...markdownTable(['Line', 'Function', 'Observer expression', 'Target', 'Options'], data.unresolvedObserveCalls.map(item => [item.line, item.function, item.observer, item.target, item.options])),
     '',
     '## Observer constructions without a matched registration',
     '',
-    ...markdownTable(
-      ['Line', 'Function', 'Type', 'Variable', 'Tracked', 'Registry', 'Disconnect'],
-      data.observerConstructions.filter(item => !item.registrations.length).map(item => [item.line, item.function, item.constructor, item.variable || '', item.tracked, item.registrySignal, item.disconnectSignal])
-    ),
+    ...markdownTable(['Line', 'Function', 'Type', 'Variable', 'Tracked', 'Registry', 'Disconnect'], data.observerConstructions.filter(item => !item.registrations.length).map(item => [item.line, item.function, item.constructor, item.variable || '', item.tracked, item.registrySignal, item.disconnectSignal])),
     '',
     '## Largest embedded templates',
     '',

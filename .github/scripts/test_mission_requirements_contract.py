@@ -89,6 +89,11 @@ def main() -> int:
         "tbody#mission_vehicle_driving > tr",
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
         "function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1)",
+        "function missionRequirementsVehicleApiRecord(vehicleId)",
+        "function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element)",
+        "personalVehicleApiCache",
+        "refreshPersonalVehicleData",
+        "assigned_personnel_count",
         "data-personnel-training",
         "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
         "additive_overlays",
@@ -167,6 +172,8 @@ def main() -> int:
     assert '"key":"police-sergeant-personnel"' in source and '"police_sergeant"' in source, "Police Sergeant needs native training evidence"
     assert '"key":"search-advisor-personnel"' in source and '"search_and_rescue"' in source and '"countable":true' in source, "Search Advisor needs ARR capability evidence"
     assert '"key":"sar-commander-personnel"' in source and '"search_and_rescue_command"' in source, "SAR Commander needs ARR capability evidence"
+    assert "assigned_personnel_count" in source and "missionRequirementsVehicleApiStaff" in source, "exact vehicle personnel API evidence is required"
+    assert "personalVehicleApiCache" in source and "refreshPersonalVehicleData(false)" in source, "Matrix must reuse the shared vehicle API cache"
     assert "LSS-Manager" not in source
     aliases_seen = set()
     for group_name in ("vehicleRequirements", "staffRequirements"):

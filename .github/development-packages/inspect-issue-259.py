@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import os
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
@@ -12,7 +14,6 @@ def function_block(source: str, name: str) -> str:
     depth = 0
     quote = None
     escaped = False
-    template_depth = 0
     i = brace
     while i < len(source):
         ch = source[i]
@@ -56,14 +57,21 @@ def main() -> None:
         "missionRequirementsAggregate",
         "missionRequirementsResolve",
     ]
-    parts = []
+    sections = ["## Issue #259 disposable source inspection", "", "No branch or production files were changed by this inspection."]
     for name in names:
         block = function_block(source, name)
-        compact = " ".join(block.split())
-        parts.append(f"[{name}] {compact[:2600]}")
+        sections.extend(["", f"### `{name}`", "```javascript", block[:9000], "```"])
     resource_pos = source.find("water-resource")
-    parts.append("[water-resource-context] " + " ".join(source[max(0, resource_pos - 700):resource_pos + 1300].split()))
-    raise RuntimeError("ISSUE259_SOURCE_INSPECTION || " + " || ".join(parts))
+    sections.extend(["", "### `water-resource` definition context", "```javascript", source[max(0, resource_pos - 900):resource_pos + 1800], "```"])
+    body = "\n".join(sections)
+    body_file = ROOT / ".issue-259-inspection.md"
+    body_file.write_text(body, encoding="utf-8")
+    subprocess.run([
+        "gh", "issue", "comment", "259",
+        "--repo", os.environ["GITHUB_REPOSITORY"],
+        "--body-file", str(body_file),
+    ], check=True)
+    body_file.unlink()
 
 
 if __name__ == "__main__":

@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.14] - 2026-07-20
+
+### Fixed
+- Removed visible Mission Info, Patients and Patient Details provenance badges from Matrix requirement labels while retaining machine-readable row metadata.
+- Classified Required Personnel Available as a mission-generation prerequisite so it cannot create rows, unresolved shortages, red state or coverage totals.
+- Normalised Other information → Required Personnel into operational trained-personnel rows and removed raw Mission info prefixes from unsupported operational personnel.
+- Enabled live Level 2 Public Order Officer and Police Sergeant reconciliation from explicit MissionChief training evidence.
+
+### Compatibility
+- Updated the Fight on Train catalogue fixture so spawn-availability Railway Police personnel are no longer treated as operational demand.
+- Added deterministic clean-label, prerequisite, operational-personnel and parser-facing row contracts.
+
 ## [4.20.13] - 2026-07-20
 
 ### Fixed

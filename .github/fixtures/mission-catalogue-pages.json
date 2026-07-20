@@ -248,8 +248,47 @@
       "variations": [],
       "expected": {
         "police-car": 4,
-        "dsu": 1,
-        "railway-police-officer": 8
+        "dsu": 1
+      }
+    },
+    {
+      "name": "operational personnel versus spawn prerequisites",
+      "sourceUrl": "https://www.missionchief.co.uk/einsaetze/fixture-operational-personnel",
+      "id": 99992,
+      "title": "Recorded operational personnel fixture",
+      "sections": {
+        "reward": [
+          [
+            "Average credits",
+            "7500"
+          ],
+          [
+            "Required Police Stations",
+            "8"
+          ],
+          [
+            "Required Personnel Available",
+            "40x Level 2 Public Order Officer 5x Police Sergeant"
+          ]
+        ],
+        "requirements": [
+          [
+            "Required Police Cars",
+            "5"
+          ]
+        ],
+        "other": [
+          [
+            "Required Personnel",
+            "18x Level 2 Public Order Officer 1x Police Sergeant"
+          ]
+        ]
+      },
+      "variations": [],
+      "expected": {
+        "police-car": 5,
+        "public-order-level-2": 18,
+        "police-sergeant-personnel": 1
       }
     }
   ]

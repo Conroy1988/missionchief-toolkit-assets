@@ -89,7 +89,7 @@ def main() -> int:
         "tbody#mission_vehicle_driving > tr",
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
         "data-personnel-training",
-        "function missionRequirementsCataloguePersonnelRequirements(label, value)",
+        "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
         "additive_overlays",
         "function missionRequirementsPrimaryRuntime()",
         "function missionRequirementsMissionIdentity(candidate, source)",
@@ -157,11 +157,20 @@ def main() -> int:
     assert "return { root, parent: operational.parentNode, before: operational };" not in source
     assert "v4.lss-manager.de" not in source
     assert "const rowText = missionRequirementsCapabilityLabel" not in source, "whole-row captions must not prove personnel training"
+    assert "<small class=\"mcms-req-source\">" not in source, "Matrix provenance badges must be structurally absent"
+    assert "class=\"mcms-matrix-requirement-name\"" in source, "Matrix requirement label needs a clean parser-facing element"
+    assert "data-requirement-source=\"${escapeHtml(sourceKey)}\"" in source, "Matrix provenance must remain outside label text"
+    assert "classification: 'spawn-prerequisite'" in source, "Mission Info spawn prerequisites need typed exclusion"
+    assert "item?.classification === 'operational'" in source, "operational catalogue unresolved text must be prefix-free"
+    assert '"key":"public-order-level-2"' in source and '"level_2_public_order"' in source, "Level 2 Public Order needs native training evidence"
+    assert '"key":"police-sergeant-personnel"' in source and '"police_sergeant"' in source, "Police Sergeant needs native training evidence"
     assert "LSS-Manager" not in source
     aliases_seen = set()
     for group_name in ("vehicleRequirements", "staffRequirements"):
         for entry in uk_capabilities[group_name]:
-            assert entry["aliases"] and entry["types"]
+            assert entry["aliases"] and (entry["types"] or entry.get("training"))
+            for training in entry.get("training", []):
+                assert isinstance(training, str) and training.strip()
             for alias in entry["aliases"]:
                 folded = re.sub(r"\s+", " ", alias).strip().casefold()
                 assert folded not in aliases_seen, f"duplicate UK capability alias: {alias}"

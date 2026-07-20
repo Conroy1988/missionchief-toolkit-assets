@@ -6,6 +6,7 @@ This audit supports Issues #247 and #277. It is measurement-only: the audit bran
 
 - Production version: `4.20.17`
 - Audit-start main commit: `2ae2e963c4eab8a8a49dd38b8dbb13c10917e791`
+- Reconciled post-release main commit: `e6b4ce9754db1ff3236c517f546fcdba435ada3a`
 - Verified production SHA-256: `6eb3c212187c68d4ccb75aad23261c71a1769c3f94cb1c3f5ac7290dc3bfe479`
 - Open pull requests at audit start: none
 
@@ -13,19 +14,21 @@ The latest validated static budget records 2,029,383 source bytes and 31,802 sou
 
 ## Deep-audit artefact
 
-The `Deep Performance Audit` workflow runs `.github/scripts/deep_performance_audit.py` and publishes:
+The `Deep Performance Audit` workflow installs the exact Acorn parser, runs `.github/scripts/deep_performance_audit.mjs` and publishes:
 
 - `deep-performance-audit.json` — machine-readable function, scheduler, observer, selector and template inventory;
 - `deep-performance-audit.md` — reviewed hotspot ranking and safety interpretation.
 
 The tool records:
 
-- named-function lines, bytes and weighted structural pressure;
-- control-flow, DOM-read and DOM-write concentration;
+- AST-resolved function and callback boundaries, lines, bytes and weighted structural pressure;
+- control-flow, DOM-read and DOM-write concentration assigned to the nearest function owner;
 - scheduler ownership and delay/mode expressions;
-- observer roots, options, subtree scope and visible teardown signals;
+- observer constructions, registrations, roots, options, subtree scope and visible teardown or registry signals;
 - large embedded CSS, HTML and text templates;
 - repeated literal selectors and their owning functions.
+
+The Acorn-backed parser is mandatory. An earlier heuristic prototype was rejected after nested JavaScript syntax produced invalid function boundaries and incomplete observer ownership evidence.
 
 ## Interpretation boundary
 
@@ -44,7 +47,7 @@ The following changes are explicitly prohibited without additional evidence:
 
 ## Planned progression
 
-1. Publish and review the v4.20.17 static inventory.
+1. Publish and review the v4.20.17 AST-backed static inventory.
 2. Run equivalent Desktop, Tablet and iOS-compatible profiler scenarios.
 3. Rank candidates by expected user impact, evidence strength and regression risk.
 4. Implement one low-risk, independently reversible optimisation per pull request.

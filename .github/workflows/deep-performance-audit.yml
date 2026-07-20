@@ -73,14 +73,18 @@ jobs:
           path: ~/.npm
           key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
 
-      - name: Run deep-audit fixtures
+      - name: Check deep-audit script syntax
         run: |
           node --check .github/scripts/deep_performance_audit.mjs
           node --check .github/scripts/reconcile_deep_performance_audit.mjs
           node --check .github/scripts/test_deep_performance_audit.mjs
           node --check .github/scripts/test_reconcile_deep_performance_audit.mjs
-          node .github/scripts/test_deep_performance_audit.mjs
-          node .github/scripts/test_reconcile_deep_performance_audit.mjs
+
+      - name: Run AST analyser fixtures
+        run: node .github/scripts/test_deep_performance_audit.mjs
+
+      - name: Run baseline reconciliation fixtures
+        run: node .github/scripts/test_reconcile_deep_performance_audit.mjs
 
       - name: Generate deep performance inventory
         run: |

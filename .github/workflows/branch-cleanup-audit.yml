@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       delete_fully_merged:
-        description: Delete branches proven fully merged into main
+        description: Delete branches proven merged into main
         required: true
         default: false
         type: boolean
@@ -23,16 +23,13 @@ on:
       - .github/workflows/branch-cleanup-audit.yml
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: read
 
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
-    permissions:
-      contents: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged)) && 'write' || 'read' }}
-      pull-requests: read
+    timeout-minutes: 10
 
     steps:
       - name: Check out latest main
@@ -42,16 +39,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Inventory and optionally delete fully merged branches
+      - name: Inventory and optionally delete merged branches
         env:
           GH_TOKEN: ${{ github.token }}
-          DELETE_FULLY_MERGED: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged) }}
+          DELETE_MERGED: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged) }}
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
-          gh pr list --state open --limit 500 --json headRefName > /tmp/open-prs.json
+
+          gh pr list \
+            --state open \
+            --limit 500 \
+            --json headRefName \
+            > /tmp/open-prs.json
+
+          gh pr list \
+            --state merged \
+            --limit 500 \
+            --json headRefName,headRefOid \
+            > /tmp/merged-prs.json
+
           jq -r '.[].headRefName' /tmp/open-prs.json | sort -u > /tmp/open-heads.txt
+          jq -r '.[] | [.headRefName, .headRefOid] | @tsv' /tmp/merged-prs.json \
+            | sort -u > /tmp/merged-heads.tsv
 
           : > /tmp/candidates.txt
           : > /tmp/protected.txt
@@ -67,20 +78,38 @@ jobs:
               continue
             fi
 
+            branch_sha="$(git rev-parse "origin/$branch")"
+
             if git merge-base --is-ancestor "origin/$branch" origin/main; then
               echo "$branch" >> /tmp/candidates.txt
+              continue
+            fi
+
+            if awk -F '\t' -v name="$branch" -v sha="$branch_sha" \
+              '$1 == name && $2 == sha { found = 1 } END { exit(found ? 0 : 1) }' \
+              /tmp/merged-heads.tsv; then
+              echo "$branch" >> /tmp/candidates.txt
             else
-              echo "$branch — not fully merged" >> /tmp/protected.txt
+              echo "$branch — not proven merged or changed after merge" >> /tmp/protected.txt
             fi
           done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sort)
 
           sort -u -o /tmp/candidates.txt /tmp/candidates.txt
           sort -u -o /tmp/protected.txt /tmp/protected.txt
 
-          if [[ "$DELETE_FULLY_MERGED" == "true" && -s /tmp/candidates.txt ]]; then
+          if [[ "$DELETE_MERGED" == "true" && -s /tmp/candidates.txt ]]; then
             while IFS= read -r branch; do
               [[ -n "$branch" ]] || continue
-              if gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" >/dev/null 2>&1; then
+              encoded_branch="$(python - "$branch" <<'PY'
+          import sys
+          from urllib.parse import quote
+          print(quote(sys.argv[1], safe=''))
+          PY
+              )"
+              if gh api \
+                --method DELETE \
+                "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_branch}" \
+                >/dev/null 2>&1; then
                 echo "$branch" >> /tmp/deleted.txt
               else
                 echo "$branch — deletion rejected or branch protected" >> /tmp/delete-failed.txt
@@ -92,7 +121,7 @@ jobs:
           sort -u -o /tmp/delete-failed.txt /tmp/delete-failed.txt
 
           jq -n \
-            --arg mode "$([[ "$DELETE_FULLY_MERGED" == "true" ]] && echo delete-fully-merged || echo read-only)" \
+            --arg mode "$([[ "$DELETE_MERGED" == "true" ]] && echo delete-merged || echo read-only)" \
             --rawfile candidates /tmp/candidates.txt \
             --rawfile deleted /tmp/deleted.txt \
             --rawfile deleteFailed /tmp/delete-failed.txt \
@@ -109,20 +138,20 @@ jobs:
           {
             echo '# Branch Cleanup Audit'
             echo
-            if [[ "$DELETE_FULLY_MERGED" == "true" ]]; then
-              echo '> Guarded deletion mode: only branches fully contained in `main` and not attached to open pull requests were eligible.'
+            if [[ "$DELETE_MERGED" == "true" ]]; then
+              echo '> Guarded deletion mode: only branches with no open PR and a tip proven merged into `main` were eligible.'
             else
               echo '> Read-only mode: this run deleted nothing.'
             fi
             echo
-            echo '## Deleted fully merged branches'
+            echo '## Deleted merged branches'
             if [[ -s /tmp/deleted.txt ]]; then
               sed 's/^/- `/' /tmp/deleted.txt | sed 's/$/`/'
             else
               echo '- None'
             fi
             echo
-            echo '## Fully merged candidates'
+            echo '## Proven merged candidates'
             if [[ -s /tmp/candidates.txt ]]; then
               sed 's/^/- `/' /tmp/candidates.txt | sed 's/$/`/'
             else

@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.12'
+        version: '4.20.14'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -968,7 +968,12 @@ assert.deepStrictEqual(
     'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
 );
 const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
-assert(publicOrderRows.every(row => row.uncertain && row.selectedText === '?' && row.enRouteText === '?'), 'unmapped role capacity remains safely uncertain');
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
 
 const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
 const genericParsed = api.parseSource(genericCandidate.source);
@@ -1098,7 +1103,8 @@ flushAnimationFrames();
 const patientRecord = api.records.get(patientRenderCandidate.source);
 assert(patientRecord, 'patient-only mission creates a normal Matrix record');
 assert(patientRecord.panel.innerHTML.includes('Ambulance'), 'patient-only mission renders an Ambulance row');
-assert(patientRecord.panel.innerHTML.includes('Patients'), 'patient-derived row identifies its source');
+assert(!patientRecord.panel.innerHTML.includes('>Patients<'), 'patient-derived row has no visible source badge');
+assert(patientRecord.panel.innerHTML.includes('data-requirement-source="patients"'), 'patient-derived row keeps machine-readable provenance');
 assert.strictEqual(patientRenderCandidate.root.children.filter(child => child.id === 'mc-map-command-toolkit-mission-requirements').length, 1, 'patient demand uses the existing single Matrix panel');
 api.clear();
 candidates = [];
@@ -1292,6 +1298,42 @@ function makeCatalogueDocument(page) {
             return [];
         }
     };
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(sergeantCapacity.min, 1, `Police Sergeant counts in ${bucketName}`);
+}
+const unsupportedPage = { title: 'Recorded unsupported operational personnel fixture', sections: { reward: [], requirements: [], other: [['Required Personnel','2x Unsupported Tactical Specialist']] }, variations: [] };
+const unsupportedCatalogue = api.parseCatalogueDocument(makeCatalogueDocument(unsupportedPage), { id: 26001 });
+const unsupportedReconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, unsupportedCatalogue, 'ready', true);
+assert(unsupportedReconciled.unresolved.some(item => /Unsupported Tactical Specialist/.test(item.text)), 'unsupported operational personnel remain visible');
+assert(unsupportedReconciled.unresolved.every(item => !/^Mission info:/i.test(item.text)), 'unsupported operational personnel omit the raw Mission info prefix');
+const patientRows = [{ key:'ambulance', requirement:'Ambulance', requirementSource:'Patients', covered:false, definitelyOpen:true, uncertain:false, partial:false, requiredText:'1', onSiteText:'0', respondingText:'0', selectedText:'0', stillNeededText:'1' },{ key:'patient-transport', requirement:'Patient Transport', requirementSource:'Patient details', covered:false, definitelyOpen:true, uncertain:false, partial:false, requiredText:'1', onSiteText:'0', respondingText:'0', selectedText:'0', stillNeededText:'1' }];
+const cleanPatientPanel = api.panelHtml(patientRows, []).html;
+assert(!cleanPatientPanel.includes('>Patients<') && !cleanPatientPanel.includes('>Patient details<'), 'patient provenance badges are structurally absent');
+assert(cleanPatientPanel.includes('data-requirement-source="patients"') && cleanPatientPanel.includes('data-requirement-source="patient-details"'), 'patient provenance remains machine-readable');
+assert(cleanPatientPanel.includes('class="mcms-matrix-requirement-name">Ambulance</span>'), 'Ambulance label contains no provenance child');
+assert(cleanPatientPanel.includes('class="mcms-matrix-requirement-name">Patient Transport</span>'), 'Patient Transport label contains no provenance child');
 }
 
 const parsedCatalogues = new Map();
@@ -1520,7 +1562,10 @@ const authoritativeCandidate = makeMissionCandidate(authoritativeDoc, '');
 const authoritativeRows = api.resolve(authoritativeCandidate, authoritativeOnly, authoritativeMajor);
 assert.strictEqual(authoritativeRows.find(item => item.key === 'fire-engine').requiredText, '10', 'authoritative vehicle baseline becomes Required');
 assert.strictEqual(authoritativeRows.find(item => item.key === 'otl').requiredText, '1', 'authoritative personnel baseline becomes Required');
-assert(api.panelHtml(authoritativeRows, []).html.includes('Mission info'), 'normal Matrix displays the compact mission-info source badge');
+const cleanAuthoritativePanel = api.panelHtml(authoritativeRows, []).html;
+assert(!cleanAuthoritativePanel.includes('>Mission info<'), 'normal Matrix does not render mission-info provenance as label text');
+assert(cleanAuthoritativePanel.includes('data-requirement-source="mission-info"'), 'mission-info provenance remains machine-readable outside the label');
+assert(cleanAuthoritativePanel.includes('class="mcms-matrix-requirement-name">Fire Engine</span>'), 'canonical requirement label remains structurally clean');
 
 const fireDefinition = api.definitions.find(item => item.key === 'fire-engine');
 const overlapping = api.reconcileCatalogue({ requirements: [{ key: 'fire-engine', requirement: 'Fire Engine', missing: 2, group: 'vehicles', definition: fireDefinition }], unresolved: [] }, authoritativeMajor, 'ready', true);
@@ -1616,14 +1661,14 @@ assert(fightCatalogue, 'Fight on Train authoritative fixture is parsed');
 const fightQuantities = Object.fromEntries(fightCatalogue.requirements.map(item => [item.key, item.baseline]));
 assert.strictEqual(fightQuantities['police-car'], 4, 'Fight on Train requires four Police Cars');
 assert.strictEqual(fightQuantities.dsu, 1, 'Fight on Train requires one DSU');
-assert.strictEqual(fightQuantities['railway-police-officer'], 8, 'Fight on Train requires eight Railway Police Officers from personnel metadata');
+assert.strictEqual(fightQuantities['railway-police-officer'], undefined, 'Fight on Train spawn-availability personnel do not become operational catalogue demand');
 const fightCandidate = makeMissionCandidate(new FakeDocument(), '');
 fightCandidate.root.ownerDocument.defaultView = { MutationObserver: FakeMutationObserver };
 const fightParsed = api.reconcileCatalogue({ requirements: [], unresolved: [] }, fightCatalogue, 'ready', true);
 const fightRows = api.resolve(fightCandidate, fightParsed, fightCatalogue);
 assert.strictEqual(fightRows.find(item => item.key === 'police-car').requiredText, '4', 'authoritative Police Car baseline reaches Matrix');
 assert.strictEqual(fightRows.find(item => item.key === 'dsu').requiredText, '1', 'authoritative DSU baseline reaches Matrix');
-assert.strictEqual(fightRows.find(item => item.key === 'railway-police-officer').requiredText, '8', 'authoritative trained-personnel baseline reaches Matrix');
+assert.strictEqual(fightRows.some(item => item.key === 'railway-police-officer'), false, 'spawn-availability trained personnel never reach Matrix rows');
 assert(!api.panelHtml(fightRows, fightParsed.unresolved).html.includes('No outstanding requirements'), 'authoritative Fight on Train data cannot render a false empty state');
 
 const pendingDoc = new FakeDocument();

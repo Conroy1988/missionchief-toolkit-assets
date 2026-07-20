@@ -8,9 +8,8 @@ const source = `// ==UserScript==
 // ==/UserScript==
 const MutationObserverCtor = window.MutationObserver;
 function installFeature() {
-  const observer = new MutationObserverCtor(records => { if (records.length) renderPanel(); });
+  const observer = runtimeTrackObserver(new MutationObserverCtor(records => { if (records.length) renderPanel(); }));
   observer.observe(document.body, { childList: true, subtree: true });
-  runtimeTrackObserver(observer);
   runtimeSetTimeout(() => renderPanel(), 250);
 }
 function renderPanel() {
@@ -26,13 +25,16 @@ function styles() {
 `;
 
 const data = analyseSource(source, 'fixture.user.js');
-assert.equal(data.schemaVersion, 2);
+assert.equal(data.schemaVersion, 3);
 assert.equal(data.parser, 'acorn');
 assert.equal(data.source.version, '9.9.9');
+assert.equal(data.summary.mutationObserverConstructions, 1);
+assert.equal(data.summary.resizeObserverConstructions, 0);
 assert.equal(data.summary.observerConstructions, 1);
 assert.equal(data.summary.observerRegistrations, 1);
 assert.equal(data.summary.broadSubtreeObservers, 1);
 assert.equal(data.summary.schedulerCalls, 1);
+assert.equal(data.unresolvedObserveCalls.length, 0);
 
 const observer = data.observerRegistrations[0];
 assert.equal(observer.constructor, 'MutationObserver');
@@ -55,12 +57,13 @@ assert.equal(install.schedulers, 1);
 assert.equal(install.observers, 1);
 assert.equal(install.flow, 0, 'nested callback flow belongs to the callback, not the parent function');
 
-const observerCallback = data.topFunctionsByScore.find(item => item.name.startsWith('<anonymous@') && item.flow === 1);
+const observerCallback = data.topFunctionsByScore.find(item => item.name.startsWith('MutationObserverCtor callback') && item.flow === 1);
 assert.ok(observerCallback, 'observer callback should own its control-flow count');
 
 const markdown = renderMarkdown(data);
 assert.match(markdown, /AST-backed static structural evidence/);
+assert.match(markdown, /Trusted-baseline cross-check/);
 assert.match(markdown, /installFeature/);
-assert.match(markdown, /Observer registrations/);
+assert.match(markdown, /Resolved observer registrations/);
 
 console.log('AST-backed deep performance audit fixtures passed');

@@ -29,16 +29,21 @@ def function_block(text: str, name: str) -> str:
         if char in "'\"`":
             quote = char
             continue
-        if char == "{": depth += 1
+        if char == "{":
+            depth += 1
         elif char == "}":
             depth -= 1
-            if depth == 0: return text[start:index + 1]
+            if depth == 0:
+                return text[start:index + 1]
     raise RuntimeError(name)
 
 
 def wrap(code: str) -> str:
     code = code.replace("; ", ";\n").replace(" { const ", " {\nconst ").replace(" } if ", "\n}\nif ").replace(" } return ", "\n}\nreturn ").replace("; const ", ";\nconst ").replace("; let ", ";\nlet ")
-    return "\n".join(textwrap.wrap(line, width=180, replace_whitespace=False, drop_whitespace=False) if len(line) > 180 else [line] for line in code.splitlines()).replace("['", "['")
+    lines = []
+    for line in code.splitlines():
+        lines.extend(textwrap.wrap(line, width=180, replace_whitespace=False, drop_whitespace=False) if len(line) > 180 else [line])
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -60,7 +65,8 @@ def main() -> None:
     start = 0
     while True:
         pos = source.find(token, start)
-        if pos < 0: break
+        if pos < 0:
+            break
         contexts.append(source[max(0, pos - 600):pos + 900])
         start = pos + len(token)
     sections.append("=== requiredCapacity contexts ===\n" + "\n---\n".join(wrap(item) for item in contexts))

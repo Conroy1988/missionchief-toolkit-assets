@@ -88,6 +88,7 @@ def main() -> int:
         "missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)",
         "tbody#mission_vehicle_driving > tr",
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
+        "function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1)",
         "data-personnel-training",
         "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
         "additive_overlays",
@@ -164,6 +165,8 @@ def main() -> int:
     assert "item?.classification === 'operational'" in source, "operational catalogue unresolved text must be prefix-free"
     assert '"key":"public-order-level-2"' in source and '"level_2_public_order"' in source, "Level 2 Public Order needs native training evidence"
     assert '"key":"police-sergeant-personnel"' in source and '"police_sergeant"' in source, "Police Sergeant needs native training evidence"
+    assert '"key":"search-advisor-personnel"' in source and '"search_and_rescue"' in source and '"countable":true' in source, "Search Advisor needs ARR capability evidence"
+    assert '"key":"sar-commander-personnel"' in source and '"search_and_rescue_command"' in source, "SAR Commander needs ARR capability evidence"
     assert "LSS-Manager" not in source
     aliases_seen = set()
     for group_name in ("vehicleRequirements", "staffRequirements"):

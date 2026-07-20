@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.16] - 2026-07-20
+
+### Fixed
+- Search Advisor personnel selected through MissionChief ARR capability `search_and_rescue` now update the Matrix immediately.
+- SAR Commander personnel selected through `search_and_rescue_command` now update Selected, Responding and On Site capacity.
+- Control Van vehicle types 85 and 100 now provide their reviewed 1–3 SAR Commander personnel range when explicit crew metadata is unavailable.
+- Explicit zero or absent ARR capability evidence no longer turns unrelated selected vehicles into unresolved specialist personnel.
+
+### Validation
+- Added deterministic selected, responding, on-site, ARR-positive, ARR-zero, Control Van fallback and deselection regressions.
+
 ## [4.20.15] - 2026-07-20
 
 ### Fixed

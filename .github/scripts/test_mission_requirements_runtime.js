@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.15'
+        version: '4.20.16'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -240,6 +240,7 @@ this.__mcmsRequirements = {
     equipmentTypes: missionRequirementsEquipmentTypes,
     progressValue: missionRequirementsProgressValue,
     metadataValues: missionRequirementsMetadataValues,
+    arrCapabilityState: missionRequirementsArrCapabilityState,
     operationalSelectors: missionRequirementsOperationalSelectors,
     operationalActive: missionRequirementsOperationalElementActive,
     cataloguePersonnel: missionRequirementsCataloguePersonnelRequirements,
@@ -315,6 +316,12 @@ for (const [group, entries] of [
             }
             for (const equipment of entry.equipment || []) {
                 assert.ok((definition.equipment || []).includes(equipment), `${group}:${entry.key}: ${alias} supports equipment ${equipment}`);
+            }
+            for (const training of entry.training || []) {
+                assert.ok((definition.training || []).includes(training), `${group}:${entry.key}: ${alias} supports training ${training}`);
+            }
+            for (const attribute of entry.arrAttributes || []) {
+                assert.ok((definition.arrAttributes || []).includes(attribute), `${group}:${entry.key}: ${alias} supports ARR attribute ${attribute}`);
             }
         }
     }
@@ -495,6 +502,88 @@ for (const [text, key, label] of [['2 PRVs', 'primary-response', 'Primary Respon
     assert.strictEqual(requirement.definition.label, label, `${text} uses the full canonical label`);
     assert.strictEqual(parsed.remaining, '', `${text} is consumed without unresolved residue`);
 }
+}
+
+
+// Issue #271: ARR specialist capabilities reconcile Search Advisor and SAR Commander personnel.
+{
+const issue271Doc = new FakeDocument();
+issue271Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/271' } };
+const issue271Candidate = makeMissionCandidate(issue271Doc, '1 Search Advisor, 2 SAR Commanders');
+const searchAdvisorDefinition = api.definitions.find(definition => definition.key === 'search-advisor-personnel');
+const sarCommanderDefinition = api.definitions.find(definition => definition.key === 'sar-commander-personnel');
+assert(searchAdvisorDefinition?.countable, 'Search Advisor is countable');
+assert(sarCommanderDefinition?.countable, 'SAR Commander is countable');
+
+const advisor = makeVehicleElement(issue271Doc, 27101, 86, { staff: 1 });
+advisor.vehicle.checked = true;
+advisor.vehicle.matchSet.add('.vehicle_checkbox');
+advisor.vehicle.classList.values.add('vehicle_checkbox');
+advisor.vehicle.setAttribute('search_and_rescue', '1');
+issue271Candidate.root.selectedUnits = [advisor.vehicle];
+let issue271Units = api.collectUnits(issue271Candidate, 'selected');
+let issue271Capacity = api.aggregate({ group: 'staff', definition: searchAdvisorDefinition }, issue271Units);
+assert.strictEqual(issue271Capacity.min, 1, 'ARR-selected Search Advisor contributes confirmed personnel');
+assert.strictEqual(issue271Capacity.max, 1, 'semantic selected crew keeps Search Advisor exact');
+let issue271Rows = api.resolve(issue271Candidate, {
+    requirements: [{ key: 'search-advisor-personnel', requirement: 'Search Advisor', missing: 1, group: 'staff', definition: searchAdvisorDefinition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'search-advisor-personnel', baseline: 1, missing: 1 }] });
+let issue271Row = issue271Rows.find(row => row.key === 'search-advisor-personnel');
+assert.strictEqual(issue271Row.selectedMin, 1, 'selected ARR Search Advisor appears in Matrix Selected');
+assert.strictEqual(issue271Row.stillNeededText, '0', 'selected ARR Search Advisor clears shortage');
+
+const explicitState = api.arrCapabilityState(advisor.vehicle, issue271Candidate, 27101);
+assert.strictEqual(explicitState.authoritative, true, 'vehicle checkbox is an authoritative ARR capability source');
+assert.strictEqual(explicitState.values.size, 1, 'positive ARR attribute is captured');
+
+const nonAdvisor = makeVehicleElement(issue271Doc, 27102, 86, { staff: 1 });
+nonAdvisor.vehicle.checked = true;
+nonAdvisor.vehicle.matchSet.add('.vehicle_checkbox');
+nonAdvisor.vehicle.classList.values.add('vehicle_checkbox');
+nonAdvisor.vehicle.setAttribute('search_and_rescue', '0');
+issue271Candidate.root.selectedUnits = [nonAdvisor.vehicle];
+issue271Units = api.collectUnits(issue271Candidate, 'selected');
+issue271Capacity = api.aggregate({ group: 'staff', definition: searchAdvisorDefinition }, issue271Units);
+assert.strictEqual(issue271Capacity.min, 0, 'zero ARR Search Advisor attribute contributes nothing');
+assert.strictEqual(issue271Capacity.max, 0, 'authoritative zero ARR attribute remains known rather than unknown');
+
+const commander = makeVehicleElement(issue271Doc, 27103, 85);
+commander.vehicle.checked = true;
+commander.vehicle.matchSet.add('.vehicle_checkbox');
+commander.vehicle.classList.values.add('vehicle_checkbox');
+issue271Candidate.root.selectedUnits = [commander.vehicle];
+issue271Units = api.collectUnits(issue271Candidate, 'selected');
+issue271Capacity = api.aggregate({ group: 'staff', definition: sarCommanderDefinition }, issue271Units);
+assert.strictEqual(issue271Capacity.min, 1, 'Control Van guarantees at least one SAR Commander');
+assert.strictEqual(issue271Capacity.max, 3, 'Control Van preserves reviewed SAR Commander staff range');
+
+const respondingAdvisor = makeVehicleElement(issue271Doc, 27104, 86, { typeOnRow: true });
+respondingAdvisor.row.setAttribute('search_and_rescue', '1');
+issue271Candidate.root.selectedUnits = [];
+issue271Candidate.root.enRouteRows = [respondingAdvisor.row];
+issue271Units = api.collectUnits(issue271Candidate, 'responding');
+issue271Capacity = api.aggregate({ group: 'staff', definition: searchAdvisorDefinition }, issue271Units);
+assert.strictEqual(issue271Capacity.min, 1, 'responding row ARR capability contributes Search Advisor');
+assert.strictEqual(issue271Capacity.max, 3, 'responding Search Advisor preserves vehicle staff range');
+
+const onsiteCommander = makeVehicleElement(issue271Doc, 27105, 100, { typeOnRow: true });
+issue271Candidate.root.enRouteRows = [];
+issue271Candidate.root.onSiteRows = [onsiteCommander.row];
+issue271Units = api.collectUnits(issue271Candidate, 'onsite');
+issue271Capacity = api.aggregate({ group: 'staff', definition: sarCommanderDefinition }, issue271Units);
+assert.strictEqual(issue271Capacity.min, 1, 'Mountain Rescue Control Van contributes on-site SAR Commander');
+assert.strictEqual(issue271Capacity.max, 3, 'on-site SAR Commander retains reviewed staff range');
+
+issue271Candidate.root.selectedUnits = [];
+issue271Candidate.root.onSiteRows = [];
+issue271Rows = api.resolve(issue271Candidate, {
+    requirements: [{ key: 'search-advisor-personnel', requirement: 'Search Advisor', missing: 1, group: 'staff', definition: searchAdvisorDefinition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'search-advisor-personnel', baseline: 1, missing: 1 }] });
+issue271Row = issue271Rows.find(row => row.key === 'search-advisor-personnel');
+assert.strictEqual(issue271Row.selectedMin, 0, 'deselection removes Search Advisor selected capacity');
+assert.strictEqual(issue271Row.stillNeededText, '1', 'Search Advisor shortage returns after deselection');
 }
 
 const factorRequirement = { group: 'vehicles', definition: { types: [5], equipment: [], factors: { 5: 2 } } };

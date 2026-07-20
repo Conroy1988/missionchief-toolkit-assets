@@ -1,0 +1,437 @@
+=== missionRequirementsParseText ===
+function missionRequirementsParseText(rawText, group = 'vehicles') {
+        const normalized = String(rawText ?? '')
+        .replace(/\r/g, '')
+        .replace(/\n+/g, ';
+')
+        .replace(/\s+/g, ' ')
+        .trim();
+        if (!normalized) return { requirements: [], remaining: '' };
+        let working = normalized;
+        const requirements = [];
+        while (true) {
+        let best = null;
+        for (const definition of MISSION_REQUIREMENT_PARSE_DEFINITIONS) {
+            if ((definition.group || 'vehicles') !== group) continue;
+            const found = missionRequirementsFindDefinitionMatch(working, definition);
+            if (!found) continue;
+            if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
+                best = { definition, found };
+            }
+        }
+        if (!best) break;
+        requirements.push({
+            key: best.definition.key,
+            requirement: best.definition.label,
+            missing: best.found.missing,
+            group,
+            definition: best.definition,
+            sourceIndex: best.found.index
+        });
+        working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
+        }
+        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
+        requirements.forEach(requirement => { delete requirement.sourceIndex;
+});
+        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
+    }
+
+=== missionRequirementsCatalogueRequirement ===
+function missionRequirementsCatalogueRequirement(label, value) {
+        const rawLabel = missionRequirementsCatalogueText({ textContent: label });
+        const rawValue = missionRequirementsCatalogueText({ textContent: value });
+        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
+        const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
+        if (quantity === null) return null;
+        const cleanedLabel = rawLabel
+            .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '')
+            .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '')
+            .trim();
+        if (!cleanedLabel) return null;
+        const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u);
+        const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100;
+        const sourceText = `${quantity} ${cleanedLabel}`;
+        for (const group of ['vehicles', 'staff', 'other']) {
+            const parsed = missionRequirementsParseText(sourceText, group);
+            if (!parsed.requirements.length) continue;
+            const requirement = parsed.requirements[0];
+            return {
+                ...requirement,
+                missing: quantity,
+                baseline: quantity,
+                baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+                probability,
+                catalogueLabel: rawLabel,
+                catalogueValue: rawValue,
+                catalogueKnown: true
+            };
+        }
+        const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles');
+        const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`;
+        return {
+            key,
+            requirement: cleanedLabel,
+            missing: quantity,
+            baseline: quantity,
+            baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
+            probability,
+            group: inferredGroup,
+            definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false },
+            catalogueLabel: rawLabel,
+            catalogueValue: rawValue,
+            catalogueKnown: false
+        };
+    }
+
+=== missionRequirementsReconcileCatalogue ===
+function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false) {
+        const requirements = Array.from(parsed?.requirements || [], item => ({ ...item }));
+        const unresolved = Array.from(parsed?.unresolved || [], item => ({ ...item }));
+        const byKey = new Map(requirements.map((item, index) => [item.key, index]));
+        for (const item of catalogue?.requirements || []) {
+            const baseline = missionRequirementsOptionalNumber(item?.baseline ?? item?.missing);
+            if (baseline === null) continue;
+            const index = byKey.get(item.key);
+            if (index !== undefined) {
+                requirements[index] = { ...requirements[index], catalogueDerived: true, catalogueBaseline: baseline, catalogueProbability: 
+missionRequirementsOptionalNumber(item.probability) ?? 100 };
+                continue;
+            }
+            const requirement = { ...item, missing: baseline, baseline, statedRequirement: false, catalogueDerived: true, catalogueProbability: 
+missionRequirementsOptionalNumber(item.probability) ?? 100, requirementSource: catalogue?.stale ? 'Cached mission info' : 'Mission info' };
+            byKey.set(requirement.key, requirements.length);
+            requirements.push(requirement);
+        }
+        const unresolvedSeen = new Set(unresolved.map(item => String(item?.text || '').toLowerCase()));
+        for (const item of catalogue?.unresolved || []) {
+            const cleanLabel = missionRequirementsSafeDiagnostic(item?.label || 'Unmapped requirement', 180);
+const cleanValue = missionRequirementsSafeDiagnostic(item?.value || '', 180);
+const text = item?.classification === 'operational' ? `${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}` : `Mission info: ${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}`;
+            if (!unresolvedSeen.has(text.toLowerCase())) { unresolved.push({ group: item?.group || 'other', text, catalogueDerived: true });
+unresolvedSeen.add(text.toLowerCase());
+}
+        }
+        if (!catalogue && expected) {
+            const text = state === 'loading' || state === 'idle' ? 'Loading Requirements for this Mission…' : 'Requirements for this Mission could not be loaded;
+verify the mission information manually.';
+            if (!unresolvedSeen.has(text.toLowerCase())) unresolved.push({ group: 'other', text, authoritativePending: state === 'loading' || state === 'idle' });
+        } else if (catalogue?.stale) unresolved.push({ group: 'other', text: 'Using cached Requirements for this Mission;
+verify conditional requirements manually.', catalogueDerived: true });
+        return { requirements, unresolved };
+    }
+
+=== missionRequirementsCapacity ===
+function missionRequirementsCapacity(min = 0, max = min, known = null) {
+        const safeMin = Math.max(0, Number(min) || 0);
+        let safeMax = max === null || max === undefined ? null : Math.max(safeMin, Number(max) || 0);
+        if (safeMax !== null && !Number.isFinite(safeMax)) safeMax = null;
+        const exact = known === true ? true : known === false ? false : safeMax !== null && safeMin === safeMax;
+        return { min: safeMin, max: safeMax, known: exact, value: safeMin };
+    }
+
+=== missionRequirementsCapacityText ===
+function missionRequirementsCapacityText(capacity) {
+        const value = missionRequirementsCapacity(capacity?.min ?? capacity?.value ?? 0, capacity?.max, capacity?.known);
+        if (value.known || value.max === value.min) return value.min.toLocaleString('en-GB');
+        if (value.max === null) return value.min > 0 ? `${value.min.toLocaleString('en-GB')}+` : '?';
+        return `${value.min.toLocaleString('en-GB')}–${value.max.toLocaleString('en-GB')}`;
+    }
+
+=== missionRequirementsCoverageRow ===
+function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null) {
+        const missing = Math.max(0, Number(requirement?.missing) || 0);
+        const selected = missionRequirementsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+        const stillMax = required.max === null ? null : Math.max(0, required.max - fulfilledMin);
+        const stillKnown = covered || (stillMax !== null && stillMin === stillMax && required.known && onSite.known && responding.known && selected.known);
+        const still = missionRequirementsCapacity(stillMin, stillMax, stillKnown);
+        const partial = !covered && fulfilledMin > 0;
+        return {
+            ...requirement,
+            required: required.min,
+            requiredMin: required.min,
+            requiredMax: required.max,
+            requiredKnown: required.known,
+            requiredText: missionRequirementsCapacityText(required),
+            onSite: onSite.min,
+            onSiteMin: onSite.min,
+            onSiteMax: onSite.max,
+            onSiteKnown: onSite.known,
+            onSiteText: missionRequirementsCapacityText(onSite),
+            responding: responding.min,
+            respondingMin: responding.min,
+            respondingMax: responding.max,
+            respondingKnown: responding.known,
+            respondingText: missionRequirementsCapacityText(responding),
+            enRoute: responding.min,
+            enRouteMin: responding.min,
+            enRouteMax: responding.max,
+            enRouteKnown: responding.known,
+            enRouteText: missionRequirementsCapacityText(responding),
+            selected: selected.min,
+            selectedMin: selected.min,
+            selectedMax: selected.max,
+            selectedKnown: selected.known,
+            selectedText: missionRequirementsCapacityText(selected),
+            stillNeeded: still.max === null ? still.min : still.max,
+            stillNeededMin: still.min,
+            stillNeededMax: still.max,
+            stillNeededKnown: still.known,
+            stillNeededText: missionRequirementsCapacityText(still),
+            covered,
+            definitelyOpen,
+            uncertain,
+            partial,
+            coverageKnown: covered || definitelyOpen
+        };
+    }
+
+=== missionRequirementsResolve ===
+function missionRequirementsResolve(candidate, parsed, catalogue = null) {
+const rawSelectedUnits = missionRequirementsCollectUnits(candidate, 'selected');
+const rawRespondingUnits = missionRequirementsCollectUnits(candidate, 'responding');
+const rawOnSiteUnits = missionRequirementsCollectUnits(candidate, 'onsite');
+const buckets = missionRequirementsExclusiveUnitBuckets(rawSelectedUnits, rawRespondingUnits, rawOnSiteUnits);
+const catalogueByKey = new Map(Array.from(catalogue?.requirements || []).map(item => [item.key, item]));
+return parsed.requirements.map(requirement => { let effectiveMissing = Math.max(0, Number(requirement.missing) || 0);
+if (requirement.patientCondition === true) {
+const requiredValue = Math.max(0, Number(requirement.patientConditionRequired ?? requirement.patientRequired ?? requirement.missing) || 0);
+const fulfilledValue = Math.max(0, Number(requirement.patientConditionFulfilled) || 0);
+const fulfilledKnown = requirement.patientConditionFulfilledKnown === true;
+const zero = missionRequirementsCapacity(0, 0, true);
+const fulfilled = fulfilledKnown ? missionRequirementsCapacity(fulfilledValue, fulfilledValue, true) : missionRequirementsCapacity(fulfilledValue, null, false);
+const row = missionRequirementsCoverageRow(requirement, zero, zero, fulfilled, missionRequirementsCapacity(requiredValue, requiredValue, true));
+if (!fulfilledKnown && !row.covered) { row.definitelyOpen = false;
+row.uncertain = true;
+row.coverageKnown = false;
+} return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'patient-details' };
+} if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement);
+const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate);
+if (condition !== true) {
+const unknown = missionRequirementsCapacity(0, null, false);
+const unresolvedRow = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown);
+return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false };
+} let selected;
+let responding;
+let onSite;
+if (requirement.definition?.bar) {
+const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected');
+const respondingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving');
+const missingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'missing');
+const onSiteMetrics = ['at_mission', 'on_site', 'onsite', 'arrived', 'actual'];
+const onSiteValue = onSiteMetrics.map(metric => missionRequirementsProgressValue(candidate, requirement.definition.bar, metric)).find(value => value !== null);
+if (selectedValue === null || respondingValue === null || missingValue === null) {
+const unknown = missionRequirementsCapacity(0, null, false);
+const row = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown);
+row.covered = false;
+row.definitelyOpen = false;
+row.uncertain = true;
+row.coverageKnown = false;
+return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'mission-progress' };
+} effectiveMissing = Math.max(0, missingValue + respondingValue);
+selected = missionRequirementsCapacity(selectedValue, selectedValue, true);
+responding = missionRequirementsCapacity(respondingValue, respondingValue, true);
+onSite = onSiteValue === undefined ? missionRequirementsCapacity(0, 0, true) : missionRequirementsCapacity(onSiteValue, onSiteValue, true);
+} else { selected = missionRequirementsAggregate(requirement, buckets.selected);
+responding = missionRequirementsAggregate(requirement, buckets.responding);
+onSite = missionRequirementsAggregate(requirement, buckets.onSite);
+} const catalogueRequirement = catalogueByKey.get(requirement.key);
+const baseline = missionRequirementsOptionalNumber(catalogueRequirement?.baseline ?? catalogueRequirement?.missing);
+const catalogueOnly = requirement.catalogueDerived === true && requirement.statedRequirement === false;
+const catalogueProbability = missionRequirementsOptionalNumber(requirement.catalogueProbability ?? catalogueRequirement?.probability) ?? 100;
+const patientKnown = requirement.patientDerived === true && requirement.patientCountKnown === true;
+const patientUnknown = requirement.patientDerived === true && requirement.patientCountKnown === false;
+const patientRequired = patientKnown ? Math.max(0, Number(requirement.patientRequired) || 0) : null;
+const hasStatedRequirement = requirement.statedRequirement !== false;
+if (baseline !== null && hasStatedRequirement) {
+const committed = Math.max(0, baseline - effectiveMissing);
+const operationalMin = onSite.min + responding.min;
+const operationalMax = onSite.max === null || responding.max === null ? null : onSite.max + responding.max;
+const inferredSelectedMin = operationalMax === null ? 0 : Math.max(0, committed - operationalMax);
+const inferredSelectedMax = Math.max(0, committed - operationalMin);
+if (inferredSelectedMax > selected.min) {
+const selectedMin = Math.max(selected.min, inferredSelectedMin);
+const selectedMax = selected.max === null ? inferredSelectedMax : Math.max(selected.max, inferredSelectedMax);
+selected = missionRequirementsCapacity(selectedMin, selectedMax, selectedMax !== null && selectedMin === selectedMax && onSite.known && responding.known);
+} } const statedRequiredMin = hasStatedRequirement ? effectiveMissing + onSite.min : 0;
+const statedRequiredMax = hasStatedRequirement ? (onSite.max === null ? null : effectiveMissing + onSite.max) : 0;
+const fixedMinimum = Math.max(patientRequired ?? 0, baseline ?? 0, statedRequiredMin);
+let required;
+if (patientUnknown) { required = missionRequirementsCapacity(Math.max(baseline ?? 0, statedRequiredMin), null, false);
+} else if (catalogueOnly && catalogueProbability < 100) { required = missionRequirementsCapacity(0, baseline ?? 0, false);
+} else if (patientKnown) {
+const possibleMaximum = statedRequiredMax === null ? null : Math.max(patientRequired, baseline ?? 0, statedRequiredMax);
+const exact = possibleMaximum !== null && possibleMaximum === fixedMinimum && (hasStatedRequirement ? onSite.known : true);
+required = missionRequirementsCapacity(fixedMinimum, possibleMaximum, exact);
+} else {
+const liveRequiredMin = statedRequiredMin;
+const liveRequiredMax = statedRequiredMax;
+required = baseline !== null ? missionRequirementsCapacity(Math.max(baseline, liveRequiredMin), Math.max(baseline, liveRequiredMin), true) : 
+missionRequirementsCapacity(liveRequiredMin, liveRequiredMax, onSite.known && liveRequiredMax !== null && liveRequiredMin === liveRequiredMax);
+} const row = missionRequirementsCoverageRow(requirement, selected, responding, onSite, required);
+if (patientUnknown) { row.covered = false;
+row.definitelyOpen = false;
+row.uncertain = true;
+row.coverageKnown = false;
+} else if (catalogueOnly && catalogueProbability < 100 && !row.covered) { row.definitelyOpen = false;
+row.uncertain = true;
+row.coverageKnown = false;
+} const authorities = [];
+if (requirement.patientDerived) authorities.push('patients');
+if (baseline !== null) authorities.push('mission-info');
+if (hasStatedRequirement) authorities.push('live');
+return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: authorities.length ? authorities.join('+') : 'live-reconstructed' };
+});
+}
+
+=== scanMissionRequirementsWindows ===
+function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionRequirementsWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeSources.add(source);
+            missionRequirementsEnsureRecord({ ...candidate, source }, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
+        }
+    }
+
+=== requiredCapacity contexts ===
+
+    }
+
+    function missionRequirementsCapacityText(capacity) {
+        const value = missionRequirementsCapacity(capacity?.min ?? capacity?.value ?? 0, capacity?.max, capacity?.known);
+        if (value.known || value.max === value.min) return value.min.toLocaleString('en-GB');
+        if (value.max === null) return value.min > 0 ? `${value.min.toLocaleString('en-GB')}+` : '?';
+        return `${value.min.toLocaleString('en-GB')}–${value.max.toLocaleString('en-GB')}`;
+    }
+
+    function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null) {
+        const missing = Math.max(0, Number(requirement?.missing) || 0);
+        const selected = missionRequirementsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, required
+---
+mentsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, r
+---
+lue ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+        const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+        const stillMax = requi
+---
+y?.max, selectedCapacity?.known);
+        const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+        const stillMax = required.max === null ? null :
+---
+ responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+        const stillMax = required.max === null ? null : Math.max(0, required.max - fulfilledMin);
+    
+---
+quirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+        const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+        const derivedRequiredMin = missing + onSite.min;
+        const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+        const required = requiredCapacity
+            ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+            : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+        const fulfilledMin = onSite.min + responding.min + selected.min;
+        const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+            ? null
+            : onSite.max + responding.max + selected.max;
+        const covered = required.max !== null && fulfilledMin >= required.max;
+        const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+        const uncertain = !covered && !definitelyOpen;
+        const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+        const stillMax = required.max === null ? null : Math.max(0, required.max - fulfilledMin);
+        const stillKnown = 

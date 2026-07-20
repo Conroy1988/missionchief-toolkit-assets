@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.15] - 2026-07-20
+
+### Fixed
+- Selected Police Cars and other supported vehicles now contribute reviewed UK minimum/maximum crew capacity to generic personnel requirements when MissionChief exposes no semantic crew field.
+- Known bounded personnel ranges remain bounded rather than becoming completely unknown.
+- `PRV`/`PRVs` and `SRV`/`SRVs` now merge into the canonical Primary Response Vehicle and Secondary Response Vehicle rows, with only the full names rendered.
+
+### Validation
+- Added deterministic crew fallback, override, selected Police Officer and response-vehicle alias regressions.
+
 ## [4.20.14] - 2026-07-20
 
 ### Fixed

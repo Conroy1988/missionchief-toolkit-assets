@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.14'
+        version: '4.20.15'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -236,6 +236,7 @@ this.__mcmsRequirements = {
     capacityText: missionRequirementsCapacityText,
     coverageRow: missionRequirementsCoverageRow,
     staffCapacity: missionRequirementsStaffCapacity,
+    defaultStaffCapacity: missionRequirementsDefaultStaffCapacity,
     equipmentTypes: missionRequirementsEquipmentTypes,
     progressValue: missionRequirementsProgressValue,
     metadataValues: missionRequirementsMetadataValues,
@@ -468,6 +469,33 @@ assert.strictEqual(issue191HemsAsAmbulance.max, 1, 'selected HEMS has exact Ambu
 assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedHemsUnit]).min, 1, 'selected HEMS retains HEMS capability');
 assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit, issue191DuplicateSelectedHemsUnit]).min, 1, 'same HEMS contribution key is not duplicated within the Ambulance row');
 assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedRoadAmbulance]).min, 0, 'road Ambulance does not satisfy HEMS');
+
+
+// Issue #269 vehicle crew fallback and canonical PRV/SRV aliases.
+{
+const policeStaff = api.defaultStaffCapacity(8, null);
+assert.strictEqual(policeStaff.min, 1, 'Police Car contributes at least one officer');
+assert.strictEqual(policeStaff.max, 2, 'Police Car preserves its two-officer maximum');
+const overrideElement = { getAttribute(name) { return name === 'data-max-personnel-override' ? '1' : null; }, closest() { return null; } };
+const overriddenStaff = api.defaultStaffCapacity(8, overrideElement);
+assert.strictEqual(overriddenStaff.min, 1, 'override preserves minimum crew');
+assert.strictEqual(overriddenStaff.max, 1, 'native override narrows maximum crew');
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const selectedPoliceCar = { typeId: 8, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), staff: policeStaff, contributionKey: 'vehicle:26901' };
+const selectedPoliceCapacity = api.aggregate({ group: 'staff', definition: policeDefinition }, [selectedPoliceCar]);
+assert.strictEqual(selectedPoliceCapacity.min, 1, 'selected Police Car credits one confirmed Police Officer');
+assert.strictEqual(selectedPoliceCapacity.max, 2, 'selected Police Car retains bounded officer capacity');
+const coveredPoliceRow = api.coverageRow({ key: 'police-officers', requirement: 'Police Officers', missing: 1, group: 'staff', definition: policeDefinition }, selectedPoliceCapacity, api.capacity(0, 0, true), api.capacity(0, 0, true), api.capacity(1, 1, true));
+assert.strictEqual(coveredPoliceRow.stillNeededText, '0', 'selected Police Car clears a one-officer shortage');
+for (const [text, key, label] of [['2 PRVs', 'primary-response', 'Primary Response Vehicle'], ['2 SRVs', 'secondary-response', 'Secondary Response Vehicle']]) {
+    const parsed = api.parseText(text, 'vehicles');
+    const requirement = parsed.requirements.find(item => item.missing === 2);
+    assert(requirement, `${text} parses as a requirement`);
+    assert.strictEqual(requirement.key, key, `${text} uses the canonical key`);
+    assert.strictEqual(requirement.definition.label, label, `${text} uses the full canonical label`);
+    assert.strictEqual(parsed.remaining, '', `${text} is consumed without unresolved residue`);
+}
+}
 
 const factorRequirement = { group: 'vehicles', definition: { types: [5], equipment: [], factors: { 5: 2 } } };
 const factorUnit = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:1' };

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.17
+// @version      4.20.18
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.17',
+        version: '4.20.18',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -14728,34 +14728,41 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }, Math.max(0, Number(delay) || 0));
     }
 
+    function setAttributeIfChanged(element, name, value) {
+        const nextValue = String(value);
+        if (element.getAttribute(name) === nextValue) return false;
+        element.setAttribute(name, nextValue);
+        return true;
+    }
+
     function applyRootAttributes() {
         const root = document.documentElement;
-        root.setAttribute('data-mcms-ui-theme', normaliseUiTheme(state.uiTheme));
-        root.setAttribute('data-mc-map-skin', state.theme);
-        root.setAttribute('data-mcms-clean', String(Boolean(state.cleanMode)));
-        root.setAttribute('data-mcms-marker-focus', String(Boolean(state.markerFocus)));
-        root.setAttribute('data-mcms-mission-pulse', String(Boolean(state.missionPulse)));
-        root.setAttribute('data-mcms-road-priority', String(Boolean(state.roadPriority)));
-        root.setAttribute('data-mcms-compact-dock', String(Boolean(state.compactDock)));
-        root.setAttribute('data-mcms-command-bar-open', String(state.commandBarOpen !== false));
-        root.setAttribute('data-mcms-economy', String(Boolean(state.economyMode)));
-        root.setAttribute('data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
+        setAttributeIfChanged(root, 'data-mcms-ui-theme', normaliseUiTheme(state.uiTheme));
+        setAttributeIfChanged(root, 'data-mc-map-skin', state.theme);
+        setAttributeIfChanged(root, 'data-mcms-clean', String(Boolean(state.cleanMode)));
+        setAttributeIfChanged(root, 'data-mcms-marker-focus', String(Boolean(state.markerFocus)));
+        setAttributeIfChanged(root, 'data-mcms-mission-pulse', String(Boolean(state.missionPulse)));
+        setAttributeIfChanged(root, 'data-mcms-road-priority', String(Boolean(state.roadPriority)));
+        setAttributeIfChanged(root, 'data-mcms-compact-dock', String(Boolean(state.compactDock)));
+        setAttributeIfChanged(root, 'data-mcms-command-bar-open', String(state.commandBarOpen !== false));
+        setAttributeIfChanged(root, 'data-mcms-economy', String(Boolean(state.economyMode)));
+        setAttributeIfChanged(root, 'data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
         activeDeviceLayout = resolveDeviceLayout();
         tabletModeActive = resolveTabletMode(activeDeviceLayout);
         mobileModeActive = resolveMobileMode(activeDeviceLayout);
         const tabletViewport = getViewportMetrics();
-        root.setAttribute('data-mcms-device-layout', activeDeviceLayout);
-        root.setAttribute('data-mcms-tablet-mode', String(state.tabletMode));
-        root.setAttribute('data-mcms-tablet-active', String(Boolean(tabletModeActive)));
-        root.setAttribute('data-mcms-mobile-mode', String(state.mobileMode));
-        root.setAttribute('data-mcms-mobile-active', String(Boolean(mobileModeActive)));
-        root.setAttribute('data-mcms-tablet-orientation', tabletViewport.orientation);
-        root.setAttribute('data-mcms-mobile-orientation', tabletViewport.orientation);
-        root.setAttribute('data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
-        root.setAttribute('data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
-        root.setAttribute('data-mcms-show-vehicles', String(Boolean(state.visibility.vehicles)));
-        root.setAttribute('data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
-        root.setAttribute('data-mcms-critical-view', String(Boolean(criticalViewActive)));
+        setAttributeIfChanged(root, 'data-mcms-device-layout', activeDeviceLayout);
+        setAttributeIfChanged(root, 'data-mcms-tablet-mode', String(state.tabletMode));
+        setAttributeIfChanged(root, 'data-mcms-tablet-active', String(Boolean(tabletModeActive)));
+        setAttributeIfChanged(root, 'data-mcms-mobile-mode', String(state.mobileMode));
+        setAttributeIfChanged(root, 'data-mcms-mobile-active', String(Boolean(mobileModeActive)));
+        setAttributeIfChanged(root, 'data-mcms-tablet-orientation', tabletViewport.orientation);
+        setAttributeIfChanged(root, 'data-mcms-mobile-orientation', tabletViewport.orientation);
+        setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
+        setAttributeIfChanged(root, 'data-mcms-show-my-missions', String(Boolean(state.visibility.myMissions)));
+        setAttributeIfChanged(root, 'data-mcms-show-vehicles', String(Boolean(state.visibility.vehicles)));
+        setAttributeIfChanged(root, 'data-mcms-show-buildings', String(Boolean(state.visibility.buildings)));
+        setAttributeIfChanged(root, 'data-mcms-critical-view', String(Boolean(criticalViewActive)));
     }
 
     function getStrongMarkerSignal(icon) {

@@ -71,7 +71,9 @@ def main() -> int:
         "function missionRequirementsCollectUnits(candidate, mode)",
         "function missionRequirementsOperationalSelectors(mode)",
         "function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate))",
-        "mode !== 'selected' && !isVisible(element)",
+        "function missionRequirementsOperationalCanonicalStateContainer(element, mode)",
+        "const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode)",
+        "mode !== 'selected' && !canonicalOwned && !isVisible(element)",
         "missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)",
         "tbody#mission_vehicle_driving > tr",
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
@@ -175,6 +177,8 @@ def main() -> int:
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
     assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"
     assert "missionRequirementsOperationalWindowScopes(candidate, context)" in source, "selected-unit acquisition must expand beyond the narrow mission root"
+    assert "missionRequirementsOperationalCanonicalStateContainer" in source, "canonical operational tables must bypass collapse-only visibility"
+    assert "documentCanonical === canonicalContainer || documentCanonical.contains?.(row)" in source, "standalone canonical-table ownership must be proven"
     assert "setInterval(" not in re.search(r"// Issue #181: patient-derived ambulance demand\.([\s\S]*?)function missionRequirementsVehicleType", source).group(1)
     assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]ambulance['\"][^\n]*(?:types|['\"]types['\"])\s*:\s*\[5,\s*9\]", source), "Ambulance capability must include road Ambulance and HEMS vehicle types"
     assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]hems['\"][^\n]*(?:types|['\"]types['\"])\s*:\s*\[9\]", source), "HEMS must retain its dedicated capability mapping"

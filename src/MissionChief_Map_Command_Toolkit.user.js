@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.8
+// @version      4.20.9
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.8',
+        version: '4.20.9',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22571,7 +22571,59 @@ function missionRequirementsStaffCapacity(element) {
         return null;
     } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
 function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
-function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') { if (!element || element.isConnected === false) return false; if (mode !== 'selected' && !isVisible(element)) return false; if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false; const row = element.matches?.('tr') ? element : element.closest?.('tr') || element; if (context.activeWindow && !(context.activeWindow === row || context.activeWindow.contains?.(row) || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow)) return false; const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source); const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId); if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false; const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]'); if (expectedMission > 0 && missionRoot) { const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null); if (actualMission > 0 && actualMission !== expectedMission) return false; } return true; }
+function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+        if (mode === 'selected') return null;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+        if (!row) return null;
+        const selectors = mode === 'onsite'
+            ? ['#mission_vehicle_at_mission', 'tbody#mission_vehicle_at_mission']
+            : ['#mission_vehicle_driving', 'tbody#mission_vehicle_driving'];
+        for (const selector of selectors) {
+            if (row.matches?.(selector)) return row;
+            const container = row.closest?.(selector);
+            if (container) return container;
+        }
+        return null;
+    }
+
+    function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') {
+        if (!element || element.isConnected === false) return false;
+        if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false;
+        const row = element.matches?.('tr') ? element : element.closest?.('tr') || element;
+        const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source);
+        const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode);
+        const candidateRoot = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        const canonicalId = mode === 'onsite' ? 'mission_vehicle_at_mission' : 'mission_vehicle_driving';
+        const documentCanonical = mode === 'selected' ? null : context?.doc?.getElementById?.(canonicalId);
+        const pathname = String(context?.doc?.defaultView?.location?.pathname || '');
+        const pathMission = missionRequirementsOptionalNumber(pathname.match(/\/missions\/(\d+)/u)?.[1]);
+        const canonicalOwned = Boolean(canonicalContainer && (
+            context?.activeWindow?.contains?.(row)
+            || candidateRoot?.contains?.(row)
+            || candidate?.root?.contains?.(row)
+            || candidate?.mount?.contains?.(row)
+            || (
+                expectedMission > 0
+                && pathMission === expectedMission
+                && documentCanonical
+                && (documentCanonical === canonicalContainer || documentCanonical.contains?.(row))
+            )
+        ));
+        if (mode !== 'selected' && !canonicalOwned && !isVisible(element)) return false;
+        if (context.activeWindow && !(
+            context.activeWindow === row
+            || context.activeWindow.contains?.(row)
+            || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow
+        )) return false;
+        const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId);
+        if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false;
+        const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]');
+        if (expectedMission > 0 && missionRoot) {
+            const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null);
+            if (actualMission > 0 && actualMission !== expectedMission) return false;
+        }
+        return true;
+    }
 function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const typeId = missionRequirementsVehicleType(vehicleElement); const vehicleId = missionRequirementsVehicleId(vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsMetadataValues(vehicleElement, 'training'); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const rowText = missionRequirementsCapabilityLabel(`${row?.textContent || ''} ${row?.innerText || ''}`); if (rowText) { for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const aliases = Array.from(definition?.training || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (!aliases.some(alias => rowText.includes(alias))) continue; aliases.forEach(alias => training.add(alias)); knownDefinitionKeys.add(definition.key); } } const unit = { typeId, vehicleId, tractiveId, equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsStaffCapacity(vehicleElement), labels, training, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
 
     function missionRequirementsMissionTypeId(candidate) {

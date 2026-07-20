@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.8'
+        version: '4.20.9'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -845,6 +845,82 @@ ambulanceParsed.requirements[0].missing = 2;
 resolved = api.resolve(unitCandidate, ambulanceParsed, ambulanceCatalogue)[0];
 assert.strictEqual(resolved.onSiteMin, 0, 'unit removal is reconciled');
 assert.strictEqual(resolved.stillNeededText, '1', 'shortage returns when capacity leaves the mission');
+
+
+// Issue #226: collapsed or relocated canonical operational tables remain authoritative.
+{
+const issue226WindowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog';
+const issue226Doc = new FakeDocument();
+issue226Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' }, navigator: context.pageWindow.navigator, innerWidth: 1280, innerHeight: 720 };
+const issue226Candidate = makeMissionCandidate(issue226Doc, '1 Police car');
+issue226Candidate.missionId = 6226;
+const issue226Window = new FakeElement('div', issue226Doc);
+issue226Candidate.root.closestMap.set(issue226WindowSelector, issue226Window);
+issue226Candidate.source.closestMap.set(issue226WindowSelector, issue226Window);
+issue226Window.appendChild(issue226Candidate.root);
+const issue226PoliceDefinition = api.definitions.find(definition => definition.key === 'police-car');
+const issue226Parsed = { requirements: [{ key: 'police-car', requirement: 'Police Car', missing: 1, group: 'vehicles', definition: issue226PoliceDefinition, statedRequirement: false, catalogueDerived: true, catalogueProbability: 100 }], unresolved: [] };
+const issue226Catalogue = { requirements: [{ key: 'police-car', baseline: 1, missing: 1 }] };
+
+const issue226RespondingBody = new FakeElement('tbody', issue226Doc);
+issue226RespondingBody.id = 'mission_vehicle_driving';
+issue226Window.appendChild(issue226RespondingBody);
+const issue226Responding = makeVehicleElement(issue226Doc, 622601, 8, { typeOnRow: true });
+issue226Responding.row.setAttribute('data-vehicle-id', '622601');
+issue226Responding.row._visible = false;
+issue226Responding.row.closestMap.set('#mission_vehicle_driving', issue226RespondingBody);
+issue226Responding.row.closestMap.set('tbody#mission_vehicle_driving', issue226RespondingBody);
+issue226Responding.row.closestMap.set(issue226WindowSelector, issue226Window);
+issue226RespondingBody.appendChild(issue226Responding.row);
+issue226Window.queryAllHandler = selector => selector === 'tbody#mission_vehicle_driving > tr' || selector === '#mission_vehicle_driving > tr' ? [issue226Responding.row] : [];
+let issue226Row = api.resolve(issue226Candidate, issue226Parsed, issue226Catalogue)[0];
+assert.strictEqual(issue226Row.respondingMin, 1, 'collapsed canonical Units Responding row contributes capacity');
+assert.strictEqual(issue226Row.stillNeededText, '0', 'responding capacity fulfils the requirement');
+assert.strictEqual(issue226Row.covered, true, 'collapsed responding capacity produces a covered row');
+let issue226Panel = api.panelHtml([issue226Row], []);
+assert(!issue226Panel.html.includes('Police Car'), 'responding-covered requirement is hidden from the Matrix list');
+assert(issue226Panel.html.includes('All currently known requirements are covered.'), 'responding-covered mission retains explicit success state');
+
+const issue226OnSiteBody = new FakeElement('tbody', issue226Doc);
+issue226OnSiteBody.id = 'mission_vehicle_at_mission';
+issue226Window.appendChild(issue226OnSiteBody);
+const issue226OnSite = makeVehicleElement(issue226Doc, 622601, 8, { typeOnRow: true });
+issue226OnSite.row.setAttribute('data-vehicle-id', '622601');
+issue226OnSite.row._visible = false;
+issue226OnSite.row.closestMap.set('#mission_vehicle_at_mission', issue226OnSiteBody);
+issue226OnSite.row.closestMap.set('tbody#mission_vehicle_at_mission', issue226OnSiteBody);
+issue226OnSite.row.closestMap.set(issue226WindowSelector, issue226Window);
+issue226OnSiteBody.appendChild(issue226OnSite.row);
+issue226Window.queryAllHandler = selector => selector === 'tbody#mission_vehicle_at_mission > tr' || selector === '#mission_vehicle_at_mission > tr' ? [issue226OnSite.row] : [];
+issue226Row = api.resolve(issue226Candidate, issue226Parsed, issue226Catalogue)[0];
+assert.strictEqual(issue226Row.onSiteMin, 1, 'collapsed canonical Vehicles on Scene row contributes capacity');
+assert.strictEqual(issue226Row.respondingMin, 0, 'on-site state supersedes responding after arrival');
+assert.strictEqual(issue226Row.stillNeededText, '0', 'on-site capacity fulfils the requirement');
+issue226Panel = api.panelHtml([issue226Row], []);
+assert(!issue226Panel.html.includes('Police Car'), 'on-site-covered requirement is hidden from the Matrix list');
+
+issue226Window.queryAllHandler = () => [];
+issue226Row = api.resolve(issue226Candidate, issue226Parsed, issue226Catalogue)[0];
+assert.strictEqual(issue226Row.stillNeededText, '1', 'shortage returns when committed capacity is removed');
+assert(api.panelHtml([issue226Row], []).html.includes('Police Car'), 'hidden row returns after cancellation or departure');
+
+const issue226StaleWindow = new FakeElement('div', issue226Doc);
+const issue226StaleBody = new FakeElement('tbody', issue226Doc);
+issue226StaleBody.id = 'mission_vehicle_driving_stale';
+issue226StaleWindow.appendChild(issue226StaleBody);
+const issue226Stale = makeVehicleElement(issue226Doc, 622699, 8, { typeOnRow: true });
+issue226Stale.row.setAttribute('data-vehicle-id', '622699');
+issue226Stale.row.setAttribute('data-mission-id', '9999');
+issue226Stale.row._visible = false;
+issue226Stale.row.closestMap.set('#mission_vehicle_driving', issue226StaleBody);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
 
 const personnelDoc = new FakeDocument();
 personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };

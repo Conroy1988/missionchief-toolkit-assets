@@ -1,75 +1,217 @@
-name: Agent inspect monospaced notes integration
+name: Agent apply monospaced notes feature
 
 on:
   push:
     branches:
       - agent/monospaced-mission-notes
-    paths-ignore:
-      - agent-inspection.txt
-      - agent-targeted.txt
-      - agent-ui-sync.txt
 
 permissions:
   contents: write
 
 jobs:
-  inspect:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/monospaced-mission-notes
-      - name: Persist UI synchronisation anchors
+      - name: Apply production patch
         shell: bash
         run: |
           python - <<'PY'
+          import json
           from pathlib import Path
 
-          source_path = Path('src/MissionChief_Map_Command_Toolkit.user.js')
-          output_path = Path('agent-ui-sync.txt')
-          lines = source_path.read_text(encoding='utf-8').splitlines()
-          report = []
+          root = Path('.')
+          userscript_path = root / 'src/MissionChief_Map_Command_Toolkit.user.js'
+          fixture_path = root / '.github/fixtures/settings-ui-contract.json'
+          changelog_path = root / 'CHANGELOG.md'
+          test_path = root / '.github/scripts/test_monospaced_notes.py'
 
-          def add_range(start, end, title):
-              report.append(f"\n===== {title} · source lines {start}-{end} =====")
-              for n in range(max(1, start), min(len(lines), end) + 1):
-                  report.append(f"{n:06d}: {lines[n - 1]}")
+          source = userscript_path.read_text(encoding='utf-8')
 
-          for start, end, title in [
-              (29210, 29550, 'post-toggle and UI state'),
-              (29551, 29879, 'UI update and control creation'),
-              (30420, 30780, 'setting changes and UI refresh'),
-          ]:
-              add_range(start, end, title)
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f'{label}: expected exactly one anchor, found {count}')
+              return text.replace(old, new, 1)
 
-          patterns = [
-              'function updateUI',
-              'dataset.toggle',
-              "querySelectorAll('[data-toggle]')",
-              'querySelectorAll("[data-toggle]")',
-              'toggleButton.dataset.toggle',
-              "feature === 'shortcuts'",
-              'mcms-pill',
-          ]
-          seen = set()
-          for pattern in patterns:
-              matches = [i for i, line in enumerate(lines) if pattern in line]
-              report.append(f"\n===== MATCH {pattern!r} · {len(matches)} =====")
-              for i in matches[:40]:
-                  start = max(0, i - 14)
-                  end = min(len(lines), i + 15)
-                  key = (start, end)
-                  if key in seen:
-                      continue
-                  seen.add(key)
-                  report.extend(f"{n + 1:06d}: {lines[n]}" for n in range(start, end))
+          source = replace_once(
+              source,
+              "        missionRequirements: true,\n        customVehicleBadges: true,",
+              "        missionRequirements: true,\n        monospacedNotes: false,\n        customVehicleBadges: true,",
+              'default state',
+          )
 
-          output_path.write_text("\n".join(report) + "\n", encoding='utf-8')
+          source = replace_once(
+              source,
+              "        merged.missionRequirements = merged.missionRequirements !== false;\n        merged.tabletMode =",
+              "        merged.missionRequirements = merged.missionRequirements !== false;\n        merged.monospacedNotes = merged.monospacedNotes === true;\n        merged.tabletMode =",
+              'state normalisation',
+          )
+
+          style_helper = '''    function installMonospacedNotesStyle() {
+        const styleId = 'mcms-monospaced-notes-style';
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            html[data-mcms-monospaced-notes="true"] #note_message,
+            html[data-mcms-monospaced-notes="true"] textarea[name="note[message]"],
+            html[data-mcms-monospaced-notes="true"] #note-message,
+            html[data-mcms-monospaced-notes="true"] .note-message,
+            html[data-mcms-monospaced-notes="true"] textarea[id*="redesign-note-message"],
+            html[data-mcms-monospaced-notes="true"] pre[id*="redesign-note-message"] {
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+                font-variant-ligatures: none !important;
+                tab-size: 4 !important;
+                white-space: pre-wrap !important;
+            }
+        `;
+        (document.head || document.documentElement)?.appendChild(style);
+    }
+
+    function applyRootAttributes() {
+        installMonospacedNotesStyle();'''
+          source = replace_once(
+              source,
+              "    function applyRootAttributes() {",
+              style_helper,
+              'style installation',
+          )
+
+          source = replace_once(
+              source,
+              "        root.setAttribute('data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');",
+              "        root.setAttribute('data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');\n        root.setAttribute('data-mcms-monospaced-notes', String(Boolean(state.monospacedNotes)));",
+              'root attribute',
+          )
+
+          source = replace_once(
+              source,
+              "        if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;\n        if (feature === 'autoLoadAllVehicles') {",
+              "        if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;\n        if (feature === 'monospacedNotes') state.monospacedNotes = !state.monospacedNotes;\n        if (feature === 'autoLoadAllVehicles') {",
+              'toggle route',
+          )
+
+          source = replace_once(
+              source,
+              "        if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');\n        if (feature === 'allianceCredits')",
+              "        if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');\n        if (feature === 'monospacedNotes') showToast(state.monospacedNotes ? 'Monospaced notes on' : 'Monospaced notes off');\n        if (feature === 'allianceCredits')",
+              'toggle feedback',
+          )
+
+          source = replace_once(
+              source,
+              "                    ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}\n                </div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Major incident threshold",
+              "                    ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}\n                    ${makeToggleButton('monospacedNotes', '⌗', 'Mono Notes', 'Display MissionChief notes and LSSM note previews in a monospaced font for aligned tables and lists.')}\n                </div>\n                <div class=\"mcms-status\">Mono Notes changes only MissionChief note editing and preview fields. Other inputs remain unchanged.</div>\n                <div class=\"mcms-row\"><span class=\"mcms-row-label\">Major incident threshold",
+              'settings interface',
+          )
+
+          source = replace_once(
+              source,
+              "            shortcuts: state.shortcuts,\n            autoLoadAllVehicles: state.autoLoadAllVehicles,",
+              "            shortcuts: state.shortcuts,\n            monospacedNotes: state.monospacedNotes,\n            autoLoadAllVehicles: state.autoLoadAllVehicles,",
+              'UI state map',
+          )
+
+          userscript_path.write_text(source, encoding='utf-8')
+
+          fixture = json.loads(fixture_path.read_text(encoding='utf-8'))
+          routes = fixture['toggleRoutes']
+          if 'monospacedNotes' not in routes:
+              routes.insert(routes.index('myMissions'), 'monospacedNotes')
+          paths = fixture['toggleStatePaths']
+          if 'monospacedNotes' not in paths:
+              rebuilt = {}
+              for key, value in paths.items():
+                  if key == 'myMissions':
+                      rebuilt['monospacedNotes'] = 'monospacedNotes'
+                  rebuilt[key] = value
+              fixture['toggleStatePaths'] = rebuilt
+          fixture_path.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
+
+          changelog = changelog_path.read_text(encoding='utf-8')
+          changelog_entry = '''## [Unreleased]
+
+### Added
+- Added an optional **Mono Notes** setting for native MissionChief notes and LSSM redesigned note editing and preview fields.
+- Preserved fixed-width spacing, line breaks and tab alignment without changing unrelated inputs or interface text.
+
+### Validation
+- Added deterministic settings-contract and selector-scope regression coverage for the new display toggle.
+'''
+          changelog = replace_once(changelog, '## [Unreleased]\n', changelog_entry, 'changelog')
+          changelog_path.write_text(changelog, encoding='utf-8')
+
+          test_path.write_text('''#!/usr/bin/env python3
+"""Regression contract for the optional monospaced MissionChief notes display."""
+
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+USERSCRIPT = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
+FIXTURE = ROOT / ".github/fixtures/settings-ui-contract.json"
+
+source = USERSCRIPT.read_text(encoding="utf-8")
+fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
+
+
+def require(fragment: str, label: str) -> None:
+    if fragment not in source:
+        raise AssertionError(f"Missing {label}: {fragment}")
+
+
+require("monospacedNotes: false", "disabled-by-default state")
+require("merged.monospacedNotes = merged.monospacedNotes === true;", "strict state migration")
+require("data-mcms-monospaced-notes", "root state attribute")
+require("mcms-monospaced-notes-style", "idempotent style element")
+require('textarea[name="note[message]"]', "native MissionChief note selector")
+require('textarea[id*="redesign-note-message"]', "LSSM note editor selector")
+require('pre[id*="redesign-note-message"]', "LSSM note preview selector")
+require("font-family: ui-monospace", "system monospace stack")
+require("font-variant-ligatures: none", "ligature suppression")
+require("tab-size: 4", "tab alignment")
+require("if (feature === 'monospacedNotes') state.monospacedNotes = !state.monospacedNotes;", "toggle routing")
+require("makeToggleButton('monospacedNotes'", "settings control")
+require("monospacedNotes: state.monospacedNotes", "UI state synchronisation")
+require("Monospaced notes on", "enabled feedback")
+require("Monospaced notes off", "disabled feedback")
+
+unsafe_selectors = (
+    'html[data-mcms-monospaced-notes="true"] textarea {',
+    'html[data-mcms-monospaced-notes="true"] pre {',
+    'html[data-mcms-monospaced-notes="true"] input {',
+)
+for selector in unsafe_selectors:
+    if selector in source:
+        raise AssertionError(f"Unsafe broad selector detected: {selector}")
+
+if "monospacedNotes" not in fixture["toggleRoutes"]:
+    raise AssertionError("settings contract is missing monospacedNotes toggle route")
+if fixture["toggleStatePaths"].get("monospacedNotes") != "monospacedNotes":
+    raise AssertionError("settings contract has an invalid monospacedNotes state path")
+
+print("Monospaced notes regression contract passed.")
+''', encoding='utf-8')
           PY
+
+      - name: Validate production patch
+        shell: bash
+        run: |
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          python -m json.tool .github/fixtures/settings-ui-contract.json >/dev/null
+          python .github/scripts/test_monospaced_notes.py
+          python .github/scripts/test_settings_ui_contract.py
+
+      - name: Commit validated feature and remove temporary inspection files
+        shell: bash
+        run: |
+          rm -f agent-inspection.txt agent-targeted.txt agent-ui-sync.txt
+          rm -f .github/workflows/agent-inspect-monospace.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add agent-ui-sync.txt
-          if ! git diff --cached --quiet; then
-            git commit -m "Record monospaced notes UI anchors [skip ci]"
-            git push origin HEAD:agent/monospaced-mission-notes
-          fi
+          git add -A
+          git commit -m "Add monospaced mission notes option"
+          git push origin HEAD:agent/monospaced-mission-notes

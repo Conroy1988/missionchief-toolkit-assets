@@ -1,34 +1,20 @@
 name: Branch Cleanup Audit
 
-run-name: Branch cleanup audit or guarded deletion
+run-name: Branch cleanup candidates
 
 on:
   schedule:
     - cron: "11 6 * * 1"
   workflow_dispatch:
-    inputs:
-      delete_fully_merged:
-        description: Delete branches proven merged into main
-        required: true
-        default: false
-        type: boolean
-  issue_comment:
-    types:
-      - created
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: read
-  issues: write
 
 jobs:
   audit:
-    if: >-
-      github.event_name != 'issue_comment' ||
-      (github.actor == github.repository_owner &&
-       github.event.comment.body == '/cleanup-branches SAFE')
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
 
     steps:
       - name: Check out latest main
@@ -38,10 +24,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Inventory and optionally delete merged branches
+      - name: Inventory safely removable branches
         env:
           GH_TOKEN: ${{ github.token }}
-          DELETE_MERGED: ${{ github.event_name == 'issue_comment' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -65,8 +50,6 @@ jobs:
 
           : > /tmp/candidates.txt
           : > /tmp/protected.txt
-          : > /tmp/deleted.txt
-          : > /tmp/delete-failed.txt
 
           while IFS= read -r ref; do
             branch="${ref#origin/}"
@@ -96,63 +79,24 @@ jobs:
           sort -u -o /tmp/candidates.txt /tmp/candidates.txt
           sort -u -o /tmp/protected.txt /tmp/protected.txt
 
-          if [[ "$DELETE_MERGED" == "true" && -s /tmp/candidates.txt ]]; then
-            while IFS= read -r branch; do
-              [[ -n "$branch" ]] || continue
-              encoded_branch="$(python - "$branch" <<'PY'
-          import sys
-          from urllib.parse import quote
-          print(quote(sys.argv[1], safe=''))
-          PY
-              )"
-              if gh api \
-                --method DELETE \
-                "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_branch}" \
-                >/dev/null 2>&1; then
-                echo "$branch" >> /tmp/deleted.txt
-              else
-                echo "$branch — deletion rejected or branch protected" >> /tmp/delete-failed.txt
-              fi
-            done < /tmp/candidates.txt
-          fi
-
-          sort -u -o /tmp/deleted.txt /tmp/deleted.txt
-          sort -u -o /tmp/delete-failed.txt /tmp/delete-failed.txt
-
           jq -n \
-            --arg mode "$([[ "$DELETE_MERGED" == "true" ]] && echo delete-merged || echo read-only)" \
             --rawfile candidates /tmp/candidates.txt \
-            --rawfile deleted /tmp/deleted.txt \
-            --rawfile deleteFailed /tmp/delete-failed.txt \
             --rawfile protected /tmp/protected.txt \
             '{
               generatedAt: (now | todateiso8601),
-              mode: $mode,
+              mode: "read-only",
               candidates: ($candidates | split("\n") | map(select(length > 0))),
-              deleted: ($deleted | split("\n") | map(select(length > 0))),
-              deletionFailures: ($deleteFailed | split("\n") | map(select(length > 0))),
               protectedOrUnmerged: ($protected | split("\n") | map(select(length > 0)))
             }' > branch-cleanup-report.json
 
           {
             echo '# Branch Cleanup Audit'
             echo
-            if [[ "$DELETE_MERGED" == "true" ]]; then
-              echo '> Guarded deletion mode: only branches with no open PR and a tip proven merged into `main` were eligible.'
-            else
-              echo '> Read-only mode: this run deleted nothing.'
-            fi
+            echo '> This workflow is read-only and deletes nothing.'
             echo
-            echo '## Deleted merged branches'
-            if [[ -s /tmp/deleted.txt ]]; then
-              sed 's/^/- `/' /tmp/deleted.txt | sed 's/$/`/'
-            else
-              echo '- None'
-            fi
-            echo
-            echo '## Deletion failures'
-            if [[ -s /tmp/delete-failed.txt ]]; then
-              sed 's/^/- /' /tmp/delete-failed.txt
+            echo '## Proven merged candidates'
+            if [[ -s /tmp/candidates.txt ]]; then
+              sed 's/^/- `/' /tmp/candidates.txt | sed 's/$/`/'
             else
               echo '- None'
             fi
@@ -167,13 +111,6 @@ jobs:
 
       - name: Publish branch audit summary
         run: cat branch-cleanup-report.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Report owner-command result
-        if: github.event_name == 'issue_comment'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CONTROL_ISSUE: ${{ github.event.issue.number }}
-        run: gh issue comment "$CONTROL_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file branch-cleanup-report.md
 
       - name: Upload branch audit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

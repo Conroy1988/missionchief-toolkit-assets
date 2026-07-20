@@ -188,7 +188,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.9'
+        version: '4.20.10'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -426,6 +426,34 @@ const railwaySelectedUnit = {
 const railwaySelectedCapacity = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [railwaySelectedUnit]);
 assert.strictEqual(railwaySelectedCapacity.min, 1, 'one selected Railway Police Officer contributes one');
 assert.strictEqual(railwaySelectedCapacity.max, 1, 'one selected Railway Police Officer remains exact');
+
+
+// Issue #242: MissionChief's live missing total already reflects selected personnel.
+{
+const issue242Doc = new FakeDocument();
+issue242Doc.defaultView = { MutationObserver: FakeMutationObserver };
+const issue242Candidate = makeMissionCandidate(issue242Doc, '4 Railway Police Officers');
+const issue242Definition = api.definitions.find(item => item.key === 'railway-police-officer');
+const issue242Catalogue = { requirements: [{ key: 'railway-police-officer', baseline: 8, missing: 8 }] };
+let issue242Rows = api.resolve(issue242Candidate, {
+    requirements: [{ key: 'railway-police-officer', requirement: 'Railway Police Officer', missing: 4, group: 'staff', definition: issue242Definition, statedRequirement: true }],
+    unresolved: []
+}, issue242Catalogue);
+let issue242Row = issue242Rows.find(item => item.key === 'railway-police-officer');
+assert.strictEqual(issue242Row.requiredText, '8', 'authoritative Railway Police requirement remains eight');
+assert.strictEqual(issue242Row.onSiteMin, 0, 'committed selected personnel are not falsely reported On site');
+assert.strictEqual(issue242Row.respondingMin, 0, 'committed selected personnel are not falsely reported Responding');
+assert.strictEqual(issue242Row.selectedMin, 4, 'baseline eight minus live missing four is reported Selected four');
+assert.strictEqual(issue242Row.stillNeededText, '4', 'four Railway Police Officers remain needed');
+
+issue242Rows = api.resolve(issue242Candidate, {
+    requirements: [{ key: 'railway-police-officer', requirement: 'Railway Police Officer', missing: 8, group: 'staff', definition: issue242Definition, statedRequirement: true }],
+    unresolved: []
+}, issue242Catalogue);
+issue242Row = issue242Rows.find(item => item.key === 'railway-police-officer');
+assert.strictEqual(issue242Row.selectedMin, 0, 'restored live missing demand removes inferred Selected after deselection');
+assert.strictEqual(issue242Row.onSiteMin, 0, 'deselection does not create false On-site personnel');
+}
 
 const issue191AmbulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
 const issue191HemsDefinition = api.definitions.find(item => item.key === 'hems');

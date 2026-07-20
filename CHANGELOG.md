@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.10] - 2026-07-20
+
+### Fixed
+- Corrected Railway Police Officer state reconciliation when MissionChief reduces the live missing count after personnel are selected.
+- The difference between the Mission Info baseline and live missing demand is no longer falsely displayed as On-site capacity.
+- Proven On-site and Responding capacity is retained first; any remaining committed capacity is displayed as Selected.
+
+### Validation
+- Added a deterministic regression for the reported `8 required / 4 live missing / no units on scene` case and deselection restoration.
+
 ## [4.20.9] - 2026-07-20
 
 ### Fixed

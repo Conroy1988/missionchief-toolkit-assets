@@ -17,6 +17,10 @@ The audit found one incomplete integration and two hardening opportunities.
 2. **Random tractive vehicles:** LSSM's reviewed UK `tractiveVehicles` metadata is compiled into a local static map. A trailer contributes an implicit tractive capability only when every compatible tractive type satisfies that requirement.
 3. **Personnel reliability:** unrestricted whole-row prose is no longer accepted as proof of specialist training. Explicit MissionChief training attributes and bracketed qualification badges remain supported; absent evidence remains bounded or unknown.
 
+### Qualification evidence boundary
+
+Bracketed qualification badges such as `[Railway Police Officer]` remain valid because they are a discrete semantic marker paired with MissionChief crew metadata. Incidental words appearing elsewhere in a vehicle row do not qualify the crew. This preserves the existing Railway Police selected-personnel contract while preventing broad caption text from creating false specialist capacity.
+
 ### Already implemented and now fixture-locked
 
 - nested `data-equipment-type` and `data-equipment-types` markers;

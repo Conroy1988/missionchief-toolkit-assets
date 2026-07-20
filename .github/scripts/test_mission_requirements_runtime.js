@@ -237,6 +237,7 @@ this.__mcmsRequirements = {
     coverageRow: missionRequirementsCoverageRow,
     staffCapacity: missionRequirementsStaffCapacity,
     equipmentTypes: missionRequirementsEquipmentTypes,
+    progressValue: missionRequirementsProgressValue,
     metadataValues: missionRequirementsMetadataValues,
     operationalSelectors: missionRequirementsOperationalSelectors,
     operationalActive: missionRequirementsOperationalElementActive,
@@ -1641,6 +1642,91 @@ assert(!pendingRecord.panel.innerHTML.includes('No outstanding requirements repo
 api.clear();
 }
 
+
+
+// Issue #259: pinned LSSM parity for resources, equipment, tractive units and training evidence.
+{
+const resourceDoc = new FakeDocument();
+resourceDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/25901' } };
+const resourceCandidate = makeMissionCandidate(resourceDoc, '2,000 litres of water');
+resourceCandidate.missionId = 25901;
+const holder = new FakeElement('div', resourceDoc);
+const metricNodes = { selected: new FakeElement('span', resourceDoc), driving: new FakeElement('span', resourceDoc), missing: new FakeElement('span', resourceDoc) };
+metricNodes.selected.textContent = metricNodes.selected.innerText = '250';
+metricNodes.driving.textContent = metricNodes.driving.innerText = '500';
+metricNodes.missing.textContent = metricNodes.missing.innerText = '2,000';
+holder.queryHandler = selector => Object.entries(metricNodes).find(([metric, node]) => node && selector.includes(`_${metric}_`))?.[1] || null;
+const originalResourceQuery = resourceCandidate.root.queryHandler;
+resourceCandidate.root.queryHandler = selector => /mission_(?:water|foam|pump)_holder/.test(selector) ? holder : originalResourceQuery(selector);
+const resourceParsed = api.parseText('2,000 litres of water', 'other');
+let resourceRow = api.resolve(resourceCandidate, resourceParsed)[0];
+assert.strictEqual(resourceRow.requiredText, '2,500', 'resource required total reconstructs missing plus driving');
+assert.strictEqual(resourceRow.respondingText, '500', 'resource driving progress is Responding');
+assert.strictEqual(resourceRow.selectedText, '250', 'resource selected progress is Selected');
+assert.strictEqual(resourceRow.onSiteText, '0', 'resource bar remains exact without a separate on-site metric');
+assert.strictEqual(resourceRow.stillNeededText, '1,750', 'resource missing value is not double-subtracted');
+assert.strictEqual(api.progressValue(resourceCandidate, 'foam', 'selected'), 250, 'generic foam progress selector accepts MissionChief water-bar class contract');
+assert.strictEqual(api.progressValue(resourceCandidate, 'pump', 'driving'), 500, 'generic pump progress selector accepts MissionChief water-bar class contract');
+metricNodes.missing = null;
+resourceRow = api.resolve(resourceCandidate, resourceParsed)[0];
+assert.strictEqual(resourceRow.stillNeededText, '?', 'malformed resource holder fails closed');
+assert.strictEqual(resourceRow.covered, false, 'malformed resource holder cannot become covered');
+
+const equipmentDoc = new FakeDocument();
+equipmentDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/25902' } };
+const equipmentCandidate = makeMissionCandidate(equipmentDoc, '1 Drone');
+equipmentCandidate.missionId = 25902;
+const droneDefinition = api.definitions.find(item => item.key === 'drone');
+const droneParsed = { requirements: [{ key: 'drone', requirement: 'Drone', missing: 1, group: 'vehicles', definition: droneDefinition }], unresolved: [] };
+const nestedUnit = makeVehicleElement(equipmentDoc, 2590201, -1);
+const nestedMarker = new FakeElement('span', equipmentDoc);
+nestedMarker.setAttribute('data-equipment-type', 'drone');
+const originalNestedQueryAll = nestedUnit.row.queryAllHandler;
+nestedUnit.row.queryAllHandler = selector => selector.includes('[data-equipment-type]') ? [nestedMarker] : originalNestedQueryAll(selector);
+equipmentCandidate.root.selectedUnits = [nestedUnit.vehicle];
+let nestedRow = api.resolve(equipmentCandidate, droneParsed)[0];
+assert.strictEqual(nestedRow.selectedMin, 1, 'nested equipment marker counts in Selected');
+equipmentCandidate.root.selectedUnits = [];
+nestedUnit.row.matchSet.add('tr');
+nestedUnit.row.setAttribute('data-vehicle-id', '2590201');
+equipmentCandidate.root.enRouteRows = [nestedUnit.row];
+nestedRow = api.resolve(equipmentCandidate, droneParsed)[0];
+assert.strictEqual(nestedRow.respondingMin, 1, 'nested equipment marker counts in Responding');
+equipmentCandidate.root.enRouteRows = [];
+equipmentCandidate.root.onSiteRows = [nestedUnit.row];
+nestedRow = api.resolve(equipmentCandidate, droneParsed)[0];
+assert.strictEqual(nestedRow.onSiteMin, 1, 'nested equipment marker counts On site');
+const dualNestedUnit = makeVehicleElement(equipmentDoc, 2590291, 91);
+const dualMarker = new FakeElement('span', equipmentDoc);
+dualMarker.setAttribute('data-equipment-type', 'drone');
+dualNestedUnit.row.queryAllHandler = selector => selector.includes('[data-equipment-type]') ? [dualMarker] : [];
+equipmentCandidate.root.onSiteRows = [];
+equipmentCandidate.root.selectedUnits = [dualNestedUnit.vehicle];
+nestedRow = api.resolve(equipmentCandidate, droneParsed)[0];
+assert.strictEqual(nestedRow.selectedMin, 1, 'type and nested equipment evidence from one unit count once');
+
+const guaranteedTractive = api.aggregate(
+    { group: 'vehicles', definition: { types: [0, 1, 4], equipment: [], factors: {} } },
+    [{ typeId: 84, compatibleTractiveTypes: new Set([0, 1, 4]), equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), staff: null, contributionKey: 'vehicle:random-tractive' }]
+);
+assert.strictEqual(guaranteedTractive.min, 1, 'random trailer contributes when every compatible tractive type satisfies the requirement');
+const partialTractive = api.aggregate(
+    { group: 'vehicles', definition: { types: [0], equipment: [], factors: {} } },
+    [{ typeId: 84, compatibleTractiveTypes: new Set([0, 1, 4]), equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), staff: null, contributionKey: 'vehicle:random-tractive-partial' }]
+);
+assert.strictEqual(partialTractive.min, 0, 'random trailer never guesses a capability not shared by every compatible tractive type');
+
+const unqualifiedRow = new FakeElement('tr', equipmentDoc);
+unqualifiedRow.textContent = unqualifiedRow.innerText = 'Railway Police Officer';
+unqualifiedRow.setAttribute('data-current-personnel', '4');
+const unqualifiedElement = new FakeElement('input', equipmentDoc);
+unqualifiedElement.closestMap.set('tr', unqualifiedRow);
+const unqualifiedTraining = api.metadataValues(unqualifiedElement, 'training');
+assert.strictEqual(unqualifiedTraining.size, 0, 'whole-row caption text is not semantic training evidence');
+const explicitTraining = new FakeElement('input', equipmentDoc);
+explicitTraining.setAttribute('data-personnel-training', 'Railway Police Officer');
+assert(api.metadataValues(explicitTraining, 'training').has('railway police officer'), 'explicit native personnel training remains recognised');
+}
 
 // Issue #257: official combined Mission Info labels use capability unions.
 {

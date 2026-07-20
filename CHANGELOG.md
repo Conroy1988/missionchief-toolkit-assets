@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.13] - 2026-07-20
+
+### Fixed
+- Reconciled water, foam and pumping requirements from MissionChief's authoritative missing, driving and selected progress values without double subtraction.
+- Added locally compiled random-tractive capability intersection for trailer selections.
+- Removed whole-row caption text as evidence of specialist personnel training.
+
+### Audit
+- Completed the pinned LSSM V.4 Enhanced Missing Vehicles compatibility audit.
+- Added an offline upstream capability snapshot and drift checker.
+- Added resource, nested-equipment, tractive and personnel reliability fixtures.
+
 ## [4.20.12] - 2026-07-20
 
 ### Fixed

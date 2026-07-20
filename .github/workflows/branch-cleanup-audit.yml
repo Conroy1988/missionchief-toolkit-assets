@@ -1,10 +1,6 @@
 name: Branch Cleanup Audit
 
-run-name: >-
-  Branch cleanup ${{
-    github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged &&
-    'and deletion' || 'audit'
-  }}
+run-name: Branch cleanup audit or guarded deletion
 
 on:
   schedule:
@@ -16,18 +12,21 @@ on:
         required: true
         default: false
         type: boolean
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/branch-cleanup-audit.yml
+  issue_comment:
+    types:
+      - created
 
 permissions:
   contents: write
   pull-requests: read
+  issues: write
 
 jobs:
   audit:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.actor == github.repository_owner &&
+       github.event.comment.body == '/cleanup-branches SAFE')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -42,7 +41,7 @@ jobs:
       - name: Inventory and optionally delete merged branches
         env:
           GH_TOKEN: ${{ github.token }}
-          DELETE_MERGED: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged) }}
+          DELETE_MERGED: ${{ github.event_name == 'issue_comment' || (github.event_name == 'workflow_dispatch' && inputs.delete_fully_merged) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -151,13 +150,6 @@ jobs:
               echo '- None'
             fi
             echo
-            echo '## Proven merged candidates'
-            if [[ -s /tmp/candidates.txt ]]; then
-              sed 's/^/- `/' /tmp/candidates.txt | sed 's/$/`/'
-            else
-              echo '- None'
-            fi
-            echo
             echo '## Deletion failures'
             if [[ -s /tmp/delete-failed.txt ]]; then
               sed 's/^/- /' /tmp/delete-failed.txt
@@ -175,6 +167,13 @@ jobs:
 
       - name: Publish branch audit summary
         run: cat branch-cleanup-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report owner-command result
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CONTROL_ISSUE: ${{ github.event.issue.number }}
+        run: gh issue comment "$CONTROL_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file branch-cleanup-report.md
 
       - name: Upload branch audit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

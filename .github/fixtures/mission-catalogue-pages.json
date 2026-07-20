@@ -156,7 +156,9 @@
         "fire-officer": 8,
         "iccu-or-control": 1,
         "otl": 1,
-        "ambulance-officer": 1
+        "ambulance-officer": 1,
+        "primary-response": 2,
+        "secondary-response": 2
       }
     },
     {

@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.12] - 2026-07-20
+
+### Fixed
+- Resolved official combined Mission Info vehicle requirements through explicit capability unions instead of rendering unknown `?` coverage.
+- Police Helicopters or Drones now accepts Police Helicopter type 11, drone vehicle types 89–91 and `drone` equipment across Selected, Responding and On site.
+- Added the remaining verified UK combined Fire, Airfield, Mountain/SAR and paramedic vehicle labels so any accepted constituent vehicle updates the same Matrix row.
+
+### Safety
+- Existing vehicle-type, equipment, factor and trailer de-duplication remains unchanged.
+- Unsupported or probabilistic Mission Info metadata continues to fail closed as unknown rather than being guessed.
+
+### Validation
+- Added fixture-backed parser, catalogue, selected, responding, on-site, deselection and dual-evidence de-duplication regressions.
+
 ## [4.20.11] - 2026-07-20
 
 ### Performance

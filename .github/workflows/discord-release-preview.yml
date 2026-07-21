@@ -60,17 +60,23 @@ jobs:
           [[ -n "$HASH" ]] || HASH="${GITHUB_SHA}${GITHUB_SHA}"
           [[ -n "$BACKUP_COMMIT" ]] || BACKUP_COMMIT="$GITHUB_SHA"
 
-          cat > release-preview-changelog.md <<'EOF'
-          # Toolkit release preview
+          awk -v version="$VERSION" '
+            $0 ~ "^## \\[" version "\\]" {
+              capture = 1
+              next
+            }
+            capture && /^## \[/ {
+              exit
+            }
+            capture {
+              print
+            }
+          ' CHANGELOG.md > release-preview-changelog.md
 
-          ### Fixed
-          - Corrected firefighter, specialist personnel and BASU reconciliation in the Mission Requirements Matrix.
-          - Ensured responding Police Sergeants, Police Inspectors and Railway Police Officers reduce outstanding demand.
-
-          ### Changed
-          - Rebuilt Discord release anouncements as a two-card deployment transmission.
-          - Prioritised the update action and user-facing release intelligence.
-          EOF
+          [[ -s release-preview-changelog.md ]] || {
+            echo "::error::Unable to extract release notes for v${VERSION}."
+            exit 1
+          }
 
           python3 .github/scripts/build_discord_release_payload.py \
             --mode primary \
@@ -90,36 +96,31 @@ jobs:
 
           path = Path("discord-release-preview.json")
           payload = json.loads(path.read_text(encoding="utf-8"))
-          hero, intelligence = payload["embeds"]
-          match = re.search(r"v([^\s]+)$", hero["title"])
+          embed = payload["embeds"][0]
+          match = re.search(r"v([^\s]+)", embed["title"])
           version = f"v{match.group(1)}" if match else "current version"
+          original_description = embed["description"]
 
-          hero["title"] = f"🧪 TRANSMISSION TEST // {version}"
-          hero["description"] = (
-              "**LIVE DESIGN PREVIEW **\n"
-              "This message is testing the release channel presentation only.\n\n"
-              "**No release was created. Greasy Fork, was not changed.**\n\n"
-              "`WEBHOOK LIVE`  `SAFETY LOCKED`  `TEST ONLY`"
+          embed["title"] = f"🧪 TEST // TOOLKIT {version} RELEASE CARD"
+          embed["description"] = (
+              "**LIVE DESIGN PREVIEW — NO RELEASE ACTION TAKEN**\n"
+              "This is a rendering test only. Greasy Fork and the published "
+              "version are unchanged.\n\n"
+              + original_description
           )
-          hero["color"] = 0x7C3AED
-          hero["fields"][0] = {
+          embed["color"] = 0x7C3AED
+          embed["fields"][2] = {
               "name": "TEST TARGET",
               "value": "Release webhook\n**CONNECTED** ✅",
               "inline": True,
           }
-          hero["fields"][1] = {
+          embed["fields"][3] = {
               "name": "SAFETY LOCK",
               "value": "No publish\n**CONFIRMED** ✅",
               "inline": True,
           }
-          hero["fields"][2]["name"] = "PREVIEW ID"
-          hero["footer"]["text"] = "TEST ONLY • No production state changed"
-
-          intelligence["title"] = "⚡ PREVIEW // RELEASE INTELLIGENCE"
-          intelligence["color"] = 0x5865F2
-          intelligence["fields"][0]["name"] = "CURRENT LIVE'LINKS"
-          intelligence["fields"][1]["name"] = "PREVIEW MARKER"
-          intelligence["footer"]["text"] = "Design preview • Release brief simulation"
+          embed["fields"][4]["name"] = "PREVIEW ID"
+          embed["footer"]["text"] = "TEST ONLY • No production state changed"
 
           path.write_text(
               json.dumps(payload, ensure_ascii=False, indent=2) + "\n",

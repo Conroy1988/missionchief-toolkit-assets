@@ -104,12 +104,13 @@ jobs:
             --json-output /tmp/userscript-audit.json \
             --markdown-output /tmp/userscript-audit.md
 
-      - name: Commit validated product candidate
+      - name: Prepare final product diff
         shell: bash
         run: |
           set -euo pipefail
           git checkout HEAD -- documentation-drift-report.md 2>/dev/null || true
           git clean -fd
+          git status --short
           git diff --name-only | sort > /tmp/final-paths
           cat > /tmp/allowed-paths <<'EOF'
           .github/fixtures/boot-lifecycle-contract.json
@@ -128,8 +129,11 @@ jobs:
           EOF
           sort -o /tmp/allowed-paths /tmp/allowed-paths
           diff -u /tmp/allowed-paths /tmp/final-paths
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Stage product files
+        shell: bash
+        run: |
+          set -euo pipefail
           git add \
             .github/fixtures/boot-lifecycle-contract.json \
             .github/fixtures/main-style-source-headroom.json \
@@ -144,5 +148,17 @@ jobs:
             dist/release-manifest.json \
             help/index.html \
             src/MissionChief_Map_Command_Toolkit.user.js
+          git diff --cached --check
+          git diff --cached --stat
+
+      - name: Commit product files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Extract Boot maintenance task registration"
-          git push origin HEAD:agent/issue-64-boot-lifecycle-stage
+
+      - name: Push product commit
+        shell: bash
+        run: git push origin HEAD:agent/issue-64-boot-lifecycle-stage

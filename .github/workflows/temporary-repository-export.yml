@@ -1,0 +1,31 @@
+name: Temporary Repository Export
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temporary-repository-export.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Package repository
+        run: tar --exclude=.git -czf missionchief-toolkit-current.tar.gz .
+      - name: Upload repository package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-current
+          path: missionchief-toolkit-current.tar.gz
+          if-no-files-found: error
+          retention-days: 1

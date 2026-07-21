@@ -6,6 +6,11 @@ on:
       - agent/issue-158-transport-sweep-confirmation
     paths:
       - ".github/workflows/temporary-issue158-apply.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temporary-issue158-apply.yml"
 
 permissions:
   contents: write
@@ -23,6 +28,7 @@ jobs:
       - name: Check out candidate branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: agent/issue-158-transport-sweep-confirmation
           fetch-depth: 0
 
       - name: Reconstruct reviewed patch
@@ -63,5 +69,3 @@ jobs:
           git status --short
           git commit -m "Fix Transport Sweep confirmed release counting (#158)"
           git push origin HEAD:agent/issue-158-transport-sweep-confirmation
-
-# retrigger: 2026-07-21T18:40Z

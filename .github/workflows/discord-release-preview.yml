@@ -68,8 +68,8 @@ jobs:
           - Ensured responding Police Sergeants, Police Inspectors and Railway Police Officers reduce outstanding demand.
 
           ### Changed
-          - Simplified Discord release announcements with a clearer update action and concise change summary.
-          - Prioritised user-facing changes over internal deployment metadata.
+          - Rebuilt Discord release anouncements as a two-card deployment transmission.
+          - Prioritised the update action and user-facing release intelligence.
           EOF
 
           python3 .github/scripts/build_discord_release_payload.py \
@@ -85,27 +85,41 @@ jobs:
 
           python3 - <<'PY'
           import json
+          import re
           from pathlib import Path
 
           path = Path("discord-release-preview.json")
           payload = json.loads(path.read_text(encoding="utf-8"))
-          embed = payload["embeds"][0]
-          version = embed["fields"][0]["value"].splitlines()[0].strip("*")
+          hero, intelligence = payload["embeds"]
+          match = re.search(r"v([^\s]+)$", hero["title"])
+          version = f"v{match.group(1)}" if match else "current version"
 
-          embed["title"] = f"🧪 TEST — {version} release announcement preview"
-          embed["description"] = (
-              "**No release was published and Greasy Fork was not changed.**\n"
-              "This is a live webhook test of the redesigned release card."
+          hero["title"] = f"🧪 TRANSMISSION TEST // {version}"
+          hero["description"] = (
+              "**LIVE DESIGN PREVIEW **\n"
+              "This message is testing the release channel presentation only.\n\n"
+              "**No release was created. Greasy Fork, was not changed.**\n\n"
+              "`WEBHOOK LIVE`  `SAFETY LOCKED`  `TEST ONLY`"
           )
-          embed["color"] = 0x5865F2
-          embed["fields"][0]["name"] = "Previewed release"
-          embed["fields"][1]["name"] = "Live systems"
-          embed["fields"][1]["value"] = "Greasy Fork unchanged\nInstall source unchanged"
-          embed["fields"][2]["name"] = "Preview checks"
-          embed["fields"][2]["value"] = "Payload contract ✅\nWebhook delivery test"
-          embed["fields"][4]["name"] = "Preview integrity"
-          embed["fields"][5]["name"] = "Current links"
-          embed["footer"]["text"] = "TEST ONLY • Discord release embed preview"
+          hero["color"] = 0x7C3AED
+          hero["fields"][0] = {
+              "name": "TEST TARGET",
+              "value": "Release webhook\n**CONNECTED** ✅",
+              "inline": True,
+          }
+          hero["fields"][1] = {
+              "name": "SAFETY LOCK",
+              "value": "No publish\n**CONFIRMED** ✅",
+              "inline": True,
+          }
+          hero["fields"][2]["name"] = "PREVIEW ID"
+          hero["footer"]["text"] = "TEST ONLY • No production state changed"
+
+          intelligence["title"] = "⚡ PREVIEW // RELEASE INTELLIGENCE"
+          intelligence["color"] = 0x5865F2
+          intelligence["fields"][0]["name"] = "CURRENT LIVE'LINKS"
+          intelligence["fields"][1]["name"] = "PREVIEW MARKER"
+          intelligence["footer"]["text"] = "Design preview • Release brief simulation"
 
           path.write_text(
               json.dumps(payload, ensure_ascii=False, indent=2) + "\n",

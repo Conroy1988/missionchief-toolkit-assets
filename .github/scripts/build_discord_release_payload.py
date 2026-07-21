@@ -32,8 +32,8 @@ SECTION_PRIORITY = {
 
 MAX_SECTIONS = 2
 MAX_ITEMS = 4
-MAX_ITEM_LENGTH = 165
-MAX_BRIEF_LENGTH = 760
+MAX_ITEM_LENGTH = 150
+MAX_BRIEF_LENGTH = 820
 
 
 def clean_text(value: str) -> str:
@@ -116,15 +116,16 @@ def parse_changelog(path: Path) -> str:
             continue
 
         icon = SECTION_ICONS.get(name.casefold(), "◆")
-        rendered.append(f"**{icon} {name.title()}**")
-        rendered.extend(f"• {item}" for item in selected_items)
-        used_items += len(selected_items)
+        rendered.append(f"**{icon} {name.upper()}**")
+        for item in selected_items:
+            used_items += 1
+            rendered.append(f"> **{used_items:02d}**  {item}")
         used_sections += 1
 
     omitted = max(0, total_items - used_items)
     if omitted:
         suffix = "s" if omitted != 1 else ""
-        rendered.append(f"*{omitted} more change{suffix} in the full release notes.*")
+        rendered.append(f"*+{omitted} additional change{suffix} in the full release notes.*")
 
     brief = "\n".join(rendered)
     if len(brief) > MAX_BRIEF_LENGTH:
@@ -147,133 +148,144 @@ def utc_timestamp() -> str:
 
 
 def build_primary(args: argparse.Namespace, brief: str) -> dict:
-    integrity = (
-        f"SHA-256 `{short_hash(args.sha256)}`\n"
-        f"Backup `{args.backup_commit[:10]}`"
-    )
+    hero = {
+        "author": {
+            "name": "MISSIONCHIEF // MAP COMMAND TOOLKIT",
+            "url": args.release_url,
+        },
+        "title": f"🚨 DEPLOYMENT CONFIRMED // v{args.version}",
+        "description": (
+            "**THE NEW BUILD IS LIVE**\n"
+            "Greasy Fork has published and verified the latest Toolkit package.\n\n"
+            f"**[⬇️  INSTALL / UPDATE TO v{args.version}]({args.install_url})**\n\n"
+            "`LIVE`  `VERIFIED`  `RECOVERABLE`"
+        ),
+        "url": args.release_url,
+        "color": 0xE11D48,
+        "fields": [
+            {
+                "name": "PUBLIC CHANNEL",
+                "value": "Greasy Fork\n**SYNCED** ✅",
+                "inline": True,
+            },
+            {
+                "name": "RELEASE GATE",
+                "value": "GitHub + backup\n**PASSED** ✅",
+                "inline": True,
+            },
+            {
+                "name": "BUILD ID",
+                "value": f"`{short_hash(args.sha256, 10, 8)}`",
+                "inline": True,
+            },
+        ],
+        "footer": {
+            "text": "Verified public deployment • MissionChief Toolkit",
+        },
+        "timestamp": utc_timestamp(),
+    }
+
+    intelligence = {
+        "title": "⚡ RELEASE INTELLIGENCE",
+        "description": brief,
+        "url": args.release_url,
+        "color": 0x00AEEF,
+        "fields": [
+            {
+                "name": "MISSION LINKS",
+                "value": (
+                    f"[Full release]({args.release_url})"
+                    f"  •  [Greasy Fork]({args.script_url})"
+                    f"  •  **[Install now]({args.install_url})**"
+                ),
+                "inline": False,
+            },
+            {
+                "name": "RECOVERY MARKER",
+                "value": f"Private archive `{args.backup_commit[:10]}`",
+                "inline": False,
+            },
+        ],
+        "footer": {
+            "text": "Release brief • User-facing changes only",
+        },
+    }
 
     return {
         "username": "MissionChief Toolkit Releases",
         "allowed_mentions": {"parse": []},
-        "embeds": [
-            {
-                "author": {
-                    "name": "MissionChief Map Command Toolkit",
-                    "url": args.release_url,
-                },
-                "title": f"✅ Toolkit v{args.version} is live",
-                "description": (
-                    "The verified update is available now on Greasy Fork.\n"
-                    "**Update to receive the latest fixes and improvements.**"
-                ),
-                "url": args.release_url,
-                "color": 0x2ECC71,
-                "fields": [
-                    {
-                        "name": "Release",
-                        "value": (
-                            f"**v{args.version}**\n"
-                            f"[Public release]({args.release_url})"
-                        ),
-                        "inline": True,
-                    },
-                    {
-                        "name": "Availability",
-                        "value": "Greasy Fork ✅\nInstall source ✅",
-                        "inline": True,
-                    },
-                    {
-                        "name": "Verification",
-                        "value": "GitHub ✅\nPrivate backup ✅",
-                        "inline": True,
-                    },
-                    {
-                        "name": "What changed",
-                        "value": brief,
-                        "inline": False,
-                    },
-                    {
-                        "name": "Release integrity",
-                        "value": integrity,
-                        "inline": False,
-                    },
-                    {
-                        "name": "Update now",
-                        "value": (
-                            f"**[⬇️ Install / Update]({args.install_url})**"
-                            f"  •  [Release notes]({args.release_url})"
-                            f"  •  [Greasy Fork page]({args.script_url})"
-                        ),
-                        "inline": False,
-                    },
-                ],
-                "footer": {
-                    "text": "Verified deployment • MissionChief Toolkit",
-                },
-                "timestamp": utc_timestamp(),
-            }
-        ],
+        "embeds": [hero, intelligence],
     }
 
 
 def build_fallback(args: argparse.Namespace, brief: str) -> dict:
-    history_url = args.history_url or f"{args.script_url.rstrip('/')}/versions"
+    history_url = args.history_url or f"{Args.script_url.rstrip('/')}/versions"
     previous = args.previous_version or "unknown"
     previous_label = f"v{previous}" if previous != "unknown" else "Unknown"
+
+    hero = {
+        "author": {
+            "name": "MISSIONCHIEF // RELEASE WATCH",
+            "url": args.script_url,
+        },
+        "title": f"📡 PUBLIC VERSION DETECTED // v{args.version}",
+        "description": (
+            "**FALLBACK RELEASE SIGNAL**\n"
+            "Greasy Fork published a new public version before the normal release "
+            "announcement completed.\n\n"
+            f"**[⬇️  INSTALL / UPDATE TO v{args.version}]({args.install_url})**\n\n"
+            f"`{previous_label}`  →  `v{args.version}`"
+        ),
+        "url": args.script_url,
+        "color": 0xF59E0B,
+        "fields": [
+            {
+                "name": "SOURCE",
+                "value": "Greasy Fork\n**LIVE** ✅",
+                "inline": True,
+            },
+            {
+                "name": "SIGNAL",
+                "value": "Fallback monitor\n**CONFIRMED**",
+                "inline": True,
+            },
+            {
+                "name": "VERSION",
+                "value": f"**v{args.version}**",
+                "inline": True,
+            },
+        ],
+        "footer": {
+            "text": "Fallback release signal • MissionChief Toolkit",
+        },
+        "timestamp": utc_timestamp(),
+    }
+
+    intelligence = {
+        "title": "⚡ RELEASE INTELLIGENCE",
+        "description": brief,
+        "url": history_url,
+        "color": 0xD97706,
+        "fields": [
+            {
+                "name": "MISSION LINKS",
+                "value": (
+                    f"[Version history]({history_url})"
+                    f"  •  [Greasy Fork]({args.script_url})"
+                    f"  •  **[Install now]({args.install_url})**"
+                ),
+                "inline": False,
+            },
+        ],
+        "footer": {
+            "text": "Fallback brief • Standard release verification may still be running",
+        },
+    }
 
     return {
         "username": "MissionChief Toolkit Releases",
         "allowed_mentions": {"parse": []},
-        "embeds": [
-            {
-                "author": {
-                    "name": "MissionChief Map Command Toolkit",
-                    "url": args.script_url,
-                },
-                "title": f"📡 Toolkit v{args.version} detected on Greasy Fork",
-                "description": (
-                    "The public version changed before the standard release "
-                    "announcement completed. The update is available now."
-                ),
-                "url": args.script_url,
-                "color": 0xF39C12,
-                "fields": [
-                    {
-                        "name": "Version change",
-                        "value": f"`{previous_label}` → **v{args.version}**",
-                        "inline": True,
-                    },
-                    {
-                        "name": "Source",
-                        "value": "Greasy Fork ✅",
-                        "inline": True,
-                    },
-                    {
-                        "name": "Status",
-                        "value": "Fallback notice",
-                        "inline": True,
-                    },
-                    {
-                        "name": "What changed",
-                        "value": brief,
-                        "inline": False,
-                    },
-                    {
-                        "name": "Update now",
-                        "value": (
-                            f"**[⬇️ Install / Update]({args.install_url})**"
-                            f"  •  [Version history]({history_url})"
-                            f"  •  [Greasy Fork page]({args.script_url})"
-                        ),
-                        "inline": False,
-                    },
-                ],
-                "footer": {
-                    "text": "Fallback release signal • MissionChief Toolkit",
-                },
-                "timestamp": utc_timestamp(),
-            }
-        ],
+        "embeds": [hero, intelligence],
     }
 
 
@@ -283,33 +295,34 @@ def validate_payload(payload: dict) -> None:
         raise SystemExit("Discord payload is unexpectedly large.")
 
     embeds = payload.get("embeds", [])
-    if len(embeds) != 1:
-        raise SystemExit("Expected exactly one Discord embed.")
+    if len(embeds) != 2:
+        raise SystemExit("Expected exactly two Discord embeds.")
 
-    embed = embeds[0]
-    if len(embed.get("title", "")) > 256:
-        raise SystemExit("Discord embed title exceeds 256 characters.")
-    if len(embed.get("description", "")) > 4096:
-        raise SystemExit("Discord embed description exceeds 4096 characters.")
-    if len(embed.get("fields", [])) > 25:
-        raise SystemExit("Discord embed contains more than 25 fields.")
+    total_characters = 0
+    for index, embed in enumerate(embeds, 1):
+        if len(embed.get("title", "")) > 256:
+            raise SystemExit(f"Discord embed {index} title exceeds 256 characters.")
+        if len(embed.get("description", "")) > 4096:
+            raise SystemExit(f"Discord embed {index} description exceeds 4096 characters.")
+        if len(embed.get("fields", [])) > 25:
+            raise SystemExit(f"Discord embed {index} contains more than 25 fields.")
 
-    total_characters = (
-        len(embed.get("title", ""))
-        + len(embed.get("description", ""))
-        + len(embed.get("author", {}).get("name", ""))
-        + len(embed.get("footer", {}).get("text", ""))
-    )
+        total_characters += (
+            len(embed.get("title", ""))
+            + len(embed.get("description", ""))
+            + len(embed.get("author", {}).get("name", ""))
+            + len(embed.get("footer", {}).get("text", ""))
+        )
 
-    for field in embed.get("fields", []):
-        name = field.get("name", "")
-        value = field.get("value", "")
-        if len(name) > 256 or len(value) > 1024:
-            raise SystemExit(f"Discord embed field exceeds limits: {name}")
-        total_characters += len(name) + len(value)
+        for field in embed.get("fields", []):
+            name = field.get("name", "")
+            value = field.get("value", "")
+            if len(name) > 256 or len(value) > 1024:
+                raise SystemExit(f"Discord embed field exceeds limits: {name}")
+            total_characters += len(name) + len(value)
 
     if total_characters > 6000:
-        raise SystemExit("Discord embed exceeds the 6000-character total limit.")
+        raise SystemExit("Discord embeds exceed the 6000-character total limit.")
 
 
 def main() -> int:

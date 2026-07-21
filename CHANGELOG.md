@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.22] - 2026-07-21
+
+### Fixed
+- Reconciled firefighter capacity using actual responding/on-site crew quantities, assigned personnel and vehicle-specific maximum overrides rather than vehicle count.
+- Added qualification-specific Police Sergeant, Police Inspector and Railway Police Officer counts that never infer specialist personnel from generic crew or vehicle captions.
+- Added complete Breathing Apparatus Support Unit coverage for BASU, OSU, BASU Pod and OSU Pod with Prime Mover pair de-duplication and explanatory Matrix detail.
+- Suppressed generic firefighter range metadata when MissionChief already supplies the exact generated requirement for the active mission.
+
 ## [4.20.21] - 2026-07-21
 
 ### Engineering

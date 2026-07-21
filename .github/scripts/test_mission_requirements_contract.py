@@ -229,7 +229,12 @@ def main() -> int:
     assert "if ((definition?.group || 'vehicles') === 'staff') continue" in source, "vehicle labels must not prove specialist personnel roles"
     assert "missionRequirementsLinkedTrainingValues(candidate, vehicleId, vehicleElement)" in source, "responding units must resolve linked specialist metadata"
     assert "missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement, mode)" in source, "responding mode must reach the crew resolver"
-    assert "mode === 'responding' ? missionRequirementsRespondingCrewCapacity(element) : null" in source, "canonical responding crew must be acquired explicitly"
+    assert "missionRequirementsOperationalCrewCapacity(element, mode)" in source, "canonical responding and on-site crew must be acquired explicitly"
+    assert "td:nth-of-type(5)[sortvalue]" in source, "canonical operational crew must use the fifth-cell sortvalue"
+    assert '"key":"police-inspector-personnel"' in source and '"police_inspector"' in source, "Police Inspector must be a countable explicit qualification"
+    assert "missionRequirementsQualifiedStaffCounts(candidate, vehicleId, vehicleElement, arrCapabilityState)" in source, "specialist personnel must use qualification-specific counts"
+    assert r"Required\s+minimum" in source and "missionRequirementsRangeMetadataKey" in source, "range-only mission metadata must be suppressible beside exact demand"
+    assert 'Breathing Apparatus Support Unit (BASU)' in source and 'BASU Pod and OSU Pod' in source, "BASU must expose its canonical label and eligible vehicle detail"
     assert "!reconciled.requirements.length && !reconciled.unresolved.length" in source, "unresolved authority must not collapse to an empty success state"
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
     assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"

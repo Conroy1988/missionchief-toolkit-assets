@@ -2,7 +2,7 @@
   "schemaVersion": 3,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "4.20.21",
+  "candidateVersion": "4.20.22",
   "originalSourceLines": 31671,
   "candidateSourceLines": 31171,
   "recoveredSourceLines": 500,

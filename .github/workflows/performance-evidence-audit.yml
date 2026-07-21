@@ -1,0 +1,102 @@
+name: Performance Evidence Audit
+
+run-name: Performance evidence · ${{ github.event_name }}
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/fixtures/observer-ownership-v4.20.24.json"
+      - ".github/scripts/build_observer_ownership_inventory.py"
+      - ".github/scripts/test_observer_ownership_inventory.py"
+      - ".github/scripts/collect_controlled_browser_evidence.py"
+      - ".github/workflows/performance-evidence-audit.yml"
+      - "docs/audits/observer-ownership-v4.20.24.md"
+      - "docs/audits/performance-evidence-v4.20.24.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove measurement-only source and distribution boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          if ! git diff --quiet origin/main...HEAD -- src dist; then
+            echo "::error::Measurement-only performance evidence changed src/ or dist/."
+            git diff --stat origin/main...HEAD -- src dist
+            exit 1
+          fi
+
+      - name: Install exact AST parser
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Validate deep audit and observer ownership inventory
+        run: python3 .github/scripts/test_observer_ownership_inventory.py
+
+      - name: Collect controlled Chromium evidence
+        id: browser
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "Browser candidates:"
+            command -v google-chrome || true
+            command -v google-chrome-stable || true
+            command -v chromium || true
+            command -v chromium-browser || true
+            google-chrome --version 2>/dev/null || true
+            google-chrome-stable --version 2>/dev/null || true
+            chromium --version 2>/dev/null || true
+          } > controlled-browser-diagnostic.txt 2>&1
+          python3 .github/scripts/collect_controlled_browser_evidence.py \
+            --json-output controlled-browser-evidence-v4.20.24.json \
+            --markdown-output controlled-browser-evidence-v4.20.24.md \
+            >> controlled-browser-diagnostic.txt 2>&1
+          STATUS=$?
+          echo "collector_exit_code=$STATUS" >> controlled-browser-diagnostic.txt
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload browser diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-controlled-browser-diagnostic
+          path: controlled-browser-diagnostic.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop on controlled browser failure
+        if: steps.browser.outputs.exit_code != '0'
+        run: |
+          cat controlled-browser-diagnostic.txt
+          exit 1
+
+      - name: Publish controlled evidence summary
+        run: cat controlled-browser-evidence-v4.20.24.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload measurement evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-performance-evidence-v4.20.24
+          path: |
+            controlled-browser-evidence-v4.20.24.json
+            controlled-browser-evidence-v4.20.24.md
+            docs/audits/observer-ownership-v4.20.24.md
+            docs/audits/performance-evidence-v4.20.24.md
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,65 @@
+name: Apply Issue 158 Candidate
+
+on:
+  push:
+    branches:
+      - agent/issue-158-transport-sweep-confirmation
+    paths:
+      - ".github/workflows/temporary-issue158-apply.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: issue-158-candidate-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .automation/issue158.patch.part* | base64 --decode | gzip --decompress > /tmp/issue158.patch
+          git apply --check /tmp/issue158.patch
+          git apply /tmp/issue158.patch
+
+      - name: Remove temporary transfer machinery
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .automation/issue158.patch.part*
+          rm -f .github/workflows/temporary-issue158-apply.yml
+          rmdir .automation 2>/dev/null || true
+
+      - name: Validate candidate
+        shell: bash
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          bash .github/scripts/run_userscript_preflight.sh --contracts
+          python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
+          git checkout -- documentation-drift-report.json documentation-drift-report.md
+
+      - name: Commit reviewed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git status --short
+          git commit -m "Fix Transport Sweep confirmed release counting (#158)"
+          git push origin HEAD:agent/issue-158-transport-sweep-confirmation

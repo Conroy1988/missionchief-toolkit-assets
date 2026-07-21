@@ -20,6 +20,40 @@ def main() -> int:
     payload = ORIGINAL.read_text(encoding="utf-8")
     payload = replace_once(
         payload,
+        '''    assignment = text.find(ASSIGNMENT, function_start)
+    if assignment < 0:
+        fail("main style.textContent assignment is missing")
+    template_start = assignment + len(ASSIGNMENT)
+    closing = text.find("`;", template_start)
+    if closing < 0:
+        fail("main style template closing delimiter is missing")
+    raw = text[template_start:closing]
+    lines = raw.split("\\n")
+''',
+        '''    cursor = function_start
+    raw = None
+    while True:
+        assignment = text.find(ASSIGNMENT, cursor)
+        if assignment < 0:
+            break
+        template_start = assignment + len(ASSIGNMENT)
+        closing = text.find("`;", template_start)
+        if closing < 0:
+            break
+        candidate = text[template_start:closing]
+        if len(candidate.encode("utf-8")) > 800000:
+            if raw is not None:
+                fail("multiple main stylesheet template candidates were found")
+            raw = candidate
+        cursor = closing + 2
+    if raw is None:
+        fail("reviewed main stylesheet template is missing")
+    lines = raw.split("\\n")
+''',
+        "large stylesheet template selection",
+    )
+    payload = replace_once(
+        payload,
         '''    return ranges
 
 
@@ -130,6 +164,8 @@ CSS comments removed by this change occupy complete lines and contain no interpo
         '''            ROOT / "docs/issue-253-style-formatting-diagnostic.txt",
             ROOT / "docs/issue-253-style-formatting-inventory.json",
             ROOT / "docs/issue-253-final-package-diagnostic.txt",
+            ROOT / "docs/issue-253-v2-package-diagnostic.txt",
+            ROOT / "docs/issue-253-v3-package-diagnostic.txt",
 ''',
         "diagnostic cleanup",
     )

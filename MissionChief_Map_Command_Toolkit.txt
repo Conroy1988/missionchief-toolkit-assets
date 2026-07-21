@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.19
+// @version      4.20.20
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.19',
+        version: '4.20.20',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22273,40 +22273,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return candidates.sort((a, b) => a.index - b.index || b.length - a.length)[0] || null;
     }
 
-    function missionRequirementsParseText(rawText, group = 'vehicles') {
-        const normalized = String(rawText ?? '')
-        .replace(/\r/g, '')
-        .replace(/\n+/g, '; ')
-        .replace(/\s+/g, ' ')
-        .trim();
-        if (!normalized) return { requirements: [], remaining: '' };
-        let working = normalized;
-        const requirements = [];
-        while (true) {
-        let best = null;
-        for (const definition of MISSION_REQUIREMENT_PARSE_DEFINITIONS) {
-            if ((definition.group || 'vehicles') !== group) continue;
-            const found = missionRequirementsFindDefinitionMatch(working, definition);
-            if (!found) continue;
-            if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) {
-                best = { definition, found };
-            }
-        }
-        if (!best) break;
-        requirements.push({
-            key: best.definition.key,
-            requirement: best.definition.label,
-            missing: best.found.missing,
-            group,
-            definition: best.definition,
-            sourceIndex: best.found.index
-        });
-        working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`;
-        }
-        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
-        requirements.forEach(requirement => { delete requirement.sourceIndex; });
-        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
-    }
+    function missionRequirementsParseText(rawText, group = 'vehicles') { const normalized = missionRequirementsStripNonDemandMetadata(rawText, false) .replace(/\r/g, '') .replace(/\n+/g, '; ') .replace(/\s+/g, ' ') .trim(); if (!normalized) return { requirements: [], remaining: '' }; let working = normalized; const requirements = []; while (true) { let best = null; for (const definition of MISSION_REQUIREMENT_PARSE_DEFINITIONS) { if ((definition.group || 'vehicles') !== group) continue; const found = missionRequirementsFindDefinitionMatch(working, definition); if (!found) continue; if (!best || found.index < best.found.index || (found.index === best.found.index && found.length > best.found.length)) { best = { definition, found }; } } if (!best) break; requirements.push({ key: best.definition.key, requirement: best.definition.label, missing: best.found.missing, group, definition: best.definition, sourceIndex: best.found.index }); working = `${working.slice(0, best.found.index)}${' '.repeat(best.found.length)}${working.slice(best.found.index + best.found.length)}`; } requirements.sort((a, b) => a.sourceIndex - b.sourceIndex); requirements.forEach(requirement => { delete requirement.sourceIndex; }); return { requirements, remaining: missionRequirementsCleanRemaining(working) }; }
 
     function missionRequirementsElementText(element) {
         if (!element) return '';
@@ -22358,112 +22325,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return sections;
     }
 
-    function missionRequirementsParseGenericText(rawText, group) {
-        let working = String(rawText || '').replace(/\r/g, '').replace(/\n+/g, '; ').trim();
-        if (!working) return { requirements: [], remaining: '' };
-        const number = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
-        const patterns = [
-        {
-            expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'),
-            quantity: 2,
-            label: 3
-        },
-        {
-            expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'),
-            quantity: 3,
-            label: 2
-        }
-        ];
-        const requirements = [];
-        let serial = 0;
-        for (const pattern of patterns) {
-        pattern.expression.lastIndex = 0;
-        let match;
-        while ((match = pattern.expression.exec(working))) {
-            const missing = missionRequirementsNumber(match[pattern.quantity]);
-            const label = String(match[pattern.label] || '')
-                .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-            if (!missing || !label) continue;
-            const sourceIndex = match.index;
-            const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement';
-            requirements.push({
-                key: `unmapped-${slug}-${serial++}`,
-                requirement: label,
-                missing,
-                group,
-                definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true },
-                sourceIndex
-            });
-            working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`;
-            pattern.expression.lastIndex = sourceIndex + match[0].length;
-        }
-        }
-        requirements.sort((a, b) => a.sourceIndex - b.sourceIndex);
-        requirements.forEach(requirement => { delete requirement.sourceIndex; });
-        return { requirements, remaining: missionRequirementsCleanRemaining(working) };
-    }
+    function missionRequirementsParseGenericText(rawText, group) { let working = missionRequirementsStripNonDemandMetadata(rawText, false).replace(/\r/g, '').replace(/\n+/g, '; ').trim(); if (!working) return { requirements: [], remaining: '' }; const number = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)'; const patterns = [ { expression: new RegExp(`(^|[,;]\\s*)\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${number}\\s*(?:x\\s*)?\\s+([^,;]+?)(?=\\s*(?:[,;]|$))`, 'giu'), quantity: 2, label: 3 }, { expression: new RegExp(`(^|[,;]\\s*)\\s*([^,;:]+?)\\s*(?::|x)\\s*${number}(?=\\s*(?:[,;]|$))`, 'giu'), quantity: 3, label: 2 } ]; const requirements = []; let serial = 0; for (const pattern of patterns) { pattern.expression.lastIndex = 0; let match; while ((match = pattern.expression.exec(working))) { const missing = missionRequirementsNumber(match[pattern.quantity]); const label = String(match[pattern.label] || '') .replace(/^\s*(?:and\s+)?(?:missing|required)\s+/iu, '') .replace(/\s+/g, ' ') .trim(); const sourceIndex = match.index; if (!missing || !label || missionRequirementsCatalogueModifier(label, String(missing), false).recognized) { working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`; pattern.expression.lastIndex = sourceIndex + match[0].length; continue; } const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'requirement'; requirements.push({ key: `unmapped-${slug}-${serial++}`, requirement: label, missing, group, definition: { key: `unmapped-${slug}`, label, aliases: [label], group, types: [], equipment: [], factors: {}, countable: false, generic: true }, sourceIndex }); working = `${working.slice(0, sourceIndex)}${' '.repeat(match[0].length)}${working.slice(sourceIndex + match[0].length)}`; pattern.expression.lastIndex = sourceIndex + match[0].length; } } requirements.sort((a, b) => a.sourceIndex - b.sourceIndex); requirements.forEach(requirement => { delete requirement.sourceIndex; }); return { requirements, remaining: missionRequirementsCleanRemaining(working) }; }
 
-    function missionRequirementsParseSource(source) {
-        const requirements = [];
-        const unresolved = [];
-        const parseSection = (rawText, requestedGroup) => {
-        const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles'));
-        const cleaned = missionRequirementsStripGroupHeading(rawText);
-        if (!cleaned) return;
-        const parsed = missionRequirementsParseText(cleaned, group);
-        requirements.push(...parsed.requirements);
-        const generic = missionRequirementsParseGenericText(parsed.remaining, group);
-        requirements.push(...generic.requirements);
-        if (generic.remaining) unresolved.push({ group, text: generic.remaining });
-        };
-
-        const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []);
-        const groupElements = allGroups.filter(element => {
-        const closest = element.closest?.('#missing_text');
-        return !closest || closest === source;
-        });
-        if (groupElements.length) {
-        for (const element of groupElements) {
-            const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles';
-            parseSection(missionRequirementsElementText(element), rawGroup);
-        }
-        } else {
-        const raw = missionRequirementsElementText(source);
-        for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group);
-        }
-        return { requirements, unresolved };
-    }
+    function missionRequirementsParseSource(source) { const requirements = []; const unresolved = []; const parseSection = (rawText, requestedGroup) => { const group = missionRequirementsNormalizeGroup(requestedGroup, missionRequirementsInferGroup(rawText, 'vehicles')); const cleaned = missionRequirementsStripGroupHeading(rawText); const operational = missionRequirementsStripNonDemandMetadata(cleaned, false); if (!operational) return; const parsed = missionRequirementsParseText(operational, group); requirements.push(...parsed.requirements); const generic = missionRequirementsParseGenericText(parsed.remaining, group); requirements.push(...generic.requirements); if (generic.remaining) unresolved.push({ group, text: generic.remaining }); }; const allGroups = Array.from(source?.querySelectorAll?.('[data-requirement-type]') || []); const groupElements = allGroups.filter(element => { const closest = element.closest?.('#missing_text'); return !closest || closest === source; }); if (groupElements.length) { for (const element of groupElements) { const rawGroup = element.getAttribute?.('data-requirement-type') || element.dataset?.requirementType || 'vehicles'; parseSection(missionRequirementsElementText(element), rawGroup); } } else { const raw = missionRequirementsElementText(source); for (const section of missionRequirementsSplitTextSections(raw, 'vehicles')) parseSection(section.text, section.group); } return { requirements, unresolved }; }
 
     // Issue #183: merge the authoritative "Requirements for this Mission" catalogue into the live model.
-    function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false) {
-        const requirements = Array.from(parsed?.requirements || [], item => ({ ...item }));
-        const unresolved = Array.from(parsed?.unresolved || [], item => ({ ...item }));
-        const byKey = new Map(requirements.map((item, index) => [item.key, index]));
-        for (const item of catalogue?.requirements || []) {
-            const baseline = missionRequirementsOptionalNumber(item?.baseline ?? item?.missing);
-            if (baseline === null) continue;
-            const index = byKey.get(item.key);
-            if (index !== undefined) {
-                requirements[index] = { ...requirements[index], catalogueDerived: true, catalogueBaseline: baseline, catalogueProbability: missionRequirementsOptionalNumber(item.probability) ?? 100 };
-                continue;
-            }
-            const requirement = { ...item, missing: baseline, baseline, statedRequirement: false, catalogueDerived: true, catalogueProbability: missionRequirementsOptionalNumber(item.probability) ?? 100, requirementSource: catalogue?.stale ? 'Cached mission info' : 'Mission info' };
-            byKey.set(requirement.key, requirements.length);
-            requirements.push(requirement);
-        }
-        const unresolvedSeen = new Set(unresolved.map(item => String(item?.text || '').toLowerCase()));
-        for (const item of catalogue?.unresolved || []) {
-            const cleanLabel = missionRequirementsSafeDiagnostic(item?.label || 'Unmapped requirement', 180); const cleanValue = missionRequirementsSafeDiagnostic(item?.value || '', 180); const text = item?.classification === 'operational' ? `${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}` : `Mission info: ${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}`;
-            if (!unresolvedSeen.has(text.toLowerCase())) { unresolved.push({ group: item?.group || 'other', text, catalogueDerived: true }); unresolvedSeen.add(text.toLowerCase()); }
-        }
-        if (!catalogue && expected) {
-            const text = state === 'loading' || state === 'idle' ? 'Loading Requirements for this Mission…' : 'Requirements for this Mission could not be loaded; verify the mission information manually.';
-            if (!unresolvedSeen.has(text.toLowerCase())) unresolved.push({ group: 'other', text, authoritativePending: state === 'loading' || state === 'idle' });
-        } else if (catalogue?.stale) unresolved.push({ group: 'other', text: 'Using cached Requirements for this Mission; verify conditional requirements manually.', catalogueDerived: true });
-        return { requirements, unresolved };
-    }
+    function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false) { const requirements = Array.from(parsed?.requirements || [], item => ({ ...item })); const unresolved = Array.from(parsed?.unresolved || [], item => ({ ...item })); const byKey = new Map(requirements.map((item, index) => [item.key, index])); for (const item of catalogue?.requirements || []) { const baseline = missionRequirementsOptionalNumber(item?.baseline ?? item?.missing); if (baseline === null) continue; const probability = missionRequirementsOptionalNumber(item.probability) ?? 100; const availabilityOnly = item.availabilityOnly === true; const conditional = probability < 100 || availabilityOnly; const index = byKey.get(item.key); if (index !== undefined) { requirements[index] = { ...requirements[index], catalogueDerived: true, catalogueBaseline: baseline, catalogueProbability: probability, catalogueAvailabilityOnly: availabilityOnly, catalogueConditional: conditional }; continue; } if (conditional && index === undefined) continue; const requirement = { ...item, missing: baseline, baseline, statedRequirement: false, catalogueDerived: true, catalogueProbability: probability, catalogueAvailabilityOnly: availabilityOnly, catalogueConditional: conditional, requirementSource: catalogue?.stale ? 'Cached mission info' : 'Mission info' }; byKey.set(requirement.key, requirements.length); requirements.push(requirement); } const unresolvedSeen = new Set(unresolved.map(item => String(item?.text || '').toLowerCase())); for (const item of catalogue?.unresolved || []) { if (item?.classification === 'informational') continue; const cleanLabel = missionRequirementsSafeDiagnostic(item?.label || 'Unmapped requirement', 180); const cleanValue = missionRequirementsSafeDiagnostic(item?.value || '', 180); const text = item?.classification === 'operational' ? `${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}` : `Mission info: ${cleanLabel}${cleanValue ? ` — ${cleanValue}` : ''}`; if (!unresolvedSeen.has(text.toLowerCase())) { unresolved.push({ group: item?.group || 'other', text, catalogueDerived: true }); unresolvedSeen.add(text.toLowerCase()); } } if (!catalogue && expected) { const text = state === 'loading' || state === 'idle' ? 'Loading Requirements for this Mission…' : 'Requirements for this Mission could not be loaded; verify the mission information manually.'; if (!unresolvedSeen.has(text.toLowerCase())) unresolved.push({ group: 'other', text, authoritativePending: state === 'loading' || state === 'idle' }); } else if (catalogue?.stale) unresolved.push({ group: 'other', text: 'Using cached Requirements for this Mission; verify conditional requirements manually.', catalogueDerived: true }); return { requirements, unresolved }; }
 
 
 
@@ -22766,55 +22633,13 @@ function missionRequirementsAggregate(requirement, units) { const contributions 
 
 function missionRequirementsCatalogueDescriptor(candidate) { const context = missionRequirementsPatientContext(candidate); const scopes = Array.from(new Set([candidate?.root, candidate?.mount, context.activeWindow, context.doc].filter(scope => scope?.querySelectorAll))); const links = []; const seen = new Set(); for (const scope of scopes) { for (const link of Array.from(scope.querySelectorAll?.('a[href*="/einsaetze/"]') || [])) { if (seen.has(link)) continue; seen.add(link); links.push(link); } } links.sort((left, right) => Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(right))) - Number(/Requirements\s+for\s+this\s+Mission/iu.test(missionRequirementsElementText(left)))); const doc = candidate?.root?.ownerDocument || candidate?.mount?.ownerDocument || context.doc; const location = doc?.defaultView?.location || pageWindow.location || {}; const origin = location.origin || `${location.protocol || 'https:'}//${location.host || 'www.missionchief.co.uk'}`; let matched = null; for (const link of links) { const href = String(link.getAttribute?.('href') || link.href || ''); let parsed; try { parsed = new URL(href, origin); } catch (err) { continue; } const match = parsed.pathname.match(/^\/einsaetze\/(\d+)\/?$/iu); if (!match) continue; const parameters = new URLSearchParams(); for (const name of ['overlay_index', 'additive_overlays']) { for (const value of parsed.searchParams.getAll(name)) if (value !== '') parameters.append(name, value); } const query = parameters.toString(); matched = { id: Number(match[1]), overlayIndex: missionRequirementsOptionalNumber(parsed.searchParams.get('overlay_index')), additiveOverlays: parsed.searchParams.getAll('additive_overlays'), path: `${parsed.pathname}${query ? `?${query}` : ''}` }; break; } if (!matched) { const id = missionRequirementsMissionTypeId(candidate); if (id === null || id === undefined || !Number.isFinite(Number(id)) || Number(id) < 0) return null; matched = { id: Number(id), overlayIndex: null, additiveOverlays: [], path: `/einsaetze/${Number(id)}` }; } return { ...matched, origin, url: `${origin}${matched.path}`, key: `${origin}${matched.path}` }; }
 
-    function missionRequirementsCatalogueRequirement(label, value) {
-        const rawLabel = missionRequirementsCatalogueText({ textContent: label });
-        const rawValue = missionRequirementsCatalogueText({ textContent: value });
-        const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u);
-        const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null;
-        if (quantity === null) return null;
-        const cleanedLabel = rawLabel
-            .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '')
-            .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '')
-            .trim();
-        if (!cleanedLabel) return null;
-        const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u);
-        const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100;
-        const sourceText = `${quantity} ${cleanedLabel}`;
-        for (const group of ['vehicles', 'staff', 'other']) {
-            const parsed = missionRequirementsParseText(sourceText, group);
-            if (!parsed.requirements.length) continue;
-            const requirement = parsed.requirements[0];
-            return {
-                ...requirement,
-                missing: quantity,
-                baseline: quantity,
-                baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
-                probability,
-                catalogueLabel: rawLabel,
-                catalogueValue: rawValue,
-                catalogueKnown: true
-            };
-        }
-        const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles');
-        const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`;
-        return {
-            key,
-            requirement: cleanedLabel,
-            missing: quantity,
-            baseline: quantity,
-            baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`,
-            probability,
-            group: inferredGroup,
-            definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false },
-            catalogueLabel: rawLabel,
-            catalogueValue: rawValue,
-            catalogueKnown: false
-        };
-    }
+function missionRequirementsCatalogueCapability(label) { const cleaned = String(label || '') .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '') .replace(/\s+/gu, ' ') .trim(); if (!cleaned) return null; for (const group of ['vehicles', 'staff', 'other']) { const parsed = missionRequirementsParseText(`1 ${cleaned}`, group); if (parsed.requirements.length !== 1 || parsed.remaining) continue; const requirement = parsed.requirements[0]; return { key: requirement.key, group, definition: requirement.definition, label: requirement.requirement }; } return null; } function missionRequirementsCatalogueModifier(label, value = '', resolveCapability = true) { const rawLabel = missionRequirementsCatalogueText({ textContent: label }); const rawValue = missionRequirementsCatalogueText({ textContent: value }); const leadingProbability = rawLabel.match(/^\s*(\d+(?:\.\d+)?)\s*%?\s+(?=(?:Probability|Chance)\b)/iu); const normalizedLabel = leadingProbability ? rawLabel.slice(leadingProbability[0].length).trim() : rawLabel; const probabilityPatterns = [ /^Probability\s+of\s+(.+?)\s+being\s+required\s*:?\s*$/iu, /^Probability\s+that\s+(.+?)\s+(?:is|are)\s+required\s*:?\s*$/iu, /^(.+?)\s+(?:requirement\s+)?(?:probability|chance)\s*:?\s*$/iu ]; for (const pattern of probabilityPatterns) { const match = normalizedLabel.match(pattern); if (!match) continue; const numberMatch = `${rawValue} ${rawLabel}`.match(/(\d+(?:\.\d+)?)\s*%?/u); const probabilityValue = numberMatch ? Math.max(0, Math.min(100, Number(numberMatch[1]))) : null; const capability = resolveCapability ? missionRequirementsCatalogueCapability(match[1]) : null; return { recognized: true, classification: 'probability', key: capability?.key || null, group: capability?.group || null, resource: capability?.label || String(match[1] || '').trim(), probability: Number.isFinite(probabilityValue) ? probabilityValue : null, availabilityOnly: false, label: rawLabel, value: rawValue }; } const availability = normalizedLabel.match(/^(.+?)\s+only\s+required\s*,?\s*when\s+available\s*:?\s*$/iu); if (availability) { const capability = resolveCapability ? missionRequirementsCatalogueCapability(availability[1]) : null; const enabled = /^(?:yes|true|1)$/iu.test(rawValue); return { recognized: true, classification: 'availability', key: capability?.key || null, group: capability?.group || null, resource: capability?.label || String(availability[1] || '').trim(), probability: null, availabilityOnly: enabled, label: rawLabel, value: rawValue }; } if (/\b(?:probability|chance)\b/iu.test(normalizedLabel) || /^(?:yes|no|true|false)$/iu.test(rawValue)) { return { recognized: true, classification: 'informational', key: null, group: null, resource: '', probability: null, availabilityOnly: false, label: rawLabel, value: rawValue }; } return { recognized: false, classification: null, key: null, group: null, resource: '', probability: null, availabilityOnly: false, label: rawLabel, value: rawValue }; } function missionRequirementsStripNonDemandMetadata(rawText, resolveCapability = false) { const fragments = String(rawText || '').replace(/\r/gu, '').split(/\n+|\s*;\s*/u); const operational = []; for (const fragment of fragments) { const clean = String(fragment || '').trim(); if (!clean) continue; const pair = clean.match(/^(.+?)\s*(?::|\||—)\s*(.+)$/u); const label = pair ? pair[1] : clean; const value = pair ? pair[2] : ''; if (missionRequirementsCatalogueModifier(label, value, resolveCapability).recognized) continue; operational.push(clean); } return operational.join('; '); }
+
+    function missionRequirementsCatalogueRequirement(label, value) { const rawLabel = missionRequirementsCatalogueText({ textContent: label }); const rawValue = missionRequirementsCatalogueText({ textContent: value }); if (missionRequirementsCatalogueModifier(rawLabel, rawValue, true).recognized) return null; const quantityMatch = rawValue.match(/^\s*(\d+(?:[\s,.]\d{3})*)/u); const quantity = quantityMatch ? missionRequirementsNumber(quantityMatch[1]) : null; if (quantity === null) return null; const cleanedLabel = rawLabel .replace(/^(?:required|requirement\s+of|needed)\s+/iu, '') .replace(/\s*\([^)]*%[^)]*\)\s*$/u, '') .trim(); if (!cleanedLabel) return null; const probabilityMatch = `${rawLabel} ${rawValue}`.match(/(\d+(?:\.\d+)?)\s*%/u); const probability = probabilityMatch ? Math.max(0, Math.min(100, Number(probabilityMatch[1]))) : 100; const sourceText = `${quantity} ${cleanedLabel}`; for (const group of ['vehicles', 'staff', 'other']) { const parsed = missionRequirementsParseText(sourceText, group); if (!parsed.requirements.length) continue; const requirement = parsed.requirements[0]; return { ...requirement, missing: quantity, baseline: quantity, baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`, probability, availabilityOnly: false, catalogueLabel: rawLabel, catalogueValue: rawValue, catalogueKnown: true }; } const inferredGroup = missionRequirementsInferGroup(cleanedLabel, 'vehicles'); const key = `catalogue-${cleanedLabel.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-|-$/gu, '').slice(0, 70) || 'unknown'}`; return { key, requirement: cleanedLabel, missing: quantity, baseline: quantity, baselineText: `${quantity.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}`, probability, availabilityOnly: false, group: inferredGroup, definition: { key, label: cleanedLabel, aliases: [cleanedLabel], group: inferredGroup, types: [], equipment: [], factors: {}, countable: false }, catalogueLabel: rawLabel, catalogueValue: rawValue, catalogueKnown: false }; }
 
 function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null) { const rawLabel = missionRequirementsCatalogueText({ textContent: label }); const available = /^Required\s+Personnel\s+Available$/iu.test(rawLabel); const required = /^Required\s+Personnel$/iu.test(rawLabel); if (!available && !required) return { recognized: false, classification: null, requirements: [], unresolved: [] }; if (available || kind === 'preconditions') return { recognized: true, classification: 'spawn-prerequisite', requirements: [], unresolved: [] }; const text = missionRequirementsCatalogueText({ textContent: value }).replace(/\s+(?=(?:\d+\s*x|x\s*\d+)\s*[A-Za-z])/giu, '; ').replace(/\s*(?:\+|\/|\band\b)\s*(?=\d+\s*x?\s*[A-Za-z])/giu, '; '); const parsed = missionRequirementsParseText(text, 'staff'); return { recognized: true, classification: 'operational', requirements: parsed.requirements.map(requirement => ({ ...requirement, baseline: requirement.missing, baselineText: requirement.missing.toLocaleString('en-GB'), probability: 100, catalogueLabel: rawLabel, catalogueValue: value, catalogueKnown: true, catalogueClassification: 'operational' })), unresolved: parsed.remaining ? [{ label: parsed.remaining, value: '', group: 'staff', classification: 'operational' }] : [] }; } function missionRequirementsCatalogueMergeRequirement(target, requirement) { if (!requirement) return; const existing = target.find(item => item.key === requirement.key); if (!existing) { target.push(requirement); return; } const baseline = Math.max(missionRequirementsOptionalNumber(existing.baseline ?? existing.missing) ?? 0, missionRequirementsOptionalNumber(requirement.baseline ?? requirement.missing) ?? 0); existing.missing = baseline; existing.baseline = baseline; existing.baselineText = baseline.toLocaleString('en-GB'); existing.catalogueKnown = existing.catalogueKnown !== false && requirement.catalogueKnown !== false; }
 
-function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!doc?.querySelectorAll) throw new Error('catalogue document unavailable'); const requirements = []; const unresolved = []; const preconditions = {}; const other = {}; let sawAuthoritativeRequirement = false; const tables = Array.from(doc.querySelectorAll('table') || []); for (const table of tables) { const tableText = missionRequirementsCatalogueText(table); let kind = /Vehicle\s+and\s+Personnel\s+Requirements/iu.test(tableText) ? 'requirements' : /Reward\s+and\s+Precondition/iu.test(tableText) ? 'preconditions' : /Other\s+information/iu.test(tableText) ? 'other' : null; if (kind === 'requirements') sawAuthoritativeRequirement = true; const rows = Array.from(table.querySelectorAll?.('tr') || []); for (const row of rows) { const cells = Array.from(row.querySelectorAll?.('th, td') || []); if (cells.length < 2) continue; const label = missionRequirementsCatalogueText(cells[0]); const value = missionRequirementsCatalogueText(cells[1]); if (!label || /^(?:Value|Vehicle\s+and\s+Personnel\s+Requirements|Reward\s+and\s+Precondition|Other\s+information)$/iu.test(label)) continue; const personnel = missionRequirementsCataloguePersonnelRequirements(label, value, kind); if (personnel.recognized) { if (personnel.classification === 'spawn-prerequisite') { if (kind === 'preconditions') preconditions[label] = value; continue; } sawAuthoritativeRequirement = true; personnel.requirements.forEach(requirement => missionRequirementsCatalogueMergeRequirement(requirements, requirement)); unresolved.push(...personnel.unresolved); if (kind === 'other') other[label] = value; continue; } if (!kind && /^(?:Required|Requirement\s+of|Needed)\b/iu.test(label)) kind = 'requirements'; if (kind === 'requirements') { sawAuthoritativeRequirement = true; const parsed = missionRequirementsCatalogueRequirement(label, value); if (parsed) missionRequirementsCatalogueMergeRequirement(requirements, parsed); else unresolved.push({ label, value, classification: 'operational' }); } else if (kind === 'preconditions') preconditions[label] = value; else if (kind === 'other') other[label] = value; } } if (sawAuthoritativeRequirement && !requirements.length && !unresolved.length) unresolved.push({ label: 'Requirements for this Mission', value: 'No quantified vehicle or trained-personnel requirements could be parsed.' }); const titleNode = doc.querySelector?.('h1, [data-mission-title], .mission-title'); const title = missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(titleNode), 140) || `Mission ${descriptor.id ?? 'Unknown'}`; const variationLinks = Array.from(doc.querySelectorAll('a[href*="/einsaetze/"]') || []); const seenVariations = new Set(); const variations = []; for (const link of variationLinks) { const href = String(link.getAttribute?.('href') || link.href || ''); if (!/\/einsaetze\/\d+/u.test(href) || seenVariations.has(href)) continue; seenVariations.add(href); variations.push({ href: missionRequirementsSafeDiagnostic(href, 180), title: missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(link), 140) }); } const findValue = (source, pattern) => { const entry = Object.entries(source).find(([key]) => pattern.test(key)); return entry ? entry[1] : ''; }; return { id: descriptor.id ?? null, overlayIndex: descriptor.overlayIndex ?? null, additiveOverlays: Array.from(descriptor.additiveOverlays || []), path: descriptor.path || '', url: descriptor.url || '', title, requirements, unresolved, preconditions, other, averageCredits: missionRequirementsOptionalNumber(findValue(preconditions, /Average\s+credits/iu)), maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)), patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)), variations, fetchedAt: Date.now(), stale: false }; }
+function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!doc?.querySelectorAll) throw new Error('catalogue document unavailable'); const requirements = []; const unresolved = []; const preconditions = {}; const other = {}; const metadata = []; const modifiersByKey = new Map(); const records = []; let sawAuthoritativeRequirement = false; const tables = Array.from(doc.querySelectorAll('table') || []); for (const table of tables) { const tableText = missionRequirementsCatalogueText(table); let kind = /Vehicle\s+and\s+Personnel\s+Requirements/iu.test(tableText) ? 'requirements' : /Reward\s+and\s+Precondition/iu.test(tableText) ? 'preconditions' : /Other\s+information/iu.test(tableText) ? 'other' : null; const rows = Array.from(table.querySelectorAll?.('tr') || []); for (const row of rows) { const cells = Array.from(row.querySelectorAll?.('th, td') || []); if (cells.length < 2) continue; const label = missionRequirementsCatalogueText(cells[0]); const value = missionRequirementsCatalogueText(cells[1]); if (!label || /^(?:Value|Vehicle\s+and\s+Personnel\s+Requirements|Reward\s+and\s+Precondition|Other\s+information)$/iu.test(label)) continue; if (!kind && /^(?:Required|Requirement\s+of|Needed)\b/iu.test(label)) kind = 'requirements'; records.push({ kind, label, value }); } } for (const record of records) { const modifier = missionRequirementsCatalogueModifier(record.label, record.value, true); if (!modifier.recognized) continue; metadata.push({ ...modifier, kind: record.kind }); if (record.kind === 'other') other[record.label] = record.value; if (!modifier.key) continue; const current = modifiersByKey.get(modifier.key) || { probability: null, availabilityOnly: false }; if (modifier.classification === 'probability' && modifier.probability !== null) current.probability = modifier.probability; if (modifier.classification === 'availability' && modifier.availabilityOnly) current.availabilityOnly = true; modifiersByKey.set(modifier.key, current); } for (const record of records) { const { kind, label, value } = record; if (missionRequirementsCatalogueModifier(label, value, true).recognized) continue; const personnel = missionRequirementsCataloguePersonnelRequirements(label, value, kind); if (personnel.recognized) { if (personnel.classification === 'spawn-prerequisite') { if (kind === 'preconditions') preconditions[label] = value; continue; } sawAuthoritativeRequirement = true; personnel.requirements.forEach(requirement => missionRequirementsCatalogueMergeRequirement(requirements, requirement)); unresolved.push(...personnel.unresolved); if (kind === 'other') other[label] = value; continue; } if (kind === 'requirements') { const parsed = missionRequirementsCatalogueRequirement(label, value); if (parsed) { sawAuthoritativeRequirement = true; const modifier = modifiersByKey.get(parsed.key); const probability = modifier?.probability ?? parsed.probability ?? 100; missionRequirementsCatalogueMergeRequirement(requirements, { ...parsed, probability, availabilityOnly: modifier?.availabilityOnly === true, baselineText: `${parsed.baseline.toLocaleString('en-GB')}${probability < 100 ? ` (${probability}% chance)` : ''}` }); } else { sawAuthoritativeRequirement = true; unresolved.push({ label, value, classification: 'operational' }); } } else if (kind === 'preconditions') preconditions[label] = value; else if (kind === 'other') other[label] = value; } if (sawAuthoritativeRequirement && !requirements.length && !unresolved.length) unresolved.push({ label: 'Requirements for this Mission', value: 'No quantified vehicle or trained-personnel requirements could be parsed.' }); const titleNode = doc.querySelector?.('h1, [data-mission-title], .mission-title'); const title = missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(titleNode), 140) || `Mission ${descriptor.id ?? 'Unknown'}`; const variationLinks = Array.from(doc.querySelectorAll('a[href*="/einsaetze/"]') || []); const seenVariations = new Set(); const variations = []; for (const link of variationLinks) { const href = String(link.getAttribute?.('href') || link.href || ''); if (!/\/einsaetze\/\d+/u.test(href) || seenVariations.has(href)) continue; seenVariations.add(href); variations.push({ href: missionRequirementsSafeDiagnostic(href, 180), title: missionRequirementsSafeDiagnostic(missionRequirementsCatalogueText(link), 140) }); } const findValue = (source, pattern) => { const entry = Object.entries(source).find(([key]) => pattern.test(key)); return entry ? entry[1] : ''; }; return { id: descriptor.id ?? null, overlayIndex: descriptor.overlayIndex ?? null, additiveOverlays: Array.from(descriptor.additiveOverlays || []), path: descriptor.path || '', url: descriptor.url || '', title, requirements, unresolved, preconditions, other, metadata, averageCredits: missionRequirementsOptionalNumber(findValue(preconditions, /Average\s+credits/iu)), maxPatients: missionRequirementsOptionalNumber(findValue(other, /Max\.?\s*Patients/iu)), patientTransportProbability: missionRequirementsOptionalNumber(findValue(other, /Probability.*transport/iu)), variations, fetchedAt: Date.now(), stale: false }; }
 
     function missionRequirementsCataloguePrune() {
         if (missionRequirementsCatalogueCache.size <= MISSION_REQUIREMENTS_CATALOGUE_CACHE_LIMIT) return;

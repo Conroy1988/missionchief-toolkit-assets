@@ -12,7 +12,7 @@
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Explore themes](https://img.shields.io/badge/EXPLORE-7_INTERFACE_SYSTEMS-6D28D9?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 
-**Current verified release:** `v4.20.24`
+**Current verified release:** `v4.20.25`
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=release&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork version](https://img.shields.io/greasyfork/v/586018?label=Greasy%20Fork&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -22,7 +22,7 @@
 [![Full audit](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence-and-attribution)
 
-[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.24**](#current-v42024-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
+[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.25**](#current-v42025-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
 
 </div>
 
@@ -67,42 +67,62 @@ Every major module can be enabled independently. Use the complete suite or retai
 | Review version history | [CHANGELOG.md](CHANGELOG.md) |
 | Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
 
-## Current v4.20.24 release
+## Current v4.20.25 release
+
+### Boot lifecycle hardening
+
+Version `4.20.25` is an engineering-hardening release. It extracts the seven recurring Boot maintenance registrations into the independently tested `registerBootMaintenanceTasks()` lifecycle helper while keeping `boot()` responsible for initialization order.
+
+The extraction preserves the existing production behaviour of:
+
+- `vehicle-data-refresh`;
+- `auto-night`;
+- `mission-maintenance`;
+- `critical-countdowns`;
+- `minute-maintenance`;
+- `major-incident-feed-integrity`; and
+- `building-visibility`.
+
+Callback logic, task intervals, economy-mode interval resolution, scheduler ownership, observer count, listener coverage, teardown behaviour, and source/distribution parity remain unchanged. The purpose is to reduce Boot complexity, improve rollback isolation, and make the maintenance lifecycle independently executable under fixture-backed tests—not to alter player-facing behaviour.
+
+### Current performance and render evidence
+
+The repository now includes measurement-only tooling for unchanged-render analysis:
+
+- an instrumented render profiler;
+- deterministic scenario fixtures;
+- a render-probe generator;
+- evidence documentation; and
+- a dedicated evidence workflow.
+
+These assets measure avoidable render work without modifying production `src`, distribution output, release version, or runtime behaviour. Authenticated MissionChief evidence remains the authority for browser behaviours that repository-only fixtures cannot prove.
 
 ### Financial Advisor reconciliation
 
-Version `4.20.24` reconciles detailed Financial Advisor transactions against MissionChief's `/credits/overview` daily checkpoints.
+The current production line retains the `v4.20.24` Financial Advisor reconciliation model. Detailed transactions are anchored against MissionChief's `/credits/overview` Revenue, Spendings, and Sum checkpoints without adding aggregate values on top of the ledger.
 
-The system now:
+The system:
 
-- reads Revenue, Spendings, and Sum values from the official overview pages;
-- paginates through bounded historical coverage;
+- paginates through bounded historical overview coverage;
 - preserves detailed transaction categories;
-- does **not** add daily aggregate values on top of detailed transactions;
 - exposes unexplained income, spending, and net variance instead of inventing categories;
 - applies overview-confirmed totals only to complete covered days;
 - retains detailed-ledger totals for partial days;
-- shares one canonical reconciled model with the dashboard, Discord reports, and generated Financial Command graphics; and
-- degrades safely to the existing detailed ledger when the overview is unavailable, malformed, duplicated, or outside the requested range.
+- shares one canonical model with the dashboard, Discord reports, and generated Financial Command graphics; and
+- degrades safely when the overview is unavailable, malformed, duplicated, or outside the requested range.
 
-The release includes deterministic coverage for parsing, sign handling, pagination, bounded caching, duplicate dates, exact matches, variance, negative net movement, partial periods, safe failure, and no-double-counting behaviour.
-
-### Performance and lifecycle evidence
-
-The repository now carries explicit observer-ownership and teardown evidence for the current runtime. Controlled measurement assets validate the large CSS payload and guarded root attributes without changing production source, distribution, version, or release state.
-
-Authenticated MissionChief evidence remains the required authority for browser behaviours that cannot be proven by repository-only fixtures.
+Deterministic contracts cover parsing, sign handling, pagination, bounded caching, duplicate dates, exact matches, variance, negative net movement, partial periods, safe failure, and no-double-counting behaviour.
 
 ### Release communication
 
-Release delivery now produces a compact deployment transmission with:
+Release delivery produces a compact deployment transmission containing:
 
 - the actual current changelog summary;
 - Install / Update;
 - release notes;
 - Greasy Fork;
 - integrity and verification posture; and
-- fallback rendering that retains the useful information when the primary Discord route is unavailable.
+- fallback rendering that retains useful information when the primary Discord route is unavailable.
 
 An owner-only preview path permits testing the real release embed without publishing a release or changing Greasy Fork.
 
@@ -232,8 +252,6 @@ Current integration work includes:
 - bounded fallbacks where third-party controls are unavailable; and
 - fail-closed behaviour where the page does not expose enough reliable evidence.
 
-MissionChief and LSSM can change independently. Confirmed compatibility failures should be reported with the affected page, enabled modules, browser, and reproducible steps.
-
 ## Release confidence
 
 The canonical userscript is:
@@ -277,16 +295,20 @@ Release-readiness and asset audit
 - Private backup evidence
 - Discord payload contracts and preview route
 - Observer ownership and teardown inventory
-- Controlled performance measurement
+- Boot lifecycle registration contract
+- Controlled performance and unchanged-render measurement
 - Sensitive-value and webhook guards
 
-### v4.20.24 recovery identity
+### v4.20.25 recovery identity
 
 | Field | Value |
 |---|---|
-| Validated candidate commit | `f78bcb9f7fb5cc79e7d0041d7b3de9e8273c7946` |
-| SHA-256 | `4bd9a9f3708292a6a48523f2f4d69b105e5957395fb10bcbeec671a4d8a4029c` |
-| Public release | [v4.20.24](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.24) |
+| Validated candidate commit | `ee199387d80bfb50cb0d36ad18a4bb88789c3ea1` |
+| SHA-256 | `c7a4a1e6a7a243f159a23bc473293dcb2d672d866c049a440be1913b1d8c9844` |
+| Verified release record | `a0fba113b4513083f51434c7a36601c51c17ff87` |
+| Update manifest commit | `73942f6e1e90b44283d7cf2da292d8d47dd4cff0` |
+| Public release | [v4.20.25](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.25) |
+| Private backup commit | `1e849e3ca8ac69878c379880ad664d17f3bcd51b` |
 | Private archive | `Conroy1988/missionchief-map-command-toolkit-private` |
 
 ## Development model

@@ -1,0 +1,153 @@
+name: Discord Release Preview
+
+run-name: Release embed preview by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: discord-release-preview
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    name: Post guarded release embed preview
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.comment.user.login == github.repository_owner &&
+        github.event.comment.author_association == 'OWNER' &&
+        github.event.comment.body == '/preview-release-embed'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out trusted main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Validate release payload builder
+        run: python3 .github/scripts/test_discord_release_payload.py
+
+      - name: Build clearly marked preview payload
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(jq -r '.currentVersion' status/release-dashboard.json)"
+          SCRIPT_URL="$(jq -r '.greasyFork.scriptUrl' .github/release-settings.json)"
+          INSTALL_URL="$(jq -r '.greasyFork.installUrl' .github/release-settings.json)"
+          RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"
+          HASH="$(jq -r '.latestRelease.sha256 // empty' status/release-dashboard.json)"
+          BACKUP_COMMIT="$(jq -r '.latestRelease.privateBackupCommit // empty' status/release-dashboard.json)"
+
+          [[ -n "$VERSION" && "$VERSION" != "null" ]] || {
+            echo "::error::Unable to resolve the current Toolkit version."
+            exit 1
+          }
+          [[ -n "$HASH" ]] || HASH="${GITHUB_SHA}${GITHUB_SHA}"
+          [[ -n "$BACKUP_COMMIT" ]] || BACKUP_COMMIT="$GITHUB_SHA"
+
+          cat > release-preview-changelog.md <<'EOF'
+          # Toolkit release preview
+
+          ### Fixed
+          - Corrected firefighter, specialist personnel and BASU reconciliation in the Mission Requirements Matrix.
+          - Ensured responding Police Sergeants, Police Inspectors and Railway Police Officers reduce outstanding demand.
+
+          ### Changed
+          - Simplified Discord release announcements with a clearer update action and concise change summary.
+          - Prioritised user-facing changes over internal deployment metadata.
+          EOF
+
+          python3 .github/scripts/build_discord_release_payload.py \
+            --mode primary \
+            --version "$VERSION" \
+            --changelog release-preview-changelog.md \
+            --output discord-release-preview.json \
+            --release-url "$RELEASE_URL" \
+            --script-url "$SCRIPT_URL" \
+            --install-url "$INSTALL_URL" \
+            --sha256 "$HASH" \
+            --backup-commit "$BACKUP_COMMIT"
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("discord-release-preview.json")
+          payload = json.loads(path.read_text(encoding="utf-8"))
+          embed = payload["embeds"][0]
+          version = embed["fields"][0]["value"].splitlines()[0].strip("*")
+
+          embed["title"] = f"🧪 TEST — {version} release announcement preview"
+          embed["description"] = (
+              "**No release was published and Greasy Fork was not changed.**\n"
+              "This is a live webhook test of the redesigned release card."
+          )
+          embed["color"] = 0x5865F2
+          embed["fields"][0]["name"] = "Previewed release"
+          embed["fields"][1]["name"] = "Live systems"
+          embed["fields"][1]["value"] = "Greasy Fork unchanged\nInstall source unchanged"
+          embed["fields"][2]["name"] = "Preview checks"
+          embed["fields"][2]["value"] = "Payload contract ✅\nWebhook delivery test"
+          embed["fields"][4]["name"] = "Preview integrity"
+          embed["fields"][5]["name"] = "Current links"
+          embed["footer"]["text"] = "TEST ONLY • Discord release embed preview"
+
+          path.write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Post preview to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "${DISCORD_WEBHOOK_URL:-}" ]] || {
+            echo "::error::DISCORD_RELEASE_WEBHOOK is not configured."
+            exit 1
+          }
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 3 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data @discord-release-preview.json \
+            "${DISCORD_WEBHOOK_URL}?wait=true"
+
+      - name: Report command result
+        if: always() && github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_NUMBER: ${{ github.event.issue.number }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$JOB_STATUS" == "success" ]]; then
+            BODY="✅ Discord release embed preview posted successfully. No release was created and no public version was changed."
+          else
+            BODY="❌ Discord release embed preview failed. Review the **Discord Release Preview** Actions run before retrying."
+          fi
+          gh issue comment "$TARGET_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"

@@ -214,7 +214,9 @@
     {
       "aliases": [
         "BASU",
-        "BASUs"
+        "BASUs",
+        "Breathing Apparatus Support Unit",
+        "Breathing Apparatus Support Units"
       ],
       "arrAttributes": [],
       "conditionalVehicles": {},
@@ -1464,6 +1466,26 @@
       "types": []
     },
     {
+      "key": "police-inspector-personnel",
+      "aliases": [
+        "Police Inspector",
+        "Police Inspectors"
+      ],
+      "types": [],
+      "equipment": [],
+      "conditionalVehicles": {},
+      "factors": {},
+      "training": [
+        "Police Inspector",
+        "Police Inspector Training",
+        "police_inspector"
+      ],
+      "arrAttributes": [
+        "police_inspector"
+      ],
+      "pair": false
+    },
+    {
       "aliases": [
         "Search Advisor",
         "Search Advisors"
@@ -1513,7 +1535,9 @@
         "Railway Police Officer",
         "Railway Police Officers"
       ],
-      "arrAttributes": [],
+      "arrAttributes": [
+        "railway_police"
+      ],
       "conditionalVehicles": {},
       "equipment": [],
       "factors": {},

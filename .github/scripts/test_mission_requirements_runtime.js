@@ -242,6 +242,8 @@ this.__mcmsRequirements = {
     coverageRow: missionRequirementsCoverageRow,
     staffCapacity: missionRequirementsStaffCapacity,
     respondingCrewCapacity: missionRequirementsRespondingCrewCapacity,
+    operationalCrewCapacity: missionRequirementsOperationalCrewCapacity,
+    qualifiedStaffCounts: missionRequirementsQualifiedStaffCounts,
     linkedTrainingValues: missionRequirementsLinkedTrainingValues,
     defaultStaffCapacity: missionRequirementsDefaultStaffCapacity,
     equipmentTypes: missionRequirementsEquipmentTypes,
@@ -260,6 +262,7 @@ this.__mcmsRequirements = {
     vehicleType: missionRequirementsVehicleType,
     collectUnits: missionRequirementsCollectUnits,
     aggregate: missionRequirementsAggregate,
+    exclusiveUnitBuckets: missionRequirementsExclusiveUnitBuckets,
     resolve: missionRequirementsResolve,
     overallState: missionRequirementsOverallState,
     lssmActive: missionRequirementsLssmActive,
@@ -1220,6 +1223,121 @@ assert.strictEqual(genericPoliceOnly.max, 0, 'generic Police Officer exclusion i
 }
 
 
+// Issue #306: firefighter, specialist-personnel and BASU state reconciliation.
+{
+const firefighterDefinition = api.definitions.find(definition => definition.key === 'firefighters');
+const inspectorDefinition = api.definitions.find(definition => definition.key === 'police-inspector-personnel');
+const issue306SergeantDefinition = api.definitions.find(definition => definition.key === 'police-sergeant-personnel');
+const issue306RailwayDefinition = api.definitions.find(definition => definition.key === 'railway-police-officer');
+const basuDefinition = api.definitions.find(definition => definition.key === 'basu');
+assert(firefighterDefinition, 'Issue #306 firefighter definition exists');
+assert.strictEqual(inspectorDefinition.countable, true, 'Police Inspector is countable');
+assert.deepStrictEqual(Array.from(inspectorDefinition.arrAttributes || []), ['police_inspector'], 'Police Inspector exposes its ARR key');
+assert.strictEqual(issue306SergeantDefinition.requireExplicitTraining, true, 'Police Sergeant requires explicit qualification evidence');
+assert.strictEqual(issue306RailwayDefinition.requireExplicitTraining, true, 'Railway Police requires explicit qualification evidence');
+assert.strictEqual(basuDefinition.label, 'Breathing Apparatus Support Unit (BASU)', 'BASU uses the canonical full Matrix label');
+for (const alias of ['BASU', 'BASUs', 'Breathing Apparatus Support Unit', 'Breathing Apparatus Support Units']) {
+    const parsed = api.parseText(`1 ${alias}`, 'vehicles');
+    assert.strictEqual(parsed.requirements[0]?.key, 'basu', `BASU parser accepts ${alias}`);
+}
+
+const respondingCrewCell = { getAttribute(name) { return name === 'sortvalue' ? '6' : null; } };
+const respondingContainer = {};
+const onsiteContainer = {};
+const canonicalCrewRow = {
+    matches(selector) { return selector === 'tr'; },
+    closest(selector) {
+        if (selector === '#mission_vehicle_driving, tbody#mission_vehicle_driving') return this.mode === 'responding' ? respondingContainer : null;
+        if (selector === '#mission_vehicle_at_mission, tbody#mission_vehicle_at_mission') return this.mode === 'onsite' ? onsiteContainer : null;
+        return null;
+    },
+    querySelector(selector) { return selector === 'td:nth-of-type(5)[sortvalue]' ? respondingCrewCell : null; }
+};
+canonicalCrewRow.mode = 'responding';
+assert.strictEqual(api.operationalCrewCapacity(canonicalCrewRow, 'responding').min, 6, 'responding fifth-cell sortvalue gives exact crew');
+canonicalCrewRow.mode = 'onsite';
+assert.strictEqual(api.operationalCrewCapacity(canonicalCrewRow, 'onsite').min, 6, 'on-site fifth-cell sortvalue gives exact crew');
+canonicalCrewRow.mode = 'other';
+assert.strictEqual(api.operationalCrewCapacity(canonicalCrewRow, 'responding'), null, 'positional crew metadata is rejected outside canonical state tables');
+
+const overrideElement = new FakeElement('input');
+const overrideRecord = { max_personnel_override: 4 };
+const overridden = api.defaultStaffCapacity(0, overrideElement, overrideRecord);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(overridden)), { min: 1, max: 4, known: false, value: 1 }, 'API max_personnel_override bounds selected firefighter capacity');
+const selectedFirefighter = api.aggregate({ group: 'staff', definition: firefighterDefinition }, [{ typeId: 0, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: overridden, contributionKey: 'vehicle:30601' }]);
+assert.strictEqual(api.capacityText(selectedFirefighter), '1–4', 'selected fire appliance exposes its bounded personnel capacity');
+const respondingFirefighters = api.aggregate({ group: 'staff', definition: firefighterDefinition }, [{ typeId: 0, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: api.capacity(6, 6, true), contributionKey: 'vehicle:30602' }]);
+assert.strictEqual(respondingFirefighters.min, 6, 'responding fire appliance contributes actual crew, not one vehicle');
+const onsiteFirefighters = api.aggregate({ group: 'staff', definition: firefighterDefinition }, [
+    { typeId: 0, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: api.capacity(6, 6, true), contributionKey: 'vehicle:30603' },
+    { typeId: 1, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: api.capacity(4, 4, true), contributionKey: 'vehicle:30604' }
+]);
+assert.strictEqual(onsiteFirefighters.min, 10, 'multiple on-site appliances contribute ten firefighters rather than two vehicles');
+
+const exactFirefighterParsed = {
+    requirements: [{ key: 'firefighters', requirement: 'Firefighters', missing: 12, group: 'staff', definition: firefighterDefinition, statedRequirement: true }],
+    unresolved: [{ group: 'staff', text: 'Required minimum firefighters — Between 8 and 24' }]
+};
+const reconciledRange = api.reconcileCatalogue(exactFirefighterParsed, { requirements: [], unresolved: [{ group: 'staff', label: 'Required minimum firefighters', value: 'Between 8 and 24', classification: 'operational' }] }, 'ready', true);
+assert.strictEqual(reconciledRange.unresolved.length, 0, 'exact generated firefighter demand suppresses generic range metadata');
+
+const specialistUnit = (definition, count, staff = count, key = definition.key) => ({
+    typeId: definition.key === 'railway-police-officer' ? 108 : 8,
+    vehicleId: 30600 + count,
+    equipment: new Set(), labels: new Set(), training: new Set(),
+    arrCapabilities: new Set(), arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(),
+    qualificationCounts: new Map([[definition.key, api.capacity(count, count, true)]]),
+    staff: api.capacity(staff, staff, true), contributionKey: `vehicle:${key}:${count}`
+});
+assert.strictEqual(api.aggregate({ group: 'staff', definition: issue306SergeantDefinition }, [specialistUnit(issue306SergeantDefinition, 6)]).min, 6, 'six responding Police Sergeants are counted exactly');
+assert.strictEqual(api.aggregate({ group: 'staff', definition: inspectorDefinition }, [specialistUnit(inspectorDefinition, 2, 4)]).min, 2, 'two selected Police Inspectors are counted within a mixed four-person crew');
+assert.strictEqual(api.aggregate({ group: 'staff', definition: issue306RailwayDefinition }, [specialistUnit(issue306RailwayDefinition, 4)]).min, 4, 'four responding Railway Police Officers are counted exactly');
+const mixedInspector = specialistUnit(inspectorDefinition, 2, 5, 'mixed');
+assert.strictEqual(api.aggregate({ group: 'staff', definition: inspectorDefinition }, [mixedInspector]).min, 2, 'generic officers in a mixed crew are not upgraded to Police Inspectors');
+const captionOnly = { ...mixedInspector, labels: new Set(['police inspector']), training: new Set(), qualificationCounts: new Map(), contributionKey: 'vehicle:caption-only' };
+const captionOnlyCapacity = api.aggregate({ group: 'staff', definition: inspectorDefinition }, [captionOnly]);
+assert.strictEqual(captionOnlyCapacity.min, 0, 'vehicle caption contributes no specialist personnel');
+assert.strictEqual(captionOnlyCapacity.max, null, 'unproven specialist metadata remains unresolved rather than falsely complete');
+const commandOnly = { ...specialistUnit(issue306RailwayDefinition, 4), qualificationCounts: new Map(), training: new Set(['railway police command']), contributionKey: 'vehicle:command-only' };
+assert.strictEqual(api.aggregate({ group: 'staff', definition: issue306RailwayDefinition }, [commandOnly]).min, 0, 'railway_police_command remains separate from railway_police');
+
+const qualificationElement = new FakeElement('input');
+qualificationElement.setAttribute('police_inspector', '2');
+const qualificationState = api.arrCapabilityState(qualificationElement, null, -1);
+const qualificationCounts = api.qualifiedStaffCounts(null, -1, qualificationElement, qualificationState);
+assert.strictEqual(qualificationCounts.get('police-inspector-personnel')?.min, 2, 'numeric ARR specialist attributes preserve their exact qualified count');
+
+const basuRequirement = { group: 'vehicles', definition: basuDefinition };
+for (const typeId of [14, 39, 46, 49]) {
+    const capacity = api.aggregate(basuRequirement, [{ typeId, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: `vehicle:basu:${typeId}` }]);
+    assert.strictEqual(capacity.min, 1, `BASU capability includes UK vehicle type ${typeId}`);
+}
+const primeMoverAlone = api.aggregate(basuRequirement, [{ typeId: 84, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'vehicle:prime' }]);
+assert.strictEqual(primeMoverAlone.min, 0, 'Prime Mover alone does not satisfy BASU');
+const pairedPod = api.aggregate(basuRequirement, [
+    { typeId: 46, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'pair:30646:30684' },
+    { typeId: 84, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'pair:30646:30684' }
+]);
+assert.strictEqual(pairedPod.min, 1, 'BASU Pod and Prime Mover pair contributes one capability, never two');
+const duplicatePod = api.aggregate(basuRequirement, [
+    { typeId: 49, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'pair:30649:30684' },
+    { typeId: 49, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'pair:30649:30684' }
+]);
+assert.strictEqual(duplicatePod.min, 1, 'repeated DOM representation of one BASU pod is de-duplicated');
+
+const lifecycleUnit = { typeId: 14, vehicleId: 30699, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), compatibleTractiveTypes: new Set(), staff: null, contributionKey: 'vehicle:30699' };
+let lifecycle = api.exclusiveUnitBuckets([lifecycleUnit], [], []);
+assert.deepStrictEqual([lifecycle.selected.length, lifecycle.responding.length, lifecycle.onSite.length], [1, 0, 0], 'BASU begins in Selected only');
+lifecycle = api.exclusiveUnitBuckets([lifecycleUnit], [lifecycleUnit], []);
+assert.deepStrictEqual([lifecycle.selected.length, lifecycle.responding.length, lifecycle.onSite.length], [0, 1, 0], 'dispatch moves BASU from Selected to Responding');
+lifecycle = api.exclusiveUnitBuckets([lifecycleUnit], [lifecycleUnit], [lifecycleUnit]);
+assert.deepStrictEqual([lifecycle.selected.length, lifecycle.responding.length, lifecycle.onSite.length], [0, 0, 1], 'arrival moves BASU from Responding to On site without duplication');
+const basuPanel = api.panelHtml([api.coverageRow({ key: 'basu', requirement: basuDefinition.label, definition: basuDefinition, missing: 1 }, api.capacity(0, 0, true), api.capacity(0, 0, true), api.capacity(0, 0, true), api.capacity(1, 1, true))], []);
+assert(basuPanel.html.includes('Eligible vehicles: BASU, OSU, BASU Pod and OSU Pod'), 'BASU Matrix row exposes eligible vehicle detail accessibly');
+}
+
+
 const issue169Doc = new FakeDocument();
 issue169Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/' }, navigator: context.pageWindow.navigator, innerWidth: 1600, innerHeight: 900 };
 const issue169Root = new FakeElement('form', issue169Doc);
@@ -1827,6 +1945,8 @@ for (const item of [issue212Police, issue212Dsu, issue212Railway]) {
     issue212Available.appendChild(item.row);
 }
 issue212Railway.row.setAttribute('data-current-personnel', '2');
+issue212Railway.row.setAttribute('data-education-key', 'railway_police');
+issue212Railway.row.setAttribute('data-qualified-personnel-count', '2');
 issue212Railway.row.textContent = issue212Railway.row.innerText = 'Craigleith Railway-PC-5 [Railway Police Officer]';
 let issue212Selected = [issue212Police.vehicle, issue212Dsu.vehicle, issue212Railway.vehicle];
 issue212OuterWindow.queryHandler = selector => selector.includes('#vehicle_show_table_body_all') || selector.includes('.vehicle_checkbox') ? issue212Available : null;
@@ -1841,7 +1961,7 @@ const issue212Catalogue = { requirements: issue212Requirements.map(item => ({ ke
 let issue212Rows = api.resolve(issue212Candidate, issue212Parsed, issue212Catalogue);
 assert.strictEqual(issue212Rows.find(item => item.key === 'police-car').selectedMin, 3, 'all selected police-family vehicles contribute to the broad Police Car requirement');
 assert.strictEqual(issue212Rows.find(item => item.key === 'dsu').selectedMin, 1, 'outer Available Units DSU is selected');
-assert.strictEqual(issue212Rows.find(item => item.key === 'railway-police-officer').selectedMin, 2, 'Railway Police badge and current crew contribute selected trained personnel');
+assert.strictEqual(issue212Rows.find(item => item.key === 'railway-police-officer').selectedMin, 2, 'explicit Railway Police education records contribute selected trained personnel');
 issue212Police.vehicle.checked = false;
 issue212Selected = [issue212Dsu.vehicle, issue212Railway.vehicle];
 issue212Rows = api.resolve(issue212Candidate, issue212Parsed, issue212Catalogue);
@@ -2332,6 +2452,7 @@ railwayUnit.row.matchSet.add('tr');
 railwayUnit.row.setAttribute('data-vehicle-id', '620607');
 railwayUnit.row.setAttribute('data-current-personnel', '4');
 railwayUnit.row.setAttribute('data-personnel-training', 'Railway Police Officer');
+railwayUnit.row.setAttribute('data-qualified-personnel-count', '4');
 issue206Window.appendChild(railwayUnit.row);
 issue206RespondingRows = [railwayUnit.row];
 const railwayDefinition = api.definitions.find(definition => definition.key === 'railway-police-officer');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Toolkit Performance Profiler (Development Only)
 // @namespace    https://github.com/Conroy1988/missionchief-toolkit-assets
-// @version      0.1.0
+// @version      0.2.0
 // @description  Opt-in, privacy-bounded browser profiler for MissionChief Toolkit development.
 // @author       Conroy1988
 // @license      MIT
@@ -25,7 +25,8 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function createProfilerCore() {
     'use strict';
 
-    const SCHEMA_VERSION = 1;
+    const SCHEMA_VERSION = 2;
+    const MUTATION_OBSERVER_OPTIONS = Object.freeze({ childList: true, subtree: true, attributes: true, characterData: true });
     const DEFAULT_LIMITS = Object.freeze({
         longTasks: 200,
         layoutShifts: 200,
@@ -33,6 +34,8 @@
         runtimeSamples: 600,
         visibility: 100,
         resourceGroups: 100,
+        renderEvents: 2000,
+        scenarioTransitions: 100,
     });
 
     function finiteNumber(value, fallback = 0) {
@@ -112,6 +115,27 @@
         return result;
     }
 
+    const RENDER_PATHS = Object.freeze(['updateUI', 'renderOperationalPanels']);
+    const SCENARIOS = Object.freeze([
+        'unclassified',
+        'idle-map',
+        'settings-open-close',
+        'mission-open-close',
+        'unit-selection',
+        'map-pan-zoom',
+        'layout-change',
+    ]);
+
+    function safeRenderPath(value) {
+        const name = String(value || '');
+        return RENDER_PATHS.includes(name) ? name : null;
+    }
+
+    function safeScenario(value) {
+        const name = String(value || '');
+        return SCENARIOS.includes(name) ? name : 'unclassified';
+    }
+
     function createSession(adapters = {}, options = {}) {
         const limits = { ...DEFAULT_LIMITS, ...(options.limits || {}) };
         const now = typeof adapters.now === 'function' ? adapters.now : () => Date.now();
@@ -125,6 +149,8 @@
         const removeVisibilityListener = adapters.removeVisibilityListener || (() => {});
         const createPerformanceObserver = adapters.createPerformanceObserver || (() => null);
         const createMutationObserver = adapters.createMutationObserver || (() => null);
+        const scheduleRenderFinalizer = adapters.scheduleRenderFinalizer || (callback => setTimeout(callback, 0));
+        const clearRenderFinalizer = adapters.clearRenderFinalizer || (id => clearTimeout(id));
         const sampleIntervalMs = Math.max(250, finiteNumber(options.sampleIntervalMs, 1000));
         const state = {
             active: false,
@@ -138,8 +164,15 @@
             visibility: [],
             resources: new Map(),
             droppedResourceGroups: 0,
+            renderEvents: [],
+            renderAggregates: new Map(),
+            scenarioTransitions: [],
+            currentScenario: 'unclassified',
+            renderSequence: 0,
+            totalMutationRecords: 0,
+            pendingRenders: new Map(),
         };
-        const handles = { performance: [], mutation: null, interval: null, visibility: null };
+        const handles = { performance: [], mutation: null, interval: null, visibility: null, renderFinalizers: new Map() };
 
         function recordResource(entry) {
             const host = safeHost(entry?.name, adapters.baseUrl);
@@ -197,11 +230,104 @@
                 } else if (record?.type === 'attributes') summary.attributes += 1;
                 else if (record?.type === 'characterData') summary.characterData += 1;
             }
-            if (summary.records) boundedPush(state.mutations, summary, limits.mutations);
+            if (summary.records) {
+                state.totalMutationRecords += summary.records;
+                boundedPush(state.mutations, summary, limits.mutations);
+            }
         }
 
         function sampleRuntime() {
             boundedPush(state.runtimeSamples, runtimeSnapshot(getRuntime(), monotonicNow()), limits.runtimeSamples);
+        }
+
+        function setScenario(value) {
+            const scenario = safeScenario(value);
+            if (state.currentScenario === scenario) return scenario;
+            state.currentScenario = scenario;
+            boundedPush(state.scenarioTransitions, { at: monotonicNow(), scenario }, limits.scenarioTransitions);
+            return scenario;
+        }
+
+        function aggregateRender(event) {
+            const key = `${event.scenario}|${event.path}`;
+            let aggregate = state.renderAggregates.get(key);
+            if (!aggregate) {
+                aggregate = {
+                    scenario: event.scenario,
+                    path: event.path,
+                    attempts: 0,
+                    changedAttempts: 0,
+                    unchangedAttempts: 0,
+                    totalDurationMs: 0,
+                    maxDurationMs: 0,
+                    mutationRecords: 0,
+                };
+                state.renderAggregates.set(key, aggregate);
+            }
+            aggregate.attempts += 1;
+            aggregate.changedAttempts += event.changed ? 1 : 0;
+            aggregate.unchangedAttempts += event.changed ? 0 : 1;
+            aggregate.totalDurationMs = Math.round((aggregate.totalDurationMs + event.durationMs) * 1000) / 1000;
+            aggregate.maxDurationMs = Math.max(aggregate.maxDurationMs, event.durationMs);
+            aggregate.mutationRecords += event.mutationRecords;
+        }
+
+        function finalizeRender(token) {
+            if (!token || !state.pendingRenders.has(token.id)) return false;
+            state.pendingRenders.delete(token.id);
+            const finalizer = handles.renderFinalizers.get(token.id);
+            if (finalizer !== undefined) handles.renderFinalizers.delete(token.id);
+            const mutationRecords = Math.max(0, state.totalMutationRecords - token.mutationRecordsBefore);
+            const durationMs = Math.max(0, finiteNumber(token.endedAt ?? monotonicNow(), 0) - finiteNumber(token.startedAt, 0));
+            const event = {
+                id: token.id,
+                path: token.path,
+                scenario: token.scenario,
+                startedAt: token.startedAt,
+                durationMs: Math.round(durationMs * 1000) / 1000,
+                mutationRecords,
+                changed: mutationRecords > 0,
+                depth: token.depth,
+            };
+            boundedPush(state.renderEvents, event, limits.renderEvents);
+            aggregateRender(event);
+            return true;
+        }
+
+        function beginRender(value) {
+            const path = safeRenderPath(value);
+            if (!state.active || !path) return null;
+            const token = {
+                id: ++state.renderSequence,
+                path,
+                scenario: state.currentScenario,
+                startedAt: monotonicNow(),
+                endedAt: null,
+                mutationRecordsBefore: state.totalMutationRecords,
+                depth: state.pendingRenders.size,
+            };
+            state.pendingRenders.set(token.id, token);
+            return token;
+        }
+
+        function endRender(token) {
+            if (!token || !state.pendingRenders.has(token.id)) return false;
+            token.endedAt = monotonicNow();
+            const id = scheduleRenderFinalizer(() => finalizeRender(token));
+            handles.renderFinalizers.set(token.id, id);
+            return true;
+        }
+
+        function flushPendingRenders() {
+            for (const token of Array.from(state.pendingRenders.values())) {
+                const id = handles.renderFinalizers.get(token.id);
+                if (id !== undefined) {
+                    try { clearRenderFinalizer(id); } catch (error) {}
+                    handles.renderFinalizers.delete(token.id);
+                }
+                if (token.endedAt === null) token.endedAt = monotonicNow();
+                finalizeRender(token);
+            }
         }
 
         function recordVisibility() {
@@ -231,6 +357,7 @@
 
         function stop() {
             if (!state.active) return false;
+            flushPendingRenders();
             state.active = false;
             state.stoppedAt = now();
             for (const observer of handles.performance.splice(0)) {
@@ -263,13 +390,20 @@
             state.visibility.length = 0;
             state.resources.clear();
             state.droppedResourceGroups = 0;
+            state.renderEvents.length = 0;
+            state.renderAggregates.clear();
+            state.scenarioTransitions.length = 0;
+            state.currentScenario = 'unclassified';
+            state.renderSequence = 0;
+            state.totalMutationRecords = 0;
+            state.pendingRenders.clear();
         }
 
         function report(metadata = {}) {
             const finishedAt = state.active ? now() : state.stoppedAt;
             return {
                 schemaVersion: SCHEMA_VERSION,
-                profilerVersion: '0.1.0',
+                profilerVersion: '0.2.0',
                 active: state.active,
                 startedAt: state.startedAt,
                 finishedAt,
@@ -287,15 +421,24 @@
                 visibility: state.visibility.slice(),
                 resources: Array.from(state.resources.values()).sort((a, b) => b.durationMs - a.durationMs),
                 droppedResourceGroups: state.droppedResourceGroups,
+                currentScenario: state.currentScenario,
+                scenarioTransitions: state.scenarioTransitions.slice(),
+                renderEvents: state.renderEvents.slice(),
+                renderMeasurements: Array.from(state.renderAggregates.values()).map(value => ({
+                    ...value,
+                    unchangedRatio: value.attempts ? Math.round((value.unchangedAttempts / value.attempts) * 10000) / 10000 : 0,
+                    averageDurationMs: value.attempts ? Math.round((value.totalDurationMs / value.attempts) * 1000) / 1000 : 0,
+                })).sort((a, b) => b.attempts - a.attempts || a.scenario.localeCompare(b.scenario) || a.path.localeCompare(b.path)),
                 limits: { ...limits },
             };
         }
 
-        return { state, start, stop, reset, report, processPerformanceEntries, recordMutations, sampleRuntime };
+        return { state, start, stop, reset, report, processPerformanceEntries, recordMutations, sampleRuntime, setScenario, beginRender, endRender, finalizeRender, flushPendingRenders };
     }
 
     return {
         SCHEMA_VERSION,
+        MUTATION_OBSERVER_OPTIONS,
         DEFAULT_LIMITS,
         finiteNumber,
         boundedPush,
@@ -304,6 +447,10 @@
         safeHost,
         browserMetadata,
         cloneStartupMetrics,
+        RENDER_PATHS,
+        SCENARIOS,
+        safeRenderPath,
+        safeScenario,
         createSession,
     };
 });
@@ -327,9 +474,15 @@
 
     function createMutationObserver(callback) {
         if (typeof window.MutationObserver !== 'function') return null;
-        const observer = new window.MutationObserver(callback);
+        const observer = new window.MutationObserver(records => {
+            const filtered = Array.from(records || []).filter(record => {
+                const target = record?.target?.nodeType === 1 ? record.target : record?.target?.parentElement;
+                return !target?.closest?.('#mcms-development-profiler');
+            });
+            if (filtered.length) callback(filtered);
+        });
         const root = document.documentElement || document;
-        observer.observe(root, { childList: true, subtree: true });
+        observer.observe(root, core.MUTATION_OBSERVER_OPTIONS);
         return observer;
     }
 
@@ -345,6 +498,8 @@
         removeVisibilityListener: listener => document.removeEventListener('visibilitychange', listener, { passive: true }),
         createPerformanceObserver,
         createMutationObserver,
+        scheduleRenderFinalizer: callback => window.setTimeout(callback, 0),
+        clearRenderFinalizer: id => window.clearTimeout(id),
         baseUrl: window.location?.href || '',
     });
 
@@ -384,7 +539,7 @@
         const panel = document.createElement('section');
         panel.id = 'mcms-development-profiler';
         panel.setAttribute('aria-label', 'Toolkit development performance profiler');
-        panel.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483647;background:#111;color:#fff;border:1px solid #666;border-radius:8px;padding:8px;font:12px/1.3 system-ui;box-shadow:0 4px 18px #0008;display:flex;gap:6px;align-items:center';
+        panel.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:2147483647;background:#111;color:#fff;border:1px solid #666;border-radius:8px;padding:8px;font:12px/1.3 system-ui;box-shadow:0 4px 18px #0008;display:flex;gap:6px;align-items:center;flex-wrap:wrap;max-width:min(620px,calc(100vw - 24px))';
         const status = document.createElement('strong');
         status.textContent = 'Profiler stopped';
         const makeButton = (label, action) => {
@@ -395,20 +550,37 @@
             button.addEventListener('click', action);
             return button;
         };
-        panel.append(status,
-            makeButton('Start', () => { session.start(); status.textContent = 'Profiler running'; }),
-            makeButton('Stop', () => { session.stop(); status.textContent = 'Profiler stopped'; }),
-            makeButton('Reset', () => { session.reset(); status.textContent = 'Profiler reset'; }),
+        const scenario = document.createElement('select');
+        scenario.setAttribute('aria-label', 'Profiler scenario');
+        scenario.style.cssText = 'font:inherit;padding:4px 7px;max-width:190px';
+        for (const value of core.SCENARIOS) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            scenario.appendChild(option);
+        }
+        scenario.addEventListener('change', () => {
+            const selected = session.setScenario(scenario.value);
+            scenario.value = selected;
+            status.textContent = `Profiler ${session.state.active ? 'running' : 'stopped'} · ${selected}`;
+        });
+        panel.append(status, scenario,
+            makeButton('Start', () => { session.start(); status.textContent = `Profiler running · ${session.state.currentScenario}`; }),
+            makeButton('Stop', () => { session.stop(); status.textContent = `Profiler stopped · ${session.state.currentScenario}`; }),
+            makeButton('Reset', () => { session.reset(); scenario.value = 'unclassified'; status.textContent = 'Profiler reset'; }),
             makeButton('Export', downloadReport));
         document.body.appendChild(panel);
     }
 
     const api = {
-        version: '0.1.0',
+        version: '0.2.0',
         start: session.start,
         stop: session.stop,
         reset: session.reset,
         report: buildReport,
+        setScenario: session.setScenario,
+        beginRender: session.beginRender,
+        endRender: session.endRender,
         export: downloadReport,
         destroy() {
             session.stop();

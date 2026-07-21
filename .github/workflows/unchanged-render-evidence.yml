@@ -1,0 +1,99 @@
+name: Unchanged Render Evidence
+
+run-name: Unchanged render evidence · ${{ github.event_name }}
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/mcms-performance-profiler.user.js"
+      - "tools/build-render-probe-userscript.mjs"
+      - ".github/fixtures/unchanged-render-scenarios-v4.20.24.json"
+      - ".github/scripts/test_performance_profiler.js"
+      - ".github/scripts/test_render_probe_instrumentation.mjs"
+      - ".github/scripts/test_unchanged_render_scenarios.py"
+      - ".github/workflows/unchanged-render-evidence.yml"
+      - "docs/audits/performance-profiler.md"
+      - "docs/audits/unchanged-render-measurement-v4.20.24.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-unchanged-render-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Prove measurement-only production boundary
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]] && ! git diff --quiet "$BASE_SHA...HEAD" -- src dist; then
+            echo "::error::Issue #255 measurement tooling changed production src/ or dist/."
+            git diff --stat "$BASE_SHA...HEAD" -- src dist
+            exit 1
+          fi
+
+      - name: Install exact JavaScript parser
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Validate profiler and render-probe contracts
+        run: |
+          node --check tools/mcms-performance-profiler.user.js
+          node --check tools/build-render-probe-userscript.mjs
+          node --check .github/scripts/test_render_probe_instrumentation.mjs
+          node .github/scripts/test_performance_profiler.js
+          node .github/scripts/test_render_probe_instrumentation.mjs
+          python3 .github/scripts/test_unchanged_render_scenarios.py
+
+      - name: Generate disposable instrumented Toolkit
+        run: |
+          mkdir -p render-probe
+          node tools/build-render-probe-userscript.mjs \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --output render-probe/MissionChief_Map_Command_Toolkit.render-probe.user.js \
+            --manifest render-probe/render-probe-manifest.json
+          node --check render-probe/MissionChief_Map_Command_Toolkit.render-probe.user.js
+          git diff --exit-code -- src dist
+
+      - name: Publish evidence-tool summary
+        shell: bash
+        run: |
+          {
+            echo "## Unchanged-render evidence tool"
+            echo
+            echo "- Production source and distribution: unchanged"
+            echo "- Profiler schema: 2"
+            echo "- Instrumented paths: updateUI, renderOperationalPanels"
+            echo "- Scenario protocol: six fixed scenarios across Desktop, Tablet and iOS-compatible profiles"
+            echo "- Generated source SHA-256: $(jq -r .sourceSha256 render-probe/render-probe-manifest.json)"
+            echo
+            echo "> The generated userscript is a development evidence artifact, not a release candidate."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload development evidence package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-unchanged-render-probe-v4.20.24
+          path: |
+            render-probe/MissionChief_Map_Command_Toolkit.render-probe.user.js
+            render-probe/render-probe-manifest.json
+            tools/mcms-performance-profiler.user.js
+            .github/fixtures/unchanged-render-scenarios-v4.20.24.json
+            docs/audits/unchanged-render-measurement-v4.20.24.md
+          if-no-files-found: error
+          retention-days: 90

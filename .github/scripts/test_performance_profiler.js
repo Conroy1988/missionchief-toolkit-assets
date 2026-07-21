@@ -4,7 +4,12 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const core = require(path.resolve(__dirname, '..', '..', 'tools', 'mcms-performance-profiler.user.js'));
 
-assert.equal(core.SCHEMA_VERSION, 1);
+assert.equal(core.SCHEMA_VERSION, 2);
+assert.deepEqual(core.MUTATION_OBSERVER_OPTIONS, { childList: true, subtree: true, attributes: true, characterData: true });
+assert.deepEqual(core.RENDER_PATHS, ['updateUI', 'renderOperationalPanels']);
+assert.equal(core.safeScenario('map-pan-zoom'), 'map-pan-zoom');
+assert.equal(core.safeScenario('mission 123 secret'), 'unclassified');
+assert.equal(core.safeRenderPath('unknown'), null);
 
 {
     const list = [];
@@ -85,7 +90,7 @@ assert.equal(core.SCHEMA_VERSION, 1);
     clock = 1500;
     session.sampleRuntime();
     const report = session.report({ host: 'www.missionchief.co.uk', pathClass: 'mission', browser: { mobile: false } });
-    assert.equal(report.schemaVersion, 1);
+    assert.equal(report.schemaVersion, 2);
     assert.equal(report.longTasks.length, 2, 'long task retention is bounded');
     assert.equal(report.longTasks[0].startTime, 2);
     assert.equal(report.mutations.length, 2, 'mutation retention is bounded');
@@ -102,6 +107,85 @@ assert.equal(core.SCHEMA_VERSION, 1);
     session.reset();
     assert.equal(session.state.longTasks.length, 0);
     assert.equal(session.state.resources.size, 0);
+}
+
+
+{
+    let clock = 0;
+    let mutationCallback = null;
+    let finalizerId = 0;
+    const finalizers = new Map();
+    const session = core.createSession({
+        now: () => clock,
+        monotonicNow: () => clock,
+        setInterval: () => 1,
+        clearInterval: () => {},
+        getRuntime: () => null,
+        getStartupMetrics: () => ({}),
+        getVisibility: () => 'visible',
+        createPerformanceObserver: () => null,
+        createMutationObserver: callback => { mutationCallback = callback; return { disconnect() {} }; },
+        scheduleRenderFinalizer: callback => { finalizerId += 1; finalizers.set(finalizerId, callback); return finalizerId; },
+        clearRenderFinalizer: id => finalizers.delete(id),
+    }, { limits: { renderEvents: 3, scenarioTransitions: 3 } });
+
+    const runFinalizers = () => {
+        for (const [id, callback] of Array.from(finalizers.entries())) {
+            finalizers.delete(id);
+            callback();
+        }
+    };
+
+    assert.equal(session.start(), true);
+    assert.equal(session.setScenario('idle-map'), 'idle-map');
+    assert.equal(session.setScenario('private mission title'), 'unclassified', 'scenario labels are allowlisted');
+    assert.equal(session.setScenario('idle-map'), 'idle-map');
+
+    clock = 10;
+    const unchanged = session.beginRender('updateUI');
+    assert(unchanged);
+    clock = 14;
+    assert.equal(session.endRender(unchanged), true);
+    runFinalizers();
+
+    session.setScenario('settings-open-close');
+    clock = 20;
+    const changed = session.beginRender('updateUI');
+    clock = 21;
+    assert.equal(session.endRender(changed), true);
+    mutationCallback([{ type: 'attributes' }, { type: 'childList', addedNodes: [1], removedNodes: [] }]);
+    runFinalizers();
+
+    clock = 30;
+    const outer = session.beginRender('updateUI');
+    const inner = session.beginRender('renderOperationalPanels');
+    clock = 32;
+    session.endRender(inner);
+    mutationCallback([{ type: 'characterData' }]);
+    clock = 35;
+    session.endRender(outer);
+    runFinalizers();
+
+    assert.equal(session.beginRender('not-a-path'), null);
+    const report = session.report();
+    assert.equal(report.renderEvents.length, 3, 'render event retention is bounded');
+    const idle = report.renderMeasurements.find(item => item.scenario === 'idle-map' && item.path === 'updateUI');
+    assert.equal(idle.attempts, 1);
+    assert.equal(idle.unchangedAttempts, 1);
+    assert.equal(idle.unchangedRatio, 1);
+    assert.equal(idle.averageDurationMs, 4);
+    const settingsUi = report.renderMeasurements.find(item => item.scenario === 'settings-open-close' && item.path === 'updateUI');
+    assert.equal(settingsUi.attempts, 2);
+    assert.equal(settingsUi.changedAttempts, 2);
+    const settingsOps = report.renderMeasurements.find(item => item.path === 'renderOperationalPanels');
+    assert.equal(settingsOps.changedAttempts, 1);
+    assert.equal(JSON.stringify(report).includes('private mission title'), false, 'free-text scenario data is not retained');
+
+    session.stop();
+    session.reset();
+    assert.equal(session.state.renderEvents.length, 0);
+    assert.equal(session.state.renderAggregates.size, 0);
+    assert.equal(session.state.currentScenario, 'unclassified');
 }
 
 console.log('Performance profiler contracts passed.');

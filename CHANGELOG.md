@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.20] - 2026-07-21
+
+### Fixed
+- Mission Info probability values can no longer become vehicle quantities; `75` probability now remains metadata rather than `75 Traffic Cars`.
+- `only required, when available` qualifiers no longer appear as Matrix rows or unresolved MissionChief requirements.
+- Probability-qualified and availability-only catalogue counts remain dormant until the live mission confirms that the resource is active.
+- Patient transport, critical-care and unknown boolean catalogue metadata remain outside operational Matrix demand.
+
+### Validation
+- Added deterministic normal-page, parser, catalogue, conditional-activation, mission-isolation and Matrix-summary regressions based on the official LSSM V4 separation of `requirements`, `chances` and `prerequisites`.
+
 ## [4.20.19] - 2026-07-21
 
 ### Fixed

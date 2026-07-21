@@ -189,7 +189,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.19'
+        version: '4.20.20'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -270,6 +270,9 @@ this.__mcmsRequirements = {
     canonicalPanel: missionRequirementsCanonicalPanel,
     fallbackHtml: missionRequirementsFallbackHtml,
     catalogueDescriptor: missionRequirementsCatalogueDescriptor,
+    catalogueModifier: missionRequirementsCatalogueModifier,
+    stripNonDemandMetadata: missionRequirementsStripNonDemandMetadata,
+    catalogueRequirement: missionRequirementsCatalogueRequirement,
     parseCatalogueDocument: missionRequirementsCatalogueParseDocument,
     cataloguePanelHtml: missionRequirementsCataloguePanelHtml,
     catalogueCompare: missionRequirementsCatalogueCompare,
@@ -1884,6 +1887,104 @@ function makeCatalogueDocument(page) {
     };
 }
 
+
+// Issue #230: probability, availability and informational metadata never become demand.
+{
+const issue230Page = {
+    title: 'Issue 230 conditional metadata fixture',
+    sections: {
+        reward: [],
+        requirements: [
+            ['Required Traffic Cars', '3'],
+            ['Probability of Traffic Cars being required', '75'],
+            ['Traffic Cars only required, when available', 'Yes'],
+            ['Required Police Cars', '5'],
+            ['Required Water Carrier', '1'],
+            ['Probability that Water Carrier is required', '50%'],
+            ['Required Aerial Appliance Truck', '1'],
+            ['Probability of Aerial Appliance Truck being required', '5'],
+            ['Unknown availability switch', 'Yes']
+        ],
+        other: [
+            ['Probability of transport', '40'],
+            ['Critical Care Probability', '25'],
+            ['Unknown informational flag', 'Yes']
+        ]
+    },
+    variations: []
+};
+const issue230Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue230Page), { id: 23000 });
+const issue230ByKey = new Map(issue230Catalogue.requirements.map(item => [item.key, item]));
+assert.strictEqual(issue230ByKey.get('traffic-car')?.baseline, 3, 'Traffic Car quantity remains three');
+assert.strictEqual(issue230ByKey.get('traffic-car')?.probability, 75, 'Traffic Car chance is attached separately');
+assert.strictEqual(issue230ByKey.get('traffic-car')?.availabilityOnly, true, 'Traffic Car availability qualifier is attached separately');
+assert.strictEqual(issue230ByKey.get('water-carrier')?.probability, 50, 'Water Carrier chance is attached separately');
+assert.strictEqual(issue230ByKey.get('aerial')?.probability, 5, 'Aerial Appliance chance is attached separately');
+assert.strictEqual(issue230ByKey.get('police-car')?.probability, 100, 'unconditional Police Cars remain unconditional');
+assert.strictEqual(issue230Catalogue.requirements.some(item => item.baseline === 75), false, '75 percent is never a vehicle count');
+assert.strictEqual(issue230Catalogue.unresolved.length, 0, 'availability and unknown informational booleans do not enter unresolved output');
+assert(issue230Catalogue.metadata.some(item => item.classification === 'probability' && item.key === 'traffic-car'), 'probability metadata remains typed for diagnostics');
+assert(issue230Catalogue.metadata.some(item => item.classification === 'availability' && item.key === 'traffic-car'), 'availability metadata remains typed for diagnostics');
+
+const issue230CatalogueOnly = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue230Catalogue, 'ready', true);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(issue230CatalogueOnly.requirements.map(item => item.key))),
+    ['police-car'],
+    'catalogue-only conditional vehicles are dormant while unconditional demand remains'
+);
+assert.strictEqual(issue230CatalogueOnly.unresolved.length, 0, 'dormant conditional metadata keeps the Matrix neutral');
+
+const issue230LiveTraffic = api.parseText('2 Traffic Cars', 'vehicles');
+const issue230LiveReconciled = api.reconcileCatalogue({ requirements: issue230LiveTraffic.requirements, unresolved: [] }, issue230Catalogue, 'ready', true);
+const issue230Traffic = issue230LiveReconciled.requirements.find(item => item.key === 'traffic-car');
+assert(issue230Traffic, 'live state activates conditional Traffic Car demand');
+assert.strictEqual(issue230Traffic.catalogueProbability, 75, 'activated live row retains chance metadata');
+assert.strictEqual(issue230Traffic.catalogueAvailabilityOnly, true, 'activated live row retains availability metadata');
+assert.strictEqual(issue230LiveReconciled.requirements.some(item => item.key === 'water-carrier'), false, 'unconfirmed Water Carrier remains dormant');
+assert.strictEqual(issue230LiveReconciled.requirements.some(item => item.key === 'aerial'), false, 'unconfirmed Aerial Appliance remains dormant');
+
+const issue230MetadataText = 'Probability of Traffic Cars being required: 75; Traffic Cars only required, when available — Yes; 2 Police Cars';
+const issue230MetadataParsed = api.parseText(issue230MetadataText, 'vehicles');
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(issue230MetadataParsed.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+    [{ key: 'police-car', missing: 2 }],
+    'direct parser removes metadata before capability matching'
+);
+assert.strictEqual(issue230MetadataParsed.remaining, '', 'removed metadata never leaks into unresolved text');
+assert.strictEqual(api.parseText('75 Probability of Traffic Cars being required', 'vehicles').requirements.length, 0, 'leading percentage is not parsed as quantity');
+assert.strictEqual(api.parseText('Traffic Cars only required when available: Yes', 'vehicles').remaining, '', 'availability qualifier is consumed as metadata');
+assert.strictEqual(api.catalogueRequirement('Probability of Traffic Cars being required', '75'), null, 'catalogue requirement parser rejects probability rows directly');
+
+const issue230SourceDoc = new FakeDocument();
+const issue230SourceCandidate = makeMissionCandidate(issue230SourceDoc, issue230MetadataText);
+const issue230SourceParsed = api.parseSource(issue230SourceCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(issue230SourceParsed.requirements.map(item => ({ key: item.key, missing: item.missing })))),
+    [{ key: 'police-car', missing: 2 }],
+    'normal mission source excludes probability and availability fragments'
+);
+assert.strictEqual(issue230SourceParsed.unresolved.length, 0, 'normal mission source has no metadata unresolved warning');
+
+const issue230UnconditionalPage = {
+    title: 'Issue 230 isolation fixture',
+    sections: { reward: [], requirements: [['Required Traffic Cars', '2']], other: [] },
+    variations: []
+};
+const issue230Unconditional = api.parseCatalogueDocument(makeCatalogueDocument(issue230UnconditionalPage), { id: 23001 });
+assert.strictEqual(issue230Unconditional.requirements[0].probability, 100, 'conditional modifier state never leaks between missions');
+assert.strictEqual(issue230Unconditional.requirements[0].availabilityOnly, false, 'availability state never leaks between missions');
+const issue230UnconditionalReconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue230Unconditional, 'ready', true);
+assert.strictEqual(issue230UnconditionalReconciled.requirements[0].key, 'traffic-car', 'unconditional authoritative Traffic Cars remain active');
+
+const issue230PanelRow = {
+    key: 'police-car', requirement: 'Police Car', covered: false, definitelyOpen: true, uncertain: false, partial: false,
+    requiredText: '5', onSiteText: '0', respondingText: '0', selectedText: '0', stillNeededText: '5'
+};
+const issue230Panel = api.panelHtml([issue230PanelRow], []);
+assert(issue230Panel.html.includes('1 outstanding · 0/1 covered'), 'header totals count only operational rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
 // Issue #260: clean labels and typed Mission Info personnel classification.
 {
 const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
@@ -2159,9 +2260,9 @@ assert.strictEqual(overlappingRow.requiredText, '10', 'larger authoritative base
 
 const conditionalCatalogue = parsedCatalogues.get('alternative and conditional requirements');
 const conditionalParsed = api.reconcileCatalogue({ requirements: [], unresolved: [] }, conditionalCatalogue, 'ready', true);
-const conditionalRow = api.resolve(authoritativeCandidate, conditionalParsed, conditionalCatalogue).find(item => item.key === 'police-car');
-assert.strictEqual(conditionalRow.uncertain, true, 'probabilistic mission-info requirement remains uncertain when not covered');
-assert.strictEqual(conditionalRow.definitelyOpen, false, 'probabilistic mission-info requirement is not falsely reported as definitely required');
+assert.strictEqual(conditionalCatalogue.requirements.some(item => item.key === 'police-car' && item.probability < 100), true, 'probabilistic Police Car requirement remains typed in Mission Info');
+assert.strictEqual(conditionalParsed.requirements.some(item => item.key === 'police-car'), false, 'catalogue-only probabilistic Police Car demand remains dormant');
+assert.strictEqual(api.resolve(authoritativeCandidate, conditionalParsed, conditionalCatalogue).some(item => item.key === 'police-car'), false, 'dormant conditional demand creates no Matrix row');
 
 const loadingAuthority = api.reconcileCatalogue({ requirements: [{ key: 'fire-engine', requirement: 'Fire Engine', missing: 1, group: 'vehicles', definition: fireDefinition }], unresolved: [] }, null, 'loading', true);
 assert(loadingAuthority.unresolved.some(item => item.authoritativePending), 'Matrix fails closed while Requirements for this Mission is loading');

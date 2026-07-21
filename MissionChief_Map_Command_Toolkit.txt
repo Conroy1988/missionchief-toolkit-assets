@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.24
+// @version      4.20.25
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.24',
+        version: '4.20.25',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -31005,7 +31005,6 @@ Create the private backup now?`);
         for (const root of roots) mainMutationObserver.observe(root, { childList: true, subtree: true });
         mainMutationObserver.observe(document.body, { childList: true, subtree: false });
     }
-
     async function runDeferredOperationalStartup() {
         if (operationalStartupStarted || runtime.destroyed) return;
         const operationalPerformanceStartedAt = startupClock();
@@ -31044,7 +31043,6 @@ Create the private backup now?`);
         recordStartupMetric('operationalStartupMs', operationalPerformanceStartedAt, { operationalStartupComplete: true });
 
     }
-
     function scheduleDeferredOperationalStartup(delay = STARTUP_OPERATIONAL_DELAY_MS) {
         if (operationalStartupStarted || runtime.destroyed) return;
         runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
@@ -31056,7 +31054,6 @@ Create the private backup now?`);
             });
         }, STARTUP_IDLE_TIMEOUT_MS), Math.max(0, Number(delay) || 0));
     }
-
 
     const AUTO_LOAD_ALL_VEHICLES_SELECTOR = 'a.missing_vehicles_load[href*="/missing_vehicles"]';
     const AUTO_LOAD_ALL_VEHICLES_MISSION_ROOT_SELECTOR = '#lightbox_box, #lightbox, .lightbox_content, .modal.show, .modal.in, .modal-content, [role="dialog"], .ui-dialog-content, .ui-dialog';
@@ -31333,6 +31330,86 @@ Create the private backup now?`);
         };
         runtimeSetTimeout(runBootAttempt, 250);
     }
+    function registerBootMaintenanceTasks() {
+        runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
+            if (!vehicleDataNeeded()) return;
+            installRadioMessageHook();
+            return refreshPersonalVehicleData(false);
+        }, {
+            economyIntervalMs: 10 * 60 * 1000,
+            economyIntervalResolver: () => operationalUiIsVisible() || document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 2 * 60 * 1000 : 10 * 60 * 1000
+        });
+        runtimeRegisterTask('auto-night', 60 * 1000, () => runAutoNight(false), { intervalResolver: () => state.autoNight.enabled ? 60 * 1000 : 15 * 60 * 1000, economyIntervalMs: 5 * 60 * 1000, economyIntervalResolver: () => state.autoNight.enabled ? 5 * 60 * 1000 : 30 * 60 * 1000 });
+        runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
+            if (state.economyMode && economyMapMoving) {
+                economyDeferredMapRefresh = true;
+                return;
+            }
+            installMissionMarkerAddHook();
+            installRadioMessageHook();
+            installCreditsUpdateHook();
+            observeCreditValue();
+            if (state.allianceCredits) scheduleAllianceCreditRefresh();
+            if (state.unitCommitment) scheduleUnitCommitmentRefresh();
+            if (state.resourceGap.enabled) scheduleResourceGapRefresh();
+            if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh();
+            const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+            if (criticalDrawer?.classList.contains('mcms-open')) {
+                let hasClearingMission = false;
+                for (const snapshot of liveMissionSnapshots.values()) {
+                    const progress = criticalMissionClearingProgress(snapshot);
+                    const units = snapshot?.units || personalUnitCommitmentForMission(snapshot?.missionId);
+                    if (progress && Math.max(0, Number(units?.onScene) || 0) > 0) {
+                        hasClearingMission = true;
+                        break;
+                    }
+                }
+                const refreshInterval = hasClearingMission ? CRITICAL_PROGRESS_REFRESH_ACTIVE_MS : CRITICAL_PROGRESS_REFRESH_IDLE_MS;
+                return refreshMissionProgressFromPage(false, refreshInterval).then(refreshed => {
+                    if (!refreshed || document.hidden || !criticalDrawer.classList.contains('mcms-open')) return;
+                    refreshMissionSnapshots();
+                    criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
+                    renderOperationalPanels(true, { updateViewTime: false, preserveScroll: true });
+                });
+            }
+        }, {
+            economyIntervalMs: 60 * 1000,
+            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 30 * 1000 : 60 * 1000
+        });
+        runtimeRegisterTask('critical-countdowns', 1000, () => {
+            if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open')) refreshCriticalClearingCountdowns();
+        }, {
+            intervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 1000 : 60 * 1000,
+            economyIntervalMs: 10000,
+            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 10000 : 60 * 1000
+        });
+        runtimeRegisterTask('minute-maintenance', 60 * 1000, () => {
+            if (state.missionAge) scheduleMissionAgeRefresh();
+            if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+            refreshVisibleMissionInspector();
+            scheduleOperationalPanelsRender(500);
+            pruneRuntimeCaches();
+        }, {
+            economyIntervalMs: 5 * 60 * 1000,
+            economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
+        });
+        runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
+            if (!state.majorIncidentFeed.enabled) return;
+            recoverMajorIncidentFeed('integrity check');
+        }, {
+            intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
+            economyIntervalMs: 12000,
+            economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
+        });
+        runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
+            if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+            if (state.economyMode) scheduleEconomyLayerSync(0);
+        }, {
+            intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+            economyIntervalMs: 45 * 1000,
+            economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+        });
+    }
 
     function boot() {
         if (runtime.destroyed || bootStarted) return;
@@ -31485,84 +31562,7 @@ Create the private backup now?`);
         runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
         runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
-        runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
-            if (!vehicleDataNeeded()) return;
-            installRadioMessageHook();
-            return refreshPersonalVehicleData(false);
-        }, {
-            economyIntervalMs: 10 * 60 * 1000,
-            economyIntervalResolver: () => operationalUiIsVisible() || document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 2 * 60 * 1000 : 10 * 60 * 1000
-        });
-        runtimeRegisterTask('auto-night', 60 * 1000, () => runAutoNight(false), { intervalResolver: () => state.autoNight.enabled ? 60 * 1000 : 15 * 60 * 1000, economyIntervalMs: 5 * 60 * 1000, economyIntervalResolver: () => state.autoNight.enabled ? 5 * 60 * 1000 : 30 * 60 * 1000 });
-        runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
-            if (state.economyMode && economyMapMoving) {
-                economyDeferredMapRefresh = true;
-                return;
-            }
-            installMissionMarkerAddHook();
-            installRadioMessageHook();
-            installCreditsUpdateHook();
-            observeCreditValue();
-            if (state.allianceCredits) scheduleAllianceCreditRefresh();
-            if (state.unitCommitment) scheduleUnitCommitmentRefresh();
-            if (state.resourceGap.enabled) scheduleResourceGapRefresh();
-            if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh();
-            const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
-            if (criticalDrawer?.classList.contains('mcms-open')) {
-                let hasClearingMission = false;
-                for (const snapshot of liveMissionSnapshots.values()) {
-                    const progress = criticalMissionClearingProgress(snapshot);
-                    const units = snapshot?.units || personalUnitCommitmentForMission(snapshot?.missionId);
-                    if (progress && Math.max(0, Number(units?.onScene) || 0) > 0) {
-                        hasClearingMission = true;
-                        break;
-                    }
-                }
-                const refreshInterval = hasClearingMission ? CRITICAL_PROGRESS_REFRESH_ACTIVE_MS : CRITICAL_PROGRESS_REFRESH_IDLE_MS;
-                return refreshMissionProgressFromPage(false, refreshInterval).then(refreshed => {
-                    if (!refreshed || document.hidden || !criticalDrawer.classList.contains('mcms-open')) return;
-                    refreshMissionSnapshots();
-                    criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
-                    renderOperationalPanels(true, { updateViewTime: false, preserveScroll: true });
-                });
-            }
-        }, {
-            economyIntervalMs: 60 * 1000,
-            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 30 * 1000 : 60 * 1000
-        });
-        runtimeRegisterTask('critical-countdowns', 1000, () => {
-            if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open')) refreshCriticalClearingCountdowns();
-        }, {
-            intervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 1000 : 60 * 1000,
-            economyIntervalMs: 10000,
-            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 10000 : 60 * 1000
-        });
-        runtimeRegisterTask('minute-maintenance', 60 * 1000, () => {
-            if (state.missionAge) scheduleMissionAgeRefresh();
-            if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
-            refreshVisibleMissionInspector();
-            scheduleOperationalPanelsRender(500);
-            pruneRuntimeCaches();
-        }, {
-            economyIntervalMs: 5 * 60 * 1000,
-            economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
-        });
-        runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
-            if (!state.majorIncidentFeed.enabled) return;
-            recoverMajorIncidentFeed('integrity check');
-        }, {
-            intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
-            economyIntervalMs: 12000,
-            economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
-        });
-        runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
-            if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
-            if (state.economyMode) scheduleEconomyLayerSync(0);
-        }, {
-            intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
-            economyIntervalMs: 45 * 1000,
-            economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
-        });
+        registerBootMaintenanceTasks();
         runtimeListen(document, 'visibilitychange', () => {
             if (document.hidden) return;
             runtimeWakeTaskScheduler(0);

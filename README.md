@@ -177,7 +177,7 @@ MissionChief can display the same base vehicle type for vehicles serving very di
 - Persistent completion history
 
 > [!WARNING]
-> Settings exports can include a configured Discord webhook. Treat exported settings as private operational material.
+> Settings exports can include the saved Discord webhook. Treat exported settings as private operational material.
 
 ## Seven interface systems
 

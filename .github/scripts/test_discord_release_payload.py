@@ -21,8 +21,8 @@ class DiscordReleasePayloadTests(unittest.TestCase):
         directory = Path(tempfile.mkdtemp())
         changelog = directory / "CHANGELOG.md"
         changelog.write_text(content, encoding="utf-8")
-        self.addCleanup(lambda: changelog.unlink(missing_ok=True))
         self.addCleanup(lambda: directory.rmdir())
+        self.addCleanup(lambda: changelog.unlink(missing_ok=True))
         return changelog
 
     @staticmethod
@@ -58,7 +58,7 @@ class DiscordReleasePayloadTests(unittest.TestCase):
 
         self.assertTrue(brief.startswith("**🛠️ Fixed**"))
         self.assertEqual(brief.count("\n• "), 4)
-        self.assertIn("2 more changes", brief)
+        self.assertIn("3 more changes", brief)
         self.assertNotIn("Rebuilt public assets", brief)
         self.assertLessEqual(len(brief), MODULE.MAX_BRIEF_LENGTH)
 

@@ -38,10 +38,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main --depth=1
-          if ! git diff --quiet origin/main...HEAD -- src dist; then
-            echo "::error::Branch already differs from main in production src/ or dist/."
-            git diff --stat origin/main...HEAD -- src dist
+          git fetch origin main
+          if ! git diff --quiet origin/main HEAD -- src dist; then
+            echo "::error::Branch differs from current main in production src/ or dist/."
+            git diff --stat origin/main HEAD -- src dist
             exit 1
           fi
           if ! git diff --quiet -- src dist; then

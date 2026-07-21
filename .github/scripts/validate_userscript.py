@@ -25,6 +25,7 @@ ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
 MISSION_REQUIREMENTS_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
 VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
+MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_source_headroom.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -140,7 +141,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT, VERSION_STATUS_CONTRACT]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT, VERSION_STATUS_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -221,6 +222,13 @@ def run_integrity_gate() -> None:
         )
         if version_status.returncode != 0:
             fail("live version-status contract failed")
+
+        main_style_headroom = subprocess.run(
+            [sys.executable, str(MAIN_STYLE_HEADROOM_CONTRACT)],
+            cwd=ROOT,
+        )
+        if main_style_headroom.returncode != 0:
+            fail("main-style source-headroom contract failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

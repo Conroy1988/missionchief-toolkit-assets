@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.20
+// @version      4.20.21
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.20',
+        version: '4.20.21',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1839,8 +1839,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mc-map-skin="rural"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(42%) brightness(94%) contrast(108%) saturate(58%) !important; }
         html[data-mc-map-skin="nightshift"] .leaflet-container { background: #07111f !important; }
         html[data-mc-map-skin="nightshift"] .leaflet-tile-pane img.leaflet-tile { filter: invert(88%) hue-rotate(165deg) brightness(68%) contrast(119%) saturate(72%) !important; }
-
-        /* Emergency-service skins: static tile filters, no extra tile provider or animation. */
         html[data-mc-map-skin="fireCommand"] .leaflet-container { background: #17120f !important; }
         html[data-mc-map-skin="fireCommand"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(38%) sepia(58%) hue-rotate(335deg) saturate(145%) brightness(76%) contrast(124%) !important; }
         html[data-mc-map-skin="policeTactical"] .leaflet-container { background: #071321 !important; }
@@ -1849,7 +1847,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mc-map-skin="medicalControl"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(18%) invert(88%) sepia(22%) saturate(126%) hue-rotate(126deg) brightness(68%) contrast(116%) !important; }
         html[data-mc-map-skin="coastalCommand"] .leaflet-container { background: #061725 !important; }
         html[data-mc-map-skin="coastalCommand"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(22%) sepia(24%) hue-rotate(145deg) saturate(138%) brightness(82%) contrast(118%) !important; }
-
         html[data-mcms-road-priority="true"][data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(18%) brightness(106%) contrast(132%) saturate(82%) !important; }
         html[data-mcms-road-priority="true"][data-mc-map-skin="control"] .leaflet-tile-pane img.leaflet-tile { filter: invert(92%) hue-rotate(182deg) brightness(68%) contrast(132%) saturate(70%) !important; }
         html[data-mcms-road-priority="true"][data-mc-map-skin="incident"] .leaflet-tile-pane img.leaflet-tile { filter: brightness(112%) contrast(156%) saturate(110%) !important; }
@@ -1861,28 +1858,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-road-priority="true"][data-mc-map-skin="policeTactical"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(28%) invert(89%) sepia(18%) saturate(112%) hue-rotate(166deg) brightness(70%) contrast(144%) !important; }
         html[data-mcms-road-priority="true"][data-mc-map-skin="medicalControl"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(22%) invert(88%) sepia(22%) saturate(122%) hue-rotate(126deg) brightness(74%) contrast(134%) !important; }
         html[data-mcms-road-priority="true"][data-mc-map-skin="coastalCommand"] .leaflet-tile-pane img.leaflet-tile { filter: grayscale(26%) sepia(24%) hue-rotate(145deg) saturate(132%) brightness(88%) contrast(136%) !important; }
-
         @keyframes mcmsMissionPulse {
             0% { filter: drop-shadow(0 0 1px rgba(255,70,70,.25)) brightness(1); }
             50% { filter: drop-shadow(0 0 8px rgba(255,70,70,.95)) brightness(1.18); }
-            100% { filter: drop-shadow(0 0 1px rgba(255,70,70,.25)) brightness(1); }
-        }
-
-        /* Focus Mode fallback: newly-redrawn markers begin dimmed before MissionChief's
-           marker registries and our classification classes have finished updating. */
+            100% { filter: drop-shadow(0 0 1px rgba(255,70,70,.25)) brightness(1); }}
         html[data-mcms-marker-focus="true"] .leaflet-marker-pane > .leaflet-marker-icon:not(.mcms-marker-mission),
         html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-building,
         html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-vehicle,
         html[data-mcms-marker-focus="true"] .leaflet-marker-icon[data-mcms-vehicle-marker="true"],
         html[data-mcms-marker-focus="true"] .leaflet-marker-icon[data-mcms-personal-building-marker="true"] {
             opacity: .38 !important;
-            filter: grayscale(35%) brightness(.82) !important;
-        }
+            filter: grayscale(35%) brightness(.82) !important;}
         html[data-mcms-marker-focus="true"] .leaflet-marker-icon.mcms-marker-mission {
             opacity: 1 !important;
             filter: drop-shadow(0 0 5px rgba(255,75,75,.75)) brightness(1.12) !important;
-            z-index: 999 !important;
-        }
+            z-index: 999 !important;}
         html[data-mcms-mission-pulse="true"] .leaflet-marker-icon.mcms-marker-mission { animation: mcmsMissionPulse 1.65s ease-in-out infinite !important; }
         html[data-mcms-show-alliance-missions="false"] .leaflet-marker-icon.mcms-marker-alliance-mission { display: none !important; }
         html[data-mcms-show-my-missions="false"] .leaflet-marker-icon.mcms-marker-my-mission { display: none !important; }
@@ -1890,14 +1880,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-show-vehicles="false"] .leaflet-marker-icon[data-mcms-vehicle-marker="true"] { display: none !important; }
         html[data-mcms-show-buildings="false"] .leaflet-marker-icon.mcms-marker-personal-building,
         html[data-mcms-show-buildings="false"] .leaflet-marker-icon[data-mcms-personal-building-marker="true"] { display: none !important; }
-
         html[data-mcms-critical-view="true"] .leaflet-marker-icon.mcms-critical-view-hidden { display: none !important; }
         .leaflet-marker-icon.mcms-critical-view-focus {
             filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff5252) brightness(1.22) !important;
-            z-index: 1000 !important;
-        }
-
-        /* v3.15.0 minimalist intelligence tracking and lock-on */
+            z-index: 1000 !important;}
         .mcms-mission-lock-travel-overlay,
         .mcms-mission-lock-dom,
         .leaflet-marker-icon.mcms-mission-lock-target {
@@ -1907,8 +1893,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             --mcms-lock-surface:rgba(3,13,22,.92);
             --mcms-lock-grid:rgba(103,217,255,.12);
             --mcms-lock-x:50%;
-            --mcms-lock-y:50%;
-        }
+            --mcms-lock-y:50%;}
         .mcms-mission-lock-travel-overlay {
             position:absolute !important;
             inset:0 !important;
@@ -1919,8 +1904,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:
                 linear-gradient(180deg,rgba(0,0,0,.10),transparent 28% 72%,rgba(0,0,0,.18)),
                 repeating-linear-gradient(90deg,transparent 0 89px,var(--mcms-lock-grid) 90px 91px,transparent 92px 180px) !important;
-            animation:mcmsIntelTravel 860ms cubic-bezier(.2,.72,.2,1) both !important;
-        }
+            animation:mcmsIntelTravel 860ms cubic-bezier(.2,.72,.2,1) both !important;}
         .mcms-mission-lock-travel-overlay::before {
             content:'' !important;
             position:absolute !important;
@@ -1930,8 +1914,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             height:1px !important;
             background:linear-gradient(90deg,transparent,var(--mcms-lock-primary) 22%,var(--mcms-lock-secondary) 50%,var(--mcms-lock-primary) 78%,transparent) !important;
             box-shadow:0 0 6px var(--mcms-lock-primary),0 0 14px color-mix(in srgb,var(--mcms-lock-primary) 45%,transparent) !important;
-            animation:mcmsIntelTravelScan 860ms cubic-bezier(.16,.72,.18,1) both !important;
-        }
+            animation:mcmsIntelTravelScan 860ms cubic-bezier(.16,.72,.18,1) both !important;}
         .mcms-mission-lock-travel-overlay::after {
             content:'TRACKING / COORDINATE INTERCEPT' !important;
             position:absolute !important;
@@ -1942,49 +1925,41 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing:1.15px !important;
             opacity:0 !important;
             text-shadow:0 0 8px color-mix(in srgb,var(--mcms-lock-primary) 62%,transparent) !important;
-            animation:mcmsIntelTravelCaption 860ms ease both !important;
-        }
+            animation:mcmsIntelTravelCaption 860ms ease both !important;}
         .mcms-mission-lock-dom {
             position:absolute !important;
             inset:0 !important;
             z-index:790 !important;
             overflow:hidden !important;
-            pointer-events:none !important;
-        }
+            pointer-events:none !important;}
         .mcms-mission-lock-intel {
             position:absolute !important;
             inset:0 !important;
-            pointer-events:none !important;
-        }
+            pointer-events:none !important;}
         .mcms-mission-lock-beam {
             position:absolute !important;
             opacity:0 !important;
             background:linear-gradient(90deg,transparent,var(--mcms-lock-primary) 18%,var(--mcms-lock-secondary) 50%,var(--mcms-lock-primary) 82%,transparent) !important;
-            filter:drop-shadow(0 0 4px var(--mcms-lock-primary)) !important;
-        }
+            filter:drop-shadow(0 0 4px var(--mcms-lock-primary)) !important;}
         .mcms-mission-lock-beam-left,
         .mcms-mission-lock-beam-right {
             top:calc(var(--mcms-lock-y) - .5px) !important;
-            height:1px !important;
-        }
+            height:1px !important;}
         .mcms-mission-lock-beam-left {
             left:0 !important;
             width:max(0px,calc(var(--mcms-lock-x) - 54px)) !important;
             transform-origin:right center !important;
-            animation:mcmsIntelBeamLeft 1100ms cubic-bezier(.18,.74,.16,1) 40ms both !important;
-        }
+            animation:mcmsIntelBeamLeft 1100ms cubic-bezier(.18,.74,.16,1) 40ms both !important;}
         .mcms-mission-lock-beam-right {
             left:calc(var(--mcms-lock-x) + 54px) !important;
             right:0 !important;
             transform-origin:left center !important;
-            animation:mcmsIntelBeamRight 1100ms cubic-bezier(.18,.74,.16,1) 40ms both !important;
-        }
+            animation:mcmsIntelBeamRight 1100ms cubic-bezier(.18,.74,.16,1) 40ms both !important;}
         .mcms-mission-lock-beam-top,
         .mcms-mission-lock-beam-bottom {
             left:calc(var(--mcms-lock-x) - .5px) !important;
             width:1px !important;
-            background:linear-gradient(180deg,transparent,var(--mcms-lock-primary) 18%,var(--mcms-lock-secondary) 50%,var(--mcms-lock-primary) 82%,transparent) !important;
-        }
+            background:linear-gradient(180deg,transparent,var(--mcms-lock-primary) 18%,var(--mcms-lock-secondary) 50%,var(--mcms-lock-primary) 82%,transparent) !important;}
         .mcms-mission-lock-beam-top {
             top:0 !important;
             height:max(0px,calc(var(--mcms-lock-y) - 54px)) !important;
@@ -2129,7 +2104,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             animation:mcmsIntelMarkerPulse 2.65s ease-in-out 920ms both !important;
             z-index:1500 !important;
         }
-
         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-travel-overlay,
         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-lock-dom,
         html[data-mcms-ui-theme="cyberpunk"] .leaflet-marker-icon.mcms-mission-lock-target {
@@ -2150,7 +2124,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="factorio"] .leaflet-marker-icon.mcms-mission-lock-target {
             --mcms-lock-primary:#ff9b32;--mcms-lock-secondary:#fff0cf;--mcms-lock-accent:#ffdb59;--mcms-lock-surface:rgba(39,38,32,.95);--mcms-lock-grid:rgba(255,155,50,.10);
         }
-
         @keyframes mcmsIntelTravel { 0%{opacity:0} 12%{opacity:.34} 70%{opacity:.18} 100%{opacity:0} }
         @keyframes mcmsIntelTravelScan { 0%{opacity:0;top:8%} 14%{opacity:1} 82%{opacity:.82;top:92%} 100%{opacity:0;top:96%} }
         @keyframes mcmsIntelTravelCaption { 0%,18%{opacity:0;transform:translateX(-6px)} 28%,72%{opacity:.85;transform:translateX(0)} 100%{opacity:0;transform:translateX(4px)} }
@@ -2171,9 +2144,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         @keyframes mcmsIntelLocalScan { 0%{opacity:0;top:18px} 16%{opacity:1} 82%{opacity:.9;top:73px} 100%{opacity:0;top:76px} }
         @keyframes mcmsIntelLabel { 0%{opacity:0;transform:translateX(-50%) translateY(6px)} 18%,76%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-2px)} }
         @keyframes mcmsIntelMarkerPulse { 0%,20%,100%{filter:brightness(1)} 38%{filter:drop-shadow(0 0 7px var(--mcms-lock-secondary,#fff)) drop-shadow(0 0 15px var(--mcms-lock-primary,#67d9ff)) brightness(1.45)} 58%{filter:drop-shadow(0 0 5px var(--mcms-lock-primary,#67d9ff)) brightness(1.16)} 74%{filter:drop-shadow(0 0 9px var(--mcms-lock-primary,#67d9ff)) brightness(1.3)} }
-
-
-
         @media (prefers-reduced-motion:reduce) {
             .mcms-mission-lock-travel-overlay,
             .mcms-mission-lock-travel-overlay::before,
@@ -2200,12 +2170,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             .mcms-mission-lock-label { opacity:1 !important; }
             .mcms-mission-lock-label { transform:translateX(-50%) !important; }
         }
-
         html[data-mcms-clean="true"] .leaflet-control-zoom,
         html[data-mcms-clean="true"] .leaflet-control-scale,
         html[data-mcms-clean="true"] .leaflet-control-attribution,
         html[data-mcms-clean="true"] #${SCRIPT.controlId} { display: none !important; }
-
         #${SCRIPT.cleanExitId} {
             display: none; position: fixed; top: 10px; right: 12px; z-index: 999999;
             padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.22);
@@ -2213,7 +2181,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             cursor: pointer; box-shadow: 0 8px 22px rgba(0,0,0,.34); backdrop-filter: blur(8px);
         }
         html[data-mcms-clean="true"] #${SCRIPT.cleanExitId} { display: block; }
-
         #${SCRIPT.controlId}, #${SCRIPT.controlId} *, #${SCRIPT.controlId} *::before, #${SCRIPT.controlId} *::after,
         #${SCRIPT.panelId}, #${SCRIPT.panelId} *, #${SCRIPT.panelId} *::before, #${SCRIPT.panelId} *::after {
             box-sizing: border-box !important;
@@ -2221,7 +2188,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             text-shadow: none !important;
             letter-spacing: normal !important;
         }
-
         #${SCRIPT.controlId} {
             position: absolute !important; z-index: 980 !important; color: #e9eef5 !important;
             user-select: none !important; pointer-events: auto !important; font-size: 11px !important; line-height: 1.15 !important;
@@ -2233,12 +2199,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.controlId}.mcms-pos-tr { right: 12px !important; top: 48px !important; }
         #${SCRIPT.controlId}.mcms-pos-bl { left: 12px !important; bottom: 42px !important; }
         #${SCRIPT.controlId}.mcms-pos-br { right: 12px !important; bottom: 42px !important; }
-
         #${SCRIPT.controlId} button, #${SCRIPT.panelId} button, #${SCRIPT.panelId} input, #${SCRIPT.panelId} select {
             appearance: none !important; -webkit-appearance: none !important; margin: 0 !important; font: inherit !important;
             text-transform: none !important; box-shadow: none !important; outline: none !important;
         }
-
         #${SCRIPT.controlId} .mcms-shell {
             position: relative !important; display: inline-flex !important; align-items: stretch !important;
             width: 40px !important; height: 48px !important; border-radius: 10px !important;
@@ -2246,7 +2210,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 5px 16px rgba(0,0,0,.30) !important; backdrop-filter: blur(6px) !important; overflow: hidden !important;
             flex-direction: column !important;
         }
-
         #${SCRIPT.controlId} .mcms-menu-btn {
             width: 100% !important; height: auto !important; min-height: 0 !important; flex: 1 1 auto !important; border: 0 !important; background: transparent !important;
             color: #fff !important; cursor: pointer !important; display: flex !important; align-items: center !important;
@@ -2262,10 +2225,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
-
         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
-
         #${SCRIPT.controlId} .mcms-floating-filter {
             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
         }
@@ -2305,7 +2266,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-quick { background: rgba(16,78,138,.86) !important; border-color: rgba(86,169,255,.68) !important; }
         #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom { background: rgba(106,80,10,.88) !important; border-color: rgba(255,213,79,.70) !important; }
-
         #${SCRIPT.panelId} {
             display: none !important;
             position: fixed !important;
@@ -2373,7 +2333,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             padding-right: 2px !important;
         }
         #${SCRIPT.panelId}.mcms-dragging { opacity: .96 !important; cursor: grabbing !important; }
-
         #${SCRIPT.panelId} .mcms-header {
             display: grid !important; grid-template-columns: minmax(0, 1fr) 24px 24px 24px !important; align-items: center !important; gap: 7px !important;
             margin: 0 0 8px 0 !important; padding: 0 0 7px 0 !important; border-bottom: 1px solid rgba(255,255,255,.12) !important; overflow: hidden !important;
@@ -2499,7 +2458,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-heat-key { padding: 4px 2px !important; border-radius: 6px !important; color: #fff !important; font-size: 7px !important; font-weight: 900 !important; text-align: center !important; text-shadow: 0 1px 2px #000 !important; }
         #${SCRIPT.panelId} .mcms-footer { margin: 9px 0 0 0 !important; padding: 7px 0 0 0 !important; border-top: 1px solid rgba(255,255,255,.10) !important; color: rgba(233,238,245,.58) !important; font-size: 9px !important; line-height: 1.25 !important; overflow: hidden !important; }
         #${SCRIPT.panelId} .mcms-build { display: block !important; margin-top: 4px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-
         .mcms-mission-float-pane,
         .mcms-mission-float-pane * {
             pointer-events: none !important;
@@ -2568,8 +2526,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 2px 8px rgba(0,0,0,.34), 0 0 12px rgba(255,45,45,.58) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.90), 0 0 5px rgba(255,104,104,.42) !important;
         }
-
-
         .mcms-unit-commitment-badge {
             min-width: 42px !important; height: 18px !important; padding: 0 6px !important; border-radius: 7px !important;
             border: 1px solid rgba(255,255,255,.42) !important; background: rgba(10,14,20,.46) !important;
@@ -2578,8 +2534,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         .mcms-unit-commitment-badge.mcms-unit-personal { border-color: rgba(244,200,79,.54) !important; color: #ffe082 !important; }
         .mcms-unit-commitment-badge.mcms-unit-alliance { border-color: rgba(76,225,126,.54) !important; color: #79f2a3 !important; }
-
-
         .mcms-transport-watcher-badge {
             width: 25px !important; height: 25px !important; padding: 0 !important; border-radius: 8px !important;
             border: 1px solid rgba(255,193,74,.94) !important; background: linear-gradient(145deg, rgba(86,46,3,.96), rgba(27,17,6,.96)) !important;
@@ -2595,7 +2549,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         .mcms-transport-watcher-badge.mcms-transport-side-left .mcms-transport-watcher-count { left:-7px !important; right:auto !important; }
         @keyframes mcmsTransportWatcherPulse { 0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 0 2px rgba(0,0,0,.48),0 0 8px rgba(255,145,24,.38)} 50%{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 0 2px rgba(0,0,0,.55),0 0 16px rgba(255,145,24,.82)} }
         @media (prefers-reduced-motion: reduce) { .mcms-transport-watcher-badge { animation:none !important; } }
-
         .mcms-resource-gap-badge {
             min-width: 31px !important; height: 19px !important; padding: 0 6px !important; border-radius: 7px !important;
             border: 1px solid rgba(255,146,49,.88) !important; background: rgba(48,20,3,.91) !important; color: #ffd29a !important;
@@ -2603,12 +2556,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font: 950 8.5px/1 Arial,Helvetica,sans-serif !important; letter-spacing:.1px !important;
         }
         .mcms-resource-gap-badge.mcms-gap-uncovered { border-color:#ff574d !important; color:#fff !important; background:rgba(91,11,7,.94) !important; box-shadow:0 0 0 2px rgba(0,0,0,.42),0 0 11px rgba(255,45,35,.46) !important; }
-
         #${SCRIPT.missionInspectorId} .mcms-inspector-gap { margin-top:6px !important; padding:7px !important; border-radius:7px !important; border:1px solid rgba(255,152,52,.38) !important; background:rgba(77,31,4,.18) !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-gap-title { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; color:#ffd29a !important; font-size:8px !important; font-weight:950 !important; letter-spacing:.4px !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; gap:7px !important; margin-top:4px !important; color:#e8edf4 !important; font-size:8px !important; line-height:1.3 !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-gap-row span:last-child { color:#9fb0c2 !important; text-align:right !important; white-space:nowrap !important; }
-
         #${SCRIPT.panelId} .mcms-ops-session-grid {
             display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 6px !important;
         }
@@ -2645,7 +2596,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             padding:0 5px 5px !important; scrollbar-width:thin !important;
         }
         #${SCRIPT.panelId} .mcms-empty-state { padding:10px !important; border:1px dashed rgba(255,255,255,.12) !important; border-radius:8px !important; color:rgba(255,255,255,.52) !important; font-size:8.5px !important; text-align:center !important; }
-
         #${SCRIPT.criticalDrawerId} {
             display:none !important; position:fixed !important; right:14px !important; top:66px !important; z-index:990 !important;
             width:330px !important; max-width:calc(100vw - 28px) !important; max-height:calc(100vh - 82px) !important; overflow:auto !important;
@@ -2671,7 +2621,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-critical-name { display:block !important; min-width:0 !important; color:#fff !important; font-size:9.5px !important; font-weight:900 !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-meta { display:block !important; margin-top:3px !important; color:rgba(255,255,255,.58) !important; font-size:7.5px !important; font-weight:800 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-age { color:#bbdefb !important; font-size:8.5px !important; font-weight:950 !important; white-space:nowrap !important; }
-
         #${SCRIPT.payoutFlashId} {
             position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important;
             z-index: 625 !important; overflow: hidden !important;
@@ -2785,7 +2734,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing: 1.5px !important; white-space: nowrap !important;
             text-shadow: 0 2px 0 rgba(0,0,0,.74), 0 5px 15px rgba(0,0,0,.68) !important;
         }
-
         #${SCRIPT.payoutFlashId} .mcms-payout-vc-sunset,
         #${SCRIPT.payoutFlashId} .mcms-payout-vc-grid {
             position: absolute !important; inset: 0 !important; opacity: 0;
@@ -3069,10 +3017,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             position:absolute !important; opacity:0; pointer-events:none !important;
             will-change:opacity, transform !important;
         }
-
-
-
-        /* Scarface Inspired — original black/ivory/red Miami-crime treatment. */
         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-red {
             background:
                 radial-gradient(ellipse at 10% 48%, rgba(154,5,14,.82) 0%, rgba(154,5,14,.36) 27%, transparent 64%),
@@ -3206,8 +3150,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             }
             #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner::after { display:none !important; }
         }
-
-        /* Cyberpunk Inspired */
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {
             background:radial-gradient(ellipse at 52% 48%, transparent 8%, rgba(0,12,18,.22) 52%, rgba(0,0,0,.86) 100%), linear-gradient(115deg, rgba(245,226,0,.12), transparent 35%, rgba(0,229,255,.10)) !important;
         }
@@ -3236,8 +3178,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-kicker { color:#f2df00 !important; }
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-amount { color:#fff !important; text-shadow:2px 2px 0 #101010,4px 4px 0 rgba(242,223,0,.58),0 0 18px rgba(0,229,255,.44) !important; }
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-particle { background:#f2df00 !important; box-shadow:0 0 8px rgba(0,229,255,.8) !important; }
-
-        /* Hellfire Inspired */
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 46%,transparent 8%,rgba(38,0,0,.20) 52%,rgba(0,0,0,.88) 100%),linear-gradient(180deg,rgba(0,0,0,.25),transparent 45%,rgba(72,8,0,.42)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-fx-a { background:radial-gradient(ellipse at 18% 110%,rgba(255,197,44,.82) 0 5%,rgba(255,72,0,.48) 13%,transparent 37%),radial-gradient(ellipse at 52% 115%,rgba(255,229,92,.72) 0 6%,rgba(255,52,0,.44) 15%,transparent 40%),radial-gradient(ellipse at 84% 110%,rgba(255,155,28,.76) 0 5%,rgba(170,0,0,.40) 17%,transparent 39%),linear-gradient(180deg,transparent 48%,rgba(92,0,0,.28)) !important; mix-blend-mode:screen !important; }
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-fx-b { background:repeating-conic-gradient(from 18deg at 50% 85%,transparent 0 7deg,rgba(255,85,0,.08) 7deg 8deg,transparent 8deg 17deg),radial-gradient(ellipse at 50% 88%,transparent 0 18%,rgba(255,43,0,.14) 42%,transparent 68%) !important; }
@@ -3250,8 +3190,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-kicker { color:#d8b8a7 !important; }
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-amount { color:#ffd76a !important; text-shadow:2px 2px 0 #2c0500,0 0 14px #ff4b00,0 0 30px rgba(255,18,0,.48) !important; }
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-particle { border-radius:999px !important; background:linear-gradient(180deg,#fff2a5,#ff7b18 55%,rgba(170,8,0,0)) !important; box-shadow:0 0 8px #ff8d21,0 0 18px rgba(255,34,0,.75) !important; }
-
-        /* Fallout Inspired — retro-futurist terminal / vault broadcast */
         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 42%,rgba(122,178,55,.12),rgba(9,18,6,.60) 52%,rgba(0,0,0,.94) 100%),repeating-linear-gradient(0deg,rgba(211,255,132,.027) 0 1px,transparent 1px 4px) !important; }
         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-a { opacity:.86 !important; background:repeating-linear-gradient(0deg,rgba(201,255,116,.055) 0 1px,transparent 1px 4px),radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(183,233,90,.13) 20.4% 20.8%,transparent 21.2% 34%,rgba(183,233,90,.09) 34.4% 34.8%,transparent 35.2%) !important; animation:mcms-fallout-scan 5.6s linear infinite !important; }
         #${SCRIPT.payoutFlashId}[data-template="wasteland"] .mcms-payout-theme-fx-b { opacity:.78 !important; background:linear-gradient(90deg,rgba(105,151,44,.12),transparent 18%,transparent 82%,rgba(105,151,44,.12)),repeating-radial-gradient(circle at 42% 38%,rgba(255,244,196,.045) 0 1px,transparent 1px 7px) !important; filter:contrast(155%) sepia(28%) !important; animation:mcms-fallout-flicker 3.8s steps(1,end) infinite !important; }
@@ -3271,7 +3209,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         @keyframes mcms-fallout-scan { 0% { transform:translateY(-2%) } 100% { transform:translateY(2%) } }
         @keyframes mcms-fallout-radar { from { transform:rotate(0deg) scale(1) } to { transform:rotate(360deg) scale(1.025) } }
         @keyframes mcms-fallout-flicker { 0%,7%,11%,46%,50%,88%,100% { opacity:.78 } 8%,10%,47%,49%,89% { opacity:.42 } }
-        /* Galactic Command */
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-cinematic { background:radial-gradient(ellipse at 50% 50%,rgba(20,119,165,.05),rgba(3,11,30,.36) 58%,rgba(0,2,10,.88)),linear-gradient(180deg,rgba(0,8,26,.34),transparent 40%,rgba(0,3,15,.52)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-theme-fx-a { background-image:radial-gradient(circle at 13% 19%,#fff 0 1px,transparent 1.7px),radial-gradient(circle at 28% 72%,#8adfff 0 1px,transparent 1.8px),radial-gradient(circle at 63% 28%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 82% 62%,#9ee9ff 0 1.2px,transparent 2px),radial-gradient(circle at 47% 48%,rgba(119,225,255,.6) 0 1px,transparent 2px); background-size:160px 140px,230px 190px,290px 240px,340px 270px,420px 330px !important; }
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-theme-fx-b { background:repeating-linear-gradient(90deg,transparent 0 72px,rgba(80,205,255,.055) 72px 73px,transparent 73px 144px),repeating-linear-gradient(0deg,transparent 0 50px,rgba(80,205,255,.045) 50px 51px,transparent 51px 100px),linear-gradient(90deg,transparent 5%,rgba(105,219,255,.18) 5% 5.2%,transparent 5.2% 94.8%,rgba(105,219,255,.18) 94.8% 95%,transparent 95%) !important; mask-image:radial-gradient(ellipse at center,#000 8%,transparent 86%) !important; -webkit-mask-image:radial-gradient(ellipse at center,#000 8%,transparent 86%) !important; }
@@ -3284,8 +3221,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-kicker { color:#e8c154 !important; }
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-amount { color:#fff !important; text-shadow:0 0 9px #6fddff,0 0 24px rgba(69,180,255,.34) !important; }
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-theme-particle { border-radius:50% !important; background:#fff !important; box-shadow:0 0 8px #6fddff !important; }
-
-        /* Dark Fantasy Inspired */
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,rgba(122,89,24,.05),rgba(15,11,8,.36) 52%,rgba(0,0,0,.90)),linear-gradient(180deg,rgba(10,8,7,.34),transparent 42%,rgba(27,17,8,.46)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-fx-a { background:radial-gradient(circle at 50% 52%,rgba(233,192,87,.16) 0 2%,transparent 3% 18%,rgba(233,192,87,.09) 18.5% 19%,transparent 19.5% 31%,rgba(233,192,87,.06) 31.5% 32%,transparent 32.5%),conic-gradient(from 0deg at 50% 52%,transparent 0 14%,rgba(233,192,87,.06) 14% 15%,transparent 15% 38%,rgba(233,192,87,.05) 38% 39%,transparent 39%) !important; }
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-fx-b { background:radial-gradient(ellipse at 18% 82%,rgba(185,122,38,.15),transparent 32%),radial-gradient(ellipse at 82% 18%,rgba(218,184,102,.09),transparent 28%),repeating-radial-gradient(circle at 32% 48%,rgba(255,255,255,.02) 0 1px,transparent 1px 8px) !important; filter:sepia(35%) !important; }
@@ -3300,8 +3235,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-kicker { color:#a89569 !important; }
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-amount { color:#fff0b1 !important; font-family:Georgia,"Times New Roman",serif !important; text-shadow:0 2px 0 #100a03,0 0 13px rgba(225,181,67,.58) !important; }
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-particle { border-radius:50% !important; background:#d5c39c !important; box-shadow:0 0 5px rgba(220,183,92,.45) !important; }
-
-        /* Umbrella Containment (legacy template ID: biohazard) */
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,transparent 12%,rgba(11,18,20,.28) 55%,rgba(0,0,0,.88)),linear-gradient(180deg,rgba(21,28,30,.26),transparent 48%,rgba(8,13,14,.40)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-a { background:repeating-linear-gradient(90deg,transparent 0 59px,rgba(218,234,236,.045) 59px 60px,transparent 60px 120px),repeating-linear-gradient(0deg,transparent 0 39px,rgba(218,234,236,.04) 39px 40px,transparent 40px 80px),linear-gradient(90deg,rgba(207,25,35,.12),transparent 28%,transparent 72%,rgba(46,178,112,.08)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-b { background:repeating-linear-gradient(135deg,rgba(204,20,30,.10) 0 10px,transparent 10px 20px) !important; mask-image:linear-gradient(180deg,#000 0 7%,transparent 7% 90%,#000 90%) !important; -webkit-mask-image:linear-gradient(180deg,#000 0 7%,transparent 7% 90%,#000 90%) !important; }
@@ -3314,8 +3247,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-source { color:#43d887 !important; }
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-kicker { color:#d65b63 !important; }
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-amount { color:#fff !important; text-shadow:0 0 10px rgba(67,216,135,.62),3px 3px 0 rgba(200,23,36,.55) !important; }
-
-        /* Underworld Inspired */
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,rgba(113,11,15,.06),rgba(17,4,7,.42) 56%,rgba(0,0,0,.91)),linear-gradient(180deg,rgba(45,0,5,.28),transparent 42%,rgba(50,5,0,.34)) !important; }
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-theme-fx-a { background:radial-gradient(ellipse at 22% 110%,rgba(233,46,18,.35),transparent 38%),radial-gradient(ellipse at 78% 110%,rgba(190,13,20,.32),transparent 36%),radial-gradient(circle at 50% 50%,transparent 0 26%,rgba(226,181,63,.08) 26.5% 27%,transparent 27.5%) !important; }
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-theme-fx-b { background:repeating-linear-gradient(90deg,transparent 0 44px,rgba(224,181,68,.07) 44px 47px,transparent 47px 88px),repeating-linear-gradient(0deg,transparent 0 44px,rgba(224,181,68,.045) 44px 47px,transparent 47px 88px) !important; mask-image:linear-gradient(90deg,#000 0 12%,transparent 12% 88%,#000 88%) !important; -webkit-mask-image:linear-gradient(90deg,#000 0 12%,transparent 12% 88%,#000 88%) !important; }
@@ -3329,8 +3260,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-kicker { color:#bd7b80 !important; }
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-amount { color:#ffe08a !important; font-family:Georgia,"Times New Roman",serif !important; text-shadow:0 2px 0 #190307,0 0 13px rgba(218,169,48,.62),0 0 25px rgba(162,8,16,.30) !important; }
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-theme-particle { border-radius:50% !important; background:#ffd96d !important; box-shadow:0 0 7px #e15e25,0 0 16px rgba(180,10,18,.62) !important; }
-
-        /* Pixel Arcade Inspired */
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-cinematic { background:radial-gradient(ellipse at center,rgba(78,31,143,.08),rgba(8,5,21,.38) 55%,rgba(0,0,0,.89)),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px) !important; }
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-theme-fx-a { background:repeating-linear-gradient(90deg,rgba(109,62,220,.06) 0 8px,transparent 8px 16px),repeating-linear-gradient(0deg,rgba(33,222,196,.05) 0 8px,transparent 8px 16px) !important; image-rendering:pixelated !important; }
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-theme-fx-b { background:radial-gradient(circle at 18% 28%,#ffdc4a 0 3px,transparent 4px),radial-gradient(circle at 82% 34%,#4af7df 0 3px,transparent 4px),radial-gradient(circle at 32% 76%,#ff5ea9 0 3px,transparent 4px),radial-gradient(circle at 68% 72%,#8b6cff 0 3px,transparent 4px); background-size:120px 100px,170px 140px,210px 180px,250px 220px !important; }
@@ -3344,9 +3273,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-kicker { color:#ff79b8 !important; }
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-amount { color:#fff !important; text-shadow:3px 0 0 #ff5aaa,0 3px 0 #25dfcb,3px 3px 0 #4d2da5 !important; }
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-theme-particle { background:#fff36a !important; box-shadow:4px 4px 0 #ff5aaa !important; image-rendering:pixelated !important; }
-
-
-        /* v3.1.8 cinematic theme remaster: CSS-only artwork to preserve performance. */
         #${SCRIPT.payoutFlashId}[data-template]:not([data-template="wasteland"]) .mcms-payout-banner {
             isolation:isolate !important;
             overflow:hidden !important;
@@ -3355,8 +3281,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             position:relative !important;
             z-index:3 !important;
         }
-
-        /* GTA V — black-and-gold heist completion card with angular city-map geometry. */
         #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-cinematic {
             background:radial-gradient(circle at 50% 48%,transparent 0 16%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.92) 100%),linear-gradient(135deg,rgba(12,28,21,.30),transparent 42%,rgba(70,53,9,.18)) !important;
         }
@@ -3384,27 +3308,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-source {color:#77d7a8 !important;}
         #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-kicker {color:#e1ba45 !important;}
         #${SCRIPT.payoutFlashId}[data-template="gta5"] .mcms-payout-amount {color:#fff7d8 !important;text-shadow:2px 2px 0 #0a0a0a,4px 4px 0 rgba(181,139,26,.58),0 0 18px rgba(239,208,83,.24) !important;}
-
-        /* Vice City — neon sunset, chrome script and ocean-grid atmosphere. */
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-theme-fx-a {background:radial-gradient(circle at 50% 13%,rgba(255,188,75,.22),transparent 20%),linear-gradient(180deg,rgba(255,62,168,.10),transparent 45%),repeating-linear-gradient(90deg,transparent 0 109px,rgba(48,245,238,.038) 110px,transparent 111px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-theme-fx-b {background:linear-gradient(116deg,transparent 0 20%,rgba(255,83,183,.08) 20% 21%,transparent 21% 79%,rgba(34,239,233,.08) 79% 80%,transparent 80%),radial-gradient(ellipse at 50% 120%,rgba(48,233,221,.15),transparent 48%) !important;}
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner {box-shadow:0 28px 74px rgba(0,0,0,.72),-16px 0 42px rgba(255,47,161,.22),16px 0 42px rgba(0,229,222,.20),inset 0 1px rgba(255,255,255,.12) !important;}
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-banner::before {content:"VICE CITY // CASHOUT" !important;position:absolute !important;top:10px !important;left:18px !important;color:rgba(71,242,231,.68) !important;font:900 7px/1 monospace !important;letter-spacing:1.7px !important;z-index:2 !important;}
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-amount {filter:drop-shadow(0 0 8px rgba(41,245,234,.35)) !important;}
-
-        /* Bad Company — battlefield extraction HUD with dust, range marks and hazard framing. */
         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-theme-fx-a {background:linear-gradient(90deg,rgba(0,0,0,.36),transparent 18%,transparent 82%,rgba(0,0,0,.36)),repeating-linear-gradient(0deg,transparent 0 38px,rgba(244,214,123,.035) 39px,transparent 40px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-theme-fx-b {background:radial-gradient(circle at 10% 78%,rgba(248,145,37,.16),transparent 25%),radial-gradient(circle at 88% 22%,rgba(168,195,146,.12),transparent 23%),linear-gradient(135deg,transparent 49.6%,rgba(255,210,109,.10) 49.8% 50.2%,transparent 50.4%) !important;}
         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner {border-top-color:rgba(247,206,112,.76) !important;border-bottom-color:rgba(121,145,103,.72) !important;box-shadow:0 28px 70px rgba(0,0,0,.78),0 0 38px rgba(230,151,54,.16),inset 0 0 40px rgba(112,94,48,.08) !important;}
         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::before {content:"FIELD OPS // PAYMENT EXTRACTED" !important;position:absolute !important;top:10px !important;right:18px !important;color:rgba(242,210,132,.60) !important;font:900 7px/1 monospace !important;letter-spacing:1.5px !important;z-index:2 !important;}
         #${SCRIPT.payoutFlashId}[data-template="badCompany"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 7%,rgba(255,211,113,.06) 7% 7.3%,transparent 7.3% 92.7%,rgba(255,211,113,.06) 92.7% 93%,transparent 93%),repeating-linear-gradient(135deg,rgba(255,199,84,.035) 0 4px,transparent 4px 12px) !important;z-index:1 !important;}
-
-        /* Scarface — sharper Art-Deco palace card, marble contrast and blood-red power line. */
         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-theme-fx-c {background:linear-gradient(90deg,rgba(255,255,255,.035),transparent 15%,transparent 85%,rgba(255,255,255,.035)),repeating-linear-gradient(45deg,transparent 0 72px,rgba(212,175,55,.035) 73px,transparent 74px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner {box-shadow:0 30px 78px rgba(0,0,0,.80),-14px 0 36px rgba(147,0,18,.20),14px 0 34px rgba(211,175,55,.14),inset 0 0 34px rgba(255,255,255,.035) !important;}
         #${SCRIPT.payoutFlashId}[data-template="scarface"] .mcms-payout-banner::before {content:"MIAMI // EMPIRE ACCOUNT" !important;position:absolute !important;top:10px !important;left:18px !important;color:rgba(215,178,62,.68) !important;font:900 7px/1 serif !important;letter-spacing:2px !important;z-index:2 !important;}
-
-        /* Cyberpunk — layered megacorp UI, warning rails, chromatic offset and data noise. */
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 50%,transparent 0 12%,rgba(0,0,0,.26) 58%,rgba(0,0,0,.88) 100%),linear-gradient(120deg,rgba(242,223,0,.07),transparent 36%,rgba(0,229,255,.075)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(0,229,255,.035) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 9%,rgba(242,223,0,.10) 9% 9.5%,transparent 9.5% 90.5%,rgba(0,229,255,.10) 90.5% 91%,transparent 91%) !important;}
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-theme-fx-b {background:linear-gradient(135deg,transparent 0 46%,rgba(242,223,0,.08) 46% 46.4%,transparent 46.4% 52%,rgba(0,229,255,.08) 52% 52.4%,transparent 52.4%),repeating-linear-gradient(90deg,transparent 0 137px,rgba(255,255,255,.028) 138px,transparent 139px) !important;}
@@ -3414,16 +3330,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:linear-gradient(90deg,transparent 0 31%,rgba(242,223,0,.055) 31% 31.4%,transparent 31.4% 67%,rgba(0,229,255,.055) 67% 67.4%,transparent 67.4%) !important;z-index:1 !important;}
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-title {font-size:clamp(36px,5.7vw,70px) !important;letter-spacing:1.8px !important;text-shadow:3px 3px 0 #020202,6px 5px 0 rgba(0,229,255,.30),-2px -1px 0 rgba(255,36,116,.32),0 0 22px rgba(242,223,0,.20) !important;}
         #${SCRIPT.payoutFlashId}[data-template="cyberpunk"] .mcms-payout-tier {box-shadow:inset 5px 0 0 #00e5ff,3px 3px 0 rgba(255,38,118,.28) !important;}
-
-        /* Hellfire — infernal altar, molten seams and ember-lit reward seal. */
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-fx-a {background:radial-gradient(ellipse at 14% 112%,rgba(255,222,92,.88) 0 4%,rgba(255,74,0,.50) 13%,transparent 35%),radial-gradient(ellipse at 50% 118%,rgba(255,237,118,.78) 0 5%,rgba(255,48,0,.48) 16%,transparent 41%),radial-gradient(ellipse at 87% 112%,rgba(255,166,36,.84) 0 4%,rgba(150,0,0,.43) 18%,transparent 38%),linear-gradient(180deg,transparent 46%,rgba(96,0,0,.32)) !important;mix-blend-mode:screen !important;}
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-theme-fx-b {background:repeating-conic-gradient(from 0deg at 50% 86%,transparent 0 8deg,rgba(255,96,0,.075) 8deg 9deg,transparent 9deg 18deg),radial-gradient(ellipse at 50% 91%,transparent 0 16%,rgba(255,48,0,.17) 38%,transparent 66%) !important;}
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-banner {border-top:3px solid #ffad26 !important;border-bottom:3px solid #760000 !important;box-shadow:0 30px 76px rgba(0,0,0,.80),0 0 44px rgba(255,48,0,.23),inset 0 -24px 48px rgba(122,4,0,.20),inset 0 1px rgba(255,232,173,.10) !important;}
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-banner::before {content:"INFERNAL TREASURY // SEAL BROKEN" !important;position:absolute !important;top:10px !important;right:18px !important;color:rgba(255,176,62,.67) !important;font:900 7px/1 serif !important;letter-spacing:1.7px !important;z-index:2 !important;}
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:radial-gradient(circle at 50% 125%,rgba(255,82,0,.16),transparent 46%),linear-gradient(118deg,transparent 0 48%,rgba(255,134,24,.055) 48% 49%,transparent 49%) !important;z-index:1 !important;}
         #${SCRIPT.payoutFlashId}[data-template="hellfire"] .mcms-payout-title {text-shadow:2px 2px 0 #170100,5px 5px 0 #7d0b00,0 0 20px rgba(255,91,13,.82),0 0 48px rgba(255,30,0,.30) !important;}
-
-        /* Galactic Command — deep-space fleet HUD, orbital rings and command telemetry. */
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 45%,transparent 0 12%,rgba(2,7,23,.30) 58%,rgba(0,2,10,.94) 100%),linear-gradient(135deg,rgba(42,98,255,.08),transparent 42%,rgba(146,74,255,.08)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-theme-fx-a {background:radial-gradient(circle at 50% 50%,transparent 0 18%,rgba(82,149,255,.11) 18.5% 19%,transparent 19.5% 31%,rgba(153,99,255,.075) 31.5% 32%,transparent 32.5%),repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 18deg,rgba(88,157,255,.045) 18deg 18.5deg,transparent 18.5deg 36deg) !important;}
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-theme-fx-b {background:radial-gradient(circle at 15% 22%,#fff 0 1px,transparent 2px),radial-gradient(circle at 78% 17%,#8fc3ff 0 1px,transparent 2px),radial-gradient(circle at 85% 74%,#c69cff 0 1px,transparent 2px),radial-gradient(circle at 28% 80%,#fff 0 1px,transparent 2px);background-size:170px 130px,220px 180px,280px 230px,320px 260px !important;}
@@ -3436,8 +3348,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-source {color:#aa8fff !important;}
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-kicker {color:#79c8ff !important;}
         #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-amount {color:#fff !important;text-shadow:0 0 9px rgba(111,188,255,.65),3px 3px 0 rgba(79,55,151,.45) !important;}
-
-        /* Dark Fantasy — illuminated manuscript, royal seal and ancient-gold ornament. */
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 46%,transparent 0 13%,rgba(13,7,16,.32) 56%,rgba(2,1,4,.94) 100%),linear-gradient(135deg,rgba(99,57,22,.08),transparent 40%,rgba(53,19,75,.09)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-fx-a {background:radial-gradient(circle at 15% 18%,rgba(214,172,74,.12),transparent 18%),radial-gradient(circle at 83% 76%,rgba(116,52,137,.12),transparent 22%),repeating-radial-gradient(circle at 50% 50%,transparent 0 54px,rgba(220,177,77,.028) 55px,transparent 56px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-theme-fx-b {background:linear-gradient(45deg,transparent 0 49.6%,rgba(219,176,72,.055) 49.8% 50.2%,transparent 50.4%),linear-gradient(135deg,transparent 0 49.6%,rgba(117,66,133,.055) 49.8% 50.2%,transparent 50.4%) !important;}
@@ -3450,8 +3360,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-source {color:#c48daf !important;}
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-kicker {color:#d9b75d !important;}
         #${SCRIPT.payoutFlashId}[data-template="darkFantasy"] .mcms-payout-amount {color:#fff4cf !important;font-family:Georgia,serif !important;text-shadow:0 0 12px rgba(220,177,72,.42),3px 3px 0 #291426 !important;}
-
-        /* Biohazard — sterile blacksite containment console with warning stripes and diagnostic grid. */
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 48%,transparent 0 13%,rgba(3,12,10,.31) 58%,rgba(0,3,3,.94) 100%),linear-gradient(120deg,rgba(28,199,107,.07),transparent 40%,rgba(207,28,42,.075)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(91,235,158,.025) 0 1px,transparent 1px 5px),linear-gradient(90deg,transparent 0 12%,rgba(85,230,150,.07) 12% 12.3%,transparent 12.3% 87.7%,rgba(205,36,48,.07) 87.7% 88%,transparent 88%) !important;}
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-theme-fx-b {background:repeating-conic-gradient(from 0deg at 50% 50%,transparent 0 29deg,rgba(85,229,151,.035) 29deg 30deg,transparent 30deg 59deg,rgba(206,32,45,.03) 59deg 60deg),radial-gradient(circle at 50% 50%,transparent 0 18%,rgba(72,224,146,.065) 18.5% 19%,transparent 19.5% 31%,rgba(209,33,45,.05) 31.5% 32%,transparent 32.5%) !important;}
@@ -3460,8 +3368,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-banner::before {content:"BSL-4 CLEARANCE // COMPENSATION AUTHORIZED" !important;color:rgba(88,231,152,.66) !important;}
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-banner::after {content:"" !important;position:absolute !important;inset:0 !important;background:repeating-linear-gradient(135deg,transparent 0 18px,rgba(201,24,36,.045) 18px 22px,transparent 22px 40px),linear-gradient(90deg,transparent 0 73%,rgba(79,225,149,.04) 73% 74%,transparent 74%) !important;z-index:1 !important;}
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-title {text-shadow:2px 2px 0 #080a0a,5px 5px 0 rgba(190,26,38,.34),0 0 18px rgba(74,222,146,.28) !important;}
-
-        /* Underworld — aristocratic nocturne, crimson velvet, silver moonlight and gold sigils. */
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 44%,transparent 0 13%,rgba(16,3,8,.34) 58%,rgba(1,1,3,.95) 100%),linear-gradient(135deg,rgba(157,20,31,.07),transparent 42%,rgba(194,166,93,.06)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-theme-fx-a {background:radial-gradient(circle at 18% 20%,rgba(223,224,239,.10),transparent 18%),radial-gradient(circle at 82% 75%,rgba(156,14,29,.13),transparent 23%),repeating-radial-gradient(circle at 50% 50%,transparent 0 62px,rgba(214,172,69,.025) 63px,transparent 64px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-theme-fx-b {background:linear-gradient(45deg,transparent 0 49.7%,rgba(219,176,73,.045) 49.8% 50.2%,transparent 50.3%),linear-gradient(135deg,transparent 0 49.7%,rgba(173,25,39,.05) 49.8% 50.2%,transparent 50.3%) !important;}
@@ -3474,8 +3380,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-source {color:#d7d8e6 !important;}
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-kicker {color:#d1a43e !important;}
         #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-amount {color:#fff0c8 !important;font-family:Georgia,serif !important;text-shadow:0 0 12px rgba(218,174,67,.42),3px 3px 0 #4e0812 !important;}
-
-        /* Pixel Arcade — premium cabinet bezel, CRT raster, score rails and true 8-bit geometry. */
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-cinematic {background:radial-gradient(circle at 50% 48%,transparent 0 13%,rgba(15,5,36,.30) 58%,rgba(3,2,10,.94) 100%),linear-gradient(135deg,rgba(255,84,166,.08),transparent 42%,rgba(38,224,204,.08)) !important;}
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-theme-fx-a {background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,transparent 0 31px,rgba(139,108,255,.035) 32px,transparent 33px) !important;}
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-theme-fx-b {background:radial-gradient(circle at 10% 18%,#fff36a 0 2px,transparent 3px),radial-gradient(circle at 90% 22%,#25dfcb 0 2px,transparent 3px),radial-gradient(circle at 20% 82%,#ff5aaa 0 2px,transparent 3px),radial-gradient(circle at 80% 78%,#8b6cff 0 2px,transparent 3px);background-size:110px 90px,150px 120px,190px 150px,230px 190px !important;}
@@ -3484,8 +3388,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-banner::after {content:"HI-SCORE" !important;position:absolute !important;top:10px !important;right:18px !important;color:#fff36a !important;font:900 8px/1 "Courier New",monospace !important;letter-spacing:1.2px !important;text-shadow:2px 2px 0 #ff5aaa !important;z-index:2 !important;}
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-title {font-size:clamp(31px,4.8vw,56px) !important;text-shadow:4px 0 0 #ff5aaa,0 4px 0 #25dfcb,4px 4px 0 #38206f,0 0 12px rgba(255,243,106,.18) !important;}
         #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-amount {text-shadow:3px 0 0 #ff5aaa,0 3px 0 #25dfcb,3px 3px 0 #4d2da5,0 0 10px rgba(255,255,255,.22) !important;}
-
-        /* Factorio — heavy industrial payout terminal, conveyor motion, gears and furnace sparks. */
         #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-cinematic {
             background:
                 radial-gradient(circle at 50% 48%, transparent 0 14%, rgba(22,18,12,.35) 56%, rgba(3,4,3,.96) 100%),
@@ -3603,7 +3505,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #ffb24d !important;
             box-shadow: 0 0 5px #ff7a22, 0 0 10px rgba(255,123,35,.62) !important;
         }
-
         @media (max-width:620px) {
             #${SCRIPT.payoutFlashId}[data-template]:not([data-template="wasteland"]) .mcms-payout-banner::before,
             #${SCRIPT.payoutFlashId}[data-template]:not([data-template="wasteland"]) .mcms-payout-banner::after {font-size:6px !important;letter-spacing:.8px !important;}
@@ -3612,8 +3513,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #${SCRIPT.payoutFlashId}[data-template="factorio"] .mcms-payout-banner,
             #${SCRIPT.payoutFlashId}[data-template="galactic"] .mcms-payout-banner {padding-left:18px !important;padding-right:18px !important;}
         }
-
-        /* Shared title fitting for every template. */
         #${SCRIPT.payoutFlashId} .mcms-payout-title.mcms-payout-title-long { font-size:clamp(28px,4.35vw,51px) !important; letter-spacing:.6px !important; transform:scaleX(.90) !important; }
         #${SCRIPT.payoutFlashId} .mcms-payout-title.mcms-payout-title-very-long { font-size:clamp(23px,3.55vw,42px) !important; line-height:.95 !important; white-space:normal !important; text-wrap:balance !important; transform:scaleX(.92) !important; }
         #${SCRIPT.payoutFlashId}[data-template="viceCity"] .mcms-payout-title.mcms-payout-title-long { font-size:clamp(34px,5.5vw,62px) !important; transform:rotate(-2deg) skewX(-5deg) scaleX(.92) !important; }
@@ -3632,7 +3531,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #${SCRIPT.payoutFlashId}[data-template="underworld"] .mcms-payout-banner,
             #${SCRIPT.payoutFlashId}[data-template="pixelArcade"] .mcms-payout-banner { width:calc(100% - 14px) !important; padding:21px 16px 19px !important; }
         }
-
         @keyframes mcmsPayoutRed {
             0%, 8%, 38%, 58%, 88%, 100% { opacity: 0; transform: scale(1); }
             14%, 28%, 64%, 80% { opacity: .82; transform: scale(1.025); }
@@ -3659,7 +3557,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 3%, 97% { opacity: 1; transform: translate(-50%, -50%); }
             }
         }
-
         #${SCRIPT.toastId} { position: fixed !important; left: 12px !important; bottom: 14px !important; z-index: 982 !important; max-width: 280px !important; padding: 6px 9px !important; border-radius: 9px !important; border: 1px solid rgba(255,255,255,.14) !important; background: rgba(10,14,20,.92) !important; color: #fff !important; font: 900 10px/1.15 Arial, Helvetica, sans-serif !important; opacity: 0 !important; transform: translateY(4px) !important; pointer-events: none !important; transition: opacity 140ms ease, transform 140ms ease !important; box-shadow: 0 5px 14px rgba(0,0,0,.28) !important; }
         #${SCRIPT.toastId}.mcms-flash { opacity: 1 !important; transform: translateY(0) !important; }
         #${SCRIPT.panelId}.mcms-map-small { width: 292px !important; }
@@ -3668,10 +3565,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId}.mcms-map-small .mcms-iconbox { width: 18px !important; height: 18px !important; min-width: 18px !important; font-size: 9px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-label { font-size: 10px !important; }
         #${SCRIPT.panelId}.mcms-map-small .mcms-footer { display: none !important; }
-
-
-        /* v3.3.0 Tablet Mode: map-aware responsive dock, unmistakable enabled states, fitted labels and bottom-sheet panel,
-           low-overhead rendering and safe-area aware spacing. */
         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId},
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId},
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} {
@@ -3792,7 +3685,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-radius: 10px !important; font-size: 10.5px !important; backdrop-filter: none !important;
             pointer-events: auto !important;
         }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} {
             padding: 12px !important; border-radius: 18px !important;
             background: rgba(8,12,18,.985) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
@@ -3880,7 +3772,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-desktop-position-controls { display: none !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId}.mcms-map-small { width: auto !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId}.mcms-map-small .mcms-footer { display: block !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} {
             left: 50% !important; right: auto !important; top: auto !important; bottom: max(8px, env(safe-area-inset-bottom)) !important;
             width: min(700px, calc(100vw - 16px)) !important; max-width: calc(100vw - 16px) !important; max-height: 78dvh !important;
@@ -3897,7 +3788,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-meta,
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-age-band { font-size: 9.5px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-age { font-size: 11px !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.missionInspectorId} {
             width: min(420px, calc(100vw - 20px)) !important; padding: 12px 13px !important;
             font-size: 12px !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
@@ -3905,7 +3795,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.toastId} {
             max-width: min(420px, calc(100vw - 24px)) !important; padding: 10px 13px !important; font-size: 12px !important;
         }
-
         @media (max-width: 560px) {
             html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-grid-2 { grid-template-columns: 1fr !important; }
             html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-grid-2 [data-toggle="criticalView"] { grid-column: auto !important; }
@@ -3913,10 +3802,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-discord-wide { grid-template-columns: 1fr !important; }
             html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-row-label { white-space: normal !important; }
         }
-
-
-        /* v3.3.1 iOS Safari Mobile Mode: map-aware command grid, safe-area bottom sheet,
-           Visual Viewport keyboard support and compact high-contrast touch controls. */
         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId},
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId},
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId},
@@ -4128,8 +4013,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs { top:34px !important; }
             html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn { height:36px !important; }
         }
-
-        /* v3.4.2: collapse after the exit animation and override later tablet/mobile layout rules. */
         #${SCRIPT.controlId} {
             transition: width 180ms cubic-bezier(.2,.78,.22,1), max-width 180ms cubic-bezier(.2,.78,.22,1) !important;
         }
@@ -4141,8 +4024,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         @media (prefers-reduced-motion: reduce) {
             #${SCRIPT.controlId} { transition: none !important; }
         }
-
-        /* v2.5.x mission intelligence and configuration tools */
         #${SCRIPT.missionInspectorId} {
             position: fixed !important; left: 0 !important; top: 0 !important; z-index: 2147483646 !important;
             width: min(300px, calc(100vw - 24px)) !important; padding: 10px 11px !important;
@@ -4164,8 +4045,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong { display:block !important; margin-top:2px !important; color:#fff !important; font-size:11px !important; font-weight:950 !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-alert { margin-top:6px !important; padding:6px 7px !important; border-radius:7px !important; border:1px solid rgba(255,181,71,.34) !important; background:rgba(255,143,31,.11) !important; color:#ffd29a !important; font-size:8px !important; font-weight:900 !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:anywhere !important; }
         #${SCRIPT.missionInspectorId} .mcms-inspector-alert.mcms-stuck { border-color:rgba(255,74,64,.48) !important; background:rgba(255,44,36,.14) !important; color:#ffaaa4 !important; }
-
-
         .mcms-mission-value-row {
             display: flex !important;
             align-items: center !important;
@@ -4228,12 +4107,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 font-size: 10px !important;
             }
         }
-
         .mcms-stuck-mission-icon { pointer-events:none !important; }
         .mcms-stuck-mission-badge { display:inline-flex !important; align-items:center !important; justify-content:center !important; min-width:58px !important; height:17px !important; padding:0 6px !important; border-radius:6px !important; border:1px solid rgba(255,86,72,.72) !important; background:rgba(90,10,8,.88) !important; color:#ffd7d2 !important; font:950 8px/17px Arial,Helvetica,sans-serif !important; letter-spacing:.35px !important; text-shadow:0 1px 2px #000 !important; box-shadow:0 0 10px rgba(255,53,39,.32) !important; white-space:nowrap !important; }
         .mcms-stuck-mission-badge.mcms-stuck-severe { background:rgba(130,7,4,.94) !important; border-color:#ff3d2e !important; color:#fff !important; animation:mcmsStuckPulse 1.3s ease-in-out infinite !important; }
         @keyframes mcmsStuckPulse { 0%,100%{box-shadow:0 0 7px rgba(255,53,39,.28);transform:scale(1)} 50%{box-shadow:0 0 16px rgba(255,53,39,.70);transform:scale(1.035)} }
-
         .mcms-mission-spawn-ring { transform-box:fill-box !important; stroke:#67d9ff !important; stroke-width:3 !important; fill:rgba(48,183,255,.12) !important; transform-origin:center !important; animation:mcmsMissionSpawnRing 2.35s cubic-bezier(.12,.72,.18,1) both !important; pointer-events:none !important; }
         .mcms-mission-spawn-label-icon { pointer-events:none !important; }
         .mcms-mission-spawn-label { display:inline-flex !important; align-items:center !important; justify-content:center !important; min-width:86px !important; height:20px !important; padding:0 8px !important; border-radius:7px !important; border:1px solid rgba(98,219,255,.78) !important; background:rgba(4,22,34,.92) !important; color:#aeeeff !important; font:950 8px/20px Arial,Helvetica,sans-serif !important; letter-spacing:.65px !important; text-shadow:0 1px 2px #000 !important; box-shadow:0 0 16px rgba(67,198,255,.42) !important; animation:mcmsMissionSpawnLabel 2.35s ease-out both !important; white-space:nowrap !important; }
@@ -4241,7 +4118,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         @keyframes mcmsMissionSpawnRing { 0%{opacity:0;transform:scale(.25)} 12%{opacity:1;transform:scale(.55)} 75%{opacity:.50;transform:scale(3.2)} 100%{opacity:0;transform:scale(4.2)} }
         @keyframes mcmsMissionSpawnLabel { 0%{opacity:0;transform:translateY(8px) scale(.9)} 14%,72%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-8px) scale(.96)} }
         @keyframes mcmsMissionSpawnMarker { 0%{filter:brightness(1);transform:scale(1)} 12%{filter:brightness(1.55) drop-shadow(0 0 10px #53d9ff);transform:scale(1.22)} 34%{filter:brightness(1.15) drop-shadow(0 0 6px #53d9ff);transform:scale(.98)} 58%{filter:brightness(1.35) drop-shadow(0 0 8px #53d9ff);transform:scale(1.12)} 100%{filter:brightness(1);transform:scale(1)} }
-
         #${SCRIPT.panelId} .mcms-profile-list { display:grid !important; gap:6px !important; }
         #${SCRIPT.panelId} .mcms-profile-row { display:grid !important; grid-template-columns:minmax(0,1fr) 36px 36px 25px !important; gap:5px !important; align-items:center !important; }
         #${SCRIPT.panelId} .mcms-profile-main { min-width:0 !important; padding:6px 7px !important; border:1px solid rgba(255,255,255,.09) !important; border-radius:7px !important; background:rgba(255,255,255,.035) !important; }
@@ -4253,9 +4129,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-config-actions [data-action="reset-config"] { grid-column:1 / -1 !important; }
         #${SCRIPT.panelId} .mcms-hidden-file { display:none !important; }
-
-
-        /* v3.7.0 complete interface themes */
         #${SCRIPT.panelId} .mcms-ui-theme-grid {
             display: grid !important;
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -4422,7 +4295,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-ui-theme-copy small { display: block !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-copy strong { color: inherit !important; font-size: 10px !important; font-weight: 950 !important; }
         #${SCRIPT.panelId} .mcms-ui-theme-copy small { margin-top: 4px !important; color: rgba(255,255,255,.48) !important; font-size: 7px !important; font-weight: 900 !important; letter-spacing: .7px !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 72px !important; grid-template-columns: 58px minmax(0,1fr) !important; padding: 8px 10px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 58px !important; height: 44px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-copy strong { font-size: 13px !important; }
@@ -4430,7 +4302,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-grid { gap: 6px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-btn { height: 62px !important; grid-template-columns: 46px minmax(0,1fr) !important; padding: 6px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-ui-theme-preview { width: 46px !important; height: 38px !important; }
-
         html[data-mcms-ui-theme="cyberpunk"] {
             --mcms-cp-yellow: #fcee0a;
             --mcms-cp-cyan: #00f0ff;
@@ -4531,7 +4402,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: linear-gradient(100deg, rgba(252,238,10,.16), rgba(24,22,5,.96)) !important;
             color: #fff7a2 !important;
         }
-
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} {
             border: 1px solid var(--mcms-cp-cyan) !important;
             border-radius: 1px !important;
@@ -4768,7 +4638,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-cp-cyan) !important;
             letter-spacing: .55px !important;
         }
-
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.toastId} {
             border: 1px solid var(--mcms-cp-cyan) !important;
             border-radius: 1px !important;
@@ -4830,7 +4699,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: rgba(0,240,255,.08) !important;
             color: var(--mcms-cp-cyan) !important;
         }
-
         html[data-mcms-ui-theme="cyberpunk"] .mcms-alliance-credit-badge,
         html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-age-badge,
         html[data-mcms-ui-theme="cyberpunk"] .mcms-unit-commitment-badge,
@@ -4849,8 +4717,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-cp-yellow) !important;
             box-shadow: inset 3px 0 0 var(--mcms-cp-red), 0 0 16px rgba(0,240,255,.38) !important;
         }
-
-        /* Cyberpunk readability and contrast pass. */
         html[data-mcms-ui-theme="cyberpunk"] {
             --mcms-cp-text: #f7fbfc;
             --mcms-cp-muted: #b7c9cf;
@@ -4912,8 +4778,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             outline: 2px solid var(--mcms-cp-yellow) !important;
             outline-offset: 2px !important;
         }
-
-        /* Yellow active controls always use dark text, including nested labels. */
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
@@ -4935,8 +4799,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active .mcms-ui-theme-copy small {
             color: rgba(5,7,11,.78) !important;
         }
-
-        /* Red controls also use dark text to meet small-text contrast targets. */
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel:hover,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-reset-panel:focus-visible,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-close:hover,
@@ -4951,8 +4813,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-cp-ink) !important;
             text-shadow: none !important;
         }
-
-        /* Disabled controls remain distinguishable without becoming unreadable. */
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} button:disabled,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} button:disabled {
             border-color: #41535b !important;
@@ -4972,8 +4832,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #9dafb5 !important;
             text-shadow: none !important;
         }
-
-        /* Device-specific small copy receives a minimum readable size. */
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-profile-main span,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-stat-label,
@@ -4986,9 +4844,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
             font-size: 8.5px !important;
         }
-
-
-        /* Fallout 4 — high-contrast Pip-Boy / Vault-Tec interface theme. */
         html[data-mcms-ui-theme="fallout4"] {
             --mcms-fo-green: #b9ff72;
             --mcms-fo-green-strong: #d3ff9b;
@@ -5013,8 +4868,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.missionInspectorId} * {
             font-family: Consolas, "Lucida Console", "Courier New", monospace !important;
         }
-
-        /* Compact command bar / Pip-Boy bezel. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} {
             color: var(--mcms-fo-text) !important;
             filter: drop-shadow(0 7px 12px rgba(0,0,0,.58)) !important;
@@ -5111,8 +4964,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: linear-gradient(180deg, rgba(92,69,25,.74), rgba(24,19,8,.97)) !important;
             color: #ffe7a7 !important;
         }
-
-        /* Main terminal panel. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} {
             border: 2px solid #5d744d !important;
             border-radius: 8px !important;
@@ -5208,8 +5059,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-fo-ink) !important;
             text-shadow: none !important;
         }
-
-        /* Tabs and section navigation. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-tabs {
             gap: 4px !important;
             padding: 0 1px 7px 1px !important;
@@ -5263,8 +5112,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-fo-amber) !important;
             text-shadow: 0 0 4px rgba(255,211,106,.32) !important;
         }
-
-        /* Buttons, controls, profiles and forms. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-place-main,
@@ -5362,8 +5209,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #08110a !important;
             color: var(--mcms-fo-text) !important;
         }
-
-        /* Information cards and financial intelligence. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-status,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat,
@@ -5504,8 +5349,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing: .45px !important;
             text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
         }
-
-        /* Toasts, drawers and map-overlay readouts. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.toastId} {
             border: 2px solid #607a50 !important;
             border-radius: 5px !important;
@@ -5598,8 +5441,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-fo-ink) !important;
             text-shadow: none !important;
         }
-
-        /* Explicit readability rules: luminous surfaces always use dark ink. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
@@ -5657,8 +5498,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #a9b7a1 !important;
             text-shadow: none !important;
         }
-
-        /* Device-specific readability without changing established layouts. */
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-profile-main span,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-stat-label,
@@ -5671,7 +5510,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="fallout4"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
             font-size: 8.5px !important;
         }
-
         @keyframes mcmsFalloutBoot {
             0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }
             35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }
@@ -5709,8 +5547,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transition: none !important;
             }
         }
-
-        /* Umbrella Biohazard Command — sterile corporate containment interface theme. */
         html[data-mcms-ui-theme="umbrella"] {
             --mcms-um-white: #f1f3f6;
             --mcms-um-white-strong: #ffffff;
@@ -5735,8 +5571,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} * {
             font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif !important;
         }
-
-        /* Compact command bar / containment command chassis. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} {
             color: var(--mcms-um-text) !important;
             filter: drop-shadow(0 7px 12px rgba(0,0,0,.58)) !important;
@@ -5833,8 +5667,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: linear-gradient(180deg, rgba(92,69,25,.74), rgba(24,19,8,.97)) !important;
             color: #ffe49a !important;
         }
-
-        /* Main containment command panel. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} {
             border: 2px solid #656b75 !important;
             border-radius: 8px !important;
@@ -5930,8 +5762,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-um-ink) !important;
             text-shadow: none !important;
         }
-
-        /* Tabs and section navigation. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tabs {
             gap: 4px !important;
             padding: 0 1px 7px 1px !important;
@@ -5985,8 +5815,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-um-amber) !important;
             text-shadow: 0 0 4px rgba(255,211,106,.32) !important;
         }
-
-        /* Buttons, controls, profiles and forms. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main,
@@ -6084,8 +5912,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #08110a !important;
             color: var(--mcms-um-text) !important;
         }
-
-        /* Information cards and financial intelligence. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-status,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat,
@@ -6226,8 +6052,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing: .45px !important;
             text-shadow: 0 0 4px rgba(255,211,106,.20) !important;
         }
-
-        /* Toasts, drawers and map-overlay readouts. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.toastId} {
             border: 2px solid #607a50 !important;
             border-radius: 5px !important;
@@ -6320,8 +6144,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-um-ink) !important;
             text-shadow: none !important;
         }
-
-        /* Explicit readability rules: luminous surfaces always use dark ink. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
@@ -6379,8 +6201,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #b7bdc6 !important;
             text-shadow: none !important;
         }
-
-        /* Device-specific readability without changing established layouts. */
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
@@ -6393,7 +6213,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
             font-size: 8.5px !important;
         }
-
         @keyframes mcmsUmbrellaBoot {
             0% { opacity: 0; transform: scaleY(.08) scaleX(.96); filter: brightness(2.1) contrast(1.4); }
             35% { opacity: .88; transform: scaleY(.72) scaleX(1.01); filter: brightness(1.45) contrast(1.2); }
@@ -6431,10 +6250,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transition: none !important;
             }
         }
-
-
-
-        /* Umbrella identity layer: sterile containment hardware and classified incident records. */
         html[data-mcms-ui-theme="umbrella"] {
             --mcms-um-red-deep: #8f0c28;
             --mcms-um-red-bright: #df2148;
@@ -6509,7 +6324,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #ffffff !important;
             color: #9c0d2b !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} {
             border: 1px solid #737a84 !important;
             border-radius: 2px !important;
@@ -6608,7 +6422,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-size: 11px !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-place-main,
@@ -6659,7 +6472,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-float-key {
             border-radius: 1px !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-input,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-select,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} textarea {
@@ -6685,7 +6497,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #0a0c11 !important;
             box-shadow: 0 0 0 2px rgba(216,25,63,.22), inset 0 1px 2px rgba(0,0,0,.10) !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-card,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-finance-card,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat,
@@ -6729,7 +6540,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-sweep-card .mcms-sweep-meta {
             color: #4f5661 !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId},
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} {
             border: 1px solid #737a84 !important;
@@ -6762,7 +6572,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #11141a !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.toastId} {
             border: 1px solid #737a84 !important;
             border-left: 6px solid #c8102e !important;
@@ -6798,8 +6607,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #11141a !important;
             text-shadow: none !important;
         }
-
-        /* Readability guarantees for saturated and light surfaces. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-desktop,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-label-tablet,
@@ -6834,7 +6641,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #b8bec7 !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-profile-main span,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-stat-label,
@@ -6847,7 +6653,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
             font-size: 8.5px !important;
         }
-
         @keyframes mcmsUmbrellaPanelIn {
             0% { opacity: 0; transform: translateY(7px) scale(.988); filter: grayscale(.8) contrast(1.25); }
             45% { opacity: 1; transform: translateY(-1px) scale(1.001); filter: grayscale(.15) contrast(1.08); }
@@ -6920,8 +6725,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transition: none !important;
             }
         }
-
-        /* v3.8.1 Factorio industrial automation interface and readability pass. */
         html[data-mcms-ui-theme="factorio"] {
             --mcms-fac-orange: #df842f;
             --mcms-fac-orange-bright: #f1a14d;
@@ -6946,7 +6749,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.missionInspectorId} * {
             font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} {
             filter: drop-shadow(0 8px 16px rgba(0,0,0,.48)) !important;
         }
@@ -7044,7 +6846,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
             border-left: 4px solid #91b95d !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} {
             border: 2px solid #171916 !important;
             border-top-color: #64675f !important;
@@ -7127,7 +6928,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: var(--mcms-fac-ink) !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-tabs {
             gap: 3px !important;
             padding: 4px !important;
@@ -7183,7 +6983,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #f1a14d !important;
             font-size: 11px !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-place-main,
@@ -7255,8 +7054,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing: .5px !important;
             text-align: center !important;
         }
-
-        /* Active cards use dark text on orange; their machine-status tiles invert for clarity. */
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-iconbox,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-iconbox,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active .mcms-iconbox,
@@ -7279,7 +7076,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: inset 0 1px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.28) !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-input,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-select,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} textarea {
@@ -7306,7 +7102,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #1c1e1b !important;
             color: #f1dfb4 !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-status,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-profile-main,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-card,
@@ -7362,7 +7157,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: #29251f !important;
             color: #e4b675 !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.toastId} {
             border: 2px solid #181a17 !important;
             border-left: 6px solid #df842f !important;
@@ -7379,7 +7173,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: linear-gradient(145deg, #3c3f39, #20221e) !important;
             color: #f0d7a6 !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.criticalDrawerId},
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.missionInspectorId} {
             border: 2px solid #1a1c19 !important;
@@ -7416,7 +7209,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #ead8ae !important;
             box-shadow: inset 0 1px rgba(255,255,255,.04) !important;
         }
-
         html[data-mcms-ui-theme="factorio"] .mcms-alliance-credit-badge,
         html[data-mcms-ui-theme="factorio"] .mcms-mission-age-badge,
         html[data-mcms-ui-theme="factorio"] .mcms-unit-commitment-badge,
@@ -7428,7 +7220,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-family: "Arial Narrow", "Segoe UI", sans-serif !important;
             letter-spacing: .35px !important;
         }
-
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} button:focus-visible,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} button:focus-visible,
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.criticalDrawerId} button:focus-visible,
@@ -7452,7 +7243,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #a9a187 !important;
             text-shadow: none !important;
         }
-
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-profile-main span,
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-ops-stat-label,
@@ -7465,7 +7255,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="factorio"] #${SCRIPT.panelId} .mcms-ops-entry-meta {
             font-size: 8.5px !important;
         }
-
         @keyframes mcmsFactorioPanelIn {
             0% { opacity: 0; transform: translateY(7px) scale(.987); filter: contrast(1.22) brightness(.78); }
             45% { opacity: 1; transform: translateY(-1px) scale(1.002); filter: contrast(1.08) brightness(1.05); }
@@ -7502,16 +7291,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transition: none !important;
             }
         }
-
-        /*
-         * v3.9.2 Umbrella light-surface readability reinforcement.
-         *
-         * Umbrella deliberately mixes dark command chrome with sterile light
-         * containment cards. Explicit child selectors are required here because
-         * the original inspector/card typography rules have greater specificity
-         * than broad descendant colour rules. This block sits before the global
-         * semantic layer so warning/success/critical colours remain authoritative.
-         */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat span {
             color: #4b5360 !important;
             font-size: 8px !important;
@@ -7562,13 +7341,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="umbrella"] #${SCRIPT.missionInspectorId} .mcms-inspector-stat strong {
             font-size: 11.5px !important;
         }
-
-        /*
-         * v3.8.0 operational semantic-colour protection layer.
-         *
-         * Interface themes may change geometry, typography and decorative chrome, but
-         * colours that communicate mission state must remain stable and unambiguous.
-         */
         html[data-mcms-ui-theme] {
             --mcms-sem-blue: #8fd3ff;
             --mcms-sem-blue-border: rgba(100,181,246,.88);
@@ -7590,8 +7362,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             --mcms-sem-cyan-bg: rgba(4,22,34,.94);
             --mcms-sem-ink: #11141a;
         }
-
-        /* Contextual alliance classification: blue where ALLIANCE is a discrete operational label. */
         html[data-mcms-ui-theme] .mcms-alliance-text,
         html[data-mcms-ui-theme] .mcms-inspector-type.mcms-alliance,
         html[data-mcms-ui-theme] .mcms-mission-spawn-label.mcms-alliance-text {
@@ -7602,8 +7372,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-color:rgba(70,170,255,.78) !important;
             background:rgba(5,35,63,.88) !important;
         }
-
-        /* Alliance credit eligibility: green means eligible; yellow means no personal unit present. */
         html[data-mcms-ui-theme] .mcms-alliance-credit-badge.mcms-credit-qualified {
             border-color: var(--mcms-sem-green-border) !important;
             background: var(--mcms-sem-green-bg) !important;
@@ -7618,8 +7386,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: inset 3px 0 0 #ffd54f, 0 2px 8px rgba(0,0,0,.34), 0 0 8px rgba(255,213,79,.14) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.92), 0 0 5px rgba(255,213,79,.18) !important;
         }
-
-        /* Mission age: recent blue, aged yellow, high orange, critical red. */
         html[data-mcms-ui-theme] .mcms-mission-age-badge {
             border-color: var(--mcms-sem-blue-border) !important;
             background: var(--mcms-sem-blue-bg) !important;
@@ -7646,8 +7412,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 2px 8px rgba(0,0,0,.36), 0 0 12px rgba(255,45,45,.54) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.94), 0 0 5px rgba(255,104,104,.40) !important;
         }
-
-        /* Unit commitment: personal units remain yellow; alliance-only units remain green. */
         html[data-mcms-ui-theme] .mcms-unit-commitment-badge.mcms-unit-personal {
             border-color: var(--mcms-sem-yellow-border) !important;
             background: var(--mcms-sem-yellow-bg) !important;
@@ -7662,8 +7426,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: inset 3px 0 0 #35d778, 0 2px 7px rgba(0,0,0,.28) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.92) !important;
         }
-
-        /* Transport type: patient amber; prisoner deeper orange. */
         html[data-mcms-ui-theme] .mcms-transport-watcher-badge.mcms-transport-patient {
             border-color: rgba(255,194,71,.98) !important;
             background: linear-gradient(145deg, rgba(86,46,3,.97), rgba(27,17,6,.97)) !important;
@@ -7685,8 +7447,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 1px 4px rgba(0,0,0,.70) !important;
             text-shadow: none !important;
         }
-
-        /* Resource gaps: amber indicates missing types; red indicates uncovered demand. */
         html[data-mcms-ui-theme] .mcms-resource-gap-badge {
             border-color: rgba(255,146,49,.94) !important;
             background: rgba(58,22,3,.94) !important;
@@ -7701,8 +7461,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 0 0 2px rgba(0,0,0,.46), 0 0 12px rgba(255,45,35,.48) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.94) !important;
         }
-
-        /* Stuck detection: red remains reserved for stalled and severely stalled missions. */
         html[data-mcms-ui-theme] .mcms-stuck-mission-badge {
             border-color: rgba(255,86,72,.84) !important;
             background: rgba(90,10,8,.94) !important;
@@ -7717,8 +7475,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow: 0 0 15px rgba(255,53,39,.62) !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.96) !important;
         }
-
-        /* Newly spawned incidents retain the cyan discovery signal. */
         html[data-mcms-ui-theme] .mcms-mission-spawn-label {
             border-color: var(--mcms-sem-cyan-border) !important;
             background: var(--mcms-sem-cyan-bg) !important;
@@ -7730,8 +7486,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             stroke: #67d9ff !important;
             fill: rgba(48,183,255,.12) !important;
         }
-
-        /* Mission Inspector signals. */
         html[data-mcms-ui-theme] #${SCRIPT.missionInspectorId} .mcms-inspector-type.mcms-alliance {
             border-color: var(--mcms-sem-green-border) !important;
             background: rgba(7,31,18,.62) !important;
@@ -7761,8 +7515,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color: #ffd29a !important;
             text-shadow: 0 1px 2px rgba(0,0,0,.90) !important;
         }
-
-        /* Critical View uses the same escalating yellow/orange/red age language as map badges. */
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-row.mcms-age-aged {
             border-color: rgba(255,202,40,.70) !important;
             background: rgba(74,52,3,.36) !important;
@@ -7791,8 +7543,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-age {
             color: #bbdefb !important;
         }
-
-        /* Discord reporting: positive green, negative red, neutral amber, busy blue. */
         html[data-mcms-ui-theme] #${SCRIPT.panelId} .mcms-discord-card[data-tone="positive"] {
             border-color: rgba(46,204,113,.68) !important;
             box-shadow: inset 4px 0 #2ecc71, 0 8px 18px rgba(0,0,0,.22) !important;
@@ -7820,8 +7570,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: rgba(10,45,72,.40) !important;
             color: #9bd5ff !important;
         }
-
-        /* Active transport sweep remains amber and visually distinct from idle. */
         html[data-mcms-ui-theme] #${SCRIPT.panelId} .mcms-sweep-state.mcms-running {
             border-color: rgba(255,177,57,.82) !important;
             background: rgba(95,49,3,.84) !important;
@@ -7834,11 +7582,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background: rgba(95,49,3,.30) !important;
             box-shadow: inset 3px 0 0 #ffb139 !important;
         }
-
-        /*
-         * Heat-map legend uses literal inline background colours. The first four
-         * swatches require dark text; only the red Gap swatch retains white text.
-         */
         html[data-mcms-ui-theme] #${SCRIPT.panelId} .mcms-heat-key:nth-child(-n+4) {
             color: #10140d !important;
             text-shadow: none !important;
@@ -7849,13 +7592,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             text-shadow: 0 1px 2px rgba(0,0,0,.90) !important;
             border-color: rgba(255,255,255,.42) !important;
         }
-
-
-        /* ============================================================
-         * VEHICLE CODE STATUS · v3.9.1
-         * Complete personal-fleet FMS overview. Theme chrome may vary;
-         * status-code colours at the end are protected semantic signals.
-         * ============================================================ */
         #${SCRIPT.vehicleStatusId} {
             --mcms-vcs-bg:linear-gradient(150deg,rgba(18,26,36,.985),rgba(7,12,18,.99));
             --mcms-vcs-panel:rgba(255,255,255,.055);
@@ -8044,8 +7780,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote code { color:var(--mcms-vcs-text) !important; font-size:inherit !important; }
         #${SCRIPT.vehicleStatusId} .mcms-vcs-unknown .mcms-vcs-status { color:#ffb6b0 !important; }
-
-        /* Tablet: touch-sized controls and a readable, bounded fleet table. */
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} {
             top:max(12px,env(safe-area-inset-top)) !important;
             right:12px !important;
@@ -8065,8 +7799,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:15px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-table-head,
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:9.5px !important; }
-
-        /* iOS Mobile: full-width bottom sheet; no horizontal scroll. */
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} {
             top:auto !important;
             right:0 !important;
@@ -8095,8 +7827,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-status { font-size:10px !important; white-space:normal !important; overflow:visible !important; text-overflow:clip !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:12px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:7.5px !important; }
-
-        /* Cyberpunk command terminal. */
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.vehicleStatusId} {
             --mcms-vcs-bg:linear-gradient(145deg,rgba(7,10,13,.99),rgba(15,18,20,.99));
             --mcms-vcs-panel:rgba(255,231,0,.035);
@@ -8113,8 +7843,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.vehicleStatusId} .mcms-vcs-refresh,
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.vehicleStatusId} .mcms-vcs-close { border-radius:1px !important; }
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { border-top-color:#00e5ff !important; background:rgba(0,229,255,.08) !important; }
-
-        /* Fallout 4 / Pip-Boy fleet terminal. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.vehicleStatusId} {
             --mcms-vcs-bg:linear-gradient(145deg,rgba(11,25,15,.99),rgba(4,13,7,.99));
             --mcms-vcs-panel:rgba(104,255,128,.035);
@@ -8131,8 +7859,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.vehicleStatusId} .mcms-vcs-refresh,
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.vehicleStatusId} .mcms-vcs-close { border-radius:2px !important; }
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { border-top-color:#ffbf47 !important; background:rgba(255,171,42,.10) !important; }
-
-        /* Umbrella sterile containment console. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.vehicleStatusId} {
             --mcms-vcs-bg:linear-gradient(145deg,rgba(16,18,21,.995),rgba(6,7,9,.995));
             --mcms-vcs-panel:rgba(255,255,255,.048);
@@ -8146,8 +7872,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.vehicleStatusId} .mcms-vcs-title { color:#fff !important; }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.vehicleStatusId} .mcms-vcs-title::before { content:'CONTAINMENT // ' !important; color:#ff4b58 !important; }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { border-top-color:#d91f2d !important; background:rgba(217,31,45,.13) !important; }
-
-        /* Factorio industrial fleet control. */
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.vehicleStatusId} {
             --mcms-vcs-bg:linear-gradient(145deg,rgba(49,49,42,.995),rgba(23,24,21,.995));
             --mcms-vcs-panel:rgba(255,145,43,.035);
@@ -8164,8 +7888,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.vehicleStatusId} .mcms-vcs-close { border-radius:2px !important; border-color:#805129 !important; }
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.vehicleStatusId} .mcms-vcs-table-head { background:repeating-linear-gradient(135deg,rgba(255,157,51,.15) 0 8px,rgba(28,29,25,.38) 8px 16px) !important; }
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { border-top-color:#e77d24 !important; background:rgba(231,125,36,.13) !important; }
-
-        /* Protected FMS code colours: themes may not flatten these operational signals. */
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code[data-code="1"] { background:#5a97f3 !important; border-color:#a8ccff !important; color:#fff !important; }
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code[data-code="2"] { background:#77dc81 !important; border-color:#c1ffc6 !important; color:#102015 !important; text-shadow:none !important; }
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code[data-code="3"] { background:#f3d470 !important; border-color:#fff1ae !important; color:#1d1a0b !important; text-shadow:none !important; }
@@ -8175,8 +7897,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code[data-code="7"] { background:#ff8600 !important; border-color:#ffc173 !important; color:#211000 !important; text-shadow:none !important; }
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code[data-code="9"] { background:#f3d470 !important; border-color:#fff1ae !important; color:#1d1a0b !important; text-shadow:none !important; }
         html[data-mcms-ui-theme] #${SCRIPT.vehicleStatusId} .mcms-vcs-code:not([data-code="1"]):not([data-code="2"]):not([data-code="3"]):not([data-code="4"]):not([data-code="5"]):not([data-code="6"]):not([data-code="7"]):not([data-code="9"]) { background:#6a2230 !important; border-color:#ff8795 !important; color:#fff !important; }
-
-        /* v3.9.1 compact fleet dashboard: smaller footprint without reducing status legibility. */
         #${SCRIPT.vehicleStatusId} {
             width:min(468px,calc(100vw - 24px)) !important;
             max-height:calc(100vh - 76px) !important;
@@ -8202,7 +7922,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { min-height:36px !important; font-size:9.4px !important; }
         #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row strong:last-child { font-size:12px !important; }
         #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { margin-top:6px !important; padding:6px 7px !important; font-size:7.2px !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} {
             top:max(10px,env(safe-area-inset-top)) !important;
             right:10px !important;
@@ -8228,7 +7947,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:13px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { min-height:40px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:8.2px !important; }
-
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} {
             max-height:min(84vh,calc(100dvh - env(safe-area-inset-top) - 8px)) !important;
             padding:10px 8px calc(10px + env(safe-area-inset-bottom)) !important;
@@ -8256,18 +7974,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:11.5px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { min-height:37px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:7.2px !important; }
-
         @media (prefers-reduced-motion:reduce) {
             #${SCRIPT.vehicleStatusId}.mcms-open,
             #${SCRIPT.vehicleStatusId}.mcms-vcs-loading .mcms-vcs-refresh { animation:none !important; }
         }
-
-        /* ============================================================
-         * MISSION AGE WATCH · v4.3.2
-         * Larger operational hierarchy, manual refresh and animated
-         * semantic attention states. This block intentionally follows
-         * every interface theme so status meaning cannot be flattened.
-         * ============================================================ */
         #${SCRIPT.criticalDrawerId} {
             width:min(392px,calc(100vw - 20px)) !important;
             max-height:calc(100vh - 88px) !important;
@@ -8411,7 +8121,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId}.mcms-critical-refreshing .mcms-drawer-refresh { animation:mcms-critical-refresh-spin .72s linear infinite !important; }
         #${SCRIPT.criticalDrawerId} .mcms-drawer-refresh:disabled { cursor:wait !important; opacity:.62 !important; }
         @keyframes mcms-critical-refresh-spin { to { transform:rotate(360deg); } }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-type-filters {
             display:grid !important;
             grid-template-columns:auto repeat(3,minmax(0,1fr)) !important;
@@ -8493,7 +8202,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-type-personal { border-color:rgba(255,205,78,.72) !important; color:#ffe084 !important; background:rgba(66,48,4,.42) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-type-event { border-color:rgba(202,126,255,.78) !important; color:#e5b5ff !important; background:rgba(54,17,78,.48) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-type-alliance { border-color:rgba(79,174,255,.82) !important; color:#8ed1ff !important; background:rgba(4,38,68,.50) !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-summary {
             display:grid !important;
             grid-template-columns:repeat(5,minmax(0,1fr)) !important;
@@ -8535,8 +8243,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow:inset 0 0 0 1px rgba(55,222,125,.08),0 0 10px rgba(55,222,125,.10) !important;
             animation:mcms-critical-summary-clearing 2.6s ease-in-out infinite !important;
         }
-
-        /* Mission Value overview and interactive Mission Age Watch filters. */
         #${SCRIPT.criticalDrawerId} .mcms-critical-values {
             display:block !important;
             margin-top:6px !important;
@@ -8625,7 +8331,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-value-no-scene { border-color:rgba(255,72,72,.48) !important; color:#ffaaaa !important; }
         #${SCRIPT.criticalDrawerId} .mcms-value-assistance { border-color:rgba(255,143,45,.52) !important; color:#ffc17c !important; }
         #${SCRIPT.criticalDrawerId} .mcms-value-all { border-color:rgba(98,181,255,.48) !important; color:#a9dcff !important; }
-
         #${SCRIPT.criticalDrawerId} button.mcms-critical-summary-card {
             position:relative !important;
             appearance:none !important;
@@ -8667,7 +8372,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-summary-enroute.mcms-filter-active { background:rgba(5,56,91,.90) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-assistance.mcms-filter-active { background:rgba(99,44,4,.90) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-clearing.mcms-filter-active { background:linear-gradient(135deg,rgba(8,111,54,.92),rgba(4,63,34,.92)) !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-drawer-list { gap:5px !important; margin-top:6px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-row {
             position:relative !important;
@@ -8880,8 +8584,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.criticalDrawerId} .mcms-critical-unit-chip strong { font-size:12px !important; line-height:1 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-unit-chip small { font-size:6.6px !important; line-height:1.05 !important; font-weight:900 !important; letter-spacing:.24px !important; opacity:.82 !important; }
-
-        /* Protected operational animation language. */
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-no-scene .mcms-critical-state {
             border-color:rgba(255,72,72,.82) !important;
             background:rgba(91,10,13,.72) !important;
@@ -8902,7 +8604,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             0% { opacity:.95; transform:scale(.35); }
             100% { opacity:0; transform:scale(1.65); }
         }
-
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-enroute .mcms-critical-state {
             border-color:rgba(72,188,255,.80) !important;
             background:rgba(4,47,78,.72) !important;
@@ -8920,7 +8621,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             0%,100% { opacity:.55; transform:translateX(-2px); }
             50% { opacity:1; transform:translateX(3px); }
         }
-
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-assistance .mcms-critical-state {
             border-color:rgba(255,143,45,.88) !important;
             background:repeating-linear-gradient(135deg,rgba(91,39,3,.88) 0 10px,rgba(65,23,2,.88) 10px 20px) !important;
@@ -8948,7 +8648,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             0%,100% { filter:brightness(1); }
             50% { filter:brightness(1.18); }
         }
-
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-on-scene .mcms-critical-state {
             border-color:rgba(59,211,123,.68) !important;
             background:rgba(6,57,30,.62) !important;
@@ -8964,8 +8663,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-size:11px !important;
             font-weight:950 !important;
         }
-
-        /* Positive completion state: personal units are on scene and MissionChief reports active progress. */
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-row.mcms-critical-state-clearing {
             border-color:rgba(55,222,125,.92) !important;
             background:linear-gradient(105deg,rgba(7,67,35,.96),rgba(8,45,29,.92)) !important;
@@ -9062,7 +8759,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-unit-scene { border-color:rgba(59,211,123,.48) !important; color:#a6efc3 !important; }
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-unit-way { border-color:rgba(72,188,255,.48) !important; color:#a9e2ff !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} {
             width:min(510px,calc(100vw - 18px)) !important;
             max-width:calc(100vw - 18px) !important;
@@ -9090,7 +8786,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-state-copy small { font-size:8.7px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-unit-chip strong { font-size:14px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-unit-chip small { font-size:7.4px !important; }
-
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} {
             width:calc(100vw - 8px) !important;
             max-width:calc(100vw - 8px) !important;
@@ -9138,8 +8833,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-lowerline { grid-template-columns:minmax(0,1fr) 106px !important; gap:4px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-state-copy strong { font-size:8.5px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-state-copy small { font-size:7.5px !important; }
-
-        /* v3.16.1: compact Mission Value rail inside the Mission Age Watch header. */
         #${SCRIPT.criticalDrawerId} .mcms-drawer-head {
             grid-template-columns:minmax(0,1fr) auto !important;
             grid-template-rows:auto auto !important;
@@ -9243,7 +8936,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             outline-offset:1px !important;
         }
         #${SCRIPT.criticalDrawerId} .mcms-critical-summary { margin-top:5px !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values {
             padding:5px 0 0 !important;
         }
@@ -9256,7 +8948,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-label strong,
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-label span { font-size:6.2px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-clear { min-height:28px !important; font-size:6.2px !important; }
-
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values {
             grid-template-columns:34px minmax(0,1fr) auto !important;
             gap:3px !important;
@@ -9281,8 +8972,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-label strong,
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-label span { font-size:5.1px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-clear { min-width:31px !important; min-height:24px !important; padding:0 3px !important; font-size:5.1px !important; }
-
-        /* v3.13.2: dock Mission Age Watch over the native mission list instead of the map. */
         #${SCRIPT.criticalDrawerId}.mcms-sidebar-docked {
             left:var(--mcms-critical-dock-left) !important;
             right:auto !important;
@@ -9316,7 +9005,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             padding:10px !important;
             border-radius:12px !important;
         }
-
         html[data-mcms-alliance-buildings-map="disabled"] .mcms-alliance-buildings-map-column {
             display:none !important;
         }
@@ -9392,12 +9080,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #mcms-alliance-buildings-map-notice { align-items:stretch !important; flex-direction:column !important; }
             #mcms-alliance-buildings-map-notice button { width:100% !important; min-height:40px !important; }
         }
-
-
-        /* v4.8.4: payout effects are constrained to the Leaflet map stacking context. */
         #${SCRIPT.payoutFlashId}[popover] { position:absolute !important; }
-
-        /* v4.8.3 Major Incident Feed — permanent full-width strip beneath MissionChief navigation. */
         @keyframes mcmsIncidentWireScroll {
             from { transform:translate3d(0,0,0); }
             to { transform:translate3d(-50%,0,0); }
@@ -9605,8 +9288,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-weight:700;
             letter-spacing:.2px;
         }
-
-        /* Cyberpunk incident wire. */
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} {
             border-color:#fcee0a !important;
             border-radius:0 !important;
@@ -9625,8 +9306,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-name { color:#fff !important; }
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode { color:#00f0ff !important; }
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-level { color:#fcee0a !important; }
-
-        /* Fallout 4 / Pip-Boy incident band. */
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.majorIncidentFeedId} {
             border:1px solid #78d85b !important;
             border-radius:1px !important;
@@ -9723,8 +9402,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-empty {
             color:#a9e492 !important;
         }
-
-        /* Umbrella containment wire. */
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId} {
             border-color:#d82632 !important;
             border-radius:1px !important;
@@ -9741,8 +9418,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode { color:#ffabb0 !important; }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta { color:#c9cdd2 !important; }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-level { color:#ff6570 !important; }
-
-        /* Factorio industrial incident bus. */
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId} {
             border-color:#d87822 !important;
             border-radius:2px !important;
@@ -9760,8 +9435,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode { color:#ffad5b !important; }
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta { color:#d9c8aa !important; }
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-level { color:#ffad5b !important; }
-
-        /* Mission Age Watch live completion timer and travelling-state treatment. */
         #${SCRIPT.criticalDrawerId} .mcms-critical-clear-countdown {
             display:inline-flex !important;
             align-items:center !important;
@@ -9790,8 +9463,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             padding-inline:5px !important;
             font-size:6.9px !important;
         }
-
-        /* Final alliance classification layer: blue survives every interface theme. */
         html[data-mcms-ui-theme] .mcms-alliance-text,
         html[data-mcms-ui-theme] #${SCRIPT.majorIncidentFeedId} .mcms-alliance-text,
         html[data-mcms-ui-theme] .mcms-inspector-type.mcms-alliance,
@@ -9799,8 +9470,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#76c7ff !important;
             text-shadow:0 0 7px rgba(66,169,255,.26) !important;
         }
-
-        /* Mission Age Watch type semantics: Personal gold, Event purple, Alliance blue. */
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-type-filter.mcms-type-personal,
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-type-badge.mcms-type-personal {
             border-color:rgba(255,205,78,.84) !important;
@@ -9816,7 +9485,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-color:rgba(79,174,255,.90) !important;
             color:#8ed1ff !important;
         }
-
         @media (max-width:760px) {
             html[data-mcms-ui-theme="fallout4"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label::after { display:none !important; }
             #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label { padding:0 7px !important; font-size:7.5px !important; letter-spacing:.4px !important; }
@@ -9825,9 +9493,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode { font-size:9px !important; }
             #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta { font-size:8px !important; }
         }
-
-
-        /* v3.19.0 Mission Age Watch expansion, location intelligence and distance ordering. */
         #${SCRIPT.criticalDrawerId} .mcms-drawer-expand {
             display:inline-grid !important;
             grid-template-columns:auto auto !important;
@@ -9993,9 +9658,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             padding-inline:4px !important;
             font-size:5.4px !important;
         }
-
-
-        /* v3.20.1 Mission Age Watch official-event metadata plus exact-title fallback detection. */
         #${SCRIPT.criticalDrawerId} .mcms-drawer-heading { display:block !important; min-width:0 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-drawer-identity,
         #${SCRIPT.criticalDrawerId} .mcms-drawer-header-controls { min-width:0 !important; }
@@ -10097,13 +9759,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             grid-template-columns:repeat(2,minmax(0,1fr)) !important;
         }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-type-label { grid-column:1 / -1 !important; }
-
-
-        /*
-         * v4.0.0 007 Intelligence / MI6 interface.
-         * Luxury black-tie command styling with hosted custom 007 artwork.
-         * Operational mission-state colours remain governed by the final semantic layers.
-         */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-bond007 {
             position:relative !important;
             border-radius:2px !important;
@@ -10135,7 +9790,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             z-index:3 !important;
         }
         #${SCRIPT.panelId} .mcms-ui-theme-preview-bond007 span { opacity:0 !important; }
-
         html[data-mcms-ui-theme="bond007"] {
             --mcms-bond-black:#07080a;
             --mcms-bond-charcoal:#15171a;
@@ -10149,7 +9803,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             --mcms-bond-steel:#8b939b;
             --mcms-bond-muted:#aeb4b9;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-shell {
             border:1px solid rgba(220,199,137,.70) !important;
             border-radius:3px !important;
@@ -10205,7 +9858,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:#0b0c0e !important;
             color:#f0d47e !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} {
             border:1px solid #a88e48 !important;
             border-radius:4px !important;
@@ -10324,7 +9976,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#b61d27 !important;
             font-size:8px !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-place-main,
@@ -10400,7 +10051,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow:inset 0 2px 5px rgba(0,0,0,.14),0 0 0 2px rgba(200,170,91,.20) !important;
         }
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-select option { color:#111 !important; background:#f2eee2 !important; }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-status,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-profile-main,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-ops-stat,
@@ -10437,7 +10087,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:#17140c !important;
             color:#e3c66c !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.toastId},
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.cleanExitId} {
             border:1px solid #b99a45 !important;
@@ -10447,7 +10096,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#f1ebde !important;
             box-shadow:0 14px 34px rgba(0,0,0,.60),inset 0 1px rgba(255,255,255,.05) !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId},
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.missionInspectorId},
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.vehicleStatusId} {
@@ -10532,7 +10180,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-radius:2px !important;
             background:#101215 !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} {
             border:1px solid #b89a47 !important;
             border-radius:2px !important;
@@ -10589,7 +10236,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:rgba(194,159,67,.08) !important;
             color:#ebcd73 !important;
         }
-
         html[data-mcms-ui-theme="bond007"] .mcms-mission-lock-travel-overlay,
         html[data-mcms-ui-theme="bond007"] .mcms-mission-lock-dom,
         html[data-mcms-ui-theme="bond007"] .leaflet-marker-icon.mcms-mission-lock-target {
@@ -10603,8 +10249,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-radius:2px !important;
             font-family:Consolas,monospace !important;
         }
-
-        /* James Bond 007 payout flash. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-red {
             background:radial-gradient(ellipse at 0% 50%,rgba(171,16,27,.72),rgba(94,4,10,.30) 34%,transparent 68%) !important;
         }
@@ -10709,7 +10353,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:#e8cb72 !important;
             box-shadow:0 0 7px rgba(238,207,112,.72) !important;
         }
-
         @keyframes mcmsBondPanelIn {
             0% { opacity:0; transform:translateY(7px) scale(.985); filter:blur(2px) brightness(.72); }
             55% { opacity:1; transform:translateY(-1px) scale(1.002); filter:blur(0) brightness(1.05); }
@@ -10725,7 +10368,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             from { transform:rotate(-5deg) scale(1.08); }
             to { transform:rotate(355deg) scale(1.08); }
         }
-
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header::before {
             width:112px !important;
             height:36px !important;
@@ -10744,12 +10386,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label::before {
             width:24px !important;
         }
-
-        /*
-         * v4.0.1 007 readability and payout-fit refinement.
-         * Keep bright active cards dark-on-ivory, while nested status hardware remains
-         * gold/ivory-on-black. This prevents black icons and ON chips disappearing.
-         */
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on .mcms-iconbox,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active .mcms-iconbox,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-place-main.mcms-active .mcms-iconbox {
@@ -10809,11 +10445,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             top:10px !important;
             opacity:.62 !important;
         }
-
-        /*
-         * Universal payout text safety layer. It runs after every template skin so all
-         * headings, mission captions, labels and credit values remain inside the banner.
-         */
         #${SCRIPT.payoutFlashId} .mcms-payout-banner {
             max-width:calc(100% - 14px) !important;
             max-height:calc(100% - 14px) !important;
@@ -10961,7 +10592,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 transition:none !important;
             }
         }
-
         @media (prefers-reduced-motion:reduce) {
             #${SCRIPT.criticalDrawerId}.mcms-open,
             #${SCRIPT.criticalDrawerId}.mcms-critical-refreshing .mcms-drawer-refresh,
@@ -10982,15 +10612,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #${SCRIPT.criticalDrawerId} .mcms-critical-zoom,
             #${SCRIPT.criticalDrawerId} .mcms-critical-open { transition:none !important; }
         }
-
-
-
-        /*
-         * v4.1.0 Mission Age Watch integrity overhaul.
-         * Final semantic/layout layer: ownership and category are separate facets,
-         * status filters are non-contradictory, unknown data remains neutral, and the
-         * progressively-rendered list stays readable across every interface theme.
-         */
         #${SCRIPT.criticalDrawerId} .mcms-critical-refreshed {
             display:flex !important;
             flex-wrap:wrap !important;
@@ -11047,9 +10668,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-category-standard { color:#b7c8d5 !important; border-color:rgba(183,200,213,.62) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-category-event { color:#e5b5ff !important; border-color:rgba(202,126,255,.78) !important; background:rgba(54,17,78,.48) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-category-special { color:#ff9fe8 !important; border-color:rgba(255,74,204,.82) !important; background:rgba(80,8,63,.54) !important; }
-
-        /* v4.1.1: keep Sort and Distance Origin controls on distinct rows so
-           labels cannot collide in expanded, tablet or narrower desktop layouts. */
         #${SCRIPT.criticalDrawerId} .mcms-critical-sort-controls {
             grid-template-columns:auto repeat(3,minmax(50px,1fr)) !important;
             grid-auto-rows:minmax(21px,auto) !important;
@@ -11078,20 +10696,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-critical-origin-control span { color:#8fd4ff !important; font:950 5px/1 Arial,sans-serif !important; letter-spacing:.3px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-origin-control select { min-width:0 !important; width:100% !important; height:19px !important; padding:0 3px !important; border:0 !important; background:#111820 !important; color:#eef8ff !important; font:850 6.6px/1 Arial,sans-serif !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-lock-origin { grid-column:4 / 5 !important; min-width:48px !important; padding:3px 5px !important; border:1px solid rgba(82,178,240,.55) !important; border-radius:5px !important; background:rgba(7,46,72,.74) !important; color:#a8ddff !important; font:950 5.8px/1 Arial,sans-serif !important; cursor:pointer !important; white-space:nowrap !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-values { grid-template-columns:auto auto minmax(0,1fr) auto auto !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-value-mode { display:flex !important; gap:2px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-value-mode button { min-width:38px !important; padding:3px 5px !important; border:1px solid rgba(255,255,255,.25) !important; border-radius:4px !important; background:rgba(255,255,255,.06) !important; color:#dceaf3 !important; font:950 5.8px/1 Arial,sans-serif !important; cursor:pointer !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-value-mode button.mcms-filter-active { border-color:#f0d47d !important; background:#f0d47d !important; color:#171717 !important; box-shadow:0 0 7px rgba(240,212,125,.35) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-value-card small { display:block !important; margin-top:1px !important; font-size:4.8px !important; line-height:1 !important; opacity:.7 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-showing { color:#b9cbd8 !important; font:900 5px/1 Arial,sans-serif !important; letter-spacing:.25px !important; white-space:nowrap !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-summary { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-on-scene { border-color:rgba(61,209,126,.68) !important; color:#9ef0bd !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-my-units { border-color:rgba(232,214,154,.62) !important; color:#f3e4ad !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-syncing { border-color:rgba(151,176,194,.62) !important; color:#c9d8e2 !important; background:repeating-linear-gradient(135deg,rgba(95,116,132,.14) 0 7px,rgba(95,116,132,.04) 7px 14px) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-summary-card small { display:block !important; margin-top:2px !important; font-size:5px !important; opacity:.76 !important; text-transform:uppercase !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-category-badge,
         #${SCRIPT.criticalDrawerId} .mcms-critical-eligibility,
         #${SCRIPT.criticalDrawerId} .mcms-critical-data-badge {
@@ -11114,7 +10729,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-critical-data-badge.mcms-data-sync { color:#d8e6ee !important; background:rgba(68,88,102,.82) !important; animation:mcmsCriticalSyncPulse 1.4s ease-in-out infinite !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-data-badge.mcms-data-unknown { color:#d5dce1 !important; background:rgba(63,68,73,.72) !important; }
         @keyframes mcmsCriticalSyncPulse { 50% { filter:brightness(1.45); box-shadow:0 0 8px rgba(173,207,230,.38); } }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-live-markers { display:flex !important; flex-wrap:wrap !important; justify-content:flex-end !important; gap:4px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-prisoners { display:inline-flex !important; align-items:center !important; gap:3px !important; min-height:20px !important; padding:3px 7px !important; border:1px solid rgba(255,159,67,.82) !important; border-radius:999px !important; background:rgba(92,41,5,.82) !important; color:#ffd0a5 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-prisoners strong { font-size:9px !important; }
@@ -11125,7 +10739,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-unit-transporting { color:#ffc47a !important; border-color:rgba(255,153,40,.68) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-unit-awaiting { color:#ffe18b !important; border-color:rgba(255,212,82,.68) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-unit-oos { color:#d4dbe0 !important; border-color:rgba(172,186,196,.55) !important; }
-
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-row.mcms-critical-state-syncing {
             border-color:rgba(146,170,188,.74) !important;
             background:repeating-linear-gradient(135deg,rgba(71,89,102,.42) 0 11px,rgba(42,54,63,.42) 11px 22px) !important;
@@ -11133,11 +10746,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-syncing .mcms-critical-state { border-color:rgba(167,193,211,.70) !important; background:rgba(44,60,72,.82) !important; color:#e2eef5 !important; }
         html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-syncing .mcms-critical-state-signal { border:2px solid rgba(220,236,246,.86) !important; border-right-color:transparent !important; border-radius:50% !important; animation:mcms-critical-refresh-spin .8s linear infinite !important; }
         #${SCRIPT.criticalDrawerId} .mcms-age-unknown .mcms-critical-age-band { color:#c7d2da !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-row { content-visibility:auto !important; contain-intrinsic-size:112px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-list-footer { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:8px !important; padding:7px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:7px !important; background:rgba(12,18,23,.88) !important; color:#c9d8e2 !important; font-size:7px !important; font-weight:900 !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-list-footer button { padding:5px 9px !important; border:1px solid rgba(87,183,244,.72) !important; border-radius:5px !important; background:rgba(5,61,96,.88) !important; color:#d9f2ff !important; font:950 7px/1 Arial,sans-serif !important; cursor:pointer !important; }
-
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-category-filters,
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-type-filters { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-category-label,
@@ -11151,8 +10762,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-value-mode { grid-column:2 / 3 !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-grid { grid-column:1 / -1 !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-showing { grid-column:1 / 3 !important; }
-
-        /* v4.3.2: compact Mission Age Watch View Controls submenu. */
         #${SCRIPT.criticalDrawerId} .mcms-drawer-header-controls {
             position:relative !important;
             display:block !important;
@@ -11318,19 +10927,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-view-menu .mcms-critical-lock-origin {
             grid-column:1 / -1 !important;
         }
-
         @media (prefers-reduced-motion: reduce) {
             #${SCRIPT.criticalDrawerId} .mcms-critical-data-badge.mcms-data-sync,
             html[data-mcms-ui-theme] #${SCRIPT.criticalDrawerId} .mcms-critical-state-syncing .mcms-critical-state-signal { animation:none !important; }
         }
-
-
-
-        /*
-         * v4.3.0 Umbrella Containment asset layer.
-         * Hosted artwork is decorative, pointer-free and intentionally excluded
-         * from protected operational state colours.
-         */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-umbrella {
             border-color:#8f172d !important;
             background:
@@ -11356,7 +10956,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing:.45px !important;
             text-shadow:0 1px 2px #000 !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-menu-btn {
             background:
                 url("${THEME_ASSETS.umbrellaEmblem}") center/74% auto no-repeat,
@@ -11371,7 +10970,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 url("${THEME_ASSETS.umbrellaEmblem}") center/74% auto no-repeat,
                 linear-gradient(180deg,#fff,#dfe4e8) !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} {
             background:
                 linear-gradient(180deg,rgba(6,13,8,.86),rgba(4,9,6,.95)),
@@ -11394,7 +10992,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             text-overflow:ellipsis !important;
             white-space:nowrap !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-section-label {
             position:relative !important;
             padding-right:29px !important;
@@ -11413,7 +11010,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             pointer-events:none !important;
             filter:drop-shadow(0 0 4px rgba(216,25,63,.28)) !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel[data-panel="resources"],
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-tab-panel[data-panel="ops"] {
             position:relative !important;
@@ -11446,7 +11042,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             position:relative !important;
             z-index:1 !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head,
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.vehicleStatusId} .mcms-vcs-head {
             position:relative !important;
@@ -11479,7 +11074,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             position:relative !important;
             z-index:1 !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label {
             padding-left:40px !important;
         }
@@ -11495,7 +11089,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border:0 !important;
             box-shadow:none !important;
         }
-
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.helpCenterId} .mcms-help-window {
             border-color:rgba(216,25,63,.64) !important;
             background:#070b0d !important;
@@ -11518,8 +11111,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.helpCenterId} .mcms-help-address-lock { color:#ff5168 !important; }
         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.helpCenterId} .mcms-help-progress::before { background:linear-gradient(90deg,transparent,#c8102e,#fff,#c8102e,transparent) !important; }
-
-        /* Umbrella Containment payout package. */
         #${SCRIPT.payoutFlashId}[data-template="biohazard"] .mcms-payout-red {
             background:radial-gradient(ellipse at 0% 50%,rgba(215,18,50,.76),rgba(110,5,24,.32) 34%,transparent 68%) !important;
         }
@@ -11674,7 +11265,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-size:7px !important;
             letter-spacing:.9px !important;
         }
-
         @media (max-width:760px) {
             html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header {
                 background:
@@ -11697,8 +11287,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             html[data-mcms-ui-theme="umbrella"] #${SCRIPT.panelId} .mcms-header::after,
             html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on { animation:none !important; }
         }
-
-        /* v4.2.0 searchable Help Centre and browser-style guide viewer. */
         #${SCRIPT.panelId} .mcms-help-button {
             font-weight:950 !important;
             color:#bcecff !important;
@@ -11706,7 +11294,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:rgba(28,93,124,.24) !important;
         }
         #${SCRIPT.panelId} .mcms-help-button::after { content:'' !important; }
-
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.panelId} .mcms-help-button {
             border:1px solid var(--mcms-cp-ink) !important; border-radius:0 !important;
             background:var(--mcms-cp-ink) !important; color:var(--mcms-cp-yellow) !important;
@@ -11742,7 +11329,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header::before { right:90px !important; }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header::before { right:108px !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header::before { right:101px !important; }
-
         #${SCRIPT.helpCenterId} {
             display:none !important; position:fixed !important; inset:0 !important; z-index:2147483600 !important;
             align-items:center !important; justify-content:center !important; padding:18px !important;
@@ -11822,11 +11408,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         @media (prefers-reduced-motion:reduce) {
             #${SCRIPT.helpCenterId}.mcms-loading .mcms-help-progress::before { animation:none !important; width:100% !important; }
         }
-
-        /* v4.4.2 Tablet command-panel stacking and cohesive sticky navigation.
-           The header and tab strip now move as one sticky unit, preventing the
-           tabs from detaching and preventing Mission Age Watch from covering
-           the open Tablet Command Panel. */
         #${SCRIPT.panelId} .mcms-panel-sticky-stack {
             position:relative !important;
             min-width:0 !important;
@@ -11863,9 +11444,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             margin:0 -4px !important;
             padding:8px 4px 10px !important;
         }
-
-
-        /* v4.7.0 Economy Mode: reversible low-overhead rendering and native map workload controls. */
         #${SCRIPT.controlId} .mcms-launch-row {
             display:inline-flex !important; align-items:stretch !important; gap:5px !important; width:auto !important;
             pointer-events:auto !important;
@@ -11898,7 +11476,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {
             width:104px !important; max-width:104px !important; grid-template-columns:50px 50px !important;
         }
-
         html[data-mcms-economy="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }
         html[data-mcms-economy="true"] .leaflet-fade-anim .leaflet-tile,
         html[data-mcms-economy="true"] .leaflet-zoom-animated,
@@ -11967,8 +11544,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-economy="true"] .progress.active .progress-bar { animation:none !important; }
         html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.majorIncidentFeedId},
         html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.missionInspectorId} { visibility:hidden !important; }
-
-        /* v4.8.0 Maximum Economy Mode: stop decorative compositing and minimise live map paint. */
         html[data-mcms-economy="true"] #${SCRIPT.controlId},
         html[data-mcms-economy="true"] #${SCRIPT.panelId},
         html[data-mcms-economy="true"] #${SCRIPT.criticalDrawerId},
@@ -12041,8 +11616,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-economy="true"][data-mcms-map-moving="true"] #${SCRIPT.missionInspectorId} {
             visibility:hidden !important;
         }
-
-        /* v4.8.0 full quality audit: sizing, readability, responsive flow and focus integrity. */
         #${SCRIPT.controlId} *, #${SCRIPT.panelId} *, #${SCRIPT.criticalDrawerId} *, #${SCRIPT.vehicleStatusId} *,
         #${SCRIPT.majorIncidentFeedId} *, #${SCRIPT.missionInspectorId} *, #${SCRIPT.helpCenterId} * { box-sizing:border-box !important; }
         #${SCRIPT.panelId} :is(.mcms-grid-2,.mcms-row,.mcms-ui-theme-grid,.mcms-profile-row,.mcms-bookmark-row,.mcms-quick-row,.mcms-finance-vault-summary) > *,
@@ -12059,7 +11632,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.helpCenterId} :is(button,input,select,a,[tabindex]):focus-visible { outline:3px solid #8cddff !important; outline-offset:2px !important; }
         #${SCRIPT.panelId} :is(button,input,select):disabled, #${SCRIPT.criticalDrawerId} :is(button,input,select):disabled,
         #${SCRIPT.vehicleStatusId} :is(button,input,select):disabled { opacity:.55 !important; cursor:not-allowed !important; }
-
         html:not([data-mcms-tablet-active="true"]):not([data-mcms-mobile-active="true"]) #${SCRIPT.panelId} {
             width:min(360px,calc(100vw - 24px)) !important; max-width:calc(100vw - 24px) !important;
         }
@@ -12081,7 +11653,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.panelId} .mcms-footer { gap:4px !important; font-size:9px !important; line-height:1.35 !important; }
         #${SCRIPT.panelId} .mcms-discord-wide { grid-template-columns:minmax(96px,35%) minmax(0,1fr) !important; }
         #${SCRIPT.panelId} .mcms-finance-vault-summary { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px !important; }
-
         html:not([data-mcms-mobile-active="true"]) #${SCRIPT.criticalDrawerId} { width:min(480px,calc(100vw - 28px)) !important; max-width:calc(100vw - 28px) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-values-grid { grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:6px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-category-filters { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:6px !important; }
@@ -12105,11 +11676,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-body { font-size:10px !important; line-height:1.35 !important; }
         #${SCRIPT.majorIncidentFeedId} :is(.mcms-major-feed-track,.mcms-major-feed-item,.mcms-major-feed-copy) { min-width:0 !important; }
         #${SCRIPT.majorIncidentFeedId} .mcms-major-feed-copy { overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} :is(.mcms-pill,.mcms-heat-key,.mcms-ui-theme-copy small,.mcms-profile-main span,.mcms-build) { font-size:9.5px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} :is(.mcms-status,.mcms-row-label) { font-size:11px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(.mcms-critical-values-label,.mcms-critical-type-label,.mcms-critical-category-label,.mcms-critical-value-mode,.mcms-critical-unit-extra) { font-size:8.5px !important; }
-
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs {
             top:40px !important; display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important;
             gap:5px !important; overflow:visible !important; padding:3px 2px 7px !important;
@@ -12158,13 +11727,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] #${SCRIPT.panelId} :is(.mcms-ops-stat-label,.mcms-sweep-state,.mcms-alliance-text),
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] #${SCRIPT.panelId} :is(.mcms-ops-stat-label,.mcms-sweep-state,.mcms-alliance-text) { font-size:9.5px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.toastId} { top:calc(max(10px,env(safe-area-inset-top)) + 58px) !important; }
-
-
-        /* v4.8.1: preserve MissionChief's native interaction layer above Toolkit drawers.
-           Bootstrap dropdowns can be trapped inside the navbar stacking context even
-           when their own z-index is high. Elevating the native navigation context and
-           its transient overlays keeps profile, alliance, account and toolbar menus
-           fully usable while Mission Age Watch remains open beneath them. */
         body > nav.navbar,
         body > .navbar,
         body > header.navbar,
@@ -12200,8 +11762,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         body [role="dialog"][aria-modal="true"] { z-index:1200 !important; }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] #${SCRIPT.panelId} .mcms-reset-panel,
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme] #${SCRIPT.panelId} .mcms-reset-panel { display:none !important; }
-
-        /* v4.9.0: compact Mission Age Watch Quick Views and Advanced Filters. */
         #${SCRIPT.criticalDrawerId} .mcms-critical-filter-deck {
             display:grid !important;
             gap:6px !important;
@@ -12321,7 +11881,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-quick-clearing { color:#90eab3 !important; border-color:rgba(51,196,108,.58) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-quick-stable { color:#a6edc1 !important; border-color:rgba(69,190,116,.48) !important; }
         #${SCRIPT.criticalDrawerId} .mcms-quick-my-units { color:#f2e0a4 !important; border-color:rgba(220,196,119,.56) !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-filter-deck .mcms-critical-category-filters {
             display:grid !important;
             grid-template-columns:62px repeat(4,minmax(64px,1fr)) !important;
@@ -12334,7 +11893,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.criticalDrawerId} .mcms-critical-filter-deck .mcms-critical-category-filter span { font-size:6.3px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-filter-deck .mcms-critical-category-filter i { font-size:5.8px !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-critical-advanced-shell { display:grid !important; gap:4px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-critical-advanced-toggle {
             display:grid !important;
@@ -12399,9 +11957,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.criticalDrawerId} .mcms-critical-advanced-panel .mcms-critical-summary-card strong { font-size:9px !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-attention { border-color:rgba(255,151,53,.72) !important; color:#ffc17d !important; }
         #${SCRIPT.criticalDrawerId} .mcms-summary-attention.mcms-filter-active { background:rgba(99,44,4,.90) !important; }
-
         #${SCRIPT.criticalDrawerId} .mcms-drawer-list { margin-top:5px !important; }
-
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-quick-views,
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-advanced-status-grid {
             grid-template-columns:repeat(3,minmax(0,1fr)) !important;
@@ -12435,12 +11991,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             box-shadow:none !important;
             filter:none !important;
         }
-
-        /*
-         * v4.10.0 007 Intelligence asset-package overhaul.
-         * Original transparent MI6 artwork hosted in the public Toolkit asset repository.
-         * All operational semantic colours remain controlled by the protected status layer.
-         */
         html[data-mcms-ui-theme="bond007"] {
             --mcms-bond-black:#060709;
             --mcms-bond-ink:#101215;
@@ -12455,7 +12005,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             --mcms-bond-steel:#9099a2;
             --mcms-bond-muted:#b8bec4;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-ui-theme-preview-bond007 {
             border:1px solid #d6b65f !important;
             background:
@@ -12476,7 +12025,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#f2d982 !important;
             font-size:5px !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-shell {
             border-color:rgba(231,205,127,.78) !important;
             background:
@@ -12501,7 +12049,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font:950 6px/1 Arial,sans-serif !important;
             letter-spacing:.7px !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} {
             isolation:isolate !important;
             border:1px solid #b89643 !important;
@@ -12571,7 +12118,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             white-space:normal !important;
             overflow-wrap:anywhere !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-tabs {
             position:relative !important;
             gap:3px !important;
@@ -12611,7 +12157,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#111214 !important;
             box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 0 11px rgba(214,182,95,.22) !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-section-label {
             min-height:30px !important;
             padding:8px 12px 8px 38px !important;
@@ -12627,7 +12172,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             white-space:normal !important;
         }
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-section-label::before { display:none !important; }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-theme-btn,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-toggle-btn,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-place-main,
@@ -12689,7 +12233,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#111214 !important;
             text-shadow:none !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-status,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-profile-main,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-ops-stat,
@@ -12725,7 +12268,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             outline:2px solid rgba(214,182,95,.27) !important;
             outline-offset:1px !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-footer {
             position:relative !important;
             min-height:38px !important;
@@ -12744,7 +12286,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             opacity:.44 !important;
             pointer-events:none !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId},
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.missionInspectorId},
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.vehicleStatusId} {
@@ -12765,7 +12306,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             position:relative !important;
             background:linear-gradient(90deg,rgba(255,255,255,.055),transparent 70%) !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head::before,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.missionInspectorId} .mcms-inspector-head::before,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-head::before {
@@ -12799,7 +12339,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             opacity:.84 !important;
             pointer-events:none !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId} .mcms-drawer-title,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.missionInspectorId} .mcms-inspector-title,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-title {
@@ -12833,7 +12372,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             color:#111214 !important;
             text-shadow:none !important;
         }
-
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} {
             border:1px solid rgba(214,182,95,.82) !important;
             border-radius:0 !important;
@@ -12869,8 +12407,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font:950 9px/1 Arial,sans-serif !important;
             letter-spacing:.65px !important;
         }
-
-        /* 007 Intelligence payout package. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] {
             background:
                 radial-gradient(circle at center,rgba(214,182,95,.06),transparent 45%),
@@ -13006,12 +12542,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             text-shadow:0 1px #fff,2px 2px rgba(184,152,66,.30) !important;
         }
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-particles { display:none !important; }
-
         @keyframes mcmsBondAssetBarrel {
             from { transform:translate(-50%,-50%) rotate(-7deg); }
             to { transform:translate(-50%,-50%) rotate(353deg); }
         }
-
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header {
             background:
                 url("${THEME_ASSETS.bond007CommandSeal}") right 184px center/38px auto no-repeat,
@@ -13033,7 +12567,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-drag-handle {
             padding-right:146px !important;
         }
-
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header {
             min-height:58px !important;
             background:linear-gradient(90deg,rgba(255,255,255,.075),rgba(255,255,255,.012) 55%,rgba(214,182,95,.045)) !important;
@@ -13078,7 +12611,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             font-size:5px !important;
             letter-spacing:.55px !important;
         }
-
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label {
             min-width:126px !important;
             padding:5px 7px 5px 42px !important;
@@ -13086,7 +12618,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background-position:6px center,center !important;
             font-size:7px !important;
         }
-
         @media (max-width:980px) {
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
                 right:4px !important;
@@ -13131,7 +12662,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-mission { font-size:clamp(10px,3.5vw,14px) !important; }
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-amount { font-size:clamp(23px,7.4vw,36px) !important; }
         }
-
         html[data-mcms-economy="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-shell,
         html[data-mcms-economy="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.panelId},
         html[data-mcms-economy="true"][data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId},
@@ -13150,10 +12680,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background-color:#e6ddc6 !important;
             box-shadow:none !important;
         }
-
-
-
-        /* v4.10.1 Daniel Craig 007 payout portrait fit hardening. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
             background-position:right bottom !important;
             background-repeat:no-repeat !important;
@@ -13168,8 +12694,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 width:clamp(150px,20vw,250px) !important;
             }
         }
-
-        /* v4.10.0 fit and readability hardening. */
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.panelId} .mcms-header > *,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.criticalDrawerId} .mcms-drawer-head > *,
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.missionInspectorId} .mcms-inspector-head > *,
@@ -13216,12 +12740,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 letter-spacing:.75px !important;
             }
         }
-
         @media (prefers-reduced-motion:reduce) {
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
-
-        /* v4.10.2: translucent 007 dossier with a protected reading field and portrait reveal zone. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
             right:max(0px,calc(50% - 395px)) !important;
             bottom:-2% !important;
@@ -13274,7 +12795,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-amount {
             text-shadow:0 1px rgba(255,255,255,.92),0 2px 8px rgba(247,242,228,.70) !important;
         }
-
         @media (max-width:980px) and (min-width:701px) {
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
                 right:max(0px,calc(50% - 330px)) !important;
@@ -13302,7 +12822,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 right:238px !important;
             }
         }
-
         @media (max-width:700px) {
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
                 display:none !important;
@@ -13325,7 +12844,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 right:15px !important;
             }
         }
-
         @media (max-height:640px) and (min-width:701px) {
             #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
                 height:76% !important;
@@ -13337,8 +12855,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 padding-bottom:27px !important;
             }
         }
-
-        /* v4.10.3: keep the 007 payout clear of the expanded map command toolbar. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-banner {
             top:var(--mcms-payout-banner-top,50%) !important;
         }
@@ -13396,8 +12912,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 width:clamp(165px,25vw,235px) !important;
             }
         }
-
-        /* v4.10.4: ground the cropped 007 portrait below the protected toolbar line. */
         #${SCRIPT.payoutFlashId}[data-template="jamesBond"] .mcms-payout-theme-fx-b {
             bottom:-7% !important;
             height:min(96%,760px) !important;
@@ -13422,8 +12936,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
                 display:none !important;
             }
         }
-
-        /* v4.11.0: compact Smart Bookmark Labels; theme colours and artwork remain untouched. */
         #${SCRIPT.controlId} .mcms-screen-pins {
             display:flex !important;
             flex-wrap:wrap !important;
@@ -13541,9 +13053,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             backdrop-filter:none !important;
             -webkit-backdrop-filter:none !important;
         }
-
-
-        /* v4.13.0 Hyrule Command flagship interface */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule {
             position:relative !important;
             border-color:#e9c85b !important;
@@ -13573,7 +13082,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             letter-spacing:.55px !important;
         }
         #${SCRIPT.panelId} .mcms-ui-theme-preview-hyrule span { opacity:0 !important; }
-
         html[data-mcms-ui-theme="hyrule"] {
             --mcms-hyrule-forest:#132c22;
             --mcms-hyrule-forest-2:#203c2b;
@@ -13670,7 +13178,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-pin-custom {
             border-color:rgba(80,227,230,.76) !important;
         }
-
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId} {
             position:fixed !important;
             border:1px solid rgba(244,208,94,.92) !important;
@@ -13819,7 +13326,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             border-color:rgba(211,172,60,.34) !important;
             background:linear-gradient(145deg,rgba(52,71,41,.45),rgba(6,27,31,.65)) !important;
         }
-
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.criticalDrawerId},
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.missionInspectorId},
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.vehicleStatusId},
@@ -13885,8 +13391,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             background:linear-gradient(145deg,rgba(37,75,49,.97),rgba(5,28,33,.97)) !important;
             color:#fff0a0 !important;
         }
-
-        /* Hyrule Quest Reward payout */
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] {
             background:
                 radial-gradient(circle at 50% 44%,rgba(79,239,196,.10),transparent 35%),
@@ -14006,10 +13510,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"][data-tier="elite"] .mcms-payout-title,
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"][data-tier="elite"] .mcms-payout-amount { color:#fffce1 !important; }
-
         @keyframes mcmsHyruleRuneTurn { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
         @keyframes mcmsHyrulePulse { 0%,100% { filter:brightness(.9) drop-shadow(0 0 5px rgba(66,229,211,.22)); } 50% { filter:brightness(1.2) drop-shadow(0 0 14px rgba(66,229,211,.58)); } }
-
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::before { width:280px !important; height:280px !important; right:-60px !important; opacity:.13 !important; }
         html[data-mcms-mobile-active="true"][data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::before { width:170px !important; height:170px !important; right:-45px !important; top:86px !important; opacity:.11 !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-banner {
@@ -14043,8 +13545,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
             #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
-
-
         `);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
     }

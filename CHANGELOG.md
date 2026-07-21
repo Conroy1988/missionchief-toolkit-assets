@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.21] - 2026-07-21
+
+### Engineering
+- Recovered source headroom by removing only blank physical lines, standalone full-line CSS comments and 15 newlines immediately before full-line closing braces from the existing `installMainStyles` template.
+- Preserved the canonical CSS content byte-for-byte after normalising only parser-ignored comments and whitespace immediately before closing braces.
+- Added a permanent fixture and validation contract for the reviewed stylesheet source sequence, formatting categories and recovered-line target.
+- Published the Issue #253 structural inventory and rollback boundary.
+
 ## [4.20.20] - 2026-07-21
 
 ### Fixed

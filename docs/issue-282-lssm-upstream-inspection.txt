@@ -1,0 +1,314 @@
+LSSM-V.4 dev commit: 4f731e1d6d009cbf2129530fb31d10177b21a52a
+EMV path: src/modules/extendedCallWindow/i18n/en_GB.json
+EMV sha256: ead0cb0e7f215ab843496d65ff90209044c736a08eeed6d5e19a312d775b5c8f
+Vehicles path: src/i18n/en_GB/vehicles.ts
+Vehicles sha256: 76dac4116b0c8b85d73eb879ed9521c2acdad787360a174cddfedee2d9c96cd1
+
+===== EMV MARITIME REQUIREMENTS =====
+[
+  {
+    "texts": [
+      "Boat Trailer or Inland Rescue Boat",
+      "Boat Trailers or Inland Rescue Boats"
+    ],
+    "vehicles": [
+      67,
+      74
+    ]
+  },
+  {
+    "texts": [
+      "ILB or ALB",
+      "ILBs or ALBs"
+    ],
+    "vehicles": [
+      68,
+      69
+    ]
+  },
+  {
+    "texts": [
+      "ILB",
+      "ILBs"
+    ],
+    "vehicles": [
+      68,
+      69
+    ]
+  },
+  {
+    "texts": [
+      "ALB",
+      "ALBs"
+    ],
+    "vehicles": [
+      69
+    ]
+  }
+]
+
+===== VEHICLE CAPTIONS 57-94 =====
+{
+  "57": "CRV",
+  "58": "Coastguard Mud Rescue Unit",
+  "59": "Coastguard Rope Rescue Unit",
+  "60": "Coastguard Commander",
+  "61": "Flood Rescue Unit (Trailer)",
+  "62": "Mud Decontamination Unit",
+  "63": "Support Unit",
+  "64": "Coastguard Rescue Helicopter",
+  "65": "Coastguard Rescue Helicopter (Large)",
+  "66": "4x4 Vehicle",
+  "67": "Inland Rescue Boat (Trailer)",
+  "68": "ILB",
+  "69": "ALB",
+  "70": "Rescue Watercraft (Trailer)",
+  "71": "Hovercraft (Trailer)",
+  "72": "Hovercraft Transporter",
+  "73": "Light 4x4",
+  "74": "Boat Trailer",
+  "75": "Major Foam Tender",
+  "76": "RIV",
+  "77": "Airfield Firefighting Command Vehicle",
+  "78": "Rescue Stairs",
+  "79": "Airfield Operations Vehicle",
+  "80": "Airfield Operations Supervisor",
+  "81": "Medical equipment trailer",
+  "82": "Armed Cell Van",
+  "83": "Medical cycle responder",
+  "84": "Pump Trailer",
+  "85": "Control Van",
+  "86": "Operational Support Van",
+  "87": "Operational Support Trailer",
+  "88": "SAR Flood Rescue (Trailer)",
+  "89": "Drone Vehicle (SAR HQ)",
+  "90": "Drone Vehicle (Fire Station)",
+  "91": "Drone Vehicle (Police Station)",
+  "92": "Personal SAR Vehicle",
+  "93": "SAR 4x4",
+  "94": "RRV"
+}
+
+===== TOKEN MATCHES =====
+
+--- src/i18n/en_GB/vehicles.ts :: Inland Rescue Boat ---
+001073:         special: 'Transports Lifeguards by road.',
+001074:     },
+001075:     67: {
+001076:         caption: 'Inland Rescue Boat (Trailer)',
+001077:         color: '#88ecc4',
+001078:         credits: 25_000,
+001079:         coins: 15,
+
+
+--- src/modules/extendedCallWindow/i18n/en_GB.json :: Inland Rescue Boat, ILB or ALB, ILBs or ALBs ---
+000215:             },
+000216:             {
+000217:                 "texts": [
+000218:                     "Boat Trailer or Inland Rescue Boat",
+000219:                     "Boat Trailers or Inland Rescue Boats"
+000220:                 ],
+000221:                 "vehicles": [67, 74]
+
+000216:             {
+000217:                 "texts": [
+000218:                     "Boat Trailer or Inland Rescue Boat",
+000219:                     "Boat Trailers or Inland Rescue Boats"
+000220:                 ],
+000221:                 "vehicles": [67, 74]
+000222:             },
+
+000220:                 ],
+000221:                 "vehicles": [67, 74]
+000222:             },
+000223:             { "texts": ["ILB or ALB", "ILBs or ALBs"], "vehicles": [68, 69] },
+000224:             { "texts": ["ILB", "ILBs"], "vehicles": [68, 69] },
+000225:             {
+000226:                 "texts": [
+
+
+--- src/modules/missionHelper/i18n/cs_CZ.json :: coastal_boat, large_coastal_boat, coastal_guard_boat ---
+000065:         "mobile_shelter": "Stání pro Týlový Kontejner",
+000066:         "mud_rescue": "Rozšíření Dekontaminace Bláta | Rozšíření Dekontaminace Bláta",
+000067:         "oil_clearing": "Stání pro Sorbentový Kontejner",
+000068:         "oneof_coastal_guard_boat_large_coastal_boat": "ALBs nebo ILBs",
+000069:         "oneof_dlk_rescue_stairs": "Auta s Lezeckými Žebříky nebo Záchranné Schody",
+000070:         "oneof_drone_police_helicopter": "Policejní Vrtulník nebo Dron",
+000071:         "oneof_elw1_elw_airport": "Velitelské Vozy nebo Velitelské Vozy Letištního Hašení",
+
+
+--- src/modules/missionHelper/i18n/de_DE.json :: coastal_boat ---
+000116:             "care_affected_people_min": "Kommt später",
+000117:             "care_includes_staff_members": "Kommt später",
+000118:             "civil_patrolcar": "Zivilstreifenwagen",
+000119:             "coastal_boat_large": "Seenotrettungskreuzer",
+000120:             "coastal_helicopter": "Hubschrauber (Seenotrettung)",
+000121:             "disaster_response_technology_crew": "MTW TeSi",
+000122:             "disaster_response_technology_equipment": "GW TeSi",
+
+
+--- src/modules/missionHelper/i18n/en_AU.json :: coastal_boat, large_coastal_boat ---
+000094:             "helicopter": "Air Ambulance | Air Ambulances",
+000095:             "k9": "K-9 Unit | K-9 Units",
+000096:             "kdow_orgl": "Paramedic Supervisor | Paramedic Supervisors",
+000097:             "large_coastal_boat": "VMR Boat | VMR Boats",
+000098:             "light_supply": "SES Emergency Lighting Trailer | SES Emergency Lighting Trailers",
+000099:             "mobile_air_vehicles": "BASU Unit | BASU Units",
+000100:             "mobile_command_vehicles": "Mobile Command Vehicle or SES Mobile Command Vehicle | Mobile Command Vehicles or SES Mobile Command Vehicles",
+
+
+--- src/modules/missionHelper/i18n/en_GB.json :: coastal_boat, large_coastal_boat, coastal_guard_boat, Inland Rescue Boat, ILBs or ALBs ---
+000057:         "mountain_cave_rescue": "Cave Rescue Specialist",
+000058:         "mountain_rescue": "Mountain Rescue Station | Mountain Rescue Stations",
+000059:         "mud_rescue": "Mud Decontamination Extension | Mud Decontamination Extensions",
+000060:         "oneof_coastal_guard_boat_large_coastal_boat": "ALBs or ILBs",
+000061:         "oneof_dlk_rescue_stairs": "Aerial Appliance Trucks or Rescue Stairs",
+000062:         "oneof_drone_police_helicopter": "Police Helicopter or Drone",
+000063:         "oneof_elw1_elw_airport": "Fire Officers or Airfield Firefighting Command Vehicles",
+
+000113:             "bomb_disposal_diver_equipment": "Marine EOD Equipment Van | Marine EOD Equipment Vans",
+000114:             "bomb_disposal_equipment": "Required EOD Medium Equipment Van | Required EOD Medium Equipment Vans",
+000115:             "bomb_disposal_heavy_equipment": "EOD Heavy Equipment Vehicle | EOD Heavy Equipment Vehicles",
+000116:             "coastal_boat": "Inland Rescue Boat (Trailer)",
+000117:             "coastal_boat_hover": "Hovercraft (Trailer) | Hovercrafts (Trailer)",
+000118:             "coastal_command": "Coastguard Commander | Coastguard Commanders",
+000119:             "coastal_guard_boat": "ALB | ALBs",
+
+000114:             "bomb_disposal_equipment": "Required EOD Medium Equipment Van | Required EOD Medium Equipment Vans",
+000115:             "bomb_disposal_heavy_equipment": "EOD Heavy Equipment Vehicle | EOD Heavy Equipment Vehicles",
+000116:             "coastal_boat": "Inland Rescue Boat (Trailer)",
+000117:             "coastal_boat_hover": "Hovercraft (Trailer) | Hovercrafts (Trailer)",
+000118:             "coastal_command": "Coastguard Commander | Coastguard Commanders",
+000119:             "coastal_guard_boat": "ALB | ALBs",
+000120:             "coastal_helicopter": "Coastguard Rescue Helicopter | Coastguard Rescue Helicopters",
+
+000116:             "coastal_boat": "Inland Rescue Boat (Trailer)",
+000117:             "coastal_boat_hover": "Hovercraft (Trailer) | Hovercrafts (Trailer)",
+000118:             "coastal_command": "Coastguard Commander | Coastguard Commanders",
+000119:             "coastal_guard_boat": "ALB | ALBs",
+000120:             "coastal_helicopter": "Coastguard Rescue Helicopter | Coastguard Rescue Helicopters",
+000121:             "coastal_jetski": "Rescue Watercraft (Trailer) | Rescue Watercraft (Trailers)",
+000122:             "coastal_mud_rescue": "Coastguard Mud Rescue Unit | Coastguard Mud Rescue Units",
+
+000136:             "helicopter": "HEMS",
+000137:             "k9": "Dog Support Unit (DSU) | Dog Support Units (DSUs)",
+000138:             "kdow_orgl": "Operational Team Leader | Operational Team Leaders",
+000139:             "large_coastal_boat": "ILB | ILBs",
+000140:             "mass_casualty_equipment": "Mass Casualty Equipment",
+000141:             "midwife": "Community Midwife | Community Midwifes",
+000142:             "mobile_air_vehicles": "Breathing Apparatus Support Unit | Breathing Apparatus Support Units",
+
+000144:             "mountain_cave_rescue": "Cave Rescue Specialist",
+000145:             "mud_rescue": "Mud Decontamination Unit | Mud Decontamination Units",
+000146:             "oneof_airport_fire_engine_or_engine_large": "RIVs or Major Foam Tenders",
+000147:             "oneof_coastal_guard_boat_or_boat_large": "ILBs or ALBs",
+000148:             "oneof_fire_command_advanced_or_airport_fire_command": "ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles",
+000149:             "oneof_fire_command_or_airport_fire_command": "Fire Officers or Airfield Firefighting Command Vehicles",
+000150:             "oneof_fire_engine_or_airport_fire_engine": "Fire Engines or RIVs",
+
+
+--- src/modules/missionHelper/i18n/en_US.json :: coastal_boat, large_coastal_boat ---
+000122:             "brush_command": "Wildland MCC | Wildland MCCs",
+000123:             "brush_truck": "Wildland Fire Engine | Wildland Fire Engines",
+000124:             "car_carrier": "Car Carrier | Car Carriers",
+000125:             "coastal_boat": "Small Coastal Boat | Small Coastal Boats",
+000126:             "coastal_command": "Lifeguard Supervisor | Lifeguard Supervisors",
+000127:             "coastal_helicopter": "Coastal Helicopter | Coastal Helicopters",
+000128:             "coastal_plane": "Coastal Guard Plane | Coastal Guard Planes",
+
+000150:             "hotshot": "Required Smoke Jumpers (in Smoke Jumper Planes)",
+000151:             "investigation": "FBI Investigation Wagon | FBI Investigation Wagons",
+000152:             "k9": "K-9 Unit | K-9 Units",
+000153:             "large_coastal_boat": "Large Coastal Boat | Large Coastal Boats",
+000154:             "large_fire_boat": "Large Fire Boat | Large Fire Boats",
+000155:             "large_rescue_boat": "Large  Rescue Boat | Large Rescue Boats",
+000156:             "light_supply": "Light Tower Trailer | Light Tower Trailers",
+
+
+--- src/modules/missionHelper/i18n/fi_FI.json :: coastal_boat, large_coastal_boat ---
+000043:             "arff": "ARFF Lentokenttäpaloauto | ARFF Lentokenttäpaloautoa",
+000044:             "battalion_chief_vehicles": "Johtoauto | Johtoautoa",
+000045:             "civil_patrolcar": "Tutkintayksikkö | Tutkintayksikköä",
+000046:             "coastal_boat": "RVL Partiovene | RVL Partiovenettä",
+000047:             "coastal_helicopter": "H215 | H215:sta",
+000048:             "coastal_plane": "Do228 | Do228:sia",
+000049:             "coastal_rescue": "RVL Partioauto | RVL Partioautoa",
+
+000055:             "hose": "Letkuajoneuvo | Letkuajoneuvoa",
+000056:             "k9": "Koirapartioauto | Koirapartioautoa",
+000057:             "kdow_orgl": "Ensihoidon kenttäjohtaja | Ensihoidon kenttäjohtajaa",
+000058:             "large_coastal_boat": "RVL Rannikkovartiovene | RVL Rannikkovartiovenettä",
+000059:             "mobile_air_vehicles": "Paineilmahuoltoauto | Paineilmahuoltoautoa",
+000060:             "mobile_command_vehicles": "Johtokeskusauto | Johtokeskusautoa",
+000061:             "platform_trucks": "Nostolava-auto | Nostolava-autoa",
+
+
+--- src/modules/missionHelper/i18n/fr_FR.json :: coastal_boat, large_coastal_boat, coastal_guard_boat ---
+000116:             "carbon_dioxide_container": "CEFSP",
+000117:             "carbon_dioxide_trailer": "RMP",
+000118:             "civil_patrol": "Véhicule banalisé",
+000119:             "coastal_boat": "Canot de Sauvetage Léger",
+000120:             "coastal_guard_boat": "Vedette Côtière de Surveillance Maritime",
+000121:             "coastal_helicopter": "Dragon",
+000122:             "coastal_rescue": "Buggy",
+
+000117:             "carbon_dioxide_trailer": "RMP",
+000118:             "civil_patrol": "Véhicule banalisé",
+000119:             "coastal_boat": "Canot de Sauvetage Léger",
+000120:             "coastal_guard_boat": "Vedette Côtière de Surveillance Maritime",
+000121:             "coastal_helicopter": "Dragon",
+000122:             "coastal_rescue": "Buggy",
+000123:             "decontamination_measurement": "Unités de mesure de décontamination",
+
+000151:             "kdow_orgl": "PC DSM",
+000152:             "ktw": "Ambulance Type A",
+000153:             "lance_nozzle": "RLC",
+000154:             "large_coastal_boat": "CTT",
+000155:             "light_supply": "CEREV",
+000156:             "min_pump_speed": "Min. Capacité de la pompe",
+000157:             "mobile_air_vehicles": "VAR | VAR",
+
+
+--- src/modules/missionHelper/i18n/it_IT.json :: coastal_boat, large_coastal_boat, coastal_guard_boat ---
+000076:             "battalion_chief_vehicles": "Funzionari",
+000077:             "boats": "Barche",
+000078:             "brush_truck": "Mezzi AIB",
+000079:             "coastal_boat": "Battello Litoraneo",
+000080:             "coastal_command": "Pattuglia Guardia Costiera",
+000081:             "coastal_guard_boat": "Motovedetta d'Altura",
+000082:             "coastal_helicopter": "Elicottero Guardia Costiera",
+
+000078:             "brush_truck": "Mezzi AIB",
+000079:             "coastal_boat": "Battello Litoraneo",
+000080:             "coastal_command": "Pattuglia Guardia Costiera",
+000081:             "coastal_guard_boat": "Motovedetta d'Altura",
+000082:             "coastal_helicopter": "Elicottero Guardia Costiera",
+000083:             "commerce_police": "Volante finanza",
+000084:             "diver_units": "Camion tecnico NSSA",
+
+000094:             "helicopter": "Elisoccorso",
+000095:             "irff": "AIS/AISP Industriali",
+000096:             "k9": "Unità cinofila antidroga",
+000097:             "large_coastal_boat": "Motovedetta Costiera",
+000098:             "mobile_air_vehicles": "Carro aria",
+000099:             "mobile_command_vehicles": "UCL",
+000100:             "platform_trucks": "Autoscala | Autoscale",
+
+
+--- src/modules/missionHelper/i18n/nl_NL.json :: coastal_boat, coastal_guard_boat ---
+000117:             "care_service": "Verzorging",
+000118:             "care_service_command": "PelotonsCommandant - Logistiek",
+000119:             "clean_service": "Arbeidshygiëne",
+000120:             "coastal_boat": "RB-K of RB-G",
+000121:             "coastal_guard_boat": "KW-boot",
+000122:             "coastal_helicopter": "SAR Helicopter",
+000123:             "detention_unit": "Aanhoudingseenheid | Aanhoudingseenheden",
+
+000118:             "care_service_command": "PelotonsCommandant - Logistiek",
+000119:             "clean_service": "Arbeidshygiëne",
+000120:             "coastal_boat": "RB-K of RB-G",
+000121:             "coastal_guard_boat": "KW-boot",
+000122:             "coastal_helicopter": "SAR Helicopter",
+000123:             "detention_unit": "Aanhoudingseenheid | Aanhoudingseenheden",
+000124:             "disaster_response": "TS-STH",
+

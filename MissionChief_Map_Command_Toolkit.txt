@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.22
+// @version      4.20.23
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.22',
+        version: '4.20.23',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1267,6 +1267,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         skipped: 0,
         errors: 0,
         processed: 0,
+        confirmedReleaseKeys: new Set(),
         rejectedOwn: 0,
         missionAnchorBaseline: new Set(),
         vehicleButtonBaseline: new Set(),
@@ -16818,11 +16819,93 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         return collectTransportSweepLssmCandidates(excludedVehicleIds);
     }
 
-    function transportSweepReleaseConfirmationVisible() {
-        const text = transportSweepVisibleWindowRoots()
-            .map(root => String(root.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase())
-            .join(' | ');
-        return /released the patient|patient (?:is not|isn['’]t) transported|patient.*released|patient.*discharged/.test(text);
+    const TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT = 'Understood! We have released the patient.';
+
+    function normaliseTransportSweepReleaseText(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+
+    function transportSweepReleaseConfirmationSignature(value) {
+        const text = normaliseTransportSweepReleaseText(value);
+        if (!text) return '';
+        const matches = [];
+        const exactConfirmation = normaliseTransportSweepReleaseText(TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT);
+        if (text.includes(exactConfirmation)) matches.push(exactConfirmation);
+        const patterns = [
+            /understood!\s*we have released the patient\.?/gi,
+            /we have released the patient\.?/gi,
+            /released the patient\.?/gi,
+            /patient (?:is not|isn['’]t) transported\.?/gi,
+            /patient[^.!?]{0,120}(?:released|discharged)\.?/gi
+        ];
+        for (const pattern of patterns) {
+            for (const match of text.matchAll(pattern)) matches.push(normaliseTransportSweepReleaseText(match[0]));
+        }
+        return Array.from(new Set(matches)).sort().join(' | ');
+    }
+
+    function transportSweepReleaseEvidenceElements() {
+        const selectors = [
+            '#notice', '#flash', '#flash_messages', '#flashMessage', '.alert', '.alert-success',
+            '.notice', '.flash', '.toast', '[role="alert"]', '[aria-live="assertive"]',
+            '[aria-live="polite"]', '[class*="alert"]', '[class*="flash"]', '[class*="notice"]', '[class*="toast"]'
+        ];
+        const elements = [];
+        const seen = new Set();
+        const add = element => {
+            if (!element || seen.has(element) || !element.isConnected) return;
+            if (element.closest?.(`#${SCRIPT.panelId}, #${SCRIPT.transportSweepHudId}`)) return;
+            const text = String(element.textContent || '');
+            if (!transportSweepReleaseConfirmationSignature(text)) return;
+            if (element.tagName !== 'BODY' && !transportSweepElementVisible(element)) return;
+            seen.add(element);
+            elements.push(element);
+        };
+        for (const root of transportSweepVisibleWindowRoots()) add(root);
+        for (const context of transportSweepDocumentContexts()) {
+            for (const selector of selectors) {
+                let matches = [];
+                try { matches = Array.from(context.doc.querySelectorAll(selector)); } catch (err) {}
+                matches.forEach(add);
+            }
+            let directChildren = [];
+            try { directChildren = Array.from(context.doc.body?.children || []); } catch (err) {}
+            directChildren.forEach(element => {
+                if (String(element.textContent || '').length <= 600) add(element);
+            });
+            const body = context.doc.body;
+            if (body && String(body.textContent || '').length <= 1000) add(body);
+        }
+        return elements;
+    }
+
+    function captureTransportSweepReleaseConfirmationBaseline() {
+        return new Map(transportSweepReleaseEvidenceElements().map(element => [element, transportSweepReleaseConfirmationSignature(element.textContent)]));
+    }
+
+    function transportSweepReleaseConfirmationVisible(baseline = null) {
+        const evidence = transportSweepReleaseEvidenceElements();
+        if (!(baseline instanceof Map)) return evidence.length > 0;
+        return evidence.some(element => {
+            const signature = transportSweepReleaseConfirmationSignature(element.textContent);
+            return !baseline.has(element) || baseline.get(element) !== signature;
+        });
+    }
+
+    function transportSweepReleaseKey(missionId, vehicleId) {
+        const mission = normaliseMissionId(missionId);
+        const vehicle = String(vehicleId || '').trim();
+        return mission !== null && vehicle ? `${mission}:${vehicle}` : '';
+    }
+
+    function recordTransportSweepConfirmedRelease(releaseKey, message) {
+        const key = String(releaseKey || '').trim();
+        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key)) return false;
+        transportSweepRuntime.confirmedReleaseKeys.add(key);
+        transportSweepRuntime.cleared += 1;
+        transportSweepRuntime.processed += 1;
+        transportSweepLog(message);
+        return true;
     }
 
     async function activateTransportSweepLssmRelease(candidate) {
@@ -16837,13 +16920,15 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
         const rowId = String(row?.id || `vehicle_row_${candidate.vehicleId}`);
         const ownerDocument = anchor.ownerDocument || document;
+        const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
         const clickedAt = Date.now();
         anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
         anchor.click();
         return Boolean(await transportSweepWaitFor(() => {
-            if (transportSweepReleaseConfirmationVisible()) return true;
+            if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
             if (Date.now() - clickedAt < 900) return null;
             const liveRow = ownerDocument.getElementById?.(rowId) || null;
+            if (!liveRow && (!row?.isConnected || !anchor?.isConnected)) return true;
             if (!liveRow) return null;
             const liveAction = Array.from(liveRow.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || [])
                 .find(item => transportSweepReleaseVehicleIdFromHref(item.getAttribute?.('href')) === String(candidate.vehicleId));
@@ -17140,13 +17225,15 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
                     transportSweepRuntime.currentItem = `${lssmCandidate.label} · ${lssmCandidate.owner}`;
                     renderTransportSweepPanel();
                     transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
+                    let confirmedThisAttempt = false;
                     try {
                         const cleared = await activateTransportSweepLssmRelease(lssmCandidate);
                         if (!cleared) throw new Error('LSSM release confirmation timed out');
-                        clearedHere += 1;
-                        transportSweepRuntime.cleared += 1;
-                        transportSweepRuntime.processed += 1;
-                        transportSweepLog(`Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`);
+                        confirmedThisAttempt = recordTransportSweepConfirmedRelease(
+                            transportSweepReleaseKey(missionId, lssmCandidate.vehicleId),
+                            `Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`
+                        );
+                        if (confirmedThisAttempt) clearedHere += 1;
                     } catch (err) {
                         transportSweepRuntime.errors += 1;
                         transportSweepLog(`Failed ${lssmCandidate.label}: ${err?.message || 'unknown error'}`, 'error');
@@ -17157,8 +17244,11 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
                         transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
                         missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
                         if (!missionOpen) {
-                            transportSweepRuntime.errors += 1;
-                            transportSweepLog(`Could not return to ${item.caption} after releasing ${lssmCandidate.label}`, 'error');
+                            if (confirmedThisAttempt) transportSweepLog(`Released ${lssmCandidate.label}, but could not reopen ${item.caption}; continuing with the confirmed patient result`, 'warn');
+                            else {
+                                transportSweepRuntime.errors += 1;
+                                transportSweepLog(`Could not return to ${item.caption} after checking ${lssmCandidate.label}`, 'error');
+                            }
                             break;
                         }
                     }
@@ -17209,20 +17299,24 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
                 120
             ) : null);
 
+            let confirmedThisAttempt = false;
             if (!button) {
                 transportSweepLog(`${candidate.label} is carrying a patient but is not transport-ready; continuing in the same mission`);
             } else {
                 try {
+                    const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
                     button.click();
                     const cleared = await transportSweepWaitFor(() => {
+                        if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
                         if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
-                        return String(button.textContent || '').trim().toLowerCase() !== 'discharge patient' ? true : null;
+                        return normaliseTransportSweepReleaseText(button.textContent) !== 'discharge patient' ? true : null;
                     }, 5000, 140);
                     if (!cleared) throw new Error('Discharge confirmation timed out');
-                    clearedHere += 1;
-                    transportSweepRuntime.cleared += 1;
-                    transportSweepRuntime.processed += 1;
-                    transportSweepLog(`Cleared ${candidate.label} at ${item.caption}`);
+                    confirmedThisAttempt = recordTransportSweepConfirmedRelease(
+                        transportSweepReleaseKey(missionId, candidate.vehicleId),
+                        `Cleared ${candidate.label} at ${item.caption}`
+                    );
+                    if (confirmedThisAttempt) clearedHere += 1;
                 } catch (err) {
                     transportSweepRuntime.errors += 1;
                     transportSweepLog(`Failed ${candidate.label}: ${err?.message || 'unknown error'}`, 'error');
@@ -17234,8 +17328,11 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
                 transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
                 missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
                 if (!missionOpen) {
-                    transportSweepRuntime.errors += 1;
-                    transportSweepLog(`Could not return to ${item.caption} during fallback processing`, 'error');
+                    if (confirmedThisAttempt) transportSweepLog(`Cleared ${candidate.label}, but could not reopen ${item.caption}; continuing with the confirmed patient result`, 'warn');
+                    else {
+                        transportSweepRuntime.errors += 1;
+                        transportSweepLog(`Could not return to ${item.caption} during fallback processing`, 'error');
+                    }
                     break;
                 }
             }
@@ -17278,6 +17375,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         transportSweepRuntime.skipped = 0;
         transportSweepRuntime.errors = 0;
         transportSweepRuntime.processed = 0;
+        transportSweepRuntime.confirmedReleaseKeys = new Set();
         transportSweepRuntime.rejectedOwn = 0;
         transportSweepRuntime.missionAnchorBaseline = new Set();
         transportSweepRuntime.vehicleButtonBaseline = new Set();

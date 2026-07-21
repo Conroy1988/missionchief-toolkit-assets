@@ -1,0 +1,28 @@
+Issue #253 final contract-selection diagnostic
+Return code: 1
+
+===== STDOUT =====
+
+added 1 package in 1s
+Recovered 500 source lines (300 blank, 185 standalone comment, 15 brace joins); 31171 remain; headroom is 829.
+
+===== STDERR =====
+MAIN STYLE HEADROOM CONTRACT ERROR: reviewed main stylesheet template is missing
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py", line 330, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py", line 288, in main
+    subprocess.run(["python3", str(CONTRACT)], cwd=ROOT, env=env, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_main_style_source_headroom.py']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-headroom-v2.py", line 183, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-headroom-v2.py", line 175, in main
+    subprocess.run(["python3", str(RUNTIME)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py']' returned non-zero exit status 1.

@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.25] - 2026-07-21
+
+### Engineering
+- Extracted the seven recurring Boot maintenance-task registrations into `registerBootMaintenanceTasks()` without changing callback logic, intervals, economy-mode scheduling or scheduler ownership.
+- Kept `boot()` responsible for initialization order while reducing its operational complexity through one independently revertible lifecycle stage.
+
+### Validation
+- Extended the fixture-backed Boot lifecycle contract to compile and execute the extracted registration helper directly and through `boot()`.
+- Preserved the exact required task set, task count, observer count, listener coverage, teardown behaviour and production source/distribution parity.
+
 ## [4.20.24] - 2026-07-21
 
 ### Fixed

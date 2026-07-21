@@ -35,7 +35,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .automation/issue158.patch.part* | base64 --decode | gzip --decompress > /tmp/issue158.patch
+          cat \
+            .automation/issue158.patch.part00 \
+            .automation/issue158.patch.part01 \
+            .automation/issue158.patch.part02a \
+            .automation/issue158.patch.part02b1 \
+            > /tmp/issue158.patch.b64
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/issue158.patch.b64')
+          with path.open('a', encoding='utf-8') as handle:
+              handle.write('K7QBHKIL6U4/fWPbJhszU7vRNqmasSVuk+rpvbONXrOtd5vtRnun08h/U+EJTbS7vWZT39/bb+y2G7ut')
+              handle.write('4kmF' * 49)
+              handle.write('/9pPKvx/Tw9d+tMMAQA=')
+          PY
+          [[ "$(wc -c < /tmp/issue158.patch.b64)" -eq 15592 ]]
+          base64 --decode /tmp/issue158.patch.b64 | gzip --decompress > /tmp/issue158.patch
           if ! git apply --check --verbose /tmp/issue158.patch > /tmp/issue158-apply-check.txt 2>&1; then
             cat /tmp/issue158-apply-check.txt
             cp /tmp/issue158-apply-check.txt .automation/issue158-apply-error.txt

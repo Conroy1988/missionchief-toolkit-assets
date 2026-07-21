@@ -1,4 +1,4 @@
-name: Temporary Issue 64 Export
+name: Apply Issue 64 Lifecycle Candidate
 
 on:
   pull_request:
@@ -6,26 +6,151 @@ on:
       - main
     paths:
       - ".github/workflows/temporary-issue64-export.yml"
+      - ".github/development-packages/issue64-stage-*.b64"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: issue64-lifecycle-apply-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  export:
+  apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - name: Check out candidate branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: agent/issue-64-boot-lifecycle-stage
           fetch-depth: 0
-          persist-credentials: false
-      - name: Package repository
-        run: tar --exclude=.git -czf /tmp/missionchief-toolkit-issue64-current.tar.gz .
-      - name: Upload repository package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-issue64-current
-          path: /tmp/missionchief-toolkit-issue64-current.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          persist-credentials: true
+
+      - name: Reconstruct reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/development-packages/issue64-stage-00.b64 \
+              .github/development-packages/issue64-stage-01.b64 > /tmp/issue64.patch.gz.b64
+          test "$(wc -c < /tmp/issue64.patch.gz.b64)" -eq 13796
+          echo "21494a658cf6ed86091e29c81d57df3d12f202e42114885e9db4f5b0d1fd27e6  /tmp/issue64.patch.gz.b64" | sha256sum -c -
+          base64 --decode /tmp/issue64.patch.gz.b64 | gzip --decompress > /tmp/issue64.patch
+          echo "e4198ef8a50b97cd50893b6c86fdddf94d37f3369fde0c8ced8824ff51ef1b9c  /tmp/issue64.patch" | sha256sum -c -
+          git apply --check /tmp/issue64.patch
+          git apply /tmp/issue64.patch
+          git checkout HEAD -- .github/workflows/temporary-issue64-export.yml
+
+      - name: Prove intended change boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/allowed-paths <<'EOF'
+          .github/fixtures/boot-lifecycle-contract.json
+          .github/fixtures/main-style-source-headroom.json
+          .github/scripts/test_boot_lifecycle_contract.py
+          CHANGELOG.md
+          MissionChief_Map_Command_Toolkit.txt
+          MissionChief_Map_Command_Toolkit.user.js
+          README.md
+          dist/MissionChief_Map_Command_Toolkit.txt
+          dist/MissionChief_Map_Command_Toolkit.user.js
+          dist/SHA256SUMS.txt
+          dist/release-manifest.json
+          help/index.html
+          src/MissionChief_Map_Command_Toolkit.user.js
+          EOF
+          sort -o /tmp/allowed-paths /tmp/allowed-paths
+          git diff --name-only | sort > /tmp/actual-paths
+          diff -u /tmp/allowed-paths /tmp/actual-paths
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Run canonical and deterministic validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/scripts/run_userscript_preflight.sh --all
+          node .github/scripts/test_mission_requirements_runtime.js
+          python3 .github/scripts/test_documentation_version_states.py
+          python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
+
+      - name: Run performance and integrity validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --no-tags
+          git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/issue64-base.user.js
+          python3 .github/scripts/test_performance_budget.py
+          python3 .github/scripts/test_runtime_optimisations.py
+          python3 .github/scripts/check_performance_budget.py \
+            --base /tmp/issue64-base.user.js \
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
+            --policy .github/performance-budget.json \
+            --json-output /tmp/performance-budget-report.json \
+            --markdown-output /tmp/performance-budget-report.md
+          python3 .github/scripts/test_code_integrity.py
+          python3 .github/scripts/check_code_integrity.py \
+            --base /tmp/issue64-base.user.js \
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
+            --policy .github/code-integrity-policy.json \
+            --json-output /tmp/code-integrity-report.json \
+            --markdown-output /tmp/code-integrity-report.md
+          python3 .github/scripts/audit_userscript_structure.py --self-test
+          python3 .github/scripts/audit_userscript_structure.py \
+            --json-output /tmp/userscript-audit.json \
+            --markdown-output /tmp/userscript-audit.md
+          python3 .github/scripts/full_userscript_audit.py \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist dist/MissionChief_Map_Command_Toolkit.user.js \
+            --json-output /tmp/full-userscript-audit-raw.json \
+            --markdown-output /tmp/full-userscript-audit-raw.md
+          python3 .github/scripts/refine_full_userscript_audit.py \
+            --raw /tmp/full-userscript-audit-raw.json \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --json-output /tmp/full-userscript-audit.json \
+            --markdown-output /tmp/full-userscript-audit.md
+
+      - name: Commit validated product candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout HEAD -- documentation-drift-report.md 2>/dev/null || true
+          git clean -fd
+          git diff --name-only | sort > /tmp/final-paths
+          cat > /tmp/allowed-paths <<'EOF'
+          .github/fixtures/boot-lifecycle-contract.json
+          .github/fixtures/main-style-source-headroom.json
+          .github/scripts/test_boot_lifecycle_contract.py
+          CHANGELOG.md
+          MissionChief_Map_Command_Toolkit.txt
+          MissionChief_Map_Command_Toolkit.user.js
+          README.md
+          dist/MissionChief_Map_Command_Toolkit.txt
+          dist/MissionChief_Map_Command_Toolkit.user.js
+          dist/SHA256SUMS.txt
+          dist/release-manifest.json
+          help/index.html
+          src/MissionChief_Map_Command_Toolkit.user.js
+          EOF
+          sort -o /tmp/allowed-paths /tmp/allowed-paths
+          diff -u /tmp/allowed-paths /tmp/final-paths
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/fixtures/boot-lifecycle-contract.json \
+            .github/fixtures/main-style-source-headroom.json \
+            .github/scripts/test_boot_lifecycle_contract.py \
+            CHANGELOG.md \
+            MissionChief_Map_Command_Toolkit.txt \
+            MissionChief_Map_Command_Toolkit.user.js \
+            README.md \
+            dist/MissionChief_Map_Command_Toolkit.txt \
+            dist/MissionChief_Map_Command_Toolkit.user.js \
+            dist/SHA256SUMS.txt \
+            dist/release-manifest.json \
+            help/index.html \
+            src/MissionChief_Map_Command_Toolkit.user.js
+          git commit -m "Extract Boot maintenance task registration"
+          git push origin HEAD:agent/issue-64-boot-lifecycle-stage

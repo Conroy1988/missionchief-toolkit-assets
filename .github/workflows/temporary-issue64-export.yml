@@ -108,7 +108,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git checkout HEAD -- documentation-drift-report.md 2>/dev/null || true
+          git checkout HEAD -- documentation-drift-report.json documentation-drift-report.md
           git clean -fd
           git status --short
           git diff --name-only | sort > /tmp/final-paths

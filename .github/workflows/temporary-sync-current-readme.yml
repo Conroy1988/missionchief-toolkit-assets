@@ -27,12 +27,24 @@ jobs:
           set -euo pipefail
           git fetch origin main:refs/remotes/origin/main
           git checkout origin/main -- README.md
-      - name: Verify exact README and boundary
+      - name: Verify current main ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse origin/main)" = "be114dcb0fedeeec6618c8f4dbac9ab50675e1b0"
+          test "$(git rev-parse origin/main:README.md)" = "955c834b513f15d20474bcd8a0e672dbd148c5db"
+      - name: Verify synchronized README blob
         shell: bash
         run: |
           set -euo pipefail
           test "$(git hash-object README.md)" = "955c834b513f15d20474bcd8a0e672dbd148c5db"
-          test "$(git diff --name-only)" = "README.md"
+      - name: Verify README-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --name-only | sort > /tmp/readme-sync-files.txt
+          printf 'README.md\n' > /tmp/expected-readme-sync-files.txt
+          diff -u /tmp/expected-readme-sync-files.txt /tmp/readme-sync-files.txt
       - name: Commit synchronized README
         shell: bash
         run: |

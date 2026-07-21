@@ -1,0 +1,34 @@
+Issue #253 exact-500 package diagnostic
+Return code: 1
+
+===== STDOUT =====
+
+added 1 package in 576ms
+
+===== STDERR =====
+/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-compaction.mjs:97
+  return stripped.replace(/\n[\t ]*}/gu, '}');
+                          ^^^^^^^^^^^^^
+
+SyntaxError: Invalid regular expression: /\n[\t ]*}/gu: Lone quantifier brackets
+    at checkSyntax (node:internal/main/check_syntax:74:5)
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py", line 318, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py", line 37, in main
+    subprocess.run(["node", "--check", str(COMPACTOR)], cwd=ROOT, env=env, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '--check', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-compaction.mjs']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-headroom-v2.py", line 147, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-253-main-style-headroom-v2.py", line 139, in main
+    subprocess.run(["python3", str(RUNTIME)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-253-main-style-headroom-runtime.py']' returned non-zero exit status 1.

@@ -94,7 +94,7 @@ function removeStandaloneFormatting(lines) {
 
 function canonicalCssFormatting(raw) {
   const stripped = removeStandaloneFormatting(raw.split('\n')).lines.join('\n');
-  return stripped.replace(/\n[\t ]*}/gu, '}');
+  return stripped.replace(/\n[\t ]*\}/gu, '}');
 }
 
 const candidates = [];

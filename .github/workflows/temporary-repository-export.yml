@@ -1,9 +1,9 @@
 name: Apply Issue 159 Candidate
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/issue-159-financial-overview
+      - main
     paths:
       - ".github/workflows/temporary-repository-export.yml"
 

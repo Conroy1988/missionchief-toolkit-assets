@@ -51,25 +51,15 @@ jobs:
           PY
           [[ "$(wc -c < /tmp/issue158.patch.b64)" -eq 15592 ]]
           base64 --decode /tmp/issue158.patch.b64 | gzip --decompress > /tmp/issue158.patch
-          if ! git apply --check --verbose /tmp/issue158.patch > /tmp/issue158-apply-check.txt 2>&1; then
-            cat /tmp/issue158-apply-check.txt
-            cp /tmp/issue158-apply-check.txt .automation/issue158-apply-error.txt
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .automation/issue158-apply-error.txt
-            git commit -m "Record Issue 158 patch conflict"
-            git push origin HEAD:agent/issue-158-transport-sweep-confirmation
-            exit 1
-          fi
+          git apply --check --verbose /tmp/issue158.patch
           git apply /tmp/issue158.patch
 
-      - name: Remove temporary transfer machinery
+      - name: Remove transfer chunks
         shell: bash
         run: |
           set -euo pipefail
           rm -f .automation/issue158.patch.part*
           rm -f .automation/issue158-apply-error.txt
-          rm -f .github/workflows/temporary-issue158-apply.yml
           rmdir .automation 2>/dev/null || true
 
       - name: Validate candidate
@@ -84,7 +74,13 @@ jobs:
           python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
           git checkout -- documentation-drift-report.json documentation-drift-report.md
 
-      - name: Commit reviewed candidate
+      - name: Prepare token-safe product commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout HEAD -- .github/workflows/full-userscript-audit.yml
+
+      - name: Commit validated product source
         shell: bash
         run: |
           set -euo pipefail

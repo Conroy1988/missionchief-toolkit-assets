@@ -6,7 +6,8 @@ on:
       - main
     paths:
       - ".github/workflows/temporary-issue64-export.yml"
-      - ".github/development-packages/issue64-stage-*.b64"
+      - ".github/development-packages/issue64-part-*.b64"
+      - ".github/development-packages/issue64-stage-01.b64"
 
 permissions:
   contents: write
@@ -31,8 +32,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .github/development-packages/issue64-stage-00.b64 \
-              .github/development-packages/issue64-stage-01.b64 > /tmp/issue64.patch.gz.b64
+          cat \
+            .github/development-packages/issue64-part-00.b64 \
+            .github/development-packages/issue64-part-01.b64 \
+            .github/development-packages/issue64-part-02.b64 \
+            .github/development-packages/issue64-part-03.b64 \
+            .github/development-packages/issue64-part-04.b64 \
+            .github/development-packages/issue64-part-05.b64 \
+            .github/development-packages/issue64-stage-01.b64 \
+            > /tmp/issue64.patch.gz.b64
           test "$(wc -c < /tmp/issue64.patch.gz.b64)" -eq 13796
           echo "21494a658cf6ed86091e29c81d57df3d12f202e42114885e9db4f5b0d1fd27e6  /tmp/issue64.patch.gz.b64" | sha256sum -c -
           base64 --decode /tmp/issue64.patch.gz.b64 | gzip --decompress > /tmp/issue64.patch

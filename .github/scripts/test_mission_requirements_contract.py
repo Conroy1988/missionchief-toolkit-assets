@@ -111,6 +111,8 @@ def main() -> int:
         "data-filterable-by",
         "td:nth-of-type(5)[sortvalue]",
         "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
+        "function missionRequirementsCatalogueModifier(label, value = '', resolveCapability = true)",
+        "function missionRequirementsStripNonDemandMetadata(rawText, resolveCapability = false)",
         "additive_overlays",
         "function missionRequirementsPrimaryRuntime()",
         "function missionRequirementsMissionIdentity(candidate, source)",
@@ -218,6 +220,9 @@ def main() -> int:
     assert source.count("function missionRequirementsReconcileCatalogue(parsed, catalogue, state = 'unavailable', expected = false)") == 1
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
+    assert "if (conditional && index === undefined) continue" in source, "catalogue-only conditional demand must remain dormant"
+    assert "classification: 'probability'" in source and "classification: 'availability'" in source, "probability and availability metadata need typed separation"
+    assert "missionRequirementsStripNonDemandMetadata(rawText, false)" in source, "live parser must classify metadata before requirement matching"
     assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]railway-police-officer['\"][^\n]*(?:training|['\"]training['\"])\s*:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
     assert '"key":"railway-police-officer"' in source and '"railway_police"' in source, "Railway Police must use the native education key"
     assert '"requireExplicitTraining":true' in source, "Railway Police carrier type must not prove specialist qualification"

@@ -31,12 +31,27 @@ jobs:
         run: |
           set -euo pipefail
           cat .automation/issue159.patch.part* > /tmp/issue159.patch.b64
-          [[ "$(wc -c < /tmp/issue159.patch.b64)" -eq 52912 ]]
-          echo "781b9c69ced5d90628cdadc736524eca7efd981f25e0aa84c2d5985973576c73  /tmp/issue159.patch.b64" | sha256sum --check --strict
+          ENCODED_LENGTH="$(wc -c < /tmp/issue159.patch.b64)"
+          ENCODED_HASH="$(sha256sum /tmp/issue159.patch.b64 | awk '{print $1}')"
+          printf 'encoded_length=%s\nencoded_sha256=%s\n' "$ENCODED_LENGTH" "$ENCODED_HASH" > issue159-transfer-diagnostic.txt
+          [[ "$ENCODED_LENGTH" -eq 52912 ]]
+          [[ "$ENCODED_HASH" == "781b9c69ced5d90628cdadc736524eca7efd981f25e0aa84c2d5985973576c73" ]]
           base64 --decode /tmp/issue159.patch.b64 | gzip --decompress > /tmp/issue159.patch
-          echo "6e21d2a8a64d8e00866f15b4a97bb4321cb489239b1fd3f3fa78c36e8423d5f5  /tmp/issue159.patch" | sha256sum --check --strict
+          PATCH_LENGTH="$(wc -c < /tmp/issue159.patch)"
+          PATCH_HASH="$(sha256sum /tmp/issue159.patch | awk '{print $1}')"
+          printf 'patch_length=%s\npatch_sha256=%s\n' "$PATCH_LENGTH" "$PATCH_HASH" >> issue159-transfer-diagnostic.txt
+          [[ "$PATCH_HASH" == "6e21d2a8a64d8e00866f15b4a97bb4321cb489239b1fd3f3fa78c36e8423d5f5" ]]
           git apply --check /tmp/issue159.patch
           git apply /tmp/issue159.patch
+
+      - name: Upload transfer diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue159-transfer-diagnostic
+          path: issue159-transfer-diagnostic.txt
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Remove transfer chunks
         shell: bash
@@ -44,6 +59,7 @@ jobs:
           set -euo pipefail
           rm -f .automation/issue159.patch.part*
           rmdir .automation 2>/dev/null || true
+          rm -f issue159-transfer-diagnostic.txt
 
       - name: Validate candidate
         shell: bash

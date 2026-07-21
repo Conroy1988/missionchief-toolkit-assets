@@ -53,7 +53,7 @@ jobs:
       - name: Install exact parser
         run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
 
-      - name: Validate candidate
+      - name: Validate profiler and render-probe contracts
         shell: bash
         run: |
           set -euo pipefail
@@ -63,12 +63,28 @@ jobs:
           node .github/scripts/test_performance_profiler.js
           node .github/scripts/test_render_probe_instrumentation.mjs
           python3 .github/scripts/test_unchanged_render_scenarios.py
+
+      - name: Validate existing performance and integrity contracts
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 .github/scripts/test_performance_budget.py
           python3 .github/scripts/test_runtime_optimisations.py
           python3 .github/scripts/test_code_integrity.py
           python3 .github/scripts/test_documentation_version_states.py
+
+      - name: Validate repository security and documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv .github/workflows/temporary-issue255-export.yml /tmp/temporary-issue255-export.yml
           python3 .github/scripts/audit_actions_security.py --root . --json-report /tmp/actions-security.json --markdown-report /tmp/actions-security.md
           python3 .github/scripts/check_documentation_drift.py --root . --json-output /tmp/documentation-drift.json --markdown-output /tmp/documentation-drift.md
+
+      - name: Generate disposable render-probe artifact
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p /tmp/render-probe
           node tools/build-render-probe-userscript.mjs \
             --source src/MissionChief_Map_Command_Toolkit.user.js \

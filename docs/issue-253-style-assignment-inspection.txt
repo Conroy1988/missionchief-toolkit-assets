@@ -1,0 +1,21 @@
+bytes=831307
+start=98360
+end=929585
+line=1831
+parents=Program > ExpressionStatement > CallExpression > FunctionExpression > BlockStatement > FunctionDeclaration > BlockStatement > ExpressionStatement > CallExpression
+--- PREFIX THROUGH OPENING BACKTICK ---
+sInstalled = false;\n
+\n
+    function installMainStyles() {\n
+        if (mainStylesInstalled && document.getElementById(SCRIPT.styleId)) return;\n
+        const styleStartedAt = startupClock();\n
+        mainStylesInstalled = true;\n
+        addStyle(`
+--- CLOSING BACKTICK AND SUFFIX ---
+`);\n
+        recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });\n
+    }\n
+\n
+   
+quasis=3522
+expressions=3521

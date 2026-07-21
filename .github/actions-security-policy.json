@@ -11,6 +11,7 @@
   "allowedWritePermissions": {
     ".github/workflows/apply-development-package.yml": ["contents", "issues", "pull-requests"],
     ".github/workflows/asset-health-monitor.yml": ["issues"],
+    ".github/workflows/discord-release-preview.yml": ["issues"],
     ".github/workflows/github-pages.yml": ["id-token", "pages"],
     ".github/workflows/greasyfork-release-monitor.yml": ["contents"],
     ".github/workflows/import-canonical-userscript.yml": ["contents"],

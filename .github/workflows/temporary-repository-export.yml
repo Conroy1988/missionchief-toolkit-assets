@@ -30,10 +30,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          : > issue159-transfer-diagnostic.txt
+          for CHUNK in .automation/issue159.patch.part*; do
+            printf '%s_length=%s\n%s_sha256=%s\n' \
+              "$(basename "$CHUNK")" "$(wc -c < "$CHUNK")" \
+              "$(basename "$CHUNK")" "$(sha256sum "$CHUNK" | awk '{print $1}')" \
+              >> issue159-transfer-diagnostic.txt
+          done
           cat .automation/issue159.patch.part* > /tmp/issue159.patch.b64
           ENCODED_LENGTH="$(wc -c < /tmp/issue159.patch.b64)"
           ENCODED_HASH="$(sha256sum /tmp/issue159.patch.b64 | awk '{print $1}')"
-          printf 'encoded_length=%s\nencoded_sha256=%s\n' "$ENCODED_LENGTH" "$ENCODED_HASH" > issue159-transfer-diagnostic.txt
+          printf 'encoded_length=%s\nencoded_sha256=%s\n' "$ENCODED_LENGTH" "$ENCODED_HASH" >> issue159-transfer-diagnostic.txt
           [[ "$ENCODED_LENGTH" -eq 52912 ]]
           [[ "$ENCODED_HASH" == "781b9c69ced5d90628cdadc736524eca7efd981f25e0aa84c2d5985973576c73" ]]
           base64 --decode /tmp/issue159.patch.b64 | gzip --decompress > /tmp/issue159.patch

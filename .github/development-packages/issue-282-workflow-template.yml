@@ -1,0 +1,52 @@
+name: Mission Requirements Cross-Source Audit
+
+on:
+  pull_request:
+    paths:
+      - 'src/MissionChief_Map_Command_Toolkit.user.js'
+      - 'src/data/mission-requirements-en_GB.json'
+      - '.github/fixtures/lssm-v4-en_GB-emv-baseline.json'
+      - '.github/fixtures/mission-requirements-cross-source-en_GB.json'
+      - '.github/scripts/audit_lssm_requirement_compatibility.py'
+      - '.github/scripts/test_mission_requirements_runtime.js'
+      - '.github/workflows/mission-requirements-cross-source-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/MissionChief_Map_Command_Toolkit.user.js'
+      - 'src/data/mission-requirements-en_GB.json'
+      - '.github/fixtures/lssm-v4-en_GB-emv-baseline.json'
+      - '.github/fixtures/mission-requirements-cross-source-en_GB.json'
+      - '.github/scripts/audit_lssm_requirement_compatibility.py'
+      - '.github/scripts/test_mission_requirements_runtime.js'
+      - '.github/workflows/mission-requirements-cross-source-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Execute parser, resolver and cross-source compatibility audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Run cross-source audit
+        run: |
+          mkdir -p audit-output
+          python3 .github/scripts/audit_lssm_requirement_compatibility.py \
+            --json-output audit-output/mission-requirements-cross-source-audit.json \
+            --markdown-output audit-output/mission-requirements-cross-source-audit.md
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mission-requirements-cross-source-audit
+          path: audit-output/
+          if-no-files-found: error
+          retention-days: 30

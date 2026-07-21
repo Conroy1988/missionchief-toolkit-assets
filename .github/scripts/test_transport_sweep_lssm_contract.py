@@ -45,7 +45,15 @@ def main() -> int:
         "existing vehicle-window route remains available as a fallback",
         "Returning to ${item.caption} for remaining alliance ambulances",
         "missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');",
-        "if (transportSweepReleaseConfirmationVisible()) return true;",
+        "const TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT = 'Understood! We have released the patient.';",
+        "function captureTransportSweepReleaseConfirmationBaseline()",
+        "function transportSweepReleaseConfirmationVisible(baseline = null)",
+        "if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;",
+        "function recordTransportSweepConfirmedRelease(releaseKey, message)",
+        "confirmedReleaseKeys: new Set()",
+        "transportSweepRuntime.confirmedReleaseKeys = new Set();",
+        "if (!liveRow && (!row?.isConnected || !anchor?.isConnected)) return true;",
+        "continuing with the confirmed patient result",
         "async function closeTransportSweepWindows(reason = 'navigation')",
         "const closed = await closeTransportSweepWindows(mode === 'mission' ? 'opening a mission' : 'opening a vehicle')",
         "const opened = await openTransportSweepPath(candidate.href, 'vehicle')",
@@ -66,7 +74,7 @@ def main() -> int:
     processor = re.search(r"async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep", source)
     assert processor, "transport sweep mission processor is missing"
     processor_text = processor.group(1)
-    release_index = processor_text.index("transportSweepRuntime.cleared += 1")
+    release_index = processor_text.index("recordTransportSweepConfirmedRelease(")
     return_index = processor_text.index("Returning to ${item.caption} for remaining alliance ambulances", release_index)
     reopen_index = processor_text.index("missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');", return_index)
     assert release_index < return_index < reopen_index, "successful releases must explicitly return to the same mission before the next scan"
@@ -111,7 +119,13 @@ def main() -> int:
     missing_hud = [marker for marker in required_hud_markers if marker not in source]
     assert not missing_hud, f"Missing Transport Sweep HUD contract markers: {missing_hud}"
     assert source.count("runtimeOnCleanup(removeTransportSweepHud);") == 1, "HUD cleanup must be registered exactly once"
-    assert source.count("transportSweepRuntime.cleared += 1") == 2, "Only the two confirmed direct/fallback release paths may increment cleared"
+    assert source.count("transportSweepRuntime.cleared += 1") == 1, "Only the idempotent confirmed-release recorder may increment cleared"
+    assert source.count("transportSweepRuntime.processed += 1") == 1, "Only the idempotent confirmed-release recorder may increment processed"
+    recorder = re.search(r"function recordTransportSweepConfirmedRelease\(releaseKey, message\) \{([\s\S]*?)\n    \}", source)
+    assert recorder, "Confirmed-release recorder is missing"
+    recorder_text = recorder.group(1)
+    assert recorder_text.index("confirmedReleaseKeys.has(key)") < recorder_text.index("transportSweepRuntime.cleared += 1"), "Duplicate protection must precede the counter update"
+    assert recorder_text.index("transportSweepRuntime.cleared += 1") < recorder_text.index("transportSweepLog(message)"), "Canonical counters must update before the shared UI render/log"
 
     renderer = re.search(r"function renderTransportSweepPanel\(\) \{([\s\S]*?)\n    \}", source)
     assert renderer, "Transport Sweep panel renderer is missing"
@@ -143,15 +157,22 @@ def main() -> int:
     assert f"scheduleTransportSweepHudDismiss({hud['final_summary_delay_ms']})" in start_text
 
     direct_click = processor_text.index("const cleared = await activateTransportSweepLssmRelease")
-    direct_increment = processor_text.index("transportSweepRuntime.cleared += 1", direct_click)
-    direct_log = processor_text.index("transportSweepLog(`Released", direct_increment)
-    assert direct_click < direct_increment < direct_log, "Direct LSSM HUD count must update only after confirmed release and then render through the canonical log"
+    direct_record = processor_text.index("recordTransportSweepConfirmedRelease(", direct_click)
+    direct_count = processor_text.index("if (confirmedThisAttempt) clearedHere += 1", direct_record)
+    assert direct_click < direct_record < direct_count, "Direct LSSM releases must enter the shared idempotent recorder only after confirmation"
 
     fallback_click = processor_text.index("button.click()")
     fallback_confirmation = processor_text.index("const cleared = await transportSweepWaitFor", fallback_click)
-    fallback_increment = processor_text.index("transportSweepRuntime.cleared += 1", fallback_confirmation)
-    fallback_log = processor_text.index("transportSweepLog(`Cleared", fallback_increment)
-    assert fallback_click < fallback_confirmation < fallback_increment < fallback_log, "Fallback HUD count must update only after confirmed discharge and then render through the canonical log"
+    fallback_record = processor_text.index("recordTransportSweepConfirmedRelease(", fallback_confirmation)
+    fallback_count = processor_text.index("if (confirmedThisAttempt) clearedHere += 1", fallback_record)
+    assert fallback_click < fallback_confirmation < fallback_record < fallback_count, "Fallback releases must enter the shared idempotent recorder only after confirmation"
+
+    confirmation = data["release_confirmation"]
+    assert confirmation["exact_visible_text"] in source, "The observed MissionChief success text must remain an explicit fallback contract"
+    assert "transportSweepDocumentContexts()" in source and "[role=\"alert\"]" in source, "Release evidence must include global same-origin alert surfaces"
+    assert "captureTransportSweepReleaseConfirmationBaseline()" in processor_text, "Fallback processing must capture stale-message evidence before clicking"
+    assert "captureTransportSweepReleaseConfirmationBaseline()" in re.search(r"async function activateTransportSweepLssmRelease\(candidate\) \{([\s\S]*?)\n    \}", source).group(1), "Direct LSSM processing must capture stale-message evidence before clicking"
+    assert processor_text.count("continuing with the confirmed patient result") == 2, "Both release routes must preserve success after cleanup/navigation failure"
 
     assert hud["id"] not in closer.group(1), "MissionChief lightbox cleanup must not target the persistent HUD"
     assert "removeTransportSweepHud" not in closer.group(1), "Window replacement must not remove the persistent HUD"

@@ -39,6 +39,43 @@ function walk(node, visitor, parent = null, owner = '<top-level>') {
   }
 }
 
+function standaloneCommentIndexes(lines) {
+  const indexes = new Set();
+  const blocks = [];
+  for (let index = 1; index < lines.length - 1;) {
+    const stripped = lines[index].trim();
+    if (!stripped.startsWith('/*')) {
+      index += 1;
+      continue;
+    }
+    const start = index;
+    let end = index;
+    let valid = !lines[index].includes('${');
+    const firstRemainder = stripped.slice(2);
+    if (firstRemainder.includes('*/')) {
+      valid = valid && !firstRemainder.split('*/', 2)[1].trim();
+    } else {
+      let found = false;
+      for (let cursor = index + 1; cursor < lines.length - 1; cursor += 1) {
+        end = cursor;
+        if (lines[cursor].includes('${')) valid = false;
+        if (lines[cursor].includes('*/')) {
+          valid = valid && !lines[cursor].split('*/', 2)[1].trim();
+          found = true;
+          break;
+        }
+      }
+      if (!found) valid = false;
+    }
+    if (valid) {
+      for (let cursor = start; cursor <= end; cursor += 1) indexes.add(cursor);
+      blocks.push({ startLine: start + 1, endLine: end + 1, lines: end - start + 1 });
+    }
+    index = end + 1;
+  }
+  return { indexes, blocks };
+}
+
 const candidates = [];
 walk(ast, (node, _parent, owner) => {
   if (node.type !== 'TemplateLiteral' || owner !== 'installMainStyles') return;
@@ -51,78 +88,93 @@ if (candidates[0].bytes < 800000) throw new Error(`unexpected installMainStyles 
 
 const raw = original.slice(target.start + 1, target.end - 1);
 const rawLines = raw.split('\n');
-const keptLines = rawLines.filter((line, index) => index === 0 || index === rawLines.length - 1 || line.trim());
-const removedBlankLines = rawLines.length - keptLines.length;
-if (removedBlankLines < 500) throw new Error(`only ${removedBlankLines} blank lines are safely removable; Issue #253 requires at least 500`);
-const beforeNonEmpty = rawLines.filter(line => line.trim());
-const afterRaw = keptLines.join('\n');
-const afterNonEmpty = keptLines.filter(line => line.trim());
-if (beforeNonEmpty.length !== afterNonEmpty.length || beforeNonEmpty.some((line, index) => line !== afterNonEmpty[index])) {
-  throw new Error('non-empty main-style source lines changed during compaction');
+const blankIndexes = new Set();
+for (let index = 1; index < rawLines.length - 1; index += 1) {
+  if (!rawLines[index].trim()) blankIndexes.add(index);
 }
-const nonEmptyPayload = beforeNonEmpty.join('\n');
-const nonEmptyLinesSha256 = crypto.createHash('sha256').update(nonEmptyPayload, 'utf8').digest('hex');
+const comments = standaloneCommentIndexes(rawLines);
+const removableIndexes = new Set([...blankIndexes, ...comments.indexes]);
+const keptLines = rawLines.filter((_line, index) => !removableIndexes.has(index));
+const removedBlankLines = blankIndexes.size;
+const removedStandaloneCommentLines = comments.indexes.size;
+const removedFormattingLines = removableIndexes.size;
+if (removedFormattingLines < 500) {
+  throw new Error(`only ${removedFormattingLines} standalone formatting lines are safely removable (${removedBlankLines} blank, ${removedStandaloneCommentLines} comment); Issue #253 requires at least 500`);
+}
+const beforeSemanticLines = rawLines.filter((_line, index) => !removableIndexes.has(index));
+const afterRaw = keptLines.join('\n');
+if (beforeSemanticLines.length !== keptLines.length || beforeSemanticLines.some((line, index) => line !== keptLines[index])) {
+  throw new Error('ordered non-formatting main-style source lines changed during compaction');
+}
+const semanticPayload = beforeSemanticLines.join('\n');
+const semanticLinesSha256 = crypto.createHash('sha256').update(semanticPayload, 'utf8').digest('hex');
 
 let compacted = original.slice(0, target.start + 1) + afterRaw + original.slice(target.end - 1);
 if ((compacted.match(/4\.20\.20/gu) || []).length !== 2) throw new Error('expected exactly two 4.20.20 source version markers');
 compacted = compacted.replaceAll(oldVersion, newVersion);
 parse(compacted, { ecmaVersion: 'latest', sourceType: 'script' });
 const after = analyseSource(compacted, 'src/MissionChief_Map_Command_Toolkit.user.js');
-if (before.source.lines - after.source.lines !== removedBlankLines) {
-  throw new Error(`source line delta ${before.source.lines - after.source.lines} does not match removed blank lines ${removedBlankLines}`);
+if (before.source.lines - after.source.lines !== removedFormattingLines) {
+  throw new Error(`source line delta ${before.source.lines - after.source.lines} does not match removed formatting lines ${removedFormattingLines}`);
 }
 if (after.source.lines > before.source.lines - 500) throw new Error('candidate does not recover the required 500 source lines');
 if (after.summary.mutationObserverConstructions !== before.summary.mutationObserverConstructions ||
     after.summary.resizeObserverConstructions !== before.summary.resizeObserverConstructions ||
     after.summary.schedulerCalls !== before.summary.schedulerCalls) {
-  throw new Error('observer or scheduler structure changed during whitespace-only compaction');
+  throw new Error('observer or scheduler structure changed during formatting-only compaction');
 }
 
 fs.writeFileSync(sourcePath, compacted, 'utf8');
 for (const distPath of distPaths) fs.writeFileSync(distPath, compacted, 'utf8');
 const fixture = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   subsystem: 'installMainStyles',
   originalVersion: oldVersion,
   candidateVersion: newVersion,
   originalSourceLines: before.source.lines,
   candidateSourceLines: after.source.lines,
-  recoveredSourceLines: removedBlankLines,
+  recoveredSourceLines: removedFormattingLines,
+  removedBlankLines,
+  removedStandaloneCommentLines,
+  removedStandaloneCommentBlocks: comments.blocks.length,
   originalTemplateLines: rawLines.length,
   candidateTemplateLines: keptLines.length,
-  nonEmptyLineCount: beforeNonEmpty.length,
-  nonEmptyLinesSha256,
+  semanticLineCount: beforeSemanticLines.length,
+  semanticLinesSha256,
   originalSourceSha256: before.source.sha256,
   candidateSourceSha256: after.source.sha256,
-  invariant: 'All ordered non-empty template source lines are byte-for-byte identical; only blank physical lines were removed.'
+  invariant: 'Every ordered non-formatting template source line is byte-for-byte identical; only blank lines and standalone full-line CSS comments were removed.'
 };
 fs.mkdirSync(path.dirname(fixturePath), { recursive: true });
 fs.writeFileSync(fixturePath, `${JSON.stringify(fixture, null, 2)}\n`, 'utf8');
 
 const report = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   issue: 253,
-  selectedSubsystem: 'installMainStyles blank physical lines',
+  selectedSubsystem: 'installMainStyles standalone source formatting',
   before: before.source,
   after: after.source,
-  recoveredSourceLines: removedBlankLines,
+  recoveredSourceLines: removedFormattingLines,
   resultingHeadroom: 32000 - after.source.lines,
   template: {
     originalLines: rawLines.length,
     candidateLines: keptLines.length,
-    nonEmptyLineCount: beforeNonEmpty.length,
-    nonEmptyLinesSha256
+    removedBlankLines,
+    removedStandaloneCommentLines,
+    removedStandaloneCommentBlocks: comments.blocks.length,
+    semanticLineCount: beforeSemanticLines.length,
+    semanticLinesSha256
   },
   structuralParity: {
     mutationObserverConstructions: [before.summary.mutationObserverConstructions, after.summary.mutationObserverConstructions],
     resizeObserverConstructions: [before.summary.resizeObserverConstructions, after.summary.resizeObserverConstructions],
     schedulerCalls: [before.summary.schedulerCalls, after.summary.schedulerCalls],
-    selectorsDeclarationsAndInterpolations: 'ordered non-empty source lines unchanged'
+    selectorsDeclarationsAndInterpolations: 'ordered non-formatting source lines unchanged'
   },
-  excluded: ['selector grouping', 'declaration consolidation', 'cascade reordering', 'style delivery changes', 'observer changes', 'scheduler changes', 'network changes'],
+  excluded: ['inline comment removal', 'selector grouping', 'declaration consolidation', 'cascade reordering', 'style delivery changes', 'observer changes', 'scheduler changes', 'network changes'],
   rollbackBoundary: 'Revert the single source-headroom implementation commit; no persistent state or migration is introduced.'
 };
 fs.writeFileSync(reportJsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-const md = `# Issue #253 — safe source headroom\n\n## Measured baseline\n\n- Toolkit version: \`${oldVersion}\`\n- Source: **${before.source.lines.toLocaleString('en-GB')} lines** / 32,000\n- Remaining headroom: **${(32000 - before.source.lines).toLocaleString('en-GB')} lines**\n- Source SHA-256: \`${before.source.sha256}\`\n- Main stylesheet template: **${rawLines.length.toLocaleString('en-GB')} physical lines**, **${beforeNonEmpty.length.toLocaleString('en-GB')} non-empty lines**\n\n## Selected bounded subsystem\n\nOnly blank physical lines inside the existing \`installMainStyles\` template are removed. Every ordered non-empty line remains byte-for-byte identical. This preserves every selector, declaration, interpolation, rule order and cascade position.\n\nThe first implementation deliberately excludes selector grouping, declaration consolidation, stylesheet splitting, deferred delivery, observer scope, scheduler timing, state ownership and network sequencing.\n\n## Result\n\n- Candidate version: \`${newVersion}\`\n- Recovered source lines: **${removedBlankLines.toLocaleString('en-GB')}**\n- Candidate source lines: **${after.source.lines.toLocaleString('en-GB')}**\n- Resulting headroom: **${(32000 - after.source.lines).toLocaleString('en-GB')} lines**\n- Ordered non-empty stylesheet hash: \`${nonEmptyLinesSha256}\`\n- MutationObserver constructions: **${before.summary.mutationObserverConstructions} → ${after.summary.mutationObserverConstructions}**\n- ResizeObserver constructions: **${before.summary.resizeObserverConstructions} → ${after.summary.resizeObserverConstructions}**\n- Scheduler calls: **${before.summary.schedulerCalls} → ${after.summary.schedulerCalls}**\n\n## Permanent contract\n\nThe committed fixture records the original/candidate line counts, recovered line count and SHA-256 of the ordered non-empty stylesheet lines. Validation fails if blank lines return without review or if any non-empty line changes without updating the reviewed fixture.\n\n## Rollback boundary\n\nRevert the single implementation commit. No storage migration, retained DOM reference, lifecycle change or external dependency is introduced.\n`;
+const md = `# Issue #253 — safe source headroom\n\n## Measured baseline\n\n- Toolkit version: \`${oldVersion}\`\n- Source: **${before.source.lines.toLocaleString('en-GB')} lines** / 32,000\n- Remaining headroom: **${(32000 - before.source.lines).toLocaleString('en-GB')} lines**\n- Source SHA-256: \`${before.source.sha256}\`\n- Main stylesheet template: **${rawLines.length.toLocaleString('en-GB')} physical lines**\n\n## Selected bounded subsystem\n\nOnly standalone source formatting inside the existing \`installMainStyles\` template is removed: **${removedBlankLines.toLocaleString('en-GB')} blank lines** and **${removedStandaloneCommentLines.toLocaleString('en-GB')} lines across ${comments.blocks.length.toLocaleString('en-GB')} full-line CSS comment blocks**. Every ordered selector, declaration, interpolation, inline comment and rule remains byte-for-byte identical and in the same cascade position.\n\nThe implementation deliberately excludes selector grouping, declaration consolidation, stylesheet splitting, deferred delivery, observer scope, scheduler timing, state ownership and network sequencing.\n\n## Result\n\n- Candidate version: \`${newVersion}\`\n- Recovered source lines: **${removedFormattingLines.toLocaleString('en-GB')}**\n- Candidate source lines: **${after.source.lines.toLocaleString('en-GB')}**\n- Resulting headroom: **${(32000 - after.source.lines).toLocaleString('en-GB')} lines**\n- Ordered non-formatting stylesheet hash: \`${semanticLinesSha256}\`\n- MutationObserver constructions: **${before.summary.mutationObserverConstructions} → ${after.summary.mutationObserverConstructions}**\n- ResizeObserver constructions: **${before.summary.resizeObserverConstructions} → ${after.summary.resizeObserverConstructions}**\n- Scheduler calls: **${before.summary.schedulerCalls} → ${after.summary.schedulerCalls}**\n\n## Permanent contract\n\nThe committed fixture records the original/candidate line counts, exact formatting categories removed and SHA-256 of every ordered non-formatting stylesheet line. Validation fails if removable formatting returns without review or if any selector, declaration, interpolation, inline comment or rule line changes without updating the reviewed fixture.\n\n## Rollback boundary\n\nRevert the single implementation commit. No storage migration, retained DOM reference, lifecycle change or external dependency is introduced.\n`;
 fs.writeFileSync(reportMdPath, md, 'utf8');
-console.log(`Recovered ${removedBlankLines} source lines; ${after.source.lines} remain; headroom is ${32000 - after.source.lines}.`);
+console.log(`Recovered ${removedFormattingLines} source lines (${removedBlankLines} blank, ${removedStandaloneCommentLines} standalone comment); ${after.source.lines} remain; headroom is ${32000 - after.source.lines}.`);

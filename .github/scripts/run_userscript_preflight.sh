@@ -32,6 +32,7 @@ CONTRACTS=(
   .github/scripts/test_boot_lifecycle_contract.py
   .github/scripts/test_settings_ui_contract.py
   .github/scripts/test_root_attribute_write_suppression_contract.py
+  .github/scripts/test_main_style_source_headroom.py
   .github/scripts/test_desktop_panel_layout_contract.py
   .github/scripts/test_section_navigation_contract.py
   .github/scripts/test_mission_value_contract.py

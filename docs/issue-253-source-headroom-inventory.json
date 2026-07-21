@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 5,
+  "issue": 253,
+  "selectedSubsystem": "installMainStyles standalone source formatting",
+  "before": {
+    "path": "src/MissionChief_Map_Command_Toolkit.user.js",
+    "version": "4.20.20",
+    "sha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
+    "bytes": 2036855,
+    "lines": 31671,
+    "nonemptyLines": 30060
+  },
+  "after": {
+    "path": "src/MissionChief_Map_Command_Toolkit.user.js",
+    "version": "4.20.21",
+    "sha256": "902171c43ba861edece0e65c97f2385fb43892b9129094d39909a7104bad03ee",
+    "bytes": 2023737,
+    "lines": 31171,
+    "nonemptyLines": 29860
+  },
+  "recoveredSourceLines": 500,
+  "resultingHeadroom": 829,
+  "template": {
+    "originalLines": 12218,
+    "candidateLines": 11718,
+    "removedBlankLines": 300,
+    "removedStandaloneCommentLines": 185,
+    "removedStandaloneCommentBlocks": 125,
+    "joinedClosingBraceLines": 15,
+    "canonicalCssSha256": "29ebbb034614b751ee485ce2c02468e8b98cdd4a81bec31d94f1a1959d7ddb69",
+    "candidateTemplateSha256": "6fe8a5e148a0f57c66ab08981790cd8d02f5160f9e0452b252aaea6662afdd2f"
+  },
+  "structuralParity": {
+    "mutationObserverConstructions": [
+      12,
+      12
+    ],
+    "resizeObserverConstructions": [
+      4,
+      4
+    ],
+    "schedulerCalls": [
+      121,
+      121
+    ],
+    "cssContent": "canonical CSS formatting hash unchanged"
+  },
+  "excluded": [
+    "inline comment removal",
+    "selector grouping",
+    "declaration consolidation",
+    "cascade reordering",
+    "style delivery changes",
+    "observer changes",
+    "scheduler changes",
+    "network changes"
+  ],
+  "rollbackBoundary": "Revert the single source-headroom implementation commit; no persistent state or migration is introduced."
+}

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.23
+// @version      4.20.24
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.23',
+        version: '4.20.24',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -25861,6 +25861,8 @@ Create the private backup now?`);
     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
     const FINANCE_RULE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     const FINANCE_POLICY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const FINANCE_OVERVIEW_CACHE_TTL_MS = 5 * 60 * 1000;
+    const FINANCE_OVERVIEW_MAX_PAGES = 500;
     const FINANCE_VAULT_SCHEMA = 2;
     const FINANCE_VAULT_MAX_TRANSACTIONS = 250000;
     const FINANCE_VAULT_MAX_CHECKPOINTS = 1000;
@@ -25913,6 +25915,7 @@ Create the private backup now?`);
     let activeFinancialPolicyVersion = 'built-in';
     let financeVaultStoreMemory = null;
     const financeVaultProfileMemory = new Map();
+    let financialOverviewCache = { fetchedAt: 0, rows: [], pageCount: 0, lastPage: 0, coverageStartMs: null, coverageEndMs: null, complete: false, malformedRowCount: 0, duplicateDateCount: 0 };
 
     function financeNormaliseText(value) {
         return String(value || '').normalize('NFKC').replace(/\s+/gu, ' ').trim();
@@ -26838,6 +26841,203 @@ Create the private backup now?`);
         return { entries, invalidTimestampCount, lastPage };
     }
 
+    function normaliseFinancialOverviewHeader(value) {
+        return financeNormaliseText(value).toLowerCase().replace(/[^a-z]/gu, '');
+    }
+
+    function parseFinancialOverviewDate(value) {
+        const text = financeNormaliseText(value);
+        const match = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/u);
+        if (!match) return null;
+        const [, day, month, year] = match;
+        const date = new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0);
+        if (date.getFullYear() !== Number(year) || date.getMonth() !== Number(month) - 1 || date.getDate() !== Number(day)) return null;
+        const dayStartMs = date.getTime();
+        return { dateKey: localIsoDate(date), dayStartMs, dayEndMs: addLocalDays(dayStartMs, 1), label: text };
+    }
+
+    function financialPaginationLastPage(doc) {
+        let lastPage = 1;
+        for (const item of Array.from(doc?.querySelectorAll?.('.pagination li') || [])) {
+            const textPage = Number(String(item.textContent || '').replace(/[^\d]/gu, ''));
+            if (Number.isFinite(textPage) && textPage > lastPage) lastPage = textPage;
+            const href = item.querySelector?.('a[href]')?.getAttribute?.('href') || '';
+            if (!href) continue;
+            try {
+                const url = new URL(href, document.baseURI || pageWindow.location.href);
+                const hrefPage = Number(url.searchParams.get('page'));
+                if (Number.isFinite(hrefPage) && hrefPage > lastPage) lastPage = hrefPage;
+            } catch (err) {}
+        }
+        return lastPage;
+    }
+
+    function parseCreditOverviewDocument(doc, pageNumber = 1) {
+        const rowsByDate = new Map();
+        let malformedRowCount = 0;
+        let duplicateDateCount = 0;
+        const tables = Array.from(doc?.querySelectorAll?.('table') || []);
+        const candidates = tables.length ? tables : [{
+            querySelectorAll(selector) {
+                if (selector === 'tbody tr') return doc?.querySelectorAll?.('table tbody tr') || [];
+                return [];
+            }
+        }];
+        for (const table of candidates) {
+            let headers = Array.from(table?.querySelectorAll?.('thead th') || []);
+            if (!headers.length) headers = Array.from(table?.querySelectorAll?.('tr th') || []);
+            const normalisedHeaders = headers.map(header => normaliseFinancialOverviewHeader(header?.textContent));
+            const findIndex = values => normalisedHeaders.findIndex(header => values.includes(header));
+            let dateIndex = findIndex(['date', 'datum']);
+            let revenueIndex = findIndex(['revenue', 'income', 'earnings']);
+            let spendingIndex = findIndex(['spendings', 'spending', 'expenses', 'expenditure']);
+            let sumIndex = findIndex(['sum', 'net', 'total', 'result']);
+            const bodyRows = Array.from(table?.querySelectorAll?.('tbody tr') || []);
+            if (!bodyRows.length) continue;
+            if (dateIndex < 0 || revenueIndex < 0 || spendingIndex < 0) {
+                const widest = Math.max(0, ...bodyRows.map(row => Array.from(row?.children || []).length));
+                if (widest < 4) continue;
+                [dateIndex, revenueIndex, spendingIndex, sumIndex] = [0, 1, 2, 3];
+            }
+            for (let rowIndex = 0; rowIndex < bodyRows.length; rowIndex++) {
+                const cells = Array.from(bodyRows[rowIndex]?.children || []);
+                if (cells.length <= Math.max(dateIndex, revenueIndex, spendingIndex, Math.max(0, sumIndex))) {
+                    malformedRowCount++;
+                    continue;
+                }
+                const date = parseFinancialOverviewDate(cells[dateIndex]?.textContent);
+                const revenueText = financeNormaliseText(cells[revenueIndex]?.textContent);
+                const spendingText = financeNormaliseText(cells[spendingIndex]?.textContent);
+                const sumText = sumIndex >= 0 ? financeNormaliseText(cells[sumIndex]?.textContent) : '';
+                if (!date || !revenueText || !spendingText) {
+                    malformedRowCount++;
+                    continue;
+                }
+                const revenue = Math.max(0, parseCreditInteger(revenueText));
+                const parsedSpending = parseCreditInteger(spendingText);
+                const spending = parsedSpending > 0 ? -parsedSpending : parsedSpending;
+                const calculatedNet = revenue + spending;
+                const net = sumText ? parseCreditInteger(sumText) : calculatedNet;
+                if (Math.abs(net - calculatedNet) > 1) {
+                    malformedRowCount++;
+                    continue;
+                }
+                const row = {
+                    ...date,
+                    revenue,
+                    spending,
+                    net,
+                    calculatedNet,
+                    netMismatch: false,
+                    page: Math.max(1, Number(pageNumber) || 1),
+                    row: rowIndex
+                };
+                if (rowsByDate.has(date.dateKey)) {
+                    duplicateDateCount++;
+                    const existing = rowsByDate.get(date.dateKey);
+                    if (existing.revenue !== row.revenue || existing.spending !== row.spending || existing.net !== row.net) malformedRowCount++;
+                    continue;
+                }
+                rowsByDate.set(date.dateKey, row);
+            }
+            if (rowsByDate.size) break;
+        }
+        return {
+            rows: Array.from(rowsByDate.values()).sort((a, b) => b.dayStartMs - a.dayStartMs),
+            malformedRowCount,
+            duplicateDateCount,
+            lastPage: financialPaginationLastPage(doc)
+        };
+    }
+
+    async function fetchCreditOverviewPage(pageNumber) {
+        const page = Math.max(1, Math.round(Number(pageNumber) || 1));
+        const attempts = Math.max(1, Math.min(5, Number(activeFinancialPolicy?.scan?.retryAttempts) || 3));
+        let lastError = null;
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            try {
+                const path = page === 1 ? '/credits/overview' : `/credits/overview?page=${page}`;
+                const result = await fetchSameOriginDocument(path);
+                return parseCreditOverviewDocument(result.doc, page);
+            } catch (err) {
+                lastError = err;
+                if (attempt >= attempts - 1) break;
+                const delay = Math.min(4000, 350 * Math.pow(2, attempt) + Math.floor(Math.random() * 180));
+                setDiscordStatus(`MissionChief credits overview page ${page.toLocaleString('en-GB')} needs another attempt…`, 'busy');
+                if (!await runtimeDelay(delay)) throw new Error('Toolkit runtime stopped while retrying the credits overview.');
+            }
+        }
+        throw lastError || new Error(`MissionChief credits overview page ${page} could not be read.`);
+    }
+
+    function financialOverviewCacheCovers(startMs, endMs, cache = financialOverviewCache) {
+        if (!cache?.rows?.length || !Number.isFinite(Number(cache.coverageStartMs)) || !Number.isFinite(Number(cache.coverageEndMs))) return false;
+        const requestedStart = localDayStart(Math.max(0, Number(startMs) || 0));
+        const requestedEnd = localDayStart(Math.max(requestedStart, Number(endMs || Date.now()) - 1));
+        return cache.coverageStartMs <= requestedStart && cache.coverageEndMs > requestedEnd;
+    }
+
+    async function fetchCreditOverview(requiredStartMs, requiredEndMs, options) {
+        const force = Boolean(options?.force);
+        const now = Date.now();
+        const startMs = Math.max(0, Number(requiredStartMs) || 0);
+        const endMs = Math.max(startMs + 1, Number(requiredEndMs) || now);
+        if (!force && now - Number(financialOverviewCache.fetchedAt || 0) < FINANCE_OVERVIEW_CACHE_TTL_MS && financialOverviewCacheCovers(startMs, endMs)) {
+            return { ...financialOverviewCache, rows: financialOverviewCache.rows.slice(), available: true, fromCache: true, coverageReached: true, error: '' };
+        }
+        const rowsByDate = new Map();
+        let malformedRowCount = 0;
+        let duplicateDateCount = 0;
+        let pageCount = 0;
+        let lastPage = 1;
+        let failure = null;
+        const targetStart = localDayStart(startMs);
+        try {
+            for (let page = 1; page <= Math.min(lastPage, FINANCE_OVERVIEW_MAX_PAGES); page++) {
+                const parsed = await fetchCreditOverviewPage(page);
+                pageCount++;
+                lastPage = Math.max(lastPage, Number(parsed.lastPage) || 1);
+                malformedRowCount += Number(parsed.malformedRowCount) || 0;
+                duplicateDateCount += Number(parsed.duplicateDateCount) || 0;
+                for (const row of parsed.rows) {
+                    if (rowsByDate.has(row.dateKey)) {
+                        duplicateDateCount++;
+                        continue;
+                    }
+                    rowsByDate.set(row.dateKey, row);
+                }
+                const oldest = parsed.rows.length ? Math.min(...parsed.rows.map(row => row.dayStartMs)) : Infinity;
+                if (startMs > 0 && oldest <= targetStart) break;
+                if (page >= lastPage) break;
+                if (page % FINANCE_FETCH_YIELD_EVERY === 0 && !await runtimeDelay(25)) throw new Error('Toolkit runtime stopped while reading the credits overview.');
+            }
+        } catch (err) {
+            failure = err;
+        }
+        const rows = Array.from(rowsByDate.values()).sort((a, b) => b.dayStartMs - a.dayStartMs);
+        if (!rows.length) {
+            const cached = financialOverviewCache.rows?.length ? financialOverviewCache : null;
+            if (cached) return { ...cached, rows: cached.rows.slice(), available: true, fromCache: true, stale: true, coverageReached: financialOverviewCacheCovers(startMs, endMs, cached), error: failure?.message || 'MissionChief credits overview was unavailable.' };
+            return { available: false, rows: [], pageCount, lastPage, complete: false, coverageReached: false, malformedRowCount, duplicateDateCount, fromCache: false, stale: false, error: failure?.message || 'MissionChief credits overview was unavailable.' };
+        }
+        const coverageStartMs = Math.min(...rows.map(row => row.dayStartMs));
+        const coverageEndMs = Math.max(...rows.map(row => row.dayEndMs));
+        const complete = !failure && pageCount >= Math.min(lastPage, FINANCE_OVERVIEW_MAX_PAGES);
+        const cache = {
+            fetchedAt: now,
+            rows,
+            pageCount,
+            lastPage,
+            coverageStartMs,
+            coverageEndMs,
+            complete,
+            malformedRowCount,
+            duplicateDateCount
+        };
+        financialOverviewCache = cache;
+        return { ...cache, rows: rows.slice(), available: true, fromCache: false, stale: false, coverageReached: financialOverviewCacheCovers(startMs, endMs, cache), error: failure?.message || '' };
+    }
+
     function financialLedgerAnchor(entries, count = 3) {
         return entries.slice(0, Math.max(1, count)).map(entry =>
             `${entry.timestamp}|${entry.amount}|${entry.description}|${entry.rawTimestamp || entry.dateLabel}`
@@ -27562,6 +27762,158 @@ Create the private backup now?`);
         };
     }
 
+    function financialOverviewDayIsAuthoritative(dayStartMs, period) {
+        const dayStart = Number(dayStartMs);
+        const dayEnd = addLocalDays(dayStart, 1);
+        if (!Number.isFinite(dayStart) || period.startMs > dayStart) return false;
+        const todayStart = localDayStart();
+        if (dayStart === todayStart) return period.endMs >= Date.now() - 10 * 60 * 1000;
+        return period.endMs >= dayEnd;
+    }
+
+    function reconcileFinancialOverview(summary, transactions, period, overview) {
+        if (summary?.overviewAudit) return summary;
+        const base = { ...summary, buckets: summary.buckets.map(bucket => ({ ...bucket })) };
+        const unavailable = !overview?.available || !Array.isArray(overview.rows) || !overview.rows.length;
+        const emptyAudit = {
+            available: !unavailable,
+            status: unavailable ? 'unavailable' : 'not-applicable',
+            label: unavailable ? 'Credits overview unavailable; detailed ledger totals retained' : 'No complete overview day falls inside this period',
+            rowsUsed: 0,
+            rowsCompared: 0,
+            pageCount: Number(overview?.pageCount) || 0,
+            lastPage: Number(overview?.lastPage) || 0,
+            coverageReached: Boolean(overview?.coverageReached),
+            malformedRowCount: Number(overview?.malformedRowCount) || 0,
+            duplicateDateCount: Number(overview?.duplicateDateCount) || 0,
+            ledgerIncome: summary.income,
+            ledgerSpending: summary.spending,
+            ledgerNet: summary.net,
+            overviewIncome: 0,
+            overviewSpending: 0,
+            overviewNet: 0,
+            incomeVariance: 0,
+            spendingVariance: 0,
+            netVariance: 0,
+            unresolvedVariance: 0,
+            days: [],
+            error: String(overview?.error || '')
+        };
+        if (unavailable) return { ...base, overviewAudit: emptyAudit };
+        const ledgerDays = new Map();
+        for (const entry of transactions) {
+            const timestamp = Number(entry?.timestamp);
+            if (!Number.isFinite(timestamp) || timestamp < period.startMs || timestamp >= period.endMs) continue;
+            const dateKey = localIsoDate(new Date(timestamp));
+            const day = ledgerDays.get(dateKey) || { income: 0, spending: 0, net: 0 };
+            const amount = Number(entry.amount) || 0;
+            if (amount > 0) day.income += amount;
+            else day.spending += amount;
+            day.net += amount;
+            ledgerDays.set(dateKey, day);
+        }
+        const auditDays = [];
+        let coveredLedgerIncome = 0;
+        let coveredLedgerSpending = 0;
+        let coveredLedgerNet = 0;
+        let overviewIncome = 0;
+        let overviewSpending = 0;
+        let overviewNet = 0;
+        for (const row of overview.rows) {
+            if (row.dayEndMs <= period.startMs || row.dayStartMs >= period.endMs) continue;
+            if (!financialOverviewDayIsAuthoritative(row.dayStartMs, period)) continue;
+            const ledgerDay = ledgerDays.get(row.dateKey) || { income: 0, spending: 0, net: 0 };
+            const incomeVariance = row.revenue - ledgerDay.income;
+            const spendingVariance = row.spending - ledgerDay.spending;
+            const netVariance = row.net - ledgerDay.net;
+            auditDays.push({
+                dateKey: row.dateKey,
+                dayStartMs: row.dayStartMs,
+                ledgerIncome: ledgerDay.income,
+                ledgerSpending: ledgerDay.spending,
+                ledgerNet: ledgerDay.net,
+                overviewIncome: row.revenue,
+                overviewSpending: row.spending,
+                overviewNet: row.net,
+                incomeVariance,
+                spendingVariance,
+                netVariance,
+                exact: Math.abs(incomeVariance) <= 1 && Math.abs(spendingVariance) <= 1 && Math.abs(netVariance) <= 1
+            });
+            coveredLedgerIncome += ledgerDay.income;
+            coveredLedgerSpending += ledgerDay.spending;
+            coveredLedgerNet += ledgerDay.net;
+            overviewIncome += row.revenue;
+            overviewSpending += row.spending;
+            overviewNet += row.net;
+            const midpoint = row.dayStartMs + 12 * 60 * 60 * 1000;
+            const bucket = base.buckets.find(candidate => midpoint >= candidate.start && midpoint < candidate.end);
+            if (bucket) {
+                bucket.income += incomeVariance;
+                bucket.spending += Math.abs(row.spending) - Math.abs(ledgerDay.spending);
+                bucket.net += netVariance;
+            }
+        }
+        if (!auditDays.length) return { ...base, overviewAudit: emptyAudit };
+        const incomeVariance = overviewIncome - coveredLedgerIncome;
+        const spendingVariance = overviewSpending - coveredLedgerSpending;
+        const netVariance = overviewNet - coveredLedgerNet;
+        const income = summary.income + incomeVariance;
+        const spending = Math.max(0, summary.spending + Math.abs(overviewSpending) - Math.abs(coveredLedgerSpending));
+        const net = income - spending;
+        const status = Math.abs(netVariance) <= 1 && auditDays.every(day => day.exact)
+            ? (overview.coverageReached ? 'reconciled' : 'partial')
+            : 'variance';
+        const label = status === 'reconciled'
+            ? `${auditDays.length.toLocaleString('en-GB')} overview day${auditDays.length === 1 ? '' : 's'} fully reconciled`
+            : status === 'partial'
+                ? `${auditDays.length.toLocaleString('en-GB')} overview day${auditDays.length === 1 ? '' : 's'} reconciled; requested range exceeds fetched overview coverage`
+                : `Overview checkpoint variance ${formatSignedCredits(netVariance)}`;
+        const calendarHours = Math.max(1 / 60, Number(summary.calendarHours) || period.durationMs / 3600000);
+        const activeHours = Math.max(0.25, Number(summary.activeHours) || 0.25);
+        const bucketIncomeValues = base.buckets.map(bucket => bucket.income);
+        return {
+            ...base,
+            income,
+            spending,
+            net,
+            incomePerHour: Math.round(income / calendarHours),
+            activeIncomePerHour: Math.round(income / activeHours),
+            operatingMarginPercent: income ? Math.round((summary.operatingResult / income) * 1000) / 10 : summary.operatingExpense ? -100 : 0,
+            capitalInvestmentRatioPercent: income ? Math.round((summary.capitalInvestment / income) * 1000) / 10 : summary.capitalInvestment ? 100 : 0,
+            allianceIncomePercent: income ? Math.round((summary.allianceIncome / income) * 1000) / 10 : 0,
+            personalIncomePercent: income ? Math.round((summary.personalIncome / income) * 1000) / 10 : 0,
+            incomeConcentrationPercent: income && summary.topIncomeCategory ? Math.round((summary.topIncomeCategory.total / income) * 1000) / 10 : 0,
+            incomeVolatilityPercent: bucketIncomeValues.length && income
+                ? Math.round((standardDeviation(bucketIncomeValues) / Math.max(1, bucketIncomeValues.reduce((sum, value) => sum + value, 0) / bucketIncomeValues.length)) * 1000) / 10
+                : 0,
+            overviewAudit: {
+                available: true,
+                status,
+                label,
+                rowsUsed: auditDays.length,
+                rowsCompared: auditDays.length,
+                pageCount: Number(overview.pageCount) || 0,
+                lastPage: Number(overview.lastPage) || 0,
+                coverageReached: Boolean(overview.coverageReached),
+                malformedRowCount: Number(overview.malformedRowCount) || 0,
+                duplicateDateCount: Number(overview.duplicateDateCount) || 0,
+                ledgerIncome: coveredLedgerIncome,
+                ledgerSpending: Math.abs(coveredLedgerSpending),
+                ledgerNet: coveredLedgerNet,
+                overviewIncome,
+                overviewSpending: Math.abs(overviewSpending),
+                overviewNet,
+                incomeVariance,
+                spendingVariance,
+                netVariance,
+                unresolvedVariance: Math.abs(netVariance) <= 1 ? 0 : netVariance,
+                days: auditDays,
+                error: String(overview.error || '')
+            }
+        };
+    }
+
     function percentageChange(current, previous) {
         const currentValue = Number(current) || 0;
         const previousValue = Number(previous) || 0;
@@ -27694,6 +28046,9 @@ Create the private backup now?`);
         const add = (severity, title, detail) => alerts.push({ severity, title, detail });
         const risk = activeFinancialPolicy?.risk || BUILTIN_FINANCIAL_POLICY.risk;
         if (!context.ledgerComplete) add('high', 'Partial ledger coverage', 'The requested period was not fully verified from the MissionChief ledger or local archive.');
+        if (context.overviewStatus === 'variance') add('high', 'Credits overview variance', `MissionChief daily aggregates differ from the detailed ledger by ${formatSignedCredits(context.overviewVariance)}. Aggregate totals use the overview checkpoint while categories remain ledger-derived.`);
+        else if (context.overviewStatus === 'partial') add('medium', 'Partial overview coverage', 'Only the complete daily rows available from MissionChief were reconciled; the remaining period retains detailed-ledger totals.');
+        else if (context.overviewStatus === 'unavailable') add('low', 'Credits overview unavailable', 'The report remains operational using the detailed ledger, but daily aggregate verification could not be completed.');
         if (context.archiveTruncated) add('high', 'Local archive capacity reached', `${Number(context.droppedTransactions || 0).toLocaleString('en-GB')} older transactions were not retained locally. Run the report directly against MissionChief for the widest currently accessible range.`);
         if (context.scanLimitReached) add('high', 'Ledger page safety cap reached', 'MissionChief exposed more ledger pages than the configured deep-scan safety cap. The report is extensive but not complete.');
         if (context.scanCancelled) add('medium', 'Deep scan stopped', 'The report uses all pages collected before the scan was stopped. Those pages remain stored in the local archive.');
@@ -27795,9 +28150,12 @@ Create the private backup now?`);
             else if (comparisonEnabled && entry.timestamp >= period.comparisonStartMs && entry.timestamp < period.comparisonEndMs) previousTransactions.push(entry);
             if (entry.timestamp >= period.endMs && entry.timestamp <= now) afterPeriodNet += entry.amount;
         }
-        const current = summariseFinancialTransactions(currentTransactions, period);
+        const overview = await fetchCreditOverview(comparisonEnabled ? period.comparisonStartMs : period.startMs, period.endMs);
+        const currentLedgerSummary = summariseFinancialTransactions(currentTransactions, period);
+        const current = reconcileFinancialOverview(currentLedgerSummary, currentTransactions, period, overview);
         const previousPeriod = { ...period, startMs: period.comparisonStartMs, endMs: period.comparisonEndMs, durationMs: period.durationMs };
-        const previous = comparisonEnabled ? summariseFinancialTransactions(previousTransactions, previousPeriod) : null;
+        const previousLedgerSummary = comparisonEnabled ? summariseFinancialTransactions(previousTransactions, previousPeriod) : null;
+        const previous = previousLedgerSummary ? reconcileFinancialOverview(previousLedgerSummary, previousTransactions, previousPeriod, overview) : null;
         const comparison = previous ? buildFinancialComparison(current, previous) : null;
         const account = ledger.account;
         const currentBalance = Number.isFinite(account?.currentBalance) ? account.currentBalance : null;
@@ -27805,9 +28163,11 @@ Create the private backup now?`);
         const openingBalance = closingBalance === null ? null : closingBalance - current.net;
         const balanceAvailable = openingBalance !== null && closingBalance !== null;
         const reconciliation = calculateVaultReconciliation(ledger.vault, period, ledger.entries, currentBalance);
-        const reconciliationLabel = balanceAvailable ? reconciliation.label : 'Balance unavailable';
+        const overviewAudit = current.overviewAudit || { status: 'unavailable', label: 'Credits overview unavailable', unresolvedVariance: 0 };
+        const reconciliationLabel = `${balanceAvailable ? reconciliation.label : 'Balance unavailable'} · ${overviewAudit.label}`;
         const drawdown = calculateFinancialDrawdown(openingBalance, current.transactions);
-        const scorecard = calculateFinancialScorecard(current, comparison, { complete: ledger.complete, balanceAvailable, reconciled: reconciliation.reconciled, closingBalance });
+        const aggregateVerified = ['reconciled', 'not-applicable'].includes(overviewAudit.status);
+        const scorecard = calculateFinancialScorecard(current, comparison, { complete: ledger.complete && overviewAudit.status !== 'partial', balanceAvailable, reconciled: reconciliation.reconciled && aggregateVerified, closingBalance });
         let forecastSummary = current;
         let forecastPeriod = period;
         if (state.discordReport.includeForecast && period.durationMs > 30 * 86400000) {
@@ -27846,6 +28206,27 @@ Create the private backup now?`);
             droppedTransactions: ledger.droppedTransactions,
             vaultTransactionCount: ledger.vaultTransactionCount,
             invalidTimestampCount: ledger.invalidTimestampCount,
+            overviewAvailable: Boolean(overviewAudit.available),
+            overviewStatus: overviewAudit.status,
+            overviewLabel: overviewAudit.label,
+            overviewRowsUsed: overviewAudit.rowsUsed,
+            overviewPages: overviewAudit.pageCount,
+            overviewLastPage: overviewAudit.lastPage,
+            overviewCoverageReached: overviewAudit.coverageReached,
+            overviewMalformedRows: overviewAudit.malformedRowCount,
+            overviewDuplicateDates: overviewAudit.duplicateDateCount,
+            overviewIncome: overviewAudit.overviewIncome,
+            overviewSpending: overviewAudit.overviewSpending,
+            overviewNet: overviewAudit.overviewNet,
+            ledgerCheckpointIncome: overviewAudit.ledgerIncome,
+            ledgerCheckpointSpending: overviewAudit.ledgerSpending,
+            ledgerCheckpointNet: overviewAudit.ledgerNet,
+            overviewIncomeVariance: overviewAudit.incomeVariance,
+            overviewSpendingVariance: overviewAudit.spendingVariance,
+            overviewNetVariance: overviewAudit.netVariance,
+            overviewUnresolvedVariance: overviewAudit.unresolvedVariance,
+            overviewAudit,
+            aggregateReconciled: aggregateVerified,
             comparison,
             previous,
             scorecard,
@@ -27862,7 +28243,9 @@ Create the private backup now?`);
             archiveTruncated: ledger.archiveTruncated,
             droppedTransactions: ledger.droppedTransactions,
             scanLimitReached: ledger.scanLimitReached,
-            scanCancelled: ledger.scanCancelled
+            scanCancelled: ledger.scanCancelled,
+            overviewStatus: overviewAudit.status,
+            overviewVariance: overviewAudit.unresolvedVariance
         }) : [];
         report.chartBlob = state.discordReport.includeChart ? await buildFinancialChartBlob(report) : null;
         return report;
@@ -27943,8 +28326,10 @@ Create the private backup now?`);
             `MissionChief pages: **${Number(report.ledgerPages || 0).toLocaleString('en-GB')} read / ${Number(report.ledgerLastPage || 0).toLocaleString('en-GB')} available**`,
             `Classification confidence: **${report.classificationConfidence.toLocaleString('en-GB')}%** · rules **${escapeDiscordMarkdown(activeFinancialRuleVersion)}** · policy **${escapeDiscordMarkdown(activeFinancialPolicyVersion)}**`,
             `Unclassified: **${report.unclassifiedCount.toLocaleString('en-GB')}** · ${formatPlainCredits(report.unclassifiedAmount)}`,
+            `Overview checkpoint: **${escapeDiscordMarkdown(report.overviewLabel || 'Unavailable')}**`,
+            report.overviewRowsUsed ? `Overview vs ledger: income **${formatSignedCredits(report.overviewIncomeVariance)}** · spending **${formatSignedCredits(report.overviewSpendingVariance)}** · net **${formatSignedCredits(report.overviewNetVariance)}**` : 'Overview vs ledger: **No complete daily checkpoint used**',
             `Balance audit: **${escapeDiscordMarkdown(report.reconciliationLabel)}**`,
-            `${report.ledgerStable ? 'Ledger head remained stable' : 'New activity arrived during scanning; the local archive was left safely resumable'}${report.ledgerScanRetries ? ` · ${report.ledgerScanRetries} restart` : ''}${report.invalidTimestampCount ? ` · ${report.invalidTimestampCount} invalid timestamp rows` : ''}${report.ledgerScanLimitReached ? ' · page safety cap reached' : ''}${report.ledgerScanCancelled ? ' · scan stopped by user' : ''}`
+            `${report.ledgerStable ? 'Ledger head remained stable' : 'New activity arrived during scanning; the local archive was left safely resumable'}${report.ledgerScanRetries ? ` · ${report.ledgerScanRetries} restart` : ''}${report.invalidTimestampCount ? ` · ${report.invalidTimestampCount} invalid timestamp rows` : ''}${report.overviewMalformedRows ? ` · ${report.overviewMalformedRows} malformed overview row${report.overviewMalformedRows === 1 ? '' : 's'}` : ''}${report.overviewDuplicateDates ? ` · ${report.overviewDuplicateDates} duplicate overview date${report.overviewDuplicateDates === 1 ? '' : 's'}` : ''}${report.ledgerScanLimitReached ? ' · page safety cap reached' : ''}${report.ledgerScanCancelled ? ' · scan stopped by user' : ''}`
         ].join('\n');
     }
 
@@ -27982,6 +28367,7 @@ Create the private backup now?`);
             escapeDiscordMarkdown(report.period.rangeLabel),
             `${condition} · **${formatSignedCredits(report.operatingResult)}**`,
             `Net credit movement after investment: **${formatSignedCredits(report.net)}**`,
+            `Daily aggregate audit: **${escapeDiscordMarkdown(report.overviewLabel || 'Detailed ledger only')}**`,
             report.userName ? `Account: **${escapeDiscordMarkdown(report.userName)}**${report.userId ? ` · ID ${escapeDiscordMarkdown(report.userId)}` : ''}` : '',
             report.period.note ? `_${escapeDiscordMarkdown(report.period.note)}_` : ''
         ].filter(Boolean).join('\n');
@@ -28113,7 +28499,9 @@ Create the private backup now?`);
                 ? ['Checkpoint audit', 'Reconciled']
                 : ['Checkpoint variance', formatSignedCompactCredits(difference)];
         } else {
-            auditRow = ['Audit basis', report?.balanceCalculated ? 'Reconstructed' : 'Unavailable'];
+            auditRow = report?.overviewRowsUsed
+                ? [report.overviewStatus === 'variance' ? 'Overview variance' : 'Overview audit', report.overviewStatus === 'variance' ? formatSignedCompactCredits(report.overviewNetVariance) : 'Reconciled']
+                : ['Audit basis', report?.balanceCalculated ? 'Reconstructed' : 'Unavailable'];
         }
         return [
             ['Operating result', formatSignedCompactCredits(report.operatingResult)],
@@ -28188,7 +28576,7 @@ Create the private backup now?`);
             context.fillText(`${report.grade.score}/100`, 1073, 96);
             context.textAlign = 'left';
             drawFinancialMetricCard(context, 54, 148, 337, 98, 'Income', formatSignedCompactCredits(report.income), '#2ecc71');
-            drawFinancialMetricCard(context, 412, 148, 337, 98, 'Operating result', formatSignedCompactCredits(report.operatingResult), report.operatingResult >= 0 ? '#58a6ff' : '#ff6b61');
+            drawFinancialMetricCard(context, 412, 148, 337, 98, 'Net movement', formatSignedCompactCredits(report.net), report.net >= 0 ? '#58a6ff' : '#ff6b61');
             drawFinancialMetricCard(context, 770, 148, 374, 98, 'Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0)), '#f1c40f');
             const chartX = 54;
             const chartY = 288;
@@ -28242,7 +28630,7 @@ Create the private backup now?`);
             });
             context.fillStyle = 'rgba(255,255,255,0.42)';
             context.font = '600 14px Arial, sans-serif';
-            context.fillText(`${report.activityCount.toLocaleString('en-GB')} transactions · ${report.ledgerPages.toLocaleString('en-GB')} ledger pages · Generated ${new Date(report.generatedAt).toLocaleString('en-GB')}`, 54, 620);
+            context.fillText(`${report.activityCount.toLocaleString('en-GB')} transactions · ${report.ledgerPages.toLocaleString('en-GB')} ledger pages · ${report.overviewRowsUsed ? `${report.overviewRowsUsed.toLocaleString('en-GB')} overview day${report.overviewRowsUsed === 1 ? '' : 's'}` : 'overview unavailable'} · Generated ${new Date(report.generatedAt).toLocaleString('en-GB')}`, 54, 620);
             context.fillStyle = 'rgba(255,255,255,0.27)';
             context.font = '600 12px Arial, sans-serif';
             context.fillText(`${SCRIPT.name} v${SCRIPT.version} · Deterministic local financial audit · projections are estimates`, 54, 648);
@@ -29017,9 +29405,9 @@ Create the private backup now?`);
         }
         if (!source.includes('id="financial-command"')) {
             const financialSection = `<section class="section" id="financial-command" data-title="Discord Financial Command" data-keywords="discord finance archive ledger audit github rules policy deep scan forecast risk capital investment webhook">
-<div class="head"><span class="num">19</span><div><h2>Discord Financial Command</h2><p class="summary">Maximum-range MissionChief ledger extraction, local historical archiving and GitHub-hosted financial intelligence.</p></div></div>
+<div class="head"><span class="num">19</span><div><h2>Discord Financial Command</h2><p class="summary">MissionChief ledger extraction, daily `/credits/overview` reconciliation, local historical archiving and GitHub-hosted financial intelligence.</p></div></div>
 <h3>Supreme financial audit</h3><p>The Discord tab can generate an Executive Brief or a complete Executive + Full Audit report. The audit separates operating income, other income, operating expenditure and capital investment so expansion spending does not automatically make healthy operations look unprofitable.</p>
-<div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
+<div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Daily aggregate audit</h4><p>MissionChief Revenue, Spendings and Sum rows verify complete days without double-counting the detailed ledger. Any unresolved variance remains visible.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights overview variance, revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
 <h3>Player-linked Local Financial Archive</h3><ol class="steps"><li>Keep Local Financial Archive enabled to retain discovered transactions by MissionChief player ID/name.</li><li>Select All Available History or run Deep Scan All Available to extend the archive as far back as MissionChief exposes.</li><li>Use Export Archive and Import Archive to transfer or merge history between your devices without exposing repository credentials.</li><li>Export All also includes the local archive and Discord webhook for complete private recovery.</li><li>GitHub hosts only public rules, audit policy and Toolkit assets; player financial data remains in the browser and private backups.</li></ol>
 <div class="call warn"><strong>Private backup:</strong> Export All includes the saved Discord webhook and local financial history. Store the JSON privately; anyone holding it may be able to post through the webhook and inspect the exported game ledger.</div>
 </section>`;

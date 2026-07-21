@@ -1,0 +1,46 @@
+name: Temporary Repository Export
+
+on:
+  push:
+    branches:
+      - agent/issue-306-matrix-reconciliation
+    paths:
+      - ".github/workflows/temporary-repository-export.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Package repository
+        run: tar --exclude=.git -czf /tmp/missionchief-toolkit-repository.tar.gz .
+
+      - name: Upload repository artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-repository
+          path: /tmp/missionchief-toolkit-repository.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Record export run
+        env:
+          EXPORT_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p .automation
+          printf '%s\n' "$EXPORT_RUN_ID" > .automation/repository-export-run-id.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .automation/repository-export-run-id.txt
+          git commit -m "Record temporary repository export run"
+          git push origin HEAD:agent/issue-306-matrix-reconciliation

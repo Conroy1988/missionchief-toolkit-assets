@@ -1,0 +1,21 @@
+returncode=1
+
+Traceback (most recent call last):
+  File "/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix.py", line 312, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix.py", line 270, in main
+    contract = replace_once(contract, railway_contract_anchor, railway_contract_anchor + railway_contract, "Issue 285 contract assertions")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix.py", line 26, in replace_once
+    raise RuntimeError(f"{label}: expected exactly one match, found {count}")
+RuntimeError: Issue 285 contract assertions: expected exactly one match, found 0
+Traceback (most recent call last):
+  File "/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix-v4.py", line 56, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix-v4.py", line 45, in main
+    subprocess.run(["python3", str(ORIGINAL)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/tmp/issue-285-final-diagnostic-w2w2tz0y/repo/.github/development-packages/issue-285-railway-responding-fix.py']' returned non-zero exit status 1.

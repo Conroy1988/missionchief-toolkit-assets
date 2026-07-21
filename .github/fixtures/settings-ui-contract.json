@@ -276,5 +276,21 @@
       "period": "last30",
       "reportMode": "executive"
     }
-  }
+  },
+  "extractedSettingRoutes": [
+    "discord-chart",
+    "discord-comparison",
+    "discord-custom-end",
+    "discord-custom-start",
+    "discord-forecast",
+    "discord-name",
+    "discord-period",
+    "discord-report-mode",
+    "discord-risk",
+    "discord-top-categories",
+    "discord-webhook",
+    "finance-rule-feed",
+    "finance-vault-enabled",
+    "finance-vault-retention"
+  ]
 }

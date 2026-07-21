@@ -39,6 +39,7 @@ FUNCTION_NAMES = [
     "applyImportedToolkitSettings",
     "toggleFeature",
     "handleAction",
+    "handleDiscordFinancialSettingChange",
     "handleSettingChange",
 ]
 
@@ -66,6 +67,7 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     masked = audit.mask_non_code(source)
     create_panel = extract_function(source, masked, "createPanel")
     handle_action = extract_function(source, masked, "handleAction")
+    handle_financial_setting = extract_function(source, masked, "handleDiscordFinancialSettingChange")
     handle_setting = extract_function(source, masked, "handleSettingChange")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
@@ -77,7 +79,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
         + re.findall(r'data-toggle\s*=\s*["\']([^"\']+)["\']', create_panel)
     ))
     handled_actions = values(r'action\s*===\s*["\']([^"\']+)["\']', handle_action)
-    handled_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_setting)
+    direct_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_setting)
+    extracted_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_financial_setting)
+    handled_settings = sorted(set(direct_settings + extracted_settings))
     toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', toggle_feature)
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
@@ -87,6 +91,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert handled_actions == sorted(fixtures["actions"] + fixtures["dynamicActions"]), "Action routing inventory changed"
     assert toggle_routes == sorted(fixtures["toggleRoutes"]), "Feature toggle routing inventory changed"
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
+    assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
+    assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
+    assert "handleDiscordFinancialSettingChange(target, setting)" in handle_setting, "Main setting router must delegate to the extracted financial route family"
 
     missing_toggle_routes = sorted(set(rendered_toggles) - set(toggle_routes))
     assert not missing_toggle_routes, f"Rendered toggles without routes: {missing_toggle_routes}"
@@ -516,6 +523,50 @@ async function testActionContracts() {{
     assert.equal(wasCalled("resetPanelPosition"), true);
 }}
 
+async function testDiscordFinancialSettingRoutesDirectly() {{
+    resetEnvironment();
+    const beforeUnknown = JSON.stringify(state);
+    assert.equal(handleDiscordFinancialSettingChange({{ value: "ignored" }}, "unknown-setting"), false);
+    assert.equal(JSON.stringify(state), beforeUnknown, "unknown settings must not mutate state");
+
+    const apply = (setting, value) => assert.equal(handleDiscordFinancialSettingChange({{ value }}, setting), true, `${{setting}} must be handled`);
+    apply("discord-webhook", "https://discord.com/api/webhooks/1/token");
+    assert.equal(gmStorage.get("webhook"), "https://discord.com/api/webhooks/1/token");
+    apply("discord-name", `  ${{"A".repeat(100)}}  `);
+    assert.equal(state.discordReport.webhookName.length, 80);
+    apply("discord-top-categories", "8");
+    assert.equal(state.discordReport.topCategories, 8);
+    apply("discord-period", "last30");
+    assert.equal(state.discordReport.period, "last30");
+    apply("discord-custom-start", "2026-07-01");
+    apply("discord-custom-end", "2026-07-21");
+    assert.equal(state.discordReport.customStart, "2026-07-01");
+    assert.equal(state.discordReport.customEnd, "2026-07-21");
+    apply("discord-comparison", "false");
+    apply("discord-chart", "false");
+    apply("discord-report-mode", "executive");
+    apply("discord-risk", "false");
+    apply("discord-forecast", "false");
+    assert.equal(state.discordReport.includeComparison, false);
+    assert.equal(state.discordReport.includeChart, false);
+    assert.equal(state.discordReport.reportMode, "executive");
+    assert.equal(state.discordReport.includeRisk, false);
+    assert.equal(state.discordReport.includeForecast, false);
+
+    apply("finance-vault-enabled", "false");
+    apply("finance-vault-retention", "365");
+    clearCalls();
+    apply("finance-rule-feed", "false");
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(state.financialVault.enabled, false);
+    assert.equal(state.financialVault.retentionDays, 365);
+    assert.equal(state.financialVault.ruleFeedEnabled, false);
+    assert.equal(wasCalled("refreshFinancialIntelligenceFeeds"), true);
+    assert.equal(wasCalled("updateUI"), true);
+    assert.equal(wasCalled("renderFinanceVaultStatus"), true);
+}}
+
 async function testSettingContracts() {{
     resetEnvironment();
     state.tabletMode = "on";
@@ -592,8 +643,9 @@ async function testSettingContracts() {{
     testImportContracts();
     await testToggleContracts();
     await testActionContracts();
+    await testDiscordFinancialSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

@@ -1,0 +1,38 @@
+name: Sync Current README
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temporary-sync-current-readme.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Synchronize current main README
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- README.md
+          git diff --name-only | grep -qx 'README.md'
+          PYTHONDONTWRITEBYTECODE=1 python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
+          git checkout -- documentation-drift-report.json documentation-drift-report.md status/release-dashboard.json 2>/dev/null || true
+          git diff --name-only | grep -qx 'README.md'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "Synchronize candidate with current README"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

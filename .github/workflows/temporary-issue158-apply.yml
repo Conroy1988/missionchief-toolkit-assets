@@ -36,7 +36,16 @@ jobs:
         run: |
           set -euo pipefail
           cat .automation/issue158.patch.part* | base64 --decode | gzip --decompress > /tmp/issue158.patch
-          git apply --check /tmp/issue158.patch
+          if ! git apply --check --verbose /tmp/issue158.patch > /tmp/issue158-apply-check.txt 2>&1; then
+            cat /tmp/issue158-apply-check.txt
+            cp /tmp/issue158-apply-check.txt .automation/issue158-apply-error.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .automation/issue158-apply-error.txt
+            git commit -m "Record Issue 158 patch conflict"
+            git push origin HEAD:agent/issue-158-transport-sweep-confirmation
+            exit 1
+          fi
           git apply /tmp/issue158.patch
 
       - name: Remove temporary transfer machinery
@@ -44,6 +53,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -f .automation/issue158.patch.part*
+          rm -f .automation/issue158-apply-error.txt
           rm -f .github/workflows/temporary-issue158-apply.yml
           rmdir .automation 2>/dev/null || true
 

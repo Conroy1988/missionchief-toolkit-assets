@@ -27,21 +27,19 @@ OLD = '''    cursor = function_start
     if raw is None:
         fail("reviewed main stylesheet template is missing")
 '''
-NEW = '''    raw = None
-    assignment_pattern = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*\\.textContent\\s*=\\s*`")
-    for match in assignment_pattern.finditer(text, function_start):
-        template_start = match.end()
-        closing = text.find("`;", template_start)
-        if closing < 0:
-            continue
-        candidate = text[template_start:closing]
-        if len(candidate.encode("utf-8")) <= 800000:
-            continue
-        if raw is not None:
-            fail("multiple main stylesheet template candidates were found")
-        raw = candidate
-    if raw is None:
-        fail("reviewed main stylesheet template is missing")
+NEW = '''    add_style = text.find("addStyle(`", function_start)
+    if add_style < 0:
+        fail("installMainStyles addStyle template opening is missing")
+    template_start = add_style + len("addStyle(`")
+    end_anchor = text.find("recordStartupMetric('stylesheetInstallMs'", template_start)
+    if end_anchor < 0:
+        fail("installMainStyles startup metric anchor is missing")
+    closing = text.rfind("`);", template_start, end_anchor)
+    if closing < 0:
+        fail("installMainStyles addStyle template closing is missing")
+    raw = text[template_start:closing]
+    if len(raw.encode("utf-8")) <= 800000:
+        fail("reviewed main stylesheet template is unexpectedly small")
 '''
 
 
@@ -57,8 +55,16 @@ def main() -> int:
         RUNTIME.unlink(missing_ok=True)
     for path in (
         V2,
+        ROOT / ".github/development-packages/issue-253-main-style-headroom-v4.py",
         ROOT / ".github/development-packages/issue-253-v4-diagnostic.py",
+        ROOT / ".github/development-packages/issue-253-v5-diagnostic.py",
+        ROOT / ".github/development-packages/issue-253-v6-diagnostic.py",
+        ROOT / ".github/development-packages/issue-253-style-assignment-inspection.mjs",
+        ROOT / ".github/development-packages/issue-253-style-assignment-inspection.py",
         ROOT / "docs/issue-253-v4-package-diagnostic.txt",
+        ROOT / "docs/issue-253-v5-package-diagnostic.txt",
+        ROOT / "docs/issue-253-v6-package-diagnostic.txt",
+        ROOT / "docs/issue-253-style-assignment-inspection.txt",
     ):
         path.unlink(missing_ok=True)
     return 0

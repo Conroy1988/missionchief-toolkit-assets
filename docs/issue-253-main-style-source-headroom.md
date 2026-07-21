@@ -22,6 +22,8 @@ No observer, scheduler, network, state, storage or lifecycle code is changed.
 
 `test_main_style_source_headroom.py` is executed by canonical validation and the shared userscript preflight. It rejects returned removable formatting, altered CSS source, inconsistent line arithmetic, a recovery below 500 lines or version drift.
 
+Source-line validation uses the same convention as `deep_performance_audit.mjs`: a terminal newline does not create an additional empty source line. This keeps the permanent contract aligned with the repository's established 31,171-line candidate measurement.
+
 ## Excluded work
 
 This change does not implement the higher-risk stylesheet modularisation work in Issues #63 or #254. Style delivery, selector grouping, visual themes, first paint and responsive behavior remain structurally unchanged.

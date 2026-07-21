@@ -1,0 +1,1128 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "path": "src/MissionChief_Map_Command_Toolkit.user.js",
+    "version": "4.20.20",
+    "sha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
+    "bytes": 2036855,
+    "lines": 31671,
+    "nonemptyLines": 30060
+  },
+  "currentHeadroom": 329,
+  "blankLines": 1612,
+  "commentOnlyLines": 259,
+  "whitespaceOnlySavings": 1612,
+  "topFunctionsByLines": [
+    {
+      "id": 141,
+      "name": "installMainStyles",
+      "startLine": 1827,
+      "endLine": 14050,
+      "lines": 12224,
+      "bytes": 831639,
+      "flow": 1,
+      "reads": 1,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 12235
+    },
+    {
+      "id": 1582,
+      "name": "createPanel",
+      "startLine": 29818,
+      "endLine": 30188,
+      "lines": 371,
+      "bytes": 38185,
+      "flow": 5,
+      "reads": 7,
+      "writes": 7,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 492
+    },
+    {
+      "id": 1684,
+      "name": "boot",
+      "startLine": 31351,
+      "endLine": 31659,
+      "lines": 309,
+      "bytes": 18057,
+      "flow": 7,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 3,
+      "observers": 1,
+      "network": 0,
+      "score": 379
+    },
+    {
+      "id": 722,
+      "name": "createCriticalDrawer",
+      "startLine": 21198,
+      "endLine": 21430,
+      "lines": 233,
+      "bytes": 14315,
+      "flow": 1,
+      "reads": 1,
+      "writes": 4,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 276
+    },
+    {
+      "id": 1241,
+      "name": "triggerPayoutFlash",
+      "startLine": 25981,
+      "endLine": 26188,
+      "lines": 208,
+      "bytes": 14918,
+      "flow": 47,
+      "reads": 22,
+      "writes": 10,
+      "schedulers": 3,
+      "observers": 0,
+      "network": 0,
+      "score": 698
+    },
+    {
+      "id": 1609,
+      "name": "updateUI",
+      "startLine": 30519,
+      "endLine": 30722,
+      "lines": 204,
+      "bytes": 14574,
+      "flow": 57,
+      "reads": 52,
+      "writes": 49,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 1198
+    },
+    {
+      "id": 1607,
+      "name": "handleSettingChange",
+      "startLine": 30316,
+      "endLine": 30517,
+      "lines": 202,
+      "bytes": 10543,
+      "flow": 64,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 586
+    },
+    {
+      "id": 1367,
+      "name": "fetchFinancialLedger",
+      "startLine": 27470,
+      "endLine": 27668,
+      "lines": 199,
+      "bytes": 12909,
+      "flow": 43,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 457
+    },
+    {
+      "id": 1234,
+      "name": "animateAdditionalPayoutTemplate",
+      "startLine": 25740,
+      "endLine": 25908,
+      "lines": 169,
+      "bytes": 11933,
+      "flow": 20,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 289
+    },
+    {
+      "id": 1384,
+      "name": "summariseFinancialTransactions",
+      "startLine": 27802,
+      "endLine": 27965,
+      "lines": 164,
+      "bytes": 8501,
+      "flow": 27,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 326
+    },
+    {
+      "id": 434,
+      "name": "processTransportSweepMission",
+      "startLine": 17604,
+      "endLine": 17751,
+      "lines": 148,
+      "bytes": 8576,
+      "flow": 28,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 316
+    },
+    {
+      "id": 726,
+      "name": "drawer.addEventListener callback@21278",
+      "startLine": 21278,
+      "endLine": 21414,
+      "lines": 137,
+      "bytes": 7100,
+      "flow": 31,
+      "reads": 1,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 328
+    },
+    {
+      "id": 1473,
+      "name": "toggleFeature",
+      "startLine": 28938,
+      "endLine": 29055,
+      "lines": 118,
+      "bytes": 8161,
+      "flow": 83,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 1,
+      "observers": 0,
+      "network": 0,
+      "score": 622
+    },
+    {
+      "id": 103,
+      "name": "normaliseLoadedState",
+      "startLine": 1406,
+      "endLine": 1522,
+      "lines": 117,
+      "bytes": 10339,
+      "flow": 30,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 297
+    },
+    {
+      "id": 1235,
+      "name": "particleElements.forEach callback",
+      "startLine": 25793,
+      "endLine": 25906,
+      "lines": 114,
+      "bytes": 8441,
+      "flow": 14,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 198
+    },
+    {
+      "id": 1410,
+      "name": "buildFinancialReport",
+      "startLine": 28159,
+      "endLine": 28271,
+      "lines": 113,
+      "bytes": 6533,
+      "flow": 18,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 221
+    },
+    {
+      "id": 1232,
+      "name": "ensurePayoutFlashOverlay",
+      "startLine": 25552,
+      "endLine": 25662,
+      "lines": 111,
+      "bytes": 7735,
+      "flow": 15,
+      "reads": 15,
+      "writes": 6,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 324
+    },
+    {
+      "id": 326,
+      "name": "updateMissionAgeLabels",
+      "startLine": 16300,
+      "endLine": 16409,
+      "lines": 110,
+      "bytes": 5111,
+      "flow": 33,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 308
+    },
+    {
+      "id": 1222,
+      "name": "playSynthPayoutSound",
+      "startLine": 25361,
+      "endLine": 25469,
+      "lines": 109,
+      "bytes": 4876,
+      "flow": 19,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 1,
+      "observers": 0,
+      "network": 0,
+      "score": 229
+    },
+    {
+      "id": 1439,
+      "name": "buildFinancialChartBlob",
+      "startLine": 28554,
+      "endLine": 28657,
+      "lines": 104,
+      "bytes": 5886,
+      "flow": 5,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 134
+    },
+    {
+      "id": 548,
+      "name": "updateCoverageHeatmap",
+      "startLine": 19093,
+      "endLine": 19195,
+      "lines": 103,
+      "bytes": 5203,
+      "flow": 19,
+      "reads": 1,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 222
+    },
+    {
+      "id": 1463,
+      "name": "toggleCommandBar",
+      "startLine": 28835,
+      "endLine": 28936,
+      "lines": 102,
+      "bytes": 5425,
+      "flow": 10,
+      "reads": 2,
+      "writes": 0,
+      "schedulers": 4,
+      "observers": 0,
+      "network": 0,
+      "score": 196
+    },
+    {
+      "id": 1102,
+      "name": "renderCriticalDrawer",
+      "startLine": 23755,
+      "endLine": 23843,
+      "lines": 89,
+      "bytes": 12717,
+      "flow": 12,
+      "reads": 14,
+      "writes": 4,
+      "schedulers": 1,
+      "observers": 0,
+      "network": 0,
+      "score": 269
+    },
+    {
+      "id": 1365,
+      "name": "resolveFinancialPeriod",
+      "startLine": 27370,
+      "endLine": 27458,
+      "lines": 89,
+      "bytes": 4201,
+      "flow": 21,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 215
+    },
+    {
+      "id": 1134,
+      "name": "toggleCriticalView",
+      "startLine": 24236,
+      "endLine": 24323,
+      "lines": 88,
+      "bytes": 4084,
+      "flow": 8,
+      "reads": 2,
+      "writes": 3,
+      "schedulers": 2,
+      "observers": 0,
+      "network": 0,
+      "score": 182
+    },
+    {
+      "id": 651,
+      "name": "getCriticalMissionEntries",
+      "startLine": 20451,
+      "endLine": 20537,
+      "lines": 87,
+      "bytes": 4879,
+      "flow": 7,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 129
+    },
+    {
+      "id": 520,
+      "name": "findLeafletMapInstance",
+      "startLine": 18712,
+      "endLine": 18797,
+      "lines": 86,
+      "bytes": 3383,
+      "flow": 19,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 200
+    },
+    {
+      "id": 1152,
+      "name": "updateStuckMissionLabels",
+      "startLine": 24445,
+      "endLine": 24529,
+      "lines": 85,
+      "bytes": 4075,
+      "flow": 26,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 241
+    },
+    {
+      "id": 343,
+      "name": "updateTransportWatcherLabels",
+      "startLine": 16669,
+      "endLine": 16753,
+      "lines": 85,
+      "bytes": 4105,
+      "flow": 26,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 241
+    },
+    {
+      "id": 317,
+      "name": "updateAllianceCreditLabels",
+      "startLine": 16129,
+      "endLine": 16212,
+      "lines": 84,
+      "bytes": 3712,
+      "flow": 22,
+      "reads": 0,
+      "writes": 0,
+      "schedulers": 0,
+      "observers": 0,
+      "network": 0,
+      "score": 216
+    }
+  ],
+  "largeTemplates": [
+    {
+      "line": 1831,
+      "bytes": 831307,
+      "classification": "css",
+      "braceCount": 6394,
+      "function": "installMainStyles"
+    },
+    {
+      "line": 29854,
+      "bytes": 31412,
+      "classification": "css",
+      "braceCount": 40,
+      "function": "createPanel"
+    },
+    {
+      "line": 23080,
+      "bytes": 13120,
+      "classification": "css",
+      "braceCount": 139,
+      "function": "missionRequirementsDocumentCss"
+    },
+    {
+      "line": 21205,
+      "bytes": 4770,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "createCriticalDrawer"
+    },
+    {
+      "line": 29684,
+      "bytes": 4603,
+      "classification": "css",
+      "braceCount": 39,
+      "function": "ensureVersionStatusStyle"
+    },
+    {
+      "line": 25570,
+      "bytes": 3270,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "ensurePayoutFlashOverlay"
+    },
+    {
+      "line": 23803,
+      "bytes": 2916,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "renderedEntries.map callback"
+    },
+    {
+      "line": 29746,
+      "bytes": 2806,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "createControl"
+    },
+    {
+      "line": 23622,
+      "bytes": 2610,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "criticalSummaryHtml"
+    },
+    {
+      "line": 29421,
+      "bytes": 2547,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "patchHelpGuideDocument"
+    },
+    {
+      "line": 29489,
+      "bytes": 2349,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "createHelpCenter"
+    },
+    {
+      "line": 137,
+      "bytes": 2333,
+      "classification": "css",
+      "braceCount": 5,
+      "function": "installAllianceBuildingsEarlyStyle"
+    },
+    {
+      "line": 15730,
+      "bytes": 1997,
+      "classification": "css",
+      "braceCount": 19,
+      "function": "customVehicleBadgeDocumentCss"
+    },
+    {
+      "line": 22066,
+      "bytes": 1782,
+      "classification": "css",
+      "braceCount": 8,
+      "function": "ensureMissionValueDocumentStyle"
+    },
+    {
+      "line": 20896,
+      "bytes": 1706,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "createVehicleCodeStatus"
+    },
+    {
+      "line": 29431,
+      "bytes": 1662,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "patchHelpGuideDocument"
+    },
+    {
+      "line": 20801,
+      "bytes": 1372,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "renderOperationalPanels"
+    },
+    {
+      "line": 29443,
+      "bytes": 1259,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "protectHelpGuideDocument"
+    },
+    {
+      "line": 30213,
+      "bytes": 1228,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "state.bookmarks.map callback@30206"
+    },
+    {
+      "line": 24089,
+      "bytes": 1223,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "createMissionLockOnReticle"
+    },
+    {
+      "line": 24652,
+      "bytes": 1201,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "renderMissionInspector"
+    },
+    {
+      "line": 23584,
+      "bytes": 1083,
+      "classification": "html",
+      "braceCount": 0,
+      "function": "criticalValuesHtml"
+    }
+  ],
+  "staticLiterals": [],
+  "externalizableJsonLikeLiterals": [],
+  "repeatedBlocks": [
+    {
+      "width": 8,
+      "occurrences": 3,
+      "recoverableLines": 16,
+      "locations": [
+        25613,
+        25682,
+        26003
+      ],
+      "preview": "const red = overlay.querySelector('.mcms-payout-red'); / const blue = overlay.querySelector('.mcms-payout-blue'); / const cinematic = overlay.querySelector('.mcms-payout-cinematic');"
+    },
+    {
+      "width": 6,
+      "occurrences": 3,
+      "recoverableLines": 12,
+      "locations": [
+        16491,
+        16700,
+        24476
+      ],
+      "preview": "for (const marker of getMissionMarkerIndex().markers) { / const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId); / if (missionId === null) continue;"
+    },
+    {
+      "width": 6,
+      "occurrences": 3,
+      "recoverableLines": 12,
+      "locations": [
+        25613,
+        25682,
+        26003
+      ],
+      "preview": "const red = overlay.querySelector('.mcms-payout-red'); / const blue = overlay.querySelector('.mcms-payout-blue'); / const cinematic = overlay.querySelector('.mcms-payout-cinematic');"
+    },
+    {
+      "width": 6,
+      "occurrences": 3,
+      "recoverableLines": 12,
+      "locations": [
+        25614,
+        25683,
+        26004
+      ],
+      "preview": "const blue = overlay.querySelector('.mcms-payout-blue'); / const cinematic = overlay.querySelector('.mcms-payout-cinematic'); / const viceSunset = overlay.querySelector('.mcms-payout-vc-sunset');"
+    },
+    {
+      "width": 6,
+      "occurrences": 3,
+      "recoverableLines": 12,
+      "locations": [
+        25615,
+        25684,
+        26005
+      ],
+      "preview": "const cinematic = overlay.querySelector('.mcms-payout-cinematic'); / const viceSunset = overlay.querySelector('.mcms-payout-vc-sunset'); / const viceGrid = overlay.querySelector('.mcms-payout-vc-grid');"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        1360,
+        21456
+      ],
+      "preview": "ownershipFilter: 'personal', / categoryFilter: 'all', / primaryStatus: 'all',"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        1361,
+        21457
+      ],
+      "preview": "categoryFilter: 'all', / primaryStatus: 'all', / advancedFiltersOpen: false,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6297,
+        6775
+      ],
+      "preview": "} / html[data-mcms-ui-theme=\"umbrella\"] .mcms-alliance-credit-badge, / html[data-mcms-ui-theme=\"umbrella\"] .mcms-mission-age-badge,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6384,
+        6838
+      ],
+      "preview": "html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ui-theme-copy small, / html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-profile-main span, / html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-stat-label,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6385,
+        6839
+      ],
+      "preview": "html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-profile-main span, / html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-stat-label, / html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-entry-meta {"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6386,
+        6840
+      ],
+      "preview": "html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-stat-label, / html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-entry-meta { / font-size: 9px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6387,
+        6841
+      ],
+      "preview": "html[data-mcms-tablet-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ops-entry-meta { / font-size: 9px !important; / }"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6388,
+        6842
+      ],
+      "preview": "font-size: 9px !important; / } / html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ui-theme-copy small,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6389,
+        6843
+      ],
+      "preview": "} / html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-ui-theme-copy small, / html[data-mcms-mobile-active=\"true\"][data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-profile-main span,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6420,
+        6873
+      ],
+      "preview": "} / @media (prefers-reduced-motion: reduce) { / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}.mcms-open,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6421,
+        6874
+      ],
+      "preview": "@media (prefers-reduced-motion: reduce) { / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}.mcms-open, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6422,
+        6875
+      ],
+      "preview": "html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId}.mcms-open, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-header::after,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6423,
+        6876
+      ],
+      "preview": "html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-tab-panel.mcms-active, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-header::after, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on {"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6424,
+        6877
+      ],
+      "preview": "html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.panelId} .mcms-header::after, / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on { / animation: none !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6425,
+        6878
+      ],
+      "preview": "html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on { / animation: none !important; / }"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        6426,
+        6879
+      ],
+      "preview": "animation: none !important; / } / html[data-mcms-ui-theme=\"umbrella\"] #${SCRIPT.controlId} .mcms-float-btn,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8322,
+        9889
+      ],
+      "preview": "display:flex !important; / align-items:center !important; / justify-content:center !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8323,
+        9890
+      ],
+      "preview": "align-items:center !important; / justify-content:center !important; / padding:0 3px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8423,
+        11010
+      ],
+      "preview": "display:flex !important; / align-items:center !important; / justify-content:center !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8424,
+        11011
+      ],
+      "preview": "align-items:center !important; / justify-content:center !important; / min-width:46px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8425,
+        11012
+      ],
+      "preview": "justify-content:center !important; / min-width:46px !important; / padding:0 4px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8426,
+        11013
+      ],
+      "preview": "min-width:46px !important; / padding:0 4px !important; / color:#a9bfd0 !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8435,
+        11022
+      ],
+      "preview": "position:relative !important; / display:grid !important; / grid-template-columns:minmax(0,1fr) auto !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8436,
+        11023
+      ],
+      "preview": "display:grid !important; / grid-template-columns:minmax(0,1fr) auto !important; / align-items:center !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8437,
+        11024
+      ],
+      "preview": "grid-template-columns:minmax(0,1fr) auto !important; / align-items:center !important; / min-width:0 !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8438,
+        11025
+      ],
+      "preview": "align-items:center !important; / min-width:0 !important; / min-height:27px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        8439,
+        11026
+      ],
+      "preview": "min-width:0 !important; / min-height:27px !important; / gap:5px !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        9287,
+        9307
+      ],
+      "preview": "left:var(--mcms-critical-dock-left) !important; / right:auto !important; / top:var(--mcms-critical-dock-top) !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        9288,
+        9308
+      ],
+      "preview": "right:auto !important; / top:var(--mcms-critical-dock-top) !important; / bottom:auto !important;"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10327,
+        12630
+      ],
+      "preview": " / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-theme-btn, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-toggle-btn,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10328,
+        12631
+      ],
+      "preview": "html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-theme-btn, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-toggle-btn, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-place-main,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10341,
+        12658
+      ],
+      "preview": "} / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-theme-btn:hover, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10342,
+        12659
+      ],
+      "preview": "html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-theme-btn:hover, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-toggle-btn:hover, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-place-main:hover,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10403,
+        12692
+      ],
+      "preview": " / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-status, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-profile-main,"
+    },
+    {
+      "width": 8,
+      "occurrences": 2,
+      "recoverableLines": 8,
+      "locations": [
+        10404,
+        12693
+      ],
+      "preview": "html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-status, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-profile-main, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-ops-stat,"
+    }
+  ],
+  "groupedHotspots": [
+    {
+      "prefix": "install",
+      "functions": 1,
+      "lines": 12224,
+      "bytes": 831639,
+      "names": [
+        "installMainStyles (12224)"
+      ]
+    },
+    {
+      "prefix": "other",
+      "functions": 18,
+      "lines": 2557,
+      "bytes": 154061,
+      "names": [
+        "boot (309)",
+        "triggerPayoutFlash (208)",
+        "handleSettingChange (202)",
+        "fetchFinancialLedger (199)",
+        "animateAdditionalPayoutTemplate (169)",
+        "summariseFinancialTransactions (164)",
+        "processTransportSweepMission (148)",
+        "drawer.addEventListener callback@21278 (137)",
+        "toggleFeature (118)",
+        "normaliseLoadedState (117)",
+        "particleElements.forEach callback (114)",
+        "ensurePayoutFlashOverlay (111)",
+        "playSynthPayoutSound (109)",
+        "toggleCommandBar (102)",
+        "resolveFinancialPeriod (89)",
+        "toggleCriticalView (88)",
+        "getCriticalMissionEntries (87)",
+        "findLeafletMapInstance (86)"
+      ]
+    },
+    {
+      "prefix": "update",
+      "functions": 6,
+      "lines": 671,
+      "bytes": 36780,
+      "names": [
+        "updateUI (204)",
+        "updateMissionAgeLabels (110)",
+        "updateCoverageHeatmap (103)",
+        "updateStuckMissionLabels (85)",
+        "updateTransportWatcherLabels (85)",
+        "updateAllianceCreditLabels (84)"
+      ]
+    },
+    {
+      "prefix": "create",
+      "functions": 2,
+      "lines": 604,
+      "bytes": 52500,
+      "names": [
+        "createPanel (371)",
+        "createCriticalDrawer (233)"
+      ]
+    },
+    {
+      "prefix": "build",
+      "functions": 2,
+      "lines": 217,
+      "bytes": 12419,
+      "names": [
+        "buildFinancialReport (113)",
+        "buildFinancialChartBlob (104)"
+      ]
+    },
+    {
+      "prefix": "render",
+      "functions": 1,
+      "lines": 89,
+      "bytes": 12717,
+      "names": [
+        "renderCriticalDrawer (89)"
+      ]
+    }
+  ],
+  "safety": {
+    "excludedFirstPass": [
+      "installMainStyles CSS delivery or selector grouping",
+      "observer ownership/scope",
+      "scheduler timing",
+      "network sequencing",
+      "cross-feature helper consolidation"
+    ],
+    "required": [
+      "single bounded subsystem",
+      "exact generated runtime value parity",
+      "deterministic subsystem contracts",
+      "canonical source/dist parity",
+      "full performance and integrity gates"
+    ]
+  }
+}

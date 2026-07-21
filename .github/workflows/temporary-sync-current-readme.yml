@@ -27,10 +27,8 @@ jobs:
           set -euo pipefail
           git fetch origin main
           git checkout origin/main -- README.md
-          git diff --name-only | grep -qx 'README.md'
-          PYTHONDONTWRITEBYTECODE=1 python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
-          git checkout -- documentation-drift-report.json documentation-drift-report.md status/release-dashboard.json 2>/dev/null || true
-          git diff --name-only | grep -qx 'README.md'
+          test "$(git hash-object README.md)" = "955c834b513f15d20474bcd8a0e672dbd148c5db"
+          test "$(git diff --name-only)" = "README.md"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md

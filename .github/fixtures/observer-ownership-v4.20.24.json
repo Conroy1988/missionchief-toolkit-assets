@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "version": "4.20.24",
+    "sourceSha256": "4bd9a9f3708292a6a48523f2f4d69b105e5957395fb10bcbeec671a4d8a4029c",
+    "mutationObservers": 12,
+    "resizeObservers": 4,
+    "observerConstructions": 16,
+    "observeRegistrations": 19,
+    "broadSubtreeRegistrations": 10,
+    "explicitDocumentBodySubtreeRegistrations": 3
+  },
+  "observers": [
+    {
+      "key": "installAllianceBuildingsContextWatcherEarly|MutationObserver|observer",
+      "subsystem": "Alliance Buildings early suppression",
+      "installation": "Installed once before normal runtime when the Alliance Buildings map preference is disabled.",
+      "scheduling": "Filters added/removed element nodes, then coalesces work through queueMicrotask.",
+      "ownership": "page-process-lifetime",
+      "teardown": "Browser document lifetime; not registered in the replaceable Toolkit runtime.",
+      "duplicateGuard": "allianceBuildingsContextWatcherInstalled",
+      "documentReplacement": "Tracks SPA navigation with popstate, hashchange, pageshow and load; observes documentElement.",
+      "coverage": ["docs/issue-251-alliance-observer-performance-contract.md"],
+      "status": "accepted-process-lifetime"
+    },
+    {
+      "key": "observeDesktopPanelWorkspace|ResizeObserver|desktopPanelResizeObserver",
+      "subsystem": "Desktop panel workspace",
+      "installation": "Created lazily only in desktop layout when ResizeObserver exists.",
+      "scheduling": "Re-applies panel sizing and schedules position after resize.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects; stopDesktopPanelWorkspaceObservation unobserves current elements.",
+      "duplicateGuard": "desktopPanelResizeObserver singleton plus desktopPanelObservedElements set",
+      "documentReplacement": "Observed elements are refreshed and stale elements unobserved.",
+      "coverage": [".github/scripts/test_desktop_panel_layout_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeTabletMapArea|ResizeObserver|tabletDockResizeObserver",
+      "subsystem": "Tablet map area",
+      "installation": "Created lazily for tablet layout when ResizeObserver exists.",
+      "scheduling": "Schedules tablet layout refresh.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects; tablet observation reset disconnects/unobserves.",
+      "duplicateGuard": "tabletDockResizeObserver singleton and observed-element identity",
+      "documentReplacement": "Map element changes cause observation refresh.",
+      "coverage": [".github/scripts/test_settings_ui_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeCustomVehicleBadgeDocument|MutationObserver|observer",
+      "subsystem": "Custom vehicle badges",
+      "installation": "One observer per discovered document/frame context.",
+      "scheduling": "Filters relevant mutations and debounces a badge scan with runtimeSetTimeout.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects all tracked observers.",
+      "duplicateGuard": "customVehicleBadgeObservedDocuments WeakSet",
+      "documentReplacement": "Discovers frames and registers load listeners; new documents get their own observer.",
+      "coverage": ["canonical validation", "full userscript audit"],
+      "status": "owned"
+    },
+    {
+      "key": "ensureMajorIncidentFeed|ResizeObserver|majorIncidentFeedResizeObserver",
+      "subsystem": "Major Incident Feed",
+      "installation": "Created only outside Economy Mode when feed identity changes.",
+      "scheduling": "Schedules feed motion/layout or recovery.",
+      "ownership": "runtime-and-subsystem",
+      "teardown": "resetMajorIncidentFeedObserver disconnects; runtime.destroy is final owner.",
+      "duplicateGuard": "majorIncidentFeedObservedElement identity",
+      "documentReplacement": "Disconnected and recreated when feed/header is replaced.",
+      "coverage": ["canonical validation", "full userscript audit"],
+      "status": "owned"
+    },
+    {
+      "key": "observeMissionValueHost|ResizeObserver|record.resizeObserver",
+      "subsystem": "Mission Value host sizing",
+      "installation": "One record per connected toolbar spacer.",
+      "scheduling": "Schedules mission-value scan after resize.",
+      "ownership": "runtime-and-record",
+      "teardown": "pruneMissionValueHostObservers disconnects stale records; runtime.destroy is final owner.",
+      "duplicateGuard": "missionValueHostObservers Map keyed by spacer",
+      "documentReplacement": "Disconnected when spacer/toolbar is no longer connected.",
+      "coverage": [".github/scripts/test_mission_value_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeMissionValueHost|MutationObserver|record.mutationObserver",
+      "subsystem": "Mission Value toolbar content",
+      "installation": "Paired with the host ResizeObserver for each toolbar spacer.",
+      "scheduling": "Schedules mission-value scan after direct toolbar child changes.",
+      "ownership": "runtime-and-record",
+      "teardown": "pruneMissionValueHostObservers disconnects stale records; runtime.destroy is final owner.",
+      "duplicateGuard": "missionValueHostObservers Map keyed by spacer",
+      "documentReplacement": "Disconnected when spacer/toolbar is replaced.",
+      "coverage": [".github/scripts/test_mission_value_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeMissionValueDocument|MutationObserver|observer",
+      "subsystem": "Mission Value document discovery",
+      "installation": "One observer per discovered document context.",
+      "scheduling": "Filters mission-window/frame activity and schedules a 50 ms scan.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects.",
+      "duplicateGuard": "missionValueObservedDocuments WeakSet",
+      "documentReplacement": "Frame loads schedule rescans; new document contexts receive separate observers.",
+      "coverage": [".github/scripts/test_mission_value_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "missionRequirementsEnsureRecord|MutationObserver|record.observer",
+      "subsystem": "Mission Requirements live record",
+      "installation": "One observer per mission requirements root record.",
+      "scheduling": "Filters requirement-relevant mutations and schedules record reconciliation.",
+      "ownership": "runtime-and-record",
+      "teardown": "record cleanup disconnects; runtime.destroy is final owner.",
+      "duplicateGuard": "missionRequirementsRecords record identity",
+      "documentReplacement": "Record is discarded when its root disconnects.",
+      "coverage": [".github/scripts/test_mission_requirements_runtime.js", ".github/scripts/test_mission_requirements_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeMissionRequirementsDocument|MutationObserver|observer",
+      "subsystem": "Mission Requirements document discovery",
+      "installation": "One observer per discovered document context.",
+      "scheduling": "Filters mission/patient/vehicle activity and schedules scan plus record updates.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects.",
+      "duplicateGuard": "missionRequirementsObservedDocuments WeakSet",
+      "documentReplacement": "Frame loads and document discovery create observers for replacement contexts.",
+      "coverage": [".github/scripts/test_mission_requirements_runtime.js", ".github/scripts/test_mission_requirements_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeCreditValue|MutationObserver|creditsValueObserver",
+      "subsystem": "Credits total",
+      "installation": "Attached to the current .credits-value element.",
+      "scheduling": "Processes the updated text synchronously.",
+      "ownership": "runtime-and-element",
+      "teardown": "Explicitly disconnects and untracks before replacing; runtime.destroy is final owner.",
+      "duplicateGuard": "observedCreditsElement identity plus creditsValueObserver",
+      "documentReplacement": "Rebinds when the credits element identity changes.",
+      "coverage": [".github/scripts/test_financial_ledger_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "installAllianceBuildingsPageOptimisation|MutationObserver|pageObserver",
+      "subsystem": "Alliance Buildings page rendering",
+      "installation": "Installed only in Alliance Buildings context or while map suppression is enabled.",
+      "scheduling": "Child-list filter then zero-delay coalesced render.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects.",
+      "duplicateGuard": "install path returns early from normal boot for the page context",
+      "documentReplacement": "Body subtree observation covers in-page replacement.",
+      "coverage": ["docs/issue-251-alliance-observer-performance-contract.md"],
+      "status": "owned"
+    },
+    {
+      "key": "observeAutoLoadAllVehiclesRoot|MutationObserver|observer",
+      "subsystem": "Auto-load mission root visibility",
+      "installation": "One observer for the current non-body mission root.",
+      "scheduling": "Schedules bounded scan or resets disconnected/hidden root.",
+      "ownership": "runtime-and-subsystem",
+      "teardown": "disconnectAutoLoadAllVehiclesRootObserver and runtime.destroy.",
+      "duplicateGuard": "Always disconnects previous root observer before binding.",
+      "documentReplacement": "Root disconnection resets mission state.",
+      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "observeAutoLoadAllVehiclesLink|MutationObserver|observer",
+      "subsystem": "Auto-load native link state",
+      "installation": "One observer for the current native load-all link.",
+      "scheduling": "Releases/reschedules when identity, visibility or signature changes.",
+      "ownership": "runtime-and-subsystem",
+      "teardown": "disconnectAutoLoadAllVehiclesLinkObserver and runtime.destroy.",
+      "duplicateGuard": "Always disconnects previous link observer before binding.",
+      "documentReplacement": "Disconnected/rebound when link identity changes.",
+      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "installAutoLoadAllVehicles|MutationObserver|observer",
+      "subsystem": "Auto-load document discovery",
+      "installation": "Singleton body observer only while feature is enabled.",
+      "scheduling": "Filters relevant child-list changes and debounces a bounded scan.",
+      "ownership": "runtime-and-subsystem",
+      "teardown": "stopAutoLoadAllVehicles untracks/disconnects; runtime.destroy is final owner.",
+      "duplicateGuard": "autoLoadAllVehiclesObserver singleton",
+      "documentReplacement": "Detects mission-root/native-link replacement and resets stale identities.",
+      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "status": "owned"
+    },
+    {
+      "key": "boot|MutationObserver|observer",
+      "subsystem": "Main map and mission lifecycle",
+      "installation": "Constructed once by guarded boot and connected after core UI readiness.",
+      "scheduling": "Filters Toolkit-owned mutations, classifies mission/layout/UI removal and debounces runtime work.",
+      "ownership": "runtime",
+      "teardown": "runtime.destroy disconnects; connectMainMutationObserver disconnects before re-targeting.",
+      "duplicateGuard": "bootStarted plus replaceable runtime singleton",
+      "documentReplacement": "Re-targets map and mission roots; body fallback is replaced when stable roots appear.",
+      "coverage": [".github/scripts/test_boot_lifecycle_contract.py"],
+      "status": "owned",
+      "manualRegistrations": [
+        {"line": 31001, "target": "document.body", "options": "{ childList: true, subtree: true }", "broad": true, "explicitDocumentBody": true, "condition": "fallback when no stable map or mission root exists"},
+        {"line": 31005, "target": "root", "options": "{ childList: true, subtree: true }", "broad": true, "explicitDocumentBody": false, "condition": "each connected stable map/mission root"},
+        {"line": 31006, "target": "document.body", "options": "{ childList: true, subtree: false }", "broad": false, "explicitDocumentBody": false, "condition": "top-level replacement detection while stable roots are observed"}
+      ]
+    }
+  ]
+}

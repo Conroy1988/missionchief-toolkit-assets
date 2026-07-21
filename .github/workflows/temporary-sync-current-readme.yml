@@ -42,16 +42,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --name-only | sort > /tmp/readme-sync-files.txt
+          git diff --cached --name-only | sort > /tmp/readme-sync-files.txt
           printf 'README.md\n' > /tmp/expected-readme-sync-files.txt
           diff -u /tmp/expected-readme-sync-files.txt /tmp/readme-sync-files.txt
+          test -z "$(git diff --name-only)"
       - name: Commit synchronized README
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
           git commit -m "Synchronize candidate with current README"
       - name: Push synchronized README
         shell: bash

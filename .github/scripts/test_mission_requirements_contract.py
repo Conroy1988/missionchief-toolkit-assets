@@ -100,11 +100,16 @@ def main() -> int:
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
         "function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1)",
         "function missionRequirementsVehicleApiRecord(vehicleId)",
-        "function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element)",
+        "function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element, mode = '')",
+        "function missionRequirementsLinkedTrainingValues(candidate, vehicleId, element)",
+        "function missionRequirementsRespondingCrewCapacity(element)",
         "personalVehicleApiCache",
         "refreshPersonalVehicleData",
         "assigned_personnel_count",
         "data-personnel-training",
+        "data-education-key",
+        "data-filterable-by",
+        "td:nth-of-type(5)[sortvalue]",
         "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
         "additive_overlays",
         "function missionRequirementsPrimaryRuntime()",
@@ -214,6 +219,12 @@ def main() -> int:
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
     assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]railway-police-officer['\"][^\n]*(?:training|['\"]training['\"])\s*:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
+    assert '"key":"railway-police-officer"' in source and '"railway_police"' in source, "Railway Police must use the native education key"
+    assert '"requireExplicitTraining":true' in source, "Railway Police carrier type must not prove specialist qualification"
+    assert "if ((definition?.group || 'vehicles') === 'staff') continue" in source, "vehicle labels must not prove specialist personnel roles"
+    assert "missionRequirementsLinkedTrainingValues(candidate, vehicleId, vehicleElement)" in source, "responding units must resolve linked specialist metadata"
+    assert "missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement, mode)" in source, "responding mode must reach the crew resolver"
+    assert "mode === 'responding' ? missionRequirementsRespondingCrewCapacity(element) : null" in source, "canonical responding crew must be acquired explicitly"
     assert "!reconciled.requirements.length && !reconciled.unresolved.length" in source, "unresolved authority must not collapse to an empty success state"
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
     assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"

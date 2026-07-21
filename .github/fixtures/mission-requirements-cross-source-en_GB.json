@@ -1507,6 +1507,26 @@
         85,
         100
       ]
+    },
+    {
+      "aliases": [
+        "Railway Police Officer",
+        "Railway Police Officers"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "railway-police-officer",
+      "pair": false,
+      "training": [
+        "Railway Police Officer",
+        "Railway Police",
+        "railway_police"
+      ],
+      "types": [
+        108
+      ]
     }
   ],
   "files": {

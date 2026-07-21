@@ -241,6 +241,8 @@ this.__mcmsRequirements = {
     capacityText: missionRequirementsCapacityText,
     coverageRow: missionRequirementsCoverageRow,
     staffCapacity: missionRequirementsStaffCapacity,
+    respondingCrewCapacity: missionRequirementsRespondingCrewCapacity,
+    linkedTrainingValues: missionRequirementsLinkedTrainingValues,
     defaultStaffCapacity: missionRequirementsDefaultStaffCapacity,
     equipmentTypes: missionRequirementsEquipmentTypes,
     progressValue: missionRequirementsProgressValue,
@@ -523,6 +525,102 @@ const railwaySelectedUnit = {
 const railwaySelectedCapacity = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [railwaySelectedUnit]);
 assert.strictEqual(railwaySelectedCapacity.min, 1, 'one selected Railway Police Officer contributes one');
 assert.strictEqual(railwaySelectedCapacity.max, 1, 'one selected Railway Police Officer remains exact');
+
+
+// Issue #285: canonical Units Responding crew and exact Railway Policing evidence.
+{
+const issue285CrewCell = {
+    textContent: '4',
+    getAttribute(name) { return name === 'sortvalue' ? '4' : null; }
+};
+const issue285DrivingContainer = {};
+const issue285RespondingRow = {
+    textContent: '',
+    innerText: '',
+    ownerDocument: null,
+    matches(selector) { return selector === 'tr'; },
+    closest(selector) {
+        if (selector === '#mission_vehicle_driving, tbody#mission_vehicle_driving') return issue285DrivingContainer;
+        return null;
+    },
+    querySelector(selector) {
+        if (selector === 'td:nth-of-type(5)[sortvalue]') return issue285CrewCell;
+        return null;
+    },
+    querySelectorAll() { return []; },
+    getAttribute() { return null; }
+};
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(api.respondingCrewCapacity(issue285RespondingRow))),
+    { min: 4, max: 4, known: true, value: 4 },
+    'canonical responding fifth-cell sortvalue provides exact crew capacity'
+);
+const issue285NonRespondingRow = { ...issue285RespondingRow, closest() { return null; } };
+assert.strictEqual(api.respondingCrewCapacity(issue285NonRespondingRow), null, 'positional sortvalue is rejected outside the canonical responding table');
+
+const issue285Local = new FakeElement('a');
+const issue285Linked = new FakeElement('input');
+issue285Linked.setAttribute('data-education-key', 'railway_police');
+const issue285LinkedRow = new FakeElement('tr');
+issue285Linked.closestMap.set('tr', issue285LinkedRow);
+const issue285Candidate = {
+    root: {
+        querySelectorAll(selector) { return selector.includes('28501') ? [issue285Linked] : []; }
+    },
+    mount: null,
+    source: null
+};
+const issue285Training = api.linkedTrainingValues(issue285Candidate, 28501, issue285Local);
+assert(issue285Training.has('railway police'), 'linked data-education-key railway_police is recognised');
+const issue285Command = new FakeElement('span');
+issue285Command.setAttribute('data-education-key', 'railway_police_command');
+const issue285CommandValues = api.metadataValues(issue285Command, 'training');
+assert(issue285CommandValues.has('railway police command'), 'railway_police_command is preserved exactly');
+assert(!issue285CommandValues.has('railway police'), 'Mobile Operations Management does not collapse into Railway Policing');
+assert(railwayPoliceDefinition.training.includes('railway_police'), 'runtime Railway Police definition contains the native education key');
+
+const issue285RespondingUnit = {
+    typeId: 108,
+    vehicleId: 28501,
+    equipment: new Set(),
+    labels: new Set(),
+    training: issue285Training,
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: false,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set(),
+    staff: api.respondingCrewCapacity(issue285RespondingRow),
+    contributionKey: 'vehicle:28501'
+};
+const issue285RespondingCapacity = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [issue285RespondingUnit]);
+assert.strictEqual(issue285RespondingCapacity.min, 4, 'four proven Railway Police Officers count as Responding');
+assert.strictEqual(issue285RespondingCapacity.max, 4, 'responding Railway Police capacity remains exact');
+const issue285Coverage = api.coverageRow(
+    { key: 'railway-police-officer', requirement: 'Railway Police Officer', missing: 4, group: 'staff', definition: railwayPoliceDefinition },
+    api.capacity(0, 0, true),
+    issue285RespondingCapacity,
+    api.capacity(0, 0, true),
+    api.capacity(4, 4, true)
+);
+assert.strictEqual(issue285Coverage.stillNeededText, '0', 'four responding Railway Police Officers clear a requirement of four');
+assert.strictEqual(issue285Coverage.covered, true, 'responding specialist personnel cover the requirement');
+
+const issue285CommandUnit = {
+    ...issue285RespondingUnit,
+    training: new Set(['railway police command']),
+    contributionKey: 'vehicle:28502'
+};
+assert.strictEqual(api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [issue285CommandUnit]).min, 0, 'Mobile Operations Managers do not satisfy Railway Police Officer demand');
+const issue285UnknownUnit = {
+    ...issue285RespondingUnit,
+    training: new Set(),
+    arrCapabilityKnown: false,
+    contributionKey: 'vehicle:28503'
+};
+const issue285Unknown = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [issue285UnknownUnit]);
+assert.strictEqual(issue285Unknown.min, 0, 'unproven responding specialist crew contributes no confirmed capacity');
+assert.strictEqual(issue285Unknown.max, null, 'unproven responding specialist crew remains fail-closed rather than confident zero');
+}
 
 
 // Issue #242: MissionChief's live missing total already reflects selected personnel.

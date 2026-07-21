@@ -1,6 +1,6 @@
 # MissionChief Toolkit development performance profiler
 
-This profiler supports Issue #249 and the staged optimisation programme in #247. It is a **separate development userscript**. It is not part of the Toolkit release, Greasy Fork stable channel or distribution bundle.
+This profiler supports Issue #249 and the staged optimisation programme in #247. Profiler v0.2.0 also supports the unchanged-render measurement protocol in Issue #255. It is a **separate development userscript**. It is not part of the Toolkit release, Greasy Fork stable channel or distribution bundle.
 
 ## Installation and operation
 
@@ -10,7 +10,11 @@ This profiler supports Issue #249 and the staged optimisation programme in #247.
 4. Run one scenario at a time and export the JSON before navigating away.
 5. Remove or disable the profiler when the test is complete.
 
-The API is also available as `window.__MCMS_PROFILER__` with `start()`, `stop()`, `reset()`, `report()`, `export()` and `destroy()`.
+The API is also available as `window.__MCMS_PROFILER__` with `start()`, `stop()`, `reset()`, `report()`, `export()`, `destroy()`, `setScenario()`, `beginRender()` and `endRender()`. The last two methods are consumed only by the generated development render-probe build.
+
+## Render-probe mode
+
+Issue #255 uses a generated development-only Toolkit copy because the production render functions are private and the stable userscript must remain unchanged. Build and installation instructions are in `docs/audits/unchanged-render-measurement-v4.20.24.md`. Select exactly one fixed scenario in the profiler control before each capture.
 
 ## Standard scenarios
 
@@ -45,11 +49,12 @@ Run each scenario from a fresh page load, with browser developer tools closed un
 - Mutation batch counts and added/removed node totals; no DOM text or selectors.
 - Document visibility state transitions.
 - Aggregate counts from the Toolkit runtime lifecycle registry.
+- When the generated render-probe build is installed: allowlisted render attempts, synchronous duration, mutation-record totals and changed/unchanged aggregates by fixed scenario.
 - Coarse browser/device metadata and viewport dimensions.
 
 ## Privacy boundary
 
-The report does not collect mission titles, addresses, coordinates, vehicle or personnel names, alliance messages, webhook values, cookies, storage values or authentication material. Full page URLs and resource paths are not retained.
+Free-text scenario labels are rejected. The report does not collect mission titles, addresses, coordinates, vehicle or personnel names, alliance messages, webhook values, cookies, storage values or authentication material. Full page URLs and resource paths are not retained.
 
 ## Interpretation
 

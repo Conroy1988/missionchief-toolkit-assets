@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "toolkitVersion": "4.20.24",
+    "sourceSha256": "4bd9a9f3708292a6a48523f2f4d69b105e5957395fb10bcbeec671a4d8a4029c",
+    "sourceLines": 31657,
+    "profilerVersion": "0.2.0",
+    "profilerSchemaVersion": 2,
+    "instrumentedPaths": [
+      "updateUI",
+      "renderOperationalPanels"
+    ]
+  },
+  "classification": {
+    "changed": "one or more DOM mutation records are delivered between the render probe entry and its deferred finaliser",
+    "unchanged": "zero DOM mutation records are delivered between the render probe entry and its deferred finaliser",
+    "limitation": "zero mutation records do not prove zero CPU, style or layout cost; equivalent long-task and layout evidence must be reviewed alongside render counts"
+  },
+  "scenarios": [
+    {
+      "id": "idle-map",
+      "minimumSeconds": 30,
+      "requiredActions": ["leave the map idle after startup"],
+      "minimumAttempts": 10
+    },
+    {
+      "id": "settings-open-close",
+      "minimumSeconds": 20,
+      "requiredActions": ["open settings", "switch one settings tab", "close settings"],
+      "minimumAttempts": 2
+    },
+    {
+      "id": "mission-open-close",
+      "minimumSeconds": 20,
+      "requiredActions": ["open one mission", "wait for live content", "close the mission"],
+      "minimumAttempts": 2
+    },
+    {
+      "id": "unit-selection",
+      "minimumSeconds": 20,
+      "requiredActions": ["select units", "deselect units", "leave mission open briefly"],
+      "minimumAttempts": 2
+    },
+    {
+      "id": "map-pan-zoom",
+      "minimumSeconds": 20,
+      "requiredActions": ["pan the map", "zoom in", "zoom out", "stop movement"],
+      "minimumAttempts": 2
+    },
+    {
+      "id": "layout-change",
+      "minimumSeconds": 20,
+      "requiredActions": ["resize or rotate once", "wait for layout settling"],
+      "minimumAttempts": 2
+    }
+  ],
+  "deviceProfiles": [
+    {"id": "desktop", "minimumWidth": 1920, "minimumHeight": 1080},
+    {"id": "tablet", "width": 1024, "height": 768},
+    {"id": "ios-compatible", "width": 430, "height": 932}
+  ],
+  "privacy": {
+    "freeTextScenarioLabels": false,
+    "missionContent": false,
+    "addresses": false,
+    "coordinates": false,
+    "vehicleOrPersonnelNames": false,
+    "fullUrls": false
+  }
+}

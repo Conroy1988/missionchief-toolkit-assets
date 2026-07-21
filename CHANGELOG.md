@@ -6,6 +6,25 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.19] - 2026-07-21
+
+### Fixed
+- `Inland Rescue Boat (Trailer)` now resolves against reviewed UK maritime vehicle types 67 and 74 across Selected, Responding and On site.
+- `Seagoing Vessel` now resolves against the ILB/ALB capability union, vehicle types 68 and 69.
+- Compatible towing vehicles no longer satisfy trailer-capable requirements without the actual eligible trailer or maritime asset.
+- Trailer and towing-vehicle pairs retain one contribution identity through dispatch and arrival transitions.
+- A Required 3 / Selected 1 maritime row remains outstanding with Still needed 2 and reports `0/1 covered`.
+- Police Sergeant personnel now retain `police_sergeant` ARR capability evidence after dispatch, so Responding and On-site counts update through vehicle identity and exact cached crew.
+- Railway Police Officer personnel now retain the native `railway_police` qualification across linked vehicle rows and Units Responding.
+- Canonical responding crew `sortvalue` is accepted only inside `#mission_vehicle_driving`; positional numeric cells elsewhere remain rejected.
+- `railway_police_command` remains a distinct Mobile Operations Manager qualification and cannot satisfy Railway Police Officer demand.
+- Required 5 with On site 3 and Responding 1 now reports Still needed 1.
+
+### Audit
+- Expanded the pinned LSSM compatibility audit across Enhanced Missing Vehicles, Mission Helper captions, UK vehicle captions and MissionChief authoritative labels.
+- Added runtime-backed parser, Selected, Responding, On-site, ineligible-type and contribution-deduplication checks for every supported UK vehicle capability.
+- Integrated the cross-source audit into the canonical Mission Requirements contract and userscript validation gate.
+
 ## [4.20.18] - 2026-07-21
 
 ### Performance

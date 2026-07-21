@@ -15,6 +15,7 @@ CUSTOM_VEHICLE_BADGES_CONTRACT = ROOT / ".github/scripts/test_custom_vehicle_bad
 LSSM_COMPATIBILITY_AUDIT = ROOT / ".github/scripts/audit_lssm_requirement_compatibility.py"
 CATALOGUE_FIXTURE = ROOT / ".github/fixtures/mission-catalogue-pages.json"
 UK_CAPABILITY_FIXTURE = ROOT / "src/data/mission-requirements-en_GB.json"
+CROSS_SOURCE_FIXTURE = ROOT / ".github/fixtures/mission-requirements-cross-source-en_GB.json"
 REPORT_FORM = ROOT / ".github/ISSUE_TEMPLATE/mission-info-missing.yml"
 
 
@@ -23,10 +24,16 @@ def main() -> int:
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
     catalogue_fixture = json.loads(CATALOGUE_FIXTURE.read_text(encoding="utf-8"))
     uk_capabilities = json.loads(UK_CAPABILITY_FIXTURE.read_text(encoding="utf-8"))
+    cross_source = json.loads(CROSS_SOURCE_FIXTURE.read_text(encoding="utf-8"))
     assert uk_capabilities["schemaVersion"] == 1
     assert uk_capabilities["locale"] == "en_GB"
     assert len(uk_capabilities["vehicleRequirements"]) >= 68
     assert len(uk_capabilities["staffRequirements"]) >= 2
+    assert cross_source["schemaVersion"] == 1
+    assert cross_source["locale"] == "en_GB"
+    assert cross_source["pinnedLssmCommit"] == "4f731e1d6d009cbf2129530fb31d10177b21a52a"
+    assert any(group["canonicalLabel"] == "Inland Rescue Boat (Trailer)" for group in cross_source["authoritativeLabels"])
+    assert any(group["canonicalLabel"] == "Seagoing Vessel" for group in cross_source["authoritativeLabels"])
     assert len(catalogue_fixture["pages"]) >= 3
     assert any(page.get("variations") for page in catalogue_fixture["pages"])
     assert any(page.get("conditional") for page in catalogue_fixture["pages"])
@@ -47,7 +54,7 @@ def main() -> int:
             print(custom_badges.stderr, end="")
         raise SystemExit("Custom Vehicle Badges contract failed")
 
-    lssm_audit = subprocess.run(["python3", str(LSSM_COMPATIBILITY_AUDIT)], cwd=ROOT, text=True, capture_output=True)
+    lssm_audit = subprocess.run(["python3", str(LSSM_COMPATIBILITY_AUDIT), "--skip-runtime"], cwd=ROOT, text=True, capture_output=True)
     if lssm_audit.stdout:
         print(lssm_audit.stdout, end="")
     if lssm_audit.returncode != 0:
@@ -79,6 +86,9 @@ def main() -> int:
         "function missionRequirementsLssmActive(candidate, source)",
         "function missionRequirementsCollectUnits(candidate, mode)",
         "MISSION_REQUIREMENTS_TRACTIVE_TYPES",
+        "definition.pair !== true && compatibleTractiveTypes.length > 0",
+        "Inland Rescue Boat (Trailer)",
+        "Seagoing Vessel",
         "missionRequirementsProgressValue(candidate, requirement.definition.bar, 'missing')",
         "function missionRequirementsOperationalSelectors(mode)",
         "function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate))",
@@ -90,11 +100,16 @@ def main() -> int:
         "function missionRequirementsMetadataValues(element, kind = 'labels')",
         "function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1)",
         "function missionRequirementsVehicleApiRecord(vehicleId)",
-        "function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element)",
+        "function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element, mode = '')",
+        "function missionRequirementsLinkedTrainingValues(candidate, vehicleId, element)",
+        "function missionRequirementsRespondingCrewCapacity(element)",
         "personalVehicleApiCache",
         "refreshPersonalVehicleData",
         "assigned_personnel_count",
         "data-personnel-training",
+        "data-education-key",
+        "data-filterable-by",
+        "td:nth-of-type(5)[sortvalue]",
         "function missionRequirementsCataloguePersonnelRequirements(label, value, kind = null)",
         "additive_overlays",
         "function missionRequirementsPrimaryRuntime()",
@@ -204,6 +219,12 @@ def main() -> int:
     assert "return parsed.requirements.map(requirement =>" in source, "resolver must retain one pass over the reconciled union"
     assert "catalogueOnly && catalogueProbability < 100" in source, "probabilistic authoritative requirements must remain uncertain"
     assert re.search(r"(?:key|['\"]key['\"])\s*:\s*['\"]railway-police-officer['\"][^\n]*(?:training|['\"]training['\"])\s*:\s*\[[^\]]*Railway Police", source), "Railway Police personnel must require explicit training evidence"
+    assert '"key":"railway-police-officer"' in source and '"railway_police"' in source, "Railway Police must use the native education key"
+    assert '"requireExplicitTraining":true' in source, "Railway Police carrier type must not prove specialist qualification"
+    assert "if ((definition?.group || 'vehicles') === 'staff') continue" in source, "vehicle labels must not prove specialist personnel roles"
+    assert "missionRequirementsLinkedTrainingValues(candidate, vehicleId, vehicleElement)" in source, "responding units must resolve linked specialist metadata"
+    assert "missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement, mode)" in source, "responding mode must reach the crew resolver"
+    assert "mode === 'responding' ? missionRequirementsRespondingCrewCapacity(element) : null" in source, "canonical responding crew must be acquired explicitly"
     assert "!reconciled.requirements.length && !reconciled.unresolved.length" in source, "unresolved authority must not collapse to an empty success state"
     assert "#mission_vehicle_driving > tr" in source and "tbody#mission_vehicle_driving > tr" in source
     assert "#vehicle_show_table_body_all, #occupied, .vehicle_checkbox" in source, "selected-unit scope must locate the Available Units container"

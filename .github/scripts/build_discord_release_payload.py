@@ -17,6 +17,9 @@ SECTION_ICONS = {
     "distribution": "📡",
     "baseline": "🧱",
     "removed": "🗑️",
+    "validation": "🧪",
+    "engineering": "⚙️",
+    "audit": "🔎",
 }
 
 SECTION_PRIORITY = {
@@ -26,14 +29,17 @@ SECTION_PRIORITY = {
     "changed": 3,
     "performance": 4,
     "removed": 5,
-    "distribution": 6,
-    "baseline": 7,
+    "validation": 6,
+    "audit": 7,
+    "engineering": 8,
+    "distribution": 9,
+    "baseline": 10,
 }
 
 MAX_SECTIONS = 2
-MAX_ITEMS = 4
+MAX_ITEMS = 3
 MAX_ITEM_LENGTH = 150
-MAX_BRIEF_LENGTH = 820
+MAX_BRIEF_LENGTH = 680
 
 
 def clean_text(value: str) -> str:
@@ -116,7 +122,7 @@ def parse_changelog(path: Path) -> str:
             continue
 
         icon = SECTION_ICONS.get(name.casefold(), "◆")
-        rendered.append(f"**{icon} {name.upper()}**")
+        rendered.append(f"**{icon} {name.title()}**")
         for item in selected_items:
             used_items += 1
             rendered.append(f"> **{used_items:02d}**  {item}")
@@ -147,22 +153,44 @@ def utc_timestamp() -> str:
     )
 
 
+def command_links(install_url: str, release_url: str, script_url: str) -> str:
+    return (
+        f"**[⬇️ Install / Update]({install_url})**"
+        f"  •  [📋 Release notes]({release_url})"
+        f"  •  [🛠️ Greasy Fork]({script_url})"
+    )
+
+
 def build_primary(args: argparse.Namespace, brief: str) -> dict:
-    hero = {
+    embed = {
         "author": {
             "name": "MISSIONCHIEF // MAP COMMAND TOOLKIT",
             "url": args.release_url,
         },
-        "title": f"🚨 DEPLOYMENT CONFIRMED // v{args.version}",
+        "title": f"🚨 TOOLKIT v{args.version} // DEPLOYMENT LIVE",
         "description": (
-            "**THE NEW BUILD IS LIVE**\n"
-            "Greasy Fork has published and verified the latest Toolkit package.\n\n"
-            f"**[⬇️  INSTALL / UPDATE TO v{args.version}]({args.install_url})**\n\n"
+            "**VERIFIED PUBLIC RELEASE**\n"
+            "The latest command package has cleared every release gate and is "
+            "available now on Greasy Fork.\n\n"
             "`LIVE`  `VERIFIED`  `RECOVERABLE`"
         ),
         "url": args.release_url,
         "color": 0xE11D48,
         "fields": [
+            {
+                "name": "⚡ MISSION BRIEF",
+                "value": brief,
+                "inline": False,
+            },
+            {
+                "name": "🔗 COMMAND LINKS",
+                "value": command_links(
+                    args.install_url,
+                    args.release_url,
+                    args.script_url,
+                ),
+                "inline": False,
+            },
             {
                 "name": "PUBLIC CHANNEL",
                 "value": "Greasy Fork\n**SYNCED** ✅",
@@ -180,65 +208,55 @@ def build_primary(args: argparse.Namespace, brief: str) -> dict:
             },
         ],
         "footer": {
-            "text": "Verified public deployment • MissionChief Toolkit",
+            "text": (
+                "Verified deployment • "
+                f"Recovery {args.backup_commit[:10]} • MissionChief Toolkit"
+            ),
         },
         "timestamp": utc_timestamp(),
-    }
-
-    intelligence = {
-        "title": "⚡ RELEASE INTELLIGENCE",
-        "description": brief,
-        "url": args.release_url,
-        "color": 0x00AEEF,
-        "fields": [
-            {
-                "name": "MISSION LINKS",
-                "value": (
-                    f"[Full release]({args.release_url})"
-                    f"  •  [Greasy Fork]({args.script_url})"
-                    f"  •  **[Install now]({args.install_url})**"
-                ),
-                "inline": False,
-            },
-            {
-                "name": "RECOVERY MARKER",
-                "value": f"Private archive `{args.backup_commit[:10]}`",
-                "inline": False,
-            },
-        ],
-        "footer": {
-            "text": "Release brief • User-facing changes only",
-        },
     }
 
     return {
         "username": "MissionChief Toolkit Releases",
         "allowed_mentions": {"parse": []},
-        "embeds": [hero, intelligence],
+        "embeds": [embed],
     }
 
 
 def build_fallback(args: argparse.Namespace, brief: str) -> dict:
-    history_url = args.history_url or f"{Args.script_url.rstrip('/')}/versions"
+    history_url = args.history_url or f"{args.script_url.rstrip('/')}/versions"
     previous = args.previous_version or "unknown"
     previous_label = f"v{previous}" if previous != "unknown" else "Unknown"
 
-    hero = {
+    embed = {
         "author": {
             "name": "MISSIONCHIEF // RELEASE WATCH",
             "url": args.script_url,
         },
-        "title": f"📡 PUBLIC VERSION DETECTED // v{args.version}",
+        "title": f"📡 TOOLKIT v{args.version} // PUBLIC VERSION DETECTED",
         "description": (
             "**FALLBACK RELEASE SIGNAL**\n"
             "Greasy Fork published a new public version before the normal release "
             "announcement completed.\n\n"
-            f"**[⬇️  INSTALL / UPDATE TO v{args.version}]({args.install_url})**\n\n"
             f"`{previous_label}`  →  `v{args.version}`"
         ),
         "url": args.script_url,
         "color": 0xF59E0B,
         "fields": [
+            {
+                "name": "⚡ MISSION BRIEF",
+                "value": brief,
+                "inline": False,
+            },
+            {
+                "name": "🔗 COMMAND LINKS",
+                "value": command_links(
+                    args.install_url,
+                    history_url,
+                    args.script_url,
+                ).replace("Release notes", "Version history"),
+                "inline": False,
+            },
             {
                 "name": "SOURCE",
                 "value": "Greasy Fork\n**LIVE** ✅",
@@ -256,36 +274,15 @@ def build_fallback(args: argparse.Namespace, brief: str) -> dict:
             },
         ],
         "footer": {
-            "text": "Fallback release signal • MissionChief Toolkit",
+            "text": "Fallback release signal • Verification may still be running",
         },
         "timestamp": utc_timestamp(),
-    }
-
-    intelligence = {
-        "title": "⚡ RELEASE INTELLIGENCE",
-        "description": brief,
-        "url": history_url,
-        "color": 0xD97706,
-        "fields": [
-            {
-                "name": "MISSION LINKS",
-                "value": (
-                    f"[Version history]({history_url})"
-                    f"  •  [Greasy Fork]({args.script_url})"
-                    f"  •  **[Install now]({args.install_url})**"
-                ),
-                "inline": False,
-            },
-        ],
-        "footer": {
-            "text": "Fallback brief • Standard release verification may still be running",
-        },
     }
 
     return {
         "username": "MissionChief Toolkit Releases",
         "allowed_mentions": {"parse": []},
-        "embeds": [hero, intelligence],
+        "embeds": [embed],
     }
 
 
@@ -295,34 +292,33 @@ def validate_payload(payload: dict) -> None:
         raise SystemExit("Discord payload is unexpectedly large.")
 
     embeds = payload.get("embeds", [])
-    if len(embeds) != 2:
-        raise SystemExit("Expected exactly two Discord embeds.")
+    if len(embeds) != 1:
+        raise SystemExit("Expected exactly one Discord embed.")
 
-    total_characters = 0
-    for index, embed in enumerate(embeds, 1):
-        if len(embed.get("title", "")) > 256:
-            raise SystemExit(f"Discord embed {index} title exceeds 256 characters.")
-        if len(embed.get("description", "")) > 4096:
-            raise SystemExit(f"Discord embed {index} description exceeds 4096 characters.")
-        if len(embed.get("fields", [])) > 25:
-            raise SystemExit(f"Discord embed {index} contains more than 25 fields.")
+    embed = embeds[0]
+    if len(embed.get("title", "")) > 256:
+        raise SystemExit("Discord embed title exceeds 256 characters.")
+    if len(embed.get("description", "")) > 4096:
+        raise SystemExit("Discord embed description exceeds 4096 characters.")
+    if len(embed.get("fields", [])) > 25:
+        raise SystemExit("Discord embed contains more than 25 fields.")
 
-        total_characters += (
-            len(embed.get("title", ""))
-            + len(embed.get("description", ""))
-            + len(embed.get("author", {}).get("name", ""))
-            + len(embed.get("footer", {}).get("text", ""))
-        )
+    total_characters = (
+        len(embed.get("title", ""))
+        + len(embed.get("description", ""))
+        + len(embed.get("author", {}).get("name", ""))
+        + len(embed.get("footer", {}).get("text", ""))
+    )
 
-        for field in embed.get("fields", []):
-            name = field.get("name", "")
-            value = field.get("value", "")
-            if len(name) > 256 or len(value) > 1024:
-                raise SystemExit(f"Discord embed field exceeds limits: {name}")
-            total_characters += len(name) + len(value)
+    for field in embed.get("fields", []):
+        name = field.get("name", "")
+        value = field.get("value", "")
+        if len(name) > 256 or len(value) > 1024:
+            raise SystemExit(f"Discord embed field exceeds limits: {name}")
+        total_characters += len(name) + len(value)
 
     if total_characters > 6000:
-        raise SystemExit("Discord embeds exceed the 6000-character total limit.")
+        raise SystemExit("Discord embed exceeds the 6000-character total limit.")
 
 
 def main() -> int:

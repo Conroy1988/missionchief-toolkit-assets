@@ -27,6 +27,7 @@ function expressionName(node) {
 function unwrap(node) {
   if (!node) return node;
   if (node.type === 'CallExpression' && ['Object.freeze', 'Object.seal'].includes(expressionName(node.callee)) && node.arguments.length === 1) return unwrap(node.arguments[0]);
+  if (node.type === 'NewExpression' && ['Map', 'Set'].includes(expressionName(node.callee)) && node.arguments.length === 1) return unwrap(node.arguments[0]);
   return node;
 }
 
@@ -49,31 +50,48 @@ function countEntries(node) {
   return 1;
 }
 
-const staticLiterals = [];
-for (const statement of ast.body) {
-  if (statement.type !== 'VariableDeclaration') continue;
-  for (const declaration of statement.declarations) {
-    if (declaration.id?.type !== 'Identifier' || !declaration.init) continue;
-    const candidate = unwrap(declaration.init);
-    if (!['ObjectExpression', 'ArrayExpression', 'TemplateLiteral'].includes(candidate?.type)) continue;
-    staticLiterals.push({
-      name: declaration.id.name,
-      kind: candidate.type,
-      startLine: declaration.loc.start.line,
-      endLine: declaration.loc.end.line,
-      lines: declaration.loc.end.line - declaration.loc.start.line + 1,
-      bytes: Buffer.byteLength(source.slice(declaration.start, declaration.end), 'utf8'),
-      entries: countEntries(candidate),
-      jsonLike: jsonLike(candidate)
-    });
+function functionName(node, parent) {
+  if (node.id?.name) return node.id.name;
+  if (parent?.type === 'VariableDeclarator' && parent.id?.type === 'Identifier') return parent.id.name;
+  if (parent?.type === 'Property' && parent.key?.type === 'Identifier') return parent.key.name;
+  return `<anonymous@${node.loc.start.line}>`;
+}
+
+function walk(node, visitor, parent = null, owner = '<top-level>') {
+  if (!node || typeof node !== 'object' || typeof node.type !== 'string') return;
+  const nextOwner = ['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression'].includes(node.type) ? functionName(node, parent) : owner;
+  visitor(node, parent, nextOwner);
+  for (const [key, value] of Object.entries(node)) {
+    if (['start', 'end', 'loc', 'range'].includes(key)) continue;
+    if (Array.isArray(value)) for (const child of value) walk(child, visitor, node, nextOwner);
+    else if (value && typeof value === 'object' && typeof value.type === 'string') walk(value, visitor, node, nextOwner);
   }
 }
+
+const staticLiterals = [];
+walk(ast, (node, _parent, owner) => {
+  if (node.type !== 'VariableDeclarator' || node.id?.type !== 'Identifier' || !node.init) return;
+  const candidate = unwrap(node.init);
+  if (!['ObjectExpression', 'ArrayExpression', 'TemplateLiteral'].includes(candidate?.type)) return;
+  const lines = node.loc.end.line - node.loc.start.line + 1;
+  if (lines < 3) return;
+  staticLiterals.push({
+    name: node.id.name,
+    owner,
+    kind: candidate.type,
+    startLine: node.loc.start.line,
+    endLine: node.loc.end.line,
+    lines,
+    bytes: Buffer.byteLength(source.slice(node.start, node.end), 'utf8'),
+    entries: countEntries(candidate),
+    jsonLike: jsonLike(candidate)
+  });
+});
 staticLiterals.sort((a, b) => b.lines - a.lines || b.bytes - a.bytes || a.name.localeCompare(b.name));
 
-const lines = source.split(/\r?\n/u);
-const blankLines = lines.filter(line => !line.trim()).length;
-const commentOnlyLines = lines.filter(line => /^\s*(?:\/\/|\/\*|\*|\*\/)/u.test(line)).length;
-const whitespaceOnlySavings = blankLines;
+const sourceLines = source.split(/\r?\n/u);
+const blankLines = sourceLines.filter(line => !line.trim()).length;
+const commentOnlyLines = sourceLines.filter(line => /^\s*(?:\/\/|\/\*|\*|\*\/)/u.test(line)).length;
 
 function normalizedLine(line) {
   return line.trim().replace(/\s+/gu, ' ');
@@ -82,8 +100,8 @@ function normalizedLine(line) {
 const repeatedBlocks = [];
 for (const width of [8, 6, 4]) {
   const seen = new Map();
-  for (let index = 0; index + width <= lines.length; index += 1) {
-    const blockLines = lines.slice(index, index + width);
+  for (let index = 0; index + width <= sourceLines.length; index += 1) {
+    const blockLines = sourceLines.slice(index, index + width);
     if (blockLines.some(line => line.includes('`'))) continue;
     const normalized = blockLines.map(normalizedLine).join('\n');
     if (normalized.length < 180 || normalized.split('\n').filter(Boolean).length < width - 1) continue;
@@ -98,39 +116,19 @@ for (const width of [8, 6, 4]) {
 }
 repeatedBlocks.sort((a, b) => b.recoverableLines - a.recoverableLines || b.width - a.width || a.locations[0] - b.locations[0]);
 
-const prefixGroups = new Map();
-for (const item of deep.topFunctionsByLines) {
-  const match = item.name.match(/^(missionRequirements|transportSweep|financial|alliance|vehicle|payout|coverage|critical|command|mission|runtime|apply|render|create|update|load|build|install)/u);
-  const prefix = match?.[1] || 'other';
-  const group = prefixGroups.get(prefix) || { prefix, functions: 0, lines: 0, bytes: 0, names: [] };
-  group.functions += 1;
-  group.lines += item.lines;
-  group.bytes += item.bytes;
-  group.names.push(`${item.name} (${item.lines})`);
-  prefixGroups.set(prefix, group);
-}
-const groupedHotspots = [...prefixGroups.values()].sort((a, b) => b.lines - a.lines || a.prefix.localeCompare(b.prefix));
-
 const externalizable = staticLiterals.filter(item => item.jsonLike && item.lines >= 20);
-const lowRiskCandidates = externalizable.map(item => ({
-  ...item,
-  estimatedRecoveredLines: Math.max(0, item.lines - 3),
-  method: 'Move reviewed JSON-like source data to src/data and embed a generated compact literal into the canonical userscript.'
-}));
-
+const lowRiskCandidates = externalizable.map(item => ({ ...item, estimatedRecoveredLines: Math.max(0, item.lines - 3), method: 'Readable src/data catalogue plus deterministic compact embedding in the canonical userscript.' }));
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   source: deep.source,
   currentHeadroom: 32000 - deep.source.lines,
   blankLines,
   commentOnlyLines,
-  whitespaceOnlySavings,
   topFunctionsByLines: deep.topFunctionsByLines,
   largeTemplates: deep.largeTemplates,
   staticLiterals,
   externalizableJsonLikeLiterals: lowRiskCandidates,
   repeatedBlocks: repeatedBlocks.slice(0, 40),
-  groupedHotspots,
   safety: {
     excludedFirstPass: ['installMainStyles CSS delivery or selector grouping', 'observer ownership/scope', 'scheduler timing', 'network sequencing', 'cross-feature helper consolidation'],
     required: ['single bounded subsystem', 'exact generated runtime value parity', 'deterministic subsystem contracts', 'canonical source/dist parity', 'full performance and integrity gates']
@@ -160,9 +158,9 @@ const md = [
   '',
   table(['Template owner', 'Type', 'Line', 'Bytes', 'Rules/braces'], deep.largeTemplates.slice(0, 20).map(item => [item.function, item.classification, item.line, item.bytes, item.braceCount])),
   '',
-  '## Top-level static literal candidates',
+  '## Static literal candidates across all scopes',
   '',
-  table(['Name', 'Kind', 'Lines', 'Bytes', 'Entries', 'JSON-like', 'Estimated recovered lines'], staticLiterals.slice(0, 50).map(item => [item.name, item.kind, item.lines, item.bytes, item.entries, item.jsonLike, item.jsonLike ? Math.max(0, item.lines - 3) : '—'])),
+  table(['Name', 'Owner', 'Kind', 'Lines', 'Bytes', 'Entries', 'JSON-like', 'Estimated recovered lines'], staticLiterals.slice(0, 60).map(item => [item.name, item.owner, item.kind, item.lines, item.bytes, item.entries, item.jsonLike, item.jsonLike ? Math.max(0, item.lines - 3) : '—'])),
   '',
   '## Exact repeated source blocks',
   '',
@@ -177,7 +175,7 @@ const md = [
   '',
   '## Candidate ranking',
   '',
-  table(['Name', 'Lines', 'Bytes', 'Entries', 'Estimated recovered lines'], lowRiskCandidates.slice(0, 20).map(item => [item.name, item.lines, item.bytes, item.entries, item.estimatedRecoveredLines])),
+  table(['Name', 'Owner', 'Lines', 'Bytes', 'Entries', 'Estimated recovered lines'], lowRiskCandidates.slice(0, 30).map(item => [item.name, item.owner, item.lines, item.bytes, item.entries, item.estimatedRecoveredLines])),
   '',
   'This inventory is static structural evidence. A production change still requires exact generated-value parity and the complete repository test suite.',
   ''

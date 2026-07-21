@@ -1,9 +1,9 @@
 name: Apply Issue 255 Measurement Candidate
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/issue-255-unchanged-render-evidence
+      - main
     paths:
       - ".github/workflows/temporary-issue255-export.yml"
 

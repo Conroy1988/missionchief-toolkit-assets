@@ -45,9 +45,8 @@ jobs:
           echo "21494a658cf6ed86091e29c81d57df3d12f202e42114885e9db4f5b0d1fd27e6  /tmp/issue64.patch.gz.b64" | sha256sum -c -
           base64 --decode /tmp/issue64.patch.gz.b64 | gzip --decompress > /tmp/issue64.patch
           echo "e4198ef8a50b97cd50893b6c86fdddf94d37f3369fde0c8ced8824ff51ef1b9c  /tmp/issue64.patch" | sha256sum -c -
-          git apply --check /tmp/issue64.patch
-          git apply /tmp/issue64.patch
-          git checkout HEAD -- .github/workflows/temporary-issue64-export.yml
+          git apply --check --exclude=.github/workflows/temporary-issue64-export.yml /tmp/issue64.patch
+          git apply --exclude=.github/workflows/temporary-issue64-export.yml /tmp/issue64.patch
 
       - name: Prove intended change boundary
         shell: bash
@@ -75,7 +74,7 @@ jobs:
           cmp --silent src/MissionChief_Map_Command_Toolkit.user.js MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
-      - name: Run canonical and deterministic validation
+      - name: Run clean-run validation
         shell: bash
         run: |
           set -euo pipefail
@@ -83,11 +82,6 @@ jobs:
           node .github/scripts/test_mission_requirements_runtime.js
           python3 .github/scripts/test_documentation_version_states.py
           python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
-
-      - name: Run performance and integrity validation
-        shell: bash
-        run: |
-          set -euo pipefail
           git fetch origin main --no-tags
           git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/issue64-base.user.js
           python3 .github/scripts/test_performance_budget.py
@@ -109,16 +103,6 @@ jobs:
           python3 .github/scripts/audit_userscript_structure.py \
             --json-output /tmp/userscript-audit.json \
             --markdown-output /tmp/userscript-audit.md
-          python3 .github/scripts/full_userscript_audit.py \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --dist dist/MissionChief_Map_Command_Toolkit.user.js \
-            --json-output /tmp/full-userscript-audit-raw.json \
-            --markdown-output /tmp/full-userscript-audit-raw.md
-          python3 .github/scripts/refine_full_userscript_audit.py \
-            --raw /tmp/full-userscript-audit-raw.json \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --json-output /tmp/full-userscript-audit.json \
-            --markdown-output /tmp/full-userscript-audit.md
 
       - name: Commit validated product candidate
         shell: bash

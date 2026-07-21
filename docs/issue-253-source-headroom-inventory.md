@@ -66,10 +66,70 @@
 | state.bookmarks.map callback@30206 | html | 30213 | 1228 | 0 |
 | createMissionLockOnReticle | html | 24089 | 1223 | 0 |
 
-## Top-level static literal candidates
+## Static literal candidates across all scopes
 
-| Name | Kind | Lines | Bytes | Entries | JSON-like | Estimated recovered lines |
-|---|---|---|---|---|---|---|
+| Name | Owner | Kind | Lines | Bytes | Entries | JSON-like | Estimated recovered lines |
+|---|---|---|---|---|---|---|---|
+| SCRIPT | <anonymous@47> | ObjectExpression | 47 | 2613 | 33 | true | 44 |
+| themedTitles | payoutTitleForTemplate | ObjectExpression | 47 | 2405 | 15 | true | 44 |
+| runtime | <anonymous@47> | ObjectExpression | 44 | 2195 | 14 | false | — |
+| fields | missionRequirementsReportUrl | ArrayExpression | 40 | 2612 | 38 | false | — |
+| PAYOUT_MEDIA_SOUNDS | <anonymous@47> | ObjectExpression | 38 | 2085 | 9 | true | 35 |
+| report | buildFinancialReport | ObjectExpression | 38 | 1742 | 36 | false | — |
+| toggleValues | updateUI | ObjectExpression | 33 | 1586 | 30 | false | — |
+| snapshot | missionSnapshotFromMarker | ObjectExpression | 32 | 2672 | 30 | false | — |
+| navigationGuard | protectHelpGuideDocument | TemplateLiteral | 31 | 1279 | 1 | true | 28 |
+| transportSweepRuntime | <anonymous@47> | ObjectExpression | 30 | 816 | 28 | false | — |
+| THEME_ASSETS | <anonymous@47> | ObjectExpression | 23 | 3218 | 21 | true | 20 |
+| merged | normaliseLoadedState | ObjectExpression | 21 | 1431 | 19 | false | — |
+| executive | buildDiscordFinancialPayload | ObjectExpression | 20 | 1877 | 6 | false | — |
+| PAYOUT_TEMPLATES | <anonymous@47> | ObjectExpression | 17 | 1908 | 15 | true | 14 |
+| BUILTIN_FINANCIAL_RULES | <anonymous@47> | ArrayExpression | 16 | 3670 | 14 | true | 13 |
+| customVehicleClassificationApi | <anonymous@47> | ObjectExpression | 16 | 714 | 4 | false | — |
+| layer | createSuppressedAllianceLayer | ObjectExpression | 16 | 553 | 14 | false | — |
+| BUILTIN_FINANCIAL_POLICY | <anonymous@47> | ObjectExpression | 16 | 544 | 4 | true | 13 |
+| FOOTBALL_SPECIAL_EVENT_MISSIONS | <anonymous@47> | ArrayExpression | 16 | 537 | 14 | true | 13 |
+| semanticSelectors | missionRequirementsStaffCapacity | ArrayExpression | 14 | 492 | 12 | true | 11 |
+| audit | buildDiscordFinancialPayload | ObjectExpression | 13 | 1113 | 4 | false | — |
+| SMART_BOOKMARK_WORDS | <anonymous@47> | ObjectExpression | 13 | 1013 | 53 | true | 10 |
+| THEMES | <anonymous@47> | ObjectExpression | 13 | 999 | 11 | true | 10 |
+| labels | missingRequirementKeyLabel | ObjectExpression | 13 | 345 | 11 | true | 10 |
+| controlToggleValues | updateUI | ObjectExpression | 11 | 534 | 9 | false | — |
+| visibilityShortcut | handleKeyboard | ObjectExpression | 11 | 370 | 9 | true | 8 |
+| candidate | collectTransportSweepStaticCandidates | ObjectExpression | 11 | 330 | 9 | false | — |
+| activeAnimations | triggerPayoutFlash | ArrayExpression | 10 | 698 | 3 | false | — |
+| VEHICLE_CODE_STATUS_DEFINITIONS | <anonymous@47> | ArrayExpression | 10 | 548 | 8 | true | 7 |
+| candidates | extractImportedFinancialVaultCredential | ArrayExpression | 10 | 525 | 8 | false | — |
+| candidates | extractImportedFinancialVaultStore | ArrayExpression | 10 | 437 | 8 | false | — |
+| UI_THEMES | <anonymous@47> | ObjectExpression | 9 | 1647 | 7 | true | 6 |
+| html | renderOperationalPanels | TemplateLiteral | 9 | 1381 | 1 | false | — |
+| data | criticalMissionStableData | ObjectExpression | 9 | 180 | 7 | false | — |
+| definitions | applyCriticalQuickView | ObjectExpression | 8 | 570 | 6 | true | 5 |
+| definitions | criticalQuickViewsHtml | ArrayExpression | 8 | 568 | 6 | true | 5 |
+| counts | criticalQuickViewsHtml | ObjectExpression | 8 | 450 | 6 | false | — |
+| labels | majorIncidentThemeLabel | ObjectExpression | 8 | 261 | 6 | true | 5 |
+| statusLabels | criticalAdvancedFilterSummaryText | ObjectExpression | 8 | 245 | 6 | true | 5 |
+| labels | criticalOperationalFilterLabel | ObjectExpression | 8 | 213 | 6 | true | 5 |
+| analysis | analyseResourceGap | ObjectExpression | 8 | 209 | 6 | false | — |
+| financialSection | patchHelpGuideDocument | TemplateLiteral | 7 | 2568 | 1 | true | 4 |
+| QUICK_PLACES | <anonymous@47> | ArrayExpression | 7 | 488 | 5 | true | 4 |
+| candidates | missionValueIdFromElement | ArrayExpression | 7 | 231 | 5 | false | — |
+| labels | missionLockOnThemeLabel | ObjectExpression | 7 | 229 | 5 | true | 4 |
+| candidates | extractImportedToolkitState | ArrayExpression | 7 | 184 | 5 | false | — |
+| economySection | patchHelpGuideDocument | TemplateLiteral | 6 | 1681 | 1 | true | 3 |
+| CRITICAL_AGE_FILTERS | <anonymous@47> | ObjectExpression | 6 | 774 | 4 | false | — |
+| safe | saveFinanceVaultCredential | ObjectExpression | 6 | 418 | 4 | false | — |
+| preferredSelectors | findMissionListDockRect | ArrayExpression | 6 | 387 | 15 | true | 3 |
+| wording | payoutPresentation | ObjectExpression | 6 | 364 | 4 | true | 3 |
+| HELP_CENTER | <anonymous@47> | ObjectExpression | 6 | 319 | 4 | true | 3 |
+| selectors | transportSweepWindowCloseControl | ArrayExpression | 6 | 309 | 11 | true | 3 |
+| SUPPRESSION_SELECTORS | <anonymous@47> | ArrayExpression | 6 | 308 | 12 | true | 3 |
+| tracking | playMissionLockTrackingSound | ArrayExpression | 6 | 257 | 4 | true | 3 |
+| POSITIONS | <anonymous@47> | ObjectExpression | 6 | 218 | 4 | true | 3 |
+| accents | payoutPresentation | ObjectExpression | 5 | 415 | 3 | true | 2 |
+| selectors | transportSweepVisibleWindowRoots | ArrayExpression | 5 | 306 | 13 | true | 2 |
+| entry | recordCreditGain | ObjectExpression | 5 | 288 | 6 | false | — |
+| names | findLeafletMapInstance | ArrayExpression | 5 | 214 | 13 | true | 2 |
 
 ## Exact repeated source blocks
 
@@ -110,7 +170,12 @@
 
 ## Candidate ranking
 
-| Name | Lines | Bytes | Entries | Estimated recovered lines |
-|---|---|---|---|---|
+| Name | Owner | Lines | Bytes | Entries | Estimated recovered lines |
+|---|---|---|---|---|---|
+| SCRIPT | <anonymous@47> | 47 | 2613 | 33 | 44 |
+| themedTitles | payoutTitleForTemplate | 47 | 2405 | 15 | 44 |
+| PAYOUT_MEDIA_SOUNDS | <anonymous@47> | 38 | 2085 | 9 | 35 |
+| navigationGuard | protectHelpGuideDocument | 31 | 1279 | 1 | 28 |
+| THEME_ASSETS | <anonymous@47> | 23 | 3218 | 21 | 20 |
 
 This inventory is static structural evidence. A production change still requires exact generated-value parity and the complete repository test suite.

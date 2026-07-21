@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "path": "src/MissionChief_Map_Command_Toolkit.user.js",
     "version": "4.20.20",
@@ -11,7 +11,6 @@
   "currentHeadroom": 329,
   "blankLines": 1612,
   "commentOnlyLines": 259,
-  "whitespaceOnlySavings": 1612,
   "topFunctionsByLines": [
     {
       "id": 141,
@@ -620,8 +619,900 @@
       "function": "criticalValuesHtml"
     }
   ],
-  "staticLiterals": [],
-  "externalizableJsonLikeLiterals": [],
+  "staticLiterals": [
+    {
+      "name": "SCRIPT",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 454,
+      "endLine": 500,
+      "lines": 47,
+      "bytes": 2613,
+      "entries": 33,
+      "jsonLike": true
+    },
+    {
+      "name": "themedTitles",
+      "owner": "payoutTitleForTemplate",
+      "kind": "ObjectExpression",
+      "startLine": 1588,
+      "endLine": 1634,
+      "lines": 47,
+      "bytes": 2405,
+      "entries": 15,
+      "jsonLike": true
+    },
+    {
+      "name": "runtime",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 505,
+      "endLine": 548,
+      "lines": 44,
+      "bytes": 2195,
+      "entries": 14,
+      "jsonLike": false
+    },
+    {
+      "name": "fields",
+      "owner": "missionRequirementsReportUrl",
+      "kind": "ArrayExpression",
+      "startLine": 23250,
+      "endLine": 23289,
+      "lines": 40,
+      "bytes": 2612,
+      "entries": 38,
+      "jsonLike": false
+    },
+    {
+      "name": "PAYOUT_MEDIA_SOUNDS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 962,
+      "endLine": 999,
+      "lines": 38,
+      "bytes": 2085,
+      "entries": 9,
+      "jsonLike": true
+    },
+    {
+      "name": "report",
+      "owner": "buildFinancialReport",
+      "kind": "ObjectExpression",
+      "startLine": 28222,
+      "endLine": 28259,
+      "lines": 38,
+      "bytes": 1742,
+      "entries": 36,
+      "jsonLike": false
+    },
+    {
+      "name": "toggleValues",
+      "owner": "updateUI",
+      "kind": "ObjectExpression",
+      "startLine": 30606,
+      "endLine": 30638,
+      "lines": 33,
+      "bytes": 1586,
+      "entries": 30,
+      "jsonLike": false
+    },
+    {
+      "name": "snapshot",
+      "owner": "missionSnapshotFromMarker",
+      "kind": "ObjectExpression",
+      "startLine": 20139,
+      "endLine": 20170,
+      "lines": 32,
+      "bytes": 2672,
+      "entries": 30,
+      "jsonLike": false
+    },
+    {
+      "name": "navigationGuard",
+      "owner": "protectHelpGuideDocument",
+      "kind": "TemplateLiteral",
+      "startLine": 29443,
+      "endLine": 29473,
+      "lines": 31,
+      "bytes": 1279,
+      "entries": 1,
+      "jsonLike": true
+    },
+    {
+      "name": "transportSweepRuntime",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 1259,
+      "endLine": 1288,
+      "lines": 30,
+      "bytes": 816,
+      "entries": 28,
+      "jsonLike": false
+    },
+    {
+      "name": "THEME_ASSETS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 891,
+      "endLine": 913,
+      "lines": 23,
+      "bytes": 3218,
+      "entries": 21,
+      "jsonLike": true
+    },
+    {
+      "name": "merged",
+      "owner": "normaliseLoadedState",
+      "kind": "ObjectExpression",
+      "startLine": 1407,
+      "endLine": 1427,
+      "lines": 21,
+      "bytes": 1431,
+      "entries": 19,
+      "jsonLike": false
+    },
+    {
+      "name": "executive",
+      "owner": "buildDiscordFinancialPayload",
+      "kind": "ObjectExpression",
+      "startLine": 28406,
+      "endLine": 28425,
+      "lines": 20,
+      "bytes": 1877,
+      "entries": 6,
+      "jsonLike": false
+    },
+    {
+      "name": "PAYOUT_TEMPLATES",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 940,
+      "endLine": 956,
+      "lines": 17,
+      "bytes": 1908,
+      "entries": 15,
+      "jsonLike": true
+    },
+    {
+      "name": "BUILTIN_FINANCIAL_RULES",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 26275,
+      "endLine": 26290,
+      "lines": 16,
+      "bytes": 3670,
+      "entries": 14,
+      "jsonLike": true
+    },
+    {
+      "name": "customVehicleClassificationApi",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 15627,
+      "endLine": 15642,
+      "lines": 16,
+      "bytes": 714,
+      "entries": 4,
+      "jsonLike": false
+    },
+    {
+      "name": "layer",
+      "owner": "createSuppressedAllianceLayer",
+      "kind": "ObjectExpression",
+      "startLine": 175,
+      "endLine": 190,
+      "lines": 16,
+      "bytes": 553,
+      "entries": 14,
+      "jsonLike": false
+    },
+    {
+      "name": "BUILTIN_FINANCIAL_POLICY",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 26295,
+      "endLine": 26310,
+      "lines": 16,
+      "bytes": 544,
+      "entries": 4,
+      "jsonLike": true
+    },
+    {
+      "name": "FOOTBALL_SPECIAL_EVENT_MISSIONS",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 15372,
+      "endLine": 15387,
+      "lines": 16,
+      "bytes": 537,
+      "entries": 14,
+      "jsonLike": true
+    },
+    {
+      "name": "semanticSelectors",
+      "owner": "missionRequirementsStaffCapacity",
+      "kind": "ArrayExpression",
+      "startLine": 22441,
+      "endLine": 22454,
+      "lines": 14,
+      "bytes": 492,
+      "entries": 12,
+      "jsonLike": true
+    },
+    {
+      "name": "audit",
+      "owner": "buildDiscordFinancialPayload",
+      "kind": "ObjectExpression",
+      "startLine": 28427,
+      "endLine": 28439,
+      "lines": 13,
+      "bytes": 1113,
+      "entries": 4,
+      "jsonLike": false
+    },
+    {
+      "name": "SMART_BOOKMARK_WORDS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 1093,
+      "endLine": 1105,
+      "lines": 13,
+      "bytes": 1013,
+      "entries": 53,
+      "jsonLike": true
+    },
+    {
+      "name": "THEMES",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 926,
+      "endLine": 938,
+      "lines": 13,
+      "bytes": 999,
+      "entries": 11,
+      "jsonLike": true
+    },
+    {
+      "name": "labels",
+      "owner": "missingRequirementKeyLabel",
+      "kind": "ObjectExpression",
+      "startLine": 1703,
+      "endLine": 1715,
+      "lines": 13,
+      "bytes": 345,
+      "entries": 11,
+      "jsonLike": true
+    },
+    {
+      "name": "controlToggleValues",
+      "owner": "updateUI",
+      "kind": "ObjectExpression",
+      "startLine": 30530,
+      "endLine": 30540,
+      "lines": 11,
+      "bytes": 534,
+      "entries": 9,
+      "jsonLike": false
+    },
+    {
+      "name": "visibilityShortcut",
+      "owner": "handleKeyboard",
+      "kind": "ObjectExpression",
+      "startLine": 29609,
+      "endLine": 29619,
+      "lines": 11,
+      "bytes": 370,
+      "entries": 9,
+      "jsonLike": true
+    },
+    {
+      "name": "candidate",
+      "owner": "collectTransportSweepStaticCandidates",
+      "kind": "ObjectExpression",
+      "startLine": 17138,
+      "endLine": 17148,
+      "lines": 11,
+      "bytes": 330,
+      "entries": 9,
+      "jsonLike": false
+    },
+    {
+      "name": "activeAnimations",
+      "owner": "triggerPayoutFlash",
+      "kind": "ArrayExpression",
+      "startLine": 26066,
+      "endLine": 26075,
+      "lines": 10,
+      "bytes": 698,
+      "entries": 3,
+      "jsonLike": false
+    },
+    {
+      "name": "VEHICLE_CODE_STATUS_DEFINITIONS",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 1039,
+      "endLine": 1048,
+      "lines": 10,
+      "bytes": 548,
+      "entries": 8,
+      "jsonLike": true
+    },
+    {
+      "name": "candidates",
+      "owner": "extractImportedFinancialVaultCredential",
+      "kind": "ArrayExpression",
+      "startLine": 25071,
+      "endLine": 25080,
+      "lines": 10,
+      "bytes": 525,
+      "entries": 8,
+      "jsonLike": false
+    },
+    {
+      "name": "candidates",
+      "owner": "extractImportedFinancialVaultStore",
+      "kind": "ArrayExpression",
+      "startLine": 25086,
+      "endLine": 25095,
+      "lines": 10,
+      "bytes": 437,
+      "entries": 8,
+      "jsonLike": false
+    },
+    {
+      "name": "UI_THEMES",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 915,
+      "endLine": 923,
+      "lines": 9,
+      "bytes": 1647,
+      "entries": 7,
+      "jsonLike": true
+    },
+    {
+      "name": "html",
+      "owner": "renderOperationalPanels",
+      "kind": "TemplateLiteral",
+      "startLine": 20801,
+      "endLine": 20809,
+      "lines": 9,
+      "bytes": 1381,
+      "entries": 1,
+      "jsonLike": false
+    },
+    {
+      "name": "data",
+      "owner": "criticalMissionStableData",
+      "kind": "ObjectExpression",
+      "startLine": 20438,
+      "endLine": 20446,
+      "lines": 9,
+      "bytes": 180,
+      "entries": 7,
+      "jsonLike": false
+    },
+    {
+      "name": "definitions",
+      "owner": "applyCriticalQuickView",
+      "kind": "ObjectExpression",
+      "startLine": 21562,
+      "endLine": 21569,
+      "lines": 8,
+      "bytes": 570,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "definitions",
+      "owner": "criticalQuickViewsHtml",
+      "kind": "ArrayExpression",
+      "startLine": 21618,
+      "endLine": 21625,
+      "lines": 8,
+      "bytes": 568,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "counts",
+      "owner": "criticalQuickViewsHtml",
+      "kind": "ObjectExpression",
+      "startLine": 21609,
+      "endLine": 21616,
+      "lines": 8,
+      "bytes": 450,
+      "entries": 6,
+      "jsonLike": false
+    },
+    {
+      "name": "labels",
+      "owner": "majorIncidentThemeLabel",
+      "kind": "ObjectExpression",
+      "startLine": 19468,
+      "endLine": 19475,
+      "lines": 8,
+      "bytes": 261,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "statusLabels",
+      "owner": "criticalAdvancedFilterSummaryText",
+      "kind": "ObjectExpression",
+      "startLine": 21590,
+      "endLine": 21597,
+      "lines": 8,
+      "bytes": 245,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "labels",
+      "owner": "criticalOperationalFilterLabel",
+      "kind": "ObjectExpression",
+      "startLine": 21635,
+      "endLine": 21642,
+      "lines": 8,
+      "bytes": 213,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "analysis",
+      "owner": "analyseResourceGap",
+      "kind": "ObjectExpression",
+      "startLine": 18028,
+      "endLine": 18035,
+      "lines": 8,
+      "bytes": 209,
+      "entries": 6,
+      "jsonLike": false
+    },
+    {
+      "name": "financialSection",
+      "owner": "patchHelpGuideDocument",
+      "kind": "TemplateLiteral",
+      "startLine": 29421,
+      "endLine": 29427,
+      "lines": 7,
+      "bytes": 2568,
+      "entries": 1,
+      "jsonLike": true
+    },
+    {
+      "name": "QUICK_PLACES",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 1082,
+      "endLine": 1088,
+      "lines": 7,
+      "bytes": 488,
+      "entries": 5,
+      "jsonLike": true
+    },
+    {
+      "name": "candidates",
+      "owner": "missionValueIdFromElement",
+      "kind": "ArrayExpression",
+      "startLine": 21728,
+      "endLine": 21734,
+      "lines": 7,
+      "bytes": 231,
+      "entries": 5,
+      "jsonLike": false
+    },
+    {
+      "name": "labels",
+      "owner": "missionLockOnThemeLabel",
+      "kind": "ObjectExpression",
+      "startLine": 23928,
+      "endLine": 23934,
+      "lines": 7,
+      "bytes": 229,
+      "entries": 5,
+      "jsonLike": true
+    },
+    {
+      "name": "candidates",
+      "owner": "extractImportedToolkitState",
+      "kind": "ArrayExpression",
+      "startLine": 25042,
+      "endLine": 25048,
+      "lines": 7,
+      "bytes": 184,
+      "entries": 5,
+      "jsonLike": false
+    },
+    {
+      "name": "economySection",
+      "owner": "patchHelpGuideDocument",
+      "kind": "TemplateLiteral",
+      "startLine": 29431,
+      "endLine": 29436,
+      "lines": 6,
+      "bytes": 1681,
+      "entries": 1,
+      "jsonLike": true
+    },
+    {
+      "name": "CRITICAL_AGE_FILTERS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 1010,
+      "endLine": 1015,
+      "lines": 6,
+      "bytes": 774,
+      "entries": 4,
+      "jsonLike": false
+    },
+    {
+      "name": "safe",
+      "owner": "saveFinanceVaultCredential",
+      "kind": "ObjectExpression",
+      "startLine": 26387,
+      "endLine": 26392,
+      "lines": 6,
+      "bytes": 418,
+      "entries": 4,
+      "jsonLike": false
+    },
+    {
+      "name": "preferredSelectors",
+      "owner": "findMissionListDockRect",
+      "kind": "ArrayExpression",
+      "startLine": 21026,
+      "endLine": 21031,
+      "lines": 6,
+      "bytes": 387,
+      "entries": 15,
+      "jsonLike": true
+    },
+    {
+      "name": "wording",
+      "owner": "payoutPresentation",
+      "kind": "ObjectExpression",
+      "startLine": 25227,
+      "endLine": 25232,
+      "lines": 6,
+      "bytes": 364,
+      "entries": 4,
+      "jsonLike": true
+    },
+    {
+      "name": "HELP_CENTER",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 884,
+      "endLine": 889,
+      "lines": 6,
+      "bytes": 319,
+      "entries": 4,
+      "jsonLike": true
+    },
+    {
+      "name": "selectors",
+      "owner": "transportSweepWindowCloseControl",
+      "kind": "ArrayExpression",
+      "startLine": 17456,
+      "endLine": 17461,
+      "lines": 6,
+      "bytes": 309,
+      "entries": 11,
+      "jsonLike": true
+    },
+    {
+      "name": "SUPPRESSION_SELECTORS",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 1109,
+      "endLine": 1114,
+      "lines": 6,
+      "bytes": 308,
+      "entries": 12,
+      "jsonLike": true
+    },
+    {
+      "name": "tracking",
+      "owner": "playMissionLockTrackingSound",
+      "kind": "ArrayExpression",
+      "startLine": 23951,
+      "endLine": 23956,
+      "lines": 6,
+      "bytes": 257,
+      "entries": 4,
+      "jsonLike": true
+    },
+    {
+      "name": "POSITIONS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 1075,
+      "endLine": 1080,
+      "lines": 6,
+      "bytes": 218,
+      "entries": 4,
+      "jsonLike": true
+    },
+    {
+      "name": "accents",
+      "owner": "payoutPresentation",
+      "kind": "ObjectExpression",
+      "startLine": 25236,
+      "endLine": 25240,
+      "lines": 5,
+      "bytes": 415,
+      "entries": 3,
+      "jsonLike": true
+    },
+    {
+      "name": "selectors",
+      "owner": "transportSweepVisibleWindowRoots",
+      "kind": "ArrayExpression",
+      "startLine": 17013,
+      "endLine": 17017,
+      "lines": 5,
+      "bytes": 306,
+      "entries": 13,
+      "jsonLike": true
+    },
+    {
+      "name": "entry",
+      "owner": "recordCreditGain",
+      "kind": "ObjectExpression",
+      "startLine": 20291,
+      "endLine": 20295,
+      "lines": 5,
+      "bytes": 288,
+      "entries": 6,
+      "jsonLike": false
+    },
+    {
+      "name": "names",
+      "owner": "findLeafletMapInstance",
+      "kind": "ArrayExpression",
+      "startLine": 18738,
+      "endLine": 18742,
+      "lines": 5,
+      "bytes": 214,
+      "entries": 13,
+      "jsonLike": true
+    },
+    {
+      "name": "payload",
+      "owner": "buildDiscordFinancialPayload",
+      "kind": "ObjectExpression",
+      "startLine": 28441,
+      "endLine": 28445,
+      "lines": 5,
+      "bytes": 166,
+      "entries": 3,
+      "jsonLike": false
+    },
+    {
+      "name": "containers",
+      "owner": "extractImportedDiscordWebhook",
+      "kind": "ArrayExpression",
+      "startLine": 25053,
+      "endLine": 25057,
+      "lines": 5,
+      "bytes": 150,
+      "entries": 3,
+      "jsonLike": false
+    },
+    {
+      "name": "BUILTIN_FINANCIAL_FALLBACKS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 26291,
+      "endLine": 26294,
+      "lines": 4,
+      "bytes": 407,
+      "entries": 2,
+      "jsonLike": true
+    },
+    {
+      "name": "player",
+      "owner": "normaliseImportedFinanceVaultStore",
+      "kind": "ObjectExpression",
+      "startLine": 25119,
+      "endLine": 25122,
+      "lines": 4,
+      "bytes": 274,
+      "entries": 2,
+      "jsonLike": false
+    },
+    {
+      "name": "player",
+      "owner": "mergeFinanceVaultStores",
+      "kind": "ObjectExpression",
+      "startLine": 26905,
+      "endLine": 26908,
+      "lines": 4,
+      "bytes": 274,
+      "entries": 2,
+      "jsonLike": false
+    },
+    {
+      "name": "selectors",
+      "owner": "activeDeveloperEventLabel",
+      "kind": "ArrayExpression",
+      "startLine": 15342,
+      "endLine": 15345,
+      "lines": 4,
+      "bytes": 250,
+      "entries": 8,
+      "jsonLike": true
+    },
+    {
+      "name": "MARKER_CLASS_NAMES",
+      "owner": "<anonymous@47>",
+      "kind": "ArrayExpression",
+      "startLine": 18515,
+      "endLine": 18518,
+      "lines": 4,
+      "bytes": 227,
+      "entries": 7,
+      "jsonLike": true
+    },
+    {
+      "name": "requestModes",
+      "owner": "transportSweepFetchMissionCandidates",
+      "kind": "ArrayExpression",
+      "startLine": 17171,
+      "endLine": 17174,
+      "lines": 4,
+      "bytes": 192,
+      "entries": 2,
+      "jsonLike": true
+    },
+    {
+      "name": "candidates",
+      "owner": "missionLiveCurrentValueFromDom",
+      "kind": "ArrayExpression",
+      "startLine": 20072,
+      "endLine": 20075,
+      "lines": 4,
+      "bytes": 185,
+      "entries": 2,
+      "jsonLike": false
+    },
+    {
+      "name": "selectors",
+      "owner": "creditsFromMissionPanel",
+      "kind": "ArrayExpression",
+      "startLine": 15179,
+      "endLine": 15182,
+      "lines": 4,
+      "bytes": 183,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "requestModes",
+      "owner": "<anonymous@15092>",
+      "kind": "ArrayExpression",
+      "startLine": 15095,
+      "endLine": 15098,
+      "lines": 4,
+      "bytes": 182,
+      "entries": 2,
+      "jsonLike": true
+    },
+    {
+      "name": "attributes",
+      "owner": "timestampFromMissionPanel",
+      "kind": "ArrayExpression",
+      "startLine": 16237,
+      "endLine": 16240,
+      "lines": 4,
+      "bytes": 154,
+      "entries": 6,
+      "jsonLike": true
+    },
+    {
+      "name": "units",
+      "owner": "appendEntry",
+      "kind": "ObjectExpression",
+      "startLine": 20476,
+      "endLine": 20479,
+      "lines": 4,
+      "bytes": 153,
+      "entries": 2,
+      "jsonLike": false
+    },
+    {
+      "name": "units",
+      "owner": "missionSnapshotFromMarker",
+      "kind": "ObjectExpression",
+      "startLine": 20126,
+      "endLine": 20129,
+      "lines": 4,
+      "bytes": 152,
+      "entries": 2,
+      "jsonLike": false
+    },
+    {
+      "name": "snapshot",
+      "owner": "applyLeafletEconomyPolicy",
+      "kind": "ObjectExpression",
+      "startLine": 18241,
+      "endLine": 18244,
+      "lines": 4,
+      "bytes": 78,
+      "entries": 2,
+      "jsonLike": false
+    }
+  ],
+  "externalizableJsonLikeLiterals": [
+    {
+      "name": "SCRIPT",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 454,
+      "endLine": 500,
+      "lines": 47,
+      "bytes": 2613,
+      "entries": 33,
+      "jsonLike": true,
+      "estimatedRecoveredLines": 44,
+      "method": "Readable src/data catalogue plus deterministic compact embedding in the canonical userscript."
+    },
+    {
+      "name": "themedTitles",
+      "owner": "payoutTitleForTemplate",
+      "kind": "ObjectExpression",
+      "startLine": 1588,
+      "endLine": 1634,
+      "lines": 47,
+      "bytes": 2405,
+      "entries": 15,
+      "jsonLike": true,
+      "estimatedRecoveredLines": 44,
+      "method": "Readable src/data catalogue plus deterministic compact embedding in the canonical userscript."
+    },
+    {
+      "name": "PAYOUT_MEDIA_SOUNDS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 962,
+      "endLine": 999,
+      "lines": 38,
+      "bytes": 2085,
+      "entries": 9,
+      "jsonLike": true,
+      "estimatedRecoveredLines": 35,
+      "method": "Readable src/data catalogue plus deterministic compact embedding in the canonical userscript."
+    },
+    {
+      "name": "navigationGuard",
+      "owner": "protectHelpGuideDocument",
+      "kind": "TemplateLiteral",
+      "startLine": 29443,
+      "endLine": 29473,
+      "lines": 31,
+      "bytes": 1279,
+      "entries": 1,
+      "jsonLike": true,
+      "estimatedRecoveredLines": 28,
+      "method": "Readable src/data catalogue plus deterministic compact embedding in the canonical userscript."
+    },
+    {
+      "name": "THEME_ASSETS",
+      "owner": "<anonymous@47>",
+      "kind": "ObjectExpression",
+      "startLine": 891,
+      "endLine": 913,
+      "lines": 23,
+      "bytes": 3218,
+      "entries": 21,
+      "jsonLike": true,
+      "estimatedRecoveredLines": 20,
+      "method": "Readable src/data catalogue plus deterministic compact embedding in the canonical userscript."
+    }
+  ],
   "repeatedBlocks": [
     {
       "width": 8,
@@ -1027,86 +1918,6 @@
         12693
       ],
       "preview": "html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-status, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-profile-main, / html[data-mcms-ui-theme=\"bond007\"] #${SCRIPT.panelId} .mcms-ops-stat,"
-    }
-  ],
-  "groupedHotspots": [
-    {
-      "prefix": "install",
-      "functions": 1,
-      "lines": 12224,
-      "bytes": 831639,
-      "names": [
-        "installMainStyles (12224)"
-      ]
-    },
-    {
-      "prefix": "other",
-      "functions": 18,
-      "lines": 2557,
-      "bytes": 154061,
-      "names": [
-        "boot (309)",
-        "triggerPayoutFlash (208)",
-        "handleSettingChange (202)",
-        "fetchFinancialLedger (199)",
-        "animateAdditionalPayoutTemplate (169)",
-        "summariseFinancialTransactions (164)",
-        "processTransportSweepMission (148)",
-        "drawer.addEventListener callback@21278 (137)",
-        "toggleFeature (118)",
-        "normaliseLoadedState (117)",
-        "particleElements.forEach callback (114)",
-        "ensurePayoutFlashOverlay (111)",
-        "playSynthPayoutSound (109)",
-        "toggleCommandBar (102)",
-        "resolveFinancialPeriod (89)",
-        "toggleCriticalView (88)",
-        "getCriticalMissionEntries (87)",
-        "findLeafletMapInstance (86)"
-      ]
-    },
-    {
-      "prefix": "update",
-      "functions": 6,
-      "lines": 671,
-      "bytes": 36780,
-      "names": [
-        "updateUI (204)",
-        "updateMissionAgeLabels (110)",
-        "updateCoverageHeatmap (103)",
-        "updateStuckMissionLabels (85)",
-        "updateTransportWatcherLabels (85)",
-        "updateAllianceCreditLabels (84)"
-      ]
-    },
-    {
-      "prefix": "create",
-      "functions": 2,
-      "lines": 604,
-      "bytes": 52500,
-      "names": [
-        "createPanel (371)",
-        "createCriticalDrawer (233)"
-      ]
-    },
-    {
-      "prefix": "build",
-      "functions": 2,
-      "lines": 217,
-      "bytes": 12419,
-      "names": [
-        "buildFinancialReport (113)",
-        "buildFinancialChartBlob (104)"
-      ]
-    },
-    {
-      "prefix": "render",
-      "functions": 1,
-      "lines": 89,
-      "bytes": 12717,
-      "names": [
-        "renderCriticalDrawer (89)"
-      ]
     }
   ],
   "safety": {

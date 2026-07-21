@@ -1,0 +1,43 @@
+name: Merge Current Main
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temporary-merge-current-main.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Fetch verified current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main:refs/remotes/origin/main
+          test "$(git rev-parse origin/main)" = "be114dcb0fedeeec6618c8f4dbac9ab50675e1b0"
+      - name: Merge current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-ff --no-edit origin/main
+          git merge-base --is-ancestor origin/main HEAD
+          test "$(git rev-parse HEAD:README.md)" = "955c834b513f15d20474bcd8a0e672dbd148c5db"
+      - name: Push merged branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

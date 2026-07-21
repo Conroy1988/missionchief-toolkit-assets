@@ -1,3 +1,4 @@
+# Issue 159 transfer corrected and hash-locked.
 name: Apply Issue 159 Candidate
 
 on:

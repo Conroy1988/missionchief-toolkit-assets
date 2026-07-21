@@ -1,31 +1,98 @@
-name: Temporary Issue 255 Export
+name: Apply Issue 255 Measurement Candidate
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/issue-255-unchanged-render-evidence
     paths:
       - ".github/workflows/temporary-issue255-export.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
+  apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Check out candidate branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: agent/issue-255-unchanged-render-evidence
           fetch-depth: 0
-          persist-credentials: false
-      - name: Package repository
-        run: tar --exclude=.git -czf /tmp/missionchief-toolkit-issue255-current.tar.gz .
-      - name: Upload repository package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-issue255-current
-          path: /tmp/missionchief-toolkit-issue255-current.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          persist-credentials: true
+
+      - name: Reconstruct reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/transfer/issue255-part1.txt .github/transfer/issue255-part2.txt > /tmp/issue255.patch.gz.b64
+          [[ "$(wc -c < /tmp/issue255.patch.gz.b64)" -eq 15908 ]]
+          echo "b3da5299127e1832ad565d2a17f837028da19a63be91118b57724763c907170b  /tmp/issue255.patch.gz.b64" | sha256sum -c -
+          base64 -d /tmp/issue255.patch.gz.b64 | gzip -d > /tmp/issue255.patch
+          git apply --check /tmp/issue255.patch
+          git apply /tmp/issue255.patch
+          rm .github/transfer/issue255-part1.txt .github/transfer/issue255-part2.txt
+
+      - name: Prove measurement-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          if ! git diff --quiet origin/main...HEAD -- src dist; then
+            echo "::error::Branch already differs from main in production src/ or dist/."
+            git diff --stat origin/main...HEAD -- src dist
+            exit 1
+          fi
+          if ! git diff --quiet -- src dist; then
+            echo "::error::Issue #255 patch changed production src/ or dist/."
+            git diff --stat -- src dist
+            exit 1
+          fi
+
+      - name: Install exact parser
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Validate candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tools/mcms-performance-profiler.user.js
+          node --check tools/build-render-probe-userscript.mjs
+          node --check .github/scripts/test_render_probe_instrumentation.mjs
+          node .github/scripts/test_performance_profiler.js
+          node .github/scripts/test_render_probe_instrumentation.mjs
+          python3 .github/scripts/test_unchanged_render_scenarios.py
+          python3 .github/scripts/test_performance_budget.py
+          python3 .github/scripts/test_runtime_optimisations.py
+          python3 .github/scripts/test_code_integrity.py
+          python3 .github/scripts/test_documentation_version_states.py
+          python3 .github/scripts/audit_actions_security.py --root . --json-report /tmp/actions-security.json --markdown-report /tmp/actions-security.md
+          python3 .github/scripts/check_documentation_drift.py --root . --json-output /tmp/documentation-drift.json --markdown-output /tmp/documentation-drift.md
+          mkdir -p /tmp/render-probe
+          node tools/build-render-probe-userscript.mjs \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --output /tmp/render-probe/MissionChief_Map_Command_Toolkit.render-probe.user.js \
+            --manifest /tmp/render-probe/render-probe-manifest.json
+          node --check /tmp/render-probe/MissionChief_Map_Command_Toolkit.render-probe.user.js
+          git diff --quiet -- src dist
+
+      - name: Commit validated measurement tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            tools/mcms-performance-profiler.user.js \
+            tools/build-render-probe-userscript.mjs \
+            .github/scripts/test_performance_profiler.js \
+            .github/scripts/test_render_probe_instrumentation.mjs \
+            .github/scripts/test_unchanged_render_scenarios.py \
+            .github/fixtures/unchanged-render-scenarios-v4.20.24.json \
+            docs/audits/performance-profiler.md \
+            docs/audits/unchanged-render-measurement-v4.20.24.md \
+            .github/transfer/issue255-part1.txt \
+            .github/transfer/issue255-part2.txt
+          git commit -m "Add unchanged-render measurement tooling"
+          git push origin HEAD:agent/issue-255-unchanged-render-evidence

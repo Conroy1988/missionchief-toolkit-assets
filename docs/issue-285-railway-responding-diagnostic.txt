@@ -1,0 +1,387 @@
+# Issue 285 diagnostic
+
+
+## Matching runtime functions
+missionRequirementsCollectUnits
+missionRequirementsDefaultStaffCapacity
+missionRequirementsExclusiveUnitBuckets
+missionRequirementsMetadataValues
+missionRequirementsOperationalCanonicalStateContainer
+missionRequirementsOperationalElementActive
+missionRequirementsOperationalSelectors
+missionRequirementsOperationalWindowScopes
+missionRequirementsResolvedStaffCapacity
+missionRequirementsStaffCapacity
+missionRequirementsUnitContribution
+missionRequirementsVehicleApiStaff
+
+
+## Railway definition
+l":"Rescue Dog","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-4x4","label":"Mountain Rescue 4x4","aliases":["Mountain Rescue 4x4","Mountain Rescue 4x4s"],"types":[99]},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":false},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[],"training":["Railway Police Officer","Railway Police"],"countable":true},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Training","search_and_rescue"],"arrAttributes":["search_and_rescue"],"countable":true},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[85,100],"training":["SAR Commander","Search Management Training","search_and_rescue_command"],"arrAttributes":["search_and_rescue_command"],"countable":true},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases":["Water","litres of water","liters of water"],"group":"other","bar":"water","types":[]},{"key":"foam-resource","label":"Foam","aliases":["Foam","litres of foam","liters of foam"],"group":"other","bar":"foam","types":[]},{"key":"pump-resource","label":"Pumping Capacity","aliases":["l/min pumping process","l/min pumping capacity","Pumping Capacity"],"group":"other","bar":"pump","types":[]},{"key":"fire-engine-2","group":"vehicles","aliases":["Fire engine","Fire engines"],"type
+
+## Metadata and definition matching
+function missionRequirementsMetadataValues(element, kind = 'labels') { const values = new Set(); const add = raw => String(raw || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const attributes = kind === 'training' ? ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name'] : ['data-mcms-custom-vehicle-category', 'data-custom-vehicle-category', 'data-vehicle-category', 'data-vehicle-type-name', 'data-vehicle-type']; for (const scope of scopes) { for (const attribute of attributes) add(scope?.getAttribute?.(attribute)); scope?.querySelectorAll?.(attributes.map(attribute => `[${attribute}]`).join(', ')).forEach(node => attributes.forEach(attribute => add(node.getAttribute?.(attribute)))); } if (kind === 'labels') { const typeCell = row?.querySelector?.('[data-column="vehicle-type"], [data-vehicle-type-name], td:nth-of-type(2)'); add(missionRequirementsElementText(typeCell)); const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; add(custom?.category); } return values; } function missionRequirementsDefinitionTokens(definition, property = 'aliases') { const raw = property === 'training' ? Array.from(definition?.training || []) : [definition?.label, ...(definition?.aliases || [])]; return new Set(raw.map(missionRequirementsCapabilityLabel).filter(Boolean)); } function missionRequirementsDefinitionMatchesValues(definition, values, property = 'aliases') { if (!values?.size) return false; const tokens = missionRequirementsDefinitionTokens(definition, property); for (const value of values) if (tokens.has(value)) return true; return false; } function missionRequirementsKnownDefinitionKeys(labels) { const keys = new Set(); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { if (missionRequirementsDefinitionMatchesValues(definition, labels)) keys.add(definition.key); } return keys; }
+function missionRequirementsPositiveCapabilityValue(raw) { if (raw === null || raw === undefined) return false; const value = String(raw).trim().toLowerCase(); if (!value || ['0', 'false', 'no', 'off', 'null', 'undefined'].includes(value)) return false; const numeric = Number(value.replace(/,/gu, '')); return Number.isFinite(numeric) ? numeric > 0 : true; }
+function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1) { const values = new Set(); let authoritative = false; const attributes = Array.from(new Set(MISSION_REQUIREMENT_DEFINITIONS.flatMap(definition => Array.from(definition?.arrAttributes || [])).map(attribute => String(attribute || '').trim()).filter(attribute => /^[a-z0-9_:-]+$/iu.test(attribute)))); if (!attributes.length) return { values, authoritative }; const inspect = scope => { if (!scope?.getAttribute) return; let present = false; for (const attribute of attributes) { const raw = scope.getAttribute(attribute); if (raw === null || raw === undefined) continue; present = true; if (missionRequirementsPositiveCapabilityValue(raw)) values.add(missionRequirementsCapabilityLabel(attribute)); } if (present) authoritative = true; }; const inspectTree = scope => { if (!scope) return; inspect(scope); const selector = attributes.map(attribute => `[${attribute}]`).join(', '); for (const node of Array.from(scope.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); } if (element?.matches?.('.vehicle_checkbox') || element?.classList?.contains?.('vehicle_checkbox') || (typeof element?.checked === 'boolean' && element?.getAttribute?.('vehicle_type_id') !== null)) authoritative = true; return { values, authoritative }; }
+
+
+const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"85":[1,3],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"100":[1,3],"101":[1,1],"102":[1,1],"116":[1,5]});
+function missionRequirementsDefaultStaffCapacity(typeId, element = null) { const range = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[typeId] || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[String(typeId)]; if (!Array.isArray(range) || range.length < 2) return null; const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const overrideAttributes = ['data-max-personnel-override', 'data-personnel-max-override', 'data-max-crew-override']; let maximumOverride = null; for (const scope of scopes) { for (const attribute of overrideAttributes) { const value = missionRequirementsOptionalNumber(scope?.getAttribute?.(attribute)); if (value !== null) { maximumOverride = value; break; } } if (maximumOverride !== null) break; } const minimum = Math.max(0, Number(range[0]) || 0); const configuredMaximum = Math.max(minimum, Number(range[1]) || 0); const maximum = maximumOverride === null ? configuredMaximum : Math.max(minimum, maximumOverride); return missionRequirementsCapacity(minimum, maximum, minimum === maximum); }
+
+    function missionRequirementsVehicleApiRecord(vehicleId) { const id = Number(vehicleId); if (!Number.isFinite(id) || id < 0) return null; return personalVehicleApiCache.get(String(id)) || personalVehicleApiCache.get(id) || null; }
+    function missionRequirementsVehicleApiStaff(record) { const assigned = missionRequirementsOptionalNumber(record?.assigned_personnel_count ?? record?.assignedPersonnelCount ?? record?.personnel_count); if (assigned === null) return null; return missionRequirementsCapacity(assigned, assigned, true); }
+    function missionRequirementsEnsureSharedVehicleData() { if (vehicleApiReady || vehicleApiFetchPromise) return; Promise.resolve(refreshPersonalVehicleData(false)).then(ready => { if (ready && !runtime.destroyed && state.missionRequirements) scheduleMissionRequirementsScan(0); }).catch(() => {}); }
+    function missionRequirementsResolvedVehicleType(vehicleId, element) { const detected = missionRequirementsVehicleType(element); if (detected >= 0) return detected; const record = missionRequirementsVehicleApiRecord(vehicleId); const recordType = missionRequirementsOptionalNumber(record?.vehicle_type ?? record?.vehicleType ?? record?.vehicle_type_id ?? record?.vehicleTypeId); return recordType === null ? -1 : recordType; }
+    function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element) { const native = missionRequirementsStaffCapacity(element); if (native?.known) return native; const exact = missionRequirementsVehicleApiStaff(missionRequirementsVehicleApiRecord(vehicleId)); if (exact) return exact; missionRequirementsEnsureSharedVehicleData(); return native || missionRequirementsDefaultStaffCapacity(typeId, element); }
+
+
+
+
+## Staff capacity and selectors
+function missionRequirementsStaffCapacity(element) {
+        const row = element?.closest?.('tr') || element;
+        const semanticSelectors = [
+            '[data-personnel-count]',
+            '[data-current-personnel]',
+            '[data-assigned-personnel-count]',
+            '[data-assigned_personnel_count]',
+            '[assigned_personnel_count]',
+            '[data-min-personnel]',
+            '[data-max-personnel]',
+            '[data-min-crew]',
+            '[data-max-crew]',
+            '[data-column="crew"]',
+            '[data-column="personnel"]',
+            '[data-column="staff"]'
+        ];
+        let crewCell = null;
+        for (const selector of semanticSelectors) {
+            crewCell = row?.querySelector?.(selector) || null;
+            if (crewCell) break;
+        }
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-assigned-personnel-count', 'data-assigned_personnel_count', 'assigned_personnel_count', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
+            }
+        }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const parseCrewText = cell => {
+            const text = String(cell?.textContent || '').trim();
+            const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+            if (currentMaximum) {
+                const current = missionRequirementsNumber(currentMaximum[1]);
+                return missionRequirementsCapacity(current, current, true);
+            }
+            const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+            if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+            return null;
+        };
+        const semanticTextCapacity = parseCrewText(crewCell);
+        if (semanticTextCapacity) return semanticTextCapacity;
+        for (const cell of Array.from(row?.querySelectorAll?.('td, th') || [])) {
+            const capacity = parseCrewText(cell);
+            if (capacity) return capacity;
+        }
+        if (crewCell) {
+            const visible = missionRequirementsOptionalNumber(String(crewCell.textContent || '').trim());
+            if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+            const sortValue = missionRequirementsOptionalNumber(crewCell.getAttribute?.('sortvalue'));
+            if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+        }
+        return null;
+    } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
+
+
+## Operational scopes through collector
+function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
+function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+        if (mode === 'selected') return null;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+        if (!row) return null;
+        const selectors = mode === 'onsite'
+            ? ['#mission_vehicle_at_mission', 'tbody#mission_vehicle_at_mission']
+            : ['#mission_vehicle_driving', 'tbody#mission_vehicle_driving'];
+        for (const selector of selectors) {
+            if (row.matches?.(selector)) return row;
+            const container = row.closest?.(selector);
+            if (container) return container;
+        }
+        return null;
+    }
+
+    function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') {
+        if (!element || element.isConnected === false) return false;
+        if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false;
+        const row = element.matches?.('tr') ? element : element.closest?.('tr') || element;
+        const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source);
+        const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode);
+        const candidateRoot = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        const canonicalId = mode === 'onsite' ? 'mission_vehicle_at_mission' : 'mission_vehicle_driving';
+        const documentCanonical = mode === 'selected' ? null : context?.doc?.getElementById?.(canonicalId);
+        const pathname = String(context?.doc?.defaultView?.location?.pathname || '');
+        const pathMission = missionRequirementsOptionalNumber(pathname.match(/\/missions\/(\d+)/u)?.[1]);
+        const canonicalOwned = Boolean(canonicalContainer && (
+            context?.activeWindow?.contains?.(row)
+            || candidateRoot?.contains?.(row)
+            || candidate?.root?.contains?.(row)
+            || candidate?.mount?.contains?.(row)
+            || (
+                expectedMission > 0
+                && pathMission === expectedMission
+                && documentCanonical
+                && (documentCanonical === canonicalContainer || documentCanonical.contains?.(row))
+            )
+        ));
+        if (mode !== 'selected' && !canonicalOwned && !isVisible(element)) return false;
+        if (context.activeWindow && !(
+            context.activeWindow === row
+            || context.activeWindow.contains?.(row)
+            || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow
+        )) return false;
+        const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId);
+        if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false;
+        const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]');
+        if (expectedMission > 0 && missionRoot) {
+            const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null);
+            if (actualMission > 0 && actualMission !== expectedMission) return false;
+        }
+        return true;
+    }
+const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
+function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const vehicleId = missionRequirementsVehicleId(vehicleElement); const typeId = missionRequirementsResolvedVehicleType(vehicleId, vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); const tractiveRandom = String(vehicleElement?.getAttribute?.('tractive_random') ?? vehicleElement?.getAttribute?.('data-tractive-random') ?? row?.getAttribute?.('tractive_random') ?? row?.getAttribute?.('data-tractive-random') ?? row?.dataset?.tractiveRandom ?? '') === '1'; const explicitTractiveType = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_type_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.getAttribute?.('tractive_vehicle_type_id') ?? row?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.dataset?.tractiveVehicleTypeId); const compatibleTractiveTypes = explicitTractiveType !== null ? [explicitTractiveType] : (tractiveRandom ? Array.from(MISSION_REQUIREMENTS_TRACTIVE_TYPES[typeId] || MISSION_REQUIREMENTS_TRACTIVE_TYPES[String(typeId)] || []) : []); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsMetadataValues(vehicleElement, 'training'); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const arrCapabilityState = missionRequirementsArrCapabilityState(vehicleElement, candidate, vehicleId); for (const capability of arrCapabilityState.values) { training.add(capability); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const attributes = Array.from(definition?.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (attributes.includes(capability)) knownDefinitionKeys.add(definition.key); } } const badgeTexts = Array.from(String(row?.textContent || row?.innerText || '').matchAll(/\[([^\]]+)\]/gu)).map(match => missionRequirementsCapabilityLabel(match[1])).filter(Boolean); for (const badgeText of badgeTexts) { for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const aliases = Array.from(definition?.training || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (!aliases.includes(badgeText)) continue; training.add(badgeText); knownDefinitionKeys.add(definition.key); } } const unit = { typeId, vehicleId, tractiveId, tractiveRandom, compatibleTractiveTypes: new Set(compatibleTractiveTypes), equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement), labels, training, arrCapabilities: arrCapabilityState.values, arrCapabilityKnown: arrCapabilityState.authoritative, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const tractiveType of unit.compatibleTractiveTypes) existing.compatibleTractiveTypes.add(tractiveType); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const capability of unit.arrCapabilities || []) existing.arrCapabilities.add(capability); existing.arrCapabilityKnown = existing.arrCapabilityKnown || unit.arrCapabilityKnown; for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
+
+    function missionRequirementsMissionTypeId(candidate) {
+        const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+        const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
+        for (const scope of scopes) {
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const node = scope.querySelector?.('[mission_type_id], [data-mission-type-id], [data-mission_type_id], input[name="mission_type_id"]');
+        if (node) {
+            for (const raw of [node.getAttribute?.('mission_type_id'), node.getAttribute?.('data-mission-type-id'), node.getAttribute?.('data-mission_type_id'), node.value]) {
+                const value = Number.parseInt(raw, 10);
+                if (Number.isFinite(value) && value >= 0) return value;
+            }
+        }
+        }
+        const runtimeValue = Number.parseInt(pageWindow.missionTypeId ?? pageWindow.mission_type_id, 10);
+        return Number.isFinite(runtimeValue) && runtimeValue >= 0 ? runtimeValue : null;
+    }
+
+    function missionRequirementsDefinitionCondition(definition, candidate) {
+        const included = Array.from(definition?.missionTypes || []).map(Number).filter(Number.isFinite);
+        const excluded = Array.from(definition?.excludedMissionTypes || []).map(Number).filter(Number.isFinite);
+        if (!included.length && !excluded.length) return true;
+        const missionTypeId = missionRequirementsMissionTypeId(candidate);
+        if (missionTypeId === null) return null;
+        if (included.length && !included.includes(missionTypeId)) return false;
+        if (excluded.includes(missionTypeId)) return false;
+        return true;
+    }
+
+function missionRequirementsUnitContribution(requirement, unit) { const definition = requirement.definition || {}; const definitionTypes = Array.from(definition.types || []); const typeEligible = definitionTypes.includes(unit.typeId); const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase())); const labelEligible = unit.knownDefinitionKeys?.has?.(definition.key) || missionRequirementsDefinitionMatchesValues(definition, unit.labels); const compatibleTractiveTypes = Array.from(unit.compatibleTractiveTypes || []).map(Number).filter(Number.isFinite); const tractiveEligible = compatibleTractiveTypes.length > 0 && compatibleTractiveTypes.every(type => definitionTypes.includes(type)); const trainingRequired = Array.from(definition.training || []).length > 0; const trainingEligible = trainingRequired && missionRequirementsDefinitionMatchesValues(definition, unit.training, 'training'); const arrTokens = new Set(Array.from(definition.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean)); const arrEligible = arrTokens.size > 0 && Array.from(unit.arrCapabilities || []).some(capability => arrTokens.has(missionRequirementsCapabilityLabel(capability))); const arrClassificationKnown = arrTokens.size === 0 || unit.arrCapabilityKnown === true; const eligible = requirement.group === 'staff' && trainingRequired ? trainingEligible || arrEligible || typeEligible : typeEligible || equipmentEligible || labelEligible || tractiveEligible; const classificationUnknown = requirement.group === 'staff' && trainingRequired ? Boolean(unit.staff && !eligible && !arrClassificationKnown && !unit.training?.size) : unit.typeId < 0 && !unit.knownDefinitionKeys?.size && !unit.equipment?.size && !compatibleTractiveTypes.length; if (!eligible) return { eligible: false, unknown: classificationUnknown, capacity: missionRequirementsCapacity(0, classificationUnknown ? null : 0, !classificationUnknown) }; if (requirement.group === 'staff') { const capacity = unit.staff ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known) : missionRequirementsCapacity(0, null, false); return { eligible: true, unknown: capacity.max === null, capacity }; } const factor = tractiveEligible && !typeEligible ? 1 : Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1); const value = Number.isFinite(factor) && factor > 0 ? factor : 1; return { eligible: true, unknown: false, capacity: missionRequirementsCapacity(value, value, true) }; }
+
+
+
+## Aggregation
+MISSING END AFTER function missionRequirementsAggregate: function missionRequirementsCoverageRow
+
+
+## Current Railway runtime fixtures
+{alias}`);
+            assert.strictEqual(parsed.remaining, '', `${group}:${entry.key}: parser consumes ${alias}`);
+            const definition = api.definitions.find(candidate =>
+                candidate.group === group && candidate.key === parsedRequirement.key
+            );
+            assert.ok(definition, `${group}:${entry.key}: parsed definition exists for ${alias}`);
+            assert.ok((definition.aliases || []).some(value => String(value).trim().toLowerCase() === String(alias).trim().toLowerCase()), `${group}:${entry.key}: parsed alias ${alias}`);
+            for (const typeId of entry.types) {
+                assert.ok((definition.types || []).includes(typeId), `${group}:${entry.key}: ${alias} supports vehicle type ${typeId}`);
+            }
+            for (const equipment of entry.equipment || []) {
+                assert.ok((definition.equipment || []).includes(equipment), `${group}:${entry.key}: ${alias} supports equipment ${equipment}`);
+            }
+            for (const training of entry.training || []) {
+                assert.ok((definition.training || []).includes(training), `${group}:${entry.key}: ${alias} supports training ${training}`);
+            }
+            for (const attribute of entry.arrAttributes || []) {
+                assert.ok((definition.arrAttributes || []).includes(attribute), `${group}:${entry.key}: ${alias} supports ARR attribute ${attribute}`);
+            }
+        }
+    }
+}
+
+for (const testCase of fixture.coverageCases) {
+    const row = api.coverageRow(
+        { key: testCase.name, requirement: testCase.name, missing: testCase.missing, group: 'vehicles', definition: {} },
+        testCase.selected,
+        testCase.responding,
+        testCase.onSite,
+        testCase.required
+    );
+    assert.strictEqual(row.covered, testCase.covered, `${testCase.name}: covered`);
+    assert.strictEqual(row.definitelyOpen, testCase.definitelyOpen, `${testCase.name}: definitelyOpen`);
+    assert.strictEqual(row.uncertain, testCase.uncertain, `${testCase.name}: uncertain`);
+    assert.strictEqual(row.stillNeededText, testCase.stillNeededText, `${testCase.name}: still-needed range`);
+}
+
+const equipmentRow = {
+    dataset: { equipmentTypes: 'drone, hazmat' },
+    getAttribute(name) { return name === 'data-equipment-types' ? 'drone, hazmat' : null; },
+    querySelectorAll() { return []; }
+};
+const equipmentCheckbox = {
+    dataset: {},
+    getAttribute() { return null; },
+    querySelectorAll() { return []; },
+    closest(selector) { return selector === 'tr' ? equipmentRow : null; }
+};
+assert.deepStrictEqual(Array.from(api.equipmentTypes(equipmentCheckbox)).sort(), ['drone', 'hazmat'], 'row-owned equipment metadata');
+
+const boundedRow = {
+    getAttribute(name) {
+        if (name === 'data-min-personnel') return '2';
+        if (name === 'data-max-personnel') return '6';
+        return null;
+    },
+    querySelector() { return null; }
+};
+const boundedCheckbox = {
+    getAttribute() { return null; },
+    closest(selector) { return selector === 'tr' ? boundedRow : null; }
+};
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(api.staffCapacity(boundedCheckbox))),
+    { min: 2, max: 6, known: false, value: 2 },
+    'bounded personnel capacity'
+);
+
+const exactCheckbox = {
+    getAttribute(name) { return name === 'data-current-personnel' ? '4' : null; },
+    closest() { return null; }
+};
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(api.staffCapacity(exactCheckbox))),
+    { min: 4, max: 4, known: true, value: 4 },
+    'exact personnel capacity'
+);
+
+
+const railwayRegressionAmbiguousCell = {
+    textContent: '239',
+    getAttribute(name) { return name === 'sortvalue' ? '239' : null; }
+};
+const railwayRegressionCrewCell = {
+    textContent: '1 / 1',
+    getAttribute(name) { return name === 'data-current-personnel' ? '1' : null; }
+};
+const railwayRegressionRow = {
+    getAttribute() { return null; },
+    querySelector(selector) {
+        if (selector === '[data-current-personnel]') return railwayRegressionCrewCell;
+        if (selector === 'td:nth-of-type(4)' || selector === 'td:nth-of-type(5)[sortvalue]') return railwayRegressionAmbiguousCell;
+        return null;
+    },
+    querySelectorAll() { return [railwayRegressionAmbiguousCell, railwayRegressionCrewCell]; }
+};
+const railwayRegressionCheckbox = {
+    getAttribute() { return null; },
+    closest(selector) { return selector === 'tr' ? railwayRegressionRow : null; }
+};
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(api.staffCapacity(railwayRegressionCheckbox))),
+    { min: 1, max: 1, known: true, value: 1 },
+    'Railway Police semantic crew count wins over unrelated sortvalue 239'
+);
+const railwayRegressionUnlabelledRow = {
+    getAttribute() { return null; },
+    querySelector() { return null; },
+    querySelectorAll() { return [railwayRegressionAmbiguousCell]; }
+};
+const railwayRegressionUnlabelledCheckbox = {
+    getAttribute() { return null; },
+    closest(selector) { return selector === 'tr' ? railwayRegressionUnlabelledRow : null; }
+};
+assert.strictEqual(
+    api.staffCapacity(railwayRegressionUnlabelledCheckbox),
+    null,
+    'unlabelled numeric table metadata must not become personnel capacity'
+);
+const railwayPoliceDefinition = api.definitions.find(item => item.key === 'railway-police-officer');
+const railwaySelectedUnit = {
+    typeId: -1,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(['railway police officer']),
+    knownDefinitionKeys: new Set(['railway-police-officer']),
+    staff: api.staffCapacity(railwayRegressionCheckbox),
+    contributionKey: 'vehicle:239'
+};
+const railwaySelectedCapacity = api.aggregate({ group: 'staff', definition: railwayPoliceDefinition }, [railwaySelectedUnit]);
+assert.strictEqual(railwaySelectedCapacity.min, 1, 'one selected Railway Police Officer contributes one');
+assert.strictEqual(railwaySelectedCapacity.max, 1, 'one selected Railway Police Officer remains exact');
+
+
+// Issue #242: MissionChief's live missing total already reflects selected personnel.
+{
+const issue242Doc = new FakeDocument();
+issue242Doc.defaultView = { MutationObserver: FakeMutationObserver };
+const issue242Candidate = makeMissionCandidate(issue242Doc, '4 Railway Police Officers');
+const issue242Definition = api.definitions.find(item => item.key === 'railway-police-officer');
+const issue242Catalogue = { requirements: [{ key: 'railway-police-officer', baseline: 8, missing: 8 }] };
+let issue242Rows = api.resolve(issue242Candidate, {
+    requirements: [{ key: 'railway-police-officer', requirement: 'Railway Police Officer', missing: 4, group: 'staff', definition: issue242Definition, statedRequirement: true }],
+    unresolved: []
+}, issue242Catalogue);
+let issue242Row = issue242Rows.find(item => item.key === 'railway-police-officer');
+assert.strictEqual(issue242Row.requiredText, '8', 'authoritative Railway Police requirement remains eight');
+assert.strictEqual(issue242Row.onSiteMin, 0, 'committed selected personnel are not falsely reported On site');
+assert.strictEqual(issue242Row.respondingMin, 0, 'committed selected personnel are not falsely reported Responding');
+assert.strictEqual(issue242Row.selectedMin, 4, 'baseline eight minus live missing four is reported Selected four');
+assert.strictEqual(issue242Row.stillNeededText, '4', 'four Railway Police Officers remain needed');
+
+issue242Rows = api.resolve(issue242Candidate, {
+    requirements: [{ key: 'railway-police-officer', requirement: 'Railway Police Officer', missing: 8, group: 'staff', definition: issue242Definition, statedRequirement: true }],
+    unresolved: []
+}, issue242Catalogue);
+issue242Row = issue242Rows.find(item => item.key === 'railway-police-officer');
+assert.strictEqual(issue242Row.selectedMin, 0, 'restored live missing demand removes inferred Selected after deselection');
+assert.strictEqual(issue242Row.onSiteMin, 0, 'deselection does not create false On-site personnel');
+}
+
+const issue191AmbulanceDefinition = api.definitions.find(item => item.key === 'ambulance');
+const issue191HemsDefinition = api.definitions.find(item => item.key === 'hems');
+const issue191SelectedHemsUnit = { typeId: 9, equipment: new Set(), staff: null, contributionKey: 'vehicle:hems-9001' };
+const issue191DuplicateSelectedHemsUnit = { ...issue191SelectedHemsUnit };
+const issue191SelectedRoadAmbulance = { typeId: 5, equipment: new Set(), staff: null, contributionKey: 'vehicle:ambulance-5001' };
+const issue191HemsAsAmbulance = api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit]);
+assert.strictEqual(issue191HemsAsAmbulance.min, 1, 'selected HEMS contributes one Ambulance capability');
+assert.strictEqual(issue191HemsAsAmbulance.max, 1, 'selected HEMS has exact Ambulance capacity');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedHemsUnit]).min, 1, 'selected HEMS retains HEMS capability');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191AmbulanceDefinition }, [issue191SelectedHemsUnit, issue191DuplicateSelectedHemsUnit]).min, 1, 'same HEMS contribution key is not duplicated within the Ambulance row');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: issue191HemsDefinition }, [issue191SelectedRoadAmbulance]).min, 0, 'road Ambulance does not satisfy HEMS');
+
+
+// Issue #269 vehicle crew fallback and canonical PRV/SRV aliases.
+{
+const policeStaff = api.defaultStaffCapacity(8, null);
+assert.strictEqual(policeStaff.min, 1, 'Police Car contributes at least one officer');
+assert.strictEqual(policeStaff.max, 2, 'Police Car preserves its two-officer maximum');
+const overrideElement = { getAttribute(name) { return name === 'data-max-personnel-override' ? '1' : null; }, closest() { return null; } };
+const overriddenStaff = api.defaultStaffCapacity(8, overrideElement);
+assert.strictEqual(overriddenStaff.min, 1, 'override preserves minimum crew');
+assert.strictEqual(overriddenStaff.max, 1, 'native override narrows maximum crew');
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const selectedPoliceCar = { typeId: 8, equipment: new Set(), labels: new Set(), training: new Set(), knownDefinitionKeys: new Set(), staff: policeStaff, contributionKey: 'vehicle:26901' };
+const selectedPoliceCapacity = api.aggregate({ group: 'staff', definition: policeDefinition }, [selectedPoliceCar

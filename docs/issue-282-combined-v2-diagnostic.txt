@@ -1,0 +1,33 @@
+Issue #282 corrected combined-package diagnostic
+Return code: 1
+
+===== STDOUT =====
+
+===== STDERR =====
+Cloning into '/tmp/issue-282-lssm-2vi6bl1m/LSSM-V.4'...
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-282-combined-final-runtime.py", line 714, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-282-combined-final-runtime.py", line 649, in main
+    contract = replace_once(
+               ^^^^^^^^^^^^^
+TypeError: replace_once() missing 1 required positional argument: 'label'
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-282-combined-final.py", line 288, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-282-combined-final.py", line 273, in main
+    subprocess.run(["python3", str(RUNTIME)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/.issue-282-combined-final-runtime.py']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-282-combined-final-v2.py", line 44, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-282-combined-final-v2.py", line 32, in main
+    subprocess.run(["python3", str(COMBINED)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue-282-combined-final.py']' returned non-zero exit status 1.

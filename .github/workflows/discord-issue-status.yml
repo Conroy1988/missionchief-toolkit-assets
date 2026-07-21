@@ -31,143 +31,232 @@ jobs:
         run: |
           set -euo pipefail
 
-          ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
-          ISSUE_NUMBER="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
-          ISSUE_TITLE="$(jq -r '.issue.title' "$GITHUB_EVENT_PATH")"
-          ISSUE_URL="$(jq -r '.issue.html_url' "$GITHUB_EVENT_PATH")"
-          ISSUE_AUTHOR="$(jq -r '.issue.user.login' "$GITHUB_EVENT_PATH")"
-          ACTOR="$(jq -r '.sender.login' "$GITHUB_EVENT_PATH")"
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
 
-          LABELS="$(
-            jq -r '
-              [.issue.labels[].name]
-              | if length == 0 then "None" else join(", ") end
-              | if length > 1000 then .[0:997] + "..." else . end
-            ' "$GITHUB_EVENT_PATH"
-          )"
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
+          issue = event["issue"]
+          action = event["action"]
 
-          ASSIGNEES="$(
-            jq -r '
-              [.issue.assignees[].login]
-              | if length == 0 then "Unassigned" else join(", ") end
-              | if length > 1000 then .[0:997] + "..." else . end
-            ' "$GITHUB_EVENT_PATH"
-          )"
+          repository = os.environ["REPOSITORY"]
+          repository_url = os.environ["REPOSITORY_URL"]
+          issue_number = issue["number"]
+          issue_url = issue["html_url"]
+          issue_title = issue["title"].strip()
+          issue_author = issue["user"]["login"]
+          issue_author_url = issue["user"].get("html_url") or f"https://github.com/{issue_author}"
+          issue_author_avatar = issue["user"].get("avatar_url")
+          actor = event["sender"]["login"]
 
-          BODY_PREVIEW="$(
-            jq -r '
-              (.issue.body // "No description supplied.")
-              | gsub("[\r\n\t]+"; " ")
-              | gsub("  +"; " ")
-              | if length > 900 then .[0:897] + "..." else . end
-            ' "$GITHUB_EVENT_PATH"
-          )"
+          label_names = [label["name"] for label in issue.get("labels", [])]
+          label_lookup = {label.lower(): label for label in label_names}
 
-          if [[ "$ACTION" == "opened" ]]; then
-            EMBED_TITLE="📋 New Pipeline Issue #${ISSUE_NUMBER}"
-            EMBED_DESCRIPTION="A new Toolkit issue has entered the development pipeline."
-            STATUS="Open"
-            COLOR="3447003"
-            TIMESTAMP="$(jq -r '.issue.created_at' "$GITHUB_EVENT_PATH")"
-          else
-            STATE_REASON="$(
-              jq -r '
-                .issue.state_reason
-                | if . == "completed" then "Completed"
-                  elif . == "not_planned" then "Not planned"
-                  elif . == null then "Closed"
-                  else .
-                  end
-              ' "$GITHUB_EVENT_PATH"
-            )"
+          priority_details = {
+              "critical": ("Critical", "🚨", 0xE74C3C),
+              "high": ("High", "🟠", 0xE67E22),
+              "medium": ("Medium", "🟡", 0xF1C40F),
+              "low": ("Low", "🔵", 0x3498DB),
+          }
 
-            EMBED_TITLE="✅ Pipeline Issue Closed #${ISSUE_NUMBER}"
-            EMBED_DESCRIPTION="A Toolkit pipeline issue has been closed."
-            STATUS="$STATE_REASON"
-            COLOR="5763719"
-            TIMESTAMP="$(jq -r '.issue.closed_at // .issue.updated_at' "$GITHUB_EVENT_PATH")"
-          fi
+          priority_key = ""
+          for candidate in priority_details:
+              if f"priority: {candidate}" in label_lookup:
+                  priority_key = candidate
+                  break
 
-          jq -n \
-            --arg username "MissionChief Toolkit Pipeline" \
-            --arg embed_title "$EMBED_TITLE" \
-            --arg embed_description "$EMBED_DESCRIPTION" \
-            --arg issue_title "$ISSUE_TITLE" \
-            --arg issue_url "$ISSUE_URL" \
-            --arg issue_number "$ISSUE_NUMBER" \
-            --arg status "$STATUS" \
-            --arg body_preview "$BODY_PREVIEW" \
-            --arg labels "$LABELS" \
-            --arg assignees "$ASSIGNEES" \
-            --arg issue_author "$ISSUE_AUTHOR" \
-            --arg actor "$ACTOR" \
-            --arg repository "$REPOSITORY" \
-            --arg repository_url "$REPOSITORY_URL" \
-            --arg timestamp "$TIMESTAMP" \
-            --argjson color "$COLOR" \
-            '{
-              username: $username,
-              allowed_mentions: {
-                parse: []
+          if priority_key:
+              priority_name, priority_icon, open_color = priority_details[priority_key]
+          else:
+              priority_name, priority_icon, open_color = "Not set", "⚪", 0x5865F2
+
+          type_details = {
+              "bug": ("Bug", "🐛"),
+              "enhancement": ("Enhancement", "✨"),
+              "documentation": ("Documentation", "📝"),
+              "security": ("Security", "🛡️"),
+              "maintenance": ("Maintenance", "🔧"),
+          }
+
+          issue_type, type_icon = "Issue", "📋"
+          for label, details in type_details.items():
+              if label in label_lookup:
+                  issue_type, type_icon = details
+                  break
+
+          assignees = [assignee["login"] for assignee in issue.get("assignees", [])]
+          owner_text = ", ".join(f"`{assignee}`" for assignee in assignees) or "`Unassigned`"
+
+          def clean_markdown_summary(markdown: str | None) -> str:
+              if not markdown or not markdown.strip():
+                  return "No description was supplied."
+
+              text = re.sub(r"```.*?```", " ", markdown, flags=re.DOTALL)
+              text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+              useful_lines: list[str] = []
+
+              for raw_line in text.replace("\r", "").split("\n"):
+                  line = raw_line.strip()
+                  if not line:
+                      continue
+                  if re.match(r"^#{1,6}\s+", line):
+                      continue
+                  if line.startswith("|") or re.match(r"^:?-{3,}:?(\s*\|.*)?$", line):
+                      continue
+                  if re.match(r"^[-*+]\s+\[[ xX]\]", line):
+                      continue
+                  if line.lower().startswith(("describe the ", "list the ", "check the ")):
+                      continue
+
+                  line = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", line)
+                  line = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", line)
+                  line = re.sub(r"^[-*+]\s+", "", line)
+                  line = re.sub(r"[*_~`>#]", "", line)
+                  line = re.sub(r"\s+", " ", line).strip()
+
+                  if len(line) >= 8:
+                      useful_lines.append(line)
+                  if len(" ".join(useful_lines)) >= 360:
+                      break
+
+              summary = " ".join(useful_lines).strip() or "No concise description could be extracted."
+              if len(summary) > 360:
+                  summary = summary[:357].rstrip() + "..."
+              return summary
+
+          def escape_discord_markdown(value: str) -> str:
+              return re.sub(r"([\\*_~|>])", r"\\\1", value)
+
+          summary = clean_markdown_summary(issue.get("body"))
+          safe_title = escape_discord_markdown(issue_title)
+
+          excluded_labels = {
+              "bug",
+              "enhancement",
+              "documentation",
+              "security",
+              "maintenance",
+              "priority: critical",
+              "priority: high",
+              "priority: medium",
+              "priority: low",
+          }
+          extra_labels = [label for label in label_names if label.lower() not in excluded_labels]
+          tags_text = " ".join(f"`{label}`" for label in extra_labels[:6]) or "`None`"
+          if len(extra_labels) > 6:
+              tags_text += f"  +{len(extra_labels) - 6} more"
+
+          if action == "opened":
+              embed_title = f"{priority_icon} New {priority_name.lower()}-priority issue · #{issue_number}" if priority_key else f"📋 New pipeline issue · #{issue_number}"
+              status_text = "🟢 Open"
+              color = open_color
+              timestamp = issue["created_at"]
+              footer_text = f"MissionChief Toolkit Pipeline • Opened by {actor}"
+          else:
+              state_reason = issue.get("state_reason")
+              status_names = {
+                  "completed": "Completed",
+                  "not_planned": "Not planned",
+              }
+              resolution = status_names.get(state_reason, "Closed")
+              embed_title = f"✅ Issue resolved · #{issue_number}"
+              status_text = f"✅ {resolution}"
+              color = 0x57F287
+              timestamp = issue.get("closed_at") or issue["updated_at"]
+              footer_text = f"MissionChief Toolkit Pipeline • Closed by {actor}"
+
+          embed = {
+              "title": embed_title,
+              "url": issue_url,
+              "description": f"**[{safe_title}]({issue_url})**\n\n{summary}",
+              "color": color,
+              "author": {
+                  "name": issue_author,
+                  "url": issue_author_url,
               },
-              embeds: [
-                {
-                  title: $embed_title,
-                  description: $embed_description,
-                  url: $issue_url,
-                  color: $color,
-                  fields: [
-                    {
-                      name: ("Issue #" + $issue_number),
-                      value: ("[" + $issue_title + "](" + $issue_url + ")"),
-                      inline: false
-                    },
-                    {
-                      name: "Status",
-                      value: ("`" + $status + "`"),
-                      inline: true
-                    },
-                    {
-                      name: "Labels",
-                      value: $labels,
-                      inline: true
-                    },
-                    {
-                      name: "Assigned",
-                      value: $assignees,
-                      inline: true
-                    },
-                    {
-                      name: "Description",
-                      value: $body_preview,
-                      inline: false
-                    },
-                    {
-                      name: "Created by",
-                      value: ("`" + $issue_author + "`"),
-                      inline: true
-                    },
-                    {
-                      name: "Action by",
-                      value: ("`" + $actor + "`"),
-                      inline: true
-                    },
-                    {
-                      name: "Repository",
-                      value: ("[" + $repository + "](" + $repository_url + ")"),
-                      inline: false
-                    }
-                  ],
-                  footer: {
-                    text: (
-                      "MissionChief Map Command Toolkit · Pipeline · Issue #" +
-                      $issue_number
-                    )
+              "fields": [
+                  {
+                      "name": "Status",
+                      "value": status_text,
+                      "inline": True,
                   },
-                  timestamp: $timestamp
-                }
-              ]
-            }' > discord-issue-payload.json
+                  {
+                      "name": "Priority",
+                      "value": f"{priority_icon} {priority_name}",
+                      "inline": True,
+                  },
+                  {
+                      "name": "Type",
+                      "value": f"{type_icon} {issue_type}",
+                      "inline": True,
+                  },
+                  {
+                      "name": "Owner",
+                      "value": owner_text,
+                      "inline": True,
+                  },
+                  {
+                      "name": "Tags",
+                      "value": tags_text,
+                      "inline": True,
+                  },
+                  {
+                      "name": "Open",
+                      "value": f"[View issue]({issue_url})  •  [Repository]({repository_url})",
+                      "inline": True,
+                  },
+              ],
+              "footer": {
+                  "text": footer_text,
+              },
+              "timestamp": timestamp,
+          }
+
+          if issue_author_avatar:
+              embed["author"]["icon_url"] = issue_author_avatar
+
+          payload = {
+              "username": "MissionChief Toolkit Pipeline",
+              "allowed_mentions": {"parse": []},
+              "embeds": [embed],
+          }
+
+          Path("discord-issue-payload.json").write_text(
+              json.dumps(payload, ensure_ascii=False, indent=2),
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Validate Discord payload
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("discord-issue-payload.json").read_text(encoding="utf-8"))
+          embeds = payload.get("embeds", [])
+          if len(embeds) != 1:
+              raise SystemExit("Expected exactly one Discord embed.")
+
+          embed = embeds[0]
+          if len(embed.get("title", "")) > 256:
+              raise SystemExit("Discord embed title exceeds 256 characters.")
+          if len(embed.get("description", "")) > 4096:
+              raise SystemExit("Discord embed description exceeds 4096 characters.")
+          if len(embed.get("fields", [])) > 25:
+              raise SystemExit("Discord embed contains more than 25 fields.")
+
+          for field in embed.get("fields", []):
+              if len(field.get("name", "")) > 256:
+                  raise SystemExit("Discord field name exceeds 256 characters.")
+              if len(field.get("value", "")) > 1024:
+                  raise SystemExit("Discord field value exceeds 1024 characters.")
+          PY
 
       - name: Post issue notification to Discord
         env:

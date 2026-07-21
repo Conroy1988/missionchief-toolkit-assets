@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.26] - 2026-07-21
+
+### Engineering
+- Extracted the 14 Discord financial-report and Local Financial Archive setting routes into `handleDiscordFinancialSettingChange()` without changing setting names, normalization, persistence, preview invalidation or asynchronous refresh behaviour.
+- Kept `handleSettingChange()` responsible for device, operational, payout and automatic-theme settings while reducing its routing complexity through one independently revertible UI-dispatch stage.
+
+### Validation
+- Extended the fixture-backed Settings/UI contract to compile and execute the extracted route family directly and through the main setting router.
+- Preserved all 36 rendered settings, intentional no-op handling, route ownership, source/distribution parity and the permanent 500-line source-headroom margin.
+
 ## [4.20.25] - 2026-07-21
 
 ### Engineering

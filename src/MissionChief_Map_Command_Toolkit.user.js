@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.25
+// @version      4.20.26
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.25',
+        version: '4.20.26',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -29039,7 +29039,6 @@ Create the private backup now?`);
         if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
         if (feature === 'autoNight') runAutoNight(true);
     }
-
     function runAutoNight(force = false) {
         if (!state.autoNight.enabled) return;
         const bucket = isNightNow(state.autoNight.nightStart, state.autoNight.dayStart) ? 'night' : 'day';
@@ -29050,7 +29049,6 @@ Create the private backup now?`);
         applyRootAttributes();
         updateUI();
     }
-
     function isNightNow(start, end) {
         const now = new Date();
         const current = now.getHours() * 60 + now.getMinutes();
@@ -30298,7 +30296,84 @@ Create the private backup now?`);
         }
         if (action === 'panel-reset') resetPanelPosition();
     }
-
+    function handleDiscordFinancialSettingChange(target, setting) {
+        if (setting === 'discord-webhook') {
+            try {
+                saveDiscordWebhookUrl(target.value);
+                setDiscordStatus(target.value ? 'Webhook saved securely in Tampermonkey storage.' : 'Webhook removed.', 'good');
+            } catch (err) {
+                setDiscordStatus(err?.message || 'Webhook URL is invalid.', 'bad');
+            }
+            return true;
+        }
+        if (setting === 'discord-name') {
+            state.discordReport.webhookName = String(target.value || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-top-categories') {
+            state.discordReport.topCategories = [3, 5, 8].includes(Number(target.value)) ? Number(target.value) : 5;
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-period') {
+            state.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(target.value) ? target.value : 'today';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-custom-start' || setting === 'discord-custom-end') {
+            const key = setting === 'discord-custom-start' ? 'customStart' : 'customEnd';
+            if (/^\d{4}-\d{2}-\d{2}$/u.test(String(target.value || ''))) state.discordReport[key] = String(target.value);
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-comparison') {
+            state.discordReport.includeComparison = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-chart') {
+            state.discordReport.includeChart = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-report-mode') {
+            state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'discord-risk' || setting === 'discord-forecast') {
+            const key = setting === 'discord-risk' ? 'includeRisk' : 'includeForecast';
+            state.discordReport[key] = String(target.value) !== 'false';
+            invalidateDiscordFinancialPreview();
+            saveState(); updateUI();
+            return true;
+        }
+        if (setting === 'finance-vault-enabled') {
+            state.financialVault.enabled = String(target.value) !== 'false';
+            saveState(); updateUI();
+            setFinanceVaultStatus(state.financialVault.enabled ? 'Local Financial Archive enabled.' : 'Local Financial Archive disabled; reports will scan MissionChief directly without retaining history.', 'neutral');
+            return true;
+        }
+        if (setting === 'finance-vault-retention') {
+            state.financialVault.retentionDays = String(target.value) === 'all' ? 'all' : ([90, 180, 365, 730, 1825].includes(Number(target.value)) ? Number(target.value) : 'all');
+            saveState(); updateUI(); renderFinanceVaultStatus();
+            return true;
+        }
+        if (setting === 'finance-rule-feed') {
+            state.financialVault.ruleFeedEnabled = String(target.value) !== 'false';
+            saveState();
+            refreshFinancialIntelligenceFeeds(true).then(() => { updateUI(); renderFinanceVaultStatus(); });
+            return true;
+        }
+        return false;
+    }
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
@@ -30382,81 +30457,7 @@ Create the private backup now?`);
             showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
             return;
         }
-        if (setting === 'discord-webhook') {
-            try {
-                saveDiscordWebhookUrl(target.value);
-                setDiscordStatus(target.value ? 'Webhook saved securely in Tampermonkey storage.' : 'Webhook removed.', 'good');
-            } catch (err) {
-                setDiscordStatus(err?.message || 'Webhook URL is invalid.', 'bad');
-            }
-            return;
-        }
-        if (setting === 'discord-name') {
-            state.discordReport.webhookName = String(target.value || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-top-categories') {
-            state.discordReport.topCategories = [3, 5, 8].includes(Number(target.value)) ? Number(target.value) : 5;
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-period') {
-            state.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(target.value) ? target.value : 'today';
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-custom-start' || setting === 'discord-custom-end') {
-            const key = setting === 'discord-custom-start' ? 'customStart' : 'customEnd';
-            if (/^\d{4}-\d{2}-\d{2}$/u.test(String(target.value || ''))) state.discordReport[key] = String(target.value);
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-comparison') {
-            state.discordReport.includeComparison = String(target.value) !== 'false';
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-chart') {
-            state.discordReport.includeChart = String(target.value) !== 'false';
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-report-mode') {
-            state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'discord-risk' || setting === 'discord-forecast') {
-            const key = setting === 'discord-risk' ? 'includeRisk' : 'includeForecast';
-            state.discordReport[key] = String(target.value) !== 'false';
-            invalidateDiscordFinancialPreview();
-            saveState(); updateUI();
-            return;
-        }
-        if (setting === 'finance-vault-enabled') {
-            state.financialVault.enabled = String(target.value) !== 'false';
-            saveState(); updateUI();
-            setFinanceVaultStatus(state.financialVault.enabled ? 'Local Financial Archive enabled.' : 'Local Financial Archive disabled; reports will scan MissionChief directly without retaining history.', 'neutral');
-            return;
-        }
-        if (setting === 'finance-vault-retention') {
-            state.financialVault.retentionDays = String(target.value) === 'all' ? 'all' : ([90, 180, 365, 730, 1825].includes(Number(target.value)) ? Number(target.value) : 'all');
-            saveState(); updateUI(); renderFinanceVaultStatus();
-            return;
-        }
-        if (setting === 'finance-rule-feed') {
-            state.financialVault.ruleFeedEnabled = String(target.value) !== 'false';
-            saveState();
-            refreshFinancialIntelligenceFeeds(true).then(() => { updateUI(); renderFinanceVaultStatus(); });
-            return;
-        }
+        if (handleDiscordFinancialSettingChange(target, setting)) return;
         if (setting === 'payout-template') {
             state.payoutFlash.template = PAYOUT_TEMPLATES[target.value] ? target.value : 'gta5';
             disposePayoutMediaAudio();
@@ -30501,7 +30502,6 @@ Create the private backup now?`);
             updateUI();
         }
     }
-
     function updateUI() {
         applyRootAttributes();
         if (state.missionRequirements) scheduleMissionRequirementsScan(0);

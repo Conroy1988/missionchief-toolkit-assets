@@ -60,5 +60,21 @@
     "mount": "document body outside sweep-owned lightbox layers",
     "desktop_anchor": "top-right",
     "mobile_anchor": "bottom-safe-area"
+  },
+  "release_confirmation": {
+    "exact_visible_text": "Understood! We have released the patient.",
+    "scan_same_origin_documents": true,
+    "scan_global_alert_and_aria_live_surfaces": true,
+    "reject_stale_preexisting_confirmation": true,
+    "accept_confirmation_after_dom_replacement": true,
+    "stable_release_key": "mission_id:vehicle_id",
+    "count_each_release_once": true,
+    "confirmed_counters": {
+      "cleared": 1,
+      "processed": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "cleanup_failure_after_success": "warning_without_reclassifying_patient"
   }
 }

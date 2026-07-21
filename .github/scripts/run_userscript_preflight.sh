@@ -43,7 +43,17 @@ CONTRACTS=(
 for contract in "${CONTRACTS[@]}"; do
   [[ -f "$contract" ]] || { echo "Missing contract: $contract" >&2; exit 1; }
   echo "[preflight] Run $(basename "$contract")"
-  python3 "$contract"
+  PYTHONDONTWRITEBYTECODE=1 python3 "$contract"
+done
+
+JAVASCRIPT_CONTRACTS=(
+  .github/scripts/test_transport_sweep_runtime.js
+)
+
+for contract in "${JAVASCRIPT_CONTRACTS[@]}"; do
+  [[ -f "$contract" ]] || { echo "Missing contract: $contract" >&2; exit 1; }
+  echo "[preflight] Run $(basename "$contract")"
+  node "$contract"
 done
 
 echo "[preflight] Complete"

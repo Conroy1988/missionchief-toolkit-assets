@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.23] - 2026-07-21
+
+### Fixed
+- Counted MissionChief's confirmed patient-release state exactly once across direct LSSM and fallback Transport Sweep routes.
+- Recognised release confirmation outside the active lightbox, including `Understood! We have released the patient.`, while rejecting stale pre-existing messages.
+- Preserved successful patient totals when a later mission-window cleanup or reopen operation fails.
+- Kept the persistent HUD, main panel and final summary on the same canonical cleared, processed and error counters.
+
+### Validation
+- Added deterministic global-alert, DOM-replacement, stale-message, duplicate-observer and post-success cleanup regression coverage.
+
 ## [4.20.22] - 2026-07-21
 
 ### Fixed

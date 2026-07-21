@@ -1,0 +1,37 @@
+returncode=1
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/py_compile.py", line 144, in compile
+    code = loader.source_to_code(source_bytes, dfile or file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 1059, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix.py", line 333
+    cross_source_path.write_text(json.dumps(cross_source, indent=2, ensure_ascii=False) + "
+                                                                                          ^
+SyntaxError: unterminated string literal (detected at line 333)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix-v7.py", line 93, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix-v7.py", line 76, in main
+    py_compile.compile(str(ORIGINAL), doraise=True)
+  File "/usr/lib/python3.12/py_compile.py", line 150, in compile
+    raise py_exc
+py_compile.PyCompileError:   File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix.py", line 333
+    cross_source_path.write_text(json.dumps(cross_source, indent=2, ensure_ascii=False) + "
+                                                                                          ^
+SyntaxError: unterminated string literal (detected at line 333)
+
+Traceback (most recent call last):
+  File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix-v8.py", line 39, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix-v8.py", line 29, in main
+    subprocess.run(["python3", str(V7)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/tmp/issue-285-v8-diagnostic-73rhxm64/repo/.github/development-packages/issue-285-railway-responding-fix-v7.py']' returned non-zero exit status 1.

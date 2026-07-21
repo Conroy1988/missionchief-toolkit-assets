@@ -9,6 +9,8 @@ Toolkit v4.20.19 closes the gap between MissionChief's authoritative maritime wo
 - Trailer-capable requirements can no longer be satisfied solely by a compatible towing vehicle. The actual eligible trailer or maritime asset must be present.
 - A trailer and its explicit towing vehicle retain a shared contribution identity and count once.
 - Selected, Responding and On-site transitions retain bucket precedence and never duplicate the same asset.
+- Police Sergeant and Level 2 Public Order ARR attributes remain discoverable by vehicle identity after dispatch, even when the travelling row no longer renders its training badge.
+- Exact assigned personnel from the shared vehicle cache remains authoritative for those trained-personnel contributions.
 
 ## Screenshot regression
 
@@ -25,7 +27,7 @@ The pinned, non-mutating compatibility fixture now records:
 - Toolkit aliases, types, equipment, factors, conditional mappings and pair semantics;
 - the compiled random-tractive compatibility map.
 
-The audit executes the production parser and capability resolver. Every accepted Toolkit vehicle alias is checked with every eligible type through Selected, Responding and On-site coverage, an ineligible control, and contribution-key deduplication.
+The audit is executed by the canonical Mission Requirements contract and userscript validation gate. It executes the production parser and capability resolver. Every accepted Toolkit vehicle alias is checked with every eligible type through Selected, Responding and On-site coverage, an ineligible control, and contribution-key deduplication.
 
 ## Review boundary
 

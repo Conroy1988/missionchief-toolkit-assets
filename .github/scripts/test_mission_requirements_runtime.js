@@ -11,6 +11,7 @@ const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_
 const fixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-requirements-contract.json'), 'utf8'));
 const catalogueFixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-catalogue-pages.json'), 'utf8'));
 const ukCapabilityFixture = JSON.parse(fs.readFileSync(path.join(root, 'src', 'data', 'mission-requirements-en_GB.json'), 'utf8'));
+const crossSourceFixture = JSON.parse(fs.readFileSync(path.join(root, '.github', 'fixtures', 'mission-requirements-cross-source-en_GB.json'), 'utf8'));
 const startMarker = '    // Issue #133 clean-room live mission requirements matrix.';
 const endMarker = '    function criticalMissionValueForEntry(entry) {';
 const start = source.indexOf(startMarker);
@@ -188,7 +189,7 @@ const context = {
     SCRIPT: {
         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
-        version: '4.20.17'
+        version: '4.20.19'
     },
     state: { missionRequirements: true, uiTheme: 'mapCommand' },
     pageWindow: { MutationObserver: FakeMutationObserver, navigator: { platform: 'FixtureOS', userAgentData: { platform: 'FixtureOS', mobile: false } }, innerWidth: 1280, innerHeight: 720, open: url => { openedUrls.push(url); return {}; } },
@@ -331,6 +332,84 @@ for (const [group, entries] of [
             for (const attribute of entry.arrAttributes || []) {
                 assert.ok((definition.arrAttributes || []).includes(attribute), `${group}:${entry.key}: ${alias} supports ARR attribute ${attribute}`);
             }
+        }
+    }
+}
+
+
+// Issue #282: every accepted vehicle alias and eligible type executes through
+// the production parser, aggregator and all three operational buckets.
+for (const entry of ukCapabilityFixture.vehicleRequirements) {
+    const firstAlias = entry.aliases[0];
+    const parsed = api.parseText(`1 ${firstAlias}`, 'vehicles');
+    const parsedRequirement = parsed.requirements.find(requirement => requirement.missing === 1);
+    assert.ok(parsedRequirement, `runtime audit parses ${firstAlias}`);
+    const definition = api.definitions.find(candidate => candidate.key === parsedRequirement.key && candidate.group === 'vehicles');
+    assert.ok(definition, `runtime audit resolves ${entry.key}`);
+    for (const typeId of entry.types) {
+        const factor = Number(definition.factors?.[typeId] ?? definition.factors?.[String(typeId)] ?? 1);
+        const expected = Number.isFinite(factor) && factor > 0 ? factor : 1;
+        const unit = {
+            typeId,
+            vehicleId: 282000 + typeId,
+            equipment: new Set(),
+            labels: new Set(),
+            training: new Set(),
+            arrCapabilities: new Set(),
+            arrCapabilityKnown: true,
+            knownDefinitionKeys: new Set(),
+            compatibleTractiveTypes: new Set(),
+            staff: null,
+            contributionKey: `vehicle:282-${entry.key}-${typeId}`
+        };
+        const capacity = api.aggregate({ group: 'vehicles', definition }, [unit]);
+        assert.strictEqual(capacity.min, expected, `${entry.key}: type ${typeId} contributes expected minimum`);
+        assert.strictEqual(capacity.max, expected, `${entry.key}: type ${typeId} contributes expected maximum`);
+        const zero = api.capacity(0, 0, true);
+        const required = api.capacity(expected, expected, true);
+        for (const [bucket, selected, responding, onSite] of [
+            ['selected', capacity, zero, zero],
+            ['responding', zero, capacity, zero],
+            ['on-site', zero, zero, capacity]
+        ]) {
+            const row = api.coverageRow(
+                { key: definition.key, requirement: definition.label, missing: expected, group: 'vehicles', definition },
+                selected,
+                responding,
+                onSite,
+                required
+            );
+            assert.strictEqual(row.covered, true, `${entry.key}: type ${typeId} covers ${bucket}`);
+            assert.strictEqual(row.stillNeededText, '0', `${entry.key}: type ${typeId} clears ${bucket}`);
+        }
+        const duplicate = api.aggregate({ group: 'vehicles', definition }, [unit, { ...unit }]);
+        assert.strictEqual(duplicate.min, expected, `${entry.key}: duplicate contribution key is counted once`);
+    }
+    const ineligible = api.aggregate({ group: 'vehicles', definition }, [{
+        typeId: 99999,
+        vehicleId: 99999,
+        equipment: new Set(),
+        labels: new Set(),
+        training: new Set(),
+        arrCapabilities: new Set(),
+        arrCapabilityKnown: true,
+        knownDefinitionKeys: new Set(),
+        compatibleTractiveTypes: new Set(),
+        staff: null,
+        contributionKey: `vehicle:ineligible-${entry.key}`
+    }]);
+    assert.strictEqual(ineligible.min, 0, `${entry.key}: ineligible type contributes zero`);
+    assert.strictEqual(ineligible.max, 0, `${entry.key}: ineligible type is definitively excluded`);
+}
+
+for (const group of crossSourceFixture.authoritativeLabels) {
+    for (const label of group.labels) {
+        const parsed = api.parseText(`1 ${label}`, 'vehicles');
+        const requirement = parsed.requirements.find(item => item.missing === 1);
+        assert.ok(requirement, `authoritative label parses: ${label}`);
+        assert.strictEqual(parsed.remaining, '', `authoritative label is consumed: ${label}`);
+        for (const typeId of group.types) {
+            assert.ok(requirement.definition.types.includes(typeId), `${label}: supports type ${typeId}`);
         }
     }
 }
@@ -836,6 +915,207 @@ function makeMissionCandidateWithoutSource(doc) {
         return [];
     };
     return { root: missionRoot, mount: missionRoot };
+}
+
+
+// Issue #282: maritime authoritative labels, trailer identity and screenshot regression.
+{
+const maritimeDoc = new FakeDocument();
+maritimeDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/282' } };
+const inlandDefinition = api.definitions.find(definition => definition.key === 'boat-or-inland');
+const seagoingDefinition = api.definitions.find(definition => definition.key === 'ilb-or-alb');
+assert.strictEqual(inlandDefinition.label, 'Inland Rescue Boat (Trailer)', 'authoritative inland label is canonical');
+assert.strictEqual(seagoingDefinition.label, 'Seagoing Vessel', 'authoritative seagoing label is canonical');
+
+const zero = api.capacity(0, 0, true);
+const one = api.capacity(1, 1, true);
+const three = api.capacity(3, 3, true);
+const inlandRequirement = { key: 'boat-or-inland', requirement: 'Inland Rescue Boat (Trailer)', missing: 3, group: 'vehicles', definition: inlandDefinition };
+const screenshotRow = api.coverageRow(inlandRequirement, one, zero, zero, three);
+assert.strictEqual(screenshotRow.covered, false, 'Required 3 with Selected 1 is not covered');
+assert.strictEqual(screenshotRow.definitelyOpen, true, 'known maritime shortage is definitely open');
+assert.strictEqual(screenshotRow.stillNeededText, '2', 'screenshot shortage remains two');
+const screenshotPanel = api.panelHtml([screenshotRow], []);
+assert(screenshotPanel.html.includes('1 outstanding · 0/1 covered'), 'screenshot summary reports zero covered');
+assert(!screenshotPanel.html.includes('1/1 covered'), 'screenshot summary never reports the open row as covered');
+
+const towOnlyUnit = {
+    typeId: 66,
+    vehicleId: 28201,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(),
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set([67]),
+    staff: null,
+    contributionKey: 'pair:28201:28202'
+};
+const trailerUnit = {
+    ...towOnlyUnit,
+    typeId: 67,
+    vehicleId: 28202,
+    compatibleTractiveTypes: new Set(),
+    contributionKey: 'pair:28201:28202'
+};
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: inlandDefinition }, [towOnlyUnit]).min, 0, 'tow-only selection contributes no inland boat capacity');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: inlandDefinition }, [towOnlyUnit]).max, 0, 'tow-only exclusion is exact');
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: inlandDefinition }, [towOnlyUnit, trailerUnit]).min, 1, 'trailer and tow pair contributes exactly one');
+const randomTowOnly = { ...towOnlyUnit, compatibleTractiveTypes: new Set([67, 74]), contributionKey: 'vehicle:28203' };
+assert.strictEqual(api.aggregate({ group: 'vehicles', definition: inlandDefinition }, [randomTowOnly]).min, 0, 'random tractive compatibility cannot replace the maritime asset');
+
+const maritimeCandidate = makeMissionCandidate(maritimeDoc, '3 Inland Rescue Boats (Trailer)');
+const selected67 = makeVehicleElement(maritimeDoc, 28211, 67);
+selected67.row.textContent = selected67.row.innerText = 'Custom Harbour Asset';
+const responding74 = makeVehicleElement(maritimeDoc, 28212, 74, { typeOnRow: true });
+responding74.row.setAttribute('data-vehicle-id', '28212');
+const onSite67 = makeVehicleElement(maritimeDoc, 28213, 67, { typeOnRow: true });
+onSite67.row.setAttribute('data-vehicle-id', '28213');
+maritimeCandidate.root.selectedUnits = [selected67.vehicle];
+maritimeCandidate.root.enRouteRows = [responding74.row];
+maritimeCandidate.root.onSiteRows = [onSite67.row];
+// MissionChief live missing excludes the one asset already on site.
+const inlandOperationalRequirement = { ...inlandRequirement, missing: 2 };
+const inlandParsed = { requirements: [inlandOperationalRequirement], unresolved: [] };
+const inlandCatalogue = { requirements: [{ key: 'boat-or-inland', baseline: 3, missing: 3 }] };
+let maritimeRow = api.resolve(maritimeCandidate, inlandParsed, inlandCatalogue)[0];
+assert.strictEqual(maritimeRow.selectedMin, 1, 'custom-caption type 67 selected capacity resolves');
+assert.strictEqual(maritimeRow.respondingMin, 1, 'type 74 responding capacity resolves');
+assert.strictEqual(maritimeRow.onSiteMin, 1, 'type 67 on-site capacity resolves');
+assert.strictEqual(maritimeRow.stillNeededText, '0', 'mixed type 67/74 buckets satisfy quantity three');
+assert.strictEqual(maritimeRow.covered, true, 'mixed maritime assets cover requirement');
+
+const seagoingCandidate = makeMissionCandidate(maritimeDoc, '1 Seagoing Vessel');
+const ilb = makeVehicleElement(maritimeDoc, 28221, 68);
+const alb = makeVehicleElement(maritimeDoc, 28222, 69, { typeOnRow: true });
+alb.row.setAttribute('data-vehicle-id', '28222');
+const seagoingRequirement = { key: 'ilb-or-alb', requirement: 'Seagoing Vessel', missing: 1, group: 'vehicles', definition: seagoingDefinition };
+const seagoingParsed = { requirements: [seagoingRequirement], unresolved: [] };
+const seagoingCatalogue = { requirements: [{ key: 'ilb-or-alb', baseline: 1, missing: 1 }] };
+seagoingCandidate.root.selectedUnits = [ilb.vehicle];
+maritimeRow = api.resolve(seagoingCandidate, seagoingParsed, seagoingCatalogue)[0];
+assert.strictEqual(maritimeRow.selectedMin, 1, 'selected ILB satisfies Seagoing Vessel');
+assert.strictEqual(maritimeRow.stillNeededText, '0', 'selected ILB clears Seagoing Vessel');
+seagoingCandidate.root.selectedUnits = [];
+seagoingCandidate.root.enRouteRows = [alb.row];
+maritimeRow = api.resolve(seagoingCandidate, seagoingParsed, seagoingCatalogue)[0];
+assert.strictEqual(maritimeRow.respondingMin, 1, 'responding ALB satisfies Seagoing Vessel');
+seagoingCandidate.root.enRouteRows = [];
+seagoingCandidate.root.onSiteRows = [alb.row];
+maritimeRow = api.resolve(seagoingCandidate, seagoingParsed, seagoingCatalogue)[0];
+assert.strictEqual(maritimeRow.onSiteMin, 1, 'on-site ALB satisfies Seagoing Vessel');
+
+const unknownMaritime = api.aggregate({ group: 'vehicles', definition: inlandDefinition }, [{
+    typeId: -1,
+    vehicleId: -1,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(),
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: false,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set(),
+    staff: null,
+    contributionKey: 'element:unknown-maritime'
+}]);
+assert.strictEqual(unknownMaritime.min, 0, 'malformed maritime evidence contributes no confirmed capacity');
+assert.strictEqual(unknownMaritime.max, null, 'malformed maritime evidence remains fail-closed');
+}
+
+
+// Issue #282: Police Sergeant capability survives Selected -> Responding -> On site.
+{
+const sergeantDoc = new FakeDocument();
+sergeantDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/282-sergeant' } };
+const sergeantCandidate = makeMissionCandidate(sergeantDoc, '2 Police Sergeants');
+const sergeantDefinition = api.definitions.find(definition => (definition.training || []).includes('police_sergeant'));
+assert(sergeantDefinition, 'Police Sergeant definition exists');
+assert((sergeantDefinition.arrAttributes || []).includes('police_sergeant'), 'Police Sergeant exposes its ARR attribute');
+const cacheSergeant = id => api.vehicleApiCache.set(String(id), { id, vehicle_type: 8, assigned_personnel_count: 1 });
+
+const respondingAssignment = makeVehicleElement(sergeantDoc, 282401, 8);
+respondingAssignment.vehicle.classList.values.add('vehicle_checkbox');
+respondingAssignment.vehicle.matchSet.add('.vehicle_checkbox');
+respondingAssignment.vehicle.checked = false;
+respondingAssignment.vehicle.setAttribute('police_sergeant', '1');
+const respondingSergeant = makeVehicleElement(sergeantDoc, 282401, 8, { typeOnRow: true });
+respondingSergeant.row.setAttribute('data-vehicle-id', '282401');
+cacheSergeant(282401);
+
+const onSiteSergeants = [];
+for (let index = 0; index < 3; index += 1) {
+    const id = 282410 + index;
+    const unit = makeVehicleElement(sergeantDoc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.setAttribute('police_sergeant', '1');
+    cacheSergeant(id);
+    onSiteSergeants.push(unit.row);
+}
+
+sergeantCandidate.root.selectedUnits = [respondingAssignment.vehicle];
+sergeantCandidate.root.enRouteRows = [respondingSergeant.row];
+sergeantCandidate.root.onSiteRows = onSiteSergeants;
+const sergeantParsed = {
+    requirements: [{ key: sergeantDefinition.key, requirement: 'Police Sergeant', missing: 2, group: 'staff', definition: sergeantDefinition, statedRequirement: true }],
+    unresolved: []
+};
+const sergeantCatalogue = { requirements: [{ key: sergeantDefinition.key, baseline: 5, missing: 5 }] };
+let sergeantRow = api.resolve(sergeantCandidate, sergeantParsed, sergeantCatalogue)[0];
+assert.strictEqual(sergeantRow.requiredText, '5', 'Police Sergeant total required remains five');
+assert.strictEqual(sergeantRow.onSiteText, '3', 'three on-site Police Sergeants are counted');
+assert.strictEqual(sergeantRow.respondingText, '1', 'travelling Police Sergeant is counted through matching vehicle identity');
+assert.strictEqual(sergeantRow.selectedText, '0', 'unchecked travelling assignment is not left in Selected');
+assert.strictEqual(sergeantRow.stillNeededText, '1', '5 required minus 3 on site and 1 responding leaves one');
+assert.strictEqual(sergeantRow.covered, false, 'one remaining Police Sergeant keeps row outstanding');
+
+const respondingState = api.arrCapabilityState(respondingSergeant.row, sergeantCandidate, 282401);
+assert.strictEqual(respondingState.authoritative, true, 'matching dispatch checkbox is authoritative capability evidence');
+assert(respondingState.values.has('police sergeant'), 'matching dispatch checkbox supplies Police Sergeant capability');
+
+respondingAssignment.vehicle.checked = true;
+sergeantCandidate.root.enRouteRows = [];
+sergeantCandidate.root.onSiteRows = [];
+sergeantRow = api.resolve(sergeantCandidate, {
+    requirements: [{ key: sergeantDefinition.key, requirement: 'Police Sergeant', missing: 1, group: 'staff', definition: sergeantDefinition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: sergeantDefinition.key, baseline: 1, missing: 1 }] })[0];
+assert.strictEqual(sergeantRow.selectedText, '1', 'Police Sergeant first appears in Selected');
+assert.strictEqual(sergeantRow.respondingText, '0', 'selected Police Sergeant is not responding');
+
+respondingAssignment.vehicle.checked = false;
+sergeantCandidate.root.enRouteRows = [respondingSergeant.row];
+sergeantRow = api.resolve(sergeantCandidate, {
+    requirements: [{ key: sergeantDefinition.key, requirement: 'Police Sergeant', missing: 1, group: 'staff', definition: sergeantDefinition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: sergeantDefinition.key, baseline: 1, missing: 1 }] })[0];
+assert.strictEqual(sergeantRow.selectedText, '0', 'dispatch removes Police Sergeant from Selected');
+assert.strictEqual(sergeantRow.respondingText, '1', 'dispatch moves Police Sergeant into Responding');
+
+sergeantCandidate.root.enRouteRows = [];
+respondingSergeant.row.setAttribute('police_sergeant', '1');
+sergeantCandidate.root.onSiteRows = [respondingSergeant.row];
+sergeantRow = api.resolve(sergeantCandidate, {
+    requirements: [{ key: sergeantDefinition.key, requirement: 'Police Sergeant', missing: 0, group: 'staff', definition: sergeantDefinition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: sergeantDefinition.key, baseline: 1, missing: 1 }] })[0];
+assert.strictEqual(sergeantRow.respondingText, '0', 'arrival removes Police Sergeant from Responding');
+assert.strictEqual(sergeantRow.onSiteText, '1', 'arrival moves Police Sergeant into On site');
+
+const genericPoliceOnly = api.aggregate({ group: 'staff', definition: sergeantDefinition }, [{
+    typeId: 8,
+    vehicleId: 282499,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(),
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(),
+    staff: api.capacity(1, 1, true),
+    contributionKey: 'vehicle:282499'
+}]);
+assert.strictEqual(genericPoliceOnly.min, 0, 'generic Police Officer is not credited as Police Sergeant');
+assert.strictEqual(genericPoliceOnly.max, 0, 'generic Police Officer exclusion is exact');
 }
 
 

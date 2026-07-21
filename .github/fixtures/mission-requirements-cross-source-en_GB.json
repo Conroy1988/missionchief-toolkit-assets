@@ -1,0 +1,2519 @@
+{
+  "authoritativeLabels": [
+    {
+      "canonicalLabel": "Inland Rescue Boat (Trailer)",
+      "capability": "boat-trailer-or-inland-rescue-boat",
+      "labels": [
+        "Inland Rescue Boat (Trailer)",
+        "Inland Rescue Boats (Trailer)",
+        "Inland Rescue Boat (Trailers)",
+        "Inland Rescue Boats (Trailers)"
+      ],
+      "pair": true,
+      "sources": [
+        "missionchief.missionInfo",
+        "lssm.missionHelper",
+        "lssm.vehicleCaption"
+      ],
+      "types": [
+        67,
+        74
+      ]
+    },
+    {
+      "canonicalLabel": "Seagoing Vessel",
+      "capability": "ilb-or-alb",
+      "labels": [
+        "Seagoing Vessel",
+        "Seagoing Vessels"
+      ],
+      "pair": false,
+      "sources": [
+        "missionchief.missionInfo"
+      ],
+      "types": [
+        68,
+        69
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "aliases": [
+        "Fire engine",
+        "Fire engines"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47
+      ]
+    },
+    {
+      "aliases": [
+        "Fire Engine or RIV",
+        "Fire Engines or RIVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine-or-riv",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        76
+      ]
+    },
+    {
+      "aliases": [
+        "Aerial Appliance Truck",
+        "Aerial Appliance Trucks"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "aerial-appliance-truck",
+      "pair": false,
+      "training": [],
+      "types": [
+        2,
+        17
+      ]
+    },
+    {
+      "aliases": [
+        "Aerial Appliance Truck or Rescue Stairs",
+        "Aerial Appliance Trucks or Rescue Stairs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "aerial-appliance-truck-or-rescue-stairs",
+      "pair": false,
+      "training": [],
+      "types": [
+        2,
+        17,
+        78
+      ]
+    },
+    {
+      "aliases": [
+        "Fire Officer",
+        "Fire Officers",
+        "Fire Officer or Airfield Firefighting Command Vehicle",
+        "Fire Officers or Airfield Firefighting Command Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-officer",
+      "pair": false,
+      "training": [],
+      "types": [
+        3,
+        15,
+        44,
+        77
+      ]
+    },
+    {
+      "aliases": [
+        "Rescue Support Unit or Rescue Pump",
+        "Rescue Support Units or Rescue Pumps"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rescue-support-unit-or-rescue-pump",
+      "pair": false,
+      "training": [],
+      "types": [
+        4,
+        16,
+        38,
+        43
+      ]
+    },
+    {
+      "aliases": [
+        "Fire engine, Rescue Support Vehicle or Aerial Appliance Truck",
+        "Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine-rescue-support-vehicle-or-aerial-appliance-truck",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        2,
+        4,
+        16,
+        17,
+        26,
+        37,
+        38,
+        43,
+        47
+      ]
+    },
+    {
+      "aliases": [
+        "Fire engine or Rescue Support Vehicle",
+        "Fire engines or Rescue Support Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine-or-rescue-support-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        4,
+        16,
+        17,
+        26,
+        37,
+        38,
+        43,
+        47
+      ]
+    },
+    {
+      "aliases": [
+        "BASU",
+        "BASUs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "basu",
+      "pair": false,
+      "training": [],
+      "types": [
+        14,
+        39,
+        46,
+        49
+      ]
+    },
+    {
+      "aliases": [
+        "Water Carrier",
+        "Water Carriers"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "water-carrier",
+      "pair": false,
+      "training": [],
+      "types": [
+        6,
+        26,
+        36,
+        41,
+        50
+      ]
+    },
+    {
+      "aliases": [
+        "Drone",
+        "Drones"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [
+        "drone"
+      ],
+      "factors": {},
+      "key": "drone",
+      "pair": false,
+      "training": [],
+      "types": [
+        89,
+        90,
+        91
+      ]
+    },
+    {
+      "aliases": [
+        "Operational Support Van, Trailer or Personal SAR Vehicle"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "operational-support-van-trailer-or-personal-sar-vehicle",
+      "pair": true,
+      "training": [],
+      "types": [
+        86,
+        87,
+        92
+      ]
+    },
+    {
+      "aliases": [
+        "Control Van",
+        "Control Vans"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "control-van",
+      "pair": false,
+      "training": [],
+      "types": [
+        85
+      ]
+    },
+    {
+      "aliases": [
+        "ICCU or Ambulance Control Unit",
+        "ICCU or Ambulance Control Units",
+        "ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle",
+        "ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "iccu-or-ambulance-control-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        15,
+        31,
+        44,
+        77
+      ]
+    },
+    {
+      "aliases": [
+        "HazMat Unit or CBRN Vehicle",
+        "HazMat Units or CBRN Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "hazmat-unit-or-cbrn-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        7,
+        32,
+        39,
+        48,
+        49
+      ]
+    },
+    {
+      "aliases": [
+        "Ambulance",
+        "Ambulances"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "ambulance",
+      "pair": false,
+      "training": [],
+      "types": [
+        5
+      ]
+    },
+    {
+      "aliases": [
+        "Police car",
+        "Police cars"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "police-car",
+      "pair": false,
+      "training": [],
+      "types": [
+        8,
+        12,
+        13,
+        19,
+        24,
+        25,
+        51,
+        52,
+        56,
+        82,
+        116
+      ]
+    },
+    {
+      "aliases": [
+        "Police Car or Armed Response Vehicle (ARV)",
+        "Police Cars or Armed Response Vehicles (ARVs)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "police-car-or-armed-response-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        8,
+        12,
+        13,
+        19,
+        24,
+        25,
+        51,
+        52,
+        56,
+        82,
+        116
+      ]
+    },
+    {
+      "aliases": [
+        "HEMS"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "hems",
+      "pair": false,
+      "training": [],
+      "types": [
+        9
+      ]
+    },
+    {
+      "aliases": [
+        "Policehelicopter",
+        "Policehelicopters"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "policehelicopter",
+      "pair": false,
+      "training": [],
+      "types": [
+        11
+      ]
+    },
+    {
+      "aliases": [
+        "Armed Response"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "armed-response",
+      "pair": false,
+      "training": [],
+      "types": [
+        13,
+        25,
+        52,
+        56,
+        82
+      ]
+    },
+    {
+      "aliases": [
+        "Dog Support Unit (DSU)",
+        "Dog Support Units (DSUs)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "dog-support-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        12,
+        53
+      ]
+    },
+    {
+      "aliases": [
+        "Operational Team Leader",
+        "Operational Team Leaders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "operational-team-leader",
+      "pair": false,
+      "training": [],
+      "types": [
+        20,
+        31,
+        34
+      ]
+    },
+    {
+      "aliases": [
+        "Traffic Car",
+        "Traffic Cars"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "traffic-car",
+      "pair": false,
+      "training": [],
+      "types": [
+        24,
+        25
+      ]
+    },
+    {
+      "aliases": [
+        "ATV Carrier",
+        "ATV Carriers"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "atv-carrier",
+      "pair": false,
+      "training": [],
+      "types": [
+        30
+      ]
+    },
+    {
+      "aliases": [
+        "Primary Response Vehicle",
+        "Primary Response Vehicles",
+        "PRV",
+        "PRVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "primary-response-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        27
+      ]
+    },
+    {
+      "aliases": [
+        "Secondary Response Vehicle",
+        "Secondary Response Vehicles",
+        "SRV",
+        "SRVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "secondary-response-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        28
+      ]
+    },
+    {
+      "aliases": [
+        "Welfare Vehicle",
+        "Welfare Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "welfare-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        29,
+        39,
+        45,
+        49,
+        115
+      ]
+    },
+    {
+      "aliases": [
+        "Ambulance Officer",
+        "Ambulance Officers"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "ambulance-officer",
+      "pair": false,
+      "training": [],
+      "types": [
+        34
+      ]
+    },
+    {
+      "aliases": [
+        "Foam Unit",
+        "Foam Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "foam-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        35,
+        36,
+        37,
+        38,
+        42,
+        75
+      ]
+    },
+    {
+      "aliases": [
+        "Mass Casualty Equipment"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "mass-casualty-equipment",
+      "pair": false,
+      "training": [],
+      "types": [
+        33
+      ]
+    },
+    {
+      "aliases": [
+        "Mounted Unit",
+        "Mounted Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "mounted-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        55
+      ]
+    },
+    {
+      "aliases": [
+        "4x4 Vehicle",
+        "4x4 Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "4x4-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        66,
+        73,
+        93
+      ]
+    },
+    {
+      "aliases": [
+        "Coastguard Rope Rescue Unit",
+        "Coastguard Rope Rescue Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "coastguard-rope-rescue-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        59
+      ]
+    },
+    {
+      "aliases": [
+        "Flood Rescue Unit",
+        "Flood Rescue Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "flood-rescue-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        61
+      ]
+    },
+    {
+      "aliases": [
+        "CRV",
+        "CRVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "crv",
+      "pair": false,
+      "training": [],
+      "types": [
+        57,
+        58,
+        59
+      ]
+    },
+    {
+      "aliases": [
+        "Coastguard Commander",
+        "Coastguard Commanders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "coastguard-commander",
+      "pair": false,
+      "training": [],
+      "types": [
+        60
+      ]
+    },
+    {
+      "aliases": [
+        "Boat Trailer or Inland Rescue Boat",
+        "Boat Trailers or Inland Rescue Boats",
+        "Inland Rescue Boat (Trailer)",
+        "Inland Rescue Boats (Trailer)",
+        "Inland Rescue Boat (Trailers)",
+        "Inland Rescue Boats (Trailers)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "boat-trailer-or-inland-rescue-boat",
+      "pair": true,
+      "training": [],
+      "types": [
+        67,
+        74
+      ]
+    },
+    {
+      "aliases": [
+        "ILB or ALB",
+        "ILBs or ALBs",
+        "Seagoing Vessel",
+        "Seagoing Vessels",
+        "ALB or ILB",
+        "ALBs or ILBs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "ilb-or-alb",
+      "pair": false,
+      "training": [],
+      "types": [
+        68,
+        69
+      ]
+    },
+    {
+      "aliases": [
+        "ILB",
+        "ILBs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "ilb",
+      "pair": false,
+      "training": [],
+      "types": [
+        68,
+        69
+      ]
+    },
+    {
+      "aliases": [
+        "Coastguard Rescue Helicopter",
+        "Coastguard Rescue Helicopters"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "coastguard-rescue-helicopter",
+      "pair": false,
+      "training": [],
+      "types": [
+        64,
+        65
+      ]
+    },
+    {
+      "aliases": [
+        "ALB",
+        "ALBs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "alb",
+      "pair": false,
+      "training": [],
+      "types": [
+        69
+      ]
+    },
+    {
+      "aliases": [
+        "Mud Decontamination Unit",
+        "Mud Decontamination Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "mud-decontamination-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        62
+      ]
+    },
+    {
+      "aliases": [
+        "Support Unit",
+        "Support Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "support-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        63
+      ]
+    },
+    {
+      "aliases": [
+        "Rescue Watercraft (Trailer)",
+        "Rescue Watercraft (Trailers)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rescue-watercraft-trailer",
+      "pair": true,
+      "training": [],
+      "types": [
+        70
+      ]
+    },
+    {
+      "aliases": [
+        "Coastguard Mud Rescue Unit",
+        "Coastguard Mud Rescue Units"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "coastguard-mud-rescue-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        58
+      ]
+    },
+    {
+      "aliases": [
+        "Hovercraft (trailer)",
+        "hovercrafts (trailer)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "hovercraft-trailer",
+      "pair": true,
+      "training": [],
+      "types": [
+        71
+      ]
+    },
+    {
+      "aliases": [
+        "Major Foam Tender",
+        "Major Foam Tenders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "major-foam-tender",
+      "pair": false,
+      "training": [],
+      "types": [
+        75
+      ]
+    },
+    {
+      "aliases": [
+        "Rescue Stair",
+        "Rescue Stairs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rescue-stair",
+      "pair": false,
+      "training": [],
+      "types": [
+        78,
+        2,
+        17
+      ]
+    },
+    {
+      "aliases": [
+        "Airfield Firefighting Command Vehicle",
+        "Airfield Firefighting Command Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "airfield-firefighting-command-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        77
+      ]
+    },
+    {
+      "aliases": [
+        "Airfield Operations Vehicle",
+        "Airfield Operations Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "airfield-operations-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        79,
+        80
+      ]
+    },
+    {
+      "aliases": [
+        "RIV",
+        "RIVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "riv",
+      "pair": false,
+      "training": [],
+      "types": [
+        76
+      ]
+    },
+    {
+      "aliases": [
+        "Medical equipment trailer",
+        "Medical equipment trailers"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "medical-equipment-trailer",
+      "pair": true,
+      "training": [],
+      "types": [
+        81
+      ]
+    },
+    {
+      "aliases": [
+        "Airfield Operations Supervisor",
+        "Airfield Operations Supervisors"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "airfield-operations-supervisor",
+      "pair": false,
+      "training": [],
+      "types": [
+        80
+      ]
+    },
+    {
+      "aliases": [
+        "Armed Cell Van",
+        "Armed Cell Vans"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "armed-cell-van",
+      "pair": false,
+      "training": [],
+      "types": [
+        82
+      ]
+    },
+    {
+      "aliases": [
+        "Medical cycle responder",
+        "Medical cycle responders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "medical-cycle-responder",
+      "pair": false,
+      "training": [],
+      "types": [
+        83
+      ]
+    },
+    {
+      "aliases": [
+        "Community Midwife",
+        "Community Midwifes"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "community-midwife",
+      "pair": false,
+      "training": [],
+      "types": [
+        95
+      ]
+    },
+    {
+      "aliases": [
+        "Specialist Paramedic RRV",
+        "Specialist Paramedic RRVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "specialist-paramedic-rrv",
+      "pair": false,
+      "training": [],
+      "types": [
+        96
+      ]
+    },
+    {
+      "aliases": [
+        "Rescue Dog",
+        "Rescue Dogs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rescue-dog",
+      "pair": false,
+      "training": [],
+      "types": [
+        101,
+        102
+      ]
+    },
+    {
+      "aliases": [
+        "Mountain Rescue 4x4"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "mountain-rescue-4x4",
+      "pair": false,
+      "training": [],
+      "types": [
+        99
+      ]
+    },
+    {
+      "aliases": [
+        "Road Rail Unit"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "road-rail-unit",
+      "pair": false,
+      "training": [],
+      "types": [
+        107
+      ]
+    },
+    {
+      "aliases": [
+        "EIU"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "eiu",
+      "pair": false,
+      "training": [],
+      "types": [
+        108
+      ]
+    },
+    {
+      "aliases": [
+        "EOD Commander",
+        "EOD Commanders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "eod-commander",
+      "pair": false,
+      "training": [],
+      "types": [
+        109
+      ]
+    },
+    {
+      "aliases": [
+        "EOD Response Vehicle",
+        "EOD Response Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "eod-response-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        110
+      ]
+    },
+    {
+      "aliases": [
+        "EOD Medium Equipment Van",
+        "EOD Medium Equipment Vans"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "eod-medium-equipment-van",
+      "pair": false,
+      "training": [],
+      "types": [
+        111
+      ]
+    },
+    {
+      "aliases": [
+        "EOD Heavy Equipment Vehicle",
+        "EOD Heavy Equipment Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "eod-heavy-equipment-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        112
+      ]
+    },
+    {
+      "aliases": [
+        "Marine EOD Response Vehicle",
+        "Marine EOD Response Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "marine-eod-response-vehicle",
+      "pair": false,
+      "training": [],
+      "types": [
+        113
+      ]
+    },
+    {
+      "aliases": [
+        "Marine EOD Equipment Van",
+        "Marine EOD Equipment Vans"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "marine-eod-equipment-van",
+      "pair": false,
+      "training": [],
+      "types": [
+        114
+      ]
+    },
+    {
+      "aliases": [
+        "Police Helicopter or Drone",
+        "Police Helicopters or Drones"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [
+        "drone"
+      ],
+      "factors": {},
+      "key": "police-helicopter-or-drone",
+      "pair": false,
+      "training": [],
+      "types": [
+        11,
+        89,
+        90,
+        91
+      ]
+    },
+    {
+      "aliases": [
+        "RIV or Major Foam Tender",
+        "RIVs or Major Foam Tenders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "riv-or-major-foam-tender",
+      "pair": false,
+      "training": [],
+      "types": [
+        75,
+        76
+      ]
+    },
+    {
+      "aliases": [
+        "Fire Engine or Major Foam Tender",
+        "Fire Engines or Major Foam Tenders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine-or-major-foam-tender",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        75
+      ]
+    },
+    {
+      "aliases": [
+        "Fire Engine, RIV or Major Foam Tender",
+        "Fire Engines, RIVs or Major Foam Tenders"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "fire-engine-riv-or-major-foam-tender",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        16,
+        17,
+        26,
+        37,
+        38,
+        47,
+        75,
+        76
+      ]
+    },
+    {
+      "aliases": [
+        "Mountain Rescue 4x4 or SAR 4x4",
+        "Mountain Rescue 4x4s or SAR 4x4s"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "mountain-rescue-4x4-or-sar-4x4",
+      "pair": false,
+      "training": [],
+      "types": [
+        93,
+        99
+      ]
+    },
+    {
+      "aliases": [
+        "RRV or Specialist Paramedic RRV",
+        "RRVs or Specialist Paramedic RRVs"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rrv-or-specialist-paramedic-rrv",
+      "pair": false,
+      "training": [],
+      "types": [
+        10,
+        94,
+        96
+      ]
+    },
+    {
+      "aliases": [
+        "Armed Response Personnel (In Armed Vehicles)"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "armed-response-personnel",
+      "pair": false,
+      "training": [],
+      "types": [
+        13,
+        25,
+        52,
+        56,
+        82
+      ]
+    },
+    {
+      "aliases": [
+        "more firefighter",
+        "more firefighters"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "firefighter",
+      "pair": false,
+      "training": [],
+      "types": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        14,
+        15,
+        16,
+        17,
+        18,
+        23,
+        26,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "aliases": [
+        "Level 2 Public Order Officer",
+        "Level 2 Public Order Officers"
+      ],
+      "arrAttributes": [
+        "level_2_public_order"
+      ],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "public-order-level-2",
+      "pair": false,
+      "training": [
+        "Level 2 Public Order Officer",
+        "Level 2 Public Order",
+        "level_2_public_order"
+      ],
+      "types": []
+    },
+    {
+      "aliases": [
+        "Police Sergeant",
+        "Police Sergeants"
+      ],
+      "arrAttributes": [
+        "police_sergeant"
+      ],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "police-sergeant-personnel",
+      "pair": false,
+      "training": [
+        "Police Sergeant",
+        "Police Sergeant Training",
+        "police_sergeant"
+      ],
+      "types": []
+    },
+    {
+      "aliases": [
+        "Search Advisor",
+        "Search Advisors"
+      ],
+      "arrAttributes": [
+        "search_and_rescue"
+      ],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "search-advisor-personnel",
+      "pair": false,
+      "training": [
+        "Search Advisor",
+        "Search Advisor Training",
+        "Police Search Advisor Training",
+        "Coastguard Search Advisor Training",
+        "search_and_rescue"
+      ],
+      "types": []
+    },
+    {
+      "aliases": [
+        "SAR Commander",
+        "SAR Commanders"
+      ],
+      "arrAttributes": [
+        "search_and_rescue_command"
+      ],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "sar-commander-personnel",
+      "pair": false,
+      "training": [
+        "SAR Commander",
+        "Search Management Training",
+        "search_and_rescue_command"
+      ],
+      "types": [
+        85,
+        100
+      ]
+    }
+  ],
+  "files": {
+    "emv": {
+      "path": "src/modules/extendedCallWindow/i18n/en_GB.json",
+      "sha256": "ead0cb0e7f215ab843496d65ff90209044c736a08eeed6d5e19a312d775b5c8f"
+    },
+    "missionHelper": {
+      "path": "src/modules/missionHelper/i18n/en_GB.json",
+      "sha256": "6e4ff1748d8e32622b45e3361dd9ec441411bd9e0238dda9e42f6f85c6be11d5"
+    },
+    "vehicles": {
+      "path": "src/i18n/en_GB/vehicles.ts",
+      "sha256": "76dac4116b0c8b85d73eb879ed9521c2acdad787360a174cddfedee2d9c96cd1"
+    }
+  },
+  "locale": "en_GB",
+  "missionHelperMappings": [
+    {
+      "capability": "airfield-operations-supervisor",
+      "labels": [
+        "Airfield Operations Supervisor",
+        "Airfield Operations Supervisors"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "airport_command"
+    },
+    {
+      "capability": "airfield-operations-vehicle",
+      "labels": [
+        "Airfield Operations Vehicle",
+        "Airfield Operations Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "airport_equipment"
+    },
+    {
+      "capability": "ambulance",
+      "labels": [
+        "Ambulance",
+        "Ambulances"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "ambulances"
+    },
+    {
+      "capability": "major-foam-tender",
+      "labels": [
+        "Major Foam Tender",
+        "Major Foam Tenders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "arff"
+    },
+    {
+      "capability": "atv-carrier",
+      "labels": [
+        "ATV Carrier",
+        "ATV Carriers"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "atv_carrier"
+    },
+    {
+      "capability": "fire-officer",
+      "labels": [
+        "Fire Officer",
+        "Fire Officers"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "battalion_chief_vehicles"
+    },
+    {
+      "capability": "eod-commander",
+      "labels": [
+        "EOD Commander",
+        "Eod Commanders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_command"
+    },
+    {
+      "capability": "eod-response-vehicle",
+      "labels": [
+        "EOD Response Vehicle",
+        "EOD Response Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_crew"
+    },
+    {
+      "capability": "marine-eod-response-vehicle",
+      "labels": [
+        "Marine EOD Response Vehicle",
+        "Marine EOD Response Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_diver_crew"
+    },
+    {
+      "capability": "marine-eod-equipment-van",
+      "labels": [
+        "Marine EOD Equipment Van",
+        "Marine EOD Equipment Vans"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_diver_equipment"
+    },
+    {
+      "capability": "eod-medium-equipment-van",
+      "labels": [
+        "Required EOD Medium Equipment Van",
+        "Required EOD Medium Equipment Vans"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_equipment"
+    },
+    {
+      "capability": "eod-heavy-equipment-vehicle",
+      "labels": [
+        "EOD Heavy Equipment Vehicle",
+        "EOD Heavy Equipment Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "bomb_disposal_heavy_equipment"
+    },
+    {
+      "capability": "boat-trailer-or-inland-rescue-boat",
+      "labels": [
+        "Inland Rescue Boat (Trailer)"
+      ],
+      "requireParserAlias": true,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_boat"
+    },
+    {
+      "capability": "hovercraft-trailer",
+      "labels": [
+        "Hovercraft (Trailer)",
+        "Hovercrafts (Trailer)"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_boat_hover"
+    },
+    {
+      "capability": "coastguard-commander",
+      "labels": [
+        "Coastguard Commander",
+        "Coastguard Commanders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_command"
+    },
+    {
+      "capability": "alb",
+      "labels": [
+        "ALB",
+        "ALBs"
+      ],
+      "requireParserAlias": true,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_guard_boat"
+    },
+    {
+      "capability": "coastguard-rescue-helicopter",
+      "labels": [
+        "Coastguard Rescue Helicopter",
+        "Coastguard Rescue Helicopters"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_helicopter"
+    },
+    {
+      "capability": "rescue-watercraft-trailer",
+      "labels": [
+        "Rescue Watercraft (Trailer)",
+        "Rescue Watercraft (Trailers)"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_jetski"
+    },
+    {
+      "capability": "coastguard-mud-rescue-unit",
+      "labels": [
+        "Coastguard Mud Rescue Unit",
+        "Coastguard Mud Rescue Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_mud_rescue"
+    },
+    {
+      "capability": "crv",
+      "labels": [
+        "CRV",
+        "CRVs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_rescue"
+    },
+    {
+      "capability": "support-unit",
+      "labels": [
+        "Support Unit",
+        "Support Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "coastal_support"
+    },
+    {
+      "capability": "airfield-firefighting-command-vehicle",
+      "labels": [
+        "Airfield Firefighting Command Vehicle",
+        "Airfield Firefighting Command Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "elw_airport"
+    },
+    {
+      "capability": "welfare-vehicle",
+      "labels": [
+        "Welfare Vehicle",
+        "Welfare Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "emergency_welfare"
+    },
+    {
+      "capability": "ambulance-officer",
+      "labels": [
+        "Ambulance Officer",
+        "Ambulance Officers"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "ems_mobile_command"
+    },
+    {
+      "capability": "fire-engine",
+      "labels": [
+        "Pump",
+        "Pumps"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "firetrucks"
+    },
+    {
+      "capability": "flood-rescue-unit",
+      "labels": [
+        "Flood Rescue Unit",
+        "Flood Rescue Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "flood_equipment"
+    },
+    {
+      "capability": "foam-unit",
+      "labels": [
+        "Foam Unit",
+        "Foam Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "foam"
+    },
+    {
+      "capability": "primary-response-vehicle",
+      "labels": [
+        "Primary Response Vehicle",
+        "Primary Response Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "hazard_response_primary"
+    },
+    {
+      "capability": "secondary-response-vehicle",
+      "labels": [
+        "Secondary Response Vehicle",
+        "Secondary Response Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "hazard_response_secondary"
+    },
+    {
+      "capability": "hazmat-unit-or-cbrn-vehicle",
+      "labels": [
+        "HazMat Unit or CBRN Vehicle",
+        "HazMat Units or CBRN Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "hazmat_vehicles"
+    },
+    {
+      "capability": "rescue-support-unit-or-rescue-pump",
+      "labels": [
+        "Rescue Support Unit or Rescue Pump",
+        "Rescue Support Units or Rescue Pumps"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "heavy_rescue_vehicles"
+    },
+    {
+      "capability": "coastguard-rope-rescue-unit",
+      "labels": [
+        "Coastguard Rope Rescue Unit",
+        "Coastguard Rope Rescue Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "height_rescue_units"
+    },
+    {
+      "capability": "hems",
+      "labels": [
+        "HEMS"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "helicopter"
+    },
+    {
+      "capability": "dog-support-unit",
+      "labels": [
+        "Dog Support Unit (DSU)",
+        "Dog Support Units (DSUs)"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "k9"
+    },
+    {
+      "capability": "operational-team-leader",
+      "labels": [
+        "Operational Team Leader",
+        "Operational Team Leaders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "kdow_orgl"
+    },
+    {
+      "capability": "ilb",
+      "labels": [
+        "ILB",
+        "ILBs"
+      ],
+      "requireParserAlias": true,
+      "source": "missionHelper.vehicles.captions",
+      "token": "large_coastal_boat"
+    },
+    {
+      "capability": "mass-casualty-equipment",
+      "labels": [
+        "Mass Casualty Equipment"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "mass_casualty_equipment"
+    },
+    {
+      "capability": "community-midwife",
+      "labels": [
+        "Community Midwife",
+        "Community Midwifes"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "midwife"
+    },
+    {
+      "capability": "basu",
+      "labels": [
+        "Breathing Apparatus Support Unit",
+        "Breathing Apparatus Support Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "mobile_air_vehicles"
+    },
+    {
+      "capability": "iccu-or-ambulance-control-unit",
+      "labels": [
+        "ICCU or Ambulance Control Unit",
+        "ICCUs or Ambulance Control Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "mobile_command_vehicles"
+    },
+    {
+      "capability": "mud-decontamination-unit",
+      "labels": [
+        "Mud Decontamination Unit",
+        "Mud Decontamination Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "mud_rescue"
+    },
+    {
+      "capability": "riv-or-major-foam-tender",
+      "labels": [
+        "RIVs or Major Foam Tenders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_airport_fire_engine_or_engine_large"
+    },
+    {
+      "capability": "ilb-or-alb",
+      "labels": [
+        "ILBs or ALBs"
+      ],
+      "requireParserAlias": true,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_coastal_guard_boat_or_boat_large"
+    },
+    {
+      "capability": "iccu-or-ambulance-control-unit",
+      "labels": [
+        "ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_command_advanced_or_airport_fire_command"
+    },
+    {
+      "capability": "fire-officer",
+      "labels": [
+        "Fire Officers or Airfield Firefighting Command Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_command_or_airport_fire_command"
+    },
+    {
+      "capability": "fire-engine-or-riv",
+      "labels": [
+        "Fire Engines or RIVs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_engine_or_airport_fire_engine"
+    },
+    {
+      "capability": "fire-engine-or-major-foam-tender",
+      "labels": [
+        "Fire Engines or Major Foam Tenders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_engine_or_airport_fire_engine_large"
+    },
+    {
+      "capability": "fire-engine-riv-or-major-foam-tender",
+      "labels": [
+        "Fire Engines, RIVs or Major Foam Tenders"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_engine_or_airport_fire_engine_or_engine_large"
+    },
+    {
+      "capability": "fire-engine-or-rescue-support-vehicle",
+      "labels": [
+        "Fire Engines or Rescue Support Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_engine_or_rescue"
+    },
+    {
+      "capability": "fire-engine-rescue-support-vehicle-or-aerial-appliance-truck",
+      "labels": [
+        "Fire Engines, Rescue Support Vehicles or Aerial Appliance Trucks"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_engine_or_rescue_or_ladder"
+    },
+    {
+      "capability": "aerial-appliance-truck-or-rescue-stairs",
+      "labels": [
+        "Aerial Appliance Trucks or Rescue Stairs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_fire_ladder_or_rescue_stairs"
+    },
+    {
+      "capability": "mountain-rescue-4x4-or-sar-4x4",
+      "labels": [
+        "Mountain Rescue 4x4 or SAR 4x4"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_mountain_atv_or_search_and_rescue_atv"
+    },
+    {
+      "capability": "rrv-or-specialist-paramedic-rrv",
+      "labels": [
+        "RRV or Specialist Paramedic RRV"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_paramedic_or_paramedic_advanced"
+    },
+    {
+      "capability": "police-helicopter-or-drone",
+      "labels": [
+        "Police Helicopters or Drones"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_police_drone_or_helicopter"
+    },
+    {
+      "capability": "police-car-or-armed-response-vehicle",
+      "labels": [
+        "Police Cars or Armed Response Vehicles (ARVs)"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "oneof_police_patrol_or_swat"
+    },
+    {
+      "capability": "aerial-appliance-truck",
+      "labels": [
+        "Aerial Appliance",
+        "Aerial Appliances"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "platform_trucks"
+    },
+    {
+      "capability": "police-car",
+      "labels": [
+        "Police Car",
+        "Police Cars"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "police_cars"
+    },
+    {
+      "capability": "policehelicopter",
+      "labels": [
+        "Police Helicopter",
+        "Police Helicopters"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "police_helicopters"
+    },
+    {
+      "capability": "mounted-unit",
+      "labels": [
+        "Mounted Unit",
+        "Mounted Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "police_horse"
+    },
+    {
+      "capability": "eiu",
+      "labels": [
+        "EIU",
+        "EIUs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "railway_police"
+    },
+    {
+      "capability": "rescue-dog",
+      "labels": [
+        "Search Dog Unit",
+        "Search Dog Units"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "rescue_dogs"
+    },
+    {
+      "capability": "rescue-stair",
+      "labels": [
+        "Rescue Stair",
+        "Rescue Stairs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "rettungstreppe"
+    },
+    {
+      "capability": "riv",
+      "labels": [
+        "RIV",
+        "RIVs"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "riv"
+    },
+    {
+      "capability": "hems",
+      "labels": [
+        "HEMS"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "rth"
+    },
+    {
+      "capability": "operational-support-van-trailer-or-personal-sar-vehicle",
+      "labels": [
+        "Operational Support Vans"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "search_and_rescue"
+    },
+    {
+      "capability": "control-van",
+      "labels": [
+        "Control Vans"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "search_and_rescue_command"
+    },
+    {
+      "capability": "armed-response",
+      "labels": [
+        "Armed Response",
+        "Armed Response"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "swat_suv"
+    },
+    {
+      "capability": "traffic-car",
+      "labels": [
+        "Traffic Car",
+        "Traffic Cars"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "traffic_car"
+    },
+    {
+      "capability": "road-rail-unit",
+      "labels": [
+        "Rail Road Unit",
+        "Rail Road Units,"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "two_way"
+    },
+    {
+      "capability": "4x4-vehicle",
+      "labels": [
+        "4x4 Vehicle",
+        "4x4 Vehicles"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "water_rescue"
+    },
+    {
+      "capability": "water-carrier",
+      "labels": [
+        "Water Carrier",
+        "Water Carriers"
+      ],
+      "requireParserAlias": false,
+      "source": "missionHelper.vehicles.captions",
+      "token": "water_tankers"
+    },
+    {
+      "capability": "ilb-or-alb",
+      "labels": [
+        "ALBs or ILBs"
+      ],
+      "requireParserAlias": true,
+      "source": "missionHelper.prerequisites",
+      "token": "oneof_coastal_guard_boat_large_coastal_boat"
+    }
+  ],
+  "missionHelperVehicleCaptions": {
+    "airport_command": "Airfield Operations Supervisor | Airfield Operations Supervisors",
+    "airport_equipment": "Airfield Operations Vehicle | Airfield Operations Vehicles",
+    "ambulances": "Ambulance | Ambulances",
+    "arff": "Major Foam Tender | Major Foam Tenders",
+    "atv_carrier": "ATV Carrier | ATV Carriers",
+    "battalion_chief_vehicles": "Fire Officer | Fire Officers",
+    "bomb_disposal_command": "EOD Commander | Eod Commanders",
+    "bomb_disposal_crew": "EOD Response Vehicle | EOD Response Vehicles",
+    "bomb_disposal_diver_crew": "Marine EOD Response Vehicle | Marine EOD Response Vehicles",
+    "bomb_disposal_diver_equipment": "Marine EOD Equipment Van | Marine EOD Equipment Vans",
+    "bomb_disposal_equipment": "Required EOD Medium Equipment Van | Required EOD Medium Equipment Vans",
+    "bomb_disposal_heavy_equipment": "EOD Heavy Equipment Vehicle | EOD Heavy Equipment Vehicles",
+    "coastal_boat": "Inland Rescue Boat (Trailer)",
+    "coastal_boat_hover": "Hovercraft (Trailer) | Hovercrafts (Trailer)",
+    "coastal_command": "Coastguard Commander | Coastguard Commanders",
+    "coastal_guard_boat": "ALB | ALBs",
+    "coastal_helicopter": "Coastguard Rescue Helicopter | Coastguard Rescue Helicopters",
+    "coastal_jetski": "Rescue Watercraft (Trailer) | Rescue Watercraft (Trailers)",
+    "coastal_mud_rescue": "Coastguard Mud Rescue Unit | Coastguard Mud Rescue Units",
+    "coastal_rescue": "CRV | CRVs",
+    "coastal_support": "Support Unit | Support Units",
+    "elw_airport": "Airfield Firefighting Command Vehicle | Airfield Firefighting Command Vehicles",
+    "emergency_welfare": "Welfare Vehicle | Welfare Vehicles",
+    "ems_mobile_command": "Ambulance Officer | Ambulance Officers",
+    "firetrucks": "Pump | Pumps",
+    "flood_equipment": "Flood Rescue Unit | Flood Rescue Units",
+    "foam": "Foam Unit | Foam Units",
+    "hazard_response_primary": "Primary Response Vehicle | Primary Response Vehicles",
+    "hazard_response_secondary": "Secondary Response Vehicle | Secondary Response Vehicles",
+    "hazmat_vehicles": "HazMat Unit or CBRN Vehicle | HazMat Units or CBRN Vehicles",
+    "heavy_rescue_vehicles": "Rescue Support Unit or Rescue Pump | Rescue Support Units or Rescue Pumps",
+    "height_rescue_units": "Coastguard Rope Rescue Unit | Coastguard Rope Rescue Units",
+    "helicopter": "HEMS",
+    "k9": "Dog Support Unit (DSU) | Dog Support Units (DSUs)",
+    "kdow_orgl": "Operational Team Leader | Operational Team Leaders",
+    "large_coastal_boat": "ILB | ILBs",
+    "mass_casualty_equipment": "Mass Casualty Equipment",
+    "midwife": "Community Midwife | Community Midwifes",
+    "mobile_air_vehicles": "Breathing Apparatus Support Unit | Breathing Apparatus Support Units",
+    "mobile_command_vehicles": "ICCU or Ambulance Control Unit | ICCUs or Ambulance Control Units",
+    "mountain_cave_rescue": "Cave Rescue Specialist",
+    "mud_rescue": "Mud Decontamination Unit | Mud Decontamination Units",
+    "oneof_airport_fire_engine_or_engine_large": "RIVs or Major Foam Tenders",
+    "oneof_coastal_guard_boat_or_boat_large": "ILBs or ALBs",
+    "oneof_fire_command_advanced_or_airport_fire_command": "ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles",
+    "oneof_fire_command_or_airport_fire_command": "Fire Officers or Airfield Firefighting Command Vehicles",
+    "oneof_fire_engine_or_airport_fire_engine": "Fire Engines or RIVs",
+    "oneof_fire_engine_or_airport_fire_engine_large": "Fire Engines or Major Foam Tenders",
+    "oneof_fire_engine_or_airport_fire_engine_or_engine_large": "Fire Engines, RIVs or Major Foam Tenders",
+    "oneof_fire_engine_or_rescue": "Fire Engines or Rescue Support Vehicles",
+    "oneof_fire_engine_or_rescue_or_ladder": "Fire Engines, Rescue Support Vehicles or Aerial Appliance Trucks",
+    "oneof_fire_ladder_or_rescue_stairs": "Aerial Appliance Trucks or Rescue Stairs",
+    "oneof_mountain_atv_or_search_and_rescue_atv": "Mountain Rescue 4x4 or SAR 4x4",
+    "oneof_paramedic_or_paramedic_advanced": "RRV or Specialist Paramedic RRV",
+    "oneof_police_drone_or_helicopter": "Police Helicopters or Drones",
+    "oneof_police_patrol_or_swat": "Police Cars or Armed Response Vehicles (ARVs)",
+    "platform_trucks": "Aerial Appliance | Aerial Appliances ",
+    "police_cars": "Police Car | Police Cars",
+    "police_helicopters": "Police Helicopter | Police Helicopters",
+    "police_horse": "Mounted Unit | Mounted Units",
+    "railway_police": "EIU | EIUs",
+    "rescue_dogs": "Search Dog Unit | Search Dog Units",
+    "rettungstreppe": "Rescue Stair | Rescue Stairs",
+    "riv": "RIV | RIVs",
+    "rth": "HEMS",
+    "search_and_rescue": "Operational Support Vans",
+    "search_and_rescue_command": "Control Vans",
+    "swat_suv": "Armed Response | Armed Response",
+    "traffic_car": "Traffic Car | Traffic Cars",
+    "two_way": "Rail Road Unit | Rail Road Units,",
+    "water_rescue": "4x4 Vehicle | 4x4 Vehicles",
+    "water_tankers": "Water Carrier | Water Carriers"
+  },
+  "missionHelperVehicleTokens": [
+    "airport_command",
+    "airport_equipment",
+    "ambulances",
+    "arff",
+    "atv_carrier",
+    "battalion_chief_vehicles",
+    "bomb_disposal_command",
+    "bomb_disposal_crew",
+    "bomb_disposal_diver_crew",
+    "bomb_disposal_diver_equipment",
+    "bomb_disposal_equipment",
+    "bomb_disposal_heavy_equipment",
+    "coastal_boat",
+    "coastal_boat_hover",
+    "coastal_command",
+    "coastal_guard_boat",
+    "coastal_helicopter",
+    "coastal_jetski",
+    "coastal_mud_rescue",
+    "coastal_rescue",
+    "coastal_support",
+    "elw_airport",
+    "emergency_welfare",
+    "ems_mobile_command",
+    "firetrucks",
+    "flood_equipment",
+    "foam",
+    "hazard_response_primary",
+    "hazard_response_secondary",
+    "hazmat_vehicles",
+    "heavy_rescue_vehicles",
+    "height_rescue_units",
+    "helicopter",
+    "k9",
+    "kdow_orgl",
+    "large_coastal_boat",
+    "mass_casualty_equipment",
+    "midwife",
+    "mobile_air_vehicles",
+    "mobile_command_vehicles",
+    "mountain_cave_rescue",
+    "mud_rescue",
+    "oneof_airport_fire_engine_or_engine_large",
+    "oneof_coastal_guard_boat_or_boat_large",
+    "oneof_fire_command_advanced_or_airport_fire_command",
+    "oneof_fire_command_or_airport_fire_command",
+    "oneof_fire_engine_or_airport_fire_engine",
+    "oneof_fire_engine_or_airport_fire_engine_large",
+    "oneof_fire_engine_or_airport_fire_engine_or_engine_large",
+    "oneof_fire_engine_or_rescue",
+    "oneof_fire_engine_or_rescue_or_ladder",
+    "oneof_fire_ladder_or_rescue_stairs",
+    "oneof_mountain_atv_or_search_and_rescue_atv",
+    "oneof_paramedic_or_paramedic_advanced",
+    "oneof_police_drone_or_helicopter",
+    "oneof_police_patrol_or_swat",
+    "platform_trucks",
+    "police_cars",
+    "police_helicopters",
+    "police_horse",
+    "railway_police",
+    "rescue_dogs",
+    "rettungstreppe",
+    "riv",
+    "rth",
+    "search_and_rescue",
+    "search_and_rescue_command",
+    "swat_suv",
+    "traffic_car",
+    "two_way",
+    "water_rescue",
+    "water_tankers"
+  ],
+  "pinnedLssmCommit": "4f731e1d6d009cbf2129530fb31d10177b21a52a",
+  "reviewedUnsupportedMissionHelperTokens": [
+    "mountain_cave_rescue"
+  ],
+  "schemaVersion": 1,
+  "tractiveTypes": {
+    "84": [
+      0,
+      1,
+      4
+    ],
+    "87": [
+      85,
+      86,
+      89,
+      94
+    ],
+    "88": [
+      85,
+      86,
+      89,
+      94
+    ]
+  },
+  "vehicleCaptions": {
+    "0": "Water Ladder",
+    "1": "Light 4X4 Pump (L4P)",
+    "10": "Rapid Response Vehicle",
+    "100": "Control Van (Mountain Rescue)",
+    "101": "Search Dog Unit",
+    "102": "Search Dog Unit (SAR)",
+    "103": "Crew Carrier (SAR)",
+    "104": "Recovery Vehicle",
+    "105": "Flatbed Recovery Vehicle",
+    "106": "HGV Recovery Vehicle",
+    "107": "RRU",
+    "108": "EIU",
+    "109": "EOD Commander",
+    "11": "Police Helicopter",
+    "110": "EOD Response Vehicle",
+    "111": "EOD Medium Equipment Van",
+    "112": "EOD Heavy Equipment Vehicle",
+    "113": "Marine EOD Response Vehicle",
+    "114": "Marine EOD Equipment Van",
+    "115": "Welfare Vehicle",
+    "116": "Cell Van",
+    "12": "Dog Support Unit",
+    "13": "Armed Response Vehicle",
+    "14": "BASU",
+    "15": "ICCU",
+    "16": "Rescue Pump",
+    "17": "CARP",
+    "18": "Co-Responder Vehicle",
+    "19": "Joint Response Unit",
+    "2": "Aerial Appliance",
+    "20": "Operational Team Leader",
+    "21": "General Practitioner",
+    "22": "Community First Responder",
+    "23": "Crew Carrier",
+    "24": "Traffic Car",
+    "25": "Armed Traffic Car",
+    "26": "Heavy 4x4 Tanker",
+    "27": "PRV",
+    "28": "SRV",
+    "29": "Welfare Vehicle",
+    "3": "Fire Officer",
+    "30": "ATV Carrier",
+    "31": "Ambulance Control Unit",
+    "32": "CBRN Vehicle",
+    "33": "Mass Casualty Equipment",
+    "34": "Ambulance Officer",
+    "35": "BFU",
+    "36": "F/WrC",
+    "37": "WrL CAFS",
+    "38": "RP CAFS",
+    "39": "OSU",
+    "4": "Rescue Support Unit (RSU)",
+    "40": "PM",
+    "41": "Water Pod",
+    "42": "Bulk Foam Pod",
+    "43": "Rescue Pod",
+    "44": "Command Pod",
+    "45": "Welfare Pod",
+    "46": "BASU Pod",
+    "47": "Misting Pod",
+    "48": "Hazardous Materials Pod",
+    "49": "OSU Pod",
+    "5": "Ambulance",
+    "50": "HVP",
+    "51": "Police Support Unit Carrier",
+    "52": "Firearms Personnel Carrier",
+    "53": "Multiple Dog Carrier",
+    "54": "Detention Van",
+    "55": "Mounted Unit",
+    "56": "Multi-Role Armoured Vehicle",
+    "57": "CRV",
+    "58": "Coastguard Mud Rescue Unit",
+    "59": "Coastguard Rope Rescue Unit",
+    "6": "Water Carrier",
+    "60": "Coastguard Commander",
+    "61": "Flood Rescue Unit (Trailer)",
+    "62": "Mud Decontamination Unit",
+    "63": "Support Unit",
+    "64": "Coastguard Rescue Helicopter",
+    "65": "Coastguard Rescue Helicopter (Large)",
+    "66": "4x4 Vehicle",
+    "67": "Inland Rescue Boat (Trailer)",
+    "68": "ILB",
+    "69": "ALB",
+    "7": "HazMat Unit",
+    "70": "Rescue Watercraft (Trailer)",
+    "71": "Hovercraft (Trailer)",
+    "72": "Hovercraft Transporter",
+    "73": "Light 4x4",
+    "74": "Boat Trailer",
+    "75": "Major Foam Tender",
+    "76": "RIV",
+    "77": "Airfield Firefighting Command Vehicle",
+    "78": "Rescue Stairs",
+    "79": "Airfield Operations Vehicle",
+    "8": "Incident response vehicle",
+    "80": "Airfield Operations Supervisor",
+    "81": "Medical equipment trailer",
+    "82": "Armed Cell Van",
+    "83": "Medical cycle responder",
+    "84": "Pump Trailer",
+    "85": "Control Van",
+    "86": "Operational Support Van",
+    "87": "Operational Support Trailer",
+    "88": "SAR Flood Rescue (Trailer)",
+    "89": "Drone Vehicle (SAR HQ)",
+    "9": "HEMS",
+    "90": "Drone Vehicle (Fire Station)",
+    "91": "Drone Vehicle (Police Station)",
+    "92": "Personal SAR Vehicle",
+    "93": "SAR 4x4",
+    "94": "RRV",
+    "95": "Community Midwife",
+    "96": "Specialist Paramedic RRV",
+    "97": "Patient Transport Service Ambulance",
+    "98": "Critical Care Transfer Ambulance",
+    "99": "Mountain Rescue 4x4"
+  }
+}

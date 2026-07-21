@@ -6,6 +6,18 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.24] - 2026-07-21
+
+### Fixed
+- Reconciled Financial Advisor daily totals against MissionChief’s `/credits/overview` Revenue, Spendings and Sum checkpoints without adding aggregate values on top of detailed transactions.
+- Preserved detailed-ledger categories while exposing unexplained income, spending and net variance instead of inventing transaction classifications.
+- Applied overview-confirmed totals to complete covered days across daily, weekly, monthly and custom-period reports, while retaining ledger totals for partial days.
+- Kept Financial Advisor, Discord financial reports and generated Financial Command graphics on the same canonical reconciled income, spending and net movement.
+- Degraded safely to the existing detailed ledger when the overview page is unavailable, malformed or outside the requested coverage range.
+
+### Validation
+- Added deterministic parser, sign handling, pagination, bounded cache, safe-failure, duplicate-date, exact-match, variance, net-negative, partial-period and no-double-counting contracts.
+
 ## [4.20.23] - 2026-07-21
 
 ### Fixed

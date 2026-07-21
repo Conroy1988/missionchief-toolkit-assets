@@ -27,6 +27,7 @@ cmp --silent "$DIST_JS" "$DIST_TXT"
 
 CONTRACTS=(
   .github/scripts/test_financial_ledger_contract.py
+  .github/scripts/test_financial_overview_contract.py
   .github/scripts/test_financial_discord_image_layout_contract.py
   .github/scripts/test_mission_marker_ingestion_contract.py
   .github/scripts/test_boot_lifecycle_contract.py

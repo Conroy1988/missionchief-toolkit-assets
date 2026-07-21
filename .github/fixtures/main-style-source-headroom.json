@@ -2,9 +2,9 @@
   "schemaVersion": 3,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "4.20.23",
-  "originalSourceLines": 31769,
-  "candidateSourceLines": 31269,
+  "candidateVersion": "4.20.24",
+  "originalSourceLines": 32157,
+  "candidateSourceLines": 31657,
   "recoveredSourceLines": 500,
   "removedBlankLines": 300,
   "removedStandaloneCommentLines": 185,
@@ -15,6 +15,6 @@
   "canonicalCssSha256": "29ebbb034614b751ee485ce2c02468e8b98cdd4a81bec31d94f1a1959d7ddb69",
   "candidateTemplateSha256": "6fe8a5e148a0f57c66ab08981790cd8d02f5160f9e0452b252aaea6662afdd2f",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "902171c43ba861edece0e65c97f2385fb43892b9129094d39909a7104bad03ee",
+  "candidateSourceSha256": "4bd9a9f3708292a6a48523f2f4d69b105e5957395fb10bcbeec671a4d8a4029c",
   "invariant": "Canonical CSS content is identical; only blank lines, standalone full-line CSS comments and fifteen newlines immediately before full-line closing braces were removed."
 }

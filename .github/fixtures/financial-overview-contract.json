@@ -1,0 +1,64 @@
+{
+  "parser": {
+    "pageNumber": 2,
+    "headers": ["Date", "Revenue", "Spendings", "Sum"],
+    "rows": [
+      ["18/07/2026", "2,997,278", "0", "2,997,278"],
+      ["17/07/2026", "6,183,493", "-3,667,080", "2,516,413"],
+      ["12/07/2026", "3,644,463", "-4,893,571", "-1,249,108"],
+      ["17/07/2026", "6,183,493", "-3,667,080", "2,516,413"],
+      ["not-a-date", "100", "-20", "80"],
+      ["16/07/2026", "6,040,864", "4,765,309", "1,275,555"]
+    ],
+    "pagination": [
+      {"text": "1", "href": "/credits/overview?page=1"},
+      {"text": "7", "href": "/credits/overview?page=7"},
+      {"text": "Next", "href": "/credits/overview?page=9"}
+    ],
+    "expected": {
+      "rowCount": 4,
+      "malformedRowCount": 1,
+      "duplicateDateCount": 1,
+      "lastPage": 9,
+      "firstDate": "2026-07-18",
+      "netNegative": -1249108,
+      "positiveSpendingNormalised": -4765309
+    }
+  },
+  "pagination": {
+    "requiredStart": "2026-07-15T00:00:00Z",
+    "requiredEnd": "2026-07-19T00:00:00Z",
+    "pages": {
+      "1": {"lastPage": 3, "rows": [
+        {"dateKey": "2026-07-18", "dayStart": "2026-07-18T00:00:00Z", "revenue": 2997278, "spending": 0, "net": 2997278},
+        {"dateKey": "2026-07-17", "dayStart": "2026-07-17T00:00:00Z", "revenue": 6183493, "spending": -3667080, "net": 2516413}
+      ]},
+      "2": {"lastPage": 3, "rows": [
+        {"dateKey": "2026-07-16", "dayStart": "2026-07-16T00:00:00Z", "revenue": 6040864, "spending": -4765309, "net": 1275555},
+        {"dateKey": "2026-07-15", "dayStart": "2026-07-15T00:00:00Z", "revenue": 5390537, "spending": -3659586, "net": 1730951}
+      ]},
+      "3": {"lastPage": 3, "rows": [
+        {"dateKey": "2026-07-14", "dayStart": "2026-07-14T00:00:00Z", "revenue": 6657908, "spending": -3651891, "net": 3006017}
+      ]}
+    },
+    "expectedCalls": [1, 2]
+  },
+  "reconciliation": {
+    "periodStart": "2026-07-17T00:00:00Z",
+    "periodEnd": "2026-07-19T00:00:00Z",
+    "overviewRows": [
+      {"dateKey": "2026-07-18", "dayStart": "2026-07-18T00:00:00Z", "revenue": 1000, "spending": 0, "net": 1000},
+      {"dateKey": "2026-07-17", "dayStart": "2026-07-17T00:00:00Z", "revenue": 600, "spending": -250, "net": 350}
+    ],
+    "ledger": [
+      {"timestamp": "2026-07-18T12:00:00Z", "amount": 800},
+      {"timestamp": "2026-07-17T10:00:00Z", "amount": 500},
+      {"timestamp": "2026-07-17T11:00:00Z", "amount": -200}
+    ],
+    "summary": {"income": 1300, "spending": 200, "net": 1100, "operatingResult": 1100, "operatingExpense": 200, "capitalInvestment": 0, "allianceIncome": 500, "personalIncome": 300, "activeHours": 3, "calendarHours": 48, "topIncomeCategory": {"total": 800}, "buckets": [
+      {"start": "2026-07-17T00:00:00Z", "end": "2026-07-18T00:00:00Z", "income": 500, "spending": 200, "net": 300},
+      {"start": "2026-07-18T00:00:00Z", "end": "2026-07-19T00:00:00Z", "income": 800, "spending": 0, "net": 800}
+    ]},
+    "expected": {"income": 1600, "spending": 250, "net": 1350, "netVariance": 250, "status": "variance"}
+  }
+}

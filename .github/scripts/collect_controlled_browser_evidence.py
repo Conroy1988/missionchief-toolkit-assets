@@ -96,7 +96,7 @@ def main()->int:
     Path(args.json_output).write_text(json.dumps(result,indent=2)+"\n")
     md=['# Controlled browser evidence — Toolkit v4.20.24','',
       '> Controlled synthetic Chromium evidence. It verifies repeatable micro-contracts, but it is **not** authenticated MissionChief runtime evidence and does not justify CSS modularisation by itself.','',
-      '## Baseline','',f"- Source SHA-256: `{source_sha}`",f"- Main embedded CSS: **{len(css.encode()):,} bytes**, approximately **{css_rule_estimate:,}** rule blocks",f"- Guarded root attributes: **{len(attrs)}**,'',
+      '## Baseline','',f"- Source SHA-256: `{source_sha}`",f"- Main embedded CSS: **{len(css.encode()):,} bytes**, approximately **{css_rule_estimate:,}** rule blocks",f"- Guarded root attributes: **{len(attrs)}**",'',
       '## Results','', '| Scenario | Viewport | CSS insertion median* | Forced style/layout median* | Initial writes | Unchanged repeat | Changed value | Tamper repair |','|---|---:|---:|---:|---:|---:|---:|---:|']
     for x in scenarios:
         c=x['rootAttributeContract']; v=x['viewport']; md.append(f"| {x['label']} | {v['width']}×{v['height']} | {x['styleInsertMedianMs']:.4f} ms | {x['forcedStyleLayoutMedianMs']:.4f} ms | {c['initialWrites']} | {c['unchangedWrites']} | {c['changedWrites']} | {c['repairedWrites']} |")

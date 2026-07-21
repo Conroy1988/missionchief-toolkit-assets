@@ -75,7 +75,7 @@ def run_one(chromium: str, doc: Path, width: int, height: int) -> dict:
 def main()->int:
     ap=argparse.ArgumentParser(); ap.add_argument('--source',default='src/MissionChief_Map_Command_Toolkit.user.js'); ap.add_argument('--json-output',default='docs/audits/controlled-browser-evidence-v4.20.24.json'); ap.add_argument('--markdown-output',default='docs/audits/controlled-browser-evidence-v4.20.24.md'); ap.add_argument('--chromium'); args=ap.parse_args()
     source_path=Path(args.source); source=source_path.read_text(); css=extract_main_css(source); attrs=extract_root_attributes(source)
-    chromium=args.chromium or shutil.which('google-chrome') or shutil.which('chromium') or shutil.which('chromium-browser')
+    chromium=args.chromium or shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium') or shutil.which('chromium-browser')
     if not chromium: raise SystemExit('Chromium/Chrome executable not found')
     scenarios=[]
     with tempfile.TemporaryDirectory() as td:
@@ -88,14 +88,15 @@ def main()->int:
             raw['forcedStyleLayoutMedianMs']=median(raw['forcedStyleLayoutSamplesMs'][1:])
             scenarios.append(raw)
     source_sha=hashlib.sha256(source_path.read_bytes()).hexdigest()
-    result={'schemaVersion':1,'evidenceClass':'controlled-synthetic-browser','tool':'collect_controlled_browser_evidence.py','baseline':{'version':'4.20.24','sourceSha256':source_sha,'sourceBytes':source_path.stat().st_size,'sourceLines':sum(1 for _ in source_path.open()),'cssBytes':len(css.encode()),'cssRuleEstimate':css.count('{'),'rootAttributeCount':len(attrs)},'environment':{'browserExecutable':Path(chromium).name,'note':'Browser timings vary by runner and are not performance budgets.'},'scenarios':scenarios,'conclusions':{
+    css_rule_estimate=css.count('{')
+    result={'schemaVersion':1,'evidenceClass':'controlled-synthetic-browser','tool':'collect_controlled_browser_evidence.py','baseline':{'version':'4.20.24','sourceSha256':source_sha,'sourceBytes':source_path.stat().st_size,'sourceLines':sum(1 for _ in source_path.open()),'cssBytes':len(css.encode()),'cssRuleEstimate':css_rule_estimate,'rootAttributeCount':len(attrs)},'environment':{'browserExecutable':Path(chromium).name,'note':'Browser timings vary by runner and are not performance budgets.'},'scenarios':scenarios,'conclusions':{
       'rootWriteSuppressionVerified':all(x['rootAttributeContract']=={'attributeCount':22,'initialWrites':22,'unchangedWrites':0,'changedWrites':1,'repairedWrites':1} for x in scenarios),
       'cssTargetProven':False,'liveMissionChiefEvidenceCaptured':False,
       'nextAction':'Capture equivalent authenticated idle map, settings, mission-window and map-pan profiler scenarios before changing style delivery or broader render paths.'}}
     Path(args.json_output).write_text(json.dumps(result,indent=2)+"\n")
     md=['# Controlled browser evidence — Toolkit v4.20.24','',
       '> Controlled synthetic Chromium evidence. It verifies repeatable micro-contracts, but it is **not** authenticated MissionChief runtime evidence and does not justify CSS modularisation by itself.','',
-      '## Baseline','',f"- Source SHA-256: `{source_sha}`",f"- Main embedded CSS: **{len(css.encode()):,} bytes**, approximately **{css.count('{'):,}** rule blocks",f"- Guarded root attributes: **{len(attrs)}**,'',
+      '## Baseline','',f"- Source SHA-256: `{source_sha}`",f"- Main embedded CSS: **{len(css.encode()):,} bytes**, approximately **{css_rule_estimate:,}** rule blocks",f"- Guarded root attributes: **{len(attrs)}**,'',
       '## Results','', '| Scenario | Viewport | CSS insertion median* | Forced style/layout median* | Initial writes | Unchanged repeat | Changed value | Tamper repair |','|---|---:|---:|---:|---:|---:|---:|---:|']
     for x in scenarios:
         c=x['rootAttributeContract']; v=x['viewport']; md.append(f"| {x['label']} | {v['width']}×{v['height']} | {x['styleInsertMedianMs']:.4f} ms | {x['forcedStyleLayoutMedianMs']:.4f} ms | {c['initialWrites']} | {c['unchangedWrites']} | {c['changedWrites']} | {c['repairedWrites']} |")

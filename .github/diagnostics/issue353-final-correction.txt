@@ -1,0 +1,31 @@
+Issue #353 final correction diagnostic
+exit_code=1
+
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: delegated checkbox change listener is installed once
+    at Object.<anonymous> (/tmp/issue353-final-_d1srt1m/repo/.github/scripts/test_mission_requirements_runtime.js:2522:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/tmp/issue353-final-_d1srt1m/repo/.github/development-packages/issue353-performance-safe-selection-refresh.py", line 141, in <module>
+    subprocess.check_call(["node", str(TEST)], cwd=ROOT, env=env)
+  File "/usr/lib/python3.12/subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['node', '/tmp/issue353-final-_d1srt1m/repo/.github/scripts/test_mission_requirements_runtime.js']' returned non-zero exit status 1.

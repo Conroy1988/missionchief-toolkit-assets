@@ -292,5 +292,31 @@
     "finance-rule-feed",
     "finance-vault-enabled",
     "finance-vault-retention"
-  ]
+  ],
+  "extractedToggleRoutes": [
+    "allianceMissions",
+    "buildings",
+    "coverage",
+    "heatmap",
+    "markerFocus",
+    "missionPulse",
+    "myMissions",
+    "roadPriority",
+    "vehicles"
+  ],
+  "extractedToggleEffectRoutes": [
+    "buildings",
+    "vehicles"
+  ],
+  "extractedToggleStatePaths": {
+    "allianceMissions": "visibility.allianceMissions",
+    "buildings": "visibility.buildings",
+    "coverage": "coverage.enabled",
+    "heatmap": "heatmap.enabled",
+    "markerFocus": "markerFocus",
+    "missionPulse": "missionPulse",
+    "myMissions": "visibility.myMissions",
+    "roadPriority": "roadPriority",
+    "vehicles": "visibility.vehicles"
+  }
 }

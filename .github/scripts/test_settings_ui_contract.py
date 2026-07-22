@@ -37,6 +37,8 @@ FUNCTION_NAMES = [
     "extractImportedFinancialVaultStore",
     "describePrivateImport",
     "applyImportedToolkitSettings",
+    "handleMapVisibilityToggle",
+    "applyMapVisibilityToggleEffects",
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
@@ -69,6 +71,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     handle_action = extract_function(source, masked, "handleAction")
     handle_financial_setting = extract_function(source, masked, "handleDiscordFinancialSettingChange")
     handle_setting = extract_function(source, masked, "handleSettingChange")
+    handle_map_visibility_toggle = extract_function(source, masked, "handleMapVisibilityToggle")
+    apply_map_visibility_effects = extract_function(source, masked, "applyMapVisibilityToggleEffects")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
     actions = values(r'data-action\s*=\s*["\']([^"\']+)["\']', create_panel)
@@ -82,7 +86,10 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     direct_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_setting)
     extracted_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_financial_setting)
     handled_settings = sorted(set(direct_settings + extracted_settings))
-    toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', toggle_feature)
+    direct_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', toggle_feature)
+    extracted_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_map_visibility_toggle)
+    extracted_toggle_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_map_visibility_effects)
+    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes))
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
     assert actions == sorted(fixtures["actions"]), "Visible data-action inventory changed"
@@ -90,6 +97,11 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert tabs == sorted(fixtures["tabs"]), "Panel tab inventory changed"
     assert handled_actions == sorted(fixtures["actions"] + fixtures["dynamicActions"]), "Action routing inventory changed"
     assert toggle_routes == sorted(fixtures["toggleRoutes"]), "Feature toggle routing inventory changed"
+    assert extracted_toggle_routes == sorted(fixtures["extractedToggleRoutes"]), "Extracted map/visibility toggle routing changed"
+    assert extracted_toggle_effect_routes == sorted(fixtures["extractedToggleEffectRoutes"]), "Extracted map/visibility effect routing changed"
+    assert not set(direct_toggle_routes).intersection(extracted_toggle_routes), "Extracted toggles must not remain duplicated in toggleFeature"
+    assert "handleMapVisibilityToggle(feature)" in toggle_feature, "Main toggle router must delegate to the extracted map/visibility state family"
+    assert "applyMapVisibilityToggleEffects(feature)" in toggle_feature, "Main toggle router must delegate to the extracted map/visibility effect family"
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
@@ -470,6 +482,41 @@ function testImportContracts() {{
     assert.equal(applyAttempts, 2);
 }}
 
+function testExtractedMapVisibilityToggleContracts() {{
+    for (const [feature, path] of Object.entries(fixtures.extractedToggleStatePaths)) {{
+        resetEnvironment();
+        const before = pathValue(state, path);
+        assert.equal(handleMapVisibilityToggle(feature), true, `${{feature}} was not handled directly`);
+        assert.notEqual(pathValue(state, path), before, `${{feature}} did not toggle ${{path}} directly`);
+        assert.equal(localStorage.getItem(SCRIPT.storageState), null, `${{feature}} helper must not persist before the router finalizes`);
+        assert.equal(wasCalled("updateUI"), false, `${{feature}} helper must not render before the router finalizes`);
+    }}
+
+    resetEnvironment();
+    const beforeUnknown = JSON.stringify(state);
+    assert.equal(handleMapVisibilityToggle("unknown-map-toggle"), false);
+    assert.equal(JSON.stringify(state), beforeUnknown, "unknown map toggle mutated state");
+
+    resetEnvironment();
+    state.economyMode = true;
+    applyMapVisibilityToggleEffects("vehicles");
+    assert.equal(wasCalled("synchroniseVehicleMarkerClasses"), true);
+    assert.equal(wasCalled("synchronisePersonalBuildingVisibility"), false);
+    assert.deepEqual(callFor("scheduleEconomyLayerSync").args, [0]);
+
+    resetEnvironment();
+    state.economyMode = true;
+    applyMapVisibilityToggleEffects("buildings");
+    assert.equal(wasCalled("synchroniseVehicleMarkerClasses"), false);
+    assert.equal(wasCalled("synchronisePersonalBuildingVisibility"), true);
+    assert.deepEqual(callFor("scheduleEconomyLayerSync").args, [0]);
+
+    resetEnvironment();
+    state.economyMode = true;
+    applyMapVisibilityToggleEffects("coverage");
+    assert.equal(calls.length, 0, "map overlays without direct layer sync must remain side-effect free in the extracted effect phase");
+}}
+
 async function testToggleContracts() {{
     for (const [feature, path] of Object.entries(fixtures.toggleStatePaths)) {{
         resetEnvironment();
@@ -482,6 +529,28 @@ async function testToggleContracts() {{
         assert.equal(localStorage.getItem(SCRIPT.storageState) !== null, true, `${{feature}} did not persist state`);
         assert.equal(wasCalled("updateUI"), true, `${{feature}} did not request UI synchronization`);
     }}
+
+    resetEnvironment();
+    state.economyMode = true;
+    toggleFeature("vehicles");
+    const vehicleUpdateIndex = calls.findIndex(call => call.name === "updateUI");
+    const vehicleSyncIndex = calls.findIndex(call => call.name === "synchroniseVehicleMarkerClasses");
+    const vehicleEconomyIndex = calls.findIndex(call => call.name === "scheduleEconomyLayerSync");
+    const vehicleReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+    assert.ok(vehicleUpdateIndex >= 0 && vehicleUpdateIndex < vehicleSyncIndex, "vehicle synchronization must remain after UI synchronization");
+    assert.ok(vehicleSyncIndex < vehicleEconomyIndex, "economy synchronization must remain after vehicle class synchronization");
+    assert.ok(vehicleEconomyIndex < vehicleReconcileIndex, "feature reconciliation must remain after map visibility effects");
+
+    resetEnvironment();
+    state.economyMode = true;
+    toggleFeature("buildings");
+    const buildingUpdateIndex = calls.findIndex(call => call.name === "updateUI");
+    const buildingSyncIndex = calls.findIndex(call => call.name === "synchronisePersonalBuildingVisibility");
+    const buildingEconomyIndex = calls.findIndex(call => call.name === "scheduleEconomyLayerSync");
+    const buildingReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+    assert.ok(buildingUpdateIndex >= 0 && buildingUpdateIndex < buildingSyncIndex, "building synchronization must remain after UI synchronization");
+    assert.ok(buildingSyncIndex < buildingEconomyIndex, "economy synchronization must remain after building visibility synchronization");
+    assert.ok(buildingEconomyIndex < buildingReconcileIndex, "feature reconciliation must remain after map visibility effects");
 
     resetEnvironment();
     toggleFeature("criticalView");
@@ -641,11 +710,12 @@ async function testSettingContracts() {{
 (async () => {{
     testStateMigration();
     testImportContracts();
+    testExtractedMapVisibilityToggleContracts();
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

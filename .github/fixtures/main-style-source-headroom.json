@@ -2,7 +2,7 @@
   "schemaVersion": 4,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "4.20.30",
+  "candidateVersion": "4.20.31",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -15,6 +15,6 @@
   "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
   "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "aba095bd09e82436789ce0c0b63b0a2178b7e915cf5ff2f4194c478b188eeb8c",
-  "invariant": "The reviewed compact stylesheet retains at least 500 recovered source lines while payout/audio routing remains fixture-backed and managed runtime budgets remain unchanged."
+  "candidateSourceSha256": "840b727e8d3549aea2cb137725bd6b235fc2fbeaf5985f69446127c77b9fa2e3",
+  "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while device-layout setting routing remains fixture-backed and managed runtime budgets remain unchanged."
 }

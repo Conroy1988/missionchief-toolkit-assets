@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.30
+// @version      4.20.31
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.30',
+        version: '4.20.31',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -30370,31 +30370,31 @@ Create the private backup now?`);
         }
         return false;
     }
+    function handleDeviceLayoutSettingChange(target, setting) {
+        const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
+        const previousLayout = activeDeviceLayout;
+        if (setting === 'mobile-mode') {
+            state.mobileMode = nextValue;
+            if (nextValue === 'on') state.tabletMode = 'off';
+        } else if (setting === 'tablet-mode') {
+            state.tabletMode = nextValue;
+            if (nextValue === 'on') state.mobileMode = 'off';
+        } else return false;
+        saveState();
+        applyRootAttributes();
+        refreshTabletModeUi();
+        if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+            clearTabletPanelSizing();
+            clearTabletDockSizing();
+        }
+        fitControlToMap();
+        positionPanelOverlay(true);
+        showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
+        return true; }
     function handleSettingChange(target) {
         const setting = target.dataset.setting;
         if (!setting) return;
-        if (setting === 'mobile-mode' || setting === 'tablet-mode') {
-            const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
-            const previousLayout = activeDeviceLayout;
-            if (setting === 'mobile-mode') {
-                state.mobileMode = nextValue;
-                if (nextValue === 'on') state.tabletMode = 'off';
-            } else {
-                state.tabletMode = nextValue;
-                if (nextValue === 'on') state.mobileMode = 'off';
-            }
-            saveState();
-            applyRootAttributes();
-            refreshTabletModeUi();
-            if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
-                clearTabletPanelSizing();
-                clearTabletDockSizing();
-            }
-            fitControlToMap();
-            positionPanelOverlay(true);
-            showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
-            return;
-        }
+        if (handleDeviceLayoutSettingChange(target, setting)) return;
         if (setting === 'major-incident-minimum') {
             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
             saveState();

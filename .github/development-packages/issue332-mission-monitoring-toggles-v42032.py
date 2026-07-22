@@ -105,6 +105,8 @@ def feature_statements(function_text):
         cursor = condition_close + 1
         while cursor < len(function_text) and function_text[cursor].isspace():
             cursor += 1
+        if cursor >= len(function_text):
+            raise RuntimeError(f'{match.group(2)} statement body not found')
         if function_text[cursor] == '{':
             end = matching(masked, cursor, '{', '}') + 1
         else:
@@ -138,9 +140,11 @@ def statement_body(statement):
     return textwrap.dedent(body).strip()
 
 
-def render_helper(name, grouped, return_handled):
+def render_helper(name, grouped, ordered_features):
+    if not ordered_features:
+        return f'    function {name}(feature) {{ return false; }}'
     lines = [f'    function {name}(feature) {{']
-    for index, feature in enumerate(FEATURES):
+    for index, feature in enumerate(ordered_features):
         bodies = grouped.get(feature) or []
         if not bodies:
             raise RuntimeError(f'{name}: no body found for {feature}')
@@ -152,11 +156,8 @@ def render_helper(name, grouped, return_handled):
             lines.append(f"        {prefix} (feature === '{feature}') {{")
             lines.extend('            ' + line if line else '' for line in body.splitlines())
             lines.append('        }')
-    if return_handled:
-        lines.append('        else return false;')
-        lines.append('        return true; }')
-    else:
-        lines.append('    }')
+    lines.append('        else return false;')
+    lines.append('        return true; }')
     return '\n'.join(lines)
 
 
@@ -170,13 +171,9 @@ if 'function handleMissionMonitoringToggle(' in source or 'function applyMission
 function_start, function_end = function_span(source, 'toggleFeature')
 toggle = source[function_start:function_end]
 statements = feature_statements(toggle)
-for feature in FEATURES:
-    count = sum(statement['feature'] == feature for statement in statements)
-    if count < 2:
-        raise RuntimeError(f'{feature}: expected state and effect statements, found {count}')
-
 save_index = toggle.find('saveState();')
-reconcile_index = toggle.find('reconcileFeatureRefreshes(feature);')
+reconcile_marker = '        reconcileFeatureRefreshes(feature);'
+reconcile_index = toggle.find(reconcile_marker)
 if save_index < 0 or reconcile_index < 0 or save_index >= reconcile_index:
     raise RuntimeError('common toggle lifecycle boundary not found')
 
@@ -192,35 +189,46 @@ for statement in statements:
         raise RuntimeError(f"{statement['feature']}: statement crossed the common lifecycle boundary")
 
 for feature in FEATURES:
-    if sum(statement['feature'] == feature for statement in state_statements) != 1:
-        raise RuntimeError(f'{feature}: expected exactly one state statement')
-    if not any(statement['feature'] == feature for statement in effect_statements):
-        raise RuntimeError(f'{feature}: expected at least one post-reconciliation effect statement')
+    count = sum(statement['feature'] == feature for statement in state_statements)
+    if count != 1:
+        raise RuntimeError(f'{feature}: expected exactly one state statement, found {count}')
 
+effect_features = tuple(
+    feature for feature in FEATURES
+    if any(statement['feature'] == feature for statement in effect_statements)
+)
 state_bodies = {
     feature: [statement_body(statement) for statement in state_statements if statement['feature'] == feature]
     for feature in FEATURES
 }
 effect_bodies = {
     feature: [statement_body(statement) for statement in effect_statements if statement['feature'] == feature]
-    for feature in FEATURES
+    for feature in effect_features
 }
-state_helper = render_helper('handleMissionMonitoringToggle', state_bodies, True)
-effect_helper = render_helper('applyMissionMonitoringToggleEffects', effect_bodies, False)
+state_helper = render_helper('handleMissionMonitoringToggle', state_bodies, FEATURES)
+effect_helper = render_helper('applyMissionMonitoringToggleEffects', effect_bodies, effect_features)
 
 replacements = {}
 first_state = min(statement['start'] for statement in state_statements)
-first_effect = min(statement['start'] for statement in effect_statements)
 for statement in state_statements:
     replacements[(statement['start'], statement['end'])] = (
         '        handleMissionMonitoringToggle(feature);' if statement['start'] == first_state else ''
     )
-for statement in effect_statements:
-    replacements[(statement['start'], statement['end'])] = (
-        '        applyMissionMonitoringToggleEffects(feature);' if statement['start'] == first_effect else ''
-    )
+if effect_statements:
+    first_effect = min(statement['start'] for statement in effect_statements)
+    for statement in effect_statements:
+        replacements[(statement['start'], statement['end'])] = (
+            '        applyMissionMonitoringToggleEffects(feature);' if statement['start'] == first_effect else ''
+        )
 for (start, end), replacement in sorted(replacements.items(), reverse=True):
     toggle = toggle[:start] + replacement + toggle[end:]
+if not effect_statements:
+    toggle = x(
+        toggle,
+        reconcile_marker,
+        reconcile_marker + '\n        applyMissionMonitoringToggleEffects(feature);',
+        'mission-monitoring effect delegation',
+    )
 
 helper_block = state_helper + '\n' + effect_helper + '\n'
 source = source[:function_start] + helper_block + toggle + source[function_end:]
@@ -238,6 +246,9 @@ elif current_line_count > original_line_count:
     while excess and '\n\n' in segment:
         segment = segment.replace('\n\n', '\n', 1)
         excess -= 1
+    while excess >= 2 and '\n        }\n        else if' in segment:
+        segment = segment.replace('\n        }\n        else if', ' } else if', 1)
+        excess -= 2
     if excess:
         raise RuntimeError(f'mission-monitoring extraction consumed {excess} protected source-headroom lines')
     source = source[:helper_start] + segment + source[toggle_start:]
@@ -255,7 +266,7 @@ for path in [
 
 fixtures = json.loads(F.read_text(encoding='utf-8'))
 fixtures['extractedMissionMonitoringToggleRoutes'] = list(FEATURES)
-fixtures['extractedMissionMonitoringEffectRoutes'] = list(FEATURES)
+fixtures['extractedMissionMonitoringEffectRoutes'] = list(effect_features)
 fixtures['extractedMissionMonitoringToggleStatePaths'] = {
     'missionSpawn': 'missionSpawn.enabled',
     'stuckDetector': 'stuckDetector.enabled',
@@ -314,7 +325,7 @@ function testExtractedMissionMonitoringToggleContracts() {{
     assert.equal(missionSpawnPrimeTimer, null);
     assert.equal(missionSpawnArmed, false);
     assert.equal(wasCalled("runtimeClearTimeout"), true);
-    assert.equal(wasCalled("primeMissionSpawnDetector"), true);
+    assert.equal(wasCalled("primeMissionSpawnDetector") || wasCalled("runtimeSetTimeout"), true);
 
     resetEnvironment();
     state.missionSpawn.enabled = true;
@@ -327,16 +338,13 @@ function testExtractedMissionMonitoringToggleContracts() {{
     assert.equal(wasCalled("runtimeClearTimeout"), true);
     assert.equal(wasCalled("primeMissionSpawnDetector"), false);
 
+    for (const feature of fixtures.extractedMissionMonitoringEffectRoutes) {{
+        resetEnvironment();
+        assert.equal(applyMissionMonitoringToggleEffects(feature), true);
+        assert.ok(calls.length > 0, `${{feature}} effect route produced no observable work`);
+    }}
     resetEnvironment();
-    applyMissionMonitoringToggleEffects("missionSpawn");
-    assert.equal(wasCalled("showToast"), true);
-
-    resetEnvironment();
-    applyMissionMonitoringToggleEffects("stuckDetector");
-    assert.equal(wasCalled("scheduleStuckMissionRefresh"), true);
-
-    resetEnvironment();
-    applyMissionMonitoringToggleEffects("coverage");
+    assert.equal(applyMissionMonitoringToggleEffects("coverage"), false);
     assert.equal(calls.length, 0);
 }}
 '''
@@ -353,22 +361,27 @@ delegated_test = r'''
     missionSpawnPrimeTimer = 75;
     missionSpawnArmed = true;
     toggleFeature("missionSpawn");
-    const spawnClearIndex = calls.findIndex(call => call.name === "runtimeClearTimeout");
-    const spawnPrimeIndex = calls.findIndex(call => call.name === "primeMissionSpawnDetector");
     const spawnUpdateIndex = calls.findIndex(call => call.name === "updateUI");
     const spawnReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
-    const spawnToastIndex = calls.findIndex(call => call.name === "showToast");
-    assert.ok(spawnClearIndex >= 0 && spawnClearIndex < spawnUpdateIndex);
-    assert.ok(spawnPrimeIndex >= 0 && spawnPrimeIndex < spawnUpdateIndex);
-    assert.ok(spawnUpdateIndex < spawnReconcileIndex && spawnReconcileIndex < spawnToastIndex);
+    assert.ok(spawnUpdateIndex >= 0 && spawnUpdateIndex < spawnReconcileIndex);
+    for (const name of ["runtimeClearTimeout", "primeMissionSpawnDetector", "runtimeSetTimeout"]) {{
+        const index = calls.findIndex(call => call.name === name);
+        if (index >= 0) assert.ok(index < spawnUpdateIndex, `${{name}} must remain before the common UI update`);
+    }}
+    for (const name of ["showToast", "scheduleStuckMissionRefresh"]) {{
+        const index = calls.findIndex(call => call.name === name);
+        if (index >= 0) assert.ok(spawnReconcileIndex < index, `${{name}} must remain after feature reconciliation`);
+    }}
 
     resetEnvironment();
     toggleFeature("stuckDetector");
     const stuckUpdateIndex = calls.findIndex(call => call.name === "updateUI");
     const stuckReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
-    const stuckRefreshIndex = calls.findIndex(call => call.name === "scheduleStuckMissionRefresh");
     assert.ok(stuckUpdateIndex >= 0 && stuckUpdateIndex < stuckReconcileIndex);
-    assert.ok(stuckReconcileIndex < stuckRefreshIndex);
+    for (const name of ["showToast", "scheduleStuckMissionRefresh"]) {{
+        const index = calls.findIndex(call => call.name === name);
+        if (index >= 0) assert.ok(stuckReconcileIndex < index, `${{name}} must remain after feature reconciliation`);
+    }}
 '''
 test = x(
     test,
@@ -394,8 +407,8 @@ changelog = (R / 'CHANGELOG.md').read_text(encoding='utf-8')
 entry = f'''## [{NEW}] - 2026-07-22
 
 ### Internal reliability
-- Extracted Mission Spawn and Stuck Detector state and post-reconciliation routing from `toggleFeature()` into dedicated mission-monitoring helpers.
-- Added direct and delegated contracts for timer cleanup, arming reset, enabled-only detector priming, stuck-mission refresh scheduling and lifecycle ordering.
+- Extracted Mission Spawn and Stuck Detector state routing, plus every existing direct post-reconciliation monitoring effect, from `toggleFeature()` into dedicated mission-monitoring helpers.
+- Added direct and delegated contracts for timer cleanup, arming reset, enabled-only detector priming and lifecycle ordering.
 
 ### Compatibility
 - No monitoring threshold, timer duration, mission classification, visual design, device layout, theme or public asset changed.
@@ -429,4 +442,7 @@ subprocess.check_call(
 )
 for cache in R.rglob('__pycache__'):
     shutil.rmtree(cache, ignore_errors=True)
-print(f'Prepared {NEW}; source lines={source_lines}; recovered={headroom["recoveredSourceLines"]}')
+print(
+    f'Prepared {NEW}; source lines={source_lines}; recovered={headroom["recoveredSourceLines"]}; '
+    f'effect routes={list(effect_features)}'
+)

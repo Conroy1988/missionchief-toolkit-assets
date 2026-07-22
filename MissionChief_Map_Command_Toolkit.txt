@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.26
+// @version      4.20.27
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.26',
+        version: '4.20.27',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28921,13 +28921,27 @@ Create the private backup now?`);
         showToast('Command bar collapsed');
     }
 
-    function toggleFeature(feature) {
-        if (feature === 'clean') state.cleanMode = !state.cleanMode;
+    function handleMapVisibilityToggle(feature) {
         if (feature === 'markerFocus') state.markerFocus = !state.markerFocus;
-        if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
-        if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
-        if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
-        if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+        else if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
+        else if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
+        else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
+        else if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+        else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+        else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+        else if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+        else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+        else return false;
+        return true;
+    }
+    function applyMapVisibilityToggleEffects(feature) {
+        if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
+        if (feature === 'buildings') synchronisePersonalBuildingVisibility();
+        if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+    }
+    function toggleFeature(feature) {
+        handleMapVisibilityToggle(feature);
+        if (feature === 'clean') state.cleanMode = !state.cleanMode;
         if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
         if (feature === 'autoLoadAllVehicles') {
             state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
@@ -28969,17 +28983,11 @@ Create the private backup now?`);
             state.autoNight.enabled = !state.autoNight.enabled;
             state.autoNight.lastBucket = '';
         }
-        if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
-        if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
-        if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
-        if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
         if (state.cleanMode) closePanel();
         if (!criticalViewActive) saveState();
         applyRootAttributes();
         updateUI();
-        if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
-        if (feature === 'buildings') synchronisePersonalBuildingVisibility();
-        if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+        applyMapVisibilityToggleEffects(feature);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
         if (feature === 'missionValue') {
             if (state.missionValue) installMissionValueWindows();
@@ -29058,13 +29066,11 @@ Create the private backup now?`);
         if (startMin < endMin) return current >= startMin && current < endMin;
         return current >= startMin || current < endMin;
     }
-
     function parseTime(value, fallback) {
         const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
         if (!match) return fallback;
         return clamp(match[1], 0, 23, Math.floor(fallback / 60)) * 60 + clamp(match[2], 0, 59, fallback % 60);
     }
-
     function shouldSuppressControl() {
         if (state.cleanMode) return false;
         if (document.body && document.body.classList.contains('modal-open')) return true;
@@ -29079,13 +29085,11 @@ Create the private backup now?`);
             });
         });
     }
-
     function refreshSuppression() {
         const control = document.getElementById(SCRIPT.controlId);
         if (!control) return;
         control.classList.toggle('mcms-hidden-by-menu', shouldSuppressControl());
     }
-
     function fitControlToMap() {
         runtimeClearTimeout(fitTimer);
         fitTimer = runtimeSetTimeout(() => {
@@ -29114,7 +29118,6 @@ Create the private backup now?`);
             panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
         }, 60);
     }
-
     function setPanelCssPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
@@ -29127,7 +29130,6 @@ Create the private backup now?`);
         panel.style.setProperty('bottom', 'auto', 'important');
         panel.style.setProperty('transform', 'none', 'important');
     }
-
     function clampPanelPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return { left: 12, top: 12 };
@@ -29137,7 +29139,6 @@ Create the private backup now?`);
         const panelHeight = Math.min(panel.offsetHeight || 500, bounds.maxHeight);
         return clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds);
     }
-
     function getDefaultPanelPosition() {
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
@@ -29153,7 +29154,6 @@ Create the private backup now?`);
             top: controlRect.top
         };
     }
-
     function positionPanelOverlay(useSavedPosition = true) {
         if (dragState) return;
         const panel = document.getElementById(SCRIPT.panelId);

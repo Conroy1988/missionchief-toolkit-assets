@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.27] - 2026-07-22
+
+### Internal reliability
+- Extracted the nine map and visibility state routes from `toggleFeature()` into `handleMapVisibilityToggle()` while preserving all saved-state, root-attribute, UI-refresh and snapshot-reconciliation behaviour.
+- Extracted vehicle/building layer synchronization into `applyMapVisibilityToggleEffects()` at the same post-render position, including Economy Mode resynchronization.
+- Added direct and delegated fixture coverage for route inventory, unknown-route safety, state parity and the exact update → layer sync → Economy Mode → reconciliation ordering.
+
+### Compatibility
+- No map presentation, mission visibility, overlay behaviour, Desktop/Tablet/iOS layout effect, setting name, theme, payout presentation or public asset changed.
+
 ## [4.20.26] - 2026-07-21
 
 ### Engineering

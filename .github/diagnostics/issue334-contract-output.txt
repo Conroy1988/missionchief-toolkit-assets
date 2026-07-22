@@ -1,0 +1,18 @@
+returncode=1
+
+--- stdout ---
+
+--- stderr ---
+/tmp/tmpfwg51adg/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032.py:151: SyntaxWarning: invalid escape sequence '\s'
+  """    mission_monitoring_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_mission_monitoring_toggle)
+  File "/tmp/tmpfwg51adg/repo/.github/scripts/test_settings_ui_contract.py", line 111
+    mission_monitoring_toggle_routes = values(r'feature\s*===\s*["']([^"']+)["']', handle_mission_monitoring_toggle)
+                                                                   ^
+SyntaxError: closing parenthesis ']' does not match opening parenthesis '('
+Traceback (most recent call last):
+  File "/tmp/tmpfwg51adg/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032.py", line 320, in <module>
+    subprocess.check_call(
+  File "/usr/lib/python3.12/subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '/tmp/tmpfwg51adg/repo/.github/scripts/test_settings_ui_contract.py']' returned non-zero exit status 1.
+

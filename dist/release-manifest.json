@@ -1,17 +1,17 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "version": "4.20.36",
+  "version": "4.20.37",
   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
   "distributionFiles": [
     "dist/MissionChief_Map_Command_Toolkit.user.js",
     "dist/MissionChief_Map_Command_Toolkit.txt"
   ],
-  "sha256": "fa30c9994641ba51920833e0fb389b02e9b13dcf8103edd51317291473850bad",
-  "bytes": 2073493,
+  "sha256": "690088591fd205f845960c44ecc4b6e6560b49a1da50d8eddf430de961e296ef",
+  "bytes": 2074806,
   "lines": 31654,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
-    "runtimeVersion": "4.20.36",
+    "runtimeVersion": "4.20.37",
     "author": "Conroy1988",
     "license": "MIT",
     "missionChiefRules": [

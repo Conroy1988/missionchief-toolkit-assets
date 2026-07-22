@@ -1499,6 +1499,27 @@
     },
     {
       "aliases": [
+        "Level 1 Public Order Officer",
+        "Level 1 Public Order Officers"
+      ],
+      "arrAttributes": [
+        "level_1_public_order"
+      ],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "public-order-level-1",
+      "pair": false,
+      "training": [
+        "Level 1 Public Order Officer",
+        "Level 1 Public Order",
+        "Level 1 Public Order Training",
+        "level_1_public_order"
+      ],
+      "types": []
+    },
+    {
+      "aliases": [
         "Level 2 Public Order Officer",
         "Level 2 Public Order Officers"
       ],

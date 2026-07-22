@@ -39,8 +39,7 @@ if old_listener.count("runtimeListen(") != 2:
 if old_listener.count("runtimeSetTimeout(") != 2 or old_listener.count("runtimeRequestAnimationFrame(") != 1:
     raise RuntimeError("listener boundary did not contain the expected deferred refresh calls")
 new_listener = """        runtimeListen(doc, 'click', event => {
-            const target = event.target;
-            if (!target?.matches?.('.vehicle_checkbox, input[type=\"checkbox\"][vehicle_type_id]') && !target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return;
+            const target = event.target; if (!target?.matches?.('.vehicle_checkbox, input[type=\"checkbox\"][vehicle_type_id]') && !target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return;
             missionRequirementsScheduleDocumentRecords(doc);
         }, true);"""
 source = source[:listener_start] + new_listener + source[listener_end:]

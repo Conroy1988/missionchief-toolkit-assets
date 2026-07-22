@@ -9,25 +9,78 @@
     "actions/upload-pages-artifact"
   ],
   "allowedWritePermissions": {
-    ".github/workflows/apply-development-package.yml": ["contents", "issues", "pull-requests"],
-    ".github/workflows/asset-health-monitor.yml": ["issues"],
-    ".github/workflows/discord-release-preview.yml": ["issues"],
-    ".github/workflows/github-pages.yml": ["id-token", "pages"],
-    ".github/workflows/greasyfork-release-monitor.yml": ["contents"],
-    ".github/workflows/import-canonical-userscript.yml": ["contents"],
-    ".github/workflows/owner-release-command.yml": ["actions", "contents", "issues"],
-    ".github/workflows/pages-production-monitor.yml": ["issues"],
-    ".github/workflows/prepare-release-rollback.yml": ["contents", "issues", "pull-requests"],
-    ".github/workflows/publish-update-manifest.yml": ["contents"],
-    ".github/workflows/reconcile-release-announcement-state.yml": ["contents"],
-    ".github/workflows/release-recovery.yml": ["contents"],
-    ".github/workflows/release-toolkit-dry-run.yml": ["contents"],
-    ".github/workflows/release-toolkit.yml": ["actions", "contents"],
-    ".github/workflows/repository-audit.yml": ["contents"],
-    ".github/workflows/sync-repository-labels.yml": ["issues"],
-    ".github/workflows/update-release-dashboard.yml": ["contents"],
-    ".github/workflows/validate-userscript.yml": ["contents"]
+    ".github/workflows/apply-development-package.yml": [
+      "contents",
+      "issues",
+      "pull-requests"
+    ],
+    ".github/workflows/asset-health-monitor.yml": [
+      "issues"
+    ],
+    ".github/workflows/auto-release-after-validation.yml": [
+      "actions",
+      "contents"
+    ],
+    ".github/workflows/discord-release-preview.yml": [
+      "issues"
+    ],
+    ".github/workflows/github-pages.yml": [
+      "id-token",
+      "pages"
+    ],
+    ".github/workflows/greasyfork-release-monitor.yml": [
+      "contents"
+    ],
+    ".github/workflows/import-canonical-userscript.yml": [
+      "contents"
+    ],
+    ".github/workflows/owner-release-command.yml": [
+      "actions",
+      "contents",
+      "issues"
+    ],
+    ".github/workflows/pages-production-monitor.yml": [
+      "issues"
+    ],
+    ".github/workflows/prepare-release-rollback.yml": [
+      "contents",
+      "issues",
+      "pull-requests"
+    ],
+    ".github/workflows/publish-update-manifest.yml": [
+      "contents"
+    ],
+    ".github/workflows/reconcile-release-announcement-state.yml": [
+      "contents"
+    ],
+    ".github/workflows/release-recovery.yml": [
+      "contents"
+    ],
+    ".github/workflows/release-toolkit-dry-run.yml": [
+      "contents"
+    ],
+    ".github/workflows/release-toolkit.yml": [
+      "actions",
+      "contents"
+    ],
+    ".github/workflows/repository-audit.yml": [
+      "contents"
+    ],
+    ".github/workflows/sync-repository-labels.yml": [
+      "issues"
+    ],
+    ".github/workflows/update-release-dashboard.yml": [
+      "contents"
+    ],
+    ".github/workflows/validate-userscript.yml": [
+      "contents"
+    ]
   },
-  "forbiddenTriggers": ["pull_request_target"],
-  "forbiddenFragments": ["permissions: write-all", "secrets: inherit"]
+  "forbiddenTriggers": [
+    "pull_request_target"
+  ],
+  "forbiddenFragments": [
+    "permissions: write-all",
+    "secrets: inherit"
+  ]
 }

@@ -88,12 +88,7 @@ def main() -> int:
     assert manifest["updateUrl"].startswith("https://update.greasyfork.org/scripts/586018/")
 
     for marker in [
-        "workflow_run:",
         "workflow_dispatch:",
-        "- Release Toolkit",
-        "github.event_name == 'workflow_dispatch'",
-        "github.event.workflow_run.conclusion == 'success'",
-        "github.event.workflow_run.head_branch == 'main'",
         "Build manifest from verified release ledger",
         "status/update-manifest.json",
         "'githubRelease': 'published'",
@@ -103,24 +98,25 @@ def main() -> int:
         "git push origin HEAD:main",
     ]:
         assert marker in workflow, f"verified manifest workflow marker missing: {marker}"
-    trigger_index = workflow.index("workflow_run:")
+    assert "workflow_run:" not in workflow, "manifest publication must not duplicate the explicit release dispatch"
     dispatch_index = workflow.index("workflow_dispatch:")
     build_index = workflow.index("Build manifest from verified release ledger")
     push_index = workflow.index("git push origin HEAD:main")
-    assert trigger_index < dispatch_index < build_index < push_index, "manifest workflow triggers must precede verified publication"
+    assert dispatch_index < build_index < push_index, "manifest dispatch must precede verified publication"
 
     for marker in [
-        "- name: Publish verified update manifest",
+        "- name: Publish update channels in parallel",
         "gh workflow run publish-update-manifest.yml --ref main",
-        "gh run list --workflow publish-update-manifest.yml --event workflow_dispatch --branch main",
-        "gh run watch \"$RUN_ID\" --exit-status",
-        "MANIFEST_RUN_ID: ${{ steps.update_manifest.outputs.run_id }}",
+        "gh workflow run github-pages.yml --ref main",
+        'gh run list --workflow "$workflow" --event workflow_dispatch --branch main',
+        'gh run watch "$MANIFEST_RUN_ID" --exit-status',
+        'gh run watch "$PAGES_RUN_ID" --exit-status',
+        "MANIFEST_RUN_ID: ${{ steps.channels.outputs.manifest_run_id }}",
     ]:
-        assert marker in release_workflow, f"release workflow manifest dispatch marker missing: {marker}"
+        assert marker in release_workflow, f"release workflow parallel publication marker missing: {marker}"
     dashboard_index = release_workflow.index("- name: Record successful release in dashboard")
-    publish_index = release_workflow.index("- name: Publish verified update manifest")
-    pages_index = release_workflow.index("- name: Deploy verified documentation site")
-    assert dashboard_index < publish_index < pages_index, "manifest must publish after dashboard reconciliation and before release completion"
+    publish_index = release_workflow.index("- name: Publish update channels in parallel")
+    assert dashboard_index < publish_index, "parallel update channels must start after dashboard reconciliation"
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)
     assert result.returncode == 0, "version status runtime fixtures failed"

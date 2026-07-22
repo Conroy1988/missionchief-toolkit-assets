@@ -148,8 +148,8 @@ jobs:
           set -euo pipefail
           META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
           SYNCED=false
-          for attempt in $(seq 1 30); do
-            echo "Greasy Fork verification attempt $attempt of 30..."
+          for attempt in $(seq 1 180); do
+            echo "Greasy Fork verification attempt $attempt of 180..."
             if curl --fail --silent --show-error --location --compressed --max-time 30 \
               --header "Cache-Control: no-cache" \
               "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork-release.meta.js; then
@@ -158,7 +158,7 @@ jobs:
               echo "Greasy Fork version: ${LIVE_VERSION:-unavailable}"
               [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] && { SYNCED=true; break; }
             fi
-            sleep 60
+            sleep 10
           done
           [[ "$SYNCED" == "true" ]] || { echo "::error::Greasy Fork did not publish version $RELEASE_VERSION within 30 minutes. Discord was not notified."; exit 1; }
 
@@ -232,8 +232,8 @@ jobs:
           git pull --rebase origin main
           git push origin HEAD:main
 
-      - name: Publish verified update manifest
-        id: update_manifest
+      - name: Publish update channels in parallel
+        id: channels
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
@@ -241,47 +241,44 @@ jobs:
         run: |
           set -euo pipefail
           STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
           gh workflow run publish-update-manifest.yml --ref main
-
-          RUN_ID=""
-          for attempt in $(seq 1 60); do
-            RUN_ID="$(gh run list --workflow publish-update-manifest.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
-            [[ -n "$RUN_ID" ]] && break
-            sleep 2
-          done
-          [[ -n "$RUN_ID" ]] || { echo "::error::The dispatched update-manifest run was not found."; exit 1; }
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Waiting for update-manifest run ${RUN_ID} for Toolkit ${RELEASE_VERSION}."
-          gh run watch "$RUN_ID" --exit-status
-
-      - name: Deploy verified documentation site
-        id: pages_deploy
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           gh workflow run github-pages.yml --ref main
 
-          RUN_ID=""
-          for attempt in $(seq 1 60); do
-            RUN_ID="$(gh run list --workflow github-pages.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
-            [[ -n "$RUN_ID" ]] && break
-            sleep 2
-          done
-          [[ -n "$RUN_ID" ]] || { echo "::error::The dispatched GitHub Pages deployment run was not found."; exit 1; }
-          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Waiting for GitHub Pages deployment run ${RUN_ID} for Toolkit ${RELEASE_VERSION}."
-          gh run watch "$RUN_ID" --exit-status
+          find_run() {
+            local workflow="$1"
+            local run_id=""
+            for attempt in $(seq 1 60); do
+              run_id="$(gh run list --workflow "$workflow" --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+              [[ -n "$run_id" ]] && { printf '%s' "$run_id"; return 0; }
+              sleep 2
+            done
+            return 1
+          }
+
+          MANIFEST_RUN_ID="$(find_run publish-update-manifest.yml)" || { echo "::error::The dispatched update-manifest run was not found."; exit 1; }
+          PAGES_RUN_ID="$(find_run github-pages.yml)" || { echo "::error::The dispatched GitHub Pages run was not found."; exit 1; }
+
+          echo "manifest_run_id=$MANIFEST_RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "pages_run_id=$PAGES_RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Waiting in parallel for update manifest ${MANIFEST_RUN_ID} and Pages ${PAGES_RUN_ID}."
+
+          set +e
+          gh run watch "$MANIFEST_RUN_ID" --exit-status & manifest_pid=$!
+          gh run watch "$PAGES_RUN_ID" --exit-status & pages_pid=$!
+          wait "$manifest_pid"; manifest_status=$?
+          wait "$pages_pid"; pages_status=$?
+          set -e
+
+          [[ "$manifest_status" -eq 0 ]] || { echo "::error::Update-manifest publication failed."; exit 1; }
+          [[ "$pages_status" -eq 0 ]] || { echo "::error::GitHub Pages deployment failed."; exit 1; }
 
       - name: Write release summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
-          MANIFEST_RUN_ID: ${{ steps.update_manifest.outputs.run_id }}
-          PAGES_RUN_ID: ${{ steps.pages_deploy.outputs.run_id }}
+          MANIFEST_RUN_ID: ${{ steps.channels.outputs.manifest_run_id }}
+          PAGES_RUN_ID: ${{ steps.channels.outputs.pages_run_id }}
         shell: bash
         run: |
           {

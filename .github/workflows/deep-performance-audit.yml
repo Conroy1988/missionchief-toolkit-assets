@@ -11,18 +11,6 @@ on:
       - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
       - ".github/workflows/deep-performance-audit.yml"
       - "docs/audits/deep-performance-audit-v4.20.17.md"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/scripts/deep_performance_audit.mjs"
-      - ".github/scripts/reconcile_deep_performance_audit.mjs"
-      - ".github/scripts/extract_deep_performance_evidence.mjs"
-      - ".github/scripts/test_deep_performance_audit.mjs"
-      - ".github/scripts/test_reconcile_deep_performance_audit.mjs"
-      - ".github/workflows/deep-performance-audit.yml"
-      - "docs/audits/deep-performance-audit-v4.20.17.md"
   workflow_dispatch:
 
 permissions:

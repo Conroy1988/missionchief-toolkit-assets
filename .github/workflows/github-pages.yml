@@ -28,12 +28,6 @@ on:
       - "docs/site-assets/**"
       - "docs/SITE.md"
       - "docs/media/**"
-      - "status/release-dashboard.json"
-      - "CHANGELOG.md"
-      - "README.md"
-  release:
-    types:
-      - published
   workflow_dispatch:
 
 permissions:
@@ -53,7 +47,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: ${{ github.event_name == 'release' && 'main' || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Validate source syntax

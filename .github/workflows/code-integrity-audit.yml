@@ -9,15 +9,6 @@ on:
       - ".github/scripts/check_code_integrity.py"
       - ".github/scripts/test_code_integrity.py"
       - ".github/workflows/code-integrity-audit.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/code-integrity-policy.json"
-      - ".github/scripts/check_code_integrity.py"
-      - ".github/scripts/test_code_integrity.py"
-      - ".github/workflows/code-integrity-audit.yml"
   workflow_dispatch:
 
 permissions:

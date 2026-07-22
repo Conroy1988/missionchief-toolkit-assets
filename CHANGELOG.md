@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.28] - 2026-07-22
+
+### Internal reliability
+- Extracted Mission Inspector, Mission Value, Mission Requirements and Custom Vehicle Badges state routing from `toggleFeature()` into `handleMissionWindowToggle()`.
+- Extracted their post-reconciliation install, clear and notification effects into `applyMissionWindowToggleEffects()` without changing execution order.
+- Added direct and delegated fixture coverage for route inventory, state isolation, unknown-route safety, enabled/disabled effects and update → reconciliation → effect ordering.
+
+### Compatibility
+- No mission-window presentation, Desktop/Tablet/iOS behaviour, setting name, theme, payout presentation or public asset changed.
+
 ## [4.20.27] - 2026-07-22
 
 ### Internal reliability

@@ -318,5 +318,23 @@
     "myMissions": "visibility.myMissions",
     "roadPriority": "roadPriority",
     "vehicles": "visibility.vehicles"
+  },
+  "extractedMissionWindowToggleRoutes": [
+    "customVehicleBadges",
+    "missionInspector",
+    "missionRequirements",
+    "missionValue"
+  ],
+  "extractedMissionWindowEffectRoutes": [
+    "customVehicleBadges",
+    "missionInspector",
+    "missionRequirements",
+    "missionValue"
+  ],
+  "extractedMissionWindowToggleStatePaths": {
+    "customVehicleBadges": "customVehicleBadges",
+    "missionInspector": "missionInspector",
+    "missionRequirements": "missionRequirements",
+    "missionValue": "missionValue"
   }
 }

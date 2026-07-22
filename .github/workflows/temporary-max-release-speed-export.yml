@@ -58,6 +58,8 @@ jobs:
             .github/workflows/release-toolkit.yml
             .github/workflows/userscript-structural-audit.yml
           )
+          printf 'CHANGED\n'; printf '%s\n' "${changed[@]}"
+          printf 'EXPECTED\n'; printf '%s\n' "${expected[@]}"
           test "${changed[*]}" = "${expected[*]}"
 
       - name: Validate workflow security and release contracts

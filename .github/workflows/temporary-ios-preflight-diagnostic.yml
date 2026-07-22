@@ -1,0 +1,39 @@
+name: Temporary iOS Preflight Diagnostic
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/temporary-ios-preflight-diagnostic.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - name: Capture deterministic preflight
+        id: preflight
+        shell: bash
+        run: |
+          set +e
+          bash .github/scripts/run_userscript_preflight.sh --contracts > ios-preflight.log 2>&1
+          status=$?
+          cat ios-preflight.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Upload complete preflight log
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ios-preflight-log
+          path: ios-preflight.log
+          if-no-files-found: error
+          retention-days: 1
+      - name: Stop on preflight failure
+        if: steps.preflight.outputs.status != '0'
+        run: exit 1

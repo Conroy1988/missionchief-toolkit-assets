@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.33] - 2026-07-22
+
+### Internal reliability
+- Extracted Clean Mode, Shortcuts and Compact Dock state routing from `toggleFeature()` into a dedicated interface-shell helper.
+- Preserved the shared Clean Mode panel-close lifecycle, persistence, root attributes, UI synchronization and feature-reconciliation order.
+- Added direct and delegated contracts for all three routes and unknown-route safety.
+
+### Benefit
+- Future interface-shell changes are easier to isolate, test and roll back without tracing unrelated operational feature branches.
+
+### Compatibility
+- No visual design, layout, theme, notification, timing, public asset or user-facing feature behaviour changed.
+
 ## [4.20.32] - 2026-07-22
 
 ### Internal reliability

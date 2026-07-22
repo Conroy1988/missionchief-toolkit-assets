@@ -45,6 +45,7 @@ FUNCTION_NAMES = [
     "applyPayoutAudioToggleEffects",
     "handleMissionMonitoringToggle",
     "applyMissionMonitoringToggleEffects",
+    "handleInterfaceShellToggle",
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
@@ -87,6 +88,7 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     apply_payout_audio_effects = extract_function(source, masked, "applyPayoutAudioToggleEffects")
     handle_mission_monitoring_toggle = extract_function(source, masked, "handleMissionMonitoringToggle")
     apply_mission_monitoring_effects = extract_function(source, masked, "applyMissionMonitoringToggleEffects")
+    handle_interface_shell_toggle = extract_function(source, masked, "handleInterfaceShellToggle")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
     actions = values(r'data-action\s*=\s*["\']([^"\']+)["\']', create_panel)
@@ -110,7 +112,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     payout_audio_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_payout_audio_effects)
     mission_monitoring_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_mission_monitoring_toggle)
     mission_monitoring_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_mission_monitoring_effects)
-    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes + payout_audio_toggle_routes + mission_monitoring_toggle_routes))
+    interface_shell_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_interface_shell_toggle)
+    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes + payout_audio_toggle_routes + mission_monitoring_toggle_routes + interface_shell_toggle_routes))
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
     assert actions == sorted(fixtures["actions"]), "Visible data-action inventory changed"
@@ -138,6 +141,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert not set(direct_toggle_routes).intersection(mission_monitoring_toggle_routes), "Extracted mission-monitoring toggles remain duplicated"
     assert "handleMissionMonitoringToggle(feature)" in toggle_feature
     assert "applyMissionMonitoringToggleEffects(feature)" in toggle_feature
+    assert interface_shell_toggle_routes == sorted(fixtures["extractedInterfaceShellToggleRoutes"]), "Extracted interface-shell toggle routing changed"
+    assert not set(direct_toggle_routes).intersection(interface_shell_toggle_routes), "Extracted interface-shell toggles remain duplicated"
+    assert "handleInterfaceShellToggle(feature)" in toggle_feature
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
@@ -670,6 +676,24 @@ function testExtractedMissionMonitoringToggleContracts() {{
     assert.equal(calls.length, 0);
 }}
 
+
+function testExtractedInterfaceShellToggleContracts() {{
+    for (const [feature, path] of Object.entries(fixtures.extractedInterfaceShellToggleStatePaths)) {{
+        resetEnvironment();
+        const before = pathValue(state, path);
+        assert.equal(handleInterfaceShellToggle(feature), true, `${{feature}} was not handled directly`);
+        assert.notEqual(pathValue(state, path), before, `${{feature}} did not toggle ${{path}}`);
+        assert.equal(localStorage.getItem(SCRIPT.storageState), null);
+        assert.equal(wasCalled("updateUI"), false);
+    }}
+
+    resetEnvironment();
+    const unknownBefore = JSON.stringify(state);
+    assert.equal(handleInterfaceShellToggle("unknown-interface-shell-toggle"), false);
+    assert.equal(JSON.stringify(state), unknownBefore);
+    assert.equal(calls.length, 0);
+}}
+
 async function testToggleContracts() {{
     for (const [feature, path] of Object.entries(fixtures.toggleStatePaths)) {{
         resetEnvironment();
@@ -762,6 +786,22 @@ async function testToggleContracts() {{
     const stuckToastIndex = calls.findIndex(call => call.name === "showToast");
     assert.ok(stuckUpdateIndex >= 0 && stuckUpdateIndex < stuckReconcileIndex);
     assert.ok(stuckReconcileIndex < stuckToastIndex);
+
+
+    for (const [feature, path] of Object.entries(fixtures.extractedInterfaceShellToggleStatePaths)) {{
+        resetEnvironment();
+        const before = pathValue(state, path);
+        toggleFeature(feature);
+        assert.notEqual(pathValue(state, path), before, `${{feature}} did not toggle through the main router`);
+        assert.equal(localStorage.getItem(SCRIPT.storageState) !== null, true, `${{feature}} did not persist state`);
+        const updateIndex = calls.findIndex(call => call.name === "updateUI");
+        const reconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+        assert.ok(updateIndex >= 0 && updateIndex < reconcileIndex, `${{feature}} reconciliation must remain after UI update`);
+        if (feature === "clean") {{
+            const closeIndex = calls.findIndex(call => call.name === "closePanel");
+            assert.ok(closeIndex >= 0 && closeIndex < updateIndex, "Clean Mode must close the panel before UI synchronization");
+        }}
+    }}
 
     resetEnvironment();
     toggleFeature("criticalView");
@@ -962,12 +1002,13 @@ async function testSettingContracts() {{
     testExtractedMissionWindowToggleContracts();
     testExtractedPayoutAudioToggleContracts();
     testExtractedMissionMonitoringToggleContracts();
+    testExtractedInterfaceShellToggleContracts();
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
     testDeviceLayoutSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted mission-monitoring toggle parity, extracted financial route parity, extracted device-layout setting parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted mission-monitoring toggle parity, extracted interface-shell toggle parity, extracted financial route parity, extracted device-layout setting parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

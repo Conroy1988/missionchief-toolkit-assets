@@ -29,9 +29,11 @@ jobs:
           cat \
             .github/development-packages/max-release-speed.part-00 \
             .github/development-packages/max-release-speed.part-01 \
-            .github/development-packages/max-release-speed.part-02 > /tmp/max-release-speed.b64
+            .github/development-packages/max-release-speed.part-02 \
+            .github/development-packages/max-release-speed.part-03 > /tmp/max-release-speed.b64
+          test "$(sha256sum /tmp/max-release-speed.b64 | awk '{print $1}')" = "c95f0d46c41da4b57dd2d3e48db6a28e7d0e376b854fbfd4eb94694768431d8b"
           base64 -d /tmp/max-release-speed.b64 | gzip -d > /tmp/max-release-speed.patch
-          test -s /tmp/max-release-speed.patch
+          test "$(sha256sum /tmp/max-release-speed.patch | awk '{print $1}')" = "b0028372fd7a8bd3f2b8904d69d1dfce131c190b696848d16b5496a9ae118343"
           git apply --check /tmp/max-release-speed.patch
           git apply /tmp/max-release-speed.patch
 

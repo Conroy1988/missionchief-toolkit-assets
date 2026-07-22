@@ -546,12 +546,12 @@ headroom_fixture["expectedSourceLines"] = candidate_source_lines
 HEADROOM_FIXTURE.write_text(json.dumps(headroom_fixture, indent=2) + "\n", encoding="utf-8")
 
 headroom_test = HEADROOM_TEST.read_text(encoding="utf-8")
-old_headroom_check = '''    split_lines = re.split(r"\r?\n", text)
+old_headroom_check = r'''    split_lines = re.split(r"\r?\n", text)
     source_lines = len(split_lines) - 1 if text.endswith("\n") else len(split_lines)
     if source_lines != fixture["candidateSourceLines"]:
         fail(f"candidate source line count changed: {source_lines} != {fixture['candidateSourceLines']}")
 '''
-new_headroom_check = '''    split_lines = re.split(r"\r?\n", text)
+new_headroom_check = r'''    split_lines = re.split(r"\r?\n", text)
     source_lines = len(split_lines) - 1 if text.endswith("\n") else len(split_lines)
     approved_changes = fixture.get("approvedNonStyleChanges", [])
     if not isinstance(approved_changes, list):

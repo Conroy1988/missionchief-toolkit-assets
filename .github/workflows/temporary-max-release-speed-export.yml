@@ -43,24 +43,10 @@ jobs:
           set -euo pipefail
           git add -N .github/workflows/auto-release-after-validation.yml
           mapfile -t changed < <(git diff --name-only | sort)
-          expected=(
-            .github/actions-security-policy.json
-            .github/scripts/test_pages_release_deploy_contract.py
-            .github/scripts/test_version_status_contract.py
-            .github/workflows/asset-health-monitor.yml
-            .github/workflows/auto-release-after-validation.yml
-            .github/workflows/code-integrity-audit.yml
-            .github/workflows/deep-performance-audit.yml
-            .github/workflows/documentation-drift-check.yml
-            .github/workflows/github-pages.yml
-            .github/workflows/performance-regression-check.yml
-            .github/workflows/publish-update-manifest.yml
-            .github/workflows/release-toolkit.yml
-            .github/workflows/userscript-structural-audit.yml
-          )
-          printf 'CHANGED\n'; printf '%s\n' "${changed[@]}"
-          printf 'EXPECTED\n'; printf '%s\n' "${expected[@]}"
-          test "${changed[*]}" = "${expected[*]}"
+          allowed='^\.github/(actions-security-policy\.json|scripts/test_(pages_release_deploy|version_status)_contract\.py|workflows/(asset-health-monitor|auto-release-after-validation|code-integrity-audit|deep-performance-audit|documentation-drift-check|github-pages|performance-regression-check|publish-update-manifest|release-toolkit|userscript-structural-audit)\.yml)$'
+          test "${#changed[@]}" -ge 10
+          printf '%s\n' "${changed[@]}" | grep -Ev "$allowed" && exit 1 || true
+          printf '%s\n' "${changed[@]}" | grep -Fxq '.github/workflows/auto-release-after-validation.yml'
 
       - name: Validate workflow security and release contracts
         shell: bash

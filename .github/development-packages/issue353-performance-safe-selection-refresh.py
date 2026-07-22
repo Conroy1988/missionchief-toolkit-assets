@@ -54,10 +54,10 @@ for path in (
     path.write_text(source, encoding="utf-8")
 
 # Replace only the Issue #353 delegated-listener test block, retaining the
-# existing animation-queue flush and subsequent cross-source tests.
+# existing final animation-queue flush and subsequent cross-source tests.
 test = TEST.read_text(encoding="utf-8")
 test_start_marker = "const issue353ClickRegistration = listenedEvents.find(entry => entry.target === issue353RefreshDoc && entry.type === 'click');"
-test_end_marker = "flushAnimationFrames();"
+test_end_marker = "flushAnimationFrames();\nlistenedEvents.splice(issue353ListenerStart);"
 test_start = test.find(test_start_marker)
 test_end = test.find(test_end_marker, test_start)
 if test_start < 0 or test_end < 0:
@@ -69,6 +69,7 @@ issue353Checkbox.matches = selector => selector.includes('.vehicle_checkbox');
 const issue353CheckboxQueue = animationQueue.length;
 issue353ClickRegistration.listener({ target: issue353Checkbox });
 assert.strictEqual(animationQueue.length, issue353CheckboxQueue + 1, 'direct checkbox click schedules a post-selection Matrix refresh');
+flushAnimationFrames();
 const issue353AaoControl = new FakeElement('a', issue353RefreshDoc);
 const issue353AaoChild = new FakeElement('span', issue353RefreshDoc);
 issue353AaoChild.closestMap.set('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]', issue353AaoControl);
@@ -108,7 +109,6 @@ if source_lines != 31653:
 if headroom["recoveredSourceLines"] != 504:
     raise RuntimeError(f"source-headroom recovery changed unexpectedly: {headroom['recoveredSourceLines']}")
 
-# Enforce the baseline-locked upper bounds identified by the failed PR gate.
 managed_limits = {
     "runtimeSetTimeout(": 99,
     "runtimeRequestAnimationFrame(": 14,

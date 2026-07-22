@@ -1,0 +1,628 @@
+# Issue 353 selected Police Sergeant / recovery diagnostic
+
+Runtime source is exported verbatim for diagnosis only.
+
+## missionRequirementsLinkedTrainingValues
+
+```javascript
+
+
+function missionRequirementsLinkedTrainingValues(candidate, vehicleId, element) {
+        const values = missionRequirementsMetadataValues(element, 'training');
+        const numericVehicleId = Number(vehicleId);
+        if (!Number.isFinite(numericVehicleId) || numericVehicleId < 0) return values;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null;
+        const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`;
+        const scopes = Array.from(new Set([
+            candidate?.root,
+            candidate?.mount,
+            candidate?.source?.ownerDocument,
+            row?.ownerDocument,
+            element?.ownerDocument
+        ].filter(scope => scope?.querySelectorAll)));
+        for (const scope of scopes) {
+            for (const node of Array.from(scope.querySelectorAll(selector) || [])) {
+                for (const qualification of missionRequirementsMetadataValues(node, 'training')) values.add(qualification);
+                const linkedRow = node?.matches?.('tr') ? node : node?.closest?.('tr') || null;
+                const badges = Array.from(String(linkedRow?.textContent || linkedRow?.innerText || '').matchAll(/\[([^\]]+)\]/gu))
+                    .map(match => missionRequirementsCapabilityLabel(match[1]))
+                    .filter(Boolean);
+                for (const badge of badges) values.add(badge);
+            }
+        }
+        return values;
+    }
+
+```
+
+## missionRequirementsArrCapabilityState
+
+```javascript
+function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1) { const values = new Set(); const counts = new Map(); let authoritative = false; const attributes = Array.from(new Set(MISSION_REQUIREMENT_DEFINITIONS.flatMap(definition => Array.from(definition?.arrAttributes || [])).map(attribute => String(attribute || '').trim()).filter(attribute => /^[a-z0-9_:-]+$/iu.test(attribute)))); if (!attributes.length) return { values, counts, authoritative }; const inspect = scope => { if (!scope?.getAttribute) return; let present = false; for (const attribute of attributes) { const raw = scope.getAttribute(attribute); if (raw === null || raw === undefined) continue; present = true; if (!missionRequirementsPositiveCapabilityValue(raw)) continue; const token = missionRequirementsCapabilityLabel(attribute); const numeric = missionRequirementsOptionalNumber(raw); const count = numeric === null ? 1 : Math.max(0, numeric); values.add(token); if (count > 0) counts.set(token, Math.max(counts.get(token) || 0, count)); } if (present) authoritative = true; }; const inspectTree = scope => { if (!scope) return; inspect(scope); const selector = attributes.map(attribute => `[${attribute}]`).join(', '); for (const node of Array.from(scope.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); } if (element?.matches?.('.vehicle_checkbox') || element?.classList?.contains?.('vehicle_checkbox') || (typeof element?.checked === 'boolean' && element?.getAttribute?.('vehicle_type_id') !== null)) authoritative = true; return { values, counts, authoritative }; }
+
+
+const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"85":[1,3],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"100":[1,3],"101":[1,1],"102":[1,1],"116":[1,5]});
+
+```
+
+## missionRequirementsQualifiedStaffCounts
+
+```javascript
+    function missionRequirementsQualifiedStaffCounts(candidate, vehicleId, element, arrState = null) { const totals = new Map(); const seenNodes = new Set(); const seenEntities = new Map(); const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => (definition?.group || 'vehicles') === 'staff' && definition.requireExplicitTraining === true); const add = (definition, count, identity = null, mode = 'sum') => { const numeric = Math.max(0, Number(count) || 0); if (!numeric) return; if (identity !== null) { const identities = seenEntities.get(definition.key) || new Set(); if (identities.has(identity)) return; identities.add(identity); seenEntities.set(definition.key, identities); } const current = totals.get(definition.key) || 0; totals.set(definition.key, mode === 'max' ? Math.max(current, numeric) : current + numeric); }; for (const [token, count] of arrState?.counts || []) for (const definition of definitions) { const tokens = new Set(Array.from(definition.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean)); if (tokens.has(token)) add(definition, count, `arr:${definition.key}`, 'max'); } const inspect = node => { if (!node || seenNodes.has(node)) return; seenNodes.add(node); const values = missionRequirementsDirectTrainingValues(node); if (!values.size) return; const explicit = missionRequirementsOptionalNumber(node.getAttribute?.('data-qualified-personnel-count') ?? node.getAttribute?.('data-personnel-count') ?? node.getAttribute?.('data-assigned-personnel-count') ?? node.getAttribute?.('data-count')); const identity = node.getAttribute?.('data-personnel-id') ?? node.getAttribute?.('personnel_id') ?? node.getAttribute?.('data-person-id') ?? null; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, explicit ?? 1, identity === null ? node : `person:${identity}`); }; const inspectTree = scope => { inspect(scope); const selector = '[data-personnel-training], [data-training], [data-trainings], [data-education], [data-educations], [data-education-name], [data-education-key], [data-filterable-by]'; for (const node of Array.from(scope?.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); const record = missionRequirementsVehicleApiRecord(numericVehicleId); const people = [record?.personnel, record?.assigned_personnel, record?.assignedPersonnel, record?.crew, record?.staff].find(Array.isArray) || []; people.forEach((person, index) => { const values = new Set(); const ingest = raw => { const visit = value => { if (Array.isArray(value)) return value.forEach(visit); if (value && typeof value === 'object') return ['key', 'name', 'caption', 'title', 'education', 'training'].forEach(field => visit(value[field])); String(value || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); }; visit(raw); }; ['education', 'educations', 'training', 'trainings', 'schooling', 'schoolings', 'qualifications'].forEach(field => ingest(person?.[field])); const identity = person?.id ?? person?.personnel_id ?? person?.personnelId ?? index; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, 1, `api:${identity}`); }); } return new Map(Array.from(totals, ([key, count]) => [key, missionRequirementsCapacity(count, count, true)])); }
+
+```
+
+## missionRequirementsVehicleApiRecord
+
+```javascript
+
+    function missionRequirementsVehicleApiRecord(vehicleId) { const id = Number(vehicleId); if (!Number.isFinite(id) || id < 0) return null; return personalVehicleApiCache.get(String(id)) || personalVehicleApiCache.get(id) || null; }
+
+```
+
+## missionRequirementsVehicleApiStaff
+
+```javascript
+    function missionRequirementsVehicleApiStaff(record) { const assigned = missionRequirementsOptionalNumber(record?.assigned_personnel_count ?? record?.assignedPersonnelCount ?? record?.personnel_count ?? (Array.isArray(record?.personnel) ? record.personnel.length : null) ?? (Array.isArray(record?.assigned_personnel) ? record.assigned_personnel.length : null)); if (assigned === null) return null; return missionRequirementsCapacity(assigned, assigned, true); }
+
+```
+
+## missionRequirementsResolvedStaffCapacity
+
+```javascript
+    function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element, mode = '') { const operational = missionRequirementsOperationalCrewCapacity(element, mode); if (operational) return operational; const native = missionRequirementsStaffCapacity(element); if (native?.known) return native; const record = missionRequirementsVehicleApiRecord(vehicleId); const exact = missionRequirementsVehicleApiStaff(record); if (exact) return exact; missionRequirementsEnsureSharedVehicleData(); return native || missionRequirementsDefaultStaffCapacity(typeId, element, record); }
+
+```
+
+## missionRequirementsOperationalSelectors
+
+```javascript
+[missing function: missionRequirementsOperationalSelectors]
+
+```
+
+## missionRequirementsOperationalElementActive
+
+```javascript
+
+    function missionRequirementsOperationalElementActive(element, candidate, context = missionRequirementsPatientContext(candidate), mode = '') {
+        if (!element || element.isConnected === false) return false;
+        if (mode === 'selected' && typeof element.checked === 'boolean' && !element.checked) return false;
+        const row = element.matches?.('tr') ? element : element.closest?.('tr') || element;
+        const expectedMission = missionRequirementsMissionIdentity(candidate, candidate?.source);
+        const canonicalContainer = missionRequirementsOperationalCanonicalStateContainer(row, mode);
+        const candidateRoot = missionRequirementsCandidateRoot(candidate) || candidate?.root || candidate?.mount;
+        const canonicalId = mode === 'onsite' ? 'mission_vehicle_at_mission' : 'mission_vehicle_driving';
+        const documentCanonical = mode === 'selected' ? null : context?.doc?.getElementById?.(canonicalId);
+        const pathname = String(context?.doc?.defaultView?.location?.pathname || '');
+        const pathMission = missionRequirementsOptionalNumber(pathname.match(/\/missions\/(\d+)/u)?.[1]);
+        const canonicalOwned = Boolean(canonicalContainer && (
+            context?.activeWindow?.contains?.(row)
+            || candidateRoot?.contains?.(row)
+            || candidate?.root?.contains?.(row)
+            || candidate?.mount?.contains?.(row)
+            || (
+                expectedMission > 0
+                && pathMission === expectedMission
+                && documentCanonical
+                && (documentCanonical === canonicalContainer || documentCanonical.contains?.(row))
+            )
+        ));
+        if (mode !== 'selected' && !canonicalOwned && !isVisible(element)) return false;
+        if (context.activeWindow && !(
+            context.activeWindow === row
+            || context.activeWindow.contains?.(row)
+            || row.closest?.('#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog') === context.activeWindow
+        )) return false;
+        const explicitMission = missionRequirementsOptionalNumber(row?.getAttribute?.('data-mission-id') ?? row?.dataset?.missionId);
+        if (expectedMission > 0 && explicitMission !== null && explicitMission !== expectedMission) return false;
+        const missionRoot = row.closest?.('#mission_form, form[action*="/missions/"], #mission_content, .mission_content, [data-mission-content]');
+        if (expectedMission > 0 && missionRoot) {
+            const actualMission = missionRequirementsMissionIdentity({ root: missionRoot, mount: missionRoot }, null);
+            if (actualMission > 0 && actualMission !== expectedMission) return false;
+        }
+        return true;
+    }
+const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
+
+```
+
+## missionRequirementsVehicleId
+
+```javascript
+
+    function missionRequirementsVehicleId(element) {
+        const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+        const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+        for (const scope of scopes) {
+        for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+            const value = Number.parseInt(raw, 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        for (const attribute of attributes) {
+            const value = Number.parseInt(scope?.getAttribute?.(attribute), 10);
+            if (Number.isFinite(value) && value >= 0) return value;
+        }
+        const idMatch = String(scope?.id || '').match(/(?:^|[_-])vehicle[_-]?(\d+)(?:$|[_-])/iu);
+        if (idMatch) return Number(idMatch[1]);
+        const link = scope?.matches?.('a[href*="/vehicles/"]') ? scope : scope?.querySelector?.('a[href*="/vehicles/"]');
+        const hrefMatch = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+        if (hrefMatch) return Number(hrefMatch[1]);
+        }
+        return -1;
+    }
+
+```
+
+## missionRequirementsVehicleType
+
+```javascript
+function missionRequirementsVehicleType(element) { const scopes = []; const addScope = scope => { if (scope && !scopes.includes(scope)) scopes.push(scope); }; addScope(element); addScope(element?.closest?.('tr')); addScope(element?.closest?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]')); const read = scope => missionRequirementsOptionalNumber( scope?.getAttribute?.('vehicle_type_id') ?? scope?.getAttribute?.('data-vehicle-type-id') ?? scope?.getAttribute?.('data-vehicle_type_id') ?? scope?.dataset?.vehicleTypeId ?? scope?.dataset?.vehicle_type_id ); for (const scope of scopes) { const direct = read(scope); if (direct !== null && direct >= 0) return direct; const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]'); const nestedType = read(nested); if (nestedType !== null && nestedType >= 0) return nestedType; } const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; const customType = missionRequirementsOptionalNumber(custom?.baseTypeId); return customType !== null && customType >= 0 ? customType : -1; }
+
+```
+
+## missionRequirementsCollectUnits
+
+```javascript
+function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const vehicleId = missionRequirementsVehicleId(vehicleElement); const typeId = missionRequirementsResolvedVehicleType(vehicleId, vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); const tractiveRandom = String(vehicleElement?.getAttribute?.('tractive_random') ?? vehicleElement?.getAttribute?.('data-tractive-random') ?? row?.getAttribute?.('tractive_random') ?? row?.getAttribute?.('data-tractive-random') ?? row?.dataset?.tractiveRandom ?? '') === '1'; const explicitTractiveType = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_type_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.getAttribute?.('tractive_vehicle_type_id') ?? row?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.dataset?.tractiveVehicleTypeId); const compatibleTractiveTypes = explicitTractiveType !== null ? [explicitTractiveType] : (tractiveRandom ? Array.from(MISSION_REQUIREMENTS_TRACTIVE_TYPES[typeId] || MISSION_REQUIREMENTS_TRACTIVE_TYPES[String(typeId)] || []) : []); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsLinkedTrainingValues(candidate, vehicleId, vehicleElement); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const arrCapabilityState = missionRequirementsArrCapabilityState(vehicleElement, candidate, vehicleId); for (const capability of arrCapabilityState.values) { training.add(capability); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const attributes = Array.from(definition?.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (attributes.includes(capability)) knownDefinitionKeys.add(definition.key); } } const qualificationCounts = missionRequirementsQualifiedStaffCounts(candidate, vehicleId, vehicleElement, arrCapabilityState); const unit = { typeId, vehicleId, tractiveId, tractiveRandom, compatibleTractiveTypes: new Set(compatibleTractiveTypes), equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement, mode), labels, training, qualificationCounts, arrCapabilities: arrCapabilityState.values, arrCapabilityCounts: arrCapabilityState.counts, arrCapabilityKnown: arrCapabilityState.authoritative, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const tractiveType of unit.compatibleTractiveTypes) existing.compatibleTractiveTypes.add(tractiveType); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const capability of unit.arrCapabilities || []) existing.arrCapabilities.add(capability); for (const [key, capacity] of unit.qualificationCounts || []) { const current = existing.qualificationCounts?.get?.(key); if (!current || capacity.min > current.min) existing.qualificationCounts.set(key, capacity); } existing.arrCapabilityKnown = existing.arrCapabilityKnown || unit.arrCapabilityKnown; for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
+
+```
+
+## missionRequirementsAggregate
+
+```javascript
+
+function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+
+```
+
+## Context windows
+
+### police_sergeant
+
+Lines 21728-21738
+```javascript
+21728:     }
+21729: 
+21730: 
+21731:     // Issue #133 clean-room live mission requirements matrix.
+21732:     // MissionChief's active mission DOM is authoritative. Unknown labels remain unresolved.
+21733:     const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([{"key":"police-helicopter-or-drone","label":"Police Helicopter or Drone","aliases":["Police Helicopter or Drone","Police Helicopters or Drones"],"types":[11,89,90,91],"equipment":["drone"]},{"key":"riv-or-major-foam","label":"RIV or Major Foam Tender","aliases":["RIV or Major Foam Tender","RIVs or Major Foam Tenders"],"types":[75,76]},{"key":"fire-engine-or-major-foam","label":"Fire Engine or Major Foam Tender","aliases":["Fire Engine or Major Foam Tender","Fire Engines or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75]},{"key":"fire-engine-riv-or-major-foam","label":"Fire Engine, RIV or Major Foam Tender","aliases":["Fire Engine, RIV or Major Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-or-sar-4x4","label":"Mountain Rescue 4x4 or SAR 4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic","label":"RRV or Specialist Paramedic RRV","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]},{"key":"fire-engine-or-riv","label":"Fire Engine or RIV","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-or-stairs","label":"Aerial Appliance or Rescue Stairs","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-rescue-aerial","label":"Fire, rescue or aerial appliance","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-or-rescue","label":"Fire Engine or Rescue Support Vehicle","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"police-or-arv","label":"Police Car or ARV","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"rsu-or-rescue-pump","label":"Rescue Support Unit or Rescue Pump","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"rescue-support-vehicle","label":"Rescue Support Vehicle","aliases":["Rescue Support Vehicle","Rescue Support Vehicles"],"types":[4,16,38,43]},{"key":"iccu-or-control","label":"ICCU or Ambulance Control Unit","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units","ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle","ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"],"types":[15,31,44,77]},{"key":"hazmat-or-cbrn","label":"HazMat Unit or CBRN Vehicle","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"boat-or-inland","label":"Inland Rescue Boat (Trailer)","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats","Inland Rescue Boat (Trailer)","Inland Rescue Boats (Trailer)","Inland Rescue Boat (Trailers)","Inland Rescue Boats (Trailers)"],"types":[67,74],"pair":true},{"key":"ilb-or-alb","label":"Seagoing Vessel","aliases":["ILB or ALB","ILBs or ALBs","Seagoing Vessel","Seagoing Vessels","ALB or ILB","ALBs or ILBs"],"types":[68,69]},{"key":"sar-support","label":"Operational Support or SAR Vehicle","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle","Operational Support Vans, Trailers or Personal SAR Vehicles"],"types":[86,87,92],"pair":true},{"key":"fire-engine","label":"Fire Engine","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"aerial","label":"Aerial Appliance Truck","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"fire-officer","label":"Fire Officer","aliases":["Fire Officer","Fire Officers","Fire Officer or Airfield Firefighting Command Vehicle","Fire Officers or Airfield Firefighting Command Vehicles"],"types":[3,15,44,77]},{"key":"basu","label":"Breathing Apparatus Support Unit (BASU)","aliases":["BASU","BASUs","Breathing Apparatus Support Unit","Breathing Apparatus Support Units"],"types":[14,39,46,49],"details":"Eligible vehicles: BASU, OSU, BASU Pod and OSU Pod. Prime Movers only count when paired with an eligible pod."},{"key":"water-carrier","label":"Water Carrier","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone","label":"Drone","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"control-van","label":"Control Van","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"ambulance","label":"Ambulance","aliases":["Ambulance","Ambulances"],"types":[5,9]},{"key":"police-car","label":"Police Car","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems","label":"HEMS","aliases":["HEMS"],"types":[9]},{"key":"critical-care-patient","label":"Critical Care","aliases":["Critical Care"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"patient-transport","label":"Patient Transport","aliases":["Patient Transport"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"police-helicopter","label":"Police Helicopter","aliases":["Police helicopter","Police helicopters","Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response","label":"Armed Response","aliases":["Armed Response","Armed Response Vehicle","Armed Response Vehicles"],"types":[13,25,52,56,82]},{"key":"dsu","label":"Dog Support Unit (DSU)","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"otl","label":"Operational Team Leader","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car","label":"Traffic Car","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier","label":"ATV Carrier","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response","label":"Primary Response Vehicle","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response","label":"Secondary Response Vehicle","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare","label":"Welfare Vehicle","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer","label":"Ambulance Officer","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit","label":"Foam Unit","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty","label":"Mass Casualty Equipment","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted","label":"Mounted Unit","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4","label":"4x4 Vehicle","aliases":["4x4 Vehicle","4x4 Vehicles","4x4 Unit","4x4 Units"],"types":[66,73,93]},{"key":"coastguard-rope","label":"Coastguard Rope Rescue Unit","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue","label":"Flood Rescue Unit","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv","label":"CRV","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander","label":"Coastguard Commander","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"ilb","label":"ILB","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-helicopter","label":"Coastguard Rescue Helicopter","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb","label":"ALB","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decon","label":"Mud Decontamination Unit","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit","label":"Support Unit","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft","label":"Rescue Watercraft Trailer","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70],"pair":true},{"key":"coastguard-mud","label":"Coastguard Mud Rescue Unit","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft","label":"Hovercraft Trailer","aliases":["Hovercraft (trailer)","Hovercrafts (trailer)"],"types":[71],"pair":true},{"key":"major-foam","label":"Major Foam Tender","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair","label":"Rescue Stair","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-command","label":"Airfield Firefighting Command Vehicle","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations","label":"Airfield Operations Vehicle","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv","label":"RIV","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-trailer","label":"Medical Equipment Trailer","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81],"pair":true},{"key":"airfield-supervisor","label":"Airfield Operations Supervisor","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell","label":"Armed Cell Van","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"cycle-responder","label":"Medical Cycle Responder","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"midwife","label":"Community Midwife","aliases":["Community Midwife","Community Midwives","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic","label":"Specialist Paramedic RRV","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog","label":"Rescue Dog","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-4x4","label":"Mountain Rescue 4x4","aliases":["Mountain Rescue 4x4","Mountain Rescue 4x4s"],"types":[99]},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[108],"training":["Railway Police Officer","Railway Police","railway_police"],"countable":true,"requireExplicitTraining":true,"arrAttributes":["railway_police"]},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Training","search_and_rescue"],"arrAttributes":["search_and_rescue"],"countable":true},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[85,100],"training":["SAR Commander","Search Management Training","search_and_rescue_command"],"arrAttributes":["search_and_rescue_command"],"countable":true},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases":["Water","litres of water","liters of water"],"group":"other","bar":"water","types":[]},{"key":"foam-resource","label":"Foam","aliases":["Foam","litres of foam","liters of foam"],"group":"other","bar":"foam","types":[]},{"key":"pump-resource","label":"Pumping Capacity","aliases":["l/min pumping process","l/min pumping capacity","Pumping Capacity"],"group":"other","bar":"pump","types":[]},{"key":"fire-engine-2","group":"vehicles","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"fire-engine-or-riv-2","group":"vehicles","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-appliance-truck","group":"vehicles","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"aerial-appliance-truck-or-rescue-stairs","group":"vehicles","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-officer-2","group":"vehicles","aliases":["Fire Officer","Fire Officers"],"types":[3,15,44,77]},{"key":"rescue-support-unit-or-rescue-pump","group":"vehicles","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"fire-engine-rescue-support-vehicle-or-aerial-appliance-truck","group":"vehicles","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-engine-or-rescue-support-vehicle","group":"vehicles","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"basu-2","group":"vehicles","aliases":["BASU","BASUs"],"types":[14,39,46,49]},{"key":"water-carrier-2","group":"vehicles","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone-2","group":"vehicles","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"operational-support-van-trailer-or-personal-sar-vehicle","group":"vehicles","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle"],"types":[86,87,92]},{"key":"control-van-2","group":"vehicles","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"iccu-or-ambulance-control-unit","group":"vehicles","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units"],"types":[15,31,44,77]},{"key":"hazmat-unit-or-cbrn-vehicle","group":"vehicles","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"ambulance-2","group":"vehicles","aliases":["Ambulance","Ambulances"],"types":[5]},{"key":"police-car-2","group":"vehicles","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"police-car-or-armed-response-vehicle","group":"vehicles","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems-2","group":"vehicles","aliases":["HEMS"],"types":[9]},{"key":"policehelicopter","group":"vehicles","aliases":["Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response-2","group":"vehicles","aliases":["Armed Response"],"types":[13,25,52,56,82]},{"key":"dog-support-unit","group":"vehicles","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"operational-team-leader","group":"vehicles","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car-2","group":"vehicles","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier-2","group":"vehicles","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response-vehicle","group":"vehicles","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response-vehicle","group":"vehicles","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare-vehicle","group":"vehicles","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer-2","group":"vehicles","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit-2","group":"vehicles","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty-equipment","group":"vehicles","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted-unit","group":"vehicles","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4-vehicle","group":"vehicles","aliases":["4x4 Vehicle","4x4 Vehicles"],"types":[66,73,93]},{"key":"coastguard-rope-rescue-unit","group":"vehicles","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue-unit","group":"vehicles","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv-2","group":"vehicles","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander-2","group":"vehicles","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"boat-trailer-or-inland-rescue-boat","group":"vehicles","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats"],"types":[67,74]},{"key":"ilb-or-alb-2","group":"vehicles","aliases":["ILB or ALB","ILBs or ALBs"],"types":[68,69]},{"key":"ilb-2","group":"vehicles","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-rescue-helicopter","group":"vehicles","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb-2","group":"vehicles","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decontamination-unit","group":"vehicles","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit-2","group":"vehicles","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft-trailer","group":"vehicles","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70]},{"key":"coastguard-mud-rescue-unit","group":"vehicles","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft-trailer","group":"vehicles","aliases":["Hovercraft (trailer)","hovercrafts (trailer)"],"types":[71]},{"key":"major-foam-tender","group":"vehicles","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair-2","group":"vehicles","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-firefighting-command-vehicle","group":"vehicles","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations-vehicle","group":"vehicles","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv-2","group":"vehicles","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-equipment-trailer","group":"vehicles","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81]},{"key":"airfield-operations-supervisor","group":"vehicles","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell-van","group":"vehicles","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"medical-cycle-responder","group":"vehicles","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"community-midwife","group":"vehicles","aliases":["Community Midwife","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic-rrv","group":"vehicles","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog-2","group":"vehicles","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-rescue-4x4","group":"vehicles","aliases":["Mountain Rescue 4x4"],"types":[99]},{"key":"road-rail-unit","group":"vehicles","aliases":["Road Rail Unit"],"types":[107]},{"key":"eiu-2","group":"vehicles","aliases":["EIU"],"types":[108]},{"key":"eod-commander-2","group":"vehicles","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response-vehicle","group":"vehicles","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium-equipment-van","group":"vehicles","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy-equipment-vehicle","group":"vehicles","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response-vehicle","group":"vehicles","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment-van","group":"vehicles","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]}].map(definition => Object.freeze({ group: 'vehicles', aliases: [], types: [], equipment: [], factors: {}, ...definition })));
+21734:     const MISSION_REQUIREMENT_PARSE_DEFINITIONS = Object.freeze([...MISSION_REQUIREMENT_DEFINITIONS].sort((left, right) => Math.max(...((right.aliases && right.aliases.length) ? right.aliases : ['']).map(value => String(value).length)) - Math.max(...((left.aliases && left.aliases.length) ? left.aliases : ['']).map(value => String(value).length))));
+21735: 
+21736:     function missionRequirementsEscapeRegex(value) {
+21737:         return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+21738:     }
+```
+
+### qualificationCounts
+
+Lines 22143-22153
+```javascript
+22143:             if (actualMission > 0 && actualMission !== expectedMission) return false;
+22144:         }
+22145:         return true;
+22146:     }
+22147: const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
+22148: function missionRequirementsCollectUnits(candidate, mode) { const root = candidate?.root; const context = missionRequirementsPatientContext(candidate); const doc = context.doc || candidate?.source?.ownerDocument || root?.ownerDocument; if (!root?.querySelectorAll && !doc?.querySelectorAll) return []; const selectors = missionRequirementsOperationalSelectors(mode); const windowScopes = missionRequirementsOperationalWindowScopes(candidate, context); const anchorSelector = mode === 'selected' ? '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox' : mode === 'onsite' ? '#mission_vehicle_at_mission, [data-mcms-vehicle-state="onsite"]' : '#mission_vehicle_driving, [data-mcms-vehicle-state="responding"]'; let activeWindow = context.activeWindow || null; for (const scope of windowScopes) { if (scope?.querySelector?.(anchorSelector)) { activeWindow = scope; break; } } const operationalContext = { ...context, activeWindow }; const elements = []; const seenElements = new Set(); const localScopes = Array.from(new Set([root, candidate?.mount, activeWindow, ...windowScopes].filter(scope => scope?.querySelectorAll))); const search = scope => { for (const selector of selectors) { for (const element of Array.from(scope?.querySelectorAll?.(selector) || [])) { if (seenElements.has(element) || !missionRequirementsOperationalElementActive(element, candidate, operationalContext, mode)) continue; seenElements.add(element); elements.push(element); } } }; localScopes.forEach(search); if (!elements.length && doc?.querySelectorAll && !localScopes.includes(doc)) search(doc); const units = new Map(); elements.forEach((element, index) => { const row = element.matches?.('tr') ? element : element.closest?.('tr'); const vehicleElement = mode === 'selected' ? element : (element.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-vehicle-id], a[href*="/vehicles/"]') || element); const vehicleId = missionRequirementsVehicleId(vehicleElement); const typeId = missionRequirementsResolvedVehicleType(vehicleId, vehicleElement); const tractiveId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-id') ?? row?.getAttribute?.('tractive_vehicle_id') ?? row?.getAttribute?.('data-tractive-vehicle-id') ?? row?.dataset?.tractiveVehicleId); const trailerId = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('trailer_id') ?? vehicleElement?.getAttribute?.('data-trailer-id') ?? row?.getAttribute?.('trailer_id') ?? row?.getAttribute?.('data-trailer-id') ?? row?.dataset?.trailerId); const tractiveRandom = String(vehicleElement?.getAttribute?.('tractive_random') ?? vehicleElement?.getAttribute?.('data-tractive-random') ?? row?.getAttribute?.('tractive_random') ?? row?.getAttribute?.('data-tractive-random') ?? row?.dataset?.tractiveRandom ?? '') === '1'; const explicitTractiveType = missionRequirementsOptionalNumber(vehicleElement?.getAttribute?.('tractive_vehicle_type_id') ?? vehicleElement?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.getAttribute?.('tractive_vehicle_type_id') ?? row?.getAttribute?.('data-tractive-vehicle-type-id') ?? row?.dataset?.tractiveVehicleTypeId); const compatibleTractiveTypes = explicitTractiveType !== null ? [explicitTractiveType] : (tractiveRandom ? Array.from(MISSION_REQUIREMENTS_TRACTIVE_TYPES[typeId] || MISSION_REQUIREMENTS_TRACTIVE_TYPES[String(typeId)] || []) : []); let contributionKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : `element:${index}`; const pairedId = tractiveId !== null && tractiveId >= 0 ? tractiveId : trailerId; if (vehicleId >= 0 && pairedId !== null && pairedId >= 0) contributionKey = `pair:${Math.min(vehicleId, pairedId)}:${Math.max(vehicleId, pairedId)}`; const identityKey = vehicleId >= 0 ? `vehicle:${vehicleId}` : contributionKey; const labels = missionRequirementsMetadataValues(vehicleElement, 'labels'); const training = missionRequirementsLinkedTrainingValues(candidate, vehicleId, vehicleElement); const knownDefinitionKeys = missionRequirementsKnownDefinitionKeys(labels); const arrCapabilityState = missionRequirementsArrCapabilityState(vehicleElement, candidate, vehicleId); for (const capability of arrCapabilityState.values) { training.add(capability); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { const attributes = Array.from(definition?.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean); if (attributes.includes(capability)) knownDefinitionKeys.add(definition.key); } } const qualificationCounts = missionRequirementsQualifiedStaffCounts(candidate, vehicleId, vehicleElement, arrCapabilityState); const unit = { typeId, vehicleId, tractiveId, tractiveRandom, compatibleTractiveTypes: new Set(compatibleTractiveTypes), equipment: missionRequirementsEquipmentTypes(vehicleElement), staff: missionRequirementsResolvedStaffCapacity(vehicleId, typeId, vehicleElement, mode), labels, training, qualificationCounts, arrCapabilities: arrCapabilityState.values, arrCapabilityCounts: arrCapabilityState.counts, arrCapabilityKnown: arrCapabilityState.authoritative, knownDefinitionKeys, contributionKey }; const existing = units.get(identityKey); if (!existing) { units.set(identityKey, unit); return; } if (existing.typeId < 0 && unit.typeId >= 0) existing.typeId = unit.typeId; for (const equipment of unit.equipment) existing.equipment.add(equipment); for (const tractiveType of unit.compatibleTractiveTypes) existing.compatibleTractiveTypes.add(tractiveType); for (const label of unit.labels) existing.labels.add(label); for (const qualification of unit.training) existing.training.add(qualification); for (const capability of unit.arrCapabilities || []) existing.arrCapabilities.add(capability); for (const [key, capacity] of unit.qualificationCounts || []) { const current = existing.qualificationCounts?.get?.(key); if (!current || capacity.min > current.min) existing.qualificationCounts.set(key, capacity); } existing.arrCapabilityKnown = existing.arrCapabilityKnown || unit.arrCapabilityKnown; for (const key of unit.knownDefinitionKeys) existing.knownDefinitionKeys.add(key); if ((!existing.staff || !existing.staff.known) && unit.staff?.known) existing.staff = unit.staff; if (existing.contributionKey.startsWith('element:') && !unit.contributionKey.startsWith('element:')) existing.contributionKey = unit.contributionKey; }); return Array.from(units.values()); }
+22149: 
+22150:     function missionRequirementsMissionTypeId(candidate) {
+22151:         const scopes = [candidate?.root, candidate?.mount].filter(Boolean);
+22152:         const attributes = ['mission_type_id', 'data-mission-type-id', 'data-mission_type_id'];
+22153:         for (const scope of scopes) {
+```
+
+Lines 22176-22186
+```javascript
+22176:         if (included.length && !included.includes(missionTypeId)) return false;
+22177:         if (excluded.includes(missionTypeId)) return false;
+22178:         return true;
+22179:     }
+22180: 
+22181: function missionRequirementsUnitContribution(requirement, unit) { const definition = requirement.definition || {}; const definitionTypes = Array.from(definition.types || []); const typeEligible = definitionTypes.includes(unit.typeId); const equipmentEligible = Array.from(definition.equipment || []).some(equipment => unit.equipment.has(String(equipment).toLowerCase())); const labelEligible = unit.knownDefinitionKeys?.has?.(definition.key) || missionRequirementsDefinitionMatchesValues(definition, unit.labels); const compatibleTractiveTypes = Array.from(unit.compatibleTractiveTypes || []).map(Number).filter(Number.isFinite); const tractiveEligible = definition.pair !== true && compatibleTractiveTypes.length > 0 && compatibleTractiveTypes.every(type => definitionTypes.includes(type)); const trainingRequired = Array.from(definition.training || []).length > 0; const explicitTrainingRequired = definition.requireExplicitTraining === true; const trainingEligible = trainingRequired && missionRequirementsDefinitionMatchesValues(definition, unit.training, 'training'); const arrTokens = new Set(Array.from(definition.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean)); const arrEligible = arrTokens.size > 0 && Array.from(unit.arrCapabilities || []).some(capability => arrTokens.has(missionRequirementsCapabilityLabel(capability))); const arrClassificationKnown = arrTokens.size === 0 || unit.arrCapabilityKnown === true; const qualifiedCapacity = unit.qualificationCounts?.get?.(definition.key) || null; const legacyExplicitProof = explicitTrainingRequired && unit.qualificationCounts === undefined && (trainingEligible || arrEligible) && unit.staff ? unit.staff : null; const provenSpecialist = qualifiedCapacity || legacyExplicitProof; const eligible = requirement.group === 'staff' && trainingRequired ? (explicitTrainingRequired ? Boolean(provenSpecialist) : trainingEligible || arrEligible || typeEligible) : typeEligible || equipmentEligible || labelEligible || tractiveEligible; const plausibleExplicitCarrier = explicitTrainingRequired && (typeEligible || labelEligible || trainingEligible || arrEligible); const classificationUnknown = requirement.group === 'staff' && trainingRequired ? Boolean(!eligible && unit.staff && (plausibleExplicitCarrier || (!unit.training?.size && !arrClassificationKnown))) : unit.typeId < 0 && !unit.knownDefinitionKeys?.size && !unit.equipment?.size && !compatibleTractiveTypes.length; if (!eligible) return { eligible: false, unknown: classificationUnknown, capacity: missionRequirementsCapacity(0, classificationUnknown ? null : 0, !classificationUnknown) }; if (requirement.group === 'staff') { const capacity = explicitTrainingRequired ? provenSpecialist : (unit.staff ? missionRequirementsCapacity(unit.staff.min ?? unit.staff.value ?? 0, unit.staff.max, unit.staff.known) : missionRequirementsCapacity(0, null, false)); return { eligible: true, unknown: capacity.max === null, capacity }; } const factor = tractiveEligible && !typeEligible ? 1 : Number(definition.factors?.[unit.typeId] ?? definition.factors?.[String(unit.typeId)] ?? 1); const value = Number.isFinite(factor) && factor > 0 ? factor : 1; return { eligible: true, unknown: false, capacity: missionRequirementsCapacity(value, value, true) }; }
+22182: 
+22183: function missionRequirementsAggregate(requirement, units) { const contributions = new Map(); let unresolvedClassification = false; for (const unit of units) { const contribution = missionRequirementsUnitContribution(requirement, unit); unresolvedClassification = unresolvedClassification || contribution.unknown === true; if (!contribution.eligible) continue; const capacity = contribution.capacity; const existing = contributions.get(unit.contributionKey); if (!existing) { contributions.set(unit.contributionKey, capacity); continue; } const pairMin = Math.max(existing.min, capacity.min); const pairMax = existing.max === null || capacity.max === null ? null : Math.max(existing.max, capacity.max); contributions.set(unit.contributionKey, missionRequirementsCapacity(pairMin, pairMax, existing.known && capacity.known && pairMax === pairMin)); } let min = 0; let max = 0; let exact = true; for (const capacity of contributions.values()) { min += capacity.min; if (max === null || capacity.max === null) max = null; else max += capacity.max; exact = exact && capacity.known; } if (unresolvedClassification) return missionRequirementsCapacity(min, null, false); return missionRequirementsCapacity(min, max, exact && max !== null && min === max); }
+22184: 
+22185:     function missionRequirementsProgressValue(candidate, bar, metric) {
+22186:         const root = candidate?.root?.isConnected ? candidate.root : candidate?.mount;
+```
+
+### arrCapabilities
+
+### vehicle_checkbox
+
+Lines 15070-15080
+```javascript
+15070: 
+15071: 
+15072:     // CUSTOM VEHICLE BADGES START
+15073:     const CUSTOM_VEHICLE_BADGE_SELECTOR = '[data-mcms-custom-vehicle-badge="1"]';
+15074:     const CUSTOM_VEHICLE_AVAILABLE_SELECTOR = [
+15075:         '#vehicle_show_table_body_all .vehicle_checkbox',
+15076:         '#vehicle_show_table_body_all [vehicle_id]',
+15077:         '#vehicle_show_table_body_all [data-vehicle-id]',
+15078:         '#vehicle_show_table_body_all [data-vehicle_id]',
+15079:         '#occupied .vehicle_checkbox',
+15080:         '#occupied [vehicle_id]',
+```
+
+Lines 15074-15084
+```javascript
+15074:     const CUSTOM_VEHICLE_AVAILABLE_SELECTOR = [
+15075:         '#vehicle_show_table_body_all .vehicle_checkbox',
+15076:         '#vehicle_show_table_body_all [vehicle_id]',
+15077:         '#vehicle_show_table_body_all [data-vehicle-id]',
+15078:         '#vehicle_show_table_body_all [data-vehicle_id]',
+15079:         '#occupied .vehicle_checkbox',
+15080:         '#occupied [vehicle_id]',
+15081:         '#occupied [data-vehicle-id]',
+15082:         '#occupied [data-vehicle_id]'
+15083:     ].join(', ');
+15084:     const CUSTOM_VEHICLE_ROW_SELECTOR = 'tr, li, .vehicle_select_table_tr, .vehicle_select_table_body_tr, .vehicle-row, .vehicle_row, .vehicle';
+```
+
+Lines 15142-15152
+```javascript
+15142:         }
+15143:     });
+15144: 
+15145:     function customVehicleBadgeVehicleId(row) {
+15146:         if (!row) return '';
+15147:         const checkbox = row.matches?.('.vehicle_checkbox')
+15148:             ? row
+15149:             : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+15150:         const resolved = missionRequirementsVehicleId(checkbox || row);
+15151:         if (Number.isFinite(Number(resolved)) && Number(resolved) >= 0) return String(Number(resolved));
+15152:         const link = row.matches?.('a[href*="/vehicles/"]') ? row : row.querySelector?.('a[href*="/vehicles/"]');
+```
+
+Lines 15144-15154
+```javascript
+15144: 
+15145:     function customVehicleBadgeVehicleId(row) {
+15146:         if (!row) return '';
+15147:         const checkbox = row.matches?.('.vehicle_checkbox')
+15148:             ? row
+15149:             : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+15150:         const resolved = missionRequirementsVehicleId(checkbox || row);
+15151:         if (Number.isFinite(Number(resolved)) && Number(resolved) >= 0) return String(Number(resolved));
+15152:         const link = row.matches?.('a[href*="/vehicles/"]') ? row : row.querySelector?.('a[href*="/vehicles/"]');
+15153:         const match = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
+15154:         return match?.[1] || '';
+```
+
+Lines 15165-15175
+```javascript
+15165:         return Array.from(rows);
+15166:     }
+15167: 
+15168:     function customVehicleBadgeHost(row) {
+15169:         if (!row) return null;
+15170:         const checkbox = row.matches?.('.vehicle_checkbox')
+15171:             ? row
+15172:             : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+15173:         const directLabel = checkbox?.closest?.('label');
+15174:         if (directLabel) return directLabel;
+15175:         if (checkbox?.id) {
+```
+
+Lines 15167-15177
+```javascript
+15167: 
+15168:     function customVehicleBadgeHost(row) {
+15169:         if (!row) return null;
+15170:         const checkbox = row.matches?.('.vehicle_checkbox')
+15171:             ? row
+15172:             : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
+15173:         const directLabel = checkbox?.closest?.('label');
+15174:         if (directLabel) return directLabel;
+15175:         if (checkbox?.id) {
+15176:             for (const label of Array.from(row.querySelectorAll?.('label') || [])) {
+15177:                 if (String(label.getAttribute?.('for') || label.htmlFor || '') === String(checkbox.id)) return label;
+```
+
+Lines 15267-15277
+```javascript
+15267:     }
+15268: 
+15269:     function customVehicleBadgeMutationRelevant(mutation) {
+15270:         const target = mutation?.target;
+15271:         if (target?.closest?.(CUSTOM_VEHICLE_BADGE_SELECTOR)) return false;
+15272:         const selector = '#vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_id], [data-vehicle-id], [data-vehicle_id], a[href*="/vehicles/"]';
+15273:         if (target?.matches?.(selector) || target?.closest?.('#vehicle_show_table_body_all, #occupied')) return true;
+15274:         for (const node of Array.from(mutation?.addedNodes || [])) {
+15275:             if (node?.nodeType !== 1) continue;
+15276:             if (node.matches?.(selector) || node.querySelector?.(selector)) return true;
+15277:         }
+```
+
+Lines 21983-21993
+```javascript
+21983:         return values;
+21984:     }
+21985: 
+21986: function missionRequirementsCapabilityLabel(value) { return String(value || '') .replace(/\u00a0/gu, ' ') .replace(/&/gu, ' and ') .replace(/\([^)]*\)/gu, ' ') .replace(/[^a-z0-9]+/giu, ' ') .replace(/\s+/gu, ' ') .trim() .toLowerCase(); } function missionRequirementsMetadataValues(element, kind = 'labels') { const values = new Set(); const add = raw => String(raw || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const attributes = kind === 'training' ? ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name', 'data-education-key', 'data-filterable-by'] : ['data-mcms-custom-vehicle-category', 'data-custom-vehicle-category', 'data-vehicle-category', 'data-vehicle-type-name', 'data-vehicle-type']; for (const scope of scopes) { for (const attribute of attributes) add(scope?.getAttribute?.(attribute)); scope?.querySelectorAll?.(attributes.map(attribute => `[${attribute}]`).join(', ')).forEach(node => attributes.forEach(attribute => add(node.getAttribute?.(attribute)))); } if (kind === 'labels') { const typeCell = row?.querySelector?.('[data-column="vehicle-type"], [data-vehicle-type-name], td:nth-of-type(2)'); add(missionRequirementsElementText(typeCell)); const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; add(custom?.category); } return values; } function missionRequirementsDefinitionTokens(definition, property = 'aliases') { const raw = property === 'training' ? Array.from(definition?.training || []) : [definition?.label, ...(definition?.aliases || [])]; return new Set(raw.map(missionRequirementsCapabilityLabel).filter(Boolean)); } function missionRequirementsDefinitionMatchesValues(definition, values, property = 'aliases') { if (!values?.size) return false; const tokens = missionRequirementsDefinitionTokens(definition, property); for (const value of values) if (tokens.has(value)) return true; return false; } function missionRequirementsKnownDefinitionKeys(labels) { const keys = new Set(); for (const definition of MISSION_REQUIREMENT_DEFINITIONS) { if ((definition?.group || 'vehicles') === 'staff') continue; if (missionRequirementsDefinitionMatchesValues(definition, labels)) keys.add(definition.key); } return keys; }
+21987: function missionRequirementsPositiveCapabilityValue(raw) { if (raw === null || raw === undefined) return false; const value = String(raw).trim().toLowerCase(); if (!value || ['0', 'false', 'no', 'off', 'null', 'undefined'].includes(value)) return false; const numeric = Number(value.replace(/,/gu, '')); return Number.isFinite(numeric) ? numeric > 0 : true; }
+21988: function missionRequirementsArrCapabilityState(element, candidate = null, vehicleId = -1) { const values = new Set(); const counts = new Map(); let authoritative = false; const attributes = Array.from(new Set(MISSION_REQUIREMENT_DEFINITIONS.flatMap(definition => Array.from(definition?.arrAttributes || [])).map(attribute => String(attribute || '').trim()).filter(attribute => /^[a-z0-9_:-]+$/iu.test(attribute)))); if (!attributes.length) return { values, counts, authoritative }; const inspect = scope => { if (!scope?.getAttribute) return; let present = false; for (const attribute of attributes) { const raw = scope.getAttribute(attribute); if (raw === null || raw === undefined) continue; present = true; if (!missionRequirementsPositiveCapabilityValue(raw)) continue; const token = missionRequirementsCapabilityLabel(attribute); const numeric = missionRequirementsOptionalNumber(raw); const count = numeric === null ? 1 : Math.max(0, numeric); values.add(token); if (count > 0) counts.set(token, Math.max(counts.get(token) || 0, count)); } if (present) authoritative = true; }; const inspectTree = scope => { if (!scope) return; inspect(scope); const selector = attributes.map(attribute => `[${attribute}]`).join(', '); for (const node of Array.from(scope.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); } if (element?.matches?.('.vehicle_checkbox') || element?.classList?.contains?.('vehicle_checkbox') || (typeof element?.checked === 'boolean' && element?.getAttribute?.('vehicle_type_id') !== null)) authoritative = true; return { values, counts, authoritative }; }
+21989: 
+21990: 
+21991: const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"85":[1,3],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"100":[1,3],"101":[1,1],"102":[1,1],"116":[1,5]});
+21992: function missionRequirementsDefaultStaffCapacity(typeId, element = null, record = null) { const range = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[typeId] || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE[String(typeId)]; if (!Array.isArray(range) || range.length < 2) return null; const row = element?.closest?.('tr') || element; const scopes = Array.from(new Set([element, row].filter(Boolean))); const overrideAttributes = ['data-max-personnel-override', 'data-personnel-max-override', 'data-max-crew-override']; let maximumOverride = missionRequirementsOptionalNumber(record?.['max_' + 'personnel_override'] ?? record?.maxPersonnelOverride ?? record?.personnel_max_override ?? record?.personnelMaxOverride); for (const scope of scopes) { if (maximumOverride !== null) break; for (const attribute of overrideAttributes) { const value = missionRequirementsOptionalNumber(scope?.getAttribute?.(attribute)); if (value !== null) { maximumOverride = value; break; } } } const minimum = Math.max(0, Number(range[0]) || 0); const configuredMaximum = Math.max(minimum, Number(range[1]) || 0); const maximum = maximumOverride === null ? configuredMaximum : Math.max(minimum, maximumOverride); return missionRequirementsCapacity(minimum, maximum, minimum === maximum); }
+21993: 
+```
+
+Lines 22001-22011
+```javascript
+22001: function missionRequirementsLinkedTrainingValues(candidate, vehicleId, element) {
+22002:         const values = missionRequirementsMetadataValues(element, 'training');
+22003:         const numericVehicleId = Number(vehicleId);
+22004:         if (!Number.isFinite(numericVehicleId) || numericVehicleId < 0) return values;
+22005:         const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null;
+22006:         const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`;
+22007:         const scopes = Array.from(new Set([
+22008:             candidate?.root,
+22009:             candidate?.mount,
+22010:             candidate?.source?.ownerDocument,
+22011:             row?.ownerDocument,
+```
+
+Lines 22022-22032
+```javascript
+22022:             }
+22023:         }
+22024:         return values;
+22025:     }
+22026:     function missionRequirementsDirectTrainingValues(element) { const values = new Set(); const add = raw => { const visit = value => { if (Array.isArray(value)) return value.forEach(visit); if (value && typeof value === 'object') return ['key', 'name', 'caption', 'title', 'education', 'training'].forEach(field => visit(value[field])); String(value || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); }; visit(raw); }; const attributes = ['data-personnel-training', 'data-training', 'data-trainings', 'data-education', 'data-educations', 'data-education-name', 'data-education-key', 'data-filterable-by']; for (const attribute of attributes) add(element?.getAttribute?.(attribute)); return values; }
+22027:     function missionRequirementsQualifiedStaffCounts(candidate, vehicleId, element, arrState = null) { const totals = new Map(); const seenNodes = new Set(); const seenEntities = new Map(); const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => (definition?.group || 'vehicles') === 'staff' && definition.requireExplicitTraining === true); const add = (definition, count, identity = null, mode = 'sum') => { const numeric = Math.max(0, Number(count) || 0); if (!numeric) return; if (identity !== null) { const identities = seenEntities.get(definition.key) || new Set(); if (identities.has(identity)) return; identities.add(identity); seenEntities.set(definition.key, identities); } const current = totals.get(definition.key) || 0; totals.set(definition.key, mode === 'max' ? Math.max(current, numeric) : current + numeric); }; for (const [token, count] of arrState?.counts || []) for (const definition of definitions) { const tokens = new Set(Array.from(definition.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean)); if (tokens.has(token)) add(definition, count, `arr:${definition.key}`, 'max'); } const inspect = node => { if (!node || seenNodes.has(node)) return; seenNodes.add(node); const values = missionRequirementsDirectTrainingValues(node); if (!values.size) return; const explicit = missionRequirementsOptionalNumber(node.getAttribute?.('data-qualified-personnel-count') ?? node.getAttribute?.('data-personnel-count') ?? node.getAttribute?.('data-assigned-personnel-count') ?? node.getAttribute?.('data-count')); const identity = node.getAttribute?.('data-personnel-id') ?? node.getAttribute?.('personnel_id') ?? node.getAttribute?.('data-person-id') ?? null; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, explicit ?? 1, identity === null ? node : `person:${identity}`); }; const inspectTree = scope => { inspect(scope); const selector = '[data-personnel-training], [data-training], [data-trainings], [data-education], [data-educations], [data-education-name], [data-education-key], [data-filterable-by]'; for (const node of Array.from(scope?.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); const record = missionRequirementsVehicleApiRecord(numericVehicleId); const people = [record?.personnel, record?.assigned_personnel, record?.assignedPersonnel, record?.crew, record?.staff].find(Array.isArray) || []; people.forEach((person, index) => { const values = new Set(); const ingest = raw => { const visit = value => { if (Array.isArray(value)) return value.forEach(visit); if (value && typeof value === 'object') return ['key', 'name', 'caption', 'title', 'education', 'training'].forEach(field => visit(value[field])); String(value || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); }; visit(raw); }; ['education', 'educations', 'training', 'trainings', 'schooling', 'schoolings', 'qualifications'].forEach(field => ingest(person?.[field])); const identity = person?.id ?? person?.personnel_id ?? person?.personnelId ?? index; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, 1, `api:${identity}`); }); } return new Map(Array.from(totals, ([key, count]) => [key, missionRequirementsCapacity(count, count, true)])); }
+22028: 
+22029:     function missionRequirementsOperationalCrewCapacity(element, mode = '') { const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; if (!row || !['responding', 'onsite'].includes(mode)) return null; const selector = mode === 'onsite' ? '#mission_vehicle_at_mission, tbody#mission_vehicle_at_mission' : '#mission_vehicle_driving, tbody#mission_vehicle_driving'; if (!row.closest?.(selector)) return null; const crewCell = row.querySelector?.('td:nth-of-type(5)[sortvalue]'); const value = missionRequirementsOptionalNumber(crewCell?.getAttribute?.('sortvalue')); return value === null ? null : missionRequirementsCapacity(value, value, true); }
+22030:     function missionRequirementsRespondingCrewCapacity(element) { return missionRequirementsOperationalCrewCapacity(element, 'responding'); }
+22031: 
+22032:     function missionRequirementsStaffCapacity(element) {
+```
+
+Lines 22087-22097
+```javascript
+22087:             if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+22088:             const sortValue = missionRequirementsOptionalNumber(crewCell.getAttribute?.('sortvalue'));
+22089:             if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+22090:         }
+22091:         return null;
+22092:     } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
+22093: function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
+22094: function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+22095:         if (mode === 'selected') return null;
+22096:         const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+22097:         if (!row) return null;
+```
+
+Lines 22621-22631
+```javascript
+22621:     function missionRequirementsLooksLikeWindow(candidate) {
+22622:         const root = missionRequirementsCandidateRoot(candidate);
+22623:         if (!root?.querySelector) return false;
+22624:         if (missionRequirementsMissionIdentity({ ...candidate, root }, missionRequirementsSourceForCandidate({ ...candidate, root })) > 0) return true;
+22625:         if (root.matches?.('#mission_form, form[action*="/missions/"], #mission_content')) return true;
+22626:         return Boolean(root.querySelector('#vehicle_show_table_body_all, #mission_vehicle_driving, .vehicle_checkbox, [mission_type_id], [data-mission-type-id]'));
+22627:     }
+22628: 
+22629:     function missionRequirementsPrimaryRuntime(){try{return!pageWindow.top||pageWindow.top===pageWindow}catch{return true}}
+22630:     function missionRequirementsMissionIdentity(candidate,source){const r=candidate?.root,l=r?.querySelector?.('a[href*="/missions/"],form[action*="/missions/"]');for(const v of[candidate?.missionId,candidate?.mission_id,r?.dataset?.missionId,r?.getAttribute?.('mission_id'),r?.getAttribute?.('action'),l?.getAttribute?.('href'),l?.getAttribute?.('action'),source?.ownerDocument?.defaultView?.location?.pathname]){const m=String(v??'').match(/(?:\/missions\/|mission[_-]?)(\d+)|^(\d+)$/i),id=+(m?.[1]||m?.[2]);if(id>0)return id}return 0}
+22631:     function missionRequirementsWindowCandidates() {
+```
+
+Lines 22865-22875
+```javascript
+22865:             `- Unresolved fragments: ${parsed.unresolved.length}`,
+22866:             '',
+22867:             ...missionRequirementsCatalogueDiagnosticLines(record, parsed),
+22868:             '### Native selector counts',
+22869:             `- missing_text: ${count('#missing_text')}`,
+22870:             `- selected checkboxes: ${count('.vehicle_checkbox:checked')}`,
+22871:             `- responding rows: ${count('#mission_vehicle_driving tbody tr')}`,
+22872:             `- on-site rows: ${count('#mission_vehicle_at_mission tbody tr')}`,
+22873:             `- patient summary nodes: ${count('#patient_button_form, #patient_button_text')}`,
+22874:             `- patient state: ${missionRequirementsSafeDiagnostic(JSON.stringify(missionRequirementsPatientCount(candidate)), 240)}`,
+22875:             `- selected vehicle types: ${missionRequirementsTypeSummary(selected)}`,
+```
+
+Lines 22931-22941
+```javascript
+22931: 
+22932:     function missionRequirementsMutationRelevant(record, mutation) {
+22933:         const panel = record?.panel;
+22934:         const target = mutation?.target;
+22935:         if (panel && (target === panel || target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`))) return false;
+22936:         const selector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"]';
+22937:         return mutationTouchesSelector(mutation, selector);
+22938:     }
+22939: 
+22940:     function missionRequirementsHostPanels(source){return[...(source?.parentNode?.children||[])].filter(p=>p?.id===SCRIPT.missionRequirementsPanelId||p?.getAttribute?.('data-mcms-requirements-panel')==='1')}
+22941:     function missionRequirementsCanonicalPanel(source,p){const a=missionRequirementsHostPanels(source);if(!a.length)return null;p=p&&a.includes(p)?p:a[0];p.setAttribute?.('data-mcms-requirements-panel','1');for(const x of a)if(x!==p)x.remove();return p}
+```
+
+Lines 23074-23084
+```javascript
+23074:         ensureMissionRequirementsDocumentStyle(doc);
+23075:         if (missionRequirementsObservedDocuments.has(doc)) return;
+23076:         missionRequirementsObservedDocuments.add(doc);
+23077:         try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+23078:         runtimeListen(doc, 'change', event => {
+23079:             if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+23080:             missionRequirementsScheduleDocumentRecords(doc);
+23081:         }, true);
+23082:         const root = doc.documentElement || doc.body;
+23083:         if (!root) return;
+23084:         const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+```
+
+Lines 23079-23089
+```javascript
+23079:             if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+23080:             missionRequirementsScheduleDocumentRecords(doc);
+23081:         }, true);
+23082:         const root = doc.documentElement || doc.body;
+23083:         if (!root) return;
+23084:         const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+23085:         const view = doc.defaultView || pageWindow;
+23086:         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+23087:         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+23088:             const relevant = mutations.some(mutation => {
+23089:                 if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+```
+
+### selectedUnits
+
+Lines 22403-22413
+```javascript
+22403:             ''
+22404:         ];
+22405:     }
+22406: 
+22407: 
+22408:     function missionRequirementsExclusiveUnitBuckets(selectedUnits, respondingUnits, onSiteUnits) {
+22409:         const claimed = new Set();
+22410:         const keysFor = unit => {
+22411:             const keys = [];
+22412:             if (unit?.vehicleId >= 0) keys.push(`vehicle:${unit.vehicleId}`);
+22413:             if (unit?.contributionKey && !String(unit.contributionKey).startsWith('element:')) keys.push(String(unit.contributionKey));
+```
+
+Lines 22419-22429
+```javascript
+22419:             keys.forEach(key => claimed.add(key));
+22420:             return true;
+22421:         });
+22422:         const onSite = claim(onSiteUnits);
+22423:         const responding = claim(respondingUnits);
+22424:         const selected = claim(selectedUnits);
+22425:         return { selected, responding, onSite };
+22426:     }
+22427: 
+22428:     function missionRequirementsResolve(candidate, parsed, catalogue = null) { const rawSelectedUnits = missionRequirementsCollectUnits(candidate, 'selected'); const rawRespondingUnits = missionRequirementsCollectUnits(candidate, 'responding'); const rawOnSiteUnits = missionRequirementsCollectUnits(candidate, 'onsite'); const buckets = missionRequirementsExclusiveUnitBuckets(rawSelectedUnits, rawRespondingUnits, rawOnSiteUnits); const catalogueByKey = new Map(Array.from(catalogue?.requirements || []).map(item => [item.key, item])); return parsed.requirements.map(requirement => { let effectiveMissing = Math.max(0, Number(requirement.missing) || 0); if (requirement.patientCondition === true) { const requiredValue = Math.max(0, Number(requirement.patientConditionRequired ?? requirement.patientRequired ?? requirement.missing) || 0); const fulfilledValue = Math.max(0, Number(requirement.patientConditionFulfilled) || 0); const fulfilledKnown = requirement.patientConditionFulfilledKnown === true; const zero = missionRequirementsCapacity(0, 0, true); const fulfilled = fulfilledKnown ? missionRequirementsCapacity(fulfilledValue, fulfilledValue, true) : missionRequirementsCapacity(fulfilledValue, null, false); const row = missionRequirementsCoverageRow(requirement, zero, zero, fulfilled, missionRequirementsCapacity(requiredValue, requiredValue, true)); if (!fulfilledKnown && !row.covered) { row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'patient-details' }; } if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement); const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate); if (condition !== true) { const unknown = missionRequirementsCapacity(0, null, false); const unresolvedRow = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown); return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false }; } let selected; let responding; let onSite; if (requirement.definition?.bar) { const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected'); const respondingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving'); const missingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'missing'); const onSiteMetrics = ['at_mission', 'on_site', 'onsite', 'arrived', 'actual']; const onSiteValue = onSiteMetrics.map(metric => missionRequirementsProgressValue(candidate, requirement.definition.bar, metric)).find(value => value !== null); if (selectedValue === null || respondingValue === null || missingValue === null) { const unknown = missionRequirementsCapacity(0, null, false); const row = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown); row.covered = false; row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'mission-progress' }; } effectiveMissing = Math.max(0, missingValue + respondingValue); selected = missionRequirementsCapacity(selectedValue, selectedValue, true); responding = missionRequirementsCapacity(respondingValue, respondingValue, true); onSite = onSiteValue === undefined ? missionRequirementsCapacity(0, 0, true) : missionRequirementsCapacity(onSiteValue, onSiteValue, true); } else { selected = missionRequirementsAggregate(requirement, buckets.selected); responding = missionRequirementsAggregate(requirement, buckets.responding); onSite = missionRequirementsAggregate(requirement, buckets.onSite); } const catalogueRequirement = catalogueByKey.get(requirement.key); const baseline = missionRequirementsOptionalNumber(catalogueRequirement?.baseline ?? catalogueRequirement?.missing); const catalogueOnly = requirement.catalogueDerived === true && requirement.statedRequirement === false; const catalogueProbability = missionRequirementsOptionalNumber(requirement.catalogueProbability ?? catalogueRequirement?.probability) ?? 100; const patientKnown = requirement.patientDerived === true && requirement.patientCountKnown === true; const patientUnknown = requirement.patientDerived === true && requirement.patientCountKnown === false; const patientRequired = patientKnown ? Math.max(0, Number(requirement.patientRequired) || 0) : null; const hasStatedRequirement = requirement.statedRequirement !== false; if (baseline !== null && hasStatedRequirement) { const committed = Math.max(0, baseline - effectiveMissing); const operationalMin = onSite.min + responding.min; const operationalMax = onSite.max === null || responding.max === null ? null : onSite.max + responding.max; const inferredSelectedMin = operationalMax === null ? 0 : Math.max(0, committed - operationalMax); const inferredSelectedMax = Math.max(0, committed - operationalMin); if (inferredSelectedMax > selected.min) { const selectedMin = Math.max(selected.min, inferredSelectedMin); const selectedMax = selected.max === null ? inferredSelectedMax : Math.max(selected.max, inferredSelectedMax); selected = missionRequirementsCapacity(selectedMin, selectedMax, selectedMax !== null && selectedMin === selectedMax && onSite.known && responding.known); } } const statedRequiredMin = hasStatedRequirement ? effectiveMissing + onSite.min : 0; const statedRequiredMax = hasStatedRequirement ? (onSite.max === null ? null : effectiveMissing + onSite.max) : 0; const fixedMinimum = Math.max(patientRequired ?? 0, baseline ?? 0, statedRequiredMin); let required; if (patientUnknown) { required = missionRequirementsCapacity(Math.max(baseline ?? 0, statedRequiredMin), null, false); } else if (catalogueOnly && catalogueProbability < 100) { required = missionRequirementsCapacity(0, baseline ?? 0, false); } else if (patientKnown) { const possibleMaximum = statedRequiredMax === null ? null : Math.max(patientRequired, baseline ?? 0, statedRequiredMax); const exact = possibleMaximum !== null && possibleMaximum === fixedMinimum && (hasStatedRequirement ? onSite.known : true); required = missionRequirementsCapacity(fixedMinimum, possibleMaximum, exact); } else { const liveRequiredMin = statedRequiredMin; const liveRequiredMax = statedRequiredMax; required = baseline !== null ? missionRequirementsCapacity(Math.max(baseline, liveRequiredMin), Math.max(baseline, liveRequiredMin), true) : missionRequirementsCapacity(liveRequiredMin, liveRequiredMax, onSite.known && liveRequiredMax !== null && liveRequiredMin === liveRequiredMax); } const row = missionRequirementsCoverageRow(requirement, selected, responding, onSite, required); if (patientUnknown) { row.covered = false; row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } else if (catalogueOnly && catalogueProbability < 100 && !row.covered) { row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } const authorities = []; if (requirement.patientDerived) authorities.push('patients'); if (baseline !== null) authorities.push('mission-info'); if (hasStatedRequirement) authorities.push('live'); return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: authorities.length ? authorities.join('+') : 'live-reconstructed' }; }); }
+22429: 
+```
+
+Lines 22423-22433
+```javascript
+22423:         const responding = claim(respondingUnits);
+22424:         const selected = claim(selectedUnits);
+22425:         return { selected, responding, onSite };
+22426:     }
+22427: 
+22428:     function missionRequirementsResolve(candidate, parsed, catalogue = null) { const rawSelectedUnits = missionRequirementsCollectUnits(candidate, 'selected'); const rawRespondingUnits = missionRequirementsCollectUnits(candidate, 'responding'); const rawOnSiteUnits = missionRequirementsCollectUnits(candidate, 'onsite'); const buckets = missionRequirementsExclusiveUnitBuckets(rawSelectedUnits, rawRespondingUnits, rawOnSiteUnits); const catalogueByKey = new Map(Array.from(catalogue?.requirements || []).map(item => [item.key, item])); return parsed.requirements.map(requirement => { let effectiveMissing = Math.max(0, Number(requirement.missing) || 0); if (requirement.patientCondition === true) { const requiredValue = Math.max(0, Number(requirement.patientConditionRequired ?? requirement.patientRequired ?? requirement.missing) || 0); const fulfilledValue = Math.max(0, Number(requirement.patientConditionFulfilled) || 0); const fulfilledKnown = requirement.patientConditionFulfilledKnown === true; const zero = missionRequirementsCapacity(0, 0, true); const fulfilled = fulfilledKnown ? missionRequirementsCapacity(fulfilledValue, fulfilledValue, true) : missionRequirementsCapacity(fulfilledValue, null, false); const row = missionRequirementsCoverageRow(requirement, zero, zero, fulfilled, missionRequirementsCapacity(requiredValue, requiredValue, true)); if (!fulfilledKnown && !row.covered) { row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'patient-details' }; } if (requirement.definition?.countable === false) return missionRequirementsUnknownCoverageRow(requirement); const condition = missionRequirementsDefinitionCondition(requirement.definition, candidate); if (condition !== true) { const unknown = missionRequirementsCapacity(0, null, false); const unresolvedRow = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown); return { ...unresolvedRow, conditionKnown: condition !== null, conditionMatched: false, uncertain: true, definitelyOpen: false, coverageKnown: false }; } let selected; let responding; let onSite; if (requirement.definition?.bar) { const selectedValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'selected'); const respondingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'driving'); const missingValue = missionRequirementsProgressValue(candidate, requirement.definition.bar, 'missing'); const onSiteMetrics = ['at_mission', 'on_site', 'onsite', 'arrived', 'actual']; const onSiteValue = onSiteMetrics.map(metric => missionRequirementsProgressValue(candidate, requirement.definition.bar, metric)).find(value => value !== null); if (selectedValue === null || respondingValue === null || missingValue === null) { const unknown = missionRequirementsCapacity(0, null, false); const row = missionRequirementsCoverageRow(requirement, unknown, unknown, unknown, unknown); row.covered = false; row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: 'mission-progress' }; } effectiveMissing = Math.max(0, missingValue + respondingValue); selected = missionRequirementsCapacity(selectedValue, selectedValue, true); responding = missionRequirementsCapacity(respondingValue, respondingValue, true); onSite = onSiteValue === undefined ? missionRequirementsCapacity(0, 0, true) : missionRequirementsCapacity(onSiteValue, onSiteValue, true); } else { selected = missionRequirementsAggregate(requirement, buckets.selected); responding = missionRequirementsAggregate(requirement, buckets.responding); onSite = missionRequirementsAggregate(requirement, buckets.onSite); } const catalogueRequirement = catalogueByKey.get(requirement.key); const baseline = missionRequirementsOptionalNumber(catalogueRequirement?.baseline ?? catalogueRequirement?.missing); const catalogueOnly = requirement.catalogueDerived === true && requirement.statedRequirement === false; const catalogueProbability = missionRequirementsOptionalNumber(requirement.catalogueProbability ?? catalogueRequirement?.probability) ?? 100; const patientKnown = requirement.patientDerived === true && requirement.patientCountKnown === true; const patientUnknown = requirement.patientDerived === true && requirement.patientCountKnown === false; const patientRequired = patientKnown ? Math.max(0, Number(requirement.patientRequired) || 0) : null; const hasStatedRequirement = requirement.statedRequirement !== false; if (baseline !== null && hasStatedRequirement) { const committed = Math.max(0, baseline - effectiveMissing); const operationalMin = onSite.min + responding.min; const operationalMax = onSite.max === null || responding.max === null ? null : onSite.max + responding.max; const inferredSelectedMin = operationalMax === null ? 0 : Math.max(0, committed - operationalMax); const inferredSelectedMax = Math.max(0, committed - operationalMin); if (inferredSelectedMax > selected.min) { const selectedMin = Math.max(selected.min, inferredSelectedMin); const selectedMax = selected.max === null ? inferredSelectedMax : Math.max(selected.max, inferredSelectedMax); selected = missionRequirementsCapacity(selectedMin, selectedMax, selectedMax !== null && selectedMin === selectedMax && onSite.known && responding.known); } } const statedRequiredMin = hasStatedRequirement ? effectiveMissing + onSite.min : 0; const statedRequiredMax = hasStatedRequirement ? (onSite.max === null ? null : effectiveMissing + onSite.max) : 0; const fixedMinimum = Math.max(patientRequired ?? 0, baseline ?? 0, statedRequiredMin); let required; if (patientUnknown) { required = missionRequirementsCapacity(Math.max(baseline ?? 0, statedRequiredMin), null, false); } else if (catalogueOnly && catalogueProbability < 100) { required = missionRequirementsCapacity(0, baseline ?? 0, false); } else if (patientKnown) { const possibleMaximum = statedRequiredMax === null ? null : Math.max(patientRequired, baseline ?? 0, statedRequiredMax); const exact = possibleMaximum !== null && possibleMaximum === fixedMinimum && (hasStatedRequirement ? onSite.known : true); required = missionRequirementsCapacity(fixedMinimum, possibleMaximum, exact); } else { const liveRequiredMin = statedRequiredMin; const liveRequiredMax = statedRequiredMax; required = baseline !== null ? missionRequirementsCapacity(Math.max(baseline, liveRequiredMin), Math.max(baseline, liveRequiredMin), true) : missionRequirementsCapacity(liveRequiredMin, liveRequiredMax, onSite.known && liveRequiredMax !== null && liveRequiredMin === liveRequiredMax); } const row = missionRequirementsCoverageRow(requirement, selected, responding, onSite, required); if (patientUnknown) { row.covered = false; row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } else if (catalogueOnly && catalogueProbability < 100 && !row.covered) { row.definitelyOpen = false; row.uncertain = true; row.coverageKnown = false; } const authorities = []; if (requirement.patientDerived) authorities.push('patients'); if (baseline !== null) authorities.push('mission-info'); if (hasStatedRequirement) authorities.push('live'); return { ...row, conditionKnown: true, conditionMatched: true, requirementAuthority: authorities.length ? authorities.join('+') : 'live-reconstructed' }; }); }
+22429: 
+22430:     function missionRequirementsOverallState(rows, unresolved) {
+22431:         if (rows.some(row => row.definitelyOpen)) return 'danger';
+22432:         if (rows.some(row => row.uncertain) || unresolved.length) return 'warning';
+22433:         return rows.length ? 'success' : 'warning';
+```
+
+### data-current-personnel
+
+Lines 22031-22041
+```javascript
+22031: 
+22032:     function missionRequirementsStaffCapacity(element) {
+22033:         const row = element?.closest?.('tr') || element;
+22034:         const semanticSelectors = [
+22035:             '[data-personnel-count]',
+22036:             '[data-current-personnel]',
+22037:             '[data-assigned-personnel-count]',
+22038:             '[data-assigned_personnel_count]',
+22039:             '[assigned_personnel_count]',
+22040:             '[data-min-personnel]',
+22041:             '[data-max-personnel]',
+```
+
+Lines 22049-22059
+```javascript
+22049:         for (const selector of semanticSelectors) {
+22050:             crewCell = row?.querySelector?.(selector) || null;
+22051:             if (crewCell) break;
+22052:         }
+22053:         const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+22054:         const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-assigned-personnel-count', 'data-assigned_personnel_count', 'assigned_personnel_count', 'data-personnel', 'data-staff', 'data-crew'];
+22055:         for (const scope of scopes) {
+22056:             for (const attribute of exactAttributes) {
+22057:                 const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+22058:                 if (value !== null) return missionRequirementsCapacity(value, value, true);
+22059:             }
+```
+
+Lines 22982-22992
+```javascript
+22982:         missionRequirementsBindPanel(panel);
+22983:         record = { candidate: scopedCandidate, source, panel, startedAt: Date.now(), missionIdentity };
+22984:         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+22985:         if (root && typeof Observer === 'function') {
+22986:             record.observer = runtimeTrackObserver(new Observer(mutations => mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation)) && missionRequirementsScheduleRecord(record)));
+22987:             record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+22988:         }
+22989:         missionRequirementsRecords.set(source, record);
+22990:         missionRequirementsScheduleRecord(record);
+22991:         return record;
+22992:     }
+```
+
+### data-vehicle-id
+
+Lines 15072-15082
+```javascript
+15072:     // CUSTOM VEHICLE BADGES START
+15073:     const CUSTOM_VEHICLE_BADGE_SELECTOR = '[data-mcms-custom-vehicle-badge="1"]';
+15074:     const CUSTOM_VEHICLE_AVAILABLE_SELECTOR = [
+15075:         '#vehicle_show_table_body_all .vehicle_checkbox',
+15076:         '#vehicle_show_table_body_all [vehicle_id]',
+15077:         '#vehicle_show_table_body_all [data-vehicle-id]',
+15078:         '#vehicle_show_table_body_all [data-vehicle_id]',
+15079:         '#occupied .vehicle_checkbox',
+15080:         '#occupied [vehicle_id]',
+15081:         '#occupied [data-vehicle-id]',
+15082:         '#occupied [data-vehicle_id]'
+```
+
+Lines 15076-15086
+```javascript
+15076:         '#vehicle_show_table_body_all [vehicle_id]',
+15077:         '#vehicle_show_table_body_all [data-vehicle-id]',
+15078:         '#vehicle_show_table_body_all [data-vehicle_id]',
+15079:         '#occupied .vehicle_checkbox',
+15080:         '#occupied [vehicle_id]',
+15081:         '#occupied [data-vehicle-id]',
+15082:         '#occupied [data-vehicle_id]'
+15083:     ].join(', ');
+15084:     const CUSTOM_VEHICLE_ROW_SELECTOR = 'tr, li, .vehicle_select_table_tr, .vehicle_select_table_body_tr, .vehicle-row, .vehicle_row, .vehicle';
+15085: 
+15086:     function customVehicleCategoryText(value) {
+```
+
+Lines 15305-15315
+```javascript
+15305:         }));
+15306:         observer.observe(root, {
+15307:             childList: true,
+15308:             subtree: true,
+15309:             attributes: true,
+15310:             attributeFilter: ['id', 'class', 'vehicle_id', 'data-vehicle-id', 'data-vehicle_id', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id']
+15311:         });
+15312:     }
+15313: 
+15314:     function clearCustomVehicleBadges() {
+15315:         runtimeClearTimeout(customVehicleBadgeScanTimer);
+```
+
+Lines 21945-21955
+```javascript
+21945:     function missionRequirementsReconcilePatientDemand(parsed, patientState) { const requirements = Array.from(parsed?.requirements || []).map(requirement => ({ ...requirement })); const unresolved = Array.from(parsed?.unresolved || []).map(item => ({ ...item })); const details = patientState?.details || {}; const patientPresent = patientState?.present === true || patientState?.transitional === true; const patientKnown = patientState?.known === true && Number.isFinite(Number(patientState?.count)); const patientCount = patientKnown ? Math.max(0, Number(patientState.count) || 0) : null; const mergeVehicleDemand = (key, label, required, known, sourceName) => { const definition = MISSION_REQUIREMENT_DEFINITIONS.find(item => item.key === key); if (!definition) return; const indexes = requirements.map((requirement, index) => requirement.key === key ? index : -1).filter(index => index >= 0); const rows = indexes.map(index => requirements[index]); const statedMissing = rows.reduce((maximum, requirement) => Math.max(maximum, Math.max(0, Number(requirement?.missing) || 0)), 0); for (const duplicateIndex of indexes.slice(1).reverse()) requirements.splice(duplicateIndex, 1); const index = indexes.length ? indexes[0] : requirements.length; const base = rows[0] || { key, requirement: label, missing: required ?? 0, group: 'vehicles', definition }; const row = { ...base, missing: rows.length ? statedMissing : (required ?? 0), group: 'vehicles', definition, patientDerived: true, patientCountKnown: known, patientRequired: required, statedRequirement: rows.length > 0, requirementSource: sourceName }; if (index < requirements.length) requirements[index] = row; else requirements.push(row); }; if (patientPresent && (!patientKnown || patientCount > 0)) { mergeVehicleDemand('ambulance', 'Ambulance', patientCount, patientKnown, 'Patients'); if (!patientKnown && !unresolved.some(item => item?.patientDerived)) unresolved.push({ group: 'vehicles', text: 'Patient total is present but could not be determined.', patientDerived: true }); } const hemsRequired = Math.max(0, Number(details?.hemsRequired?.yes) || 0); if (hemsRequired > 0) mergeVehicleDemand('hems', 'HEMS', hemsRequired, true, 'Patient details'); const mergeCondition = (key, label, requiredFlag, fulfilledFlag) => { const required = Math.max(0, Number(requiredFlag?.yes) || 0, Number(fulfilledFlag?.yes) || 0); if (!required) return; const definition = MISSION_REQUIREMENT_DEFINITIONS.find(item => item.key === key) || { key, label, aliases: [label], group: 'other', types: [], countable: true, patientCondition: true }; const indexes = requirements.map((requirement, index) => requirement.key === key ? index : -1).filter(index => index >= 0); const rows = indexes.map(index => requirements[index]); for (const duplicateIndex of indexes.slice(1).reverse()) requirements.splice(duplicateIndex, 1); const index = indexes.length ? indexes[0] : requirements.length; const existingRequired = rows.reduce((maximum, requirement) => Math.max(maximum, Math.max(0, Number(requirement?.missing) || 0)), 0); const row = { ...(rows[0] || {}), key, requirement: label, missing: Math.max(existingRequired, required), group: 'other', definition, patientDerived: true, patientCondition: true, patientConditionRequired: Math.max(existingRequired, required), patientConditionFulfilled: Math.max(0, Number(fulfilledFlag?.yes) || 0), patientConditionFulfilledKnown: fulfilledFlag?.known === true, statedRequirement: rows.length > 0, requirementSource: 'Patient details' }; if (index < requirements.length) requirements[index] = row; else requirements.push(row); }; mergeCondition('critical-care-patient', 'Critical Care', details?.criticalCareRequired, details?.criticalCareWithPatient); mergeCondition('patient-transport', 'Patient Transport', details?.transportRequired, details?.ambulanceWithPatient); return { requirements, unresolved, patientState }; }
+21946: function missionRequirementsVehicleType(element) { const scopes = []; const addScope = scope => { if (scope && !scopes.includes(scope)) scopes.push(scope); }; addScope(element); addScope(element?.closest?.('tr')); addScope(element?.closest?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]')); const read = scope => missionRequirementsOptionalNumber( scope?.getAttribute?.('vehicle_type_id') ?? scope?.getAttribute?.('data-vehicle-type-id') ?? scope?.getAttribute?.('data-vehicle_type_id') ?? scope?.dataset?.vehicleTypeId ?? scope?.dataset?.vehicle_type_id ); for (const scope of scopes) { const direct = read(scope); if (direct !== null && direct >= 0) return direct; const nested = scope?.querySelector?.('[vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id]'); const nestedType = read(nested); if (nestedType !== null && nestedType >= 0) return nestedType; } const vehicleId = missionRequirementsVehicleId(element); const custom = vehicleId >= 0 && typeof customVehicleClassificationForId === 'function' ? customVehicleClassificationForId(vehicleId) : null; const customType = missionRequirementsOptionalNumber(custom?.baseTypeId); return customType !== null && customType >= 0 ? customType : -1; }
+21947: 
+21948:     function missionRequirementsVehicleId(element) {
+21949:         const scopes = Array.from(new Set([element, element?.closest?.('tr')].filter(Boolean)));
+21950:         const attributes = ['vehicle_id', 'data-vehicle-id', 'data-vehicle_id'];
+21951:         for (const scope of scopes) {
+21952:         for (const raw of [scope?.value, scope?.getAttribute?.('value'), scope?.dataset?.vehicleId, scope?.dataset?.vehicle_id]) {
+21953:             const value = Number.parseInt(raw, 10);
+21954:             if (Number.isFinite(value) && value >= 0) return value;
+21955:         }
+```

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.33
+// @version      4.20.34
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.33',
+        version: '4.20.34',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -14510,19 +14510,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         };
     }
 
-    function captureMissionMarkerData(payload) {
-        if (!payload) return;
+    function resolveMissionMarkerCandidates(payload) {
+        if (!payload) return [];
         if (Array.isArray(payload)) {
-        payload.forEach(captureMissionMarkerData);
-        return;
+        return payload.flatMap(resolveMissionMarkerCandidates);
         }
-        if (typeof payload !== 'object') return;
-
-        const candidates = [payload, payload.params, payload.mission, payload.data].filter(item => item && typeof item === 'object');
-        for (const item of candidates) {
-        const missionId = normaliseMissionId(item.id ?? item.mission_id ?? item.missionId);
-        if (missionId === null) continue;
-
+        if (typeof payload !== 'object') return [];
+        return [payload, payload.params, payload.mission, payload.data]
+        .filter(item => item && typeof item === 'object')
+        .map(item => ({ item, missionId: normaliseMissionId(item.id ?? item.mission_id ?? item.missionId) }))
+        .filter(candidate => candidate.missionId !== null);
+    }
+    function captureMissionMarkerData(payload) {
+        for (const { item, missionId } of resolveMissionMarkerCandidates(payload)) {
         const existing = missionOverlayData.get(missionId) || {};
         setMissionOverlayRecord(missionId, normaliseMissionOverlayRecord(item, existing));
         }

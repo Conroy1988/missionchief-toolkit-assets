@@ -28,6 +28,7 @@ FUNCTION_NAMES = [
     "formatMissingRequirementObject",
     "normaliseMissingRequirementText",
     "normaliseMissionId",
+    "resolveMissionMarkerCandidates",
     "missionIdFromMarker",
     "shallowRecordEqual",
     "setMissionOverlayRecord",
@@ -166,6 +167,28 @@ function assertSubset(actual, expected, label) {
     for (const [key, value] of Object.entries(expected)) {
         assert.deepEqual(actual?.[key], value, `${label}.${key}`);
     }
+}
+
+
+function testCandidateResolution() {
+    const candidateFixture = fixtures.candidateResolution;
+    const objectCandidates = resolveMissionMarkerCandidates(candidateFixture.objectPayload);
+    assert.deepEqual(objectCandidates.map(candidate => candidate.missionId), candidateFixture.objectExpectedIds);
+    assert.equal(objectCandidates[0].item, candidateFixture.objectPayload, "root candidate reference changed");
+    assert.equal(objectCandidates[1].item, candidateFixture.objectPayload.params, "params candidate reference changed");
+    assert.equal(objectCandidates[2].item, candidateFixture.objectPayload.mission, "mission candidate reference changed");
+    assert.equal(objectCandidates[3].item, candidateFixture.objectPayload.data, "data candidate reference changed");
+
+    const arrayCandidates = resolveMissionMarkerCandidates(candidateFixture.arrayPayload);
+    assert.deepEqual(arrayCandidates.map(candidate => candidate.missionId), candidateFixture.arrayExpectedIds, "recursive array order changed");
+
+    assert.deepEqual(resolveMissionMarkerCandidates(candidateFixture.emptyIdBlocksFallback), [], "empty id must continue blocking fallback exactly as production does");
+    assert.deepEqual(resolveMissionMarkerCandidates(candidateFixture.nullFallsThrough).map(candidate => candidate.missionId), ["77"], "nullish ID fallback changed");
+    assert.deepEqual(resolveMissionMarkerCandidates(candidateFixture.duplicatePayload).map(candidate => candidate.missionId), candidateFixture.duplicateExpectedIds, "duplicate candidate behavior changed");
+    assert.deepEqual(resolveMissionMarkerCandidates(null), []);
+    assert.deepEqual(resolveMissionMarkerCandidates(false), []);
+    assert.deepEqual(resolveMissionMarkerCandidates(0), []);
+    assert.deepEqual(resolveMissionMarkerCandidates("mission"), []);
 }
 
 function testOverlayRecordNormalisation() {
@@ -355,11 +378,12 @@ function testSnapshotCoordinatesAndCacheInvalidation() {
     }
 }
 
+testCandidateResolution();
 testOverlayRecordNormalisation();
 testCaptureAndClassification();
 testInlineAndDocumentCapture();
 testSnapshotCoordinatesAndCacheInvalidation();
-console.log("Mission marker ingestion contract passed: direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.");
+console.log("Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.");
 '''
     return template.replace("__FIXTURES__", json.dumps(fixtures, ensure_ascii=False)).replace("__FUNCTIONS__", functions)
 

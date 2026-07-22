@@ -14,7 +14,10 @@
       "date_now": 1784203200,
       "vehicle_state": "3",
       "missing_text": {
-        "vehicles": ["1 Pump", "1 Aerial"],
+        "vehicles": [
+          "1 Pump",
+          "1 Aerial"
+        ],
         "patients": 2
       },
       "patients_count": "2",
@@ -116,13 +119,22 @@
     0,
     "mission",
     {},
-    { "id": "" },
-    { "data": { "mission_id": null } }
+    {
+      "id": ""
+    },
+    {
+      "data": {
+        "mission_id": null
+      }
+    }
   ],
   "source": {
     "script": "missionMarkerAdd({\"id\":5005,\"caption\":\"Inline {Alarm}\",\"user_id\":42}); missionMarkerAdd({\"mission_id\":5006,\"alliance_id\":9,\"user_id\":99}); missionMarkerAdd({bad json});",
     "expectedCaptured": 2,
-    "expectedIds": ["5005", "5006"]
+    "expectedIds": [
+      "5005",
+      "5006"
+    ]
   },
   "documentScripts": [
     "const ignored = true;",
@@ -137,5 +149,77 @@
     "secondNow": 1784203200500,
     "updatedNow": 1784203201000,
     "updatedCaption": "Warehouse Fire - Snapshot Updated"
+  },
+  "candidateResolution": {
+    "objectPayload": {
+      "id": "root",
+      "mission_id": "ignored-root",
+      "params": {
+        "mission_id": 200
+      },
+      "mission": {
+        "missionId": 300
+      },
+      "data": {
+        "id": 400
+      }
+    },
+    "objectExpectedIds": [
+      "root",
+      "200",
+      "300",
+      "400"
+    ],
+    "arrayPayload": [
+      {
+        "id": 10
+      },
+      null,
+      "ignored",
+      {
+        "data": {
+          "mission_id": 20
+        }
+      },
+      [
+        {
+          "missionId": 30
+        },
+        {
+          "id": ""
+        },
+        {
+          "id": 0
+        },
+        {
+          "id": -2
+        }
+      ]
+    ],
+    "arrayExpectedIds": [
+      "10",
+      "20",
+      "30",
+      "0",
+      "-2"
+    ],
+    "emptyIdBlocksFallback": {
+      "id": "",
+      "mission_id": 88
+    },
+    "nullFallsThrough": {
+      "mission_id": null,
+      "missionId": 77
+    },
+    "duplicatePayload": {
+      "id": 70,
+      "data": {
+        "id": 70
+      }
+    },
+    "duplicateExpectedIds": [
+      "70",
+      "70"
+    ]
   }
 }

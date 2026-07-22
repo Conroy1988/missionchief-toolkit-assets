@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.34] - 2026-07-22
+
+### Core mission-data reliability
+- Extracted mission-marker candidate discovery and mission-ID normalization from `captureMissionMarkerData()` into `resolveMissionMarkerCandidates()`.
+- Preserved array recursion, payload/params/mission/data ordering, exact ID-key precedence, stringification, duplicate behavior and overlay publication.
+- Added direct fixtures for nested containers, arrays, nullish fall-through, empty-ID blocking, zero/negative values and duplicate candidates.
+
+### Benefit
+- Mission payload-shape changes are now easier to isolate and support without risking overlay publication, ownership classification or downstream mission windows.
+
+### Compatibility
+- No mission ownership, coordinates, timestamps, requirements, patients, prisoners, event state, visual design, device layout, theme, payout, notification, timing or public asset changed.
+
 ## [4.20.33] - 2026-07-22
 
 ### Internal reliability

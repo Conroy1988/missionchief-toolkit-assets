@@ -6,6 +6,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.29] - 2026-07-22
+
+### Improved
+- Hardened the full iPhone and iPad Safari layout against notches, browser chrome, the home indicator, orientation changes, split view and delayed visual-viewport updates.
+- Rebuilt touch launcher controls, settings tabs, screen pins, bookmarks, profiles and operational drawers around a 44px minimum interaction target with visible press feedback.
+- Added horizontally scrollable mobile tab and screen-pin rails, safe internal scrolling and visual-viewport-constrained panel sizing so menus remain reachable without covering the map.
+- Added multi-frame keyboard and Safari toolbar settling after resize, scroll, focus and orientation events while preserving the existing desktop layout.
+
+### Validation
+- Added a deterministic iOS/Safari usability contract covering viewport geometry, keyboard recovery, safe edges, touch-target floors and prevention of undersized mobile regressions.
+
 ## [4.20.28] - 2026-07-22
 
 ### Internal reliability

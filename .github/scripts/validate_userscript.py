@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+sys.dont_write_bytecode = True
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 BASELINE = ROOT / "status" / "source-baseline.json"
 CHANGELOG = ROOT / "CHANGELOG.md"
@@ -42,6 +46,17 @@ SCRIPT_VERSION_RE = re.compile(
 
 def fail(message: str) -> None:
     raise SystemExit(f"VALIDATION ERROR: {message}")
+
+
+def cleanup_repository_bytecode() -> None:
+    for cache_dir in sorted(ROOT.rglob("__pycache__"), reverse=True):
+        if ".git" in cache_dir.parts:
+            continue
+        shutil.rmtree(cache_dir, ignore_errors=True)
+    for suffix in ("*.pyc", "*.pyo"):
+        for bytecode in ROOT.rglob(suffix):
+            if ".git" not in bytecode.parts:
+                bytecode.unlink(missing_ok=True)
 
 
 def sha256(path: Path) -> str:
@@ -369,4 +384,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    finally:
+        cleanup_repository_bytecode()

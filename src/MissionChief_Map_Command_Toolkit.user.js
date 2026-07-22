@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.32
+// @version      4.20.33
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.32',
+        version: '4.20.33',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28972,13 +28972,14 @@ Create the private backup now?`);
     function applyMissionMonitoringToggleEffects(feature) {
         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
         else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
+    function handleInterfaceShellToggle(feature) {
+        if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else return false; return true; }
     function toggleFeature(feature) {
         handleMapVisibilityToggle(feature);
         handleMissionWindowToggle(feature);
         handlePayoutAudioToggle(feature);
         handleMissionMonitoringToggle(feature);
-        if (feature === 'clean') state.cleanMode = !state.cleanMode;
-        if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
+        handleInterfaceShellToggle(feature);
         if (feature === 'autoLoadAllVehicles') {
             state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
             if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
@@ -28992,7 +28993,6 @@ Create the private backup now?`);
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
         if (feature === 'criticalView') { toggleCriticalView(); return; }
-        if (feature === 'compactDock') state.compactDock = !state.compactDock;
         if (feature === 'autoNight') {
             state.autoNight.enabled = !state.autoNight.enabled;
             state.autoNight.lastBucket = '';

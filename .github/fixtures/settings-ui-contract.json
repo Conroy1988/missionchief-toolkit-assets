@@ -371,5 +371,15 @@
   "extractedMissionMonitoringToggleStatePaths": {
     "missionSpawn": "missionSpawn.enabled",
     "stuckDetector": "stuckDetector.enabled"
+  },
+  "extractedInterfaceShellToggleRoutes": [
+    "clean",
+    "compactDock",
+    "shortcuts"
+  ],
+  "extractedInterfaceShellToggleStatePaths": {
+    "clean": "cleanMode",
+    "compactDock": "compactDock",
+    "shortcuts": "shortcuts"
   }
 }

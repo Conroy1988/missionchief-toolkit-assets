@@ -1,0 +1,23 @@
+returncode=1
+
+/tmp/issue368-2utmszoe/repo/.github/scripts/test_mission_requirements_runtime.js:629
+assert(issue368Html.includes('4/4 covered'), 'Issue #368 panel reports full catalogue coverage');
+                    ^
+
+TypeError: issue368Html.includes is not a function
+    at Object.<anonymous> (/tmp/issue368-2utmszoe/repo/.github/scripts/test_mission_requirements_runtime.js:629:21)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/tmp/issue368-2utmszoe/repo/.github/development-packages/issue368-authoritative-empty-v42037.py", line 212, in <module>
+    subprocess.check_call(["node", str(TEST)], cwd=ROOT, env=env)
+  File "/usr/lib/python3.12/subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['node', '/tmp/issue368-2utmszoe/repo/.github/scripts/test_mission_requirements_runtime.js']' returned non-zero exit status 1.

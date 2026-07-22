@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.35] - 2026-07-22
+
+### Critical Mission Requirements fix
+- Added standalone `Rescue Support Vehicle` and `Rescue Support Vehicles` requirement aliases.
+- Mapped the requirement to the reviewed rescue-support vehicle types `4`, `16`, `38`, and `43`.
+- Preserved PRV type `27` and SRV type `28` as independent requirement families.
+- Added an exact railway-station mission regression covering catalogue parsing, reconciliation, selected, responding, on-site and still-needed counts.
+
+### Benefit
+- Rescue Support Vehicle requirements now receive complete Matrix tracking instead of unresolved `?` values.
+
+### Compatibility
+- Existing composite rescue-support requirements, covered-row visibility, vehicle selection, dispatch, themes, layout and unrelated mission logic are unchanged.
+
 ## [4.20.34] - 2026-07-22
 
 ### Core mission-data reliability

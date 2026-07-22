@@ -1,0 +1,391 @@
+===== occurrence 1 at offset 1534480 =====
+urce);
+        if (record.source?.getAttribute?.('data-mcms-requirements-anchor') === '1') record.source.remove?.();
+        missionRequirementsRecords.delete(source);
+    }
+
+    function clearMissionRequirementsPanels() {
+        for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+        missionRequirementsPatientSnapshots.clear();
+        for (const context of transportSweepDocumentContexts()) {
+            try {
+                context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+                context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+                context.doc.querySelectorAll?.('[data-mcms-requirements-anchor="1"]').forEach(anchor => anchor.remove());
+            } catch (err) {}
+        }
+    }
+
+    function scheduleMissionRequirementsScan(delay = 60) {
+        runtimeClearTimeout(missionRequirementsScanTimer);
+        missionRequirementsScanTimer = runtimeSetTimeout(() => {
+            missionRequirementsScanTimer = null;
+            scanMissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionRequirementsWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeSources.add(source);
+            missionRequirementsEnsureRecord({ ...candidate, source }, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
+        }
+    }
+
+    function missionRequirementsScheduleDocumentRecords(doc) {
+        for (const record of missionRequirementsRecords.values()) {
+            if (record.source?.ownerDocument === doc) missionRequirementsScheduleRecord(record);
+        }
+    }
+
+    function observeMissionRequirementsFrame(frame) {
+        if (!frame || missionRequirementsObservedFrames.has(frame)) return;
+        missionRequirementsObservedFrames.add(frame);
+        const onLoad = () => scheduleMissionRequirementsScan(20);
+        frame.addEventListener('load', onLoad);
+        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionRequirementsDocument(doc) {
+        if (!doc) return;
+        ensureMissionRequirementsDocumentStyle(doc);
+        if (missionRequirementsObservedDocuments.has(doc)) return;
+        missionRequirementsObservedDocuments.add(doc);
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+        runtimeListen(doc, 'change', event => {
+            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+            missionRequirementsScheduleDocumentRecords(doc);
+        }, true); runtimeListen(doc, 'click', event => { if (!event.target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return; const refresh = () => missionRequirementsScheduleDocumentRecords(doc); runtimeRequestAnimationFrame(refresh); runtimeSetTimeout(refresh, 80); runtimeSetTimeout(refresh, 220); }, true);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+            const relevant = mutations.some(mutation => {
+                if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+                if (mutationTouchesSelector(mutation, activitySelector)) return true;
+                return false;
+            });
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+            scheduleMissionRequirementsScan(35);
+            missionRequirementsScheduleDocumentRecords(doc);
+    
+
+===== occurrence 2 at offset 1535631 =====
+MissionRequirementsWindows();
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function scanMissionRequirementsWindows() {
+        if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+        if (!state.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionRequirementsWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeSources.add(source);
+            missionRequirementsEnsureRecord({ ...candidate, source }, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
+        }
+    }
+
+    function missionRequirementsScheduleDocumentRecords(doc) {
+        for (const record of missionRequirementsRecords.values()) {
+            if (record.source?.ownerDocument === doc) missionRequirementsScheduleRecord(record);
+        }
+    }
+
+    function observeMissionRequirementsFrame(frame) {
+        if (!frame || missionRequirementsObservedFrames.has(frame)) return;
+        missionRequirementsObservedFrames.add(frame);
+        const onLoad = () => scheduleMissionRequirementsScan(20);
+        frame.addEventListener('load', onLoad);
+        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionRequirementsDocument(doc) {
+        if (!doc) return;
+        ensureMissionRequirementsDocumentStyle(doc);
+        if (missionRequirementsObservedDocuments.has(doc)) return;
+        missionRequirementsObservedDocuments.add(doc);
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+        runtimeListen(doc, 'change', event => {
+            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+            missionRequirementsScheduleDocumentRecords(doc);
+        }, true); runtimeListen(doc, 'click', event => { if (!event.target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return; const refresh = () => missionRequirementsScheduleDocumentRecords(doc); runtimeRequestAnimationFrame(refresh); runtimeSetTimeout(refresh, 80); runtimeSetTimeout(refresh, 220); }, true);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+            const relevant = mutations.some(mutation => {
+                if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+                if (mutationTouchesSelector(mutation, activitySelector)) return true;
+                return false;
+            });
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+            scheduleMissionRequirementsScan(35);
+            missionRequirementsScheduleDocumentRecords(doc);
+        }));
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+    }
+
+    function installMissionRequirementsWindows() {
+        if (!missionRequirementsPrimaryRuntime()) return;
+        if (!missionRequirementsFeatureInstalled) {
+            missionRequirementsFeatureInstalled = true;
+            runtimeOnCleanup(() => {
+                runtimeClearTimeout(missionRequirementsScanTimer);
+                missionRequirementsScanTimer = null;
+                clearMissionRequirementsPanels();
+                for (const context of transportSweepDocumentContexts()) {
+                    try { context.doc.getElementById?.(SCRIPT.missionRequirementsDocumentStyleId)?.remove(); } catch (err) {}
+                }
+            });
+        }
+        for (const context of transportSweepDocumentContexts()) observeMissionRequirementsDocument(context.doc);
+        scheduleMissionRequirementsScan(0);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 1600)
+
+===== occurrence 3 at offset 1535855 =====
+ate.missionRequirements) {
+            clearMissionRequirementsPanels();
+            return;
+        }
+        const activeSources = new Set();
+        const activeDocuments = new WeakSet();
+        for (const candidate of missionRequirementsWindowCandidates()) {
+            const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
+            if (!source || source.isConnected === false) continue;
+            const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+            if (!doc || activeDocuments.has(doc)) continue;
+            activeDocuments.add(doc);
+            ensureMissionRequirementsDocumentStyle(doc);
+            if (missionRequirementsLssmActive(candidate, source)) {
+                missionRequirementsRemoveRecord(source);
+                continue;
+            }
+            activeSources.add(source);
+            missionRequirementsEnsureRecord({ ...candidate, source }, source);
+        }
+        for (const source of Array.from(missionRequirementsRecords.keys())) {
+            if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
+        }
+    }
+
+    function missionRequirementsScheduleDocumentRecords(doc) {
+        for (const record of missionRequirementsRecords.values()) {
+            if (record.source?.ownerDocument === doc) missionRequirementsScheduleRecord(record);
+        }
+    }
+
+    function observeMissionRequirementsFrame(frame) {
+        if (!frame || missionRequirementsObservedFrames.has(frame)) return;
+        missionRequirementsObservedFrames.add(frame);
+        const onLoad = () => scheduleMissionRequirementsScan(20);
+        frame.addEventListener('load', onLoad);
+        runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionRequirementsDocument(doc) {
+        if (!doc) return;
+        ensureMissionRequirementsDocumentStyle(doc);
+        if (missionRequirementsObservedDocuments.has(doc)) return;
+        missionRequirementsObservedDocuments.add(doc);
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+        runtimeListen(doc, 'change', event => {
+            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+            missionRequirementsScheduleDocumentRecords(doc);
+        }, true); runtimeListen(doc, 'click', event => { if (!event.target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return; const refresh = () => missionRequirementsScheduleDocumentRecords(doc); runtimeRequestAnimationFrame(refresh); runtimeSetTimeout(refresh, 80); runtimeSetTimeout(refresh, 220); }, true);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+            const relevant = mutations.some(mutation => {
+                if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+                if (mutationTouchesSelector(mutation, activitySelector)) return true;
+                return false;
+            });
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+            scheduleMissionRequirementsScan(35);
+            missionRequirementsScheduleDocumentRecords(doc);
+        }));
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+    }
+
+    function installMissionRequirementsWindows() {
+        if (!missionRequirementsPrimaryRuntime()) return;
+        if (!missionRequirementsFeatureInstalled) {
+            missionRequirementsFeatureInstalled = true;
+            runtimeOnCleanup(() => {
+                runtimeClearTimeout(missionRequirementsScanTimer);
+                missionRequirementsScanTimer = null;
+                clearMissionRequirementsPanels();
+                for (const context of transportSweepDocumentContexts()) {
+                    try { context.doc.getElementById?.(SCRIPT.missionRequirementsDocumentStyleId)?.remove(); } catch (err) {}
+                }
+            });
+        }
+        for (const context of transportSweepDocumentContexts()) observeMissionRequirementsDocument(context.doc);
+        scheduleMissionRequirementsScan(0);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 1600);
+    }
+
+
+
+
+
+    function criticalMissionValueForEntry(entry) {
+        return criticalMissionValueDetails(entry).value;
+    }
+
+    function criticalValueEligible(entry) {
+        return selectedCriticalValueMode() === 'tota
+
+===== occurrence 4 at offset 1537627 =====
+Cleanup(() => frame.removeEventListener('load', onLoad));
+    }
+
+    function observeMissionRequirementsDocument(doc) {
+        if (!doc) return;
+        ensureMissionRequirementsDocumentStyle(doc);
+        if (missionRequirementsObservedDocuments.has(doc)) return;
+        missionRequirementsObservedDocuments.add(doc);
+        try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+        runtimeListen(doc, 'change', event => {
+            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
+            missionRequirementsScheduleDocumentRecords(doc);
+        }, true); runtimeListen(doc, 'click', event => { if (!event.target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return; const refresh = () => missionRequirementsScheduleDocumentRecords(doc); runtimeRequestAnimationFrame(refresh); runtimeSetTimeout(refresh, 80); runtimeSetTimeout(refresh, 220); }, true);
+        const root = doc.documentElement || doc.body;
+        if (!root) return;
+        const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+        const view = doc.defaultView || pageWindow;
+        const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+        const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+            const relevant = mutations.some(mutation => {
+                if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+                if (mutationTouchesSelector(mutation, activitySelector)) return true;
+                return false;
+            });
+            if (!relevant) return;
+            try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+            scheduleMissionRequirementsScan(35);
+            missionRequirementsScheduleDocumentRecords(doc);
+        }));
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+    }
+
+    function installMissionRequirementsWindows() {
+        if (!missionRequirementsPrimaryRuntime()) return;
+        if (!missionRequirementsFeatureInstalled) {
+            missionRequirementsFeatureInstalled = true;
+            runtimeOnCleanup(() => {
+                runtimeClearTimeout(missionRequirementsScanTimer);
+                missionRequirementsScanTimer = null;
+                clearMissionRequirementsPanels();
+                for (const context of transportSweepDocumentContexts()) {
+                    try { context.doc.getElementById?.(SCRIPT.missionRequirementsDocumentStyleId)?.remove(); } catch (err) {}
+                }
+            });
+        }
+        for (const context of transportSweepDocumentContexts()) observeMissionRequirementsDocument(context.doc);
+        scheduleMissionRequirementsScan(0);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+        runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 1600);
+    }
+
+
+
+
+
+    function criticalMissionValueForEntry(entry) {
+        return criticalMissionValueDetails(entry).value;
+    }
+
+    function criticalValueEligible(entry) {
+        return selectedCriticalValueMode() === 'total' || Boolean(entry?.eligibleForCredits);
+    }
+
+    function criticalValueGroup(entries, predicate = () => true) {
+        let total = 0;
+        let known = 0;
+        let unknown = 0;
+        let eligible = 0;
+        const seenMissionIds = new Set();
+        const sources = new Map();
+        for (const entry of entries) {
+            if (!predicate(entry) || !criticalValueEligible(entry)) continue;
+            const missionId = normaliseMissionId(entry?.missionId);
+            if (missionId !== null && seenMissionIds.has(missionId)) continue;
+            if (missionId !== null) seenMissionIds.add(missionId);
+            if (entry?.eligibleForCredits) eligible += 1;
+            const details = criticalMissionValueDetails(entry);
+            const value = details.value;
+            if (value === null || !Number.isFinite(Number(value))) {
+                unknown += 1;
+                continue;
+            }
+            total += Math.max(0, Number(value) || 0);
+            known += 1;
+            sources.set(details.source, (sources.get(details.source) || 0) + 1);
+        }
+        return { total: Math.round(total), known, unknown, eligible, count: seenMissionIds.size, sources };
+    }
+
+    function criticalValueDisplay(group) {
+        if (!group?.known) return 'UNKNOWN';
+        return `≈${formatOperationalCompactCredits(group.total)} CR`;
+    }
+
+    function criticalValueCoverage(group) {
+        return `${group.known.toLocaleString('en-GB')} / ${(group.known + group.unknown).toLocaleString('en-GB')} valued`;
+    }
+
+    function criticalValueTitle(label, group) {
+        const knownText = `${group.known.toLocaleString('en-GB')} valued mission${group.known === 1 ? '' : 's'}`;
+        const unknownText = group.unknown ? ` · ${group.unknown.

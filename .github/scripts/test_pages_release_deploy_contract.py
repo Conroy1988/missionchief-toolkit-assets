@@ -13,13 +13,10 @@ RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release-toolkit.yml"
 def main() -> int:
     pages = PAGES_WORKFLOW.read_text(encoding="utf-8")
     required = [
-        "  release:\n    types:\n      - published",
         "format('toolkit-pages-pr-{0}', github.event.pull_request.number)",
         "'toolkit-pages-production'",
         "cancel-in-progress: true",
         "Resolve verified production source",
-        "github.event.release.tag_name",
-        "EXPECTED_TAG#v",
         "git fetch --no-tags --depth=1 origin main",
         "git reset --hard origin/main",
         "latestRelease.version // empty",
@@ -32,6 +29,7 @@ def main() -> int:
     ]
     missing = [fragment for fragment in required if fragment not in pages]
     assert not missing, f"Pages production deployment contract fragments missing: {missing}"
+    assert "  release:\n" not in pages, "Release publication must not trigger a duplicate Pages deployment"
     assert "group: toolkit-pages-${{" not in pages, (
         "Legacy event-specific production concurrency group still permits release/push deployment races"
     )
@@ -47,12 +45,12 @@ def main() -> int:
     release_required = [
         "permissions:\n  contents: write\n  actions: write",
         "Record successful release in dashboard",
-        "Deploy verified documentation site",
+        "Publish update channels in parallel",
         "gh workflow run github-pages.yml --ref main",
-        "gh run list --workflow github-pages.yml --event workflow_dispatch --branch main",
-        "The dispatched GitHub Pages deployment run was not found",
-        'gh run watch "$RUN_ID" --exit-status',
-        "steps.pages_deploy.outputs.run_id",
+        "gh run list --workflow \"$workflow\" --event workflow_dispatch --branch main",
+        "The dispatched GitHub Pages run was not found",
+        'gh run watch "$PAGES_RUN_ID" --exit-status',
+        "steps.channels.outputs.pages_run_id",
     ]
     release_missing = [fragment for fragment in release_required if fragment not in release]
     assert not release_missing, (
@@ -61,7 +59,7 @@ def main() -> int:
     )
 
     dashboard_index = release.index("Record successful release in dashboard")
-    pages_dispatch_index = release.index("Deploy verified documentation site")
+    pages_dispatch_index = release.index("Publish update channels in parallel")
     summary_index = release.index("Write release summary")
     assert dashboard_index < pages_dispatch_index < summary_index, (
         "The release must record verified state, await the Pages deployment, then write its final summary"

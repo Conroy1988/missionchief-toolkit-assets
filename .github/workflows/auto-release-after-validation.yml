@@ -1,0 +1,93 @@
+name: Automatic Toolkit Release
+
+run-name: Automatic release after validated main
+
+on:
+  workflow_run:
+    workflows:
+      - Validate Canonical Userscript
+    types:
+      - completed
+
+permissions:
+  actions: write
+  contents: write
+
+concurrency:
+  group: toolkit-automatic-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve validated unreleased candidate
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      release_needed: ${{ steps.candidate.outputs.release_needed }}
+      version: ${{ steps.candidate.outputs.version }}
+    steps:
+      - name: Check out reconciled main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify validated candidate is not already released
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.distributionCandidate.version // empty' status/release-dashboard.json)"
+          STATE="$(jq -r '.distributionCandidate.state // empty' status/release-dashboard.json)"
+          VALIDATION="$(jq -r '.status.validation // empty' status/release-dashboard.json)"
+          RELEASED="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
+          SOURCE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' src/MissionChief_Map_Command_Toolkit.user.js | head -n 1 | xargs)"
+
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]
+          [[ "$VERSION" == "$SOURCE_VERSION" ]]
+          [[ "$STATE" == "validated" ]]
+          [[ "$VALIDATION" == "passed" ]]
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$RELEASED" == "$VERSION" ]]; then
+            echo "release_needed=false" >> "$GITHUB_OUTPUT"
+            echo "Toolkit v${VERSION} is already the verified release."
+          else
+            echo "release_needed=true" >> "$GITHUB_OUTPUT"
+            echo "Toolkit v${VERSION} is validated and will release automatically."
+          fi
+
+  readiness:
+    name: Run mandatory release readiness
+    needs: prepare
+    if: needs.prepare.outputs.release_needed == 'true'
+    permissions:
+      actions: write
+      contents: read
+    uses: ./.github/workflows/release-readiness-check.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+
+  production:
+    name: Run guarded production release
+    needs:
+      - prepare
+      - readiness
+    if: needs.prepare.outputs.release_needed == 'true' && needs.readiness.result == 'success'
+    permissions:
+      actions: write
+      contents: write
+    uses: ./.github/workflows/release-toolkit.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      confirmation: RELEASE
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}

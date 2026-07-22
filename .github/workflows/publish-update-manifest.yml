@@ -1,11 +1,6 @@
 name: Publish Toolkit Update Manifest
 
 on:
-  workflow_run:
-    workflows:
-      - Release Toolkit
-    types:
-      - completed
   workflow_dispatch:
 
 permissions:
@@ -17,10 +12,6 @@ concurrency:
 
 jobs:
   publish:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 

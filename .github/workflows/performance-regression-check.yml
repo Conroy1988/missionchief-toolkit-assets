@@ -12,19 +12,6 @@ on:
       - ".github/scripts/test_runtime_optimisations.py"
       - ".github/workflows/performance-regression-check.yml"
       - "docs/audits/performance-profiler.md"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "tools/mcms-performance-profiler.user.js"
-      - ".github/performance-budget.json"
-      - ".github/scripts/check_performance_budget.py"
-      - ".github/scripts/test_performance_budget.py"
-      - ".github/scripts/test_performance_profiler.js"
-      - ".github/scripts/test_runtime_optimisations.py"
-      - ".github/workflows/performance-regression-check.yml"
-      - "docs/audits/performance-profiler.md"
   workflow_dispatch:
 
 permissions:

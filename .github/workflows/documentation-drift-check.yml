@@ -16,21 +16,6 @@ on:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - "CHANGELOG.md"
       - "README.md"
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/documentation-contract.json"
-      - ".github/fixtures/documentation-version-states.json"
-      - ".github/scripts/check_documentation_drift.py"
-      - ".github/scripts/test_documentation_version_states.py"
-      - ".github/workflows/documentation-drift-check.yml"
-      - ".github/release-settings.json"
-      - "docs/site-data.json"
-      - "status/release-dashboard.json"
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "CHANGELOG.md"
-      - "README.md"
   schedule:
     - cron: "23 4 * * 3"
   workflow_dispatch:

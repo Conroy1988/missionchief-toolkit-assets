@@ -22,28 +22,6 @@ on:
       - "**/*.gif"
       - "**/*.webp"
       - "**/*.svg"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/asset-health-policy.json"
-      - ".github/release-settings.json"
-      - ".github/ASSET_HEALTH.md"
-      - ".github/scripts/check_asset_health.py"
-      - ".github/scripts/check_distribution_body_parity.py"
-      - ".github/scripts/test_asset_health.py"
-      - ".github/workflows/asset-health-monitor.yml"
-      - "status/release-dashboard.json"
-      - "**/*.mp3"
-      - "**/*.wav"
-      - "**/*.ogg"
-      - "**/*.png"
-      - "**/*.jpg"
-      - "**/*.jpeg"
-      - "**/*.gif"
-      - "**/*.webp"
-      - "**/*.svg"
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:

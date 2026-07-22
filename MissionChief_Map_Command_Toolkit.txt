@@ -23075,10 +23075,10 @@ function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!
         if (missionRequirementsObservedDocuments.has(doc)) return;
         missionRequirementsObservedDocuments.add(doc);
         try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
-        runtimeListen(doc, 'change', event => {
-            if (!event.target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]')) return;
-            missionRequirementsScheduleDocumentRecords(doc);
-        }, true); runtimeListen(doc, 'click', event => { if (!event.target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return; const refresh = () => missionRequirementsScheduleDocumentRecords(doc); runtimeRequestAnimationFrame(refresh); runtimeSetTimeout(refresh, 80); runtimeSetTimeout(refresh, 220); }, true);
+        runtimeListen(doc, 'click', event => {
+            const target = event.target; if (!target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]') && !target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return;
+            scheduleMissionRequirementsScan(35);
+        }, true);
         const root = doc.documentElement || doc.body;
         if (!root) return;
         const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';

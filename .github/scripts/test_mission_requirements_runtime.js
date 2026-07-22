@@ -175,6 +175,7 @@ let nextAnimationId = 1;
 const trackedObservers = new Set();
 const listenedEvents = [];
 const openedUrls = [];
+const timeoutCalls = [];
 const flushAnimationFrames = () => {
     while (animationQueue.length) {
         const queue = animationQueue;
@@ -207,7 +208,7 @@ const context = {
     vehicleApiReady: true,
     vehicleApiFetchPromise: null,
     refreshPersonalVehicleData: () => Promise.resolve(true),
-    runtimeSetTimeout: () => 1,
+    runtimeSetTimeout: (callback, delay) => { timeoutCalls.push({ callback, delay }); return timeoutCalls.length; },
     runtimeClearTimeout: () => {},
     runtimeRequestAnimationFrame: callback => {
         const id = nextAnimationId++;
@@ -559,17 +560,24 @@ issue353RefreshDoc.defaultView = { MutationObserver: FakeMutationObserver, locat
 const issue353ListenerStart = listenedEvents.length;
 api.observeDocument(issue353RefreshDoc);
 const issue353ClickRegistration = listenedEvents.find(entry => entry.target === issue353RefreshDoc && entry.type === 'click');
-assert(issue353ClickRegistration, 'Matrix registers delegated ARR refresh listener');
+assert(issue353ClickRegistration, 'Matrix registers one delegated selection refresh listener');
+const issue353Checkbox = new FakeElement('input', issue353RefreshDoc);
+issue353Checkbox.matches = selector => selector.includes('.vehicle_checkbox');
+const issue353CheckboxTimeouts = timeoutCalls.length;
+issue353ClickRegistration.listener({ target: issue353Checkbox });
+assert.strictEqual(timeoutCalls.length, issue353CheckboxTimeouts + 1, 'direct checkbox click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'direct checkbox refresh uses the managed 35 ms scan delay');
 const issue353AaoControl = new FakeElement('a', issue353RefreshDoc);
 const issue353AaoChild = new FakeElement('span', issue353RefreshDoc);
 issue353AaoChild.closestMap.set('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]', issue353AaoControl);
-const issue353QueueBefore = animationQueue.length;
+const issue353AaoTimeouts = timeoutCalls.length;
 issue353ClickRegistration.listener({ target: issue353AaoChild });
-assert.strictEqual(animationQueue.length, issue353QueueBefore + 1, 'ARR click schedules a post-selection Matrix refresh');
+assert.strictEqual(timeoutCalls.length, issue353AaoTimeouts + 1, 'ARR click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'ARR refresh uses the managed 35 ms scan delay');
 const issue353Unrelated = new FakeElement('span', issue353RefreshDoc);
-const issue353UnrelatedQueue = animationQueue.length;
+const issue353UnrelatedTimeouts = timeoutCalls.length;
 issue353ClickRegistration.listener({ target: issue353Unrelated });
-assert.strictEqual(animationQueue.length, issue353UnrelatedQueue, 'unrelated clicks do not schedule Matrix refreshes');
+assert.strictEqual(timeoutCalls.length, issue353UnrelatedTimeouts, 'unrelated clicks do not schedule Matrix refreshes');
 flushAnimationFrames();
 listenedEvents.splice(issue353ListenerStart);
 
@@ -2511,7 +2519,7 @@ api.scan();
 flushAnimationFrames();
 assert.strictEqual(api.records.size, 0, 'disabling the feature removes every panel and observer record');
 context.state.missionRequirements = true;
-assert(listenedEvents.filter(event => event.type === 'change').length === 1, 'delegated checkbox change listener is installed once');
+assert(listenedEvents.filter(event => event.target === lifecycleDoc && event.type === 'click').length === 1, 'delegated selection click listener is installed once per document');
 assert(trackedObservers.size >= 1, 'document lifecycle observer remains runtime-owned');
 
 

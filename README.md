@@ -12,7 +12,7 @@
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Explore themes](https://img.shields.io/badge/EXPLORE-7_INTERFACE_SYSTEMS-6D28D9?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 
-**Current verified release:** `v4.20.27`
+**Current verified release:** `v4.20.28`
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=release&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork version](https://img.shields.io/greasyfork/v/586018?label=Greasy%20Fork&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -22,7 +22,7 @@
 [![Full audit](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence-and-attribution)
 
-[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.27**](#current-v42027-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
+[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.28**](#current-v42028-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
 
 </div>
 
@@ -67,11 +67,33 @@ Every major module can be enabled independently. Use the complete suite or retai
 | Review version history | [CHANGELOG.md](CHANGELOG.md) |
 | Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
 
-## Current v4.20.27 release
+## Current v4.20.28 release
 
-### Map and visibility lifecycle hardening
+### Mission-window lifecycle hardening
 
-Version `4.20.27` extracts the nine map and visibility state routes from the main `toggleFeature()` dispatcher into the independently tested `handleMapVisibilityToggle()` helper:
+Version `4.20.28` extracts four mission-window state routes from the main `toggleFeature()` dispatcher into the independently tested `handleMissionWindowToggle()` helper:
+
+- Mission Inspector;
+- Mission Value;
+- Mission Requirements; and
+- Custom Vehicle Badges.
+
+Their post-reconciliation install, clear, and notification effects now run through `applyMissionWindowToggleEffects()` at the same point in the lifecycle as before.
+
+Direct and delegated fixture coverage verifies:
+
+- the complete route inventory;
+- state isolation between the four features;
+- safe handling of unknown routes;
+- enabled and disabled effects; and
+- the exact **update → reconciliation → effect** execution order.
+
+> [!IMPORTANT]
+> This is an internal reliability release. Mission-window presentation, Desktop/Tablet/iOS behaviour, setting names, themes, payout presentation, and public assets are intentionally unchanged.
+
+### Map and visibility routing retained from v4.20.27
+
+The production line retains the extraction of nine map and visibility routes into `handleMapVisibilityToggle()`:
 
 - marker focus;
 - mission pulse;
@@ -83,30 +105,17 @@ Version `4.20.27` extracts the nine map and visibility state routes from the mai
 - vehicles; and
 - buildings.
 
-Vehicle and building layer synchronisation now runs through `applyMapVisibilityToggleEffects()` at the same post-render position as before, including Economy Mode resynchronisation. Direct and delegated fixture coverage verifies route inventory, unknown-route safety, saved-state parity, and the exact **update → layer synchronisation → Economy Mode → reconciliation** order.
+Vehicle and building layer effects remain isolated in `applyMapVisibilityToggleEffects()`, including Economy Mode resynchronisation and the verified **update → layer synchronisation → Economy Mode → reconciliation** order.
 
-> [!IMPORTANT]
-> This is an internal reliability release. Map presentation, mission visibility, overlays, Desktop/Tablet/iOS layouts, setting names, themes, payout presentation, and public assets are intentionally unchanged.
+### Financial-setting routing retained from v4.20.26
 
-### Settings routing retained from v4.20.26
-
-The current production line also retains the `v4.20.26` extraction of fourteen Discord financial-report and Local Financial Archive setting routes into `handleDiscordFinancialSettingChange()`.
-
-The contract preserves:
-
-- all existing setting names and normalisation rules;
-- persistence and preview invalidation;
-- asynchronous feed refresh behaviour;
-- all 36 rendered settings;
-- intentional no-op handling;
-- source/distribution parity; and
-- the permanent 500-line source-headroom margin.
+Fourteen Discord financial-report and Local Financial Archive routes remain isolated in `handleDiscordFinancialSettingChange()` while preserving setting names, normalisation, persistence, preview invalidation, asynchronous refresh, all 36 rendered settings, intentional no-op handling, source/distribution parity, and the permanent source-headroom margin.
 
 ### Boot lifecycle and performance evidence
 
 The seven recurring Boot maintenance registrations remain isolated in `registerBootMaintenanceTasks()` while `boot()` retains initialization-order ownership. Callback logic, intervals, Economy Mode scheduling, observer/listener coverage, teardown behaviour, and distribution parity remain fixture-backed.
 
-The repository also carries measurement-only tooling for unchanged-render analysis: an instrumented profiler, deterministic scenarios, a render-probe generator, evidence documentation, and a dedicated evidence workflow. These tools do not modify production runtime behaviour.
+The repository also carries measurement-only unchanged-render tooling: an instrumented profiler, deterministic scenarios, a render-probe generator, evidence documentation, and a dedicated evidence workflow. These tools do not modify production runtime behaviour.
 
 ### Financial Advisor reconciliation
 
@@ -116,7 +125,7 @@ The system:
 
 - paginates through bounded historical overview coverage;
 - preserves detailed transaction categories;
-- exposes unexplained income, spending, and net variance instead of inventing categories;
+- exposes unexplained income, spending, and net variance rather than inventing categories;
 - applies overview-confirmed totals only to complete covered days;
 - retains detailed-ledger totals for partial days;
 - shares one canonical model with the dashboard, Discord reports, and generated Financial Command graphics; and
@@ -191,8 +200,7 @@ MissionChief can display the same base vehicle type for vehicles serving very di
 
 - Seven complete interface systems
 - Independent payout-presentation selection
-- Economy Mode
-- Reduced-motion support
+- Economy Mode and reduced-motion support
 - Settings import/export
 - Hosted transparent assets and optional audio
 - Configurable completion duration and emergency flash
@@ -262,7 +270,7 @@ The canonical userscript is:
 src/MissionChief_Map_Command_Toolkit.user.js
 ```
 
-The release path is designed as a verified delivery chain:
+The verified delivery chain is:
 
 ```text
 Issue-scoped development
@@ -300,19 +308,20 @@ Release-readiness and asset audit
 - Boot lifecycle registration contract
 - Discord financial and Local Archive setting-route contract
 - Map and visibility route/effect ordering contract
+- Mission-window route/reconciliation/effect ordering contract
 - Controlled performance and unchanged-render measurement
 - Sensitive-value and webhook guards
 
-### v4.20.27 recovery identity
+### v4.20.28 recovery identity
 
 | Field | Value |
 |---|---|
-| Validated candidate commit | `c60ec6e17c2a980e73d9d92afb5d2ad59a9ad081` |
-| SHA-256 | `8927d7064d2c757cae791cbcb14f2eaefcf3e831c32197727cbd846f95b05ea2` |
-| Verified release record | `3bac8b32c352eae627a9dd7ad778fd3263b730c5` |
-| Update manifest commit | `fee42c4af3ca6ec9a74152165e48201a5d32e626` |
-| Public release | [v4.20.27](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.27) |
-| Private backup commit | `db9c8669d535df7e7347613c3e2ad6aa2ec91127` |
+| Validated candidate commit | `c1e5470a98c7da51668f421802d4deaffec4aa0a` |
+| SHA-256 | `834bd75ad718df10e47aa08292f4f20f31e1ad8afc1a3b7d8ab18e0913a2d37e` |
+| Verified release record | `87c7f17233136169a21a40172384befc893abb40` |
+| Update manifest commit | `383781a7e8503b878c2ab60e0fbf37a2642f6cdd` |
+| Public release | [v4.20.28](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.28) |
+| Private backup commit | `e06fd7ac26c8dc5bc7de7b358ff1bf20cd8c1656` |
 | Private archive | `Conroy1988/missionchief-map-command-toolkit-private` |
 
 ## Development model

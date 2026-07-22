@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.27
+// @version      4.20.28
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.27',
+        version: '4.20.28',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28939,8 +28939,23 @@ Create the private backup now?`);
         if (feature === 'buildings') synchronisePersonalBuildingVisibility();
         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
     }
+    function handleMissionWindowToggle(feature) {
+        if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+        else if (feature === 'missionValue') state.missionValue = !state.missionValue;
+        else if (feature === 'missionRequirements') state.missionRequirements = !state.missionRequirements;
+        else if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
+        else return false;
+        return true;
+    }
+    function applyMissionWindowToggleEffects(feature) {
+        if (feature === 'missionValue') { if (state.missionValue) installMissionValueWindows(); else clearMissionValueIndicators(); showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off'); }
+        if (feature === 'missionRequirements') { if (state.missionRequirements) installMissionRequirementsWindows(); else clearMissionRequirementsPanels(); showToast(state.missionRequirements ? 'Mission Requirements on' : 'Mission Requirements off'); }
+        if (feature === 'customVehicleBadges') { if (state.customVehicleBadges) installCustomVehicleBadges(); else clearCustomVehicleBadges(); showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off'); }
+        if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
+    }
     function toggleFeature(feature) {
         handleMapVisibilityToggle(feature);
+        handleMissionWindowToggle(feature);
         if (feature === 'clean') state.cleanMode = !state.cleanMode;
         if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
         if (feature === 'autoLoadAllVehicles') {
@@ -28958,10 +28973,6 @@ Create the private backup now?`);
         if (feature === 'missionAge') state.missionAge = !state.missionAge;
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
-        if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
-        if (feature === 'missionValue') state.missionValue = !state.missionValue;
-        if (feature === 'missionRequirements') state.missionRequirements = !state.missionRequirements;
-        if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
         if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
         if (feature === 'missionSpawn') {
@@ -28989,21 +29000,7 @@ Create the private backup now?`);
         updateUI();
         applyMapVisibilityToggleEffects(feature);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
-        if (feature === 'missionValue') {
-            if (state.missionValue) installMissionValueWindows();
-            else clearMissionValueIndicators();
-            showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off');
-        }
-        if (feature === 'missionRequirements') {
-            if (state.missionRequirements) installMissionRequirementsWindows();
-            else clearMissionRequirementsPanels();
-            showToast(state.missionRequirements ? 'Mission Requirements on' : 'Mission Requirements off');
-        }
-        if (feature === 'customVehicleBadges') {
-            if (state.customVehicleBadges) installCustomVehicleBadges();
-            else clearCustomVehicleBadges();
-            showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off');
-        }
+        applyMissionWindowToggleEffects(feature);
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
@@ -29036,7 +29033,6 @@ Create the private backup now?`);
             showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
             if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
         }
-        if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
         if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off');
         if (feature === 'resourceGap') {

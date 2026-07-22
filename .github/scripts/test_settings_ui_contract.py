@@ -39,6 +39,8 @@ FUNCTION_NAMES = [
     "applyImportedToolkitSettings",
     "handleMapVisibilityToggle",
     "applyMapVisibilityToggleEffects",
+    "handleMissionWindowToggle",
+    "applyMissionWindowToggleEffects",
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
@@ -73,6 +75,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     handle_setting = extract_function(source, masked, "handleSettingChange")
     handle_map_visibility_toggle = extract_function(source, masked, "handleMapVisibilityToggle")
     apply_map_visibility_effects = extract_function(source, masked, "applyMapVisibilityToggleEffects")
+    handle_mission_window_toggle = extract_function(source, masked, "handleMissionWindowToggle")
+    apply_mission_window_effects = extract_function(source, masked, "applyMissionWindowToggleEffects")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
     actions = values(r'data-action\s*=\s*["\']([^"\']+)["\']', create_panel)
@@ -89,7 +93,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     direct_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', toggle_feature)
     extracted_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_map_visibility_toggle)
     extracted_toggle_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_map_visibility_effects)
-    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes))
+    mission_window_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_mission_window_toggle)
+    mission_window_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_mission_window_effects)
+    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes))
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
     assert actions == sorted(fixtures["actions"]), "Visible data-action inventory changed"
@@ -102,6 +108,11 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert not set(direct_toggle_routes).intersection(extracted_toggle_routes), "Extracted toggles must not remain duplicated in toggleFeature"
     assert "handleMapVisibilityToggle(feature)" in toggle_feature, "Main toggle router must delegate to the extracted map/visibility state family"
     assert "applyMapVisibilityToggleEffects(feature)" in toggle_feature, "Main toggle router must delegate to the extracted map/visibility effect family"
+    assert mission_window_toggle_routes == sorted(fixtures["extractedMissionWindowToggleRoutes"]), "Extracted mission-window toggle routing changed"
+    assert mission_window_effect_routes == sorted(fixtures["extractedMissionWindowEffectRoutes"]), "Extracted mission-window effect routing changed"
+    assert not set(direct_toggle_routes).intersection(mission_window_toggle_routes), "Extracted mission-window toggles must not remain duplicated in toggleFeature"
+    assert "handleMissionWindowToggle(feature)" in toggle_feature, "Main toggle router must delegate to the extracted mission-window state family"
+    assert "applyMissionWindowToggleEffects(feature)" in toggle_feature, "Main toggle router must delegate to the extracted mission-window effect family"
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
@@ -517,6 +528,47 @@ function testExtractedMapVisibilityToggleContracts() {{
     assert.equal(calls.length, 0, "map overlays without direct layer sync must remain side-effect free in the extracted effect phase");
 }}
 
+
+function testExtractedMissionWindowToggleContracts() {{
+    for (const [feature, path] of Object.entries(fixtures.extractedMissionWindowToggleStatePaths)) {{
+        resetEnvironment();
+        const before = pathValue(state, path);
+        assert.equal(handleMissionWindowToggle(feature), true, `${{feature}} was not handled directly`);
+        assert.notEqual(pathValue(state, path), before, `${{feature}} did not toggle ${{path}} directly`);
+        assert.equal(localStorage.getItem(SCRIPT.storageState), null, `${{feature}} helper must not persist before router finalization`);
+        assert.equal(wasCalled("updateUI"), false, `${{feature}} helper must not render before router finalization`);
+    }}
+
+    resetEnvironment();
+    const beforeUnknown = JSON.stringify(state);
+    assert.equal(handleMissionWindowToggle("unknown-mission-window-toggle"), false);
+    assert.equal(JSON.stringify(state), beforeUnknown, "unknown mission-window toggle mutated state");
+
+    const effects = [
+        ["missionValue", "installMissionValueWindows", "clearMissionValueIndicators"],
+        ["missionRequirements", "installMissionRequirementsWindows", "clearMissionRequirementsPanels"],
+        ["customVehicleBadges", "installCustomVehicleBadges", "clearCustomVehicleBadges"],
+    ];
+    for (const [feature, installCall, clearCall] of effects) {{
+        resetEnvironment();
+        applyMissionWindowToggleEffects(feature);
+        assert.equal(wasCalled(installCall), true, `${{feature}} enabled effect did not install`);
+        assert.equal(wasCalled(clearCall), false, `${{feature}} enabled effect cleared unexpectedly`);
+        resetEnvironment();
+        state[feature] = false;
+        applyMissionWindowToggleEffects(feature);
+        assert.equal(wasCalled(clearCall), true, `${{feature}} disabled effect did not clear`);
+        assert.equal(wasCalled(installCall), false, `${{feature}} disabled effect installed unexpectedly`);
+    }}
+
+    resetEnvironment();
+    applyMissionWindowToggleEffects("missionInspector");
+    assert.equal(callFor("showToast").args[0], "Mission Inspector on");
+    resetEnvironment();
+    applyMissionWindowToggleEffects("coverage");
+    assert.equal(calls.length, 0, "unrelated toggle entered mission-window effect phase");
+}}
+
 async function testToggleContracts() {{
     for (const [feature, path] of Object.entries(fixtures.toggleStatePaths)) {{
         resetEnvironment();
@@ -551,6 +603,24 @@ async function testToggleContracts() {{
     assert.ok(buildingUpdateIndex >= 0 && buildingUpdateIndex < buildingSyncIndex, "building synchronization must remain after UI synchronization");
     assert.ok(buildingSyncIndex < buildingEconomyIndex, "economy synchronization must remain after building visibility synchronization");
     assert.ok(buildingEconomyIndex < buildingReconcileIndex, "feature reconciliation must remain after map visibility effects");
+
+
+    const missionEffects = [
+        ["missionValue", "installMissionValueWindows"],
+        ["missionRequirements", "installMissionRequirementsWindows"],
+        ["customVehicleBadges", "installCustomVehicleBadges"],
+        ["missionInspector", "showToast"],
+    ];
+    for (const [feature, effectName] of missionEffects) {{
+        resetEnvironment();
+        state[feature] = false;
+        toggleFeature(feature);
+        const updateIndex = calls.findIndex(call => call.name === "updateUI");
+        const reconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+        const effectIndex = calls.findIndex(call => call.name === effectName);
+        assert.ok(updateIndex >= 0 && updateIndex < reconcileIndex, `${{feature}} reconciliation must remain after UI update`);
+        assert.ok(reconcileIndex < effectIndex, `${{feature}} effect must remain after feature reconciliation`);
+    }}
 
     resetEnvironment();
     toggleFeature("criticalView");
@@ -711,11 +781,12 @@ async function testSettingContracts() {{
     testStateMigration();
     testImportContracts();
     testExtractedMapVisibilityToggleContracts();
+    testExtractedMissionWindowToggleContracts();
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue334-export-package-traceback.py", line 19, in <module>
+    exec(compile(code, str(temp_package), 'exec'), namespace)
+  File "/tmp/tmpsufr2lqo/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032.py", line 148, in <module>
+    contract = replace_once(
+               ^^^^^^^^^^^^^
+  File "/tmp/tmpsufr2lqo/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032.py", line 22, in replace_once
+    raise RuntimeError(f"{label}: expected exactly one occurrence, found {count}")
+RuntimeError: contract monitoring route inventory: expected exactly one occurrence, found 0

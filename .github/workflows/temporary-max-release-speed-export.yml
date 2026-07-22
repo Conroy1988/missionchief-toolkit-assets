@@ -72,13 +72,17 @@ jobs:
           git diff --cached --quiet && { echo "::error::Validated optimisation produced no staged changes."; exit 1; }
           git status --short
           git commit -m "Maximise Toolkit release pipeline speed"
+          {
+            echo "commit_sha=$(git rev-parse HEAD)"
+            echo "tree_sha=$(git rev-parse HEAD^{tree})"
+          } > push-diagnostic.log
 
       - name: Attempt validated push
         id: push
         shell: bash
         run: |
           set +e
-          git push origin "HEAD:${{ github.event.pull_request.head.ref }}" > push-diagnostic.log 2>&1
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}" >> push-diagnostic.log 2>&1
           STATUS=$?
           cat push-diagnostic.log
           echo "status=$STATUS" >> "$GITHUB_OUTPUT"

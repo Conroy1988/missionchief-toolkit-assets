@@ -43,7 +43,7 @@ source = replace_once(
 
 settings_shell = r'''    const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
     const OPERATIONAL_SUITE_LSSM_BASELINE = Object.freeze({
-        repository: 'LSS-Manager/LSSM-V.4',
+        repository: 'LSSM-V.4',
         branch: 'dev',
         commit: '88e41646e59a7d620624f90f1d9a0a62320c2775'
     });

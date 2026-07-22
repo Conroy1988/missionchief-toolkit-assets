@@ -195,7 +195,7 @@ MissionChief can display the same base vehicle type for assets serving different
 | **Financial Advisor** | Builds daily, weekly, monthly and custom-period income/spending analysis |
 | **Overview reconciliation** | Anchors complete days to MissionChief Revenue, Spendings and Sum checkpoints |
 | **Variance reporting** | Preserves unexplained differences without inventing classifications |
-| **Discord financial reports** | Sends the canonical reconciled model through configured webhook reporting |
+| **Discord financial reports** | Sends the canonical reconciled model through the saved Discord webhook |
 | **Financial Command graphics** | Generates visual summaries from the same reconciled data model |
 | **Session performance** | Tracks credits, completions, largest payout, aged missions and payout events |
 

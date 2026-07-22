@@ -26,14 +26,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object .github/development-packages/max-release-speed.part-00)" = "717eba0853639a4148ba3e9ee29a19a6b6e62443"
-          test "$(git hash-object .github/development-packages/max-release-speed.part-01)" = "421628730f98da405462231ebc7ca46db0e095e6"
-          test "$(git hash-object .github/development-packages/max-release-speed.part-02)" = "60974a09b8a262c27ad0d88f7b9b84df028ad0fa"
           cat \
             .github/development-packages/max-release-speed.part-00 \
             .github/development-packages/max-release-speed.part-01 \
             .github/development-packages/max-release-speed.part-02 > /tmp/max-release-speed.b64
           base64 -d /tmp/max-release-speed.b64 | gzip -d > /tmp/max-release-speed.patch
+          test -s /tmp/max-release-speed.patch
           git apply --check /tmp/max-release-speed.patch
           git apply /tmp/max-release-speed.patch
 

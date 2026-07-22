@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-07-22",
+  "programme": {
+    "issue": 378,
+    "alertLevel": "nuclear",
+    "targetMajorRelease": true
+  },
+  "toolkit": {
+    "repository": "Conroy1988/missionchief-toolkit-assets",
+    "branch": "main",
+    "commit": "d1e0f30114f3be5f17b5142ec1781868214087bc",
+    "version": "4.20.37",
+    "canonicalUserscript": "src/MissionChief_Map_Command_Toolkit.user.js"
+  },
+  "upstream": {
+    "repository": "LSS-Manager/LSSM-V.4",
+    "branch": "dev",
+    "commit": "88e41646e59a7d620624f90f1d9a0a62320c2775",
+    "publicLicense": "CC BY-NC-SA 4.0",
+    "permissionExceptionConfirmed": true,
+    "permissionScope": [
+      "extendedCallWindow",
+      "extendedCallList",
+      "enhancedTransportRequests",
+      "direct runtime dependencies required for behavioural parity"
+    ]
+  },
+  "files": [
+    {
+      "path": "LICENSE.md",
+      "sha": "cbe5ad1670406e4402217edfb82d2c56af7e8631",
+      "role": "public licence baseline"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/main.ts",
+      "sha": "d831354f616a9c2cd810adabd35e17ff74ac4835",
+      "role": "Extended Call Window entry point"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/settings.ts",
+      "sha": "08564c1f331419be0b249e21a500465346a60f91",
+      "role": "Extended Call Window settings"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/docs/en_GB.md",
+      "sha": "13d349289fd328f4643af807d35c0cc0727f60a0",
+      "role": "UK feature documentation"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/i18n/en_GB.root.json",
+      "sha": "38731ea2677df85550b7e6210b6a483d3fc973e1",
+      "role": "UK settings labels and default tailored tabs"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/i18n/en_GB.json",
+      "sha": "990aa5337238e094ec917d82a5a54cc109b47bba",
+      "role": "UK requirement and runtime translations"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/assets/enhancedMissingVehicles.ts",
+      "sha": "49ddcc64e27d574d075830b474374f03ab4e05d3",
+      "role": "enhanced requirements mount"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/assets/emv/getMissingRequirements.ts",
+      "sha": "7d34cca89c0738bb4625387e753dfbf0b9853a39",
+      "role": "requirement parser, graph and en-route calculation"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/assets/emv/getVehicleListObserveHandler.ts",
+      "sha": "ac31ffede10c0a5f97ea983773ec911a940f0071",
+      "role": "selected vehicle, equipment and tractive calculation"
+    },
+    {
+      "path": "src/modules/extendedCallWindow/components/enhancedMissingVehicles/EMVComponent.vue",
+      "sha": "ad603202aaa2c6f1912bc2697762cc227a804683",
+      "role": "enhanced requirements UI and state"
+    },
+    {
+      "path": "src/modules/extendedCallList/main.ts",
+      "sha": "a0454279b9ad0af30b0fcc6223f2793cf1668c68",
+      "role": "Extended Call List entry point"
+    },
+    {
+      "path": "src/modules/extendedCallList/settings.ts",
+      "sha": "19452624455fe94d3ecd5583dcda45a3f3a5b024",
+      "role": "Extended Call List settings"
+    },
+    {
+      "path": "src/modules/extendedCallList/docs/en_GB.md",
+      "sha": "8e60f91a59e640aacb6f0001b7f1e5eb3d549cd7",
+      "role": "UK mission-list feature documentation"
+    },
+    {
+      "path": "src/modules/enhancedTransportRequests/main.ts",
+      "sha": "670aa1cf07c0bfe1cead6a94885caf5a0dc8838b",
+      "role": "Enhanced Transport Requests entry point"
+    },
+    {
+      "path": "src/modules/enhancedTransportRequests/settings.ts",
+      "sha": "84bdfaee2cba71ee24b0c7407f79379c62d023c8",
+      "role": "Enhanced Transport Requests settings"
+    },
+    {
+      "path": "src/modules/enhancedTransportRequests/assets/autoClickSuccessBtns.ts",
+      "sha": "a685d8b998a573b1b35c1c80e044cb000f31bee5",
+      "role": "successful transport continuation"
+    },
+    {
+      "path": "src/modules/enhancedTransportRequests/assets/autoOpenTransportRequest.ts",
+      "sha": "db1c455ad9528b960dead13990394bac1cc4793d",
+      "role": "automatic transport-request opening"
+    }
+  ],
+  "featureFamilies": {
+    "extendedCallWindow": [
+      "enhanced requirements",
+      "generation date",
+      "patient summary",
+      "collapsible patients",
+      "ARR counters",
+      "ARR click highlighting",
+      "ARR match highlighting",
+      "ARR search and dropdown",
+      "ARR hover details and time",
+      "ARR category colours",
+      "alarm time",
+      "alarm icons",
+      "tailored tabs",
+      "selected vehicle counter",
+      "sticky header",
+      "load-more header control",
+      "hide vehicle list",
+      "permanent vehicle search",
+      "vehicle type in list",
+      "remaining patient time",
+      "vehicle and player counters",
+      "mission keywords",
+      "centre map",
+      "staging-area selected counter",
+      "expanded release-patient controls"
+    ],
+    "extendedCallList": [
+      "remaining mission time",
+      "remaining patient time",
+      "remaining pumping time",
+      "starrable missions",
+      "average credits",
+      "collapsible missions",
+      "mission sharing",
+      "mission sorting",
+      "mission-window sorting",
+      "current patients",
+      "current prisoners",
+      "patient and prisoner tooltips",
+      "fixed event information",
+      "event mission labels",
+      "vehicle mission participation state"
+    ],
+    "enhancedTransportRequests": [
+      "automatic successful transport continuation",
+      "automatic transport-request opening"
+    ]
+  },
+  "driftPolicy": {
+    "refreshBeforeEveryPhase": true,
+    "automaticImport": false,
+    "requireReviewForChangedSha": true
+  }
+}

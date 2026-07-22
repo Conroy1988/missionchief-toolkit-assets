@@ -26,47 +26,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$(git hash-object .github/development-packages/max-release-speed.part-00)" = "717eba0853639a4148ba3e9ee29a19a6b6e62443"
+          test "$(git hash-object .github/development-packages/max-release-speed.part-01)" = "421628730f98da405462231ebc7ca46db0e095e6"
+          test "$(git hash-object .github/development-packages/max-release-speed.part-02)" = "60974a09b8a262c27ad0d88f7b9b84df028ad0fa"
           cat \
             .github/development-packages/max-release-speed.part-00 \
             .github/development-packages/max-release-speed.part-01 \
             .github/development-packages/max-release-speed.part-02 > /tmp/max-release-speed.b64
-          test "$(sha256sum /tmp/max-release-speed.b64 | awk '{print $1}')" = "a1620c308d54bf3b15186e7625a0dfc5fe38cee7ad20c8bc00773ca581b21e94"
           base64 -d /tmp/max-release-speed.b64 | gzip -d > /tmp/max-release-speed.patch
-          test "$(sha256sum /tmp/max-release-speed.patch | awk '{print $1}')" = "23c9dfe3b5ef229a7695c81fe1f2ee3fb834d28fa47d0ce06317335edfee905a"
-          cat > .github/workflows/temporary-max-release-speed-export.yml <<'EXPORT'
-          name: Temporary Max Release Speed Export
-
-          on:
-            pull_request:
-              branches:
-                - main
-              paths:
-                - ".github/workflows/temporary-max-release-speed-export.yml"
-
-          permissions:
-            contents: read
-
-          jobs:
-            export:
-              runs-on: ubuntu-latest
-              timeout-minutes: 5
-              steps:
-                - name: Check out optimisation branch
-                  uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-                  with:
-                    fetch-depth: 0
-                    persist-credentials: false
-                - name: Package repository
-                  run: tar --exclude=.git -czf /tmp/missionchief-toolkit-max-release-speed.tar.gz .
-                - name: Upload repository package
-                  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-                  with:
-                    name: missionchief-toolkit-max-release-speed
-                    path: /tmp/missionchief-toolkit-max-release-speed.tar.gz
-                    if-no-files-found: error
-                    retention-days: 1
-          EXPORT
-          sed -i 's/^          //' .github/workflows/temporary-max-release-speed-export.yml
           git apply --check /tmp/max-release-speed.patch
           git apply /tmp/max-release-speed.patch
 
@@ -88,7 +55,6 @@ jobs:
             .github/workflows/performance-regression-check.yml
             .github/workflows/publish-update-manifest.yml
             .github/workflows/release-toolkit.yml
-            .github/workflows/temporary-max-release-speed-export.yml
             .github/workflows/userscript-structural-audit.yml
           )
           test "${changed[*]}" = "${expected[*]}"
@@ -109,7 +75,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
+          git add -- \
             .github/actions-security-policy.json \
             .github/scripts/test_pages_release_deploy_contract.py \
             .github/scripts/test_version_status_contract.py \
@@ -122,7 +88,6 @@ jobs:
             .github/workflows/performance-regression-check.yml \
             .github/workflows/publish-update-manifest.yml \
             .github/workflows/release-toolkit.yml \
-            .github/workflows/temporary-max-release-speed-export.yml \
             .github/workflows/userscript-structural-audit.yml
           git commit -m "Maximise Toolkit release pipeline speed"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

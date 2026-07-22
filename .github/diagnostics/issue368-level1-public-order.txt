@@ -1,0 +1,1528 @@
+===== SOURCE CONTEXT: LEVEL 1 PUBLIC ORDER =====
+":["car to tow","cars to tow"],"types":[104,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector 
+
+---
+
+4,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttribut
+
+---
+
+ey":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requi
+
+---
+
+"label":"Car Recovery","aliases":["car to tow","cars to tow"],"types":[104,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"countable":false},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Polic
+
+===== FUNCTION: missionRequirementsLinkedTrainingValues =====
+// NOT FOUND: missionRequirementsLinkedTrainingValues
+
+
+===== FUNCTION: missionRequirementsQualifiedStaffCounts =====
+    function missionRequirementsQualifiedStaffCounts(candidate, vehicleId, element, arrState = null) { const totals = new Map(); const seenNodes = new Set(); const seenEntities = new Map(); const definitions = MISSION_REQUIREMENT_DEFINITIONS.filter(definition => (definition?.group || 'vehicles') === 'staff' && definition.requireExplicitTraining === true); const add = (definition, count, identity = null, mode = 'sum') => { const numeric = Math.max(0, Number(count) || 0); if (!numeric) return; if (identity !== null) { const identities = seenEntities.get(definition.key) || new Set(); if (identities.has(identity)) return; identities.add(identity); seenEntities.set(definition.key, identities); } const current = totals.get(definition.key) || 0; totals.set(definition.key, mode === 'max' ? Math.max(current, numeric) : current + numeric); }; for (const [token, count] of arrState?.counts || []) for (const definition of definitions) { const tokens = new Set(Array.from(definition.arrAttributes || []).map(missionRequirementsCapabilityLabel).filter(Boolean)); if (tokens.has(token)) add(definition, count, `arr:${definition.key}`, 'max'); } const inspect = node => { if (!node || seenNodes.has(node)) return; seenNodes.add(node); const values = missionRequirementsDirectTrainingValues(node); if (!values.size) return; const explicit = missionRequirementsOptionalNumber(node.getAttribute?.('data-qualified-personnel-count') ?? node.getAttribute?.('data-personnel-count') ?? node.getAttribute?.('data-assigned-personnel-count') ?? node.getAttribute?.('data-count')); const identity = node.getAttribute?.('data-personnel-id') ?? node.getAttribute?.('personnel_id') ?? node.getAttribute?.('data-person-id') ?? null; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, explicit ?? 1, identity === null ? node : `person:${identity}`); }; const inspectTree = scope => { inspect(scope); const selector = '[data-personnel-training], [data-training], [data-trainings], [data-education], [data-educations], [data-education-name], [data-education-key], [data-filterable-by], [class*="personnel"], [class*="training"], [class*="education"], [class*="schooling"], [class*="qualification"]'; for (const node of Array.from(scope?.querySelectorAll?.(selector) || [])) inspect(node); }; const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; inspectTree(element); if (row && row !== element) inspectTree(row); const numericVehicleId = Number(vehicleId); if (Number.isFinite(numericVehicleId) && numericVehicleId >= 0) { const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`; const scopes = Array.from(new Set([candidate?.root, candidate?.mount, candidate?.source?.ownerDocument, row?.ownerDocument, element?.ownerDocument].filter(scope => scope?.querySelectorAll))); for (const scope of scopes) for (const node of Array.from(scope.querySelectorAll(selector) || [])) inspectTree(node); const record = missionRequirementsVehicleApiRecord(numericVehicleId); const people = [record?.personnel, record?.assigned_personnel, record?.assignedPersonnel, record?.crew, record?.staff].find(Array.isArray) || []; people.forEach((person, index) => { const values = new Set(); const ingest = raw => { const visit = value => { if (Array.isArray(value)) return value.forEach(visit); if (value && typeof value === 'object') return ['key', 'name', 'caption', 'title', 'education', 'training'].forEach(field => visit(value[field])); String(value || '').split(/[,;|]/u).map(missionRequirementsCapabilityLabel).filter(Boolean).forEach(value => values.add(value)); }; visit(raw); }; ['education', 'educations', 'training', 'trainings', 'schooling', 'schoolings', 'qualifications'].forEach(field => ingest(person?.[field])); const identity = person?.id ?? person?.personnel_id ?? person?.personnelId ?? index; for (const definition of definitions) if (missionRequirementsDefinitionMatchesValues(definition, values, 'training')) add(definition, 1, `api:${identity}`); }); } return new Map(Array.from(totals, ([key, count]) => [key, missionRequirementsCapacity(count, count, true)])); }
+
+
+===== FUNCTION: missionRequirementsDefaultStaffCapacity =====
+// NOT FOUND: missionRequirementsDefaultStaffCapacity
+
+
+===== FUNCTION: missionRequirementsResolvedStaffCapacity =====
+    function missionRequirementsResolvedStaffCapacity(vehicleId, typeId, element, mode = '') { const operational = missionRequirementsOperationalCrewCapacity(element, mode); if (operational) return operational; const native = missionRequirementsStaffCapacity(element); if (native?.known) return native; const record = missionRequirementsVehicleApiRecord(vehicleId); const exact = missionRequirementsVehicleApiStaff(record); if (exact) return exact; missionRequirementsEnsureSharedVehicleData(); return native || missionRequirementsDefaultStaffCapacity(typeId, element, record); }
+
+
+function missionRequirementsLinkedTrainingValues(candidate, vehicleId, element) {
+        const values = missionRequirementsMetadataValues(element, 'training');
+        const numericVehicleId = Number(vehicleId);
+        if (!Number.isFinite(numericVehicleId) || numericVehicleId < 0) return values;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null;
+        const selector = `.vehicle_checkbox[value="${numericVehicleId}"], input[value="${numericVehicleId}"][vehicle_type_id], [data-vehicle-id="${numericVehicleId}"], [vehicle_id="${numericVehicleId}"]`;
+        const scopes = Array.from(new Set([
+            candidate?.root,
+            candidate?.mount,
+            candidate?.source?.ownerDocument,
+            row?.ownerDocument,
+            element?.ownerDocument
+        ].filter(scope => scope?.querySelectorAll)));
+        for (const scope of scopes) {
+            for (const node of Array.from(scope.querySelectorAll(selector) || [])) {
+                for (const qualification of missionRequirementsMetadataValues(node, 'training')) values.add(qualification);
+                const linkedRow = node?.matches?.('tr') ? node : node?.closest?.('tr') || null;
+                const badges = Array.from(String(linkedRow?.textContent || linkedRow?.innerText || '').matchAll(/\[([^\]]+)\]/gu))
+                    .map(match => missionRequirementsCapabilityLabel(match[1]))
+                    .filter(Boolean);
+                for (const badge of badges) values.add(badge);
+            }
+        }
+        return values;
+    }
+
+
+===== FUNCTION: missionRequirementsStaffCapacity =====
+    function missionRequirementsStaffCapacity(element) {
+        const row = element?.closest?.('tr') || element;
+        const semanticSelectors = [
+            '[data-personnel-count]',
+            '[data-current-personnel]',
+            '[data-assigned-personnel-count]',
+            '[data-assigned_personnel_count]',
+            '[assigned_personnel_count]',
+            '[data-min-personnel]',
+            '[data-max-personnel]',
+            '[data-min-crew]',
+            '[data-max-crew]',
+            '[data-column="crew"]',
+            '[data-column="personnel"]',
+            '[data-column="staff"]'
+        ];
+        let crewCell = null;
+        for (const selector of semanticSelectors) {
+            crewCell = row?.querySelector?.(selector) || null;
+            if (crewCell) break;
+        }
+        const scopes = Array.from(new Set([element, row, crewCell].filter(Boolean)));
+        const exactAttributes = ['data-personnel-count', 'data-current-personnel', 'data-assigned-personnel-count', 'data-assigned_personnel_count', 'assigned_personnel_count', 'data-personnel', 'data-staff', 'data-crew'];
+        for (const scope of scopes) {
+            for (const attribute of exactAttributes) {
+                const value = missionRequirementsOptionalNumber(scope.getAttribute?.(attribute));
+                if (value !== null) return missionRequirementsCapacity(value, value, true);
+            }
+        }
+        let min = null;
+        let max = null;
+        for (const scope of scopes) {
+            if (min === null) min = missionRequirementsOptionalNumber(scope.getAttribute?.('data-min-personnel') ?? scope.getAttribute?.('data-min-crew'));
+            if (max === null) max = missionRequirementsOptionalNumber(scope.getAttribute?.('data-max-personnel') ?? scope.getAttribute?.('data-max-crew'));
+        }
+        if (min !== null || max !== null) return missionRequirementsCapacity(min ?? 0, max, min !== null && max !== null && min === max);
+        const parseCrewText = cell => {
+            const text = String(cell?.textContent || '').trim();
+            const currentMaximum = text.match(/(\d[\d,.]*)\s*\/\s*(\d[\d,.]*)/u);
+            if (currentMaximum) {
+                const current = missionRequirementsNumber(currentMaximum[1]);
+                return missionRequirementsCapacity(current, current, true);
+            }
+            const bounded = text.match(/(\d[\d,.]*)\s*(?:-|–|to)\s*(\d[\d,.]*)/iu);
+            if (bounded) return missionRequirementsCapacity(missionRequirementsNumber(bounded[1]), missionRequirementsNumber(bounded[2]), false);
+            return null;
+        };
+        const semanticTextCapacity = parseCrewText(crewCell);
+        if (semanticTextCapacity) return semanticTextCapacity;
+        for (const cell of Array.from(row?.querySelectorAll?.('td, th') || [])) {
+            const capacity = parseCrewText(cell);
+            if (capacity) return capacity;
+        }
+        if (crewCell) {
+            const visible = missionRequirementsOptionalNumber(String(crewCell.textContent || '').trim());
+            if (visible !== null) return missionRequirementsCapacity(visible, visible, true);
+            const sortValue = missionRequirementsOptionalNumber(crewCell.getAttribute?.('sortvalue'));
+            if (sortValue !== null) return missionRequirementsCapacity(sortValue, sortValue, true);
+        }
+        return null;
+    } function missionRequirementsOperationalSelectors(mode) { if (mode === 'selected') return ['#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked, .vehicle_checkbox:checked']; if (mode === 'onsite') return ['#mission_vehicle_at_mission tbody tr', 'tbody#mission_vehicle_at_mission > tr', '#mission_vehicle_at_mission > tr', '[data-mcms-vehicle-state="onsite"]']; return ['#mission_vehicle_driving tbody tr', 'tbody#mission_vehicle_driving > tr', '#mission_vehicle_driving > tr', '[data-mcms-vehicle-state="responding"]']; }
+function missionRequirementsOperationalWindowScopes(candidate, context = missionRequirementsPatientContext(candidate)) { const windowSelector = '#lightbox_box, #lightbox, .lightbox_content, .modal-body, .modal, [role="dialog"], .ui-dialog-content, .ui-dialog'; const scopes = []; const addChain = origin => { let current = origin?.closest?.(windowSelector) || null; while (current && !scopes.includes(current)) { scopes.push(current); const parent = current.parentElement || current.parentNode; current = parent?.closest?.(windowSelector) || null; } }; [candidate?.root, candidate?.mount, candidate?.source, missionRequirementsCandidateRoot(candidate), context?.activeWindow].forEach(addChain); if (context?.activeWindow && !scopes.includes(context.activeWindow)) scopes.unshift(context.activeWindow); return scopes; }
+function missionRequirementsOperationalCanonicalStateContainer(element, mode) {
+        if (mode === 'selected') return null;
+        const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || element;
+        if (!row) return null;
+        const selectors = mode === 'onsite'
+            ? ['#mission_vehicle_at_mission', 'tbody#mission_vehicle_at_mission']
+            : ['#mission_vehicle_driving', 'tbody#mission_vehicle_driving'];
+        for (const selector of selectors) {
+            if (row.matches?.(selector)) return row;
+            const container = row.closest?.(selector);
+            if (container) return container;
+        }
+        return null;
+    }
+
+
+===== FUNCTION: missionRequirementsRespondingCrewCapacity =====
+    function missionRequirementsRespondingCrewCapacity(element) { return missionRequirementsOperationalCrewCapacity(element, 'responding'); }
+
+
+===== FUNCTION: missionRequirementsOperationalCrewCapacity =====
+    function missionRequirementsOperationalCrewCapacity(element, mode = '') { const row = element?.matches?.('tr') ? element : element?.closest?.('tr') || null; if (!row || !['responding', 'onsite'].includes(mode)) return null; const selector = mode === 'onsite' ? '#mission_vehicle_at_mission, tbody#mission_vehicle_at_mission' : '#mission_vehicle_driving, tbody#mission_vehicle_driving'; if (!row.closest?.(selector)) return null; const crewCell = row.querySelector?.('td:nth-of-type(5)[sortvalue]'); const value = missionRequirementsOptionalNumber(crewCell?.getAttribute?.('sortvalue')); return value === null ? null : missionRequirementsCapacity(value, value, true); }
+
+
+===== FUNCTION: missionRequirementsCollectUnits =====
+// NOT FOUND: missionRequirementsCollectUnits
+
+
+===== FUNCTION: missionRequirementsAggregate =====
+// NOT FOUND: missionRequirementsAggregate
+
+
+===== TEST CONTEXT: PUBLIC ORDER =====
+nst issue226Stale = makeVehicleElement(issue226Doc, 622699, 8, { typeOnRow: true });
+issue226Stale.row.setAttribute('data-vehicle-id', '622699');
+issue226Stale.row.setAttribute('data-mission-id', '9999');
+issue226Stale.row._visible = false;
+issue226Stale.row.closestMap.set('#mission_vehicle_driving', issue226StaleBody);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteTe
+
+---
+
+blic Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements
+
+---
+
+s', 'primary-response', 'Primary Response Vehicle'], ['2 SRVs', 'secondary-response', 'Secondary Response Vehicle']]) {
+    const parsed = api.parseText(text, 'vehicles');
+    const requirement = parsed.requirements.find(item => item.missing === 2);
+    assert(requirement, `${text} parses as a requirement`);
+    assert.strictEqual(requirement.key, key, `${text} uses the canonical key`);
+    assert.strictEqual(requirement.definition.label, label, `${text} uses the full canonical label`);
+    assert.strictEqual(parsed.remaining, '', `${text} is consumed without unresolved residue`);
+}
+}
+
+
+
+// Issue #273: exact assigned personnel clears trained and generic police requirements.
+{
+const issue273Doc = new FakeDocument();
+issue273Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehi
+
+---
+
+ { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row 
+
+---
+
+checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}
+
+---
+
+;
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1)
+
+---
+
+ment(issue226Doc, 622699, 8, { typeOnRow: true });
+issue226Stale.row.setAttribute('data-vehicle-id', '622699');
+issue226Stale.row.setAttribute('data-mission-id', '9999');
+issue226Stale.row._visible = false;
+issue226Stale.row.closestMap.set('#mission_vehicle_driving', issue226StaleBody);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Pu
+
+---
+
+rse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[
+
+---
+
+   [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+
+{
+function attachPatientSummary(candidate, totalTex
+
+---
+
+oup: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+
+{
+function attachPatientSummary(candidate, totalText, detailText = '') {
+    const doc = candidate.root.ownerDocument;
+    const form = new FakeElement('div', doc);
+    form.id = 
+
+---
+
+itional authoritative Traffic Cars remain active');
+
+const issue230PanelRow = {
+    key: 'police-car', requirement: 'Police Car', covered: false, definitelyOpen: true, uncertain: false, partial: false,
+    requiredText: '5', onSiteText: '0', respondingText: '0', selectedText: '0', stillNeededText: '5'
+};
+const issue230Panel = api.panelHtml([issue230PanelRow], []);
+assert(issue230Panel.html.includes('1 outstanding · 0/1 covered'), 'header totals count only operational rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.r
+
+---
+
+ered: false, definitelyOpen: true, uncertain: false, partial: false,
+    requiredText: '5', onSiteText: '0', respondingText: '0', selectedText: '0', stillNeededText: '5'
+};
+const issue230Panel = api.panelHtml([issue230PanelRow], []);
+assert(issue230Panel.html.includes('1 outstanding · 0/1 covered'), 'header totals count only operational rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merg
+
+---
+
+l rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x 
+
+---
+
+ncludes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed cata
+
+---
+
+ Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(is
+
+---
+
+tem => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(ser
+
+---
+
+cileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(sergeantCapacity.min, 1, `Police Sergeant counts in ${bucketName}`);
+}
+const unsupportedPage = { title: 'Recorded unsupported operational personnel fixture', sections: { reward: [], requirements: [], other: [['Required Personnel','2x Unsupported Tactical Specialist']] }, variations: [] };
+const unsupportedCatalogue = api.parseCatalogueDocument(makeCatalogueDocument(unsupportedPage), { id: 26001 
+
+---
+
+ctEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(sergeantCapacity.min, 1, `Police Sergeant counts in ${bucketName}`);
+}
+const unsupportedPage = { title: 'Recorded unsupported operational personnel fixture', sections: { reward: [], requirements: [], other: [['Required Personnel','2x Unsupported Tactical Specialist']] }, variations: [] };
+const unsupportedCatalogue = api.parseCatalogueDocument(makeCatalogueDocument(unsupportedPage), { id: 26001 });
+const unsupportedReconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, unsupportedCatalogue, 'ready', true);
+assert(unsupportedReconciled.unresolved.some(item => /Unsupported Tactical Specialist/.test(item.text)), 'unsupported operational personnel remain visible');
+assert(unsupportedReconciled.unresolved.every(item => !/^Mission info:/i.test(item.text)), 'unsupported operational personnel omit the raw Mission info prefix')
+
+---
+
+mary-response', 'Primary Response Vehicle'], ['2 SRVs', 'secondary-response', 'Secondary Response Vehicle']]) {
+    const parsed = api.parseText(text, 'vehicles');
+    const requirement = parsed.requirements.find(item => item.missing === 2);
+    assert(requirement, `${text} parses as a requirement`);
+    assert.strictEqual(requirement.key, key, `${text} uses the canonical key`);
+    assert.strictEqual(requirement.definition.label, label, `${text} uses the full canonical label`);
+    assert.strictEqual(parsed.remaining, '', `${text} is consumed without unresolved residue`);
+}
+}
+
+
+
+// Issue #273: exact assigned personnel clears trained and generic police requirements.
+{
+const issue273Doc = new FakeDocument();
+issue273Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehi
+
+---
+
+']]) {
+    const parsed = api.parseText(text, 'vehicles');
+    const requirement = parsed.requirements.find(item => item.missing === 2);
+    assert(requirement, `${text} parses as a requirement`);
+    assert.strictEqual(requirement.key, key, `${text} uses the canonical key`);
+    assert.strictEqual(requirement.definition.label, label, `${text} uses the full canonical label`);
+    assert.strictEqual(parsed.remaining, '', `${text} is consumed without unresolved residue`);
+}
+}
+
+
+
+// Issue #273: exact assigned personnel clears trained and generic police requirements.
+{
+const issue273Doc = new FakeDocument();
+issue273Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.agg
+
+---
+
+ionObserver: FakeMutationObserver, location: { pathname: '/missions/273' } };
+const issue273Candidate = makeMissionCandidate(issue273Doc, '18 Level 2 Public Order Officers');
+const level2Definition = api.definitions.find(definition => definition.key === 'public-order-level-2');
+const cacheVehicle = (id, type, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: type, assigned_personnel_count: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row 
+
+---
+
+unt: personnel });
+const firstCarrier = makeVehicleElement(issue273Doc, 27301, 51, { typeOnRow: true });
+const secondCarrier = makeVehicleElement(issue273Doc, 27302, 51, { typeOnRow: true });
+for (const carrier of [firstCarrier, secondCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits =
+
+---
+
+econdCarrier]) {
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, sta
+
+---
+
+= true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}
+
+---
+
+rrier.row.innerText = 'Police Support Unit Carrier [Level 2 Public Order Officer]';
+}
+cacheVehicle(27301, 51, 9);
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2')
+
+---
+
+;
+cacheVehicle(27302, 51, 9);
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle, secondCarrier.vehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel
+
+---
+
+ehicle];
+let issue273Units = api.collectUnits(issue273Candidate, 'selected');
+let issue273Capacity = api.aggregate({ group: 'staff', definition: level2Definition }, issue273Units);
+assert.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+---
+
+rt.strictEqual(issue273Capacity.min, 18, 'two exact nine-person public-order carriers contribute eighteen');
+assert.strictEqual(issue273Capacity.max, 18, 'exact assigned personnel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 
+
+---
+
+nel removes the 2–18 fallback range');
+let issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `missi
+
+---
+
+sue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1)
+
+---
+
+up: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1);
+    sceneUnits.push(unit.row);
+}
+issue273Candidate.root.selectedUnits = [];
+issue273Candidate.root.onSiteRows = sceneUnits;
+let policeRows = api.resolve(is
+
+---
+
+ [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+let issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1);
+    sceneUnits.push(unit.row);
+}
+issue273Candidate.root.selectedUnits = [];
+issue273Candidate.root.onSiteRows = sceneUnits;
+let policeRows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'police-officers', requirement: 'Police Officers', missing: 2, 
+
+---
+
+3Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '18', 'Matrix displays exact selected public-order personnel');
+assert.strictEqual(issue273Row.stillNeededText, '0', '9 + 9 clears the eighteen-person requirement');
+assert.strictEqual(issue273Row.covered, true, 'fulfilled public-order row is marked covered');
+issue273Candidate.root.selectedUnits = [firstCarrier.vehicle];
+issue273Rows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'public-order-level-2', requirement: 'Level 2 Public Order Officer', missing: 18, group: 'staff', definition: level2Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-2', baseline: 18, missing: 18 }] });
+issue273Row = issue273Rows.find(row => row.key === 'public-order-level-2');
+assert.strictEqual(issue273Row.selectedText, '9', 'deselecting one public-order carrier removes nine personnel');
+assert.strictEqual(issue273Row.stillNeededText, '9', 'nine-person shortage returns after deselection');
+
+const policeDefinition = api.definitions.find(definition => definition.key === 'police-officers');
+const sceneUnits = [];
+for (let index = 0; index < 11; index += 1) {
+    const id = 273100 + index;
+    const unit = makeVehicleElement(issue273Doc, id, 8, { typeOnRow: true });
+    unit.row.setAttribute('data-vehicle-id', String(id));
+    unit.row.id = `mission_vehicle_${id}`;
+    cacheVehicle(id, 8, 1);
+    sceneUnits.push(unit.row);
+}
+issue273Candidate.root.selectedUnits = [];
+issue273Candidate.root.onSiteRows = sceneUnits;
+let policeRows = api.resolve(issue273Candidate, {
+    requirements: [{ key: 'police-officers', requirement: 'Police Officers', missing: 2, group: 'staff', definition: policeDefinition, statedRequirement: true }],
+    unresolved: [
+
+---
+
+e226Stale = makeVehicleElement(issue226Doc, 622699, 8, { typeOnRow: true });
+issue226Stale.row.setAttribute('data-vehicle-id', '622699');
+issue226Stale.row.setAttribute('data-mission-id', '9999');
+issue226Stale.row._visible = false;
+issue226Stale.row.closestMap.set('#mission_vehicle_driving', issue226StaleBody);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteTe
+
+---
+
+ue226Doc, 622699, 8, { typeOnRow: true });
+issue226Stale.row.setAttribute('data-vehicle-id', '622699');
+issue226Stale.row.setAttribute('data-mission-id', '9999');
+issue226Stale.row._visible = false;
+issue226Stale.row.closestMap.set('#mission_vehicle_driving', issue226StaleBody);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Pu
+
+---
+
+y);
+issue226Stale.row.closestMap.set(issue226WindowSelector, issue226StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected cap
+
+---
+
+StaleWindow);
+issue226StaleBody.appendChild(issue226Stale.row);
+assert.strictEqual(
+    api.operationalActive(issue226Stale.row, issue226Candidate, { doc: issue226Doc, activeWindow: issue226Window }, 'responding'),
+    false,
+    'hidden stale operational table from another mission remains excluded'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respo
+
+---
+
+'
+);
+}
+
+const personnelDoc = new FakeDocument();
+personnelDoc.defaultView = { MutationObserver: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.re
+
+---
+
+: FakeMutationObserver };
+const personnelCandidate = makeMissionCandidate(
+    personnelDoc,
+    'Missing Personnel: 8x Level 1 Public Order Officer, 22x Level 2 Public Order Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.st
+
+---
+
+er Officer'
+);
+const personnelParsed = api.parseSource(personnelCandidate.source);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements
+
+---
+
+.stringify(personnelParsed.requirements.map(item => ({ key: item.key, missing: item.missing, group: item.group })))),
+    [
+        { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[
+
+---
+
+     { key: 'public-order-level-1', missing: 8, group: 'staff' },
+        { key: 'public-order-level-2', missing: 22, group: 'staff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+
+{
+function attachPatientSummary(candidate, totalTex
+
+---
+
+aff' }
+    ],
+    'unstructured Missing Personnel banner is inferred as staff and parsed in source order'
+);
+const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
+const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
+const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
+assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
+assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
+assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');
+
+const genericCandidate = makeMissionCandidate(personnelDoc, 'Missing Personnel: 3x Specialist Evidence Officer');
+const genericParsed = api.parseSource(genericCandidate.source);
+assert.strictEqual(genericParsed.requirements.length, 1, 'unknown quantified requirement becomes a visible table row');
+assert.strictEqual(genericParsed.requirements[0].requirement, 'Specialist Evidence Officer', 'unknown requirement label is preserved');
+assert.strictEqual(genericParsed.requirements[0].missing, 3, 'unknown requirement quantity is preserved');
+assert.strictEqual(api.resolve(genericCandidate, genericParsed)[0].uncertain, true, 'unknown requirement cannot become falsely covered');
+
+
+{
+function attachPatientSummary(candidate, totalText, detailText = '') {
+    const doc = candidate.root.ownerDocument;
+    const form = new FakeElement('div', doc);
+    form.id = 
+
+---
+
+authoritative Traffic Cars remain active');
+
+const issue230PanelRow = {
+    key: 'police-car', requirement: 'Police Car', covered: false, definitelyOpen: true, uncertain: false, partial: false,
+    requiredText: '5', onSiteText: '0', respondingText: '0', selectedText: '0', stillNeededText: '5'
+};
+const issue230Panel = api.panelHtml([issue230PanelRow], []);
+assert(issue230Panel.html.includes('1 outstanding · 0/1 covered'), 'header totals count only operational rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.r
+
+---
+
+lse, definitelyOpen: true, uncertain: false, partial: false,
+    requiredText: '5', onSiteText: '0', respondingText: '0', selectedText: '0', stillNeededText: '5'
+};
+const issue230Panel = api.panelHtml([issue230PanelRow], []);
+assert(issue230Panel.html.includes('1 outstanding · 0/1 covered'), 'header totals count only operational rows');
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merg
+
+---
+
+;
+assert(!issue230Panel.html.includes('Probability of') && !issue230Panel.html.includes('only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x 
+
+---
+
+'only required'), 'metadata is absent from responsive Matrix rendering');
+}
+
+// Issue #260: clean labels and typed Mission Info personnel classification.
+{
+const issue260Page = { title: 'Recorded Issue 260 fixture', sections: { reward: [['Average credits','7500'],['Required Police Stations','8'],['Required Personnel Available','40x Level 2 Public Order Officer 5x Police Sergeant']], requirements: [['Required Police Cars','5']], other: [['Required Personnel','18x Level 2 Public Order Officer 1x Police Sergeant']] }, variations: [] };
+const issue260Catalogue = api.parseCatalogueDocument(makeCatalogueDocument(issue260Page), { id: 26000 });
+const issue260ByLabel = Object.fromEntries(issue260Catalogue.requirements.map(item => [item.requirement, item.baseline]));
+assert.strictEqual(issue260ByLabel['Level 2 Public Order Officer'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed cata
+
+---
+
+'], 18, 'operational Required Personnel becomes a canonical Level 2 Public Order Officer row');
+assert.strictEqual(issue260ByLabel['Police Sergeant'], 1, 'operational Required Personnel becomes a canonical Police Sergeant row');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 40), false, 'Required Personnel Available count is excluded completely');
+assert.strictEqual(issue260Catalogue.requirements.some(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(is
+
+---
+
+(item => item.baseline === 5 && item.group === 'staff'), false, 'spawn-prerequisite Police Sergeant count is not merged with operational demand');
+assert.strictEqual(issue260Catalogue.unresolved.some(item => /Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: {
+
+---
+
+Personnel Available|40x|5x Police Sergeant/i.test(`${item.label || ''} ${item.value || ''}`)), false, 'spawn prerequisites never enter unresolved output');
+assert.strictEqual(issue260Catalogue.preconditions['Required Personnel Available'], '40x Level 2 Public Order Officer 5x Police Sergeant', 'spawn prerequisite remains typed catalogue metadata');
+const issue260Reconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(ser
+
+---
+
+logue({ requirements: [], unresolved: [] }, issue260Catalogue, 'ready', true);
+assert.strictEqual(issue260Reconciled.unresolved.length, 0, 'supported operational personnel reconcile without raw Mission info text');
+const issue260Level2 = issue260Catalogue.requirements.find(item => item.key === 'public-order-level-2');
+const issue260Sergeant = issue260Catalogue.requirements.find(item => item.key === 'police-sergeant-personnel');
+assert.strictEqual(issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(sergeantCapacity.min, 1, `Police Sergeant counts in ${bucketName}`);
+}
+const unsupportedPage = { title: 'Recorded unsupported operational personnel fixture', sections: { reward: [], requirements: [], other: [['Required Personnel','2x Unsupported Tactical Specialist']] }, variations: [] };
+const unsupportedCatalogue = api.parseCatalogueDocument(makeCatalogueDocument(unsupportedPage), { id: 26001 
+
+---
+
+issue260Level2?.definition?.countable, true, 'Level 2 Public Order personnel is live-countable');
+assert.strictEqual(issue260Sergeant?.definition?.countable, true, 'Police Sergeant personnel is live-countable');
+for (const bucketName of ['Selected','Responding','On site']) {
+    const level2Capacity = api.aggregate(issue260Level2, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['level 2 public order']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-level2-${bucketName}` }]);
+    const sergeantCapacity = api.aggregate(issue260Sergeant, [{ typeId: -1, equipment: new Set(), labels: new Set(), knownDefinitionKeys: new Set(), training: new Set(['police sergeant']), staff: { min: 1, max: 1, known: true }, contributionKey: `issue260-sergeant-${bucketName}` }]);
+    assert.strictEqual(level2Capacity.min, 1, `Level 2 Public Order counts in ${bucketName}`);
+    assert.strictEqual(sergeantCapacity.min, 1, `Police Sergeant counts in ${bucketName}`);
+}
+const unsupportedPage = { title: 'Recorded unsupported operational personnel fixture', sections: { reward: [], requirements: [], other: [['Required Personnel','2x Unsupported Tactical Specialist']] }, variations: [] };
+const unsupportedCatalogue = api.parseCatalogueDocument(makeCatalogueDocument(unsupportedPage), { id: 26001 });
+const unsupportedReconciled = api.reconcileCatalogue({ requirements: [], unresolved: [] }, unsupportedCatalogue, 'ready', true);
+assert(unsupportedReconciled.unresolved.some(item => /Unsupported Tactical Specialist/.test(item.text)), 'unsupported operational personnel remain visible');
+assert(unsupportedReconciled.unresolved.every(item => !/^Mission info:/i.test(item.text)), 'unsupported operational personnel omit the raw Mission info prefix')
+
+===== DATA CONTEXT: PUBLIC ORDER =====
+ajor Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-person
+
+---
+
+, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor
+
+---
+
+38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advi
+
+---
+
+rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advisor","Search Advisor Training",
+
+---
+
+,"aliases":["Fire Engine, RIV or Major Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTra
+
+---
+
+m Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-person
+
+---
+
+r Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor
+
+---
+
+,76]},{"key":"mountain-rescue-4x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advi
+
+---
+
+x4-or-sar-4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advisor","Search Advisor Training",
+
+---
+
+":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor 
+
+---
+
+tain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic-rrv","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]}],"staffRequirements":[{"key":"armed-response-personnel","aliases":["Armed Response Personnel (In Armed Vehicles)"],"types":[13,25,52,56,82]},{"key":"firefighter","aliases":["more firefighter","more firefighters"],"types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"public-order-level-2","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"arrAttributes":["level_2_public_order"]},{"key":"police-sergeant-personnel","aliases":["Police Sergeant","Police Sergeants"],"types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","aliases":["Police Inspector","Police Inspectors"],"types":[],"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"search-advisor-personnel","aliases":["Search Advisor","Search Advisors"],"types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Trai

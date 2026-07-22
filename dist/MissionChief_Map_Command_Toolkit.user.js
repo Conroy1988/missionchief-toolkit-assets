@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.28
+// @version      4.20.29
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.28',
+        version: '4.20.29',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1305,7 +1305,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let tabletModeActive = false;
     let mobileModeActive = false;
     let activeDeviceLayout = 'desktop';
-    let tabletLayoutTimer = null;
+    let tabletLayoutTimer = null; let visualViewportRefreshGeneration = 0;
     let tabletDockResizeObserver = null;
     let tabletDockObservedMap = null;
     let desktopPanelResizeObserver = null;
@@ -11681,10 +11681,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} :is(.mcms-status,.mcms-row-label) { font-size:11px !important; }
         html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(.mcms-critical-values-label,.mcms-critical-type-label,.mcms-critical-category-label,.mcms-critical-value-mode,.mcms-critical-unit-extra) { font-size:8.5px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs {
-            top:40px !important; display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-            gap:5px !important; overflow:visible !important; padding:3px 2px 7px !important;
+            top:40px !important; display:flex !important; gap:6px !important; overflow-x:auto !important; overflow-y:hidden !important; padding:3px 2px 7px !important;
         }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn { width:100% !important; min-width:0 !important; height:38px !important; padding:0 4px !important; font-size:9.5px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn { width:auto !important; min-width:88px !important; height:44px !important; padding:0 11px !important; font-size:10px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-panel-sticky-stack { position:sticky !important; top:-8px !important; z-index:9 !important; background:rgba(6,10,15,.985) !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-header { position:relative !important; top:auto !important; margin:-8px -8px 5px !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} :is(.mcms-pill,.mcms-heat-key,.mcms-ui-theme-copy small,.mcms-profile-main span,.mcms-build) { font-size:9px !important; }
@@ -11702,9 +11701,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-category-filters,
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-summary { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
         html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(.mcms-critical-values-label,.mcms-critical-type-label,.mcms-critical-category-label,.mcms-critical-value-mode,.mcms-critical-unit-extra,.mcms-critical-refreshed,.mcms-critical-showing) { font-size:8.5px !important; }
-        html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card) { min-height:38px !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card) { min-height:44px !important; }
         @media (max-width:380px) {
-            html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+            html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs { display:flex !important; }
             html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-values-grid,
             html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-category-filters,
             html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} .mcms-critical-summary { grid-template-columns:1fr !important; }
@@ -13542,6 +13541,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             animation:none !important;
             display:none !important;
         }
+        html[data-mcms-mobile-active="true"],html[data-mcms-tablet-active="true"]{--mcms-touch-target:44px}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important;width:100%!important;height:var(--mcms-mobile-filter-height,44px)!important;min-height:44px!important;flex-direction:row!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:14px!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId}{width:140px!important;max-width:140px!important;grid-template-columns:repeat(3,44px)!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}{grid-template-columns:145px minmax(0,1fr)!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row{width:145px!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell{width:92px!important;height:48px!important;flex-direction:row!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:15px!important}html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId}{width:145px!important;max-width:145px!important;grid-template-columns:145px!important;grid-template-areas:"menu"!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:1px 0 3px!important;pointer-events:auto!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins::-webkit-scrollbar{display:none!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{flex:0 0 clamp(88px,28vw,118px)!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;scroll-snap-align:start!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{height:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important;padding-bottom:max(10px,calc(8px + env(safe-area-inset-bottom)))!important;scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:3px 2px 7px!important;touch-action:pan-x!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn{flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 11px!important;font-size:10px!important;scroll-snap-align:start!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row{grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-name{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-row{grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-main{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId},html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId}{max-height:calc(var(--mcms-visual-height,100dvh) - 20px)!important;max-width:calc(var(--mcms-visual-width,100vw) - 20px)!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card),html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter),html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId} button,html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId} button{min-width:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.toastId}{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important;max-width:min(320px,calc(var(--mcms-visual-width,100vw) - 20px))!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]){-webkit-touch-callout:none!important;touch-action:manipulation!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]):active{filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important}html[data-mcms-keyboard-open="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important}
         @media (prefers-reduced-motion:reduce) {
             html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
             #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
@@ -13680,6 +13680,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         };
     }
 
+    function setRootStylePropertyIfChanged(root,name,value){if(!root?.style||root.style.getPropertyValue(name)===value)return false;root.style.setProperty(name,value);return true;}
+    function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
+    for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
+    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))applyTabletPanelPosition();scheduleCriticalDrawerDock(0);scheduleMajorIncidentFeedLayout();}
+    function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
     function hasCoarsePointer() {
         try {
         return Boolean(
@@ -14061,7 +14066,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
         const margin = rect.width < 700 ? 8 : 10;
         const gap = 5;
-        const menuWidth = 52;
+        const menuWidth = 145;
         const nudgeX = Math.abs(Number(state.nudge?.x) || 0);
         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
         const viewport = getViewportMetrics();
@@ -14080,7 +14085,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ? Math.max(1, Math.min(pinCount, Math.floor((contentWidth + gap) / (preferredPinWidth + gap)) || 1))
         : 1;
         let filterHeight = 48;
-        let pinHeight = 31;
+        let pinHeight = 44;
         const availableMapHeight = Math.max(80, rect.height - (margin * 2) - nudgeY);
 
         let estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
@@ -14098,8 +14103,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }
 
         if (estimatedHeight > availableMapHeight) {
-        filterHeight = 46;
-        pinHeight = 29;
+        filterHeight = 44;
         estimatedHeight = estimateTabletDockHeight(filterCount, filterColumns, pinCount, pinColumns, filterHeight, pinHeight, gap);
         }
 
@@ -14138,15 +14142,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
         const mapWidth = Math.min(rect.width, viewport.width);
         const dockWidth = Math.max(1, Math.min(1000, mapWidth - (margin * 2) - nudgeX));
-        const commandCount = 1 + Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+        const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+        const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;
+        const commandCount = launchSlotCount + filterCount;
         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
         const minCommandWidth = viewport.orientation === 'landscape' ? 68 : 62;
         const maxPortraitColumns = viewport.orientation === 'portrait' ? 5 : commandCount;
         let columns = Math.max(3, Math.min(commandCount, maxPortraitColumns, Math.floor((dockWidth + gap) / (minCommandWidth + gap)) || 3));
         if (viewport.orientation === 'landscape' && dockWidth >= 700) columns = commandCount;
-        let pinColumns = pinCount ? Math.max(2, Math.min(pinCount, Math.floor((dockWidth + gap) / (70 + gap)) || 2)) : 1;
-        let commandHeight = viewport.orientation === 'landscape' ? 42 : 44;
-        let pinHeight = 30;
+        let pinColumns = Math.max(1, pinCount);
+        let commandHeight = 44;
+        let pinHeight = 44;
         const availableMapHeight = Math.max(72, rect.height - (margin * 2) - nudgeY);
 
         let estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
@@ -14154,13 +14160,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         columns += 1;
         estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
-        while (estimatedHeight > availableMapHeight && pinColumns < pinCount) {
-        pinColumns += 1;
-        estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
-        }
         if (estimatedHeight > availableMapHeight) {
-        commandHeight = 40;
-        pinHeight = 28;
         estimatedHeight = estimateMobileDockHeight(commandCount, columns, pinCount, pinColumns, commandHeight, pinHeight, gap);
         }
 
@@ -31507,7 +31507,7 @@ Create the private backup now?`);
             invalidateMapElementCache();
             applyRootAttributes();
             refreshTabletModeUi();
-            scheduleTabletLayoutRefresh(20);
+            scheduleVisualViewportStabilisation('window-resize');
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
             if (dragState) return;
@@ -31519,19 +31519,19 @@ Create the private backup now?`);
             scheduleMajorIncidentFeedLayout();
         });
         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
-        runtimeListen(pageWindow, 'orientationchange', () => scheduleTabletLayoutRefresh(30));
-        if (pageWindow.visualViewport) {
-            runtimeListen(pageWindow.visualViewport, 'resize', () => scheduleTabletLayoutRefresh(20));
-            runtimeListen(pageWindow.visualViewport, 'scroll', () => {
-                if (isTouchLayoutActive() && document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open')) scheduleTabletLayoutRefresh(20);
-            });
+        runtimeListen(pageWindow,'orientationchange',()=>scheduleVisualViewportStabilisation('orientationchange'));
+        if(pageWindow.visualViewport){
+            runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
+            runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
         }
+        applyVisualViewportGeometry();
+        scheduleVisualViewportStabilisation('boot-viewport');
         try {
             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
         } catch (err) {}
         runtimeListen(pageWindow, 'focus', () => {
-            if (dragState) return;
+            scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
             refreshSuppression();
             fitControlToMap();
             schedulePanelPosition(true, 40);

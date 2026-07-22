@@ -1,8 +1,8 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "4.20.28",
+  "candidateVersion": "4.20.29",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -12,9 +12,9 @@
   "joinedClosingBraceLines": 15,
   "originalTemplateLines": 12218,
   "candidateTemplateLines": 11718,
-  "canonicalCssSha256": "29ebbb034614b751ee485ce2c02468e8b98cdd4a81bec31d94f1a1959d7ddb69",
-  "candidateTemplateSha256": "6fe8a5e148a0f57c66ab08981790cd8d02f5160f9e0452b252aaea6662afdd2f",
+  "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
+  "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "834bd75ad718df10e47aa08292f4f20f31e1ad8afc1a3b7d8ab18e0913a2d37e",
-  "invariant": "Canonical CSS content is identical; only blank lines, standalone full-line CSS comments and fifteen newlines immediately before full-line closing braces were removed."
+  "candidateSourceSha256": "b4bb8ccd7a1d8e2b211626c83236b63790ff3522e98a250e924cfa3a747cc113",
+  "invariant": "The reviewed compact stylesheet retains at least 500 recovered source lines while iOS/Safari viewport geometry remains isolated from root-attribute state updates and managed runtime budgets remain unchanged."
 }

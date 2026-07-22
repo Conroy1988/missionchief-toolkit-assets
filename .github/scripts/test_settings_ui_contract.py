@@ -43,6 +43,8 @@ FUNCTION_NAMES = [
     "applyMissionWindowToggleEffects",
     "handlePayoutAudioToggle",
     "applyPayoutAudioToggleEffects",
+    "handleMissionMonitoringToggle",
+    "applyMissionMonitoringToggleEffects",
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
@@ -83,6 +85,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     apply_mission_window_effects = extract_function(source, masked, "applyMissionWindowToggleEffects")
     handle_payout_audio_toggle = extract_function(source, masked, "handlePayoutAudioToggle")
     apply_payout_audio_effects = extract_function(source, masked, "applyPayoutAudioToggleEffects")
+    handle_mission_monitoring_toggle = extract_function(source, masked, "handleMissionMonitoringToggle")
+    apply_mission_monitoring_effects = extract_function(source, masked, "applyMissionMonitoringToggleEffects")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
     actions = values(r'data-action\s*=\s*["\']([^"\']+)["\']', create_panel)
@@ -104,7 +108,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     mission_window_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_mission_window_effects)
     payout_audio_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_payout_audio_toggle)
     payout_audio_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_payout_audio_effects)
-    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes + payout_audio_toggle_routes))
+    mission_monitoring_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_mission_monitoring_toggle)
+    mission_monitoring_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_mission_monitoring_effects)
+    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes + payout_audio_toggle_routes + mission_monitoring_toggle_routes))
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
     assert actions == sorted(fixtures["actions"]), "Visible data-action inventory changed"
@@ -127,6 +133,11 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert not set(direct_toggle_routes).intersection(payout_audio_toggle_routes), "Extracted payout/audio toggles remain duplicated"
     assert "handlePayoutAudioToggle(feature)" in toggle_feature
     assert "applyPayoutAudioToggleEffects(feature)" in toggle_feature
+    assert mission_monitoring_toggle_routes == sorted(fixtures["extractedMissionMonitoringToggleRoutes"]), "Extracted mission-monitoring toggle routing changed"
+    assert mission_monitoring_effect_routes == sorted(fixtures["extractedMissionMonitoringEffectRoutes"]), "Extracted mission-monitoring effect routing changed"
+    assert not set(direct_toggle_routes).intersection(mission_monitoring_toggle_routes), "Extracted mission-monitoring toggles remain duplicated"
+    assert "handleMissionMonitoringToggle(feature)" in toggle_feature
+    assert "applyMissionMonitoringToggleEffects(feature)" in toggle_feature
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
@@ -605,6 +616,60 @@ function testExtractedPayoutAudioToggleContracts() {{
     resetEnvironment(); applyPayoutAudioToggleEffects("coverage"); assert.equal(calls.length, 0);
 }}
 
+
+function testExtractedMissionMonitoringToggleContracts() {{
+    for (const [feature, path] of Object.entries(fixtures.extractedMissionMonitoringToggleStatePaths)) {{
+        resetEnvironment();
+        const before = pathValue(state, path);
+        assert.equal(handleMissionMonitoringToggle(feature), true, `${{feature}} was not handled directly`);
+        assert.notEqual(pathValue(state, path), before, `${{feature}} did not toggle ${{path}}`);
+        assert.equal(localStorage.getItem(SCRIPT.storageState), null);
+        assert.equal(wasCalled("updateUI"), false);
+    }}
+
+    resetEnvironment();
+    const unknownBefore = JSON.stringify(state);
+    assert.equal(handleMissionMonitoringToggle("unknown-monitoring-toggle"), false);
+    assert.equal(JSON.stringify(state), unknownBefore);
+    assert.equal(calls.length, 0);
+
+    resetEnvironment();
+    state.missionSpawn.enabled = false;
+    missionSpawnPrimeTimer = 73;
+    missionSpawnArmed = true;
+    knownMissionIds.add("existing");
+    handleMissionMonitoringToggle("missionSpawn");
+    assert.equal(state.missionSpawn.enabled, true);
+    assert.equal(missionSpawnArmed, false);
+    assert.equal(knownMissionIds.size, 0);
+    assert.deepEqual(callFor("runtimeClearTimeout").args, [73]);
+    assert.equal(wasCalled("primeMissionSpawnDetector"), true);
+
+    resetEnvironment();
+    state.missionSpawn.enabled = true;
+    missionSpawnPrimeTimer = 74;
+    missionSpawnArmed = true;
+    knownMissionIds.add("existing");
+    handleMissionMonitoringToggle("missionSpawn");
+    assert.equal(state.missionSpawn.enabled, false);
+    assert.equal(missionSpawnArmed, false);
+    assert.equal(knownMissionIds.size, 0);
+    assert.deepEqual(callFor("runtimeClearTimeout").args, [74]);
+    assert.equal(wasCalled("primeMissionSpawnDetector"), false);
+
+    resetEnvironment();
+    applyMissionMonitoringToggleEffects("missionSpawn");
+    assert.equal(callFor("showToast").args[0], "New mission animation on");
+
+    resetEnvironment();
+    applyMissionMonitoringToggleEffects("stuckDetector");
+    assert.equal(callFor("showToast").args[0], "Stuck detector on · 20 min");
+
+    resetEnvironment();
+    applyMissionMonitoringToggleEffects("coverage");
+    assert.equal(calls.length, 0);
+}}
+
 async function testToggleContracts() {{
     for (const [feature, path] of Object.entries(fixtures.toggleStatePaths)) {{
         resetEnvironment();
@@ -672,6 +737,31 @@ async function testToggleContracts() {{
         assert.ok(update >= 0 && update < reconcile && reconcile < toast);
         if (immediate) assert.ok(calls.findIndex(call => call.name === immediate) < update);
     }}
+
+
+    resetEnvironment();
+    state.missionSpawn.enabled = false;
+    missionSpawnPrimeTimer = 75;
+    missionSpawnArmed = true;
+    knownMissionIds.add("existing");
+    toggleFeature("missionSpawn");
+    const spawnClearIndex = calls.findIndex(call => call.name === "runtimeClearTimeout");
+    const spawnPrimeIndex = calls.findIndex(call => call.name === "primeMissionSpawnDetector");
+    const spawnUpdateIndex = calls.findIndex(call => call.name === "updateUI");
+    const spawnReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+    const spawnToastIndex = calls.findIndex(call => call.name === "showToast");
+    assert.ok(spawnClearIndex >= 0 && spawnClearIndex < spawnUpdateIndex);
+    assert.ok(spawnPrimeIndex >= 0 && spawnPrimeIndex < spawnUpdateIndex);
+    assert.ok(spawnUpdateIndex < spawnReconcileIndex && spawnReconcileIndex < spawnToastIndex);
+    assert.equal(knownMissionIds.size, 0);
+
+    resetEnvironment();
+    toggleFeature("stuckDetector");
+    const stuckUpdateIndex = calls.findIndex(call => call.name === "updateUI");
+    const stuckReconcileIndex = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+    const stuckToastIndex = calls.findIndex(call => call.name === "showToast");
+    assert.ok(stuckUpdateIndex >= 0 && stuckUpdateIndex < stuckReconcileIndex);
+    assert.ok(stuckReconcileIndex < stuckToastIndex);
 
     resetEnvironment();
     toggleFeature("criticalView");
@@ -871,12 +961,13 @@ async function testSettingContracts() {{
     testExtractedMapVisibilityToggleContracts();
     testExtractedMissionWindowToggleContracts();
     testExtractedPayoutAudioToggleContracts();
+    testExtractedMissionMonitoringToggleContracts();
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
     testDeviceLayoutSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted financial route parity, extracted device-layout setting parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted mission-monitoring toggle parity, extracted financial route parity, extracted device-layout setting parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.31
+// @version      4.20.32
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.31',
+        version: '4.20.32',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28964,10 +28964,19 @@ Create the private backup now?`);
         else if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
         else if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
     }
+    function handleMissionMonitoringToggle(feature) {
+        if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
+        else if (feature === 'missionSpawn') { state.missionSpawn.enabled = !state.missionSpawn.enabled; missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (state.missionSpawn.enabled) primeMissionSpawnDetector(); }
+        else return false;
+        return true; }
+    function applyMissionMonitoringToggleEffects(feature) {
+        if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
+        else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
     function toggleFeature(feature) {
         handleMapVisibilityToggle(feature);
         handleMissionWindowToggle(feature);
         handlePayoutAudioToggle(feature);
+        handleMissionMonitoringToggle(feature);
         if (feature === 'clean') state.cleanMode = !state.cleanMode;
         if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
         if (feature === 'autoLoadAllVehicles') {
@@ -28981,14 +28990,6 @@ Create the private backup now?`);
         if (feature === 'missionAge') state.missionAge = !state.missionAge;
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
-        if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
-        if (feature === 'missionSpawn') state.missionSpawn.enabled = !state.missionSpawn.enabled;
-        if (feature === 'missionSpawn') {
-            missionSpawnArmed = false;
-            runtimeClearTimeout(missionSpawnPrimeTimer);
-            knownMissionIds.clear();
-            if (state.missionSpawn.enabled) primeMissionSpawnDetector();
-        }
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
         if (feature === 'criticalView') { toggleCriticalView(); return; }
         if (feature === 'compactDock') state.compactDock = !state.compactDock;
@@ -29004,6 +29005,7 @@ Create the private backup now?`);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
         applyMissionWindowToggleEffects(feature);
         applyPayoutAudioToggleEffects(feature);
+        applyMissionMonitoringToggleEffects(feature);
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
@@ -29035,8 +29037,6 @@ Create the private backup now?`);
             showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
             if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
         }
-        if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
-        if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off');
         if (feature === 'resourceGap') {
             if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');

@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.32] - 2026-07-22
+
+### Internal reliability
+- Extracted Mission Spawn and Stuck Detector state and notification routing from `toggleFeature()` into dedicated mission-monitoring helpers.
+- Preserved Mission Spawn arming reset, timer cancellation, known-mission reset and enabled-only detector priming before the shared persistence/UI phase.
+- Added direct and delegated contracts proving both monitoring notifications remain after feature reconciliation.
+
+### Compatibility
+- No monitoring threshold, timer duration, mission classification, visual design, device layout, theme or public asset changed.
+
 ## [4.20.31] - 2026-07-22
 
 ### Internal reliability

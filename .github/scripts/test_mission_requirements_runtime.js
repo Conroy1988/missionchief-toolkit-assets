@@ -581,6 +581,173 @@ assert.strictEqual(timeoutCalls.length, issue353UnrelatedTimeouts, 'unrelated cl
 flushAnimationFrames();
 listenedEvents.splice(issue353ListenerStart);
 
+
+// Issue #368: authoritative empty live requirements and executable Level 1
+// Public Order personnel tracking.
+{
+const issue368Specs = [
+    ['24 Level 2 Public Order Officers', 24],
+    ['3 Police Medics', 3],
+    ['3 Police Sergeants', 3],
+    ['1 Police Inspector', 1]
+];
+const issue368CatalogueRequirements = issue368Specs.map(([text, baseline]) => {
+    const parsed = api.parseText(text, 'staff');
+    assert.strictEqual(parsed.remaining, '', `Issue #368 parses ${text}`);
+    assert.strictEqual(parsed.requirements.length, 1, `Issue #368 resolves one requirement for ${text}`);
+    return { ...parsed.requirements[0], missing: baseline, baseline, statedRequirement: false };
+});
+const issue368Catalogue = {
+    requirements: issue368CatalogueRequirements,
+    unresolved: [{ group: 'staff', classification: 'operational', label: 'Unmapped catalogue specialist', value: '1' }]
+};
+const issue368Authoritative = api.reconcileCatalogue(
+    { requirements: [], unresolved: [], authoritativeSatisfied: true },
+    issue368Catalogue,
+    'ready',
+    true
+);
+assert.strictEqual(issue368Authoritative.requirements.length, 4, 'Issue #368 retains four catalogue rows for coverage accounting');
+assert(issue368Authoritative.requirements.every(item => item.authoritativeSatisfied === true), 'Issue #368 marks every catalogue row authoritatively satisfied');
+assert.strictEqual(issue368Authoritative.unresolved.length, 0, 'Issue #368 suppresses catalogue-only unresolved warnings after live satisfaction');
+const issue368Doc = new FakeDocument();
+const issue368Root = new FakeElement('div', issue368Doc);
+issue368Doc.body.appendChild(issue368Root);
+const issue368Candidate = { root: issue368Root, mount: issue368Root, source: null };
+const issue368Rows = api.resolve(issue368Candidate, issue368Authoritative, issue368Catalogue);
+assert.strictEqual(issue368Rows.length, 4, 'Issue #368 resolves all specialist rows');
+for (const row of issue368Rows) {
+    assert.strictEqual(row.covered, true, `${row.requirement}: authoritative live satisfaction covers the row`);
+    assert.strictEqual(row.uncertain, false, `${row.requirement}: no confirmation warning remains`);
+    assert.strictEqual(row.definitelyOpen, false, `${row.requirement}: no false shortage remains`);
+    assert.strictEqual(row.stillNeededText, '0', `${row.requirement}: still needed is zero`);
+    assert.strictEqual(row.onSiteText, '?', `${row.requirement}: specialist on-site count is not fabricated`);
+    assert.strictEqual(row.requirementAuthority, 'live-satisfied+mission-info', `${row.requirement}: authority is explicit`);
+}
+assert.strictEqual(api.overallState(issue368Rows, []), 'success', 'Issue #368 overall state is successful');
+const issue368Presentation = api.panelHtml(issue368Rows, []);
+const issue368Html = issue368Presentation?.html ?? String(issue368Presentation ?? '');
+assert(issue368Html.includes('All 4 covered'), 'Issue #368 panel reports full catalogue coverage');
+assert(issue368Html.includes('All currently known requirements are covered.'), 'Issue #368 panel replaces false requirement rows with the all-covered state');
+assert(!issue368Html.includes('need confirmation'), 'Issue #368 panel removes false confirmation warning');
+
+const issue368OrdinaryEmpty = api.reconcileCatalogue(
+    { requirements: [], unresolved: [] },
+    issue368Catalogue,
+    'ready',
+    true
+);
+const issue368OrdinaryRows = api.resolve(issue368Candidate, issue368OrdinaryEmpty, issue368Catalogue);
+assert(issue368OrdinaryRows.some(row => !row.covered && row.uncertain), 'ordinary empty data is not treated as authoritative satisfaction');
+const issue368LiveSergeant = api.parseText('1 Police Sergeant', 'staff');
+const issue368LiveMissing = api.reconcileCatalogue(issue368LiveSergeant, issue368Catalogue, 'ready', true);
+const issue368LiveRows = api.resolve(issue368Candidate, issue368LiveMissing, issue368Catalogue);
+const issue368SergeantRow = issue368LiveRows.find(row => row.key === 'police-sergeant-personnel');
+assert(issue368SergeantRow && !issue368SergeantRow.covered, 'a non-empty live Police Sergeant requirement remains outstanding');
+assert(!issue368LiveMissing.requirements.some(item => item.authoritativeSatisfied === true), 'non-empty live requirements never inherit authoritative satisfaction');
+assert(source.includes("record.source.id === 'missing_text' || record.source.matches?.('#missing_text')"), 'Issue #368 limits empty-source authority to the native missing_text source');
+
+const issue368Level1Doc = new FakeDocument();
+issue368Level1Doc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/368-level1' } };
+const issue368Level1Candidate = makeMissionCandidate(issue368Level1Doc, '21 Level 1 Public Order Officers');
+const issue368Level1Definition = api.definitions.find(definition => definition.key === 'public-order-level-1');
+assert(issue368Level1Definition, 'Issue #368 Level 1 definition exists');
+assert.strictEqual(issue368Level1Definition.countable, true, 'Issue #368 Level 1 is countable');
+assert(issue368Level1Definition.training.includes('level_1_public_order'), 'Issue #368 contains the native Level 1 schooling key');
+assert(issue368Level1Definition.training.includes('Level 1 Public Order Training'), 'Issue #368 contains the visible Level 1 training caption');
+assert(issue368Level1Definition.arrAttributes.includes('level_1_public_order'), 'Issue #368 contains the Level 1 ARR capability');
+const issue368CacheLevel1 = (id, personnel) => api.vehicleApiCache.set(String(id), { id, vehicle_type: 51, assigned_personnel_count: personnel });
+const issue368Level1Carriers = [36801, 36802, 36803].map(id => {
+    const carrier = makeVehicleElement(issue368Level1Doc, id, 51, { typeOnRow: true });
+    carrier.vehicle.checked = true;
+    carrier.vehicle.matchSet.add('.vehicle_checkbox');
+    carrier.vehicle.classList.values.add('vehicle_checkbox');
+    carrier.row.textContent = carrier.row.innerText = 'Police Support Unit Carrier [Level 1 Public Order Officer]';
+    issue368CacheLevel1(id, 7);
+    return carrier;
+});
+issue368Level1Candidate.root.selectedUnits = issue368Level1Carriers.map(carrier => carrier.vehicle);
+let issue368Level1Units = api.collectUnits(issue368Level1Candidate, 'selected');
+let issue368Level1Capacity = api.aggregate({ group: 'staff', definition: issue368Level1Definition }, issue368Level1Units);
+assert.strictEqual(issue368Level1Capacity.min, 21, 'three exact seven-person Level 1 carriers contribute twenty-one');
+assert.strictEqual(issue368Level1Capacity.max, 21, 'Level 1 selected capacity is exact');
+let issue368Level1Rows = api.resolve(issue368Level1Candidate, {
+    requirements: [{ key: 'public-order-level-1', requirement: 'Level 1 Public Order Officer', missing: 21, group: 'staff', definition: issue368Level1Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-1', baseline: 21, missing: 21 }] });
+let issue368Level1Row = issue368Level1Rows.find(row => row.key === 'public-order-level-1');
+assert.strictEqual(issue368Level1Row.selectedText, '21', 'Matrix displays twenty-one selected Level 1 officers');
+assert.strictEqual(issue368Level1Row.respondingText, '0', 'Level 1 responding bucket is numeric when empty');
+assert.strictEqual(issue368Level1Row.onSiteText, '0', 'Level 1 on-site bucket is numeric when empty');
+assert.strictEqual(issue368Level1Row.stillNeededText, '0', 'twenty-one selected Level 1 officers clear demand');
+assert.strictEqual(issue368Level1Row.covered, true, 'Level 1 row is covered');
+
+issue368Level1Carriers[2].vehicle.checked = false;
+issue368Level1Candidate.root.selectedUnits = issue368Level1Carriers.slice(0, 2).map(carrier => carrier.vehicle);
+issue368Level1Rows = api.resolve(issue368Level1Candidate, {
+    requirements: [{ key: 'public-order-level-1', requirement: 'Level 1 Public Order Officer', missing: 21, group: 'staff', definition: issue368Level1Definition, statedRequirement: true }],
+    unresolved: []
+}, { requirements: [{ key: 'public-order-level-1', baseline: 21, missing: 21 }] });
+issue368Level1Row = issue368Level1Rows.find(row => row.key === 'public-order-level-1');
+assert.strictEqual(issue368Level1Row.selectedText, '14', 'deselecting one Level 1 carrier removes seven personnel');
+assert.strictEqual(issue368Level1Row.stillNeededText, '7', 'seven-person Level 1 shortage returns after deselection');
+
+const issue368Untrained = makeVehicleElement(issue368Level1Doc, 36810, 8, { typeOnRow: true });
+issue368Untrained.vehicle.checked = true;
+issue368Untrained.vehicle.matchSet.add('.vehicle_checkbox');
+issue368Untrained.vehicle.classList.values.add('vehicle_checkbox');
+issue368Untrained.row.textContent = issue368Untrained.row.innerText = 'Generic Police Car';
+issue368CacheLevel1(36810, 7);
+issue368Level1Candidate.root.selectedUnits = [issue368Untrained.vehicle];
+issue368Level1Units = api.collectUnits(issue368Level1Candidate, 'selected');
+issue368Level1Capacity = api.aggregate({ group: 'staff', definition: issue368Level1Definition }, issue368Level1Units);
+assert.strictEqual(issue368Level1Capacity.min, 0, 'untrained police personnel do not satisfy Level 1 demand');
+
+const issue368Linked = new FakeElement('input');
+issue368Linked.setAttribute('data-education-key', 'level_1_public_order');
+const issue368LinkedRow = new FakeElement('tr');
+issue368Linked.closestMap.set('tr', issue368LinkedRow);
+const issue368Level1Training = api.linkedTrainingValues({
+    root: { querySelectorAll(selector) { return selector.includes('36820') ? [issue368Linked] : []; } },
+    mount: null,
+    source: null
+}, 36820, new FakeElement('a'));
+assert(issue368Level1Training.has('level 1 public order'), 'native level_1_public_order metadata is recognised');
+const issue368OperationalUnit = {
+    typeId: 51,
+    vehicleId: 36820,
+    equipment: new Set(),
+    labels: new Set(),
+    training: issue368Level1Training,
+    arrCapabilities: new Set(['level 1 public order']),
+    arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set(),
+    staff: api.capacity(7, 7, true),
+    contributionKey: 'vehicle:36820'
+};
+const issue368RespondingCapacity = api.aggregate({ group: 'staff', definition: issue368Level1Definition }, [issue368OperationalUnit]);
+assert.strictEqual(issue368RespondingCapacity.min, 7, 'seven explicitly trained Level 1 officers count as Responding');
+const issue368RespondingRow = api.coverageRow(
+    { key: 'public-order-level-1', requirement: 'Level 1 Public Order Officer', missing: 7, group: 'staff', definition: issue368Level1Definition },
+    api.capacity(0, 0, true),
+    issue368RespondingCapacity,
+    api.capacity(0, 0, true),
+    api.capacity(7, 7, true)
+);
+assert.strictEqual(issue368RespondingRow.respondingText, '7', 'Level 1 responding count is numeric');
+assert.strictEqual(issue368RespondingRow.stillNeededText, '0', 'responding Level 1 officers clear demand');
+const issue368OnSiteRow = api.coverageRow(
+    { key: 'public-order-level-1', requirement: 'Level 1 Public Order Officer', missing: 7, group: 'staff', definition: issue368Level1Definition },
+    api.capacity(0, 0, true),
+    api.capacity(0, 0, true),
+    issue368RespondingCapacity,
+    api.capacity(7, 7, true)
+);
+assert.strictEqual(issue368OnSiteRow.onSiteText, '7', 'Level 1 on-site count is numeric');
+assert.strictEqual(issue368OnSiteRow.stillNeededText, '0', 'on-site Level 1 officers clear demand');
+}
+
 for (const group of crossSourceFixture.authoritativeLabels) {
     for (const label of group.labels) {
         const parsed = api.parseText(`1 ${label}`, 'vehicles');
@@ -1846,7 +2013,10 @@ assert.deepStrictEqual(
 const publicOrderRows = api.resolve(personnelCandidate, personnelParsed);
 const level1PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-1');
 const level2PublicOrderRow = publicOrderRows.find(row => row.key === 'public-order-level-2');
-assert(level1PublicOrderRow.uncertain && level1PublicOrderRow.selectedText === '?' && level1PublicOrderRow.enRouteText === '?', 'unverified Level 1 Public Order capacity remains safely uncertain');
+assert.strictEqual(level1PublicOrderRow.uncertain, false, 'Level 1 Public Order has an executable explicit-training model');
+assert.strictEqual(level1PublicOrderRow.selectedText, '0', 'Level 1 Public Order selected capacity starts at zero');
+assert.strictEqual(level1PublicOrderRow.respondingText, '0', 'Level 1 Public Order responding capacity starts at zero');
+assert.strictEqual(level1PublicOrderRow.onSiteText, '0', 'Level 1 Public Order on-site capacity starts at zero');
 assert.strictEqual(level2PublicOrderRow.uncertain, false, 'verified Level 2 Public Order capacity has an exact empty state');
 assert.strictEqual(level2PublicOrderRow.selectedText, '0', 'verified Level 2 Public Order selected capacity starts at zero');
 assert.strictEqual(level2PublicOrderRow.respondingText, '0', 'verified Level 2 Public Order responding capacity starts at zero');

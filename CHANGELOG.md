@@ -6,6 +6,23 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.37] - 2026-07-22
+
+### Critical Mission Requirements fixes
+- Distinguished an authoritative empty MissionChief `#missing_text` source from an absent or unavailable source.
+- Marked catalogue-only requirements covered when MissionChief confirms that no live requirements remain.
+- Enabled exact Level 1 Public Order Officer tracking using the canonical `level_1_public_order` schooling and ARR capability.
+- Preserved unknown specialist on-site composition instead of fabricating personnel counts.
+- Added exact regressions for Rival Fans Mass Disorder (Medium) and a twenty-one-officer Level 1 Public Order selection.
+
+### Benefit
+- Fully satisfied missions no longer retain false specialist shortages or `need confirmation` warnings.
+- Selecting qualified Level 1 Public Order units now updates Selected and Still Needed immediately; qualified responding and on-site crews also render numeric totals.
+
+### Compatibility
+- Non-empty live requirements, unavailable sources, loading states, explicit specialist training, deselection, patients, prisoners and transports retain their existing authority and tracking behaviour.
+- Generic police vehicles and untrained personnel do not satisfy Level 1 Public Order demand.
+
 ## [4.20.36] - 2026-07-22
 
 ### Critical Mission Requirements fixes

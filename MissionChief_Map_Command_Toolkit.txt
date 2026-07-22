@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      4.20.29
+// @version      4.20.30
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '4.20.29',
+        version: '4.20.30',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -28953,9 +28953,21 @@ Create the private backup now?`);
         if (feature === 'customVehicleBadges') { if (state.customVehicleBadges) installCustomVehicleBadges(); else clearCustomVehicleBadges(); showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off'); }
         if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
     }
+    function handlePayoutAudioToggle(feature) {
+        if (feature === 'missionLockAudio') { state.missionLockAudio = !state.missionLockAudio; if (state.missionLockAudio) unlockPayoutAudio(true); }
+        else if (feature === 'payoutFlash') state.payoutFlash.enabled = !state.payoutFlash.enabled;
+        else if (feature === 'payoutSound') { state.payoutFlash.soundEnabled = !state.payoutFlash.soundEnabled; if (state.payoutFlash.soundEnabled) unlockPayoutAudio(); else disposePayoutMediaAudio(); }
+        else return false;
+        return true; }
+    function applyPayoutAudioToggleEffects(feature) {
+        if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
+        else if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
+        else if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
+    }
     function toggleFeature(feature) {
         handleMapVisibilityToggle(feature);
         handleMissionWindowToggle(feature);
+        handlePayoutAudioToggle(feature);
         if (feature === 'clean') state.cleanMode = !state.cleanMode;
         if (feature === 'shortcuts') state.shortcuts = !state.shortcuts;
         if (feature === 'autoLoadAllVehicles') {
@@ -28965,10 +28977,6 @@ Create the private backup now?`);
         }
         if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
         if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
-        if (feature === 'missionLockAudio') {
-            state.missionLockAudio = !state.missionLockAudio;
-            if (state.missionLockAudio) unlockPayoutAudio(true);
-        }
         if (feature === 'allianceCredits') state.allianceCredits = !state.allianceCredits;
         if (feature === 'missionAge') state.missionAge = !state.missionAge;
         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
@@ -28983,12 +28991,6 @@ Create the private backup now?`);
         }
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
         if (feature === 'criticalView') { toggleCriticalView(); return; }
-        if (feature === 'payoutFlash') state.payoutFlash.enabled = !state.payoutFlash.enabled;
-        if (feature === 'payoutSound') {
-            state.payoutFlash.soundEnabled = !state.payoutFlash.soundEnabled;
-            if (state.payoutFlash.soundEnabled) unlockPayoutAudio();
-            else disposePayoutMediaAudio();
-        }
         if (feature === 'compactDock') state.compactDock = !state.compactDock;
         if (feature === 'autoNight') {
             state.autoNight.enabled = !state.autoNight.enabled;
@@ -29001,6 +29003,7 @@ Create the private backup now?`);
         applyMapVisibilityToggleEffects(feature);
         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
         applyMissionWindowToggleEffects(feature);
+        applyPayoutAudioToggleEffects(feature);
         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
@@ -29021,7 +29024,6 @@ Create the private backup now?`);
             } else removeMajorIncidentFeed();
             showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
         }
-        if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
         if (feature === 'allianceBuildingsMapBlocker') {
             if (state.allianceBuildingsMap === false) {
                 installAllianceBuildingsEarlyStyle();
@@ -29039,8 +29041,6 @@ Create the private backup now?`);
             if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
         }
-        if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
-        if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
         if (feature === 'autoNight') runAutoNight(true);
     }
     function runAutoNight(force = false) {

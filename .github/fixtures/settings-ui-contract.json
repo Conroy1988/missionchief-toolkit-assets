@@ -336,5 +336,20 @@
     "missionInspector": "missionInspector",
     "missionRequirements": "missionRequirements",
     "missionValue": "missionValue"
+  },
+  "extractedPayoutAudioToggleRoutes": [
+    "missionLockAudio",
+    "payoutFlash",
+    "payoutSound"
+  ],
+  "extractedPayoutAudioEffectRoutes": [
+    "missionLockAudio",
+    "payoutFlash",
+    "payoutSound"
+  ],
+  "extractedPayoutAudioToggleStatePaths": {
+    "missionLockAudio": "missionLockAudio",
+    "payoutFlash": "payoutFlash.enabled",
+    "payoutSound": "payoutFlash.soundEnabled"
   }
 }

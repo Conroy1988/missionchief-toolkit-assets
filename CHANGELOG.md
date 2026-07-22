@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.30] - 2026-07-22
+
+### Internal reliability
+- Extracted Mission Tracking Audio, Emergency Payout Flash and Theme Audio state and notification routing from `toggleFeature()` into dedicated payout/audio helpers.
+- Preserved immediate audio unlock/disposal and post-reconciliation notification ordering with direct and delegated contracts.
+
+### Compatibility
+- No payout presentation, hosted audio source, threshold, duration, volume, device layout, theme or public asset changed.
+
 ## [4.20.29] - 2026-07-22
 
 ### Improved

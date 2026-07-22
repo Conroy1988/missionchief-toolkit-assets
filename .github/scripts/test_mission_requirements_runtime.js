@@ -175,6 +175,7 @@ let nextAnimationId = 1;
 const trackedObservers = new Set();
 const listenedEvents = [];
 const openedUrls = [];
+const timeoutCalls = [];
 const flushAnimationFrames = () => {
     while (animationQueue.length) {
         const queue = animationQueue;
@@ -207,7 +208,7 @@ const context = {
     vehicleApiReady: true,
     vehicleApiFetchPromise: null,
     refreshPersonalVehicleData: () => Promise.resolve(true),
-    runtimeSetTimeout: () => 1,
+    runtimeSetTimeout: (callback, delay) => { timeoutCalls.push({ callback, delay }); return timeoutCalls.length; },
     runtimeClearTimeout: () => {},
     runtimeRequestAnimationFrame: callback => {
         const id = nextAnimationId++;
@@ -483,6 +484,102 @@ for (const typeId of [0, 1, 27, 28, 47]) {
     assert.strictEqual(capacity.min, 0, `Issue #349 type ${typeId} is not a standalone Rescue Support Vehicle`);
     assert.strictEqual(capacity.max, 0, `Issue #349 type ${typeId} is definitively excluded`);
 }
+
+
+// Issue #353: Non-Injury RTC with Police Car (Recovery Required).
+const issue353RecoverySingular = api.parseText('1 car to tow', 'vehicles');
+const issue353RecoveryPlural = api.parseText('2 cars to tow', 'vehicles');
+assert.strictEqual(issue353RecoverySingular.requirements[0]?.key, 'car-recovery', 'car to tow resolves to Car Recovery');
+assert.strictEqual(issue353RecoverySingular.requirements[0]?.requirement, 'Car Recovery', 'Matrix uses the canonical Car Recovery label');
+assert.strictEqual(issue353RecoveryPlural.requirements[0]?.key, 'car-recovery', 'cars to tow resolves to Car Recovery');
+assert.strictEqual(issue353RecoveryPlural.requirements[0]?.missing, 2, 'plural recovery quantity is preserved');
+const issue353RecoveryDefinition = api.definitions.find(definition => definition.key === 'car-recovery');
+assert(issue353RecoveryDefinition, 'Car Recovery definition exists');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(issue353RecoveryDefinition.types)), [104, 105]);
+assert.strictEqual(Number(issue353RecoveryDefinition.factors?.[105] ?? issue353RecoveryDefinition.factors?.['105']), 2, 'Flatbed Recovery Vehicle contributes two cars');
+const issue353RecoveryUnit = typeId => ({
+    typeId,
+    vehicleId: 353000 + typeId,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(),
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set(),
+    staff: null,
+    contributionKey: `vehicle:353-recovery-${typeId}`
+});
+const issue353RecoveryRequirement = { key: 'car-recovery', requirement: 'Car Recovery', missing: 1, group: 'vehicles', definition: issue353RecoveryDefinition };
+const issue353StandardRecovery = api.aggregate(issue353RecoveryRequirement, [issue353RecoveryUnit(104)]);
+const issue353FlatbedRecovery = api.aggregate(issue353RecoveryRequirement, [issue353RecoveryUnit(105)]);
+assert.strictEqual(issue353StandardRecovery.min, 1, 'Recovery Vehicle clears one car');
+assert.strictEqual(issue353StandardRecovery.max, 1, 'Recovery Vehicle capacity is exact');
+assert.strictEqual(issue353FlatbedRecovery.min, 2, 'Flatbed Recovery Vehicle clears two cars');
+assert.strictEqual(issue353FlatbedRecovery.max, 2, 'Flatbed Recovery Vehicle capacity is exact');
+for (const [bucket, selected, responding, onSite] of [
+    ['selected', issue353StandardRecovery, api.capacity(0, 0, true), api.capacity(0, 0, true)],
+    ['responding', api.capacity(0, 0, true), issue353StandardRecovery, api.capacity(0, 0, true)],
+    ['on-site', api.capacity(0, 0, true), api.capacity(0, 0, true), issue353StandardRecovery]
+]) {
+    const row = api.coverageRow(issue353RecoveryRequirement, selected, responding, onSite, api.capacity(1, 1, true));
+    assert.strictEqual(row.covered, true, `${bucket} Recovery Vehicle covers the requirement`);
+    assert.strictEqual(row.stillNeededText, '0', `${bucket} Recovery Vehicle clears still needed`);
+}
+for (const typeId of [0, 8, 103, 106, 107]) {
+    const capacity = api.aggregate(issue353RecoveryRequirement, [issue353RecoveryUnit(typeId)]);
+    assert.strictEqual(capacity.min, 0, `type ${typeId} does not satisfy ordinary car recovery`);
+    assert.strictEqual(capacity.max, 0, `type ${typeId} exclusion is exact`);
+}
+
+const issue353SergeantDefinition = api.definitions.find(definition => definition.key === 'police-sergeant-personnel');
+assert(issue353SergeantDefinition, 'Police Sergeant specialist definition exists');
+const issue353BadgeDoc = new FakeDocument();
+const issue353BadgeRow = new FakeElement('tr', issue353BadgeDoc);
+const issue353Badge = new FakeElement('span', issue353BadgeDoc);
+issue353Badge.className = 'personnel-training-badge';
+issue353Badge.textContent = issue353Badge.innerText = 'Police Sergeant';
+issue353BadgeRow.appendChild(issue353Badge);
+issue353BadgeRow.queryAllHandler = selector => selector.includes('[class*="training"]') ? [issue353Badge] : [];
+const issue353BadgeCheckbox = new FakeElement('input', issue353BadgeDoc);
+issue353BadgeCheckbox.closestMap.set('tr', issue353BadgeRow);
+const issue353Qualified = api.qualifiedStaffCounts(null, -1, issue353BadgeCheckbox, { counts: new Map() });
+assert.strictEqual(issue353Qualified.get('police-sergeant-personnel')?.min, 1, 'explicit selected training badge proves one Police Sergeant');
+const issue353CaptionRow = new FakeElement('tr', issue353BadgeDoc);
+const issue353Caption = new FakeElement('span', issue353BadgeDoc);
+issue353Caption.className = 'vehicle-caption';
+issue353Caption.textContent = issue353Caption.innerText = 'Police Sergeant';
+issue353CaptionRow.queryAllHandler = () => [issue353Caption];
+const issue353CaptionCheckbox = new FakeElement('input', issue353BadgeDoc);
+issue353CaptionCheckbox.closestMap.set('tr', issue353CaptionRow);
+const issue353CaptionOnly = api.qualifiedStaffCounts(null, -1, issue353CaptionCheckbox, { counts: new Map() });
+assert.strictEqual(issue353CaptionOnly.has('police-sergeant-personnel'), false, 'caption-only Police Sergeant text is not qualification evidence');
+
+const issue353RefreshDoc = new FakeDocument();
+issue353RefreshDoc.defaultView = { MutationObserver: FakeMutationObserver, location: { pathname: '/missions/353' } };
+const issue353ListenerStart = listenedEvents.length;
+api.observeDocument(issue353RefreshDoc);
+const issue353ClickRegistration = listenedEvents.find(entry => entry.target === issue353RefreshDoc && entry.type === 'click');
+assert(issue353ClickRegistration, 'Matrix registers one delegated selection refresh listener');
+const issue353Checkbox = new FakeElement('input', issue353RefreshDoc);
+issue353Checkbox.matches = selector => selector.includes('.vehicle_checkbox');
+const issue353CheckboxTimeouts = timeoutCalls.length;
+issue353ClickRegistration.listener({ target: issue353Checkbox });
+assert.strictEqual(timeoutCalls.length, issue353CheckboxTimeouts + 1, 'direct checkbox click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'direct checkbox refresh uses the managed 35 ms scan delay');
+const issue353AaoControl = new FakeElement('a', issue353RefreshDoc);
+const issue353AaoChild = new FakeElement('span', issue353RefreshDoc);
+issue353AaoChild.closestMap.set('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]', issue353AaoControl);
+const issue353AaoTimeouts = timeoutCalls.length;
+issue353ClickRegistration.listener({ target: issue353AaoChild });
+assert.strictEqual(timeoutCalls.length, issue353AaoTimeouts + 1, 'ARR click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'ARR refresh uses the managed 35 ms scan delay');
+const issue353Unrelated = new FakeElement('span', issue353RefreshDoc);
+const issue353UnrelatedTimeouts = timeoutCalls.length;
+issue353ClickRegistration.listener({ target: issue353Unrelated });
+assert.strictEqual(timeoutCalls.length, issue353UnrelatedTimeouts, 'unrelated clicks do not schedule Matrix refreshes');
+flushAnimationFrames();
+listenedEvents.splice(issue353ListenerStart);
 
 for (const group of crossSourceFixture.authoritativeLabels) {
     for (const label of group.labels) {
@@ -2422,7 +2519,7 @@ api.scan();
 flushAnimationFrames();
 assert.strictEqual(api.records.size, 0, 'disabling the feature removes every panel and observer record');
 context.state.missionRequirements = true;
-assert(listenedEvents.filter(event => event.type === 'change').length === 1, 'delegated checkbox change listener is installed once');
+assert(listenedEvents.filter(event => event.target === lifecycleDoc && event.type === 'click').length === 1, 'delegated selection click listener is installed once per document');
 assert(trackedObservers.size >= 1, 'document lifecycle observer remains runtime-owned');
 
 

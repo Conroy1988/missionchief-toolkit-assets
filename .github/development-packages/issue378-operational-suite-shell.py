@@ -543,8 +543,7 @@ headroom_fixture["approvedNonStyleChanges"] = [
     {"issue": 378, "phase": "operational-suite-shell", "lines": approved_non_style_lines}
 ]
 headroom_fixture["expectedSourceLines"] = candidate_source_lines
-HEADROOM_FIXTURE.write_text(json.dumps(headroom_fixture, indent=2) + "
-", encoding="utf-8")
+HEADROOM_FIXTURE.write_text(json.dumps(headroom_fixture, indent=2) + "\n", encoding="utf-8")
 
 headroom_test = HEADROOM_TEST.read_text(encoding="utf-8")
 old_headroom_check = '''    split_lines = re.split(r"\r?\n", text)

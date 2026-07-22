@@ -53,6 +53,22 @@
         38,
         43
       ]
+    },
+    {
+      "canonicalLabel": "Car Recovery",
+      "capability": "car-recovery",
+      "labels": [
+        "car to tow",
+        "cars to tow"
+      ],
+      "pair": false,
+      "sources": [
+        "missionchief.liveRequirements"
+      ],
+      "types": [
+        104,
+        105
+      ]
     }
   ],
   "capabilities": [
@@ -1158,6 +1174,25 @@
       "training": [],
       "types": [
         99
+      ]
+    },
+    {
+      "aliases": [
+        "car to tow",
+        "cars to tow"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {
+        "105": 2
+      },
+      "key": "car-recovery",
+      "pair": false,
+      "training": [],
+      "types": [
+        104,
+        105
       ]
     },
     {

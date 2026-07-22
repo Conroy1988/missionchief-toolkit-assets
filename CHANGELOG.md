@@ -6,6 +6,21 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.36] - 2026-07-22
+
+### Critical Mission Requirements fixes
+- Added canonical `Car Recovery` handling for MissionChief's `car to tow` and `cars to tow` demand.
+- Counted Recovery Vehicle type `104` as one car and Flatbed Recovery Vehicle type `105` as two cars; HGV Recovery Vehicle type `106` remains excluded from ordinary car recovery.
+- Added deferred Matrix refresh after ARR and vehicle-group controls programmatically update selected vehicles.
+- Added strict semantic specialist-training badge support so an explicitly labelled selected Police Sergeant can be counted without treating vehicle captions or generic Police Officers as qualified Sergeants.
+
+### Benefit
+- Recovery requirements now receive complete selected, responding, on-site and still-needed tracking.
+- Police Sergeant selection updates immediately after native or ARR-driven vehicle selection.
+
+### Compatibility
+- Whole-row captions remain invalid specialist qualification evidence. Existing vehicle, personnel, mission-window, covered-row, theme, payout and notification behaviour is unchanged.
+
 ## [4.20.35] - 2026-07-22
 
 ### Critical Mission Requirements fix

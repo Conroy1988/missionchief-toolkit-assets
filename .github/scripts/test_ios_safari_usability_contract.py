@@ -9,8 +9,8 @@ required={
 'bottom visual gap':"'--mcms-visual-gap-bottom'",
 'visual viewport height':"'--mcms-visual-height'",
 'keyboard state':"'data-mcms-keyboard-open'",
-'focus-in recovery':"runtimeListen(document,'focusin',scheduleFocusedViewportRefresh,true)",
-'focus-out recovery':"runtimeListen(document,'focusout',scheduleFocusedViewportRefresh,true)",
+'boot viewport refresh':"scheduleVisualViewportStabilisation('boot-viewport')",
+'window focus recovery':"scheduleVisualViewportStabilisation('window-focus')",
 'visual resize recovery':"scheduleVisualViewportStabilisation('visual-viewport-resize')",
 'visual scroll recovery':"scheduleVisualViewportStabilisation('visual-viewport-scroll')",
 'orientation recovery':"scheduleVisualViewportStabilisation('orientationchange')",
@@ -24,7 +24,8 @@ required={
 'tablet launcher geometry':'const menuWidth = 145;',
 'mobile launcher accounting':"const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;",
 '44px pin floor':'let pinHeight = 44;',
-'multi-frame WebKit settling':'delays=isTouchLayoutActive()?[0,80,220,420]:[0]'
+'multi-frame WebKit settling':'delays=isTouchLayoutActive()?[0,80,220,420]:[0]',
+'unmanaged timer budget protection':'pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return'
 }
 missing=[name for name,token in required.items() if token not in text]
 if missing: raise SystemExit('IOS SAFARI CONTRACT ERROR: missing '+', '.join(missing))

@@ -13684,7 +13684,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
     for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
     function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))applyTabletPanelPosition();scheduleCriticalDrawerDock(0);scheduleMajorIncidentFeedLayout();}
-    function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)runtimeSetTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
+    function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
     function hasCoarsePointer() {
         try {
         return Boolean(
@@ -31524,8 +31524,8 @@ Create the private backup now?`);
             runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
             runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
         }
-        const scheduleFocusedViewportRefresh=event=>{if(isTouchLayoutActive()&&event?.target?.matches?.('input,select,textarea,[contenteditable="true"]'))scheduleVisualViewportStabilisation(event.type);};
-        runtimeListen(document,'focusin',scheduleFocusedViewportRefresh,true);runtimeListen(document,'focusout',scheduleFocusedViewportRefresh,true);
+        applyVisualViewportGeometry();
+        scheduleVisualViewportStabilisation('boot-viewport');
         try {
             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));

@@ -27,7 +27,9 @@ jobs:
           set -euo pipefail
           cat \
             .github/development-packages/issue64-mission-window-v4.20.28.part-00 \
-            .github/development-packages/issue64-mission-window-v4.20.28.part-01 \
+            .github/development-packages/issue64-mission-window-v4.20.28.part-01-0 \
+            .github/development-packages/issue64-mission-window-v4.20.28.part-01-1 \
+            .github/development-packages/issue64-mission-window-v4.20.28.part-01-2 \
             .github/development-packages/issue64-mission-window-v4.20.28.part-02 > /tmp/candidate.b64
           test "$(sha256sum /tmp/candidate.b64 | awk '{print $1}')" = "8cf52211bddcc86b89c17c34b35d4477ee8bf12e133f24ba89ac80662d78931d"
           base64 -d /tmp/candidate.b64 | gzip -d > /tmp/candidate.patch

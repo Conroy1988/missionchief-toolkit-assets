@@ -41,6 +41,8 @@ FUNCTION_NAMES = [
     "applyMapVisibilityToggleEffects",
     "handleMissionWindowToggle",
     "applyMissionWindowToggleEffects",
+    "handlePayoutAudioToggle",
+    "applyPayoutAudioToggleEffects",
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
@@ -77,6 +79,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     apply_map_visibility_effects = extract_function(source, masked, "applyMapVisibilityToggleEffects")
     handle_mission_window_toggle = extract_function(source, masked, "handleMissionWindowToggle")
     apply_mission_window_effects = extract_function(source, masked, "applyMissionWindowToggleEffects")
+    handle_payout_audio_toggle = extract_function(source, masked, "handlePayoutAudioToggle")
+    apply_payout_audio_effects = extract_function(source, masked, "applyPayoutAudioToggleEffects")
     toggle_feature = extract_function(source, masked, "toggleFeature")
 
     actions = values(r'data-action\s*=\s*["\']([^"\']+)["\']', create_panel)
@@ -95,7 +99,9 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     extracted_toggle_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_map_visibility_effects)
     mission_window_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_mission_window_toggle)
     mission_window_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_mission_window_effects)
-    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes))
+    payout_audio_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_payout_audio_toggle)
+    payout_audio_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_payout_audio_effects)
+    toggle_routes = sorted(set(direct_toggle_routes + extracted_toggle_routes + mission_window_toggle_routes + payout_audio_toggle_routes))
     setting_families = values(r'setting\.startsWith\(\s*["\']([^"\']+)["\']\s*\)', handle_setting)
 
     assert actions == sorted(fixtures["actions"]), "Visible data-action inventory changed"
@@ -113,6 +119,11 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert not set(direct_toggle_routes).intersection(mission_window_toggle_routes), "Extracted mission-window toggles must not remain duplicated in toggleFeature"
     assert "handleMissionWindowToggle(feature)" in toggle_feature, "Main toggle router must delegate to the extracted mission-window state family"
     assert "applyMissionWindowToggleEffects(feature)" in toggle_feature, "Main toggle router must delegate to the extracted mission-window effect family"
+    assert payout_audio_toggle_routes == sorted(fixtures["extractedPayoutAudioToggleRoutes"]), "Extracted payout/audio toggle routing changed"
+    assert payout_audio_effect_routes == sorted(fixtures["extractedPayoutAudioEffectRoutes"]), "Extracted payout/audio effect routing changed"
+    assert not set(direct_toggle_routes).intersection(payout_audio_toggle_routes), "Extracted payout/audio toggles remain duplicated"
+    assert "handlePayoutAudioToggle(feature)" in toggle_feature
+    assert "applyPayoutAudioToggleEffects(feature)" in toggle_feature
     assert setting_families == sorted(fixtures["settingFamilies"]), "Setting-family routing changed"
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
@@ -569,6 +580,23 @@ function testExtractedMissionWindowToggleContracts() {{
     assert.equal(calls.length, 0, "unrelated toggle entered mission-window effect phase");
 }}
 
+
+function testExtractedPayoutAudioToggleContracts() {{
+    for (const [feature, path] of Object.entries(fixtures.extractedPayoutAudioToggleStatePaths)) {{
+        resetEnvironment(); const before = pathValue(state, path);
+        assert.equal(handlePayoutAudioToggle(feature), true); assert.notEqual(pathValue(state, path), before);
+        assert.equal(localStorage.getItem(SCRIPT.storageState), null); assert.equal(wasCalled("updateUI"), false);
+    }}
+    resetEnvironment(); const before = JSON.stringify(state);
+    assert.equal(handlePayoutAudioToggle("unknown-payout-audio"), false); assert.equal(JSON.stringify(state), before);
+    resetEnvironment(); state.missionLockAudio = false; handlePayoutAudioToggle("missionLockAudio"); assert.deepEqual(callFor("unlockPayoutAudio").args, [true]);
+    resetEnvironment(); state.payoutFlash.soundEnabled = true; handlePayoutAudioToggle("payoutSound"); assert.equal(wasCalled("disposePayoutMediaAudio"), true);
+    for (const [feature, message] of [["missionLockAudio","Mission tracking audio on"],["payoutSound","Theme audio off"],["payoutFlash","Emergency payout flash on"]]) {{
+        resetEnvironment(); applyPayoutAudioToggleEffects(feature); assert.equal(callFor("showToast").args[0], message);
+    }}
+    resetEnvironment(); applyPayoutAudioToggleEffects("coverage"); assert.equal(calls.length, 0);
+}}
+
 async function testToggleContracts() {{
     for (const [feature, path] of Object.entries(fixtures.toggleStatePaths)) {{
         resetEnvironment();
@@ -620,6 +648,21 @@ async function testToggleContracts() {{
         const effectIndex = calls.findIndex(call => call.name === effectName);
         assert.ok(updateIndex >= 0 && updateIndex < reconcileIndex, `${{feature}} reconciliation must remain after UI update`);
         assert.ok(reconcileIndex < effectIndex, `${{feature}} effect must remain after feature reconciliation`);
+    }}
+
+
+
+    for (const [feature, prepare, immediate] of [
+        ["missionLockAudio", () => {{ state.missionLockAudio = false; }}, "unlockPayoutAudio"],
+        ["payoutSound", () => {{ state.payoutFlash.soundEnabled = false; }}, "unlockPayoutAudio"],
+        ["payoutFlash", () => {{ state.payoutFlash.enabled = false; }}, null],
+    ]) {{
+        resetEnvironment(); prepare(); toggleFeature(feature);
+        const update = calls.findIndex(call => call.name === "updateUI");
+        const reconcile = calls.findIndex(call => call.name === "reconcileFeatureRefreshes");
+        const toast = calls.findIndex(call => call.name === "showToast");
+        assert.ok(update >= 0 && update < reconcile && reconcile < toast);
+        if (immediate) assert.ok(calls.findIndex(call => call.name === immediate) < update);
     }}
 
     resetEnvironment();
@@ -782,11 +825,12 @@ async function testSettingContracts() {{
     testImportContracts();
     testExtractedMapVisibilityToggleContracts();
     testExtractedMissionWindowToggleContracts();
+    testExtractedPayoutAudioToggleContracts();
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

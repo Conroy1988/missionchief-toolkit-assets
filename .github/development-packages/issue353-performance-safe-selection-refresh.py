@@ -40,7 +40,7 @@ if old_listener.count("runtimeSetTimeout(") != 2 or old_listener.count("runtimeR
     raise RuntimeError("listener boundary did not contain the expected deferred refresh calls")
 new_listener = """        runtimeListen(doc, 'click', event => {
             const target = event.target; if (!target?.matches?.('.vehicle_checkbox, input[type=\"checkbox\"][vehicle_type_id]') && !target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return;
-            missionRequirementsScheduleDocumentRecords(doc);
+            scheduleMissionRequirementsScan(35);
         }, true);"""
 source = source[:listener_start] + new_listener + source[listener_end:]
 SOURCE.write_text(source, encoding="utf-8")
@@ -53,9 +53,24 @@ for path in (
 ):
     path.write_text(source, encoding="utf-8")
 
+# Record existing managed timeout requests in the fixture without executing
+# them, matching the test harness's existing non-running timeout behaviour.
+test = TEST.read_text(encoding="utf-8")
+test = replace_once(
+    test,
+    "const openedUrls = [];",
+    "const openedUrls = [];\nconst timeoutCalls = [];",
+    "timeout fixture inventory",
+)
+test = replace_once(
+    test,
+    "    runtimeSetTimeout: () => 1,",
+    "    runtimeSetTimeout: (callback, delay) => { timeoutCalls.push({ callback, delay }); return timeoutCalls.length; },",
+    "managed timeout fixture",
+)
+
 # Replace only the Issue #353 delegated-listener test block, retaining the
 # existing final animation-queue flush and subsequent cross-source tests.
-test = TEST.read_text(encoding="utf-8")
 test_start_marker = "const issue353ClickRegistration = listenedEvents.find(entry => entry.target === issue353RefreshDoc && entry.type === 'click');"
 test_end_marker = "flushAnimationFrames();\nlistenedEvents.splice(issue353ListenerStart);"
 test_start = test.find(test_start_marker)
@@ -66,27 +81,28 @@ new_test = """const issue353ClickRegistration = listenedEvents.find(entry => ent
 assert(issue353ClickRegistration, 'Matrix registers one delegated selection refresh listener');
 const issue353Checkbox = new FakeElement('input', issue353RefreshDoc);
 issue353Checkbox.matches = selector => selector.includes('.vehicle_checkbox');
-const issue353CheckboxQueue = animationQueue.length;
+const issue353CheckboxTimeouts = timeoutCalls.length;
 issue353ClickRegistration.listener({ target: issue353Checkbox });
-assert.strictEqual(animationQueue.length, issue353CheckboxQueue + 1, 'direct checkbox click schedules a post-selection Matrix refresh');
-flushAnimationFrames();
+assert.strictEqual(timeoutCalls.length, issue353CheckboxTimeouts + 1, 'direct checkbox click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'direct checkbox refresh uses the managed 35 ms scan delay');
 const issue353AaoControl = new FakeElement('a', issue353RefreshDoc);
 const issue353AaoChild = new FakeElement('span', issue353RefreshDoc);
 issue353AaoChild.closestMap.set('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]', issue353AaoControl);
-const issue353QueueBefore = animationQueue.length;
+const issue353AaoTimeouts = timeoutCalls.length;
 issue353ClickRegistration.listener({ target: issue353AaoChild });
-assert.strictEqual(animationQueue.length, issue353QueueBefore + 1, 'ARR click schedules a post-selection Matrix refresh');
+assert.strictEqual(timeoutCalls.length, issue353AaoTimeouts + 1, 'ARR click schedules one deferred Matrix scan');
+assert.strictEqual(timeoutCalls.at(-1)?.delay, 35, 'ARR refresh uses the managed 35 ms scan delay');
 const issue353Unrelated = new FakeElement('span', issue353RefreshDoc);
-const issue353UnrelatedQueue = animationQueue.length;
+const issue353UnrelatedTimeouts = timeoutCalls.length;
 issue353ClickRegistration.listener({ target: issue353Unrelated });
-assert.strictEqual(animationQueue.length, issue353UnrelatedQueue, 'unrelated clicks do not schedule Matrix refreshes');
+assert.strictEqual(timeoutCalls.length, issue353UnrelatedTimeouts, 'unrelated clicks do not schedule Matrix refreshes');
 """
 test = test[:test_start] + new_test + test[test_end:]
 TEST.write_text(test, encoding="utf-8")
 
 changelog = CHANGELOG.read_text(encoding="utf-8")
 old_changelog = "- Added deferred Matrix refresh after ARR and vehicle-group controls programmatically update selected vehicles."
-new_changelog = "- Reused one delegated selection listener for direct checkbox, ARR and vehicle-group updates without adding lifecycle call sites."
+new_changelog = "- Reused one delegated selection listener and the existing managed scan scheduler for direct checkbox, ARR and vehicle-group updates without adding lifecycle call sites."
 if old_changelog in changelog:
     changelog = replace_once(changelog, old_changelog, new_changelog, "Issue #353 changelog refresh wording")
 elif new_changelog not in changelog:
@@ -100,7 +116,7 @@ headroom["recoveredSourceLines"] = headroom["originalSourceLines"] - source_line
 headroom["candidateSourceSha256"] = hashlib.sha256(source.encode()).hexdigest()
 headroom["invariant"] = (
     f'The reviewed compact stylesheet retains {headroom["recoveredSourceLines"]} recovered source lines '
-    "while Police Sergeant and Car Recovery tracking reuse the existing delegated selection lifecycle and managed runtime budgets remain unchanged."
+    "while Police Sergeant and Car Recovery tracking reuse the existing delegated selection and managed scan lifecycle budgets."
 )
 HEADROOM.write_text(json.dumps(headroom, indent=2) + "\n", encoding="utf-8")
 
@@ -109,9 +125,8 @@ if source_lines != 31653:
 if headroom["recoveredSourceLines"] != 504:
     raise RuntimeError(f"source-headroom recovery changed unexpectedly: {headroom['recoveredSourceLines']}")
 
-# Raw token counts include each wrapper declaration. The official performance
-# checker reports only invocations, so these limits correspond to the locked
-# call-site budgets of 99 timeouts, 14 animation frames and 31 listeners.
+# Raw token counts include each wrapper declaration. These correspond to the
+# locked official call-site budgets of 99 timeouts, 14 RAFs and 31 listeners.
 managed_limits = {
     "runtimeSetTimeout(": 100,
     "runtimeRequestAnimationFrame(": 15,

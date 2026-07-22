@@ -1,0 +1,31 @@
+returncode=1
+
+--- stdout ---
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'Stuck detector on · 20 min'
+- 'Stuck detector on · 15 min'
+                       ^
+
+    at testExtractedMissionMonitoringToggleContracts (/tmp/missionchief-settings-ui-contract-p1ryscj0/settings-ui-contract.cjs:1256:12)
+    at /tmp/missionchief-settings-ui-contract-p1ryscj0/settings-ui-contract.cjs:1554:5
+    at Object.<anonymous> (/tmp/missionchief-settings-ui-contract-p1ryscj0/settings-ui-contract.cjs:1561:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+--- stderr ---
+Traceback (most recent call last):
+  File "/tmp/tmp74clp4m3/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032-corrected.py", line 12, in <module>
+    exec(compile(corrected, str(package), 'exec'), namespace)
+  File "/tmp/tmp74clp4m3/repo/.github/development-packages/issue332-mission-monitoring-toggles-v42032.py", line 320, in <module>
+    subprocess.check_call(
+  File "/usr/lib/python3.12/subprocess.py", line 413, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['/usr/bin/python3', '/tmp/tmp74clp4m3/repo/.github/scripts/test_settings_ui_contract.py']' returned non-zero exit status 1.
+

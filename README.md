@@ -12,7 +12,7 @@
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Explore themes](https://img.shields.io/badge/EXPLORE-7_INTERFACE_SYSTEMS-6D28D9?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 
-**Current verified release:** `v4.20.25`
+**Current verified release:** `v4.20.27`
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=release&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork version](https://img.shields.io/greasyfork/v/586018?label=Greasy%20Fork&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -22,7 +22,7 @@
 [![Full audit](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/full-userscript-audit.yml)
 [![Licence](https://img.shields.io/badge/licence-MIT-111827)](#licence-and-attribution)
 
-[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.25**](#current-v42025-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
+[**Why it exists**](#why-it-exists) · [**Install**](#install-in-under-a-minute) · [**v4.20.27**](#current-v42027-release) · [**Systems**](#operational-systems) · [**Themes**](#seven-interface-systems) · [**Devices**](#built-for-every-screen) · [**Release confidence**](#release-confidence) · [**Support**](#support-and-development)
 
 </div>
 
@@ -67,39 +67,50 @@ Every major module can be enabled independently. Use the complete suite or retai
 | Review version history | [CHANGELOG.md](CHANGELOG.md) |
 | Report a confirmed problem | [Issue tracker](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) |
 
-## Current v4.20.25 release
+## Current v4.20.27 release
 
-### Boot lifecycle hardening
+### Map and visibility lifecycle hardening
 
-Version `4.20.25` is an engineering-hardening release. It extracts the seven recurring Boot maintenance registrations into the independently tested `registerBootMaintenanceTasks()` lifecycle helper while keeping `boot()` responsible for initialization order.
+Version `4.20.27` extracts the nine map and visibility state routes from the main `toggleFeature()` dispatcher into the independently tested `handleMapVisibilityToggle()` helper:
 
-The extraction preserves the existing production behaviour of:
+- marker focus;
+- mission pulse;
+- road priority;
+- coverage;
+- heat map;
+- alliance missions;
+- personal missions;
+- vehicles; and
+- buildings.
 
-- `vehicle-data-refresh`;
-- `auto-night`;
-- `mission-maintenance`;
-- `critical-countdowns`;
-- `minute-maintenance`;
-- `major-incident-feed-integrity`; and
-- `building-visibility`.
+Vehicle and building layer synchronisation now runs through `applyMapVisibilityToggleEffects()` at the same post-render position as before, including Economy Mode resynchronisation. Direct and delegated fixture coverage verifies route inventory, unknown-route safety, saved-state parity, and the exact **update → layer synchronisation → Economy Mode → reconciliation** order.
 
-Callback logic, task intervals, economy-mode interval resolution, scheduler ownership, observer count, listener coverage, teardown behaviour, and source/distribution parity remain unchanged. The purpose is to reduce Boot complexity, improve rollback isolation, and make the maintenance lifecycle independently executable under fixture-backed tests—not to alter player-facing behaviour.
+> [!IMPORTANT]
+> This is an internal reliability release. Map presentation, mission visibility, overlays, Desktop/Tablet/iOS layouts, setting names, themes, payout presentation, and public assets are intentionally unchanged.
 
-### Current performance and render evidence
+### Settings routing retained from v4.20.26
 
-The repository now includes measurement-only tooling for unchanged-render analysis:
+The current production line also retains the `v4.20.26` extraction of fourteen Discord financial-report and Local Financial Archive setting routes into `handleDiscordFinancialSettingChange()`.
 
-- an instrumented render profiler;
-- deterministic scenario fixtures;
-- a render-probe generator;
-- evidence documentation; and
-- a dedicated evidence workflow.
+The contract preserves:
 
-These assets measure avoidable render work without modifying production `src`, distribution output, release version, or runtime behaviour. Authenticated MissionChief evidence remains the authority for browser behaviours that repository-only fixtures cannot prove.
+- all existing setting names and normalisation rules;
+- persistence and preview invalidation;
+- asynchronous feed refresh behaviour;
+- all 36 rendered settings;
+- intentional no-op handling;
+- source/distribution parity; and
+- the permanent 500-line source-headroom margin.
+
+### Boot lifecycle and performance evidence
+
+The seven recurring Boot maintenance registrations remain isolated in `registerBootMaintenanceTasks()` while `boot()` retains initialization-order ownership. Callback logic, intervals, Economy Mode scheduling, observer/listener coverage, teardown behaviour, and distribution parity remain fixture-backed.
+
+The repository also carries measurement-only tooling for unchanged-render analysis: an instrumented profiler, deterministic scenarios, a render-probe generator, evidence documentation, and a dedicated evidence workflow. These tools do not modify production runtime behaviour.
 
 ### Financial Advisor reconciliation
 
-The current production line retains the `v4.20.24` Financial Advisor reconciliation model. Detailed transactions are anchored against MissionChief's `/credits/overview` Revenue, Spendings, and Sum checkpoints without adding aggregate values on top of the ledger.
+Detailed Financial Advisor transactions remain anchored against MissionChief's `/credits/overview` Revenue, Spendings, and Sum checkpoints without adding aggregate values on top of the ledger.
 
 The system:
 
@@ -115,16 +126,7 @@ Deterministic contracts cover parsing, sign handling, pagination, bounded cachin
 
 ### Release communication
 
-Release delivery produces a compact deployment transmission containing:
-
-- the actual current changelog summary;
-- Install / Update;
-- release notes;
-- Greasy Fork;
-- integrity and verification posture; and
-- fallback rendering that retains useful information when the primary Discord route is unavailable.
-
-An owner-only preview path permits testing the real release embed without publishing a release or changing Greasy Fork.
+Release delivery produces a compact deployment transmission containing the current changelog summary, Install / Update, release notes, Greasy Fork, integrity posture, verification evidence, and fallback rendering. An owner-only preview path tests the real release embed without publishing a release or changing Greasy Fork.
 
 ## Specialist fleet intelligence
 
@@ -296,19 +298,21 @@ Release-readiness and asset audit
 - Discord payload contracts and preview route
 - Observer ownership and teardown inventory
 - Boot lifecycle registration contract
+- Discord financial and Local Archive setting-route contract
+- Map and visibility route/effect ordering contract
 - Controlled performance and unchanged-render measurement
 - Sensitive-value and webhook guards
 
-### v4.20.25 recovery identity
+### v4.20.27 recovery identity
 
 | Field | Value |
 |---|---|
-| Validated candidate commit | `ee199387d80bfb50cb0d36ad18a4bb88789c3ea1` |
-| SHA-256 | `c7a4a1e6a7a243f159a23bc473293dcb2d672d866c049a440be1913b1d8c9844` |
-| Verified release record | `a0fba113b4513083f51434c7a36601c51c17ff87` |
-| Update manifest commit | `73942f6e1e90b44283d7cf2da292d8d47dd4cff0` |
-| Public release | [v4.20.25](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.25) |
-| Private backup commit | `1e849e3ca8ac69878c379880ad664d17f3bcd51b` |
+| Validated candidate commit | `c60ec6e17c2a980e73d9d92afb5d2ad59a9ad081` |
+| SHA-256 | `8927d7064d2c757cae791cbcb14f2eaefcf3e831c32197727cbd846f95b05ea2` |
+| Verified release record | `3bac8b32c352eae627a9dd7ad778fd3263b730c5` |
+| Update manifest commit | `fee42c4af3ca6ec9a74152165e48201a5d32e626` |
+| Public release | [v4.20.27](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v4.20.27) |
+| Private backup commit | `db9c8669d535df7e7347613c3e2ad6aa2ec91127` |
 | Private archive | `Conroy1988/missionchief-map-command-toolkit-private` |
 
 ## Development model

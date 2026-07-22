@@ -1,0 +1,7 @@
+Issue #353 correction diagnostic 2
+exit_code=1
+
+Traceback (most recent call last):
+  File "/tmp/issue353-diagnostic-2-pltmb4n8/repo/.github/development-packages/issue353-performance-safe-selection-refresh.py", line 120, in <module>
+    raise RuntimeError(f"{token} call-site count is {managed_counts[token]}; limit is {limit}")
+RuntimeError: runtimeSetTimeout( call-site count is 100; limit is 99

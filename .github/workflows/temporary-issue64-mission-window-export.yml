@@ -36,6 +36,20 @@ jobs:
           test "$(sha256sum /tmp/candidate.patch | awk '{print $1}')" = "42a9b7db3ed962d49dfa108d9fefca3f92a17a5c6fe4862894589619c20a40b5"
           git apply --check /tmp/candidate.patch
           git apply /tmp/candidate.patch
+      - name: Correct reviewed headroom accounting
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.github/fixtures/main-style-source-headroom.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          data['removedBlankLines'] = 304
+          path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+          PY
+          test "$(sha256sum .github/fixtures/main-style-source-headroom.json | awk '{print $1}')" = "b0f2cb6ae47c126cbf085a7982afa5eeeb3c44a10a11065d10dd4129756abb27"
       - name: Prove intended change boundary
         shell: bash
         run: |

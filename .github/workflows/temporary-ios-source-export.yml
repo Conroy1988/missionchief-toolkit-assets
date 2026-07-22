@@ -1,9 +1,11 @@
 name: Temporary iOS Source Export
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/ios-safari-usability
+      - main
+    paths:
+      - ".github/workflows/temporary-ios-source-export.yml"
 
 permissions:
   contents: read

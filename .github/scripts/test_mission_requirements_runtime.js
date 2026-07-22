@@ -410,6 +410,80 @@ for (const entry of ukCapabilityFixture.vehicleRequirements) {
     assert.strictEqual(ineligible.max, 0, `${entry.key}: ineligible type is definitively excluded`);
 }
 
+
+// Issue #349: the official railway-station mission lists Rescue Support Vehicles,
+// PRVs and SRVs as three independent requirement families.
+const issue349Catalogue = [
+    api.catalogueRequirement('Required Rescue Support Vehicles', '3'),
+    api.catalogueRequirement('Required PRVs', '1'),
+    api.catalogueRequirement('Required SRVs', '1')
+];
+assert(issue349Catalogue.every(Boolean), 'Issue #349 catalogue rows all parse');
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(issue349Catalogue.map(item => ({ key: item.key, label: item.requirement, missing: item.missing })))),
+    [
+        { key: 'rescue-support-vehicle', label: 'Rescue Support Vehicle', missing: 3 },
+        { key: 'primary-response', label: 'Primary Response Vehicle', missing: 1 },
+        { key: 'secondary-response', label: 'Secondary Response Vehicle', missing: 1 }
+    ],
+    'Issue #349 keeps Rescue Support Vehicle, PRV and SRV separate'
+);
+const issue349Reconciled = api.reconcileCatalogue(
+    { requirements: [], unresolved: [] },
+    { requirements: issue349Catalogue },
+    'ready',
+    true
+);
+assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(issue349Reconciled.requirements.map(item => item.key))),
+    ['rescue-support-vehicle', 'primary-response', 'secondary-response'],
+    'Issue #349 catalogue reconciliation retains all three requirement rows'
+);
+const issue349Definition = api.definitions.find(item => item.key === 'rescue-support-vehicle');
+assert(issue349Definition, 'Issue #349 Rescue Support Vehicle definition exists');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(issue349Definition.types)), [4, 16, 38, 43]);
+const issue349Unit = typeId => ({
+    typeId,
+    vehicleId: 349000 + typeId,
+    equipment: new Set(),
+    labels: new Set(),
+    training: new Set(),
+    arrCapabilities: new Set(),
+    arrCapabilityKnown: true,
+    knownDefinitionKeys: new Set(),
+    compatibleTractiveTypes: new Set(),
+    staff: null,
+    contributionKey: `vehicle:349-${typeId}`
+});
+const issue349Requirement = {
+    key: issue349Definition.key,
+    requirement: issue349Definition.label,
+    missing: 1,
+    group: 'vehicles',
+    definition: issue349Definition
+};
+for (const typeId of [4, 16, 38, 43]) {
+    const capacity = api.aggregate(issue349Requirement, [issue349Unit(typeId)]);
+    assert.strictEqual(capacity.min, 1, `Issue #349 type ${typeId} contributes to Rescue Support Vehicle`);
+    assert.strictEqual(capacity.max, 1, `Issue #349 type ${typeId} contribution is exact`);
+    const zero = api.capacity(0, 0, true);
+    const required = api.capacity(1, 1, true);
+    for (const [bucket, selected, responding, onSite] of [
+        ['selected', capacity, zero, zero],
+        ['responding', zero, capacity, zero],
+        ['on-site', zero, zero, capacity]
+    ]) {
+        const row = api.coverageRow(issue349Requirement, selected, responding, onSite, required);
+        assert.strictEqual(row.covered, true, `Issue #349 ${bucket} Rescue Support Vehicle covers the row`);
+        assert.strictEqual(row.stillNeededText, '0', `Issue #349 ${bucket} Rescue Support Vehicle clears still needed`);
+    }
+}
+for (const typeId of [0, 1, 27, 28, 47]) {
+    const capacity = api.aggregate(issue349Requirement, [issue349Unit(typeId)]);
+    assert.strictEqual(capacity.min, 0, `Issue #349 type ${typeId} is not a standalone Rescue Support Vehicle`);
+    assert.strictEqual(capacity.max, 0, `Issue #349 type ${typeId} is definitively excluded`);
+}
+
 for (const group of crossSourceFixture.authoritativeLabels) {
     for (const label of group.labels) {
         const parsed = api.parseText(`1 ${label}`, 'vehicles');

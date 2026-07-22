@@ -1,0 +1,7 @@
+Issue #353 correction diagnostic
+exit_code=1
+
+Traceback (most recent call last):
+  File "/tmp/issue353-diagnostic-z4izwkog/repo/.github/development-packages/issue353-performance-safe-selection-refresh.py", line 108, in <module>
+    raise RuntimeError(f"source line count changed unexpectedly: {source_lines}")
+RuntimeError: source line count changed unexpectedly: 31654

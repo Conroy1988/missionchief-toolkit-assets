@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [4.20.31] - 2026-07-22
+
+### Internal reliability
+- Extracted Mobile Mode and Tablet Mode state, layout reconciliation, sizing cleanup, fitting and notification routing from `handleSettingChange()` into a dedicated device-layout handler.
+- Added direct and delegated contracts for accepted values, invalid-value normalization, mutual exclusion and Desktop/Tablet/iOS transition ordering.
+
+### Compatibility
+- No visual design, breakpoint, viewport, safe-area, touch-target, panel sizing, theme or public asset changed.
+
 ## [4.20.30] - 2026-07-22
 
 ### Internal reliability

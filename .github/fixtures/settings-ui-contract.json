@@ -351,5 +351,13 @@
     "missionLockAudio": "missionLockAudio",
     "payoutFlash": "payoutFlash.enabled",
     "payoutSound": "payoutFlash.soundEnabled"
+  },
+  "extractedDeviceLayoutSettingRoutes": [
+    "mobile-mode",
+    "tablet-mode"
+  ],
+  "extractedDeviceLayoutSettingStatePaths": {
+    "mobile-mode": "mobileMode",
+    "tablet-mode": "tabletMode"
   }
 }

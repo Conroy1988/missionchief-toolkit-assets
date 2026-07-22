@@ -46,6 +46,7 @@ FUNCTION_NAMES = [
     "toggleFeature",
     "handleAction",
     "handleDiscordFinancialSettingChange",
+    "handleDeviceLayoutSettingChange",
     "handleSettingChange",
 ]
 
@@ -74,6 +75,7 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     create_panel = extract_function(source, masked, "createPanel")
     handle_action = extract_function(source, masked, "handleAction")
     handle_financial_setting = extract_function(source, masked, "handleDiscordFinancialSettingChange")
+    handle_device_layout_setting = extract_function(source, masked, "handleDeviceLayoutSettingChange")
     handle_setting = extract_function(source, masked, "handleSettingChange")
     handle_map_visibility_toggle = extract_function(source, masked, "handleMapVisibilityToggle")
     apply_map_visibility_effects = extract_function(source, masked, "applyMapVisibilityToggleEffects")
@@ -93,7 +95,8 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     handled_actions = values(r'action\s*===\s*["\']([^"\']+)["\']', handle_action)
     direct_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_setting)
     extracted_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_financial_setting)
-    handled_settings = sorted(set(direct_settings + extracted_settings))
+    device_layout_settings = values(r'setting\s*===\s*["\']([^"\']+)["\']', handle_device_layout_setting)
+    handled_settings = sorted(set(direct_settings + extracted_settings + device_layout_settings))
     direct_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', toggle_feature)
     extracted_toggle_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', handle_map_visibility_toggle)
     extracted_toggle_effect_routes = values(r'feature\s*===\s*["\']([^"\']+)["\']', apply_map_visibility_effects)
@@ -128,6 +131,11 @@ def assert_static_routes(source: str, fixtures: dict) -> None:
     assert extracted_settings == sorted(fixtures["extractedSettingRoutes"]), "Extracted financial setting routing changed"
     assert not set(direct_settings).intersection(extracted_settings), "Extracted settings must not remain duplicated in handleSettingChange"
     assert "handleDiscordFinancialSettingChange(target, setting)" in handle_setting, "Main setting router must delegate to the extracted financial route family"
+    assert device_layout_settings == sorted(fixtures["extractedDeviceLayoutSettingRoutes"]), "Extracted device-layout setting routing changed"
+    assert not set(direct_settings).intersection(device_layout_settings), "Extracted device-layout settings remain duplicated in handleSettingChange"
+    assert "handleDeviceLayoutSettingChange(target, setting)" in handle_setting, "Main setting router must delegate to the extracted device-layout route family"
+    assert handle_device_layout_setting.index("saveState();") < handle_device_layout_setting.index("applyRootAttributes();") < handle_device_layout_setting.index("refreshTabletModeUi();"), "Device-layout persistence and reconciliation ordering changed"
+    assert handle_device_layout_setting.index("fitControlToMap();") < handle_device_layout_setting.index("positionPanelOverlay(true);") < handle_device_layout_setting.index("showToast("), "Device-layout fit, positioning and notification ordering changed"
 
     missing_toggle_routes = sorted(set(rendered_toggles) - set(toggle_routes))
     assert not missing_toggle_routes, f"Rendered toggles without routes: {missing_toggle_routes}"
@@ -749,6 +757,43 @@ async function testDiscordFinancialSettingRoutesDirectly() {{
     assert.equal(wasCalled("renderFinanceVaultStatus"), true);
 }}
 
+
+function testDeviceLayoutSettingRoutesDirectly() {{
+    resetEnvironment();
+    const unknownBefore = JSON.stringify(state);
+    assert.equal(handleDeviceLayoutSettingChange({{ value: "ignored" }}, "unknown-layout-setting"), false);
+    assert.equal(JSON.stringify(state), unknownBefore);
+    assert.equal(calls.length, 0);
+
+    resetEnvironment();
+    state.tabletMode = "on";
+    assert.equal(handleDeviceLayoutSettingChange({{ value: "on" }}, "mobile-mode"), true);
+    assert.equal(state.mobileMode, "on");
+    assert.equal(state.tabletMode, "off");
+    assert.equal(activeDeviceLayout, "mobile");
+    assert.equal(JSON.parse(localStorage.getItem(SCRIPT.storageState)).mobileMode, "on");
+    assert.deepEqual(calls.map(call => call.name), ["applyRootAttributes", "refreshTabletModeUi", "fitControlToMap", "positionPanelOverlay", "showToast"]);
+    assert.equal(callFor("showToast").args[0], "iOS Mobile Mode active");
+
+    resetEnvironment();
+    state.mobileMode = "on";
+    assert.equal(handleDeviceLayoutSettingChange({{ value: "on" }}, "tablet-mode"), true);
+    assert.equal(state.tabletMode, "on");
+    assert.equal(state.mobileMode, "off");
+    assert.equal(activeDeviceLayout, "tablet");
+    assert.equal(callFor("showToast").args[0], "Tablet Mode active");
+
+    resetEnvironment();
+    state.mobileMode = "on";
+    applyRootAttributes();
+    clearCalls();
+    assert.equal(handleDeviceLayoutSettingChange({{ value: "invalid" }}, "mobile-mode"), true);
+    assert.equal(state.mobileMode, "auto");
+    assert.equal(activeDeviceLayout, "desktop");
+    assert.deepEqual(calls.map(call => call.name), ["applyRootAttributes", "refreshTabletModeUi", "clearTabletPanelSizing", "clearTabletDockSizing", "fitControlToMap", "positionPanelOverlay", "showToast"]);
+    assert.equal(callFor("showToast").args[0], "Desktop layout active");
+}}
+
 async function testSettingContracts() {{
     resetEnvironment();
     state.tabletMode = "on";
@@ -829,8 +874,9 @@ async function testSettingContracts() {{
     await testToggleContracts();
     await testActionContracts();
     await testDiscordFinancialSettingRoutesDirectly();
+    testDeviceLayoutSettingRoutesDirectly();
     await testSettingContracts();
-    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted financial route parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
+    console.log(`Settings/UI contract passed: direct normalization, defaults, migrations, import rollback, extracted map/visibility toggle parity, extracted mission-window toggle parity, extracted payout/audio toggle parity, extracted financial route parity, extracted device-layout setting parity, ${{fixtures.toggleRoutes.length}} toggles, ${{fixtures.actions.length}} actions and ${{fixtures.settings.length}} settings.`);
 }})().catch(error => {{
     console.error(error?.stack || error);
     process.exitCode = 1;

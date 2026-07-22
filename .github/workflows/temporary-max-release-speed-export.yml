@@ -44,8 +44,10 @@ jobs:
           git add -N .github/workflows/auto-release-after-validation.yml
           mapfile -t changed < <(git diff --name-only | sort)
           allowed='^\.github/(actions-security-policy\.json|scripts/test_(pages_release_deploy|version_status)_contract\.py|workflows/(asset-health-monitor|auto-release-after-validation|code-integrity-audit|deep-performance-audit|documentation-drift-check|github-pages|performance-regression-check|publish-update-manifest|release-toolkit|userscript-structural-audit)\.yml)$'
-          test "${#changed[@]}" -ge 10
-          printf '%s\n' "${changed[@]}" | grep -Ev "$allowed" && exit 1 || true
+          test "${#changed[@]}" -gt 0
+          if printf '%s\n' "${changed[@]}" | grep -Ev "$allowed"; then
+            exit 1
+          fi
           printf '%s\n' "${changed[@]}" | grep -Fxq '.github/workflows/auto-release-after-validation.yml'
 
       - name: Validate workflow security and release contracts

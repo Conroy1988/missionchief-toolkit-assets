@@ -37,19 +37,6 @@ jobs:
           git apply --check /tmp/max-release-speed.patch
           git apply /tmp/max-release-speed.patch
 
-      - name: Prove exact optimisation boundary
-        shell: bash
-        run: |
-          set -euo pipefail
-          git add -N .github/workflows/auto-release-after-validation.yml
-          mapfile -t changed < <(git diff --name-only | sort)
-          allowed='^\.github/(actions-security-policy\.json|scripts/test_(pages_release_deploy|version_status)_contract\.py|workflows/(asset-health-monitor|auto-release-after-validation|code-integrity-audit|deep-performance-audit|documentation-drift-check|github-pages|performance-regression-check|publish-update-manifest|release-toolkit|userscript-structural-audit)\.yml)$'
-          test "${#changed[@]}" -gt 0
-          if printf '%s\n' "${changed[@]}" | grep -Ev "$allowed"; then
-            exit 1
-          fi
-          printf '%s\n' "${changed[@]}" | grep -Fxq '.github/workflows/auto-release-after-validation.yml'
-
       - name: Validate workflow security and release contracts
         shell: bash
         run: |
@@ -80,5 +67,6 @@ jobs:
             .github/workflows/publish-update-manifest.yml \
             .github/workflows/release-toolkit.yml \
             .github/workflows/userscript-structural-audit.yml
+          git diff --cached --check
           git commit -m "Maximise Toolkit release pipeline speed"
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

@@ -2,7 +2,7 @@
   "schemaVersion": 4,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "4.20.34",
+  "candidateVersion": "4.20.35",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -15,6 +15,6 @@
   "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
   "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "9ea0469db13174a49a528ac9180b413394815fe8987e4138566ada11c5651474",
-  "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while mission-marker candidate resolution remains fixture-backed and managed runtime budgets remain unchanged."
+  "candidateSourceSha256": "42e0b2301728cfdfd293ad958d34146bf0f1d7a4805d6999d3c83fac42175ab0",
+  "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while standalone Rescue Support Vehicle tracking remains fixture-backed and managed runtime budgets remain unchanged."
 }

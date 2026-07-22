@@ -35,6 +35,24 @@
         68,
         69
       ]
+    },
+    {
+      "canonicalLabel": "Rescue Support Vehicle",
+      "capability": "rescue-support-vehicle",
+      "labels": [
+        "Rescue Support Vehicle",
+        "Rescue Support Vehicles"
+      ],
+      "pair": false,
+      "sources": [
+        "missionchief.missionInfo"
+      ],
+      "types": [
+        4,
+        16,
+        38,
+        43
+      ]
     }
   ],
   "capabilities": [
@@ -151,6 +169,25 @@
       "equipment": [],
       "factors": {},
       "key": "rescue-support-unit-or-rescue-pump",
+      "pair": false,
+      "training": [],
+      "types": [
+        4,
+        16,
+        38,
+        43
+      ]
+    },
+    {
+      "aliases": [
+        "Rescue Support Vehicle",
+        "Rescue Support Vehicles"
+      ],
+      "arrAttributes": [],
+      "conditionalVehicles": {},
+      "equipment": [],
+      "factors": {},
+      "key": "rescue-support-vehicle",
       "pair": false,
       "training": [],
       "types": [

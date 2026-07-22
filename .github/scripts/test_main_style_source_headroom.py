@@ -95,8 +95,26 @@ def main() -> int:
         fail("candidate stylesheet template line count differs from the reviewed fixture")
     split_lines = re.split(r"\r?\n", text)
     source_lines = len(split_lines) - 1 if text.endswith("\n") else len(split_lines)
-    if source_lines != fixture["candidateSourceLines"]:
-        fail(f"candidate source line count changed: {source_lines} != {fixture['candidateSourceLines']}")
+    approved_changes = fixture.get("approvedNonStyleChanges", [])
+    if not isinstance(approved_changes, list):
+        fail("approved non-style source changes must be a list")
+    approved_total = 0
+    for change in approved_changes:
+        if not isinstance(change, dict):
+            fail("approved non-style source change entries must be objects")
+        issue = change.get("issue")
+        phase = str(change.get("phase") or "").strip()
+        lines = change.get("lines")
+        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or lines < 0:
+            fail("approved non-style source change entry is malformed")
+        approved_total += lines
+    if approved_total != fixture.get("approvedNonStyleSourceLines", 0):
+        fail("approved non-style source-line ledger total is inconsistent")
+    expected_source_lines = fixture["candidateSourceLines"] + approved_total
+    if fixture.get("expectedSourceLines", expected_source_lines) != expected_source_lines:
+        fail("expected source line count is inconsistent with the approved non-style ledger")
+    if source_lines != expected_source_lines:
+        fail(f"candidate source line count changed: {source_lines} != {expected_source_lines}")
     if fixture["originalSourceLines"] - fixture["candidateSourceLines"] != fixture["recoveredSourceLines"]:
         fail("fixture source-line arithmetic is inconsistent")
     if fixture["removedBlankLines"] + fixture["removedStandaloneCommentLines"] + fixture["joinedClosingBraceLines"] != fixture["recoveredSourceLines"]:

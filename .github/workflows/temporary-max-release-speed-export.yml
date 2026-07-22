@@ -21,6 +21,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN || github.token }}
 
       - name: Reconstruct reviewed optimisation patch
         shell: bash
@@ -66,25 +67,14 @@ jobs:
           rm -f actions-security-report.json actions-security-report.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- \
-            .github/actions-security-policy.json \
-            .github/scripts/test_pages_release_deploy_contract.py \
-            .github/scripts/test_version_status_contract.py \
-            .github/workflows/asset-health-monitor.yml \
-            .github/workflows/auto-release-after-validation.yml \
-            .github/workflows/code-integrity-audit.yml \
-            .github/workflows/deep-performance-audit.yml \
-            .github/workflows/documentation-drift-check.yml \
-            .github/workflows/github-pages.yml \
-            .github/workflows/performance-regression-check.yml \
-            .github/workflows/publish-update-manifest.yml \
-            .github/workflows/release-toolkit.yml \
-            .github/workflows/userscript-structural-audit.yml \
-            .github/workflows/temporary-max-release-speed-export.yml \
-            .github/development-packages/max-release-speed.part-00 \
-            .github/development-packages/max-release-speed.part-01 \
-            .github/development-packages/max-release-speed.part-02 \
-            .github/development-packages/max-release-speed.part-03
+          git add -A
           git diff --cached --check
+          git diff --cached --quiet && { echo "::error::Validated optimisation produced no staged changes."; exit 1; }
+          git status --short
           git commit -m "Maximise Toolkit release pipeline speed"
+
+      - name: Push validated optimisation
+        shell: bash
+        run: |
+          set -euo pipefail
           git push origin "HEAD:${{ github.event.pull_request.head.ref }}"

@@ -359,5 +359,17 @@
   "extractedDeviceLayoutSettingStatePaths": {
     "mobile-mode": "mobileMode",
     "tablet-mode": "tabletMode"
+  },
+  "extractedMissionMonitoringToggleRoutes": [
+    "missionSpawn",
+    "stuckDetector"
+  ],
+  "extractedMissionMonitoringEffectRoutes": [
+    "missionSpawn",
+    "stuckDetector"
+  ],
+  "extractedMissionMonitoringToggleStatePaths": {
+    "missionSpawn": "missionSpawn.enabled",
+    "stuckDetector": "stuckDetector.enabled"
   }
 }

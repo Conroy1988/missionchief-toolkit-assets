@@ -109,15 +109,18 @@ if source_lines != 31653:
 if headroom["recoveredSourceLines"] != 504:
     raise RuntimeError(f"source-headroom recovery changed unexpectedly: {headroom['recoveredSourceLines']}")
 
+# Raw token counts include each wrapper declaration. The official performance
+# checker reports only invocations, so these limits correspond to the locked
+# call-site budgets of 99 timeouts, 14 animation frames and 31 listeners.
 managed_limits = {
-    "runtimeSetTimeout(": 99,
-    "runtimeRequestAnimationFrame(": 14,
-    "runtimeListen(": 31,
+    "runtimeSetTimeout(": 100,
+    "runtimeRequestAnimationFrame(": 15,
+    "runtimeListen(": 32,
 }
 managed_counts = {token: source.count(token) for token in managed_limits}
 for token, limit in managed_limits.items():
     if managed_counts[token] > limit:
-        raise RuntimeError(f"{token} call-site count is {managed_counts[token]}; limit is {limit}")
+        raise RuntimeError(f"{token} raw token count is {managed_counts[token]}; limit is {limit}")
 
 env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 subprocess.check_call(["node", str(TEST)], cwd=ROOT, env=env)

@@ -1,0 +1,1803 @@
+ISSUE378_TARGETED_SOURCE_EXCERPTS
+source_lines=31653
+source_sha256=690088591fd205f845960c44ecc4b6e6560b49a1da50d8eddf430de961e296ef
+
+===== SCRIPT constants [430-525] =====
+00430:         const root = document.documentElement;
+00431:         if (root) observer.observe(root, { childList: true, subtree: true });
+00432:         };
+00433:         if (document.documentElement) begin();
+00434:         else document.addEventListener('readystatechange', begin, { once: true });
+00435:         pageWindow.addEventListener?.('popstate', queueAllianceBuildingsEarlyCheck);
+00436:         pageWindow.addEventListener?.('hashchange', queueAllianceBuildingsEarlyCheck);
+00437:         pageWindow.addEventListener?.('pageshow', queueAllianceBuildingsEarlyCheck);
+00438:         pageWindow.addEventListener?.('load', queueAllianceBuildingsEarlyCheck, { once: true });
+00439:         applyAllianceBuildingsEarlySuppression();
+00440:     }
+00441:     const earlyAllianceBuildingsPage = isAllianceBuildingsPath();
+00442:     const earlyAllianceBuildingsMapEnabled = readAllianceBuildingsMapPreferenceEarly();
+00443:     if (earlyAllianceBuildingsPage) {
+00444:         document.documentElement?.setAttribute('data-mcms-alliance-buildings-page', 'true');
+00445:         document.documentElement?.setAttribute('data-mcms-alliance-buildings-map', earlyAllianceBuildingsMapEnabled ? 'enabled' : 'disabled');
+00446:     }
+00447:     if (!earlyAllianceBuildingsMapEnabled) {
+00448:         installAllianceBuildingsEarlyStyle();
+00449:         installAllianceBuildingsLeafletAssignmentGuard();
+00450:         installAllianceBuildingsContextWatcherEarly();
+00451:     }
+00452: 
+00453: 
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '4.20.37',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+00459:         panelId: 'mc-map-command-toolkit-panel',
+00460:         toastId: 'mc-map-command-toolkit-toast',
+00461:         payoutFlashId: 'mc-map-command-toolkit-payout-flash',
+00462:         criticalDrawerId: 'mc-map-command-toolkit-critical-drawer',
+00463:         vehicleStatusId: 'mc-map-command-toolkit-vehicle-status',
+00464:         majorIncidentFeedId: 'mc-map-command-toolkit-major-incident-feed',
+00465:         missionInspectorId: 'mc-map-command-toolkit-mission-inspector',
+00466:         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
+00467:         missionRequirementsPanelId: 'mc-map-command-toolkit-mission-requirements',
+00468:         missionRequirementsDocumentStyleId: 'mcms-mission-requirements-document-style',
+00469:         customVehicleBadgeStyleId: 'mcms-custom-vehicle-badge-style',
+00470:         helpCenterId: 'mc-map-command-toolkit-help-center',
+00471:         cleanExitId: 'mcms-clean-exit',
+00472:         styleId: 'mc-map-command-toolkit-style-v4146',
+00473:         oldControlId: 'mc-map-command-skins-control',
+00474:         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
+00475:         storageState: 'mc_map_command_toolkit_state_v150',
+00476:         payoutHistoryState: 'mc_map_command_toolkit_payout_history_v200',
+00477:         sessionPerformanceState: 'mc_map_command_toolkit_session_v200',
+00478:         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
+00479:         discordWebhookState: 'mc_map_command_toolkit_discord_webhook_v300',
+00480:         discordLastReportState: 'mc_map_command_toolkit_discord_last_report_v310',
+00481:         financeVaultState: 'mc_map_command_toolkit_finance_vault_v450',
+00482:         financeVaultCredentialState: 'mc_map_command_toolkit_finance_vault_credential_v450',
+00483:         financeRulesCacheState: 'mc_map_command_toolkit_finance_rules_v450',
+00484:         financePolicyCacheState: 'mc_map_command_toolkit_finance_policy_v460',
+00485:         oldStorageKeys: [
+00486:         'mc_map_command_toolkit_state_v149',
+00487:         'mc_map_command_toolkit_state_v148',
+00488:         'mc_map_command_toolkit_state_v147',
+00489:         'mc_map_command_toolkit_state_v146',
+00490:         'mc_map_command_toolkit_state_v145',
+00491:         'mc_map_command_toolkit_state_v144',
+00492:         'mc_map_command_toolkit_state_v143',
+00493:         'mc_map_command_toolkit_state_v142',
+00494:         'mc_map_command_toolkit_state_v141',
+00495:         'mc_map_command_toolkit_state_v140',
+00496:             'mc_map_command_toolkit_state_v130'
+00497:         ],
+00498:         legacyTheme: 'mc_map_command_skins_theme_v2',
+00499:         legacyPosition: 'mc_map_command_skins_position_v1'
+00500:     };
+00501:     const RUNTIME_KEY = '__MC_MAP_COMMAND_TOOLKIT_RUNTIME__';
+00502:     const previousRuntime = pageWindow[RUNTIME_KEY];
+00503:     if (previousRuntime?.version === SCRIPT.version && previousRuntime.destroyed !== true) return;
+00504:     try { previousRuntime?.destroy?.('replaced by a newer toolkit runtime'); } catch (err) {}
+00505:     const runtime = {
+00506:         version: SCRIPT.version,
+00507:         destroyed: false,
+00508:         timeouts: new Set(),
+00509:         intervals: new Set(),
+00510:         animationFrames: new Set(),
+00511:         observers: new Set(),
+00512:         waiters: new Set(),
+00513:         requests: new Set(),
+00514:         fetchControllers: new Set(),
+00515:         listeners: [],
+00516:         mapBindings: [],
+00517:         hookRestorers: [],
+00518:         cleanupCallbacks: [],
+00519:         destroy(reason = 'runtime shutdown') {
+00520:         if (this.destroyed) return;
+00521:         this.destroyed = true;
+00522:         for (const id of this.timeouts) { try { pageWindow.clearTimeout(id); } catch (err) {} }
+00523:         for (const id of this.intervals) { try { pageWindow.clearInterval(id); } catch (err) {} }
+00524:         for (const id of this.animationFrames) { try { pageWindow.cancelAnimationFrame(id); } catch (err) {} }
+00525:         this.timeouts.clear();
+
+===== runtime records, default state and state loading [1280-1555] =====
+01280:         startedAt: 0,
+01281:         missionIndex: 0,
+01282:         missionTotal: 0,
+01283:         currentItem: '',
+01284:         statusMessage: '',
+01285:         statusLevel: 'info',
+01286:         hudFinal: false,
+01287:         hudDismissTimer: null,
+01288:         log: []
+01289:     };
+01290:     const personalVehicleApiCache = new Map();
+01291:     const missionCommitmentIndex = new Map();
+01292:     const payoutHistory = loadPayoutHistory();
+01293:     const sessionPerformance = loadSessionPerformance();
+01294:     let discordFinanceBusy = false;
+01295:     let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
+01296:     let discordFinanceStatusTone = 'neutral';
+01297:     let financeVaultStatus = 'Local Financial Archive ready.';
+01298:     let financeVaultStatusTone = 'neutral';
+01299:     let financeRuleFeedStatus = 'Built-in financial intelligence active.';
+01300:     let financeRuleFeedStatusTone = 'neutral';
+01301:     let financeArchiveScanBusy = false;
+01302:     let financeArchiveScanCancelled = false;
+01303:     let financeRuleRefreshPromise = null;
+01304:     let financePolicyRefreshPromise = null;
+01305:     let tabletModeActive = false;
+01306:     let mobileModeActive = false;
+01307:     let activeDeviceLayout = 'desktop';
+01308:     let tabletLayoutTimer = null; let visualViewportRefreshGeneration = 0;
+01309:     let tabletDockResizeObserver = null;
+01310:     let tabletDockObservedMap = null;
+01311:     let desktopPanelResizeObserver = null;
+01312:     let desktopPanelObservedElements = new Set();
+01313:     let missionValueScanTimer = null;
+01314:     let missionValueFeatureInstalled = false;
+01315:     const missionValueObservedDocuments = new WeakSet();
+01316:     const missionValueObservedFrames = new WeakSet();
+01317:     const missionValueHostObservers = new Map();
+01318:     const missionValueRetryState = new WeakMap();
+01319:     let missionRequirementsScanTimer = null;
+01320:     let missionRequirementsFeatureInstalled = false;
+01321:     const missionRequirementsObservedDocuments = new WeakSet();
+01322:     const missionRequirementsObservedFrames = new WeakSet();
+01323:     const missionRequirementsRecords = new Map();
+01324:     let customVehicleBadgeScanTimer = null;
+01325:     let customVehicleBadgeRefreshPromise = null;
+01326:     let customVehicleBadgeFeatureInstalled = false;
+01327:     const customVehicleBadgeObservedDocuments = new WeakSet();
+01328:     const customVehicleBadgeObservedFrames = new WeakSet();
+01329:     const customVehicleClassificationCache = new Map();
+01330:     let customVehicleClassificationRevision = -1;
+01331:     let commandBarAnimationTimer = null;
+01332:     let commandBarAnimating = false;
+01333:     let helpGuideDocumentCache = '';
+01334:     let helpGuideLoadedAt = 0;
+01335:     let helpGuideLoadPromise = null;
+01336:     let helpCenterReturnFocus = null;
+01337: 
+01338:     function defaultState() {
+01339:         return {
+01340:         uiTheme: 'mapCommand',
+01341:         theme: getLegacyTheme(),
+01342:         position: getLegacyPosition(),
+01343:         activeTab: 'skins',
+01344:         cleanMode: false,
+01345:         markerFocus: false,
+01346:         missionPulse: false,
+01347:         roadPriority: false,
+01348:         compactDock: false,
+01349:         commandBarOpen: true,
+01350:         economyMode: false,
+01351:         tabletMode: 'auto',
+01352:         mobileMode: 'auto',
+01353:         shortcuts: true,
+01354:         autoLoadAllVehicles: false,
+01355:         allianceBuildingsMap: true,
+01356:         majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
+01357:         missionAgeWatch: {
+01358:             ageFilter: '8h',
+01359:             sortMode: 'age',
+01360:             expanded: false,
+01361:             ownershipFilter: 'personal',
+01362:             categoryFilter: 'all',
+01363:             primaryStatus: 'all',
+01364:             advancedFiltersOpen: false,
+01365:             hasVehiclesOnWay: false,
+01366:             onlyMyUnits: false,
+01367:             valueMode: 'total',
+01368:             distanceOrigin: 'live',
+01369:             lockedOrigin: null
+01370:         },
+01371:         missionLockAudio: true,
+01372:         missionValue: true,
+01373:         missionRequirements: true,
+01374:         customVehicleBadges: true,
+01375:         allianceCredits: false,
+01376:         allianceCreditMinimum: 0,
+01377:         missionAge: false,
+01378:         unitCommitment: false,
+01379:         transportWatcher: true,
+01380:         missionInspector: true,
+01381:         stuckDetector: { enabled: true, thresholdMin: 20 },
+01382:         missionSpawn: { enabled: true },
+01383:         resourceGap: { enabled: false, radiusMi: 25 },
+01384:         transportSweep: { delayMs: 2000, maxPerRun: 25 },
+01385:         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
+01386:         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+01387:         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
+01388:         profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
+01389:         nudge: { x: 0, y: 0 },
+01390:         panelPosition: null,
+01391:         visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true },
+01392:         quickPins: Object.fromEntries(QUICK_PLACES.map(place => [place.id, false])),
+01393:         coverage: { enabled: false, radiusMi: 10 },
+01394:         heatmap: { enabled: false, source: 'stations', service: 'all', radiusMi: 10, opacity: 0.30 },
+01395:         autoNight: {
+01396:             enabled: false,
+01397:             nightStart: '19:00',
+01398:             dayStart: '07:00',
+01399:             nightTheme: 'nightshift',
+01400:             dayTheme: 'default',
+01401:             lastBucket: ''
+01402:         },
+01403:         bookmarks: [null, null, null, null, null]
+01404:         };
+01405:     }
+01406: 
+01407:     function normaliseLoadedState(parsed, base = defaultState()) {
+01408:         const merged = {
+01409:         ...base,
+01410:         ...parsed,
+01411:         nudge: { ...base.nudge, ...(parsed.nudge || {}) },
+01412:         visibility: { ...base.visibility, ...(parsed.visibility || {}) },
+01413:         quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+01414:         coverage: { ...base.coverage, ...(parsed.coverage || {}) },
+01415:         heatmap: { ...base.heatmap, ...(parsed.heatmap || {}) },
+01416:         stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
+01417:         missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
+01418:         resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+01419:         transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
+01420:         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
+01421:         missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+01422:         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
+01423:         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
+01424:         financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+01425:         autoNight: { ...base.autoNight, ...(parsed.autoNight || {}) },
+01426:         profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
+01427:         bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
+01428:         };
+01429: 
+01430:         while (merged.bookmarks.length < 5) merged.bookmarks.push(null);
+01431:         while (merged.profiles.length < MAP_PROFILE_LIMIT) merged.profiles.push(null);
+01432: 
+01433:         merged.uiTheme = normaliseUiTheme(merged.uiTheme);
+01434:         merged.theme = normaliseTheme(merged.theme);
+01435:         merged.position = POSITIONS[merged.position] ? merged.position : 'bl';
+01436:         if (merged.activeTab === 'fleet') merged.activeTab = 'resources';
+01437:         merged.activeTab = ['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(merged.activeTab) ? merged.activeTab : 'skins';
+01438:         delete merged.fleetFilter;
+01439:         merged.nudge.x = clamp(merged.nudge.x, -220, 220, 0);
+01440:         merged.nudge.y = clamp(merged.nudge.y, -220, 220, 0);
+01441:         merged.coverage.radiusMi = Number(merged.coverage.radiusMi) || 10;
+01442:         merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
+01443:         merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
+01444:         merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
+01445:         merged.commandBarOpen = merged.commandBarOpen !== false;
+01446:         merged.economyMode = Boolean(merged.economyMode);
+01447:         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+01448:         merged.customVehicleBadges = merged.customVehicleBadges !== false;
+01449:         merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
+01450:         merged.majorIncidentFeed.enabled = merged.majorIncidentFeed.enabled !== false;
+01451:         merged.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(merged.majorIncidentFeed.minimumCredits)) ? Number(merged.majorIncidentFeed.minimumCredits) : 25000;
+01452:         merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+01453:         merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+01454:         merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+01455:         merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+01456:         merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+01457:         merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+01458:         merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+01459:         merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+01460:         merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+01461:         merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+01462:         const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
+01463:         merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
+01464:         ? { lat: Number(lockedOrigin.lat), lng: Number(lockedOrigin.lng), label: String(lockedOrigin.label || 'Locked centre').slice(0, 80) }
+01465:         : null;
+01466:         merged.missionLockAudio = merged.missionLockAudio !== false;
+01467:         merged.missionValue = merged.missionValue !== false;
+01468:         merged.missionRequirements = merged.missionRequirements !== false;
+01469:         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
+01470:         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
+01471:         merged.transportWatcher = merged.transportWatcher !== false;
+01472:         merged.missionInspector = merged.missionInspector !== false;
+01473:         merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
+01474:         merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+01475:         merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
+01476:         merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
+01477:         merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
+01478:         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
+01479:         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+01480:         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
+01481:         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+01482:         merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+01483:         merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
+01484:         merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
+01485:         merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
+01486:         merged.discordReport.webhookName = String(merged.discordReport.webhookName || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+01487:         merged.discordReport.topCategories = [3, 5, 8].includes(Number(merged.discordReport.topCategories)) ? Number(merged.discordReport.topCategories) : 5;
+01488:         merged.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(merged.discordReport.period) ? merged.discordReport.period : 'today';
+01489:         merged.discordReport.customStart = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customStart || '')) ? String(merged.discordReport.customStart) : localIsoDate(new Date(Date.now() - 6 * 86400000));
+01490:         merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
+01491:         merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
+01492:         merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
+01493:         merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
+01494:         merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
+01495:         merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
+01496:         merged.financialVault.enabled = merged.financialVault.enabled !== false;
+01497:         merged.financialVault.ruleFeedEnabled = merged.financialVault.ruleFeedEnabled !== false;
+01498:         merged.financialVault.retentionDays = String(merged.financialVault.retentionDays) === 'all'
+01499:         ? 'all'
+01500:         : ([90, 180, 365, 730, 1825].includes(Number(merged.financialVault.retentionDays)) ? Number(merged.financialVault.retentionDays) : 'all');
+01501:         delete merged.financialVault.autoSync;
+01502:         delete merged.financialVault.benchmarkOptIn;
+01503:         delete merged.financialVault.gatewayUrl;
+01504:         delete merged.discordReport.includeBenchmark;
+01505:         merged.autoNight.nightTheme = normaliseTheme(merged.autoNight.nightTheme);
+01506:         merged.autoNight.dayTheme = normaliseTheme(merged.autoNight.dayTheme);
+01507:         merged.bookmarks = merged.bookmarks.map(item => item ? {
+01508:         ...item,
+01509:         name: String(item.name || 'Bookmark').trim().slice(0, 80) || 'Bookmark',
+01510:         shortLabel: sanitiseBookmarkShortLabel(item.shortLabel || ''),
+01511:         pinned: Boolean(item.pinned)
+01512:         } : null);
+01513:         merged.profiles = merged.profiles.map(item => item && typeof item === 'object' ? item : null);
+01514: 
+01515:         if (!merged.panelPosition || !Number.isFinite(Number(merged.panelPosition.left)) || !Number.isFinite(Number(merged.panelPosition.top))) {
+01516:         merged.panelPosition = null;
+01517:         } else {
+01518:         merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
+01519:         }
+01520: 
+01521:         delete merged.requiresAttention;
+01522:         return merged;
+01523:     }
+01524: 
+01525:     function loadState() {
+01526:         const base = defaultState();
+01527:         const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
+01528:         if (!raw) return base;
+01529: 
+01530:         try {
+01531:         return normaliseLoadedState(JSON.parse(raw), base);
+01532:         } catch (err) {
+01533:         return base;
+01534:         }
+01535:     }
+01536: 
+01537:     function saveState() {
+01538:         try {
+01539:         localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
+01540:         localStorage.setItem(SCRIPT.legacyTheme, state.theme);
+01541:         localStorage.setItem(SCRIPT.legacyPosition, state.position);
+01542:         } catch (err) {}
+01543:     }
+01544: 
+01545:     function getLegacyTheme() {
+01546:         return normaliseTheme(localStorage.getItem(SCRIPT.legacyTheme) || 'default');
+01547:     }
+01548: 
+01549:     function getLegacyPosition() {
+01550:         const saved = localStorage.getItem(SCRIPT.legacyPosition);
+01551:         return POSITIONS[saved] ? saved : 'bl';
+01552:     }
+01553: 
+01554:     function normaliseUiTheme(key) {
+01555:         return UI_THEMES[key] ? key : 'mapCommand';
+
+===== owned-node cleanup [1780-1830] =====
+01780:             if (typeof parsed === 'string' && parsed.trim() && parsed.trim() !== text) {
+01781:                 text = parsed.trim();
+01782:                 continue;
+01783:             }
+01784:         } catch (err) {}
+01785:         break;
+01786:         }
+01787: 
+01788:         // Fallback for malformed but still recognisable object fragments.
+01789:         const parsedPairs = {};
+01790:         const pairPattern = /["']?([a-z][\w -]*)["']?\s*:\s*(?:"([^"]*)"|'([^']*)'|([^,}\]]+))/gi;
+01791:         let match;
+01792:         while ((match = pairPattern.exec(text))) {
+01793:         const key = match[1];
+01794:         const pairValue = match[2] ?? match[3] ?? match[4] ?? '';
+01795:         parsedPairs[key] = pairValue;
+01796:         }
+01797:         if (Object.keys(parsedPairs).length) {
+01798:         const formatted = formatMissingRequirementObject(parsedPairs);
+01799:         if (formatted) return formatted;
+01800:         }
+01801: 
+01802:         return text.replace(/^[{\[]+|[}\]]+$/g, '').replace(/\s+/g, ' ').trim();
+01803:     }
+01804: 
+01805:     function removeOldInstances() {
+01806:         document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.criticalDrawerId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.missionInspectorId}, #${SCRIPT.missionRequirementsPanelId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+01807:         .forEach(el => el.remove());
+01808: 
+01809:         document.querySelectorAll('style').forEach(style => {
+01810:         const text = style.textContent || '';
+01811:         if (style.id.startsWith('mc-map-command-') || (text.includes('mcms-') && text.includes('data-mc-map-skin'))) {
+01812:             style.remove();
+01813:         }
+01814:         });
+01815:     }
+01816: 
+01817:     function addStyle(css) {
+01818:         const style = document.createElement('style');
+01819:         style.id = SCRIPT.styleId;
+01820:         style.textContent = css;
+01821:         const parent = document.head || document.documentElement;
+01822:         if (parent) parent.appendChild(style);
+01823:         else document.addEventListener('readystatechange', () => (document.head || document.documentElement)?.appendChild(style), { once: true });
+01824:     }
+01825: 
+01826:     let mainStylesInstalled = false;
+01827: 
+01828:     function installMainStyles() {
+01829:         if (mainStylesInstalled && document.getElementById(SCRIPT.styleId)) return;
+01830:         const styleStartedAt = startupClock();
+
+===== Matrix scan and lifecycle [22970-23135] =====
+22970:             if (otherSource !== source && otherSource.ownerDocument === doc) missionRequirementsRemoveRecord(otherSource);
+22971:         }
+22972:         ensureMissionRequirementsDocumentStyle(doc);
+22973:         panel = missionRequirementsCanonicalPanel(source);
+22974:         if (!panel) {
+22975:             panel = doc.createElement('section');
+22976:             panel.id = SCRIPT.missionRequirementsPanelId;
+22977:             panel.setAttribute('data-mcms-requirements-panel', '1');
+22978:             panel.setAttribute('aria-label', 'Live mission requirements');
+22979:         }
+22980:         missionRequirementsPlacePanel(scopedCandidate, source, panel);
+22981:         panel.dataset.mcmsTheme = state.uiTheme;
+22982:         missionRequirementsBindPanel(panel);
+22983:         record = { candidate: scopedCandidate, source, panel, startedAt: Date.now(), missionIdentity };
+22984:         const Observer = doc.defaultView?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+22985:         if (root && typeof Observer === 'function') {
+22986:             record.observer = runtimeTrackObserver(new Observer(mutations => mutations.some(mutation => missionRequirementsMutationRelevant(record, mutation)) && missionRequirementsScheduleRecord(record)));
+22987:             record.observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['checked', 'class', 'style', 'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle_type_id', 'data-equipment-types', 'data-equipment-type', 'data-current-personnel', 'data-min-personnel', 'data-max-personnel', 'data-patient-count', 'data-patient-total', 'data-patients', 'patient_count', 'patients_count', 'tractive_vehicle_id', 'data-tractive-vehicle-id', 'trailer_id', 'data-trailer-id', 'sortvalue'] });
+22988:         }
+22989:         missionRequirementsRecords.set(source, record);
+22990:         missionRequirementsScheduleRecord(record);
+22991:         return record;
+22992:     }
+22993: 
+22994:     function missionRequirementsRemoveRecord(source) {
+22995:         const record = missionRequirementsRecords.get(source);
+22996:         if (!record) {
+22997:             missionRequirementsRestoreSource(source);
+22998:             if (source?.getAttribute?.('data-mcms-requirements-anchor') === '1') source.remove?.();
+22999:             return;
+23000:         }
+23001:         if (record.frame) runtimeCancelAnimationFrame(record.frame);
+23002:         if (record.patientTransitionTimer) runtimeClearTimeout(record.patientTransitionTimer);
+23003:         record.patientTransitionTimer = null;
+23004:         runtimeUntrackObserver(record.observer);
+23005:         try { record.panel?.remove(); } catch (err) {}
+23006:         missionRequirementsRestoreSource(record.source);
+23007:         if (record.source?.getAttribute?.('data-mcms-requirements-anchor') === '1') record.source.remove?.();
+23008:         missionRequirementsRecords.delete(source);
+23009:     }
+23010: 
+23011:     function clearMissionRequirementsPanels() {
+23012:         for (const source of Array.from(missionRequirementsRecords.keys())) missionRequirementsRemoveRecord(source);
+23013:         missionRequirementsPatientSnapshots.clear();
+23014:         for (const context of transportSweepDocumentContexts()) {
+23015:             try {
+23016:                 context.doc.querySelectorAll?.(`#${SCRIPT.missionRequirementsPanelId}`).forEach(panel => panel.remove());
+23017:                 context.doc.querySelectorAll?.('[data-mcms-requirements-source-hidden="1"]').forEach(missionRequirementsRestoreSource);
+23018:                 context.doc.querySelectorAll?.('[data-mcms-requirements-anchor="1"]').forEach(anchor => anchor.remove());
+23019:             } catch (err) {}
+23020:         }
+23021:     }
+23022: 
+23023:     function scheduleMissionRequirementsScan(delay = 60) {
+23024:         runtimeClearTimeout(missionRequirementsScanTimer);
+23025:         missionRequirementsScanTimer = runtimeSetTimeout(() => {
+23026:             missionRequirementsScanTimer = null;
+23027:             scanMissionRequirementsWindows();
+23028:         }, Math.max(0, Number(delay) || 0));
+23029:     }
+23030: 
+23031:     function scanMissionRequirementsWindows() {
+23032:         if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
+23033:         if (!state.missionRequirements) {
+23034:             clearMissionRequirementsPanels();
+23035:             return;
+23036:         }
+23037:         const activeSources = new Set();
+23038:         const activeDocuments = new WeakSet();
+23039:         for (const candidate of missionRequirementsWindowCandidates()) {
+23040:             const source = missionRequirementsSourceForCandidate(candidate) || missionRequirementsAnchorForCandidate(candidate);
+23041:             if (!source || source.isConnected === false) continue;
+23042:             const doc = source.ownerDocument || candidate?.root?.ownerDocument || document;
+23043:             if (!doc || activeDocuments.has(doc)) continue;
+23044:             activeDocuments.add(doc);
+23045:             ensureMissionRequirementsDocumentStyle(doc);
+23046:             if (missionRequirementsLssmActive(candidate, source)) {
+23047:                 missionRequirementsRemoveRecord(source);
+23048:                 continue;
+23049:             }
+23050:             activeSources.add(source);
+23051:             missionRequirementsEnsureRecord({ ...candidate, source }, source);
+23052:         }
+23053:         for (const source of Array.from(missionRequirementsRecords.keys())) {
+23054:             if (source.isConnected === false || !activeSources.has(source)) missionRequirementsRemoveRecord(source);
+23055:         }
+23056:     }
+23057: 
+23058:     function missionRequirementsScheduleDocumentRecords(doc) {
+23059:         for (const record of missionRequirementsRecords.values()) {
+23060:             if (record.source?.ownerDocument === doc) missionRequirementsScheduleRecord(record);
+23061:         }
+23062:     }
+23063: 
+23064:     function observeMissionRequirementsFrame(frame) {
+23065:         if (!frame || missionRequirementsObservedFrames.has(frame)) return;
+23066:         missionRequirementsObservedFrames.add(frame);
+23067:         const onLoad = () => scheduleMissionRequirementsScan(20);
+23068:         frame.addEventListener('load', onLoad);
+23069:         runtimeOnCleanup(() => frame.removeEventListener('load', onLoad));
+23070:     }
+23071: 
+23072:     function observeMissionRequirementsDocument(doc) {
+23073:         if (!doc) return;
+23074:         ensureMissionRequirementsDocumentStyle(doc);
+23075:         if (missionRequirementsObservedDocuments.has(doc)) return;
+23076:         missionRequirementsObservedDocuments.add(doc);
+23077:         try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+23078:         runtimeListen(doc, 'click', event => {
+23079:             const target = event.target; if (!target?.matches?.('.vehicle_checkbox, input[type="checkbox"][vehicle_type_id]') && !target?.closest?.('.aao_btn, [aao_id], .vehicle_group, [vehicle_group_id]')) return;
+23080:             scheduleMissionRequirementsScan(35);
+23081:         }, true);
+23082:         const root = doc.documentElement || doc.body;
+23083:         if (!root) return;
+23084:         const activitySelector = '#missing_text, [data-mcms-requirements-anchor], #patient_button_form, #patient_button_text, #patient_button_text strong, [id^="patient_"], [data-patient-id], [data-patient], [class*="patient"], [data-patient-count], [data-patient-total], [data-patients], #mission_vehicle_driving, #mission_vehicle_at_mission, #vehicle_show_table_body_all, #occupied, .vehicle_checkbox, [vehicle_type_id], [data-vehicle-type-id], [data-vehicle_type_id], [data-equipment-types], [data-equipment-type], [data-current-personnel], [data-min-personnel], [data-max-personnel], [id^="mission_water_holder"], [id^="mission_foam_holder"], [id^="mission_pump_holder"], #lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame';
+23085:         const view = doc.defaultView || pageWindow;
+23086:         const MutationObserverCtor = view?.MutationObserver || pageWindow.MutationObserver || MutationObserver;
+23087:         const observer = runtimeTrackObserver(new MutationObserverCtor(mutations => {
+23088:             const relevant = mutations.some(mutation => {
+23089:                 if (mutation.target?.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)) return false;
+23090:                 if (mutationTouchesSelector(mutation, activitySelector)) return true;
+23091:                 return false;
+23092:             });
+23093:             if (!relevant) return;
+23094:             try { doc.querySelectorAll('iframe, frame').forEach(observeMissionRequirementsFrame); } catch (err) {}
+23095:             scheduleMissionRequirementsScan(35);
+23096:             missionRequirementsScheduleDocumentRecords(doc);
+23097:         }));
+23098:         observer.observe(root, { childList: true, subtree: true, characterData: true });
+23099:     }
+23100: 
+23101:     function installMissionRequirementsWindows() {
+23102:         if (!missionRequirementsPrimaryRuntime()) return;
+23103:         if (!missionRequirementsFeatureInstalled) {
+23104:             missionRequirementsFeatureInstalled = true;
+23105:             runtimeOnCleanup(() => {
+23106:                 runtimeClearTimeout(missionRequirementsScanTimer);
+23107:                 missionRequirementsScanTimer = null;
+23108:                 clearMissionRequirementsPanels();
+23109:                 for (const context of transportSweepDocumentContexts()) {
+23110:                     try { context.doc.getElementById?.(SCRIPT.missionRequirementsDocumentStyleId)?.remove(); } catch (err) {}
+23111:                 }
+23112:             });
+23113:         }
+23114:         for (const context of transportSweepDocumentContexts()) observeMissionRequirementsDocument(context.doc);
+23115:         scheduleMissionRequirementsScan(0);
+23116:         runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 180);
+23117:         runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 800);
+23118:         runtimeSetTimeout(() => scheduleMissionRequirementsScan(0), 1600);
+23119:     }
+23120: 
+23121: 
+23122: 
+23123: 
+23124: 
+23125:     function criticalMissionValueForEntry(entry) {
+23126:         return criticalMissionValueDetails(entry).value;
+23127:     }
+23128: 
+23129:     function criticalValueEligible(entry) {
+23130:         return selectedCriticalValueMode() === 'total' || Boolean(entry?.eligibleForCredits);
+23131:     }
+23132: 
+23133:     function criticalValueGroup(entries, predicate = () => true) {
+23134:         let total = 0;
+23135:         let known = 0;
+
+===== mission-window toggle handlers [28780-29040] =====
+28780:             toast.classList.remove('mcms-flash');
+28781:         }, 950);
+28782:     }
+28783: 
+28784:     function applyTheme(themeKey, persist = true) {
+28785:         state.theme = normaliseTheme(themeKey);
+28786:         if (persist) saveState();
+28787:         applyRootAttributes();
+28788:         updateUI();
+28789:         showToast(THEMES[state.theme].full);
+28790:     }
+28791: 
+28792:     function setActiveTab(tab) {
+28793:         if (!['skins', 'tools', 'resources', 'ops', 'payouts', 'discord', 'places', 'settings'].includes(tab)) return;
+28794:         state.activeTab = tab;
+28795:         saveState();
+28796:         updateUI();
+28797:         if (!dragState) positionPanelOverlay(true);
+28798:         if (tab === 'ops') refreshPersonalVehicleData(false).finally(() => scheduleOperationalPanelsRender(0, true));
+28799:     }
+28800: 
+28801:     function applyPosition(position, persist = true) {
+28802:         state.position = POSITIONS[position] ? position : 'bl';
+28803:         if (persist) saveState();
+28804:         updateUI();
+28805:         fitControlToMap();
+28806:     }
+28807: 
+28808:     function nudgeControl(dx, dy) {
+28809:         state.nudge.x = clamp(state.nudge.x + dx, -220, 220, 0);
+28810:         state.nudge.y = clamp(state.nudge.y + dy, -220, 220, 0);
+28811:         saveState();
+28812:         updateUI();
+28813:     }
+28814: 
+28815:     function resetNudge() {
+28816:         state.nudge = { x: 0, y: 0 };
+28817:         saveState();
+28818:         updateUI();
+28819:     }
+28820: 
+28821:     function toggleCommandBar() {
+28822:         if (commandBarAnimating) return;
+28823:         const control = document.getElementById(SCRIPT.controlId);
+28824:         const opening = state.commandBarOpen === false;
+28825:         const animatedItems = control
+28826:             ? Array.from(control.querySelectorAll('.mcms-float-btn, .mcms-screen-pin-btn'))
+28827:             : [];
+28828:         const reduceMotion = Boolean(state.economyMode || pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+28829:         const duration = reduceMotion ? 0 : (mobileModeActive ? 145 : 175);
+28830:         const stagger = reduceMotion ? 0 : (mobileModeActive ? 5 : 7);
+28831:         const maxDelay = Math.min(Math.max(0, animatedItems.length - 1) * stagger, 70);
+28832:         const clearAnimationStyles = () => {
+28833:             for (const item of animatedItems) {
+28834:                 item.style.removeProperty('opacity');
+28835:                 item.style.removeProperty('transform');
+28836:                 item.style.removeProperty('transition');
+28837:                 item.style.removeProperty('transition-delay');
+28838:                 item.style.removeProperty('will-change');
+28839:             }
+28840:         };
+28841:         if (commandBarAnimationTimer !== null) {
+28842:             runtimeClearTimeout(commandBarAnimationTimer);
+28843:             commandBarAnimationTimer = null;
+28844:         }
+28845:         if (opening) {
+28846:             state.commandBarOpen = true;
+28847:             saveState();
+28848:             updateUI();
+28849:             fitControlToMap();
+28850:             if (duration > 0 && animatedItems.length) {
+28851:                 commandBarAnimating = true;
+28852:                 const targetStyles = animatedItems.map(item => {
+28853:                     const computed = pageWindow.getComputedStyle(item);
+28854:                     return {
+28855:                         opacity: computed.opacity || '1',
+28856:                         transform: computed.transform === 'none' ? 'none' : computed.transform
+28857:                     };
+28858:                 });
+28859:                 animatedItems.forEach(item => {
+28860:                     item.style.setProperty('transition', 'none', 'important');
+28861:                     item.style.setProperty('transition-delay', '0ms', 'important');
+28862:                     item.style.setProperty('opacity', '0', 'important');
+28863:                     item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
+28864:                     item.style.setProperty('will-change', 'opacity, transform', 'important');
+28865:                 });
+28866:                 void control.offsetWidth;
+28867:                 runtimeRequestAnimationFrame(() => {
+28868:                     animatedItems.forEach((item, index) => {
+28869:                         item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.2,.78,.22,1), transform ${duration}ms cubic-bezier(.2,.78,.22,1)`, 'important');
+28870:                         item.style.setProperty('transition-delay', `${Math.min(index * stagger, 70)}ms`, 'important');
+28871:                         item.style.setProperty('opacity', targetStyles[index].opacity, 'important');
+28872:                         item.style.setProperty('transform', targetStyles[index].transform, 'important');
+28873:                     });
+28874:                 });
+28875:                 commandBarAnimationTimer = runtimeSetTimeout(() => {
+28876:                     commandBarAnimationTimer = null;
+28877:                     clearAnimationStyles();
+28878:                     commandBarAnimating = false;
+28879:                 }, duration + maxDelay + 35);
+28880:             }
+28881:             showToast('Command bar expanded');
+28882:             return;
+28883:         }
+28884:         if (duration <= 0 || !animatedItems.length) {
+28885:             state.commandBarOpen = false;
+28886:             saveState();
+28887:             updateUI();
+28888:             fitControlToMap();
+28889:             showToast('Command bar collapsed');
+28890:             return;
+28891:         }
+28892:         commandBarAnimating = true;
+28893:         animatedItems.forEach((item, index) => {
+28894:             const computed = pageWindow.getComputedStyle(item);
+28895:             item.style.setProperty('transition', 'none', 'important');
+28896:             item.style.setProperty('transition-delay', '0ms', 'important');
+28897:             item.style.setProperty('opacity', computed.opacity || '1', 'important');
+28898:             item.style.setProperty('transform', computed.transform === 'none' ? 'none' : computed.transform, 'important');
+28899:             item.style.setProperty('will-change', 'opacity, transform', 'important');
+28900:             item.dataset.mcmsCollapseDelay = String(Math.min(index * stagger, 70));
+28901:         });
+28902:         void control.offsetWidth;
+28903:         runtimeRequestAnimationFrame(() => {
+28904:             for (const item of animatedItems) {
+28905:                 item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.4,0,.2,1), transform ${duration}ms cubic-bezier(.4,0,.2,1)`, 'important');
+28906:                 item.style.setProperty('transition-delay', `${item.dataset.mcmsCollapseDelay || 0}ms`, 'important');
+28907:                 item.style.setProperty('opacity', '0', 'important');
+28908:                 item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
+28909:                 delete item.dataset.mcmsCollapseDelay;
+28910:             }
+28911:         });
+28912:         commandBarAnimationTimer = runtimeSetTimeout(() => {
+28913:             commandBarAnimationTimer = null;
+28914:             state.commandBarOpen = false;
+28915:             saveState();
+28916:             updateUI();
+28917:             fitControlToMap();
+28918:             clearAnimationStyles();
+28919:             commandBarAnimating = false;
+28920:         }, duration + maxDelay + 25);
+28921:         showToast('Command bar collapsed');
+28922:     }
+28923: 
+28924:     function handleMapVisibilityToggle(feature) {
+28925:         if (feature === 'markerFocus') state.markerFocus = !state.markerFocus;
+28926:         else if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
+28927:         else if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
+28928:         else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
+28929:         else if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+28930:         else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+28931:         else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+28932:         else if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+28933:         else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+28934:         else return false;
+28935:         return true;
+28936:     }
+28937:     function applyMapVisibilityToggleEffects(feature) {
+28938:         if (feature === 'vehicles') synchroniseVehicleMarkerClasses();
+28939:         if (feature === 'buildings') synchronisePersonalBuildingVisibility();
+28940:         if (state.economyMode && (feature === 'vehicles' || feature === 'buildings')) scheduleEconomyLayerSync(0);
+28941:     }
+28942:     function handleMissionWindowToggle(feature) {
+28943:         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+28944:         else if (feature === 'missionValue') state.missionValue = !state.missionValue;
+28945:         else if (feature === 'missionRequirements') state.missionRequirements = !state.missionRequirements;
+28946:         else if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
+28947:         else return false;
+28948:         return true;
+28949:     }
+28950:     function applyMissionWindowToggleEffects(feature) {
+28951:         if (feature === 'missionValue') { if (state.missionValue) installMissionValueWindows(); else clearMissionValueIndicators(); showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off'); }
+28952:         if (feature === 'missionRequirements') { if (state.missionRequirements) installMissionRequirementsWindows(); else clearMissionRequirementsPanels(); showToast(state.missionRequirements ? 'Mission Requirements on' : 'Mission Requirements off'); }
+28953:         if (feature === 'customVehicleBadges') { if (state.customVehicleBadges) installCustomVehicleBadges(); else clearCustomVehicleBadges(); showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off'); }
+28954:         if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
+28955:     }
+28956:     function handlePayoutAudioToggle(feature) {
+28957:         if (feature === 'missionLockAudio') { state.missionLockAudio = !state.missionLockAudio; if (state.missionLockAudio) unlockPayoutAudio(true); }
+28958:         else if (feature === 'payoutFlash') state.payoutFlash.enabled = !state.payoutFlash.enabled;
+28959:         else if (feature === 'payoutSound') { state.payoutFlash.soundEnabled = !state.payoutFlash.soundEnabled; if (state.payoutFlash.soundEnabled) unlockPayoutAudio(); else disposePayoutMediaAudio(); }
+28960:         else return false;
+28961:         return true; }
+28962:     function applyPayoutAudioToggleEffects(feature) {
+28963:         if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
+28964:         else if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
+28965:         else if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
+28966:     }
+28967:     function handleMissionMonitoringToggle(feature) {
+28968:         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
+28969:         else if (feature === 'missionSpawn') { state.missionSpawn.enabled = !state.missionSpawn.enabled; missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (state.missionSpawn.enabled) primeMissionSpawnDetector(); }
+28970:         else return false;
+28971:         return true; }
+28972:     function applyMissionMonitoringToggleEffects(feature) {
+28973:         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
+28974:         else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
+28975:     function handleInterfaceShellToggle(feature) {
+28976:         if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else return false; return true; }
+28977:     function toggleFeature(feature) {
+28978:         handleMapVisibilityToggle(feature);
+28979:         handleMissionWindowToggle(feature);
+28980:         handlePayoutAudioToggle(feature);
+28981:         handleMissionMonitoringToggle(feature);
+28982:         handleInterfaceShellToggle(feature);
+28983:         if (feature === 'autoLoadAllVehicles') {
+28984:             state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
+28985:             if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+28986:             else stopAutoLoadAllVehicles();
+28987:         }
+28988:         if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
+28989:         if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
+28990:         if (feature === 'allianceCredits') state.allianceCredits = !state.allianceCredits;
+28991:         if (feature === 'missionAge') state.missionAge = !state.missionAge;
+28992:         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
+28993:         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
+28994:         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
+28995:         if (feature === 'criticalView') { toggleCriticalView(); return; }
+28996:         if (feature === 'autoNight') {
+28997:             state.autoNight.enabled = !state.autoNight.enabled;
+28998:             state.autoNight.lastBucket = '';
+28999:         }
+29000:         if (state.cleanMode) closePanel();
+29001:         if (!criticalViewActive) saveState();
+29002:         applyRootAttributes();
+29003:         updateUI();
+29004:         applyMapVisibilityToggleEffects(feature);
+29005:         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+29006:         applyMissionWindowToggleEffects(feature);
+29007:         applyPayoutAudioToggleEffects(feature);
+29008:         applyMissionMonitoringToggleEffects(feature);
+29009:         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+29010:         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
+29011:         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+29012:         if (feature === 'unitCommitment') {
+29013:             if (state.unitCommitment) {
+29014:                 showToast('Loading unit assignments…');
+29015:                 refreshPersonalVehicleData(true).then(ok => {
+29016:                     scheduleUnitCommitmentRefresh(0);
+29017:                     showToast(ok ? 'Unit Count on' : 'Unit Count on · live vehicle data unavailable');
+29018:                 });
+29019:             } else showToast('Unit Count off');
+29020:         }
+29021:         if (feature === 'transportWatcher') showToast(state.transportWatcher ? 'Transport Watcher on' : 'Transport Watcher off');
+29022:         if (feature === 'majorIncidentFeed') {
+29023:             if (state.majorIncidentFeed.enabled) {
+29024:                 refreshMissionSnapshots();
+29025:                 scheduleMajorIncidentFeedRender(0);
+29026:             } else removeMajorIncidentFeed();
+29027:             showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
+29028:         }
+29029:         if (feature === 'allianceBuildingsMapBlocker') {
+29030:             if (state.allianceBuildingsMap === false) {
+29031:                 installAllianceBuildingsEarlyStyle();
+29032:                 installAllianceBuildingsLeafletAssignmentGuard();
+29033:                 installAllianceBuildingsContextWatcherEarly();
+29034:             } else {
+29035:                 clearAllianceBuildingsEarlyContext();
+29036:             }
+29037:             showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
+29038:             if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
+29039:         }
+29040:         if (feature === 'resourceGap') {
+
+===== settings panel creation and mission-window controls [29680-30100] =====
+29680:         const checkedAt = Number(versionStatusModel.checkedAt) || 0;
+29681:         if (checkedAt > 0 && versionStatusModel.manifest) {
+29682:             const elapsed = Math.max(0, current - checkedAt);
+29683:             return Math.max(1000, VERSION_STATUS.cacheMs - Math.min(VERSION_STATUS.cacheMs, elapsed));
+29684:         }
+29685:         return VERSION_STATUS.autoIntervalMs;
+29686:     }
+29687:     function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) {
+29688:         if (runtime.destroyed) return;
+29689:         ensureVersionStatusButton();
+29690:         if (versionStatusTimer !== null) {
+29691:             if (!force && Number(delay) === VERSION_STATUS.bootDelayMs) return;
+29692:             runtimeClearTimeout(versionStatusTimer);
+29693:         }
+29694:         versionStatusTimer = runtimeSetTimeout(async () => {
+29695:             versionStatusTimer = null;
+29696:             if (runtime.destroyed) return;
+29697:             if (!force && document.visibilityState === 'hidden') return;
+29698:             try {
+29699:                 await runVersionStatusCheck(force);
+29700:             } finally {
+29701:                 if (!runtime.destroyed && document.visibilityState !== 'hidden') {
+29702:                     scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false);
+29703:                 }
+29704:             }
+29705:         }, Math.max(0, Number(delay) || 0));
+29706:     }
+29707:     function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); }
+29708: 
+29709:     function createCleanExit() {
+29710:         if (document.getElementById(SCRIPT.cleanExitId)) return;
+29711:         const button = document.createElement('button');
+29712:         button.id = SCRIPT.cleanExitId;
+29713:         button.type = 'button';
+29714:         button.textContent = 'Exit Clean Mode';
+29715:         button.title = 'Exit clean mode. Shortcut: C or Esc.';
+29716:         button.addEventListener('click', () => toggleFeature('clean'));
+29717:         document.body.appendChild(button);
+29718:     }
+29719: 
+29720:     function createControl(mapEl) {
+29721:         if (!mapEl || document.getElementById(SCRIPT.controlId)) return;
+29722:         const control = document.createElement('div');
+29723:         control.id = SCRIPT.controlId;
+29724:         control.className = 'mcms-control';
+29725:         control.setAttribute('aria-label', `${SCRIPT.name} control`);
+29726:         control.innerHTML = `
+29727:             <div class="mcms-launch-row">
+29728:                 <div class="mcms-shell">
+29729:                     <button class="mcms-menu-btn" type="button" title="Open or close toolkit settings" aria-label="Open or close toolkit settings" aria-expanded="false" aria-controls="${SCRIPT.panelId}">🗺️</button>
+29730:                     <button class="mcms-dock-toggle-btn" type="button" title="Collapse command bar" aria-label="Collapse command bar" aria-expanded="true"><span class="mcms-dock-toggle-icon" aria-hidden="true">▴</span></button>
+29731:                 </div>
+29732:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+29733:             </div>
+29734:             <div class="mcms-floating-filter" title="Persistent map visibility filters">
+29735:                 ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
+29736:                 ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
+29737:                 ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+29738:                 ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
+29739:                 ${makeFloatButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally Credits', 'Ally £')}
+29740:                 ${makeFloatButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
+29741:                 ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
+29742:                 ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+29743:                 ${makeFloatButton('criticalView', '9', 'Crit View', 'Show only personal missions aged 8 hours or more and frame them on the map. Shortcut: 9', 'Critical View', 'Critical')}
+29744:                 ${makeActionFloatButton('open-vehicle-status', 'V', 'Veh Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Veh Codes', 'Codes')}
+29745:                 ${makeActionFloatButton('open-critical-drawer', 'W', 'Age Watch', 'Open or close Mission Age Watch. Shortcut: W', 'Age Watch', 'Watch')}
+29746:             </div>
+29747:             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
+29748:         `;
+29749:         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+29750:             control.addEventListener(eventName, stopMapInteraction, { passive: false });
+29751:         });
+29752:         let screenPinLongPressTimer = 0;
+29753:         let screenPinLongPressButton = null;
+29754:         const cancelScreenPinLongPress = () => {
+29755:             runtimeClearTimeout(screenPinLongPressTimer);
+29756:             screenPinLongPressTimer = 0;
+29757:             screenPinLongPressButton = null;
+29758:         };
+29759:         control.addEventListener('pointerdown', event => {
+29760:             const pinButton = closestEventTarget(event, '.mcms-screen-pin-btn[data-full-label]');
+29761:             if (!pinButton || event.pointerType === 'mouse') return;
+29762:             cancelScreenPinLongPress();
+29763:             screenPinLongPressButton = pinButton;
+29764:             screenPinLongPressTimer = runtimeSetTimeout(() => {
+29765:                 if (screenPinLongPressButton !== pinButton) return;
+29766:                 pinButton.dataset.mcmsLongPress = 'true';
+29767:                 showToast(pinButton.dataset.fullLabel || pinButton.textContent || 'Bookmark');
+29768:             }, 560);
+29769:         });
+29770:         control.addEventListener('pointermove', cancelScreenPinLongPress, { passive: true });
+29771:         control.addEventListener('pointercancel', cancelScreenPinLongPress, { passive: true });
+29772:         control.addEventListener('pointerup', () => {
+29773:             runtimeClearTimeout(screenPinLongPressTimer);
+29774:             screenPinLongPressTimer = 0;
+29775:             screenPinLongPressButton = null;
+29776:         }, { passive: true });
+29777:         control.addEventListener('click', event => {
+29778:             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
+29779:             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
+29780:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+29781:             const actionButton = closestEventTarget(event, '[data-action]');
+29782:             if (actionButton?.dataset.mcmsLongPress === 'true') {
+29783:                 delete actionButton.dataset.mcmsLongPress;
+29784:                 event.preventDefault();
+29785:                 return;
+29786:             }
+29787:             if (menuButton) { togglePanel(); return; }
+29788:             if (dockToggleButton) { toggleCommandBar(); return; }
+29789:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+29790:             if (actionButton) handleAction(actionButton);
+29791:         });
+29792:         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+29793:         mapEl.appendChild(control);
+29794:         renderScreenPins();
+29795:         updateUI();
+29796:     }
+29797: 
+29798:     function createPanel() {
+29799:         const existingPanel = document.getElementById(SCRIPT.panelId);
+29800:         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
+29801:         const panelStartedAt = startupClock();
+29802:         settingsPanelActivated = true;
+29803:         const panel = document.createElement('div');
+29804:         panel.id = SCRIPT.panelId;
+29805:         panel.setAttribute('role', 'dialog');
+29806:         panel.setAttribute('aria-modal', 'false');
+29807:         panel.setAttribute('aria-hidden', 'true');
+29808:         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
+29809:         const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
+29810:             const theme = UI_THEMES[key];
+29811:             return `
+29812:                 <button class="mcms-ui-theme-btn" type="button" data-ui-theme="${key}" title="${escapeHtml(theme.description)}" aria-pressed="false">
+29813:                     <span class="mcms-ui-theme-preview mcms-ui-theme-preview-${key}" aria-hidden="true"><span></span><span></span><span></span></span>
+29814:                     <span class="mcms-ui-theme-copy"><strong>${escapeHtml(theme.label)}</strong><small>${escapeHtml(theme.short)}</small></span>
+29815:                 </button>
+29816:             `;
+29817:         }).join('');
+29818:         const buildThemeButtons = keys => keys.map(key => {
+29819:             const theme = THEMES[key];
+29820:             return `
+29821:                 <button class="mcms-theme-btn" type="button" data-theme="${key}" title="${theme.full}">
+29822:                     <span class="mcms-iconbox">${theme.icon}</span>
+29823:                     <span class="mcms-text">
+29824:                         <span class="mcms-label">${theme.label}</span>
+29825:                         <span class="mcms-pill">${theme.short}</span>
+29826:                     </span>
+29827:                 </button>
+29828:             `;
+29829:         }).join('');
+29830:         const uiThemeButtons = buildUiThemeButtons();
+29831:         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
+29832:         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
+29833:         const positionButtons = Object.entries(POSITIONS).map(([key, pos]) => `<button class="mcms-position-btn" type="button" data-position="${key}" title="${pos.label}">${pos.short}</button>`).join('');
+29834:         panel.innerHTML = `
+29835:             <div class="mcms-panel-sticky-stack">
+29836:                 <div class="mcms-header">
+29837:                     <div class="mcms-drag-handle" title="Hold left-click and drag this bar to move the menu">
+29838:                         <span class="mcms-title">☰ DRAG MENU HERE</span>
+29839:                         <span class="mcms-subtitle">Hold left-click on this title area. Position saves.</span>
+29840:                     </div>
+29841:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29842:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29843:                     <button class="mcms-close" type="button" title="Close">×</button>
+29844:                 </div>
+29845:                 <div class="mcms-tabs">
+29846:                     <button class="mcms-tab-btn" type="button" data-tab="skins">Skins</button>
+29847:                     <button class="mcms-tab-btn" type="button" data-tab="tools">Tools</button>
+29848:                     <button class="mcms-tab-btn" type="button" data-tab="resources">Resources</button>
+29849:                     <button class="mcms-tab-btn" type="button" data-tab="ops">Ops</button>
+29850:                     <button class="mcms-tab-btn" type="button" data-tab="payouts">Payouts</button>
+29851:                     <button class="mcms-tab-btn" type="button" data-tab="discord">Finance</button>
+29852:                     <button class="mcms-tab-btn" type="button" data-tab="places">Places</button>
+29853:                     <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
+29854:                 </div>
+29855:             </div>
+29856:             <section class="mcms-tab-panel" data-panel="skins">
+29857:                 <div class="mcms-section-label">Interface theme</div>
+29858:                 <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+29859:                 <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
+29860:                 <div class="mcms-section-label">Core skins</div>
+29861:                 <div class="mcms-grid-2">${coreThemeButtons}</div>
+29862:                 <div class="mcms-section-label">Emergency services</div>
+29863:                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
+29864:                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+29865:                 <div class="mcms-section-label">Automatic day / night</div>
+29866:                 <div class="mcms-grid-2">
+29867:                     ${makeToggleButton('autoNight', '◑', 'Auto Night', 'Automatically switch operational map skins at the configured day and night times.')}
+29868:                 </div>
+29869:                 <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+29870:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+29871:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+29872:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+29873:             </section>
+29874:             <section class="mcms-tab-panel" data-panel="tools">
+29875:                 <div class="mcms-section-label">Map tools</div>
+29876:                 <div class="mcms-grid-2">
+29877:                     ${makeToggleButton('clean', '▢', 'Clean', 'Hide map controls for screenshots. Shortcut: C')}
+29878:                     ${makeToggleButton('markerFocus', '◉', 'Focus', 'Dim detected buildings/vehicles and keep missions clearer. Shortcut: F')}
+29879:                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
+29880:                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
+29881:                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+29882:                     ${makeToggleButton('heatmap', '▦', 'Heatmap', 'Show strong and weak operational coverage across the visible map.')}
+29883:                 </div>
+29884:                 <div class="mcms-row" style="margin-top:8px">
+29885:                     <span class="mcms-row-label">Ring radius</span>
+29886:                     <select class="mcms-select" data-setting="coverage-radius">
+29887:                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
+29888:                     </select>
+29889:                 </div>
+29890:                 <div class="mcms-section-label">Coverage Heatmap</div>
+29891:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+29892:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+29893:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+29894:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+29895:                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+29896:                 <div class="mcms-section-label">Map performance</div>
+29897:                 <div class="mcms-grid-2">
+29898:                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Alliance Map Blocker', 'Blocks the heavy map in the Alliance Buildings/Courses menu. ON means blocked. Reload required.')}
+29899:                 </div>
+29900:                 <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map, expands the courses list and prevents its heavy marker layer attaching.</div>
+29901:                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
+29902:                 <div class="mcms-grid-2">
+29903:                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
+29904:                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
+29905:                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+29906:                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+29907:                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
+29908:                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+29909:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
+29910:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
+29911:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Temporarily show only personal missions aged 8 hours or more. Shortcut: 9')}
+29912:                 </div>
+29913:                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
+29914:                 <div class="mcms-status">Ready.</div>
+29915:             </section>
+29916:             <section class="mcms-tab-panel" data-panel="resources">
+29917:                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
+29918:                 <div class="mcms-grid-2">
+29919:                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
+29920:                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
+29921:                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
+29922:                 </div>
+29923:                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
+29924:                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
+29925:                 <div data-transport-sweep></div>
+29926:                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+29927:                 <div class="mcms-section-label">Resource Gap Finder</div>
+29928:                 <div class="mcms-grid-2">
+29929:                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates in Mission Inspector.')}
+29930:                 </div>
+29931:                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+29932:                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+29933:                 <div class="mcms-section-label">Vehicle loading</div>
+29934:                 <div class="mcms-grid-2">
+29935:                     ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically activates MissionChief’s native Load more vehicles control inside an opened mission.')}
+29936:                 </div>
+29937:                 <div class="mcms-status">Transport Watcher and Unit Count remain under Tools as the canonical map-overlay controls for shortcuts 7 and 8.</div>
+29938:             </section>
+29939:             <section class="mcms-tab-panel" data-panel="ops">
+29940:                 <div class="mcms-section-label">Mission Intelligence</div>
+29941:                 <div class="mcms-grid-2">
+29942:                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+29943:                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
+29944:                     ${makeToggleButton('missionRequirements', '≡', 'Requirements', 'Show a live MissionChief requirements matrix above dispatch controls.')}
+29945:                     ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
+29946:                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
+29947:                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
+29948:                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
+29949:                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
+29950:                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
+29951:                         <span class="mcms-iconbox">V</span>
+29952:                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
+29953:                     </button>
+29954:                 </div>
+29955:                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+29956:                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+29957:                 <div class="mcms-section-label">Session Performance</div>
+29958:                 <div data-ops-session></div>
+29959:                 <div class="mcms-section-label">Mission Age Workflow</div>
+29960:                 <div class="mcms-grid-2">
+29961:                     <button class="mcms-small-btn" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+29962:                     <button class="mcms-small-btn" type="button" data-action="fit-critical">Frame Aged</button>
+29963:                 </div>
+29964:                 <div class="mcms-status">Mission Age and Critical View remain under Tools as the canonical shortcut controls for 6 and 9. Ops provides the mission workflow and dashboard actions.</div>
+29965:                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
+29966:                 <div class="mcms-ops-list" data-ops-critical-preview></div>
+29967:                 <div class="mcms-section-label">Completion History</div>
+29968:                 <div class="mcms-ops-list" data-ops-history></div>
+29969:                 <div class="mcms-grid-2" style="margin-top:7px !important">
+29970:                     <button class="mcms-small-btn" type="button" data-action="reset-session">Reset Session</button>
+29971:                     <button class="mcms-small-btn" type="button" data-action="clear-payout-history">Clear History</button>
+29972:                 </div>
+29973:             </section>
+29974:             <section class="mcms-tab-panel" data-panel="payouts">
+29975:                 <div class="mcms-section-label">Emergency Payout Flash</div>
+29976:                 <div class="mcms-grid-2">
+29977:                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
+29978:                     ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+29979:                 </div>
+29980:                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
+29981:                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
+29982:                 <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+29983:                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
+29984:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+29985:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+29986:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+29987:             </section>
+29988:             <section class="mcms-tab-panel" data-panel="discord">
+29989:                 <div class="mcms-section-label">Discord Financial Command</div>
+29990:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
+29991:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
+29992:                 <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+29993:                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
+29994:                 <div class="mcms-discord-date-grid">
+29995:                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
+29996:                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
+29997:                 </div>
+29998:                 <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+29999:                 <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+30000:                 <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+30001:                 <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+30002:                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
+30003:                 <div class="mcms-grid-2">
+30004:                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
+30005:                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
+30006:                 </div>
+30007:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate & Post Audit</button>
+30008:                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+30009: 
+30010:                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
+30011:                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+30012:                 <div class="mcms-row"><span class="mcms-row-label">History retention</span><select class="mcms-select" data-setting="finance-vault-retention"><option value="all">All available</option><option value="1825">5 years</option><option value="730">2 years</option><option value="365">1 year</option><option value="180">180 days</option><option value="90">90 days</option></select></div>
+30013:                 <div class="mcms-row"><span class="mcms-row-label">GitHub intelligence feeds</span><select class="mcms-select" data-setting="finance-rule-feed"><option value="true">Automatic rules + policy</option><option value="false">Built-in intelligence only</option></select></div>
+30014:                 <div class="mcms-grid-2">
+30015:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-scan">Deep Scan All Available</button>
+30016:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-cancel">Stop Scan</button>
+30017:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
+30018:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
+30019:                 </div>
+30020:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh Financial Intelligence</button>
+30021:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear Player Archive</button>
+30022:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
+30023:                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
+30024:                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
+30025:                 <div class="mcms-status mcms-discord-status" data-finance-rule-status data-tone="neutral">Built-in financial intelligence active.</div>
+30026:                 <div class="mcms-status">GitHub hosts public transaction-classification rules and audit policy only. The Toolkit never uploads player ledger data, Discord webhooks or repository credentials. The local archive is indexed by MissionChief player ID/name and can be transferred between devices using Export Archive / Import Archive or the complete private Toolkit backup.</div>
+30027:                 <div class="mcms-status mcms-finance-private-note">Private backup warning: Export All includes your Discord webhook and locally stored MissionChief financial history. Anyone holding the file may post through the webhook and inspect the exported game ledger.</div>
+30028:             </section>
+30029:             <section class="mcms-tab-panel" data-panel="places">
+30030:                 <div class="mcms-section-label">Quick jumps + screen shortcuts</div>
+30031:                 <div class="mcms-quick-list"></div>
+30032:                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
+30033:                 <div class="mcms-bookmark-list"></div>
+30034:                 <div class="mcms-section-label">Saved Map Profiles</div>
+30035:                 <div class="mcms-profile-list" data-profile-list></div>
+30036:                 <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
+30037:             </section>
+30038:             <section class="mcms-tab-panel" data-panel="settings">
+30039:                 <div class="mcms-section-label">Device layout</div>
+30040:                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+30041:                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+30042:                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
+30043:                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+30044:                 <div class="mcms-section-label">Dock position</div>
+30045:                 <div class="mcms-position-grid">${positionButtons}</div>
+30046:                 <div class="mcms-desktop-position-controls">
+30047:                     <div class="mcms-section-label">Fine nudge</div>
+30048:                     <div class="mcms-nudge-grid">
+30049:                         <button class="mcms-small-btn" type="button" data-action="nudge-left">←</button>
+30050:                         <button class="mcms-small-btn" type="button" data-action="nudge-up">↑</button>
+30051:                         <button class="mcms-small-btn" type="button" data-action="nudge-down">↓</button>
+30052:                         <button class="mcms-small-btn" type="button" data-action="nudge-right">→</button>
+30053:                         <button class="mcms-small-btn" type="button" data-action="nudge-reset">0</button>
+30054:                     </div>
+30055:                     <div class="mcms-status mcms-nudge-value">X 0 / Y 0</div>
+30056:                     <div class="mcms-section-label">Menu panel</div>
+30057:                     <div class="mcms-nudge-grid">
+30058:                         <button class="mcms-small-btn" type="button" data-action="panel-left">←</button>
+30059:                         <button class="mcms-small-btn" type="button" data-action="panel-up">↑</button>
+30060:                         <button class="mcms-small-btn" type="button" data-action="panel-down">↓</button>
+30061:                         <button class="mcms-small-btn" type="button" data-action="panel-right">→</button>
+30062:                         <button class="mcms-small-btn" type="button" data-action="panel-reset">↺</button>
+30063:                     </div>
+30064:                 </div>
+30065:                 <div class="mcms-section-label">Input</div>
+30066:                 <div class="mcms-grid-2">
+30067:                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
+30068:                 </div>
+30069:                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
+30070:                 <div class="mcms-section-label">Economy Mode</div>
+30071:                 <div class="mcms-status mcms-economy-status">Use the leaf button beside the map-menu opener. Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+30072:                 <div class="mcms-section-label">Settings Backup</div>
+30073:                 <div class="mcms-config-actions">
+30074:                     <button class="mcms-small-btn" type="button" data-action="export-config" title="Export every toolkit setting, private integration, profile, bookmark and Financial Archive history" aria-label="Export all toolkit settings">Export All</button>
+30075:                     <button class="mcms-small-btn" type="button" data-action="import-config" title="Import a current or legacy toolkit settings backup" aria-label="Import all toolkit settings">Import All</button>
+30076:                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
+30077:                 </div>
+30078:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-config-file>
+30079:                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
+30080:             </section>
+30081:             <div class="mcms-footer">
+30082:                 <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
+30083:                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
+30084:             </div>
+30085:         `;
+30086:         const tabList = panel.querySelector('.mcms-tabs');
+30087:         if (tabList) tabList.setAttribute('role', 'tablist');
+30088:         panel.querySelectorAll('.mcms-tab-btn').forEach(button => {
+30089:             const tab = button.dataset.tab;
+30090:             button.id = `mcms-tab-${tab}`;
+30091:             button.setAttribute('role', 'tab');
+30092:             button.setAttribute('aria-controls', `mcms-tabpanel-${tab}`);
+30093:             button.setAttribute('aria-selected', 'false');
+30094:             button.tabIndex = -1;
+30095:         });
+30096:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+30097:             const tab = tabPanel.dataset.panel;
+30098:             tabPanel.id = `mcms-tabpanel-${tab}`;
+30099:             tabPanel.setAttribute('role', 'tabpanel');
+30100:             tabPanel.setAttribute('aria-labelledby', `mcms-tab-${tab}`);
+
+===== updateUI state projection [30450-30675] =====
+30450:             saveState();
+30451:             updateUI();
+30452:             scheduleAllianceCreditRefresh(0);
+30453:             showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
+30454:             return;
+30455:         }
+30456:         if (handleDiscordFinancialSettingChange(target, setting)) return;
+30457:         if (setting === 'payout-template') {
+30458:             state.payoutFlash.template = PAYOUT_TEMPLATES[target.value] ? target.value : 'gta5';
+30459:             disposePayoutMediaAudio();
+30460:             saveState();
+30461:             updateUI();
+30462:             const hostedCue = PAYOUT_MEDIA_SOUNDS[state.payoutFlash.template];
+30463:             showToast(hostedCue
+30464:                 ? `${payoutTemplateMeta(state.payoutFlash.template).label} · ${hostedCue.label} ready`
+30465:                 : `${payoutTemplateMeta(state.payoutFlash.template).label} payout template`);
+30466:             return;
+30467:         }
+30468:         if (setting === 'payout-threshold') {
+30469:             state.payoutFlash.threshold = Math.round(clamp(target.value, 1000, 1000000000, 10000));
+30470:             saveState();
+30471:             updateUI();
+30472:             showToast(`Payout flash: ${state.payoutFlash.threshold.toLocaleString()}+`);
+30473:             return;
+30474:         }
+30475:         if (setting === 'payout-duration') {
+30476:             state.payoutFlash.durationMs = normalisePayoutFlashDuration(Number(target.value) * 1000);
+30477:             saveState();
+30478:             updateUI();
+30479:             showToast(`Payout flash: ${state.payoutFlash.durationMs / 1000} seconds`);
+30480:             return;
+30481:         }
+30482:         if (setting === 'payout-volume') {
+30483:             state.payoutFlash.soundVolume = clamp(target.value, 0, 1, 0.35);
+30484:             if (payoutMediaAudio && !payoutMediaAudio.paused) payoutMediaAudio.volume = state.payoutFlash.soundVolume;
+30485:             saveState();
+30486:             updateUI();
+30487:             return;
+30488:         }
+30489:         if (setting === 'payout-test-amount') return;
+30490:         if (setting === 'auto-night-start') state.autoNight.nightStart = target.value || '19:00';
+30491:         if (setting === 'auto-day-start') state.autoNight.dayStart = target.value || '07:00';
+30492:         if (setting === 'auto-night-theme') state.autoNight.nightTheme = normaliseTheme(target.value);
+30493:         if (setting === 'auto-day-theme') state.autoNight.dayTheme = normaliseTheme(target.value);
+30494:         if (setting.startsWith('auto-')) {
+30495:             state.autoNight.lastBucket = '';
+30496:             saveState();
+30497:             runAutoNight(true);
+30498:             updateUI();
+30499:         }
+30500:     }
+30501:     function updateUI() {
+30502:         applyRootAttributes();
+30503:         if (state.missionRequirements) scheduleMissionRequirementsScan(0);
+30504:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+30505:         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30506:         const control = document.getElementById(SCRIPT.controlId);
+30507:         const panel = document.getElementById(SCRIPT.panelId);
+30508:         if (control) {
+30509:             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
+30510:             control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
+30511:             control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+30512:             const controlToggleValues = {
+30513:                 allianceMissions: state.visibility.allianceMissions,
+30514:                 myMissions: state.visibility.myMissions,
+30515:                 vehicles: state.visibility.vehicles,
+30516:                 buildings: state.visibility.buildings,
+30517:                 allianceCredits: state.allianceCredits,
+30518:                 missionAge: state.missionAge,
+30519:                 transportWatcher: state.transportWatcher,
+30520:                 unitCommitment: state.unitCommitment,
+30521:                 criticalView: criticalViewActive
+30522:             };
+30523:             control.querySelectorAll('[data-toggle]').forEach(btn => {
+30524:                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
+30525:                 btn.classList.toggle('mcms-on', on);
+30526:                 btn.setAttribute('aria-pressed', String(on));
+30527:                 btn.dataset.mcmsState = on ? 'on' : 'off';
+30528:             });
+30529:             const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
+30530:             if (vehicleStatusButton) {
+30531:                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
+30532:                 vehicleStatusButton.classList.toggle('mcms-on', open);
+30533:                 vehicleStatusButton.setAttribute('aria-pressed', String(open));
+30534:                 vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
+30535:             }
+30536:             const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
+30537:             if (missionAgeWatchButton) {
+30538:                 const open = Boolean(document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open'));
+30539:                 missionAgeWatchButton.classList.toggle('mcms-on', open);
+30540:                 missionAgeWatchButton.setAttribute('aria-pressed', String(open));
+30541:                 missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
+30542:             }
+30543:             const economyButton = control.querySelector('.mcms-economy-btn');
+30544:             if (economyButton) {
+30545:                 const on = Boolean(state.economyMode);
+30546:                 const label = on ? 'Disable Economy Mode' : 'Enable Economy Mode';
+30547:                 economyButton.classList.toggle('mcms-on', on);
+30548:                 economyButton.setAttribute('aria-pressed', String(on));
+30549:                 economyButton.setAttribute('aria-label', label);
+30550:                 economyButton.title = label;
+30551:                 economyButton.dataset.mcmsState = on ? 'on' : 'off';
+30552:             }
+30553:             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+30554:             if (dockToggleButton) {
+30555:                 const open = state.commandBarOpen !== false;
+30556:                 const label = open ? 'Collapse command bar' : 'Expand command bar';
+30557:                 dockToggleButton.classList.toggle('mcms-open', open);
+30558:                 dockToggleButton.setAttribute('aria-expanded', String(open));
+30559:                 dockToggleButton.setAttribute('aria-label', label);
+30560:                 dockToggleButton.title = label;
+30561:                 const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
+30562:                 if (icon) icon.textContent = open ? '▴' : '▾';
+30563:             }
+30564:         }
+30565:         if (!panel) return;
+30566:         refreshTabletModeUi(panel);
+30567:         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
+30568:             const active = btn.dataset.tab === state.activeTab;
+30569:             btn.classList.toggle('mcms-active', active);
+30570:             btn.setAttribute('aria-selected', String(active));
+30571:             btn.tabIndex = active ? 0 : -1;
+30572:         });
+30573:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+30574:             const active = tabPanel.dataset.panel === state.activeTab;
+30575:             tabPanel.classList.toggle('mcms-active', active);
+30576:             tabPanel.hidden = !active;
+30577:         });
+30578:         const panelOpen = panel.classList.contains('mcms-open');
+30579:         panel.setAttribute('aria-hidden', String(!panelOpen));
+30580:         control?.querySelector('.mcms-menu-btn')?.setAttribute('aria-expanded', String(panelOpen));
+30581:         panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
+30582:             const active = btn.dataset.uiTheme === state.uiTheme;
+30583:             btn.classList.toggle('mcms-active', active);
+30584:             btn.setAttribute('aria-pressed', String(active));
+30585:         });
+30586:         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
+30587:         panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
+30588:         const toggleValues = {
+30589:             clean: state.cleanMode,
+30590:             markerFocus: state.markerFocus,
+30591:             missionPulse: state.missionPulse,
+30592:             roadPriority: state.roadPriority,
+30593:             coverage: state.coverage.enabled,
+30594:             heatmap: state.heatmap.enabled,
+30595:             shortcuts: state.shortcuts,
+30596:             autoLoadAllVehicles: state.autoLoadAllVehicles,
+30597:             allianceBuildingsMapBlocker: state.allianceBuildingsMap === false,
+30598:             majorIncidentFeed: state.majorIncidentFeed.enabled,
+30599:             missionLockAudio: state.missionLockAudio,
+30600:             autoNight: state.autoNight.enabled,
+30601:             payoutFlash: state.payoutFlash.enabled,
+30602:             payoutSound: state.payoutFlash.soundEnabled,
+30603:             missionInspector: state.missionInspector,
+30604:             missionValue: state.missionValue,
+30605:             missionRequirements: state.missionRequirements,
+30606: 
+30607:             customVehicleBadges: state.customVehicleBadges,
+30608:             stuckDetector: state.stuckDetector.enabled,
+30609:             missionSpawn: state.missionSpawn.enabled,
+30610:             resourceGap: state.resourceGap.enabled,
+30611:             allianceMissions: state.visibility.allianceMissions,
+30612:             myMissions: state.visibility.myMissions,
+30613:             vehicles: state.visibility.vehicles,
+30614:             buildings: state.visibility.buildings,
+30615:             allianceCredits: state.allianceCredits,
+30616:             missionAge: state.missionAge,
+30617:             transportWatcher: state.transportWatcher,
+30618:             unitCommitment: state.unitCommitment,
+30619:             criticalView: criticalViewActive
+30620:         };
+30621:         panel.querySelectorAll('[data-toggle]').forEach(btn => {
+30622:             const key = btn.dataset.toggle;
+30623:             const on = Boolean(toggleValues[key]);
+30624:             btn.classList.toggle('mcms-on', on);
+30625:             const pill = btn.querySelector('.mcms-pill');
+30626:             if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : key === 'heatmap' ? (on ? `${state.heatmap.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
+30627:         });
+30628:         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
+30629:         if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
+30630:         const radius = panel.querySelector('[data-setting="coverage-radius"]');
+30631:         if (radius) radius.value = String(state.coverage.radiusMi);
+30632:         const heatmapSource = panel.querySelector('[data-setting="heatmap-source"]');
+30633:         if (heatmapSource) heatmapSource.value = state.heatmap.source;
+30634:         const heatmapService = panel.querySelector('[data-setting="heatmap-service"]');
+30635:         if (heatmapService) heatmapService.value = state.heatmap.service;
+30636:         const heatmapRadius = panel.querySelector('[data-setting="heatmap-radius"]');
+30637:         if (heatmapRadius) heatmapRadius.value = String(state.heatmap.radiusMi);
+30638:         const heatmapOpacity = panel.querySelector('[data-setting="heatmap-opacity"]');
+30639:         if (heatmapOpacity) heatmapOpacity.value = String(state.heatmap.opacity);
+30640:         const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
+30641:         if (allianceCreditMinimum) allianceCreditMinimum.value = String(state.allianceCreditMinimum);
+30642:         const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
+30643:         if (transportSweepDelay) transportSweepDelay.value = String(state.transportSweep.delayMs);
+30644:         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
+30645:         if (transportSweepMax) transportSweepMax.value = String(state.transportSweep.maxPerRun);
+30646:         if (panel.classList.contains('mcms-open') && state.activeTab === 'resources') renderTransportSweepPanel();
+30647:         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
+30648:         if (payoutTemplate) payoutTemplate.value = state.payoutFlash.template;
+30649:         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) resourceGapRadius.value = String(state.resourceGap.radiusMi);
+30650:         const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
+30651:         if (stuckThreshold) stuckThreshold.value = String(state.stuckDetector.thresholdMin);
+30652:         const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
+30653:         if (payoutThreshold) payoutThreshold.value = String(state.payoutFlash.threshold);
+30654:         const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
+30655:         if (payoutDuration) payoutDuration.value = String(state.payoutFlash.durationMs / 1000);
+30656:         const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
+30657:         if (payoutVolume) payoutVolume.value = String(state.payoutFlash.soundVolume);
+30658:         const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
+30659:         if (discordWebhook && document.activeElement !== discordWebhook) discordWebhook.value = getDiscordWebhookUrl();
+30660:         const discordName = panel.querySelector('[data-setting="discord-name"]');
+30661:         if (discordName && document.activeElement !== discordName) discordName.value = state.discordReport.webhookName;
+30662:         const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
+30663:         if (discordTopCategories) discordTopCategories.value = String(state.discordReport.topCategories);
+30664:         const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
+30665:         if (discordPeriod) discordPeriod.value = state.discordReport.period;
+30666:         const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
+30667:         if (discordCustomStart && document.activeElement !== discordCustomStart) discordCustomStart.value = state.discordReport.customStart;
+30668:         const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
+30669:         if (discordCustomEnd && document.activeElement !== discordCustomEnd) discordCustomEnd.value = state.discordReport.customEnd;
+30670:         const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
+30671:         if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+30672:         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+30673:         if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+30674:         const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
+30675:         if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+
+===== boot installation sequence [31370-31535] =====
+31370:             }
+31371:         }, {
+31372:             economyIntervalMs: 60 * 1000,
+31373:             economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 30 * 1000 : 60 * 1000
+31374:         });
+31375:         runtimeRegisterTask('critical-countdowns', 1000, () => {
+31376:             if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open')) refreshCriticalClearingCountdowns();
+31377:         }, {
+31378:             intervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 1000 : 60 * 1000,
+31379:             economyIntervalMs: 10000,
+31380:             economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 10000 : 60 * 1000
+31381:         });
+31382:         runtimeRegisterTask('minute-maintenance', 60 * 1000, () => {
+31383:             if (state.missionAge) scheduleMissionAgeRefresh();
+31384:             if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+31385:             refreshVisibleMissionInspector();
+31386:             scheduleOperationalPanelsRender(500);
+31387:             pruneRuntimeCaches();
+31388:         }, {
+31389:             economyIntervalMs: 5 * 60 * 1000,
+31390:             economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
+31391:         });
+31392:         runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
+31393:             if (!state.majorIncidentFeed.enabled) return;
+31394:             recoverMajorIncidentFeed('integrity check');
+31395:         }, {
+31396:             intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
+31397:             economyIntervalMs: 12000,
+31398:             economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
+31399:         });
+31400:         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
+31401:             if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+31402:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31403:         }, {
+31404:             intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+31405:             economyIntervalMs: 45 * 1000,
+31406:             economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+31407:         });
+31408:     }
+31409: 
+31410:     function boot() {
+31411:         if (runtime.destroyed || bootStarted) return;
+31412:         bootStarted = true;
+31413:         bootStartedAt = Date.now();
+31414:         const bootPerformanceStartedAt = startupClock();
+31415:         applyRootAttributes();
+31416:         if (installAllianceBuildingsPageOptimisation()) return;
+31417:         createCleanExit();
+31418:         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+31419:         installMissionMarkerAddHook();
+31420:         installRadioMessageHook();
+31421:         lastObservedCredits = readCurrentCreditTotal();
+31422:         installCreditsUpdateHook();
+31423:         observeCreditValue();
+31424:         installMissionRequirementsWindows();
+31425:         installCustomVehicleBadges();
+31426:         startBootAttemptCoordinator(bootPerformanceStartedAt);
+31427:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+31428:             if (state.economyMode && economyMapMoving) {
+31429:                 economyDeferredDomMutation = true;
+31430:                 return;
+31431:             }
+31432:             let externalMutationFound = false;
+31433:             let addedLeafletMarker = false;
+31434:             let missionChanged = false;
+31435:             let layoutChanged = false;
+31436:             let toolkitUiRemoved = false;
+31437:             for (const mutation of mutations) {
+31438:                 if (mutationBelongsToToolkit(mutation)) continue;
+31439:                 externalMutationFound = true;
+31440:                 if (!addedLeafletMarker && mutationAddsLeafletMarkerIcon(mutation)) {
+31441:                     addedLeafletMarker = true;
+31442:                     missionChanged = true;
+31443:                 }
+31444:                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
+31445:                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
+31446:                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
+31447:                 if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
+31448:             }
+31449:             if (!externalMutationFound) return;
+31450:             missionChanged ||= addedLeafletMarker;
+31451:             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+31452:             if (addedLeafletMarker) {
+31453:                 invalidateMarkerRegistryCaches('all');
+31454:                 scheduleMarkerStateSync(0, false);
+31455:                 if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+31456:             }
+31457:             if (layoutChanged) invalidateMapElementCache();
+31458:             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+31459:             runtimeClearTimeout(mutationTimer);
+31460:             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+31461:             const mutationDelay = startupSettling
+31462:                 ? STARTUP_MUTATION_DEBOUNCE_MS
+31463:                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+31464:             mutationTimer = runtimeSetTimeout(() => {
+31465:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+31466:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+31467:                 const mapElement = getLargestLeafletMap();
+31468:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+31469:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+31470:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+31471:                     connectMainMutationObserver();
+31472:                 }
+31473:                 if (layoutChanged) {
+31474:                     refreshSuppression();
+31475:                     fitControlToMap();
+31476:                     schedulePanelPosition(true, 50);
+31477:                     scheduleCriticalDrawerDock(60);
+31478:                 }
+31479:                 if (missionChanged) {
+31480:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31481:                     scheduleMissionRequirementsScan(35);
+31482:                 }
+31483:             }, mutationDelay);
+31484:         }));
+31485:         mainMutationObserver = observer;
+31486:         runtimeListen(document, 'keydown', handleKeyboard);
+31487:         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
+31488:         runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
+31489:         runtimeListen(document, 'pointerout', handleMissionInspectorPointerOut, true);
+31490:         runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+31491:         runtimeListen(document, 'click', event => {
+31492:             runtimeSetTimeout(refreshSuppression, 0);
+31493:             if (suppressNextOutsideClick) {
+31494:                 event.preventDefault();
+31495:                 event.stopPropagation();
+31496:                 suppressNextOutsideClick = false;
+31497:                 return;
+31498:             }
+31499:             const control = document.getElementById(SCRIPT.controlId);
+31500:             const panel = document.getElementById(SCRIPT.panelId);
+31501:             if (!panel || !panel.classList.contains('mcms-open')) return;
+31502:             if (control && control.contains(event.target)) return;
+31503:             if (panel.contains(event.target)) return;
+31504:             closePanel();
+31505:         }, true);
+31506:         runtimeListen(pageWindow, 'resize', () => {
+31507:             invalidateMapElementCache();
+31508:             applyRootAttributes();
+31509:             refreshTabletModeUi();
+31510:             scheduleVisualViewportStabilisation('window-resize');
+31511:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+31512:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+31513:             if (dragState) return;
+31514:             refreshSuppression();
+31515:             fitControlToMap();
+31516:             schedulePanelPosition(true, 40);
+31517:             scheduleCriticalDrawerDock(30);
+31518:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+31519:             scheduleMajorIncidentFeedLayout();
+31520:         });
+31521:         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+31522:         runtimeListen(pageWindow,'orientationchange',()=>scheduleVisualViewportStabilisation('orientationchange'));
+31523:         if(pageWindow.visualViewport){
+31524:             runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
+31525:             runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
+31526:         }
+31527:         applyVisualViewportGeometry();
+31528:         scheduleVisualViewportStabilisation('boot-viewport');
+31529:         try {
+31530:             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
+31531:             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
+31532:         } catch (err) {}
+31533:         runtimeListen(pageWindow, 'focus', () => {
+31534:             scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
+31535:             refreshSuppression();
+
+===== shutdown and final startup [31535-31653] =====
+31535:             refreshSuppression();
+31536:             fitControlToMap();
+31537:             schedulePanelPosition(true, 40);
+31538:             installRadioMessageHook();
+31539:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+31540:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31541:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31542:             scheduleOperationalPanelsRender(500);
+31543:             scheduleMajorIncidentFeedRender(80);
+31544:         });
+31545:         const recoverUiAfterNavigation = event => {
+31546:             runtimeSetTimeout(() => {
+31547:                 if (runtime.destroyed || document.hidden) return;
+31548:                 invalidateMapElementCache();
+31549:                 ensureUi();
+31550:                 connectMainMutationObserver();
+31551:                 recoverMajorIncidentFeed(event?.type || 'navigation');
+31552:             }, 120);
+31553:             runtimeSetTimeout(() => {
+31554:                 if (runtime.destroyed || document.hidden) return;
+31555:                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+31556:             }, 650);
+31557:         };
+31558:         runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
+31559:         runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
+31560:         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+31561:         registerBootMaintenanceTasks();
+31562:         runtimeListen(document, 'visibilitychange', () => {
+31563:             if (document.hidden) return;
+31564:             runtimeWakeTaskScheduler(0);
+31565:             ensureUi();
+31566:             scheduleVersionStatusCheck(0, false);
+31567:             refreshSuppression();
+31568:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+31569:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31570:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+31571:             scheduleMajorIncidentFeedRender(80);
+31572:         });
+31573:         runtimeSetTimeout(() => {
+31574:             if (document.hidden || !operationalStartupComplete) return;
+31575:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+31576:         }, 2200);
+31577:         runtimeOnCleanup(() => {
+31578:             stopAutoLoadAllVehicles();
+31579:             transportSweepRuntime.stopRequested = true;
+31580:             document.removeEventListener('mousemove', movePanelDrag, true);
+31581:             document.removeEventListener('mouseup', endPanelDrag, true);
+31582:             document.removeEventListener('touchmove', movePanelDrag, true);
+31583:             document.removeEventListener('touchend', endPanelDrag, true);
+31584:             document.removeEventListener('touchcancel', endPanelDrag, true);
+31585:             document.documentElement.style.cursor = '';
+31586:             if (document.body) document.body.style.userSelect = '';
+31587:             restoreEconomyLayers();
+31588:             restoreLeafletEconomyPolicy();
+31589:             disposeEconomyCanvasRenderer();
+31590:             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+31591:             majorIncidentFeedLayoutTimer = null;
+31592:             const originalBuildingVisibility = state.visibility.buildings;
+31593:             try {
+31594:                 state.visibility.buildings = true;
+31595:                 synchronisePersonalBuildingVisibility(cachedMap);
+31596:             } catch (err) {
+31597:                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+31598:             } finally {
+31599:                 state.visibility.buildings = originalBuildingVisibility;
+31600:             }
+31601:             try { creditsValueObserver?.disconnect(); } catch (err) {}
+31602:             removeMajorIncidentFeed();
+31603:             clearMissionLockOnEffect();
+31604:             clearAllianceCreditLabels();
+31605:             clearMissionAgeLabels();
+31606:             clearUnitCommitmentLabels();
+31607:             clearTransportWatcherLabels();
+31608:             clearResourceGapLabels();
+31609:             clearStuckMissionLabels();
+31610:             clearCoverageHeatmap();
+31611:             if (coverageGroup) {
+31612:                 try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+31613:                 coverageGroup = null;
+31614:             }
+31615:             stopPayoutFlashAnimation();
+31616:             disposePayoutMediaAudio();
+31617:             try { payoutAudioContext?.close?.(); } catch (err) {}
+31618:             clearDiscordPreviewChartUrl();
+31619:             closeHelpCenter({ restoreFocus: false });
+31620:             disposeVersionStatus();
+31621:             helpGuideDocumentCache = '';
+31622:             helpGuideLoadedAt = 0;
+31623:             stopDesktopPanelWorkspaceObservation();
+31624:             runtimeUntrackObserver(desktopPanelResizeObserver);
+31625:             desktopPanelResizeObserver = null;
+31626:             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+31627:             majorIncidentFeedResizeObserver = null;
+31628:             majorIncidentFeedObservedElement = null;
+31629:             missionSnapshotCache.clear();
+31630:             missionPanelCache.clear();
+31631:             missionOverlayVersions.clear();
+31632:             markerRegistryCache.clear();
+31633:             criticalMissionStableCache.clear();
+31634:             removeOldInstances();
+31635:             const root = document.documentElement;
+31636:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+31637:         });
+31638:         runtimeSetTimeout(() => runAutoNight(true), 180);
+31639:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+31640:         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+31641:     }
+31642: 
+31643:     function scheduleBoot() {
+31644:         if (runtime.destroyed || bootStarted) return;
+31645:         runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+31646:     }
+31647: 
+31648:     if (document.readyState === 'loading') {
+31649:         runtimeListen(document, 'DOMContentLoaded', scheduleBoot, { once: true });
+31650:     } else {
+31651:         scheduleBoot();
+31652:     }
+31653: })();

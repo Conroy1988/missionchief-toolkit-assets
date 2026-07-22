@@ -98,6 +98,12 @@ issue353ClickRegistration.listener({ target: issue353Unrelated });
 assert.strictEqual(timeoutCalls.length, issue353UnrelatedTimeouts, 'unrelated clicks do not schedule Matrix refreshes');
 """
 test = test[:test_start] + new_test + test[test_end:]
+test = replace_once(
+    test,
+    "assert(listenedEvents.filter(event => event.type === 'change').length === 1, 'delegated checkbox change listener is installed once');",
+    "assert(listenedEvents.filter(event => event.target === lifecycleDoc && event.type === 'click').length === 1, 'delegated selection click listener is installed once per document');",
+    "delegated listener lifecycle assertion",
+)
 TEST.write_text(test, encoding="utf-8")
 
 changelog = CHANGELOG.read_text(encoding="utf-8")

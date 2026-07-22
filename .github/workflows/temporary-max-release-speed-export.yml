@@ -41,6 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git add -N .github/workflows/auto-release-after-validation.yml
           mapfile -t changed < <(git diff --name-only | sort)
           expected=(
             .github/actions-security-policy.json

@@ -1,0 +1,15 @@
+returncode=0
+
+ISSUE368_PRESENTATION={"stateName":"success","widthMode":"standard","html":"<div class=\"mcms-req-head\"><div class=\"mcms-req-title\"><i aria-hidden=\"true\"></i><span>Mission Requirements</span></div><span class=\"mcms-req-summary\">All 4 covered</span><button type=\"button\" class=\"mcms-req-collapse\" data-mcms-requirements-collapse aria-label=\"Collapse mission requirements\" aria-expanded=\"true\">⌃</button></div><div class=\"mcms-req-body\"><div class=\"mcms-req-fallback mcms-req-all-covered\" role=\"status\"><span class=\"mcms-req-fallback-message\">All currently known requirements are covered.</span></div></div>"}
+Mission requirements runtime fixtures passed
+ISSUE368_PRESENTATION={"stateName":"success","widthMode":"standard","html":"<div class=\"mcms-req-head\"><div class=\"mcms-req-title\"><i aria-hidden=\"true\"></i><span>Mission Requirements</span></div><span class=\"mcms-req-summary\">All 4 covered</span><button type=\"button\" class=\"mcms-req-collapse\" data-mcms-requirements-collapse aria-label=\"Collapse mission requirements\" aria-expanded=\"true\">⌃</button></div><div class=\"mcms-req-body\"><div class=\"mcms-req-fallback mcms-req-all-covered\" role=\"status\"><span class=\"mcms-req-fallback-message\">All currently known requirements are covered.</span></div></div>"}
+Mission requirements runtime fixtures passed
+LSSM cross-source compatibility audit passed against 4f731e1d6d009cbf2129530fb31d10177b21a52a
+- missingLssmAliases: 0
+- missionHelperLabelsMissingParserAlias: 15
+- vehicleCaptionsWithoutCapability: 14
+- expectedVehicleIdsMissing: 0
+- toolkitOnlyVehicleIds: 0
+- ambiguousLabels: 0
+- drift: 0
+Prepared Toolkit v4.20.37 authoritative-empty Mission Requirements hotfix

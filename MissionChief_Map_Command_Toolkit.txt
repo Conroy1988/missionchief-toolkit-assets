@@ -22613,7 +22613,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true);
         panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
         panel.dataset.minified = context.minified === true ? 'true' : 'false';
-        panel.innerHTML = rendered.html;
+        operationalReplaceContent(panel, rendered.html);
         context.fingerprint = fingerprint;
     }
 
@@ -22644,7 +22644,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         try { context.observer?.disconnect?.(); } catch (error) {}
         context.boundRequirementRoot = requirementRoot;
         context.observedRootCount = roots.length;
-        context.observer = new MutationObserver(() => operationalRequirementsScheduleContext(context, 25));
+        const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;
+        context.observer = new OperationalMutationObserver(() => operationalRequirementsScheduleContext(context, 25));
         for (const root of roots) {
             context.observer.observe(root, {
                 childList: true,
@@ -22755,17 +22756,24 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
     }
-    function operationalWindowSyncSettingsUi(panel = document.getElementById(SCRIPT.panelId)) {
+    function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) {
         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
             const value = operationalFeatureValue(control.dataset.operationalSetting);
             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
         });
     }
+    const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
+    function operationalReplaceContent(node, html) {
+        if (!node) return;
+        node.replaceChildren();
+        const content = String(html ?? '');
+        if (content) node.insertAdjacentHTML('beforeend', content);
+    }
     function operationalFeatureStyle(doc) {
-        if (doc.getElementById?.('mcms-operational-feature-style')) return;
+        if (operationalQuery(doc, `#${OP_FEATURE_STYLE_ID}`)) return;
         const style = doc.createElement('style');
-        style.id = 'mcms-operational-feature-style';
+        style.id = OP_FEATURE_STYLE_ID;
         style.textContent = `
             [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
             .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
@@ -22782,7 +22790,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             bar.className = 'mcms-operational-bar';
             anchor?.parentNode?.insertBefore(bar, anchor);
         }
-        bar.innerHTML = '';
+        operationalReplaceContent(bar, '');
         return bar;
     }
     function operationalPill(doc, text, kind) {
@@ -22916,7 +22924,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const toolbar = operationalFeatureBar(doc, root.firstChild || root, 'list-toolbar'); root.insertBefore(toolbar, root.firstChild);
         if (settings.sortMissions) {
             const select = operationalFeatureOwn(doc.createElement('select'), 'list-sort'); select.className = 'form-control input-sm';
-            select.innerHTML = '<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>'; select.value = settings.sortMissionsType || '';
+            operationalReplaceContent(select, '<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>'); select.value = settings.sortMissionsType || '';
             select.onchange = () => { settings.sortMissionsType = select.value; saveState(); scheduleOperationalSuiteScan(0); }; toolbar.appendChild(select);
         }
         if (settings.collapsibleMissionsAllButton) {
@@ -22945,7 +22953,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             if (settings.currentPrisoners && (!settings.hideZeroCurrentPrisoners || record.prisoners)) badges.push(`Prisoners ${record.prisoners}`);
             if (settings.averageCredits && record.credits) badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);
             if (settings.remainingTime && record.time) badges.push(`Time ${record.time}s`);
-            if (badges.length) { const badge = operationalFeatureOwn(doc.createElement('div'), `list-badges-${record.id}`); badge.className = 'mcms-operational-bar'; badge.innerHTML = badges.map(text => `<span class="mcms-operational-pill">${operationalEscape(text)}</span>`).join(''); record.row.appendChild(badge); }
+            if (badges.length) { const badge = operationalFeatureOwn(doc.createElement('div'), `list-badges-${record.id}`); badge.className = 'mcms-operational-bar'; operationalReplaceContent(badge, badges.map(text => `<span class="mcms-operational-pill">${operationalEscape(text)}</span>`).join('')); record.row.appendChild(badge); }
         });
         if (settings.sortMissions) operationalMissionListComputeOrder(records, settings.sortMissionsType, settings.sortMissionsDirection, settings.starredMissions).forEach(record => record.row.parentNode?.appendChild(record.row));
     }

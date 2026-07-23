@@ -40,14 +40,14 @@ for forbidden in [
 start = source.index("// Issue #378 enhanced requirements runtime renderer.")
 end = source.index("// Issue #378 end enhanced requirements runtime renderer.", start)
 block = source[start:end]
-if block.count("new MutationObserver(") != 1:
-    raise SystemExit("Issue #378 renderer must use one reusable scoped MutationObserver per context")
+if block.count("new OperationalMutationObserver(") != 1 or "doc.defaultView?.MutationObserver || pageWindow.MutationObserver" not in block:
+    raise SystemExit("Issue #378 renderer must use one reusable scoped MutationObserver alias per context")
 if "doc.addEventListener('change', context.changeHandler, true)" not in block:
     raise SystemExit("Issue #378 renderer checkbox change listener is missing")
 if "doc.removeEventListener('change', context.changeHandler, true)" not in source:
     raise SystemExit("Issue #378 renderer checkbox listener teardown is missing")
-if "panel.innerHTML = rendered.html" not in block:
-    raise SystemExit("Issue #378 renderer output assignment is missing")
+if "operationalReplaceContent(panel, rendered.html)" not in block:
+    raise SystemExit("Issue #378 renderer bounded output replacement is missing")
 if "requirementRoot.parentNode?.insertBefore(panel, requirementRoot)" not in block:
     raise SystemExit("Issue #378 renderer must remain in normal document flow")
 

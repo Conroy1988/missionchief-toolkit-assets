@@ -1,0 +1,10 @@
+ISSUE391_RETIREMENT_PREFLIGHT_FAILURE_V2
+returncode=1
+
+=== STDOUT ===
+
+=== STDERR ===
+Traceback (most recent call last):
+  File "/tmp/issue391-retirement-diagnostic-v2-n64b42k3/repo/.github/development-packages/issue391-retire-matrix.py", line 117, in <module>
+    raise RuntimeError(f"shared capability declaration count changed: {name}")
+RuntimeError: shared capability declaration count changed: MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE

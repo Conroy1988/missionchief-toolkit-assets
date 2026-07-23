@@ -15,25 +15,32 @@ FINAL_REL = Path(".github/development-packages/issue391-update-post-retirement-s
 
 text = RETIRE.read_text(encoding="utf-8")
 
-old_capture = '''old_block = source[start:end]
+old_boundary = '''start = source.index(start_marker)
+end = source.index(end_marker, start)
+old_block = source[start:end]
 if len(old_block.splitlines()) != 1395:
     raise RuntimeError(f"Matrix retirement boundary drifted: {len(old_block.splitlines())} lines")
 
 shared_names = (
 '''
-new_capture = '''old_block = source[start:end]
-if len(old_block.splitlines()) != 1395:
-    raise RuntimeError(f"Matrix retirement boundary drifted: {len(old_block.splitlines())} lines")
-
+new_boundary = '''start = source.index(start_marker)
+end = source.index(end_marker, start)
 settings_handler_start = source.index("    function handleOperationalWindowSettingChange")
 settings_handler_end = source.index("    function operationalFeatureStyle", settings_handler_start)
-preserved_operational_settings_handler = source[settings_handler_start:settings_handler_end] if start <= settings_handler_start < end else ""
+preserved_operational_settings_handler = source[settings_handler_start:settings_handler_end]
+if settings_handler_start < start:
+    source = source[:settings_handler_start] + source[settings_handler_end:]
+    start = source.index(start_marker)
+    end = source.index(end_marker, start)
+old_block = source[start:end]
+if len(old_block.splitlines()) != 1395:
+    raise RuntimeError(f"Matrix retirement boundary drifted: {len(old_block.splitlines())} lines")
 
 shared_names = (
 '''
-if text.count(old_capture) != 1:
-    raise RuntimeError("operational settings handler capture anchor drifted")
-text = text.replace(old_capture, new_capture, 1)
+if text.count(old_boundary) != 1:
+    raise RuntimeError(f"operational settings handler boundary anchor drifted: {text.count(old_boundary)}")
+text = text.replace(old_boundary, new_boundary, 1)
 
 insertion_anchor = '    + "".join(shared)\n'
 if text.count(insertion_anchor) != 1:
@@ -77,8 +84,9 @@ with tempfile.TemporaryDirectory(prefix="issue391-preserve-settings-handler-") a
         raise SystemExit("Operational settings handler preservation failed full retirement sandbox")
 
 for obsolete in (
-    ROOT / ".github" / "development-packages" / "issue391-preserve-handler-diagnostic.py",
+    ROOT / ".github" / "development-packages" / "issue391-preserve-handler-diagnostic-v2.py",
     ROOT / ".github" / "diagnostics" / "issue391-preserve-handler-failure.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-preserve-handler-failure-v2.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-setting-router-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-settings-slice-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-suite-tail-map.txt",
@@ -86,4 +94,4 @@ for obsolete in (
 ):
     obsolete.unlink(missing_ok=True)
 
-print("Operational settings handler preserved; complete Matrix-retirement sandbox passed.")
+print("Operational settings handler relocated and preserved; complete Matrix-retirement sandbox passed.")

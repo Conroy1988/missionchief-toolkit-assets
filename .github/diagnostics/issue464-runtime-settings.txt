@@ -1,0 +1,1532 @@
+ISSUE #464 TOOLKIT RUNTIME AND SETTINGS DIAGNOSTIC
+source_bytes=2004970
+source_lines=31851
+
+
+====================================================================================================
+// context for 'const OPERATIONAL_SUITE_SETTINGS_VERSION'; lines 1079-1194
+01079: 
+01080:     const QUICK_PLACES = [
+01081:         { id: 'edi', label: 'EDI', name: 'Edinburgh', lat: 55.9533, lng: -3.1883, zoom: 11 },
+01082:         { id: 'fife', label: 'FIFE', name: 'Fife', lat: 56.2082, lng: -3.1495, zoom: 10 },
+01083:         { id: 'glas', label: 'GLAS', name: 'Glasgow', lat: 55.8642, lng: -4.2518, zoom: 11 },
+01084:         { id: 'dund', label: 'DUND', name: 'Dundee', lat: 56.4620, lng: -2.9707, zoom: 11 },
+01085:         { id: 'stir', label: 'STIR', name: 'Stirling', lat: 56.1165, lng: -3.9369, zoom: 11 }
+01086:     ];
+01087: 
+01088: 
+01089:     const SMART_BOOKMARK_LABEL_MAX = 12;
+01090:     const SMART_BOOKMARK_SINGLE_WORD_MAX = 5;
+01091:     const SMART_BOOKMARK_WORDS = Object.freeze({
+01092:         edinburgh: 'EDIN', glasgow: 'GLA', london: 'LDN', manchester: 'MAN', liverpool: 'LIV',
+01093:         birmingham: 'BHM', newcastle: 'NCL', aberdeen: 'ABDN', dundee: 'DND', stirling: 'STIR',
+01094:         perth: 'PER', fife: 'FIFE', wakefield: 'WKFD', livingston: 'LVSTN', kirkcaldy: 'KRKDY',
+01095:         dunfermline: 'DNFRM', musselburgh: 'MSLBG', bonnyrigg: 'BNYRG', bathgate: 'BTHGT',
+01096:         dalkeith: 'DLKTH', leith: 'LEITH', paisley: 'PSLY', ayr: 'AYR', inverness: 'INV',
+01097:         centre: 'CTR', center: 'CTR', station: 'STN', headquarters: 'HQ', airport: 'AP',
+01098:         hospital: 'HOSP', fire: 'FIRE', police: 'POL', ambulance: 'AMB', training: 'TRG',
+01099:         control: 'CTRL', dispatch: 'DSP', operations: 'OPS', response: 'RSP', depot: 'DPT',
+01100:         district: 'DIST', central: 'CEN', north: 'N', south: 'S', east: 'E', west: 'W',
+01101:         northeast: 'NE', northwest: 'NW', southeast: 'SE', southwest: 'SW',
+01102:         northern: 'N', southern: 'S', eastern: 'E', western: 'W'
+01103:     });
+01104:     const SMART_BOOKMARK_STOP_WORDS = new Set(['the', 'of', 'and', 'at', 'in', 'for', 'on', 'to']);
+01105:     const SMART_BOOKMARK_OPTIONAL_WORDS = new Set(['city', 'county', 'area', 'region']);
+01106: 
+01107:     const SUPPRESSION_SELECTORS = [
+01108:         '.modal.show', '.modal.in', '.modal-backdrop', '.bootbox.modal',
+01109:         '[role="dialog"][aria-modal="true"]', '.popover.show', '.popover.in',
+01110:         '.dropdown-menu.show', '.dropdown.open > .dropdown-menu', '.ui-dialog',
+01111:         '.fancybox-overlay', '#fancybox-wrap'
+01112:     ];
+01113: 
+01114:     const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
+01115:     let state = loadState();
+01116:     let cachedMap = null;
+01117:     let cachedMapElement = null;
+01118:     let cachedMapElementCheckedAt = 0;
+01119:     let mapDiscoveryLastAttempt = 0;
+01120:     const markerRegistryCache = new Map();
+01121:     let markerRegistryRevision = 0;
+01122:     let missionRegistryRevision = 0;
+01123:     let vehicleRegistryRevision = 0;
+01124:     let buildingRegistryRevision = 0;
+01125:     let vehicleDataRevision = 0;
+01126:     let missionMarkerIndexCache = { revision: -1, registry: null, markers: [], byId: new Map() };
+01127:     let personalVehicleRecordsCache = { vehicleRevision: -1, markerRevision: -1, apiReady: false, createdAt: 0, records: [] };
+01128:     let cachedUserId = null;
+01129:     let cachedUserIdReadAt = 0;
+01130:     let personalBuildingIdsCache = { revision: -1, userId: null, createdAt: 0, values: new Set() };
+01131:     let missionIconMarkerCache = new WeakMap();
+01132:     let panelPositionTimer = null;
+01133:     let coverageRenderSignature = '';
+01134:     let heatmapRenderSignature = '';
+01135:     let heatmapSourceCache = { key: '', createdAt: 0, points: [] };
+01136:     let majorIncidentFeedRenderSignature = '';
+01137:     let majorIncidentFeedRenderTimer = null;
+01138:     let majorIncidentFeedLayoutFrame = null;
+01139:     let majorIncidentFeedLayoutTimer = null;
+01140:     let majorIncidentFeedMotionTimer = null;
+01141:     let majorIncidentFeedMotionRevision = 0;
+01142:     let majorIncidentFeedResizeObserver = null;
+01143:     let majorIncidentFeedObservedElement = null;
+01144:     let missionInspectorLastPosition = '';
+01145:     let missionInspectorTooltipCache = { marker: null, createdAt: 0, rect: null };
+01146:     const missionLifecycleLastSeen = new Map();
+01147:     let coverageGroup = null;
+01148:     let mutationTimer = null;
+01149:     let classifyTimer = null;
+01150:     let markerStateSyncTimer = null;
+01151:     let markerStateTrailingTimer = null;
+01152:     let coverageTimer = null;
+01153:     let fitTimer = null;
+01154:     let dragState = null;
+01155:     let suppressNextOutsideClick = false;
+01156:     const hiddenPersonalBuildingLayers = new Set();
+01157:     const personalBuildingLayerOpacity = new Map();
+01158:     let enforcingPersonalBuildingVisibility = false;
+01159:     const economyHiddenVehicleLayers = new Set();
+01160:     const economyHiddenBuildingLayers = new Set();
+01161:     const economyLeafletOptionSnapshots = new Map();
+01162:     let economyLayerSyncTimer = null;
+01163:     let economyLayerEnforcement = false;
+01164:     let economyMapMoving = false;
+01165:     let economyDeferredMapRefresh = false;
+01166:     let economyDeferredDomMutation = false;
+01167:     let economyCanvasRenderer = null;
+01168:     let heatmapGroup = null;
+01169:     let heatmapTimer = null;
+01170:     let allianceCreditGroup = null;
+01171:     let allianceCreditTimer = null;
+01172:     let missionAgeGroup = null;
+01173:     let missionAgeTimer = null;
+01174:     let unitCommitmentGroup = null;
+01175:     let unitCommitmentTimer = null;
+01176:     let transportWatcherGroup = null;
+01177:     let transportWatcherTimer = null;
+01178:     let resourceGapGroup = null;
+01179:     let resourceGapTimer = null;
+01180:     let missionSnapshotTimer = null;
+01181:     let bootStarted = false;
+01182:     let bootStartedAt = 0;
+01183:     let operationalStartupStarted = false;
+01184:     let operationalStartupComplete = false;
+01185:     let startupDataPassActive = false;
+01186:     let mainMutationObserver = null;
+01187:     let mainMutationObserverFallbackActive = false;
+01188:     let settingsPanelActivated = false;
+01189:     let opsRefreshTimer = null;
+01190:     let payoutFlashTimer = null;
+01191:     let toastFlashTimer = null;
+01192:     let payoutFlashFallbackInterval = null;
+01193:     let payoutFlashAnimations = [];
+01194:     let payoutAmountAnimationFrame = null;
+
+====================================================================================================
+// context for 'Toolkit-native operational controls'; lines 22866-22981
+22866:     }
+22867:     function operationalFeatureNumber(node, names) {
+22868:         for (const name of names) {
+22869:             const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
+22870:             if (Number.isFinite(parsed)) return parsed;
+22871:         }
+22872:         return 0;
+22873:     }
+22874:     function operationalFeatureOwn(node, kind) {
+22875:         node?.setAttribute?.(OP_FEATURE_ATTR, kind);
+22876:         return node;
+22877:     }
+22878:     function operationalFeatureRemove(context, prefix = '') {
+22879:         const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+22880:         operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+22881:     }
+22882: 
+22883:     function operationalWindowSettingsMarkup() {
+22884:         const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+22885:             <details class="mcms-operational-settings-group" open>
+22886:                 <summary>${OP_LABELS[group]}</summary>
+22887:                 ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+22888:             </details>`).join('');
+22889:         const advanced = [
+22890:             ['requirements.viewMode', 'Requirements view', 'table,text'],
+22891:             ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+22892:             ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+22893:             ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+22894:             ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+22895:         ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+22896:         const json = [
+22897:             'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+22898:             'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+22899:             'missionList.shareMissionTypes','missionList.eventMissions'
+22900:         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+22901:         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+22902:     }
+22903:     function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) {
+22904:         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+22905:             const value = operationalFeatureValue(control.dataset.operationalSetting);
+22906:             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+22907:             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+22908:         });
+22909:     }
+22910:     const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
+22911:     function operationalReplaceContent(node, html) {
+22912:         if (!node) return;
+22913:         node.replaceChildren();
+22914:         const content = String(html ?? '');
+22915:         if (content) node.insertAdjacentHTML('beforeend', content);
+22916:     }
+22917:     function operationalFeatureStyle(doc) {
+22918:         if (operationalQuery(doc, `#${OP_FEATURE_STYLE_ID}`)) return;
+22919:         const style = doc.createElement('style');
+22920:         style.id = OP_FEATURE_STYLE_ID;
+22921:         style.textContent = `
+22922:             [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
+22923:             .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
+22924:             .mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden{display:none!important}
+22925:             .mcms-operational-arr-match{outline:2px solid var(--mcms-arr-colour,#008000);outline-offset:1px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}.mcms-operational-json-row{display:grid;gap:4px;margin:8px 0}
+22926:             @media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}}
+22927:         `;
+22928:         (doc.head || doc.documentElement)?.appendChild(style);
+22929:     }
+22930:     function operationalFeatureBar(doc, anchor, kind) {
+22931:         let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
+22932:         if (!bar) {
+22933:             bar = operationalFeatureOwn(doc.createElement('div'), kind);
+22934:             bar.className = 'mcms-operational-bar';
+22935:             anchor?.parentNode?.insertBefore(bar, anchor);
+22936:         }
+22937:         operationalReplaceContent(bar, '');
+22938:         return bar;
+22939:     }
+22940:     function operationalPill(doc, text, kind) {
+22941:         const node = operationalFeatureOwn(doc.createElement('span'), kind);
+22942:         node.className = 'mcms-operational-pill'; node.textContent = text; return node;
+22943:     }
+22944: 
+22945:     function operationalCallWindowApply(context) {
+22946:         const settings = state.operationalWindow?.callWindow || {};
+22947:         const doc = context.doc;
+22948:         const path = String(doc.defaultView?.location?.pathname || '');
+22949:         if (!settings.enabled || !/^\/missions\/\d+\/?$/u.test(path) || operationalQuery(doc, '[data-module="extendedCallWindow"]')) {
+22950:             operationalFeatureRemove(context, 'call-'); return;
+22951:         }
+22952:         operationalFeatureStyle(doc);
+22953:         operationalFeatureRemove(context, 'call-');
+22954:         const anchor = operationalQuery(doc, '#missing_text, #mission_general_info, .mission_general_info, h1');
+22955:         if (!anchor) return;
+22956:         const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');
+22957:         const patients = operationalQueryAll(doc, '#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');
+22958:         const vehicles = operationalQueryAll(doc, '#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr');
+22959:         const selected = operationalRequirementsSelectedSnapshot(doc);
+22960:         const arr = operationalQueryAll(doc, '[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);
+22961:         if (settings.patientSummary) bar.appendChild(operationalPill(doc, `Patients ${patients.length}`, 'call-patients'));
+22962:         if (settings.vehicleCounter) bar.appendChild(operationalPill(doc, `Vehicles ${vehicles.length}`, 'call-vehicles'));
+22963:         if (settings.selectedVehicleCounter || settings.stagingAreaSelectedCounter) bar.appendChild(operationalPill(doc, `Selected ${selected.length}`, 'call-selected'));
+22964:         if (settings.playerCounter) {
+22965:             const players = new Set(vehicles.map(row => row.dataset?.userId || row.getAttribute?.('data-user-id')).filter(Boolean));
+22966:             bar.appendChild(operationalPill(doc, `Players ${players.size}`, 'call-players'));
+22967:         }
+22968:         if (settings.arrCounter) bar.appendChild(operationalPill(doc, `ARR ${arr.length}`, 'call-arr-count'));
+22969:         if (settings.generationDate || settings.alarmTime) {
+22970:             const time = operationalQuery(doc, 'time[datetime],[data-generation-date],[data-alarm-time]');
+22971:             const raw = time?.getAttribute?.('datetime') || time?.getAttribute?.('data-generation-date') || time?.getAttribute?.('data-alarm-time');
+22972:             if (raw) bar.appendChild(operationalPill(doc, `${settings.alarmTime ? 'Alarm' : 'Generated'} ${raw}`, 'call-time'));
+22973:         }
+22974:         if (settings.collapsiblePatients && patients.length >= Number(settings.collapsiblePatientsMinPatients || 0)) {
+22975:             const button = operationalFeatureOwn(doc.createElement('button'), 'call-patient-toggle');
+22976:             button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Toggle patients';
+22977:             button.onclick = () => patients.forEach(node => node.classList.toggle('mcms-operational-patient-hidden'));
+22978:             bar.appendChild(button);
+22979:         }
+22980:         const search = (label, rows, kind) => {
+22981:             const input = operationalFeatureOwn(doc.createElement('input'), kind);
+
+====================================================================================================
+// context for 'data-operational-setting'; lines 22852-22967
+22852:         return value;
+22853:     }
+22854:     function operationalFeatureValue(path) {
+22855:         return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
+22856:     }
+22857:     function operationalFeatureSet(path, value) {
+22858:         const parts = String(path || '').split('.').filter(Boolean);
+22859:         let target = state.operationalWindow;
+22860:         for (const part of parts.slice(0, -1)) target = target[part] ??= {};
+22861:         target[parts.at(-1)] = value;
+22862:     }
+22863:     function operationalFeatureMissionId(row) {
+22864:         return String(row?.dataset?.missionId || row?.id?.match(/mission[_-](\d+)/u)?.[1]
+22865:             || operationalQuery(row, 'a[href*="/missions/"]')?.href?.match(/\/missions\/(\d+)/u)?.[1] || '');
+22866:     }
+22867:     function operationalFeatureNumber(node, names) {
+22868:         for (const name of names) {
+22869:             const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
+22870:             if (Number.isFinite(parsed)) return parsed;
+22871:         }
+22872:         return 0;
+22873:     }
+22874:     function operationalFeatureOwn(node, kind) {
+22875:         node?.setAttribute?.(OP_FEATURE_ATTR, kind);
+22876:         return node;
+22877:     }
+22878:     function operationalFeatureRemove(context, prefix = '') {
+22879:         const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+22880:         operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+22881:     }
+22882: 
+22883:     function operationalWindowSettingsMarkup() {
+22884:         const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+22885:             <details class="mcms-operational-settings-group" open>
+22886:                 <summary>${OP_LABELS[group]}</summary>
+22887:                 ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+22888:             </details>`).join('');
+22889:         const advanced = [
+22890:             ['requirements.viewMode', 'Requirements view', 'table,text'],
+22891:             ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+22892:             ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+22893:             ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+22894:             ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+22895:         ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+22896:         const json = [
+22897:             'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+22898:             'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+22899:             'missionList.shareMissionTypes','missionList.eventMissions'
+22900:         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+22901:         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+22902:     }
+22903:     function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) {
+22904:         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+22905:             const value = operationalFeatureValue(control.dataset.operationalSetting);
+22906:             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+22907:             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+22908:         });
+22909:     }
+22910:     const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
+22911:     function operationalReplaceContent(node, html) {
+22912:         if (!node) return;
+22913:         node.replaceChildren();
+22914:         const content = String(html ?? '');
+22915:         if (content) node.insertAdjacentHTML('beforeend', content);
+22916:     }
+22917:     function operationalFeatureStyle(doc) {
+22918:         if (operationalQuery(doc, `#${OP_FEATURE_STYLE_ID}`)) return;
+22919:         const style = doc.createElement('style');
+22920:         style.id = OP_FEATURE_STYLE_ID;
+22921:         style.textContent = `
+22922:             [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
+22923:             .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
+22924:             .mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden{display:none!important}
+22925:             .mcms-operational-arr-match{outline:2px solid var(--mcms-arr-colour,#008000);outline-offset:1px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}.mcms-operational-json-row{display:grid;gap:4px;margin:8px 0}
+22926:             @media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}}
+22927:         `;
+22928:         (doc.head || doc.documentElement)?.appendChild(style);
+22929:     }
+22930:     function operationalFeatureBar(doc, anchor, kind) {
+22931:         let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
+22932:         if (!bar) {
+22933:             bar = operationalFeatureOwn(doc.createElement('div'), kind);
+22934:             bar.className = 'mcms-operational-bar';
+22935:             anchor?.parentNode?.insertBefore(bar, anchor);
+22936:         }
+22937:         operationalReplaceContent(bar, '');
+22938:         return bar;
+22939:     }
+22940:     function operationalPill(doc, text, kind) {
+22941:         const node = operationalFeatureOwn(doc.createElement('span'), kind);
+22942:         node.className = 'mcms-operational-pill'; node.textContent = text; return node;
+22943:     }
+22944: 
+22945:     function operationalCallWindowApply(context) {
+22946:         const settings = state.operationalWindow?.callWindow || {};
+22947:         const doc = context.doc;
+22948:         const path = String(doc.defaultView?.location?.pathname || '');
+22949:         if (!settings.enabled || !/^\/missions\/\d+\/?$/u.test(path) || operationalQuery(doc, '[data-module="extendedCallWindow"]')) {
+22950:             operationalFeatureRemove(context, 'call-'); return;
+22951:         }
+22952:         operationalFeatureStyle(doc);
+22953:         operationalFeatureRemove(context, 'call-');
+22954:         const anchor = operationalQuery(doc, '#missing_text, #mission_general_info, .mission_general_info, h1');
+22955:         if (!anchor) return;
+22956:         const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');
+22957:         const patients = operationalQueryAll(doc, '#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');
+22958:         const vehicles = operationalQueryAll(doc, '#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr');
+22959:         const selected = operationalRequirementsSelectedSnapshot(doc);
+22960:         const arr = operationalQueryAll(doc, '[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);
+22961:         if (settings.patientSummary) bar.appendChild(operationalPill(doc, `Patients ${patients.length}`, 'call-patients'));
+22962:         if (settings.vehicleCounter) bar.appendChild(operationalPill(doc, `Vehicles ${vehicles.length}`, 'call-vehicles'));
+22963:         if (settings.selectedVehicleCounter || settings.stagingAreaSelectedCounter) bar.appendChild(operationalPill(doc, `Selected ${selected.length}`, 'call-selected'));
+22964:         if (settings.playerCounter) {
+22965:             const players = new Set(vehicles.map(row => row.dataset?.userId || row.getAttribute?.('data-user-id')).filter(Boolean));
+22966:             bar.appendChild(operationalPill(doc, `Players ${players.size}`, 'call-players'));
+22967:         }
+
+====================================================================================================
+// context for 'function operationalWindowSettingsMarkup'; lines 22848-22963
+22848:         if (!value) {
+22849:             value = { transportTokens: new Set(), route: '', arrHandlers: new Map() };
+22850:             operationalFeatureContexts.set(context, value);
+22851:         }
+22852:         return value;
+22853:     }
+22854:     function operationalFeatureValue(path) {
+22855:         return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
+22856:     }
+22857:     function operationalFeatureSet(path, value) {
+22858:         const parts = String(path || '').split('.').filter(Boolean);
+22859:         let target = state.operationalWindow;
+22860:         for (const part of parts.slice(0, -1)) target = target[part] ??= {};
+22861:         target[parts.at(-1)] = value;
+22862:     }
+22863:     function operationalFeatureMissionId(row) {
+22864:         return String(row?.dataset?.missionId || row?.id?.match(/mission[_-](\d+)/u)?.[1]
+22865:             || operationalQuery(row, 'a[href*="/missions/"]')?.href?.match(/\/missions\/(\d+)/u)?.[1] || '');
+22866:     }
+22867:     function operationalFeatureNumber(node, names) {
+22868:         for (const name of names) {
+22869:             const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
+22870:             if (Number.isFinite(parsed)) return parsed;
+22871:         }
+22872:         return 0;
+22873:     }
+22874:     function operationalFeatureOwn(node, kind) {
+22875:         node?.setAttribute?.(OP_FEATURE_ATTR, kind);
+22876:         return node;
+22877:     }
+22878:     function operationalFeatureRemove(context, prefix = '') {
+22879:         const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+22880:         operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+22881:     }
+22882: 
+22883:     function operationalWindowSettingsMarkup() {
+22884:         const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+22885:             <details class="mcms-operational-settings-group" open>
+22886:                 <summary>${OP_LABELS[group]}</summary>
+22887:                 ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+22888:             </details>`).join('');
+22889:         const advanced = [
+22890:             ['requirements.viewMode', 'Requirements view', 'table,text'],
+22891:             ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+22892:             ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+22893:             ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+22894:             ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+22895:         ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+22896:         const json = [
+22897:             'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+22898:             'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+22899:             'missionList.shareMissionTypes','missionList.eventMissions'
+22900:         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+22901:         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+22902:     }
+22903:     function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) {
+22904:         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+22905:             const value = operationalFeatureValue(control.dataset.operationalSetting);
+22906:             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+22907:             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+22908:         });
+22909:     }
+22910:     const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
+22911:     function operationalReplaceContent(node, html) {
+22912:         if (!node) return;
+22913:         node.replaceChildren();
+22914:         const content = String(html ?? '');
+22915:         if (content) node.insertAdjacentHTML('beforeend', content);
+22916:     }
+22917:     function operationalFeatureStyle(doc) {
+22918:         if (operationalQuery(doc, `#${OP_FEATURE_STYLE_ID}`)) return;
+22919:         const style = doc.createElement('style');
+22920:         style.id = OP_FEATURE_STYLE_ID;
+22921:         style.textContent = `
+22922:             [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
+22923:             .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
+22924:             .mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden{display:none!important}
+22925:             .mcms-operational-arr-match{outline:2px solid var(--mcms-arr-colour,#008000);outline-offset:1px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}.mcms-operational-json-row{display:grid;gap:4px;margin:8px 0}
+22926:             @media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}}
+22927:         `;
+22928:         (doc.head || doc.documentElement)?.appendChild(style);
+22929:     }
+22930:     function operationalFeatureBar(doc, anchor, kind) {
+22931:         let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
+22932:         if (!bar) {
+22933:             bar = operationalFeatureOwn(doc.createElement('div'), kind);
+22934:             bar.className = 'mcms-operational-bar';
+22935:             anchor?.parentNode?.insertBefore(bar, anchor);
+22936:         }
+22937:         operationalReplaceContent(bar, '');
+22938:         return bar;
+22939:     }
+22940:     function operationalPill(doc, text, kind) {
+22941:         const node = operationalFeatureOwn(doc.createElement('span'), kind);
+22942:         node.className = 'mcms-operational-pill'; node.textContent = text; return node;
+22943:     }
+22944: 
+22945:     function operationalCallWindowApply(context) {
+22946:         const settings = state.operationalWindow?.callWindow || {};
+22947:         const doc = context.doc;
+22948:         const path = String(doc.defaultView?.location?.pathname || '');
+22949:         if (!settings.enabled || !/^\/missions\/\d+\/?$/u.test(path) || operationalQuery(doc, '[data-module="extendedCallWindow"]')) {
+22950:             operationalFeatureRemove(context, 'call-'); return;
+22951:         }
+22952:         operationalFeatureStyle(doc);
+22953:         operationalFeatureRemove(context, 'call-');
+22954:         const anchor = operationalQuery(doc, '#missing_text, #mission_general_info, .mission_general_info, h1');
+22955:         if (!anchor) return;
+22956:         const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');
+22957:         const patients = operationalQueryAll(doc, '#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');
+22958:         const vehicles = operationalQueryAll(doc, '#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr');
+22959:         const selected = operationalRequirementsSelectedSnapshot(doc);
+22960:         const arr = operationalQueryAll(doc, '[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);
+22961:         if (settings.patientSummary) bar.appendChild(operationalPill(doc, `Patients ${patients.length}`, 'call-patients'));
+22962:         if (settings.vehicleCounter) bar.appendChild(operationalPill(doc, `Vehicles ${vehicles.length}`, 'call-vehicles'));
+22963:         if (settings.selectedVehicleCounter || settings.stagingAreaSelectedCounter) bar.appendChild(operationalPill(doc, `Selected ${selected.length}`, 'call-selected'));
+
+====================================================================================================
+// context for 'function ensureUi'; lines 30837-30952
+30837:         if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+30838:         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+30839:         if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+30840:         const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
+30841:         if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+30842:         const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
+30843:         if (discordRisk) discordRisk.value = String(state.discordReport.includeRisk);
+30844:         const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
+30845:         if (discordForecast) discordForecast.value = String(state.discordReport.includeForecast);
+30846:         const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
+30847:         if (financeVaultEnabled) financeVaultEnabled.value = String(state.financialVault.enabled);
+30848:         const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
+30849:         if (financeVaultRetention) financeVaultRetention.value = String(state.financialVault.retentionDays);
+30850:         const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
+30851:         if (financeRuleFeed) financeRuleFeed.value = String(state.financialVault.ruleFeedEnabled);
+30852:         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
+30853:         if (panel.classList.contains('mcms-open') && state.activeTab === 'discord') renderFinanceVaultStatus();
+30854:         const nightStart = panel.querySelector('[data-setting="auto-night-start"]');
+30855:         if (nightStart) nightStart.value = state.autoNight.nightStart;
+30856:         const dayStart = panel.querySelector('[data-setting="auto-day-start"]');
+30857:         if (dayStart) dayStart.value = state.autoNight.dayStart;
+30858:         const nightTheme = panel.querySelector('[data-setting="auto-night-theme"]');
+30859:         if (nightTheme) nightTheme.value = state.autoNight.nightTheme;
+30860:         const dayTheme = panel.querySelector('[data-setting="auto-day-theme"]');
+30861:         if (dayTheme) dayTheme.value = state.autoNight.dayTheme;
+30862:         const economyStatus = panel.querySelector('.mcms-economy-status');
+30863:         if (economyStatus) economyStatus.textContent = state.economyMode
+30864:             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
+30865:             : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+30866:         const nudge = panel.querySelector('.mcms-nudge-value');
+30867:         if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+30868:         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+30869:         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+30870:     }
+30871: 
+30872:     function ensureUi() {
+30873:         const mapEl = getLargestLeafletMap();
+30874:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+30875:         if (mapEl) {
+30876:             createControl(mapEl);
+30877:             ensureVersionStatusButton();
+30878:             const map = findLeafletMapInstance(false);
+30879:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+30880:             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+30881:             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30882:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+30883:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+30884:         }
+30885:         return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
+30886:     }
+30887: 
+30888:     function mutationBelongsToToolkit(mutation) {
+30889:         const target = mutation.target;
+30890:         const toolkitTarget = Boolean(
+30891:             target &&
+30892:             target.nodeType === 1 &&
+30893:             (
+30894:                 target.id === SCRIPT.controlId ||
+30895:                 target.id === SCRIPT.panelId ||
+30896:                 target.id === SCRIPT.toastId ||
+30897:                 target.id === SCRIPT.payoutFlashId ||
+30898:                 target.id === SCRIPT.criticalDrawerId ||
+30899:                 target.id === SCRIPT.vehicleStatusId ||
+30900:                 target.id === SCRIPT.majorIncidentFeedId ||
+30901:                 target.id === SCRIPT.missionInspectorId ||
+30902:                 target.closest?.(`#${SCRIPT.controlId}`) ||
+30903:                 target.closest?.(`#${SCRIPT.panelId}`) ||
+30904:                 target.closest?.(`#${SCRIPT.toastId}`) ||
+30905:                 target.closest?.(`#${SCRIPT.payoutFlashId}`) ||
+30906:                 target.closest?.(`#${SCRIPT.criticalDrawerId}`) ||
+30907:                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
+30908:                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
+30909:                 target.closest?.(`#${SCRIPT.missionInspectorId}`)
+30910:             )
+30911:         );
+30912:         if (toolkitTarget) return true;
+30913:         if (mutation.type === 'attributes' && mutation.attributeName === 'class' && target?.classList) {
+30914:             for (const className of target.classList) {
+30915:                 if (String(className).startsWith('mcms-')) return true;
+30916:             }
+30917:         }
+30918:         const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+30919:         let elementCount = 0;
+30920:         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
+30921:             if (!collection?.length) continue;
+30922:             for (const node of collection) {
+30923:                 if (!node || node.nodeType !== 1) continue;
+30924:                 elementCount += 1;
+30925:                 if (!(node.matches?.(toolkitSelector) || node.querySelector?.(toolkitSelector))) return false;
+30926:             }
+30927:         }
+30928:         return elementCount > 0;
+30929:     }
+30930: 
+30931:     function mutationAddsLeafletMarkerIcon(mutation) {
+30932:         if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
+30933:         for (const node of mutation.addedNodes) {
+30934:             if (!node || node.nodeType !== 1) continue;
+30935:             if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
+30936:             if (node.matches?.('.leaflet-marker-icon')) return true;
+30937:             if (node.querySelector?.('.leaflet-marker-icon')) return true;
+30938:         }
+30939:         return false;
+30940:     }
+30941: 
+30942:     function mutationTouchesSelector(mutation, selector) {
+30943:         const target = mutation?.target;
+30944:         if (target?.nodeType === 1 && (target.matches?.(selector) || target.closest?.(selector))) return true;
+30945:         for (const collection of [mutation?.addedNodes, mutation?.removedNodes]) {
+30946:             if (!collection?.length) continue;
+30947:             for (const node of collection) {
+30948:                 if (!node || node.nodeType !== 1) continue;
+30949:                 if (node.matches?.(selector) || node.querySelector?.(selector)) return true;
+30950:             }
+30951:         }
+30952:         return false;
+
+====================================================================================================
+// context for 'function startBootAttemptCoordinator'; lines 31443-31558
+31443:             stopAutoLoadAllVehicles();
+31444:             return false;
+31445:         }
+31446:         if (!document.body) {
+31447:             runtimeListen(document, 'DOMContentLoaded', installAutoLoadAllVehicles, { once: true });
+31448:             return false;
+31449:         }
+31450:         if (!autoLoadAllVehiclesObserver) {
+31451:             const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+31452:                 if (!state.autoLoadAllVehicles) return;
+31453:                 if (autoLoadAllVehiclesMissionRoot && !autoLoadAllVehiclesMissionRoot.isConnected) {
+31454:                     resetAutoLoadAllVehiclesMission();
+31455:                 }
+31456:                 if (autoLoadAllVehiclesActiveLink && !autoLoadAllVehiclesActiveLink.isConnected) {
+31457:                     releaseAutoLoadAllVehiclesRequest({ schedule: false });
+31458:                 }
+31459:                 if (mutations.some(autoLoadAllVehiclesMutationRelevant)) scheduleAutoLoadAllVehiclesScan(AUTO_LOAD_ALL_VEHICLES_SETTLE_MS);
+31460:             }));
+31461:             observer.observe(document.body, { childList: true, subtree: true });
+31462:             autoLoadAllVehiclesObserver = observer;
+31463:         }
+31464:         scheduleAutoLoadAllVehiclesScan(0);
+31465:         return true;
+31466:     }
+31467: 
+31468: 
+31469:     function runBootIntegration(label, callback) {
+31470:         try {
+31471:             return callback();
+31472:         } catch (error) {
+31473:             console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
+31474:             return null;
+31475:         }
+31476:     }
+31477: 
+31478:     function startBootAttemptCoordinator(bootPerformanceStartedAt) {
+31479:         let attempts = 0;
+31480:         let complete = false;
+31481:         const scheduleAttempt = delay => {
+31482:             if (complete || runtime.destroyed) return;
+31483:             runtimeSetTimeout(runBootAttempt, delay);
+31484:         };
+31485:         const runBootAttempt = () => {
+31486:             if (complete || runtime.destroyed) return;
+31487:             attempts += 1;
+31488:             const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
+31489:             const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+31490:             runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+31491:             runBootIntegration('radio message hook', installRadioMessageHook);
+31492:             runBootIntegration('credits update hook', installCreditsUpdateHook);
+31493:             runBootIntegration('credits observer', observeCreditValue);
+31494:             if (ready && (mapReady || attempts >= 12)) {
+31495:                 complete = true;
+31496:                 runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+31497:                 runBootIntegration('marker state sync', () => {
+31498:                     scheduleMarkerStateSync(0, false);
+31499:                 });
+31500:                 runBootIntegration('deferred operational startup', () => {
+31501:                     scheduleDeferredOperationalStartup();
+31502:                 });
+31503:                 runBootIntegration('operational suite scan', () => {
+31504:                     if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+31505:                 });
+31506:                 runBootIntegration('version status check', () => {
+31507:                     scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+31508:                 });
+31509:                 runBootIntegration('main observer connection', () => {
+31510:                     runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+31511:                 });
+31512:                 return;
+31513:             }
+31514:             if (attempts >= 90) return;
+31515:             const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+31516:             scheduleAttempt(delay);
+31517:         };
+31518:         runBootAttempt();
+31519:     }
+31520:     function registerBootMaintenanceTasks() {
+31521:         runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
+31522:             if (!vehicleDataNeeded()) return;
+31523:             installRadioMessageHook();
+31524:             return refreshPersonalVehicleData(false);
+31525:         }, {
+31526:             economyIntervalMs: 10 * 60 * 1000,
+31527:             economyIntervalResolver: () => operationalUiIsVisible() || document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 2 * 60 * 1000 : 10 * 60 * 1000
+31528:         });
+31529:         runtimeRegisterTask('auto-night', 60 * 1000, () => runAutoNight(false), { intervalResolver: () => state.autoNight.enabled ? 60 * 1000 : 15 * 60 * 1000, economyIntervalMs: 5 * 60 * 1000, economyIntervalResolver: () => state.autoNight.enabled ? 5 * 60 * 1000 : 30 * 60 * 1000 });
+31530:         runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
+31531:             if (state.economyMode && economyMapMoving) {
+31532:                 economyDeferredMapRefresh = true;
+31533:                 return;
+31534:             }
+31535:             installMissionMarkerAddHook();
+31536:             installRadioMessageHook();
+31537:             installCreditsUpdateHook();
+31538:             observeCreditValue();
+31539:             if (state.allianceCredits) scheduleAllianceCreditRefresh();
+31540:             if (state.unitCommitment) scheduleUnitCommitmentRefresh();
+31541:             if (state.resourceGap.enabled) scheduleResourceGapRefresh();
+31542:             if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh();
+31543:             const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+31544:             if (criticalDrawer?.classList.contains('mcms-open')) {
+31545:                 let hasClearingMission = false;
+31546:                 for (const snapshot of liveMissionSnapshots.values()) {
+31547:                     const progress = criticalMissionClearingProgress(snapshot);
+31548:                     const units = snapshot?.units || personalUnitCommitmentForMission(snapshot?.missionId);
+31549:                     if (progress && Math.max(0, Number(units?.onScene) || 0) > 0) {
+31550:                         hasClearingMission = true;
+31551:                         break;
+31552:                     }
+31553:                 }
+31554:                 const refreshInterval = hasClearingMission ? CRITICAL_PROGRESS_REFRESH_ACTIVE_MS : CRITICAL_PROGRESS_REFRESH_IDLE_MS;
+31555:                 return refreshMissionProgressFromPage(false, refreshInterval).then(refreshed => {
+31556:                     if (!refreshed || document.hidden || !criticalDrawer.classList.contains('mcms-open')) return;
+31557:                     refreshMissionSnapshots();
+31558:                     criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
+
+====================================================================================================
+FUNCTION: defaultOperationalWindowState
+// lines 1346-1455
+
+    function defaultOperationalWindowState(legacyRequirementsEnabled = true) {
+        return {
+            schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+            enabled: true,
+            phase: 'operational-suite',
+            requirements: {
+                enabled: legacyRequirementsEnabled !== false,
+                calcMaxStaff: false,
+                hoverTip: true,
+                viewMode: 'table',
+                overlay: false,
+                minified: false,
+                pushRight: false,
+                sort: 'requirement',
+                sortDir: 'asc',
+                drag: { active: false, top: 60, left: null, offset: { x: 0, y: 0 } }
+            },
+            callWindow: {
+                enabled: false,
+                generationDate: true,
+                yellowBorderHours: 0,
+                redBorder: false,
+                patientSummary: true,
+                collapsiblePatients: false,
+                collapsiblePatientsMinPatients: 7,
+                arrCounter: false,
+                arrCounterAsBadge: false,
+                arrClickHighlight: false,
+                arrClickHighlightColor: '#008000',
+                arrClickHighlightWidth: 2,
+                arrCounterResetSelection: false,
+                arrMatchHighlight: false,
+                arrMatchHighlightAllWords: false,
+                arrTime: false,
+                arrSpecs: false,
+                alarmTime: false,
+                stickyHeader: false,
+                loadMoreVehiclesInHeader: false,
+                hideVehicleList: false,
+                centerMap: false,
+                stagingAreaSelectedCounter: true,
+                vehicleTypeInList: false,
+                remainingPatientTime: true,
+                vehicleCounter: false,
+                vehicleCounterColor: 'info',
+                vehicleListPermanentSearch: false,
+                playerCounter: false,
+                playerCounterColor: 'danger',
+                selectedVehicleCounter: false,
+                selectedVehicleCounterVehicleTypes: [],
+                arrSearch: false,
+                arrSearchDissolveCategories: false,
+                arrSearchCompactResults: false,
+                arrSearchSelectOnEnter: false,
+                arrSearchClearOnEnter: false,
+                arrSearchAutoFocus: false,
+                arrSearchDropdown: false,
+                arrSearchCloseDropdownOnSelect: false,
+                moreReleasePatientButtons: false,
+                tailoredTabs: [],
+                missionKeywords: [],
+                alarmIcons: [],
+                arrCategoryColors: []
+            },
+            missionList: {
+                enabled: false,
+                remainingTime: false,
+                remainingTimeGreenOnly: true,
+                remainingPatientTime: false,
+                remainingPumpingTime: false,
+                starrableMissions: false,
+                starredMissions: [],
+                averageCredits: true,
+                collapsibleMissions: false,
+                collapsibleMissionsAllButton: true,
+                collapsedMissions: [],
+                allMissionsCollapsed: false,
+                shareMissions: false,
+                shareMissionTypes: ['', 'sicherheitswache'],
+                shareMissionsMinCredits: 0,
+                shareMissionsButtonColor: 'success',
+                sortMissions: false,
+                sortMissionsType: '',
+                sortMissionsDirection: '',
+                sortMissionsButtonColor: 'default',
+                sortMissionsInMissionWindow: true,
+                sortMissionsInMissionWindowChecked: false,
+                sortMissionsOrder: {},
+                currentPatients: false,
+                hideZeroCurrentPatients: true,
+                currentPatientsInTooltips: false,
+                currentPrisoners: false,
+                hideZeroCurrentPrisoners: true,
+                currentPrisonersInTooltips: false,
+                fixedEventInfo: false,
+                eventMissions: []
+            },
+            transport: {
+                enabled: false,
+                autoClickSuccessButtons: true,
+                autoOpenTransportRequest: false
+            },
+            migration: {
+                legacyRequirementsEnabled: legacyRequirementsEnabled !== false,
+                matrixPreferenceCaptured: true,
+                matrixRetired: true
+            }
+        };
+    }
+
+====================================================================================================
+FUNCTION: normaliseOperationalWindowState
+// lines 1464-1542
+
+    function normaliseOperationalWindowState(value, legacyRequirementsEnabled = true) {
+        const base = defaultOperationalWindowState(legacyRequirementsEnabled);
+        const parsed = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+        const requirements = parsed.requirements && typeof parsed.requirements === 'object' ? parsed.requirements : {};
+        const callWindow = parsed.callWindow && typeof parsed.callWindow === 'object' ? parsed.callWindow : {};
+        const missionList = parsed.missionList && typeof parsed.missionList === 'object' ? parsed.missionList : {};
+        const transport = parsed.transport && typeof parsed.transport === 'object' ? parsed.transport : {};
+        const migration = parsed.migration && typeof parsed.migration === 'object' ? parsed.migration : {};
+        const merged = {
+            ...base,
+            ...parsed,
+            schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+            phase: 'operational-suite',
+            requirements: { ...base.requirements, ...requirements },
+            callWindow: { ...base.callWindow, ...callWindow },
+            missionList: { ...base.missionList, ...missionList },
+            transport: { ...base.transport, ...transport },
+            migration: { ...base.migration, ...migration }
+        };
+        merged.enabled = parsed.phase === 'shell' ? true : operationalSuiteBoolean(parsed.enabled, parsed.phase === undefined);
+        merged.requirements.enabled = operationalSuiteBoolean(requirements.enabled, legacyRequirementsEnabled !== false);
+        merged.requirements.calcMaxStaff = operationalSuiteBoolean(requirements.calcMaxStaff, false);
+        merged.requirements.hoverTip = operationalSuiteBoolean(requirements.hoverTip, true);
+        merged.requirements.viewMode = ['table', 'text'].includes(String(requirements.viewMode)) ? String(requirements.viewMode) : 'table';
+        merged.requirements.overlay = operationalSuiteBoolean(requirements.overlay, false);
+        merged.requirements.minified = operationalSuiteBoolean(requirements.minified, false);
+        merged.requirements.pushRight = operationalSuiteBoolean(requirements.pushRight, false);
+        merged.requirements.sort = ['requirement', 'missing', 'driving', 'total', 'selected'].includes(String(requirements.sort)) ? String(requirements.sort) : 'requirement';
+        merged.requirements.sortDir = String(requirements.sortDir) === 'desc' ? 'desc' : 'asc';
+        merged.requirements.drag = {
+            ...base.requirements.drag,
+            ...(requirements.drag && typeof requirements.drag === 'object' ? requirements.drag : {}),
+            offset: {
+                ...base.requirements.drag.offset,
+                ...(requirements.drag?.offset && typeof requirements.drag.offset === 'object' ? requirements.drag.offset : {})
+            }
+        };
+        const callWindowBooleanKeys = [
+            'enabled', 'generationDate', 'redBorder', 'patientSummary', 'collapsiblePatients',
+            'arrCounter', 'arrCounterAsBadge', 'arrClickHighlight', 'arrCounterResetSelection',
+            'arrMatchHighlight', 'arrMatchHighlightAllWords', 'arrTime', 'arrSpecs', 'alarmTime',
+            'stickyHeader', 'loadMoreVehiclesInHeader', 'hideVehicleList', 'centerMap',
+            'stagingAreaSelectedCounter', 'vehicleTypeInList', 'remainingPatientTime',
+            'vehicleCounter', 'vehicleListPermanentSearch', 'playerCounter', 'selectedVehicleCounter',
+            'arrSearch', 'arrSearchDissolveCategories', 'arrSearchCompactResults',
+            'arrSearchSelectOnEnter', 'arrSearchClearOnEnter', 'arrSearchAutoFocus',
+            'arrSearchDropdown', 'arrSearchCloseDropdownOnSelect', 'moreReleasePatientButtons'
+        ];
+        for (const key of callWindowBooleanKeys) merged.callWindow[key] = operationalSuiteBoolean(callWindow[key], base.callWindow[key]);
+        merged.callWindow.yellowBorderHours = Math.max(0, Math.min(48, Number(callWindow.yellowBorderHours ?? base.callWindow.yellowBorderHours) || 0));
+        merged.callWindow.collapsiblePatientsMinPatients = Math.max(0, Math.round(Number(callWindow.collapsiblePatientsMinPatients ?? base.callWindow.collapsiblePatientsMinPatients) || 7));
+        merged.callWindow.arrClickHighlightColor = /^#[0-9a-f]{6}$/iu.test(String(callWindow.arrClickHighlightColor || '')) ? String(callWindow.arrClickHighlightColor) : '#008000';
+        merged.callWindow.arrClickHighlightWidth = Math.max(1, Math.min(12, Number(callWindow.arrClickHighlightWidth ?? 2) || 2));
+        merged.callWindow.vehicleCounterColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(callWindow.vehicleCounterColor)) ? String(callWindow.vehicleCounterColor) : 'info';
+        merged.callWindow.playerCounterColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(callWindow.playerCounterColor)) ? String(callWindow.playerCounterColor) : 'danger';
+        for (const key of ['selectedVehicleCounterVehicleTypes', 'tailoredTabs', 'missionKeywords', 'alarmIcons', 'arrCategoryColors']) merged.callWindow[key] = operationalSuiteArray(callWindow[key], base.callWindow[key]);
+        const missionListBooleanKeys = [
+            'enabled', 'remainingTime', 'remainingTimeGreenOnly', 'remainingPatientTime',
+            'remainingPumpingTime', 'starrableMissions', 'averageCredits', 'collapsibleMissions',
+            'collapsibleMissionsAllButton', 'allMissionsCollapsed', 'shareMissions', 'sortMissions',
+            'sortMissionsInMissionWindow', 'sortMissionsInMissionWindowChecked', 'currentPatients',
+            'hideZeroCurrentPatients', 'currentPatientsInTooltips', 'currentPrisoners',
+            'hideZeroCurrentPrisoners', 'currentPrisonersInTooltips', 'fixedEventInfo'
+        ];
+        for (const key of missionListBooleanKeys) merged.missionList[key] = operationalSuiteBoolean(missionList[key], base.missionList[key]);
+        for (const key of ['starredMissions', 'collapsedMissions', 'shareMissionTypes', 'eventMissions']) merged.missionList[key] = operationalSuiteArray(missionList[key], base.missionList[key]);
+        merged.missionList.shareMissionsMinCredits = Math.max(0, Number(missionList.shareMissionsMinCredits ?? 0) || 0);
+        merged.missionList.shareMissionsButtonColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(missionList.shareMissionsButtonColor)) ? String(missionList.shareMissionsButtonColor) : 'success';
+        merged.missionList.sortMissionsButtonColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(missionList.sortMissionsButtonColor)) ? String(missionList.sortMissionsButtonColor) : 'default';
+        merged.missionList.sortMissionsOrder = missionList.sortMissionsOrder && typeof missionList.sortMissionsOrder === 'object' && !Array.isArray(missionList.sortMissionsOrder) ? { ...missionList.sortMissionsOrder } : {};
+        merged.transport.enabled = operationalSuiteBoolean(transport.enabled, false);
+        merged.transport.autoClickSuccessButtons = operationalSuiteBoolean(transport.autoClickSuccessButtons, true);
+        merged.transport.autoOpenTransportRequest = operationalSuiteBoolean(transport.autoOpenTransportRequest, false);
+        merged.migration.legacyRequirementsEnabled = operationalSuiteBoolean(migration.legacyRequirementsEnabled, legacyRequirementsEnabled !== false);
+        merged.migration.matrixPreferenceCaptured = operationalSuiteBoolean(migration.matrixPreferenceCaptured, true);
+        merged.migration.matrixRetired = operationalSuiteBoolean(migration.matrixRetired, false);
+        return merged;
+    }
+
+====================================================================================================
+FUNCTION: operationalWindowSettingsMarkup
+// lines 22882-22902
+
+    function operationalWindowSettingsMarkup() {
+        const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+            <details class="mcms-operational-settings-group" open>
+                <summary>${OP_LABELS[group]}</summary>
+                ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+            </details>`).join('');
+        const advanced = [
+            ['requirements.viewMode', 'Requirements view', 'table,text'],
+            ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+            ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+            ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+            ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+        ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+        const json = [
+            'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+            'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+            'missionList.shareMissionTypes','missionList.eventMissions'
+        ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+        return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+    }
+
+====================================================================================================
+FUNCTION: operationalWindowSyncSettingsUi
+[missing function: operationalWindowSyncSettingsUi]
+
+====================================================================================================
+FUNCTION: handleOperationalWindowSettingChange
+// lines 23276-23289
+    function handleOperationalWindowSettingChange(target) {
+        const path = target?.dataset?.operationalSetting;
+        if (!path) return false;
+        try {
+            const type = target.dataset.operationalType;
+            const value = type === 'boolean' ? target.checked : type === 'json' ? JSON.parse(target.value || '[]') : target.value;
+            operationalFeatureSet(path, value);
+            state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow, state.operationalWindow?.requirements?.enabled !== false);
+            saveState(); updateUI(); showToast('Operational Window setting saved');
+        } catch (error) {
+            showToast('Operational setting contains invalid JSON');
+        }
+        return true;
+    }
+
+====================================================================================================
+FUNCTION: scheduleOperationalSuiteScan
+// lines 23236-23248
+
+    function scheduleOperationalSuiteScan(delay = 0) {
+        if (runtime.destroyed) return;
+        runtimeClearTimeout(operationalSuiteScanTimer);
+        operationalSuiteScanTimer = runtimeSetTimeout(() => {
+            operationalSuiteScanTimer = null;
+            try {
+                scanOperationalSuiteShell();
+            } catch (error) {
+                console.error(`[${SCRIPT.name}] Operational suite scan failed without blocking the Toolkit menu.`, error);
+            }
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+====================================================================================================
+FUNCTION: installOperationalSuiteShell
+// lines 23249-23270
+
+    function installOperationalSuiteShell() {
+        if (operationalSuiteInstalled) {
+            if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
+            return;
+        }
+        operationalSuiteInstalled = true;
+        runtime.operationalSuite = Object.freeze({
+            baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
+            settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+            phase: 'operational-suite',
+            schedule: scheduleOperationalSuiteScan,
+            contextCount: () => operationalSuiteContexts.size
+        });
+        runtimeOnCleanup(() => {
+            runtimeClearTimeout(operationalSuiteScanTimer);
+            operationalSuiteScanTimer = null;
+            clearOperationalSuiteContexts();
+            if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+        });
+        if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
+    }
+
+====================================================================================================
+FUNCTION: runBootIntegration
+// lines 31467-31476
+
+
+    function runBootIntegration(label, callback) {
+        try {
+            return callback();
+        } catch (error) {
+            console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
+            return null;
+        }
+    }
+
+====================================================================================================
+FUNCTION: startBootAttemptCoordinator
+// lines 31477-31519
+
+    function startBootAttemptCoordinator(bootPerformanceStartedAt) {
+        let attempts = 0;
+        let complete = false;
+        const scheduleAttempt = delay => {
+            if (complete || runtime.destroyed) return;
+            runtimeSetTimeout(runBootAttempt, delay);
+        };
+        const runBootAttempt = () => {
+            if (complete || runtime.destroyed) return;
+            attempts += 1;
+            const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
+            const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+            runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+            runBootIntegration('radio message hook', installRadioMessageHook);
+            runBootIntegration('credits update hook', installCreditsUpdateHook);
+            runBootIntegration('credits observer', observeCreditValue);
+            if (ready && (mapReady || attempts >= 12)) {
+                complete = true;
+                runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                runBootIntegration('marker state sync', () => {
+                    scheduleMarkerStateSync(0, false);
+                });
+                runBootIntegration('deferred operational startup', () => {
+                    scheduleDeferredOperationalStartup();
+                });
+                runBootIntegration('operational suite scan', () => {
+                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+                });
+                runBootIntegration('version status check', () => {
+                    scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+                });
+                runBootIntegration('main observer connection', () => {
+                    runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+                });
+                return;
+            }
+            if (attempts >= 90) return;
+            const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+            scheduleAttempt(delay);
+        };
+        runBootAttempt();
+    }
+
+====================================================================================================
+FUNCTION: registerBootMaintenanceTasks
+// lines 31520-31599
+    function registerBootMaintenanceTasks() {
+        runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
+            if (!vehicleDataNeeded()) return;
+            installRadioMessageHook();
+            return refreshPersonalVehicleData(false);
+        }, {
+            economyIntervalMs: 10 * 60 * 1000,
+            economyIntervalResolver: () => operationalUiIsVisible() || document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 2 * 60 * 1000 : 10 * 60 * 1000
+        });
+        runtimeRegisterTask('auto-night', 60 * 1000, () => runAutoNight(false), { intervalResolver: () => state.autoNight.enabled ? 60 * 1000 : 15 * 60 * 1000, economyIntervalMs: 5 * 60 * 1000, economyIntervalResolver: () => state.autoNight.enabled ? 5 * 60 * 1000 : 30 * 60 * 1000 });
+        runtimeRegisterTask('mission-maintenance', FALLBACK_MISSION_REFRESH_MS, () => {
+            if (state.economyMode && economyMapMoving) {
+                economyDeferredMapRefresh = true;
+                return;
+            }
+            installMissionMarkerAddHook();
+            installRadioMessageHook();
+            installCreditsUpdateHook();
+            observeCreditValue();
+            if (state.allianceCredits) scheduleAllianceCreditRefresh();
+            if (state.unitCommitment) scheduleUnitCommitmentRefresh();
+            if (state.resourceGap.enabled) scheduleResourceGapRefresh();
+            if (missionSnapshotsNeeded()) scheduleMissionSnapshotRefresh();
+            const criticalDrawer = document.getElementById(SCRIPT.criticalDrawerId);
+            if (criticalDrawer?.classList.contains('mcms-open')) {
+                let hasClearingMission = false;
+                for (const snapshot of liveMissionSnapshots.values()) {
+                    const progress = criticalMissionClearingProgress(snapshot);
+                    const units = snapshot?.units || personalUnitCommitmentForMission(snapshot?.missionId);
+                    if (progress && Math.max(0, Number(units?.onScene) || 0) > 0) {
+                        hasClearingMission = true;
+                        break;
+                    }
+                }
+                const refreshInterval = hasClearingMission ? CRITICAL_PROGRESS_REFRESH_ACTIVE_MS : CRITICAL_PROGRESS_REFRESH_IDLE_MS;
+                return refreshMissionProgressFromPage(false, refreshInterval).then(refreshed => {
+                    if (!refreshed || document.hidden || !criticalDrawer.classList.contains('mcms-open')) return;
+                    refreshMissionSnapshots();
+                    criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, missionProgressPageLastSuccessAt);
+                    renderOperationalPanels(true, { updateViewTime: false, preserveScroll: true });
+                });
+            }
+        }, {
+            economyIntervalMs: 60 * 1000,
+            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 30 * 1000 : 60 * 1000
+        });
+        runtimeRegisterTask('critical-countdowns', 1000, () => {
+            if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open')) refreshCriticalClearingCountdowns();
+        }, {
+            intervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 1000 : 60 * 1000,
+            economyIntervalMs: 10000,
+            economyIntervalResolver: () => document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ? 10000 : 60 * 1000
+        });
+        runtimeRegisterTask('minute-maintenance', 60 * 1000, () => {
+            if (state.missionAge) scheduleMissionAgeRefresh();
+            if (state.stuckDetector.enabled) scheduleStuckMissionRefresh();
+            refreshVisibleMissionInspector();
+            scheduleOperationalPanelsRender(500);
+            pruneRuntimeCaches();
+        }, {
+            economyIntervalMs: 5 * 60 * 1000,
+            economyIntervalResolver: () => operationalUiIsVisible() ? 2 * 60 * 1000 : 5 * 60 * 1000
+        });
+        runtimeRegisterTask('major-incident-feed-integrity', 5000, () => {
+            if (!state.majorIncidentFeed.enabled) return;
+            recoverMajorIncidentFeed('integrity check');
+        }, {
+            intervalResolver: () => state.majorIncidentFeed.enabled ? 5000 : 60 * 1000,
+            economyIntervalMs: 12000,
+            economyIntervalResolver: () => state.majorIncidentFeed.enabled ? 12000 : 2 * 60 * 1000
+        });
+        runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
+            if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+            if (state.economyMode) scheduleEconomyLayerSync(0);
+        }, {
+            intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
+            economyIntervalMs: 45 * 1000,
+            economyIntervalResolver: () => (!state.visibility.buildings || state.economyMode) ? 45 * 1000 : 2 * 60 * 1000
+        });
+    }
+
+====================================================================================================
+FUNCTION: ensureUi
+// lines 30871-30886
+
+    function ensureUi() {
+        const mapEl = getLargestLeafletMap();
+        if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+        if (mapEl) {
+            createControl(mapEl);
+            ensureVersionStatusButton();
+            const map = findLeafletMapInstance(false);
+            if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+            if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+            else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+            const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+            if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+        }
+        return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
+    }
+
+====================================================================================================
+FUNCTION: boot
+// lines 31600-31836
+
+    function boot() {
+        if (runtime.destroyed || bootStarted) return;
+        bootStarted = true;
+        bootStartedAt = Date.now();
+        const bootPerformanceStartedAt = startupClock();
+        const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
+        if (!allianceBuildingsOnly) startBootAttemptCoordinator(bootPerformanceStartedAt);
+        runBootIntegration('root attributes', applyRootAttributes);
+        runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
+        if (allianceBuildingsOnly) return;
+        runBootIntegration('clean-mode exit', createCleanExit);
+        if (state.autoLoadAllVehicles) runBootIntegration('auto-load all vehicles', installAutoLoadAllVehicles);
+        runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+        runBootIntegration('radio message hook', installRadioMessageHook);
+        lastObservedCredits = runBootIntegration('initial credit total', readCurrentCreditTotal);
+        runBootIntegration('credits update hook', installCreditsUpdateHook);
+        runBootIntegration('credits observer', observeCreditValue);
+        runBootIntegration('operational suite shell', installOperationalSuiteShell);
+        runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
+        const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+            if (state.economyMode && economyMapMoving) {
+                economyDeferredDomMutation = true;
+                return;
+            }
+            let externalMutationFound = false;
+            let addedLeafletMarker = false;
+            let missionChanged = false;
+            let layoutChanged = false;
+            let toolkitUiRemoved = false;
+            for (const mutation of mutations) {
+                if (mutationBelongsToToolkit(mutation)) continue;
+                externalMutationFound = true;
+                if (!addedLeafletMarker && mutationAddsLeafletMarkerIcon(mutation)) {
+                    addedLeafletMarker = true;
+                    missionChanged = true;
+                }
+                if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
+                if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
+                if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
+                if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
+            }
+            if (!externalMutationFound) return;
+            missionChanged ||= addedLeafletMarker;
+            if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+            if (addedLeafletMarker) {
+                invalidateMarkerRegistryCaches('all');
+                scheduleMarkerStateSync(0, false);
+                if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+            }
+            if (layoutChanged) invalidateMapElementCache();
+            if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+            runtimeClearTimeout(mutationTimer);
+            const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+            const mutationDelay = startupSettling
+                ? STARTUP_MUTATION_DEBOUNCE_MS
+                : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+            mutationTimer = runtimeSetTimeout(() => {
+                if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+                const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+                const mapElement = getLargestLeafletMap();
+                const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+                if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+                if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+                    connectMainMutationObserver();
+                }
+                if (layoutChanged) {
+                    refreshSuppression();
+                    fitControlToMap();
+                    schedulePanelPosition(true, 50);
+                    scheduleCriticalDrawerDock(60);
+                }
+                if (missionChanged) {
+                    scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+                    scheduleOperationalSuiteScan(35);
+                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(35);
+                }
+            }, mutationDelay);
+        }));
+        mainMutationObserver = observer;
+        runtimeListen(document, 'keydown', handleKeyboard);
+        runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
+        runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
+        runtimeListen(document, 'pointerout', handleMissionInspectorPointerOut, true);
+        runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+        runtimeListen(document, 'click', event => {
+            runtimeSetTimeout(refreshSuppression, 0);
+            if (suppressNextOutsideClick) {
+                event.preventDefault();
+                event.stopPropagation();
+                suppressNextOutsideClick = false;
+                return;
+            }
+            const control = document.getElementById(SCRIPT.controlId);
+            const panel = document.getElementById(SCRIPT.panelId);
+            if (!panel || !panel.classList.contains('mcms-open')) return;
+            if (control && control.contains(event.target)) return;
+            if (panel.contains(event.target)) return;
+            closePanel();
+        }, true);
+        runtimeListen(pageWindow, 'resize', () => {
+            invalidateMapElementCache();
+            applyRootAttributes();
+            refreshTabletModeUi();
+            scheduleVisualViewportStabilisation('window-resize');
+            const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+            if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+            if (dragState) return;
+            refreshSuppression();
+            fitControlToMap();
+            schedulePanelPosition(true, 40);
+            scheduleCriticalDrawerDock(30);
+            scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+            scheduleMajorIncidentFeedLayout();
+        });
+        runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+        runtimeListen(pageWindow,'orientationchange',()=>scheduleVisualViewportStabilisation('orientationchange'));
+        if(pageWindow.visualViewport){
+            runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
+            runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
+        }
+        applyVisualViewportGeometry();
+        scheduleVisualViewportStabilisation('boot-viewport');
+        try {
+            const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
+            if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
+        } catch (err) {}
+        runtimeListen(pageWindow, 'focus', () => {
+            scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
+            refreshSuppression();
+            fitControlToMap();
+            schedulePanelPosition(true, 40);
+            installRadioMessageHook();
+            if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+            if (state.economyMode) scheduleEconomyLayerSync(0);
+            scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+            scheduleOperationalPanelsRender(500);
+            scheduleMajorIncidentFeedRender(80);
+        });
+        const recoverUiAfterNavigation = event => {
+            runtimeSetTimeout(() => {
+                if (runtime.destroyed || document.hidden) return;
+                invalidateMapElementCache();
+                ensureUi();
+                connectMainMutationObserver();
+                recoverMajorIncidentFeed(event?.type || 'navigation');
+            }, 120);
+            runtimeSetTimeout(() => {
+                if (runtime.destroyed || document.hidden) return;
+                recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+            }, 650);
+        };
+        runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
+        runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
+        runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+        registerBootMaintenanceTasks();
+        runtimeListen(document, 'visibilitychange', () => {
+            if (document.hidden) return;
+            runtimeWakeTaskScheduler(0);
+            ensureUi();
+            scheduleVersionStatusCheck(0, false);
+            refreshSuppression();
+            if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+            if (state.economyMode) scheduleEconomyLayerSync(0);
+            scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+            if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+            scheduleMajorIncidentFeedRender(80);
+        });
+        runtimeSetTimeout(() => {
+            if (document.hidden || !operationalStartupComplete) return;
+            scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+        }, 2200);
+        runtimeOnCleanup(() => {
+            stopAutoLoadAllVehicles();
+            transportSweepRuntime.stopRequested = true;
+            document.removeEventListener('mousemove', movePanelDrag, true);
+            document.removeEventListener('mouseup', endPanelDrag, true);
+            document.removeEventListener('touchmove', movePanelDrag, true);
+            document.removeEventListener('touchend', endPanelDrag, true);
+            document.removeEventListener('touchcancel', endPanelDrag, true);
+            document.documentElement.style.cursor = '';
+            if (document.body) document.body.style.userSelect = '';
+            restoreEconomyLayers();
+            restoreLeafletEconomyPolicy();
+            disposeEconomyCanvasRenderer();
+            runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+            majorIncidentFeedLayoutTimer = null;
+            const originalBuildingVisibility = state.visibility.buildings;
+            try {
+                state.visibility.buildings = true;
+                synchronisePersonalBuildingVisibility(cachedMap);
+            } catch (err) {
+                console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+            } finally {
+                state.visibility.buildings = originalBuildingVisibility;
+            }
+            try { creditsValueObserver?.disconnect(); } catch (err) {}
+            removeMajorIncidentFeed();
+            clearMissionLockOnEffect();
+            clearAllianceCreditLabels();
+            clearMissionAgeLabels();
+            clearUnitCommitmentLabels();
+            clearTransportWatcherLabels();
+            clearResourceGapLabels();
+            clearStuckMissionLabels();
+            clearCoverageHeatmap();
+            if (coverageGroup) {
+                try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+                coverageGroup = null;
+            }
+            stopPayoutFlashAnimation();
+            disposePayoutMediaAudio();
+            try { payoutAudioContext?.close?.(); } catch (err) {}
+            clearDiscordPreviewChartUrl();
+            closeHelpCenter({ restoreFocus: false });
+            disposeVersionStatus();
+            helpGuideDocumentCache = '';
+            helpGuideLoadedAt = 0;
+            stopDesktopPanelWorkspaceObservation();
+            runtimeUntrackObserver(desktopPanelResizeObserver);
+            desktopPanelResizeObserver = null;
+            runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+            majorIncidentFeedResizeObserver = null;
+            majorIncidentFeedObservedElement = null;
+            missionSnapshotCache.clear();
+            missionPanelCache.clear();
+            missionOverlayVersions.clear();
+            markerRegistryCache.clear();
+            criticalMissionStableCache.clear();
+            removeOldInstances();
+            const root = document.documentElement;
+            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+        });
+        runtimeSetTimeout(() => runAutoNight(true), 180);
+        if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+        console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+    }
+
+====================================================================================================
+FUNCTION: scheduleBoot
+// lines 31837-31844
+
+    function scheduleBoot() {
+        if (runtime.destroyed || bootStarted) return;
+        runBootIntegration('idle boot scheduling', () => runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS));
+        runtimeSetTimeout(() => {
+            if (!runtime.destroyed && !bootStarted) boot();
+        }, Math.min(1200, STARTUP_IDLE_TIMEOUT_MS));
+    }
+
+====================================================================================================
+CURRENT SETTINGS INVENTORY
+{
+  "renderedDataOperationalSettings": [
+    "${group}.${key}",
+    "${path}",
+    "enabled"
+  ],
+  "defaultOperationalWindowKeys": [
+    "alarmIcons",
+    "alarmTime",
+    "allMissionsCollapsed",
+    "arrCategoryColors",
+    "arrClickHighlight",
+    "arrClickHighlightColor",
+    "arrClickHighlightWidth",
+    "arrCounter",
+    "arrCounterAsBadge",
+    "arrCounterResetSelection",
+    "arrMatchHighlight",
+    "arrMatchHighlightAllWords",
+    "arrSearch",
+    "arrSearchAutoFocus",
+    "arrSearchClearOnEnter",
+    "arrSearchCloseDropdownOnSelect",
+    "arrSearchCompactResults",
+    "arrSearchDissolveCategories",
+    "arrSearchDropdown",
+    "arrSearchSelectOnEnter",
+    "arrSpecs",
+    "arrTime",
+    "autoClickSuccessButtons",
+    "autoOpenTransportRequest",
+    "averageCredits",
+    "calcMaxStaff",
+    "callWindow",
+    "centerMap",
+    "collapsedMissions",
+    "collapsibleMissions",
+    "collapsibleMissionsAllButton",
+    "collapsiblePatients",
+    "collapsiblePatientsMinPatients",
+    "currentPatients",
+    "currentPatientsInTooltips",
+    "currentPrisoners",
+    "currentPrisonersInTooltips",
+    "drag",
+    "enabled",
+    "eventMissions",
+    "fixedEventInfo",
+    "generationDate",
+    "hideVehicleList",
+    "hideZeroCurrentPatients",
+    "hideZeroCurrentPrisoners",
+    "hoverTip",
+    "legacyRequirementsEnabled",
+    "loadMoreVehiclesInHeader",
+    "matrixPreferenceCaptured",
+    "matrixRetired",
+    "migration",
+    "minified",
+    "missionKeywords",
+    "missionList",
+    "moreReleasePatientButtons",
+    "overlay",
+    "patientSummary",
+    "phase",
+    "playerCounter",
+    "playerCounterColor",
+    "pushRight",
+    "redBorder",
+    "remainingPatientTime",
+    "remainingPumpingTime",
+    "remainingTime",
+    "remainingTimeGreenOnly",
+    "requirements",
+    "schemaVersion",
+    "selectedVehicleCounter",
+    "selectedVehicleCounterVehicleTypes",
+    "shareMissionTypes",
+    "shareMissions",
+    "shareMissionsButtonColor",
+    "shareMissionsMinCredits",
+    "sort",
+    "sortDir",
+    "sortMissions",
+    "sortMissionsButtonColor",
+    "sortMissionsDirection",
+    "sortMissionsInMissionWindow",
+    "sortMissionsInMissionWindowChecked",
+    "sortMissionsOrder",
+    "sortMissionsType",
+    "stagingAreaSelectedCounter",
+    "starrableMissions",
+    "starredMissions",
+    "stickyHeader",
+    "tailoredTabs",
+    "transport",
+    "vehicleCounter",
+    "vehicleCounterColor",
+    "vehicleListPermanentSearch",
+    "vehicleTypeInList",
+    "viewMode",
+    "yellowBorderHours"
+  ],
+  "renderedCount": 3,
+  "defaultCount": 95
+}

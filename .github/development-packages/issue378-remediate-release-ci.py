@@ -21,6 +21,7 @@ PERFORMANCE = ROOT / ".github" / "scripts" / "check_performance_budget.py"
 PERFORMANCE_POLICY = ROOT / ".github" / "performance-budget.json"
 DEEP_AUDIT = ROOT / ".github" / "scripts" / "deep_performance_audit.mjs"
 HEADROOM = ROOT / ".github" / "fixtures" / "main-style-source-headroom.json"
+RENDERER_TEST = ROOT / ".github" / "scripts" / "test_issue378_requirements_renderer.py"
 ENV = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
 
 
@@ -72,13 +73,11 @@ source = SOURCE.read_text(encoding="utf-8")
 region_start = source.index("    function operationalRequirementCreateModel")
 region_end = source.index("    // Issue #391: legacy Mission Requirements Matrix retired", region_start)
 region = source[region_start:region_end]
-
 assignment_pattern = re.compile(r"(?P<target>[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.innerHTML\s*=")
 matches = list(assignment_pattern.finditer(region))
 if len(matches) != 4:
     contexts = [region[max(0, match.start() - 80):match.end() + 120] for match in matches]
     raise RuntimeError(f"operational innerHTML inventory drifted: {len(matches)} assignments: {contexts}")
-
 for match in reversed(matches):
     expression_start = match.end()
     semicolon = assignment_end(region, expression_start)
@@ -105,11 +104,9 @@ new_style = '''    const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
         style.id = OP_FEATURE_STYLE_ID;
 '''
 source = replace_exact(source, old_style, new_style, "operational style ownership")
-
 old_observer = "        context.observer = new MutationObserver(() => operationalRequirementsScheduleContext(context, 25));"
 new_observer = "        const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;\n        context.observer = new OperationalMutationObserver(() => operationalRequirementsScheduleContext(context, 25));"
 source = replace_exact(source, old_observer, new_observer, "operational observer alias")
-
 if source.count(".innerHTML =") != 22:
     raise RuntimeError(f"innerHTML assignment budget not restored: {source.count('.innerHTML =')}")
 if source.count("function operationalReplaceContent(") != 1:
@@ -118,7 +115,6 @@ if source.count("'mcms-operational-feature-style'") != 1:
     raise RuntimeError("operational feature style ID literal is not single-owned")
 if source.count("new MutationObserver(") != 8:
     raise RuntimeError(f"direct MutationObserver budget not restored: {source.count('new MutationObserver(')}")
-
 SOURCE.write_text(source, encoding="utf-8")
 for path in CANONICAL_ROOT:
     path.write_text(source, encoding="utf-8")
@@ -128,6 +124,29 @@ deep = replace_exact(deep, "  const remaining = 32000 - sourceSummary.lines;", "
 deep = replace_exact(deep, "      expectedMutationObserverConstructions: 12,", "      expectedMutationObserverConstructions: 11,", "retired observer baseline")
 deep = replace_exact(deep, "      expectedBroadSubtreeObservers: 10,", "      expectedBroadSubtreeObservers: 9,", "retired broad-observer baseline")
 DEEP_AUDIT.write_text(deep, encoding="utf-8")
+
+renderer = RENDERER_TEST.read_text(encoding="utf-8")
+renderer = replace_exact(
+    renderer,
+    '''if block.count("new MutationObserver(") != 1:
+    raise SystemExit("Issue #378 renderer must use one reusable scoped MutationObserver per context")
+''',
+    '''if block.count("new OperationalMutationObserver(") != 1 or "doc.defaultView?.MutationObserver || pageWindow.MutationObserver" not in block:
+    raise SystemExit("Issue #378 renderer must use one reusable scoped MutationObserver alias per context")
+''',
+    "renderer observer contract",
+)
+renderer = replace_exact(
+    renderer,
+    '''if "panel.innerHTML = rendered.html" not in block:
+    raise SystemExit("Issue #378 renderer output assignment is missing")
+''',
+    '''if "operationalReplaceContent(panel, rendered.html)" not in block:
+    raise SystemExit("Issue #378 renderer bounded output replacement is missing")
+''',
+    "renderer output contract",
+)
+RENDERER_TEST.write_text(renderer, encoding="utf-8")
 
 fixture = json.loads(HEADROOM.read_text(encoding="utf-8"))
 new_source_lines = len(source.splitlines())
@@ -145,45 +164,27 @@ HEADROOM.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
 subprocess.run(["node", "--check", str(SOURCE)], cwd=ROOT, env=ENV, check=True)
 subprocess.run(["node", "--check", str(DEEP_AUDIT)], cwd=ROOT, env=ENV, check=True)
 subprocess.run(["python3", str(VALIDATOR)], cwd=ROOT, env=ENV, check=True)
-
 with tempfile.TemporaryDirectory(prefix="issue378-release-ci-") as temporary:
     temp = Path(temporary)
     structural_json = temp / "structural.json"
     structural_md = temp / "structural.md"
-    subprocess.run([
-        "python3", str(STRUCTURAL),
-        "--source", str(SOURCE),
-        "--policy", str(STRUCTURAL_POLICY),
-        "--json-output", str(structural_json),
-        "--markdown-output", str(structural_md),
-    ], cwd=ROOT, env=ENV, check=True)
+    subprocess.run(["python3", str(STRUCTURAL), "--source", str(SOURCE), "--policy", str(STRUCTURAL_POLICY), "--json-output", str(structural_json), "--markdown-output", str(structural_md)], cwd=ROOT, env=ENV, check=True)
     structural = json.loads(structural_json.read_text(encoding="utf-8"))
     if structural.get("summary", {}).get("failures") != 0:
         raise RuntimeError(structural_md.read_text(encoding="utf-8"))
-
     base = temp / "main.user.js"
     with base.open("wb") as handle:
-        subprocess.run([
-            "git", "show", "origin/main:src/MissionChief_Map_Command_Toolkit.user.js"
-        ], cwd=ROOT, stdout=handle, check=True)
+        subprocess.run(["git", "show", "origin/main:src/MissionChief_Map_Command_Toolkit.user.js"], cwd=ROOT, stdout=handle, check=True)
     performance_json = temp / "performance.json"
     performance_md = temp / "performance.md"
-    subprocess.run([
-        "python3", str(PERFORMANCE),
-        "--candidate", str(SOURCE),
-        "--base", str(base),
-        "--policy", str(PERFORMANCE_POLICY),
-        "--json-output", str(performance_json),
-        "--markdown-output", str(performance_md),
-    ], cwd=ROOT, env=ENV, check=True)
+    subprocess.run(["python3", str(PERFORMANCE), "--candidate", str(SOURCE), "--base", str(base), "--policy", str(PERFORMANCE_POLICY), "--json-output", str(performance_json), "--markdown-output", str(performance_md)], cwd=ROOT, env=ENV, check=True)
     performance = json.loads(performance_json.read_text(encoding="utf-8"))
     if performance.get("result") != "pass":
         raise RuntimeError(performance_md.read_text(encoding="utf-8"))
-
 for obsolete in (
-    ROOT / ".github" / "development-packages" / "issue378-release-ci-diagnostic.py",
+    ROOT / ".github" / "development-packages" / "issue378-release-ci-diagnostic-v2.py",
     ROOT / ".github" / "diagnostics" / "issue378-release-ci-failure.txt",
+    ROOT / ".github" / "diagnostics" / "issue378-release-ci-failure-v2.txt",
 ):
     obsolete.unlink(missing_ok=True)
-
 print(f"Issue #378 release CI remediation passed; signed source-ledger delta: {delta:+d} lines.")

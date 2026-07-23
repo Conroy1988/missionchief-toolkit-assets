@@ -1,0 +1,92 @@
+ionalRequirementsNumberFrom(cell?.getAttribute?.('sortvalue') ?? cell?.textContent, -1);
+            if (value >= 0) return value;
+        }
+        const fallback = operationalRequirementsStaffRange(typeId, row);
+        return fallback.min;
+    }
+
+    function operationalRequirementsDrivingSnapshot(doc) {
+        return Array.from(doc?.querySelectorAll?.('#mission_vehicle_driving tbody tr') || []).map(row => {
+            const vehicleType = operationalRequirementsVehicleType(row);
+            return {
+                id: operationalRequirementsVehicleId(row),
+                vehicleType,
+                equipment: operationalRequirementsEquipment(row),
+                staff: operationalRequirementsDrivingStaff(row, vehicleType)
+            };
+        }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
+    }
+
+    function operationalRequirementsTexts(root) {
+        const texts = { vehicles: null, staff: null, other: null };
+        const groups = Array.from(root?.querySelectorAll?.('[data-requirement-type]') || []);
+        for (const element of groups) {
+            const type = String(element.getAttribute('data-requirement-type') || '').toLowerCase();
+            const group = type === 'personnel' || type === 'staff' ? 'staff' : type === 'other' ? 'other' : type === 'vehicles' ? 'vehicles' : null;
+            if (!group) continue;
+            const raw = operationalRequirementNormaliseText(element.textContent || '');
+            if (!raw) continue;
+            texts[group] = texts[group]
+                ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || '' }
+                : { raw, infoText: operationalRequirementNormaliseText(element.getAttribute('data-info-text') || '') };
+        }
+        if (!groups.length) {
+            const raw = operationalRequirementNormaliseText(root?.textContent || '');
+            if (raw) texts.other = { raw, infoText: '' };
+        }
+        return texts;
+    }
+
+    function operationalRequirementsVehicleTypes() {
+        const result = {};
+        for (const [trailerType, tractives] of Object.entries(MISSION_REQUIREMENTS_TRACTIVE_TYPES || {})) {
+            result[String(trailerType)] = { tractiveVehicles: Array.from(tractives || []).map(Number).filter(Number.isFinite) };
+        }
+        return result;
+    }
+
+    function operationalRequirementsProgress(root) {
+        const result = {};
+        const selectors = {
+            water: '[data-mcms-requirement-progress="water"], [data-requirement-progress="water"], #water_missing',
+            foam: '[data-mcms-requirement-progress="foam"], [data-requirement-progress="foam"], #foam_missing',
+            pump: '[data-mcms-requirement-progress="pump"], [data-requirement-progress="pump"], #pump_missing'
+        };
+        for (const [key, selector] of Object.entries(selectors)) {
+            const node = root?.querySelector?.(selector) || root?.ownerDocument?.querySelector?.(selector);
+            if (!node) continue;
+            result[key] = {
+                texts: [key, key === 'water' ? 'litres of water' : key === 'foam' ? 'litres of foam' : 'pump capacity'],
+                missing: operationalRequirementsNumberFrom(node.getAttribute?.('data-missing') ?? node.textContent, 0),
+                driving: operationalRequirementsNumberFrom(node.getAttribute?.('data-driving'), 0),
+                selected: operationalRequirementsNumberFrom(node.getAttribute?.('data-selected'), 0)
+            };
+        }
+        return result;
+    }
+
+    function operationalRequirementsInput(context, requirementRoot) {
+        const doc = context.doc;
+        return {
+            texts: operationalRequirementsTexts(requirementRoot),
+            catalog: operationalRequirementsRuntimeCatalog(),
+            vehicleTypes: operationalRequirementsVehicleTypes(),
+            driving: operationalRequirementsDrivingSnapshot(doc),
+            selected: operationalRequirementsSelectedSnapshot(doc),
+            progress: operationalRequirementsProgress(requirementRoot),
+            missionAdditional: {}
+        };
+    }
+
+    function operationalRequirementsEscapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/gu, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+    }
+
+    function operationalRequirementsSelectedText(row, calcMaxStaff = false) {
+        if (typeof row?.selected === 'number') return Math.max(0, Number(row.selected) || 0).toLocaleString('en-GB');
+        const min = Math.max(0, Number(row?.selected?.min) || 0);
+        const max = Math.max(min, Number(row?.selected?.max) || 0);
+        if (calcMaxStaff || min === max) return (calcMaxStaff ? max : min).toLocaleString('en-GB');
+        return `${m

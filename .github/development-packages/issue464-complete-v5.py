@@ -11,8 +11,8 @@ end = code.index("'''\ncode = code[:ledger_start]", start)
 inner = r"""# Reconcile the source-headroom ledger with an explicit audited net physical-line delta.
 headroom_path=ROOT/'.github/scripts/test_main_style_source_headroom.py'
 headroom=headroom_path.read_text(encoding='utf-8')
-old_guard='        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or lines < 0:\n            fail("approved non-style source change entry is malformed")'
-new_guard='        net_delta = change.get("netPhysicalDelta") is True and issue == 464 and phase == "complete-launcher-settings-operational-runtime-and-mission-age-recovery"\n        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or (lines < 0 and not net_delta):\n            fail("approved non-style source change entry is malformed")'
+old_guard='        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or lines < 0:\\n            fail("approved non-style source change entry is malformed")'
+new_guard='        net_delta = change.get("netPhysicalDelta") is True and issue == 464 and phase == "complete-launcher-settings-operational-runtime-and-mission-age-recovery"\\n        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or (lines < 0 and not net_delta):\\n            fail("approved non-style source change entry is malformed")'
 if old_guard not in headroom: raise SystemExit('Issue #464 source-headroom guard anchor changed')
 headroom_path.write_text(headroom.replace(old_guard,new_guard,1),encoding='utf-8')
 fixture=json.loads(FIXTURE.read_text(encoding='utf-8'))

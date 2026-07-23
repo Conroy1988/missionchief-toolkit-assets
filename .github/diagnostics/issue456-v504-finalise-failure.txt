@@ -1,0 +1,44 @@
+ISSUE 456 V5.0.4 FINALISE DIAGNOSTIC
+returncode=1
+
+===== STDOUT =====
+Issue #456 requirements truth-state and dedupe runtime passed.
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed: 504 lines recovered (304 blank, 185 standalone comment, 15 closing-brace joins), 31653 source lines remain.
+Issue #378 enhanced requirements renderer contract passed.
+Issue #378 complete operational feature-suite contract passed.
+Issue #378 operational feature runtime fixtures passed.
+Issue #447 menu boot fail-open contract passed under the Issue #450 bootstrap architecture.
+Issue #450 core launcher bootstrap contract passed.
+Code-integrity release baseline: v5.0.3
+
+===== STDERR =====
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_issue454_preboot_state_order.py", line 19, in <module>
+    assert "// @version      5.0.3" in text
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+VALIDATION ERROR: Issue #454 preboot state-order contract failed
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue456-v5.0.4-truth-state-dedupe.py", line 331, in <module>
+    subprocess.run(["python3", str(VALIDATOR)], cwd=ROOT, env=ENV, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/validate_userscript.py']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue456-v5.0.4-finalise.py", line 35, in <module>
+    subprocess.run(["python3", str(BASE_PACKAGE)], cwd=ROOT, env=ENV, check=True, timeout=300)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['python3', '/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue456-v5.0.4-truth-state-dedupe.py']' returned non-zero exit status 1.
+

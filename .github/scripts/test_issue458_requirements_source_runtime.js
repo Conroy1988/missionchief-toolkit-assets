@@ -35,7 +35,15 @@ class Node {
 }
 const mission=visible=>new Node({id:'mission-form',visible});
 function doc({native=[],carriers=[],groups=[],missionRoot=mission(true)}={}){
-  const value={native,carriers,groups,missionRoot,defaultView:{getComputedStyle(node){return {display:node.visible?'block':'none',visibility:'visible'};}},querySelectorAll(selector){if(selector==='[id="missing_text"]')return this.native;if(selector==='[data-requirement-type]')return this.groups;if(selector==='.alert-missing-vehicles[data-raw-html]')return this.carriers;return[];},querySelector(selector){return selector.includes('#mission-form')?this.missionRoot:null;},createElement(){const node=new Node({visible:false});node.ownerDocument=value;return node;}};
+  const value={native,carriers,groups,missionRoot,defaultView:{getComputedStyle(node){return {display:node.visible?'block':'none',visibility:'visible'};}},querySelectorAll(selector){if(selector==='[id="missing_text"]')return this.native;if(selector==='[data-requirement-type]')return this.groups;if(selector==='.alert-missing-vehicles[data-raw-html]')return this.carriers;return[];},querySelector(selector){return selector.includes('#mission-form')?this.missionRoot:null;},createRange(){return{createContextualFragment(html){
+    const raw=String(html||'');
+    const type=raw.match(/data-requirement-type="([^"]+)"/iu)?.[1]||'';
+    const heading=raw.match(/<b>([^<]*)<\/b>/iu)?.[1]||'';
+    const plain=raw.replace(/<[^>]+>/gu,' ').replace(/\s+/gu,' ').trim();
+    const node=new Node({visible:false,text:plain});node.ownerDocument=value;
+    if(type){const group=new Node({visible:false,text:plain,attrs:{'data-requirement-type':type}});group.ownerDocument=value;group.querySelector=selector=>selector==='b'&&heading?new Node({text:heading}):null;node.groups=[group];}
+    return node;
+}}}};
   [...native,...carriers,...groups,missionRoot].filter(Boolean).forEach(node=>node.ownerDocument=value);
   return value;
 }
@@ -57,5 +65,6 @@ selected=sandbox.resolveSource(doc({native:[toolkit,populated],missionRoot:activ
 const delayed=doc({native:[empty],missionRoot:active});selected=sandbox.resolveSource(delayed);if(selected.root!==empty||selected.raw||selected.groupedCount)throw new Error('empty placeholder was not retained as safe pending');delayed.native.push(populated);if(sandbox.resolveSource(delayed).root!==populated)throw new Error('later replacement source was not selected');
 if(!source.includes('context.boundRequirementSource === sourceFingerprint'))throw new Error('observer source-rebind contract is missing');
 if(!source.includes('filter(root => root && root.isConnected !== false)'))throw new Error('observer root filter admits null candidates');
+if(!source.includes('if (!rawHtml || !doc?.createRange) return null;')||!source.includes('createContextualFragment?.(rawHtml)')||source.includes('holder.innerHTML = rawHtml')||source.includes('if (!rawHtml || !doc?.createElement) return null;'))throw new Error('LSSM raw parser dependency or performance contract is invalid');
 if(!source.includes("element.querySelector?.('b')?.textContent"))throw new Error('native requirement heading removal is missing');
 console.log('Issue #458 authoritative requirement-source runtime passed.');

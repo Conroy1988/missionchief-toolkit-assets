@@ -14,6 +14,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Recovered requirement evidence from hidden LSSM `data-raw-html` carriers while continuing to suppress a genuinely visible equivalent LSSM panel.
 - Removed native MissionChief requirement headings before parsing, matching the authorised LSSM parser contract.
 - Rebound the operational observer whenever the authoritative source changes and added behavioural coverage for duplicate, stale, delayed, LSSM and Toolkit-owned roots.
+- Decoded hidden LSSM raw markup with a contextual fragment rather than adding another `innerHTML` assignment site, preserving the established performance ceiling.
 
 
 ## [5.0.4] - 2026-07-23

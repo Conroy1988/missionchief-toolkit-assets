@@ -22298,11 +22298,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function operationalRequirementsRawHtmlRoot(doc, carrier) {
         const rawHtml = String(carrier?.getAttribute?.('data-raw-html') || '').trim();
-        if (!rawHtml || !doc?.createElement) return null;
-        const holder = doc.createElement('div');
-        holder.setAttribute('data-mcms-requirement-source', 'lssm-raw');
-        holder.innerHTML = rawHtml;
-        return holder.querySelector?.('[data-requirement-type]') ? holder : null;
+        if (!rawHtml || !doc?.createRange) return null;
+        const range = doc.createRange();
+        const fragment = range?.createContextualFragment?.(rawHtml);
+        if (!fragment?.querySelector?.('[data-requirement-type]')) return null;
+        return fragment;
     }
 
     function operationalRequirementsCandidateRecord(root, anchor, kind, index) {

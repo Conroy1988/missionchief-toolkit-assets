@@ -1,0 +1,433 @@
+ISSUE391_OPERATIONAL_SUITE_TAIL_MAP_V1
+range=22820-23250
+22820:         const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');
+22821:         const patients = operationalQueryAll(doc, '#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');
+22822:         const vehicles = operationalQueryAll(doc, '#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr');
+22823:         const selected = operationalRequirementsSelectedSnapshot(doc);
+22824:         const arr = operationalQueryAll(doc, '[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);
+22825:         if (settings.patientSummary) bar.appendChild(operationalPill(doc, `Patients ${patients.length}`, 'call-patients'));
+22826:         if (settings.vehicleCounter) bar.appendChild(operationalPill(doc, `Vehicles ${vehicles.length}`, 'call-vehicles'));
+22827:         if (settings.selectedVehicleCounter || settings.stagingAreaSelectedCounter) bar.appendChild(operationalPill(doc, `Selected ${selected.length}`, 'call-selected'));
+22828:         if (settings.playerCounter) {
+22829:             const players = new Set(vehicles.map(row => row.dataset?.userId || row.getAttribute?.('data-user-id')).filter(Boolean));
+22830:             bar.appendChild(operationalPill(doc, `Players ${players.size}`, 'call-players'));
+22831:         }
+22832:         if (settings.arrCounter) bar.appendChild(operationalPill(doc, `ARR ${arr.length}`, 'call-arr-count'));
+22833:         if (settings.generationDate || settings.alarmTime) {
+22834:             const time = operationalQuery(doc, 'time[datetime],[data-generation-date],[data-alarm-time]');
+22835:             const raw = time?.getAttribute?.('datetime') || time?.getAttribute?.('data-generation-date') || time?.getAttribute?.('data-alarm-time');
+22836:             if (raw) bar.appendChild(operationalPill(doc, `${settings.alarmTime ? 'Alarm' : 'Generated'} ${raw}`, 'call-time'));
+22837:         }
+22838:         if (settings.collapsiblePatients && patients.length >= Number(settings.collapsiblePatientsMinPatients || 0)) {
+22839:             const button = operationalFeatureOwn(doc.createElement('button'), 'call-patient-toggle');
+22840:             button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Toggle patients';
+22841:             button.onclick = () => patients.forEach(node => node.classList.toggle('mcms-operational-patient-hidden'));
+22842:             bar.appendChild(button);
+22843:         }
+22844:         const search = (label, rows, kind) => {
+22845:             const input = operationalFeatureOwn(doc.createElement('input'), kind);
+22846:             input.type = 'search'; input.className = 'form-control input-sm'; input.placeholder = label;
+22847:             input.oninput = () => {
+22848:                 const query = input.value.trim().toLocaleLowerCase('en-GB');
+22849:                 rows.forEach(row => { row.hidden = Boolean(query) && !String(row.textContent || '').toLocaleLowerCase('en-GB').includes(query); });
+22850:             };
+22851:             bar.appendChild(input); return input;
+22852:         };
+22853:         if (settings.vehicleListPermanentSearch && vehicles.length) search('Search vehicles', vehicles, 'call-vehicle-search');
+22854:         if (settings.arrSearch && arr.length) {
+22855:             const input = search('Search ARR', arr, 'call-arr-search');
+22856:             input.onkeydown = event => {
+22857:                 if (event.key !== 'Enter') return;
+22858:                 const visible = arr.filter(row => !row.hidden);
+22859:                 if (settings.arrSearchSelectOnEnter && visible.length === 1) operationalQuery(visible[0], 'a,button,input')?.click?.();
+22860:                 if (settings.arrSearchClearOnEnter) { input.value = ''; input.oninput(); }
+22861:             };
+22862:             if (settings.arrSearchAutoFocus) runtimeSetTimeout(() => input.focus(), 0);
+22863:         }
+22864:         if (settings.hideVehicleList) {
+22865:             const list = operationalQuery(doc, '#vehicle_show_table_body_all');
+22866:             const button = operationalFeatureOwn(doc.createElement('button'), 'call-vehicle-toggle');
+22867:             button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Toggle vehicles';
+22868:             button.onclick = () => list?.classList.toggle('mcms-operational-vehicle-hidden'); bar.appendChild(button);
+22869:         }
+22870:         if (settings.centerMap) {
+22871:             const native = operationalQuery(doc, '.map_position_mover,[data-action="center-map"],#map_position');
+22872:             if (native) {
+22873:                 const button = operationalFeatureOwn(doc.createElement('button'), 'call-center-map');
+22874:                 button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Centre map'; button.onclick = () => native.click(); bar.appendChild(button);
+22875:             }
+22876:         }
+22877:         if (settings.vehicleTypeInList) vehicles.forEach(row => {
+22878:             if (operationalQuery(row, `[${OP_FEATURE_ATTR}="call-vehicle-type"]`)) return;
+22879:             const type = operationalRequirementsVehicleType(row); if (type < 0) return;
+22880:             const badge = operationalPill(doc, `Type ${type}`, 'call-vehicle-type'); (operationalQuery(row, 'td') || row).appendChild(badge);
+22881:         });
+22882:         if (settings.stickyHeader) operationalQueryAll(doc, '#vehicle_show_table thead').forEach(node => {
+22883:             node.style.position = 'sticky'; node.style.top = '0'; node.style.zIndex = '4'; node.dataset.mcmsOperationalSticky = 'true';
+22884:         });
+22885:         for (const keyword of settings.missionKeywords || []) {
+22886:             const text = String(keyword?.keyword || keyword?.text || ''); const title = operationalQuery(doc, 'h1,.mission_title')?.textContent || '';
+22887:             if (text && title.toLocaleLowerCase('en-GB').includes(text.toLocaleLowerCase('en-GB'))) bar.appendChild(operationalPill(doc, text, 'call-keyword'));
+22888:         }
+22889:         if (settings.arrClickHighlight || settings.arrMatchHighlight) {
+22890:             const feature = operationalFeatureState(context);
+22891:             arr.forEach(row => {
+22892:                 if (feature.arrHandlers.has(row)) return;
+22893:                 const previous = row.onclick; feature.arrHandlers.set(row, previous);
+22894:                 row.onclick = function (event) {
+22895:                     previous?.call?.(this, event);
+22896:                     if (state.operationalWindow?.callWindow?.arrCounterResetSelection) arr.forEach(item => item.classList.remove('mcms-operational-arr-match'));
+22897:                     row.style.setProperty('--mcms-arr-colour', state.operationalWindow?.callWindow?.arrClickHighlightColor || '#008000');
+22898:                     row.classList.add('mcms-operational-arr-match');
+22899:                 };
+22900:             });
+22901:         }
+22902:     }
+22903: 
+22904:     function operationalMissionListRoot(doc) {
+22905:         for (const selector of ['#mission_list','#missions','#mission-list','#missions-panel','#mission_panel','.mission-list','.missionSideBarList','[data-mission-list]']) {
+22906:             const root = operationalQuery(doc, selector);
+22907:             if (root && operationalQuery(root, 'a[href*="/missions/"]')) return root;
+22908:         }
+22909:         return null;
+22910:     }
+22911:     function operationalMissionRows(root) {
+22912:         const rows = operationalQueryAll(root, '.missionSideBarEntry,.mission-side-bar-entry,[data-mission-id],[id^="mission_"]').filter(operationalFeatureMissionId);
+22913:         return rows.length ? Array.from(new Set(rows)) : Array.from(new Set(operationalQueryAll(root, 'a[href*="/missions/"]').map(link => link.closest?.('li,.panel,[id^="mission_"]')).filter(Boolean)));
+22914:     }
+22915:     function operationalMissionListComputeOrder(records, type = '', direction = '', starredIds = []) {
+22916:         const starred = new Set((starredIds || []).map(String)); const multiplier = direction === 'desc' ? -1 : 1;
+22917:         const value = record => type === 'name' ? record.name.toLocaleLowerCase('en-GB') : type ? Number(record[type]) || 0 : record.index;
+22918:         return records.slice().sort((left, right) => {
+22919:             const stars = Number(starred.has(right.id)) - Number(starred.has(left.id)); if (stars) return stars;
+22920:             const a = value(left), b = value(right); return (typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - b) * multiplier;
+22921:         });
+22922:     }
+22923:     function operationalMissionListApply(context) {
+22924:         const settings = state.operationalWindow?.missionList || {}; const doc = context.doc; const root = operationalMissionListRoot(doc);
+22925:         if (!settings.enabled || !root || operationalQuery(doc, '[data-module="extendedCallList"]')) { operationalFeatureRemove(context, 'list-'); return; }
+22926:         operationalFeatureStyle(doc); operationalFeatureRemove(context, 'list-');
+22927:         const rows = operationalMissionRows(root);
+22928:         const records = rows.map((row, index) => {
+22929:             const id = operationalFeatureMissionId(row); const name = String(operationalQuery(row, 'a[href*="/missions/"]')?.textContent || row.textContent || '').trim();
+22930:             return { id, row, name, credits: operationalFeatureNumber(row, ['data-credits','data-average-credits']), patients: operationalFeatureNumber(row, ['data-patients','data-patient-count']), prisoners: operationalFeatureNumber(row, ['data-prisoners','data-prisoner-count']), time: operationalFeatureNumber(row, ['data-remaining-time','data-time-left']), index };
+22931:         });
+22932:         const toolbar = operationalFeatureBar(doc, root.firstChild || root, 'list-toolbar'); root.insertBefore(toolbar, root.firstChild);
+22933:         if (settings.sortMissions) {
+22934:             const select = operationalFeatureOwn(doc.createElement('select'), 'list-sort'); select.className = 'form-control input-sm';
+22935:             select.innerHTML = '<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>'; select.value = settings.sortMissionsType || '';
+22936:             select.onchange = () => { settings.sortMissionsType = select.value; saveState(); scheduleOperationalSuiteScan(0); }; toolbar.appendChild(select);
+22937:         }
+22938:         if (settings.collapsibleMissionsAllButton) {
+22939:             const all = operationalFeatureOwn(doc.createElement('button'), 'list-collapse-all'); all.type = 'button'; all.className = 'btn btn-default btn-sm'; all.textContent = settings.allMissionsCollapsed ? 'Expand all' : 'Collapse all';
+22940:             all.onclick = () => { settings.allMissionsCollapsed = !settings.allMissionsCollapsed; settings.collapsedMissions = settings.allMissionsCollapsed ? records.map(record => record.id) : []; saveState(); scheduleOperationalSuiteScan(0); }; toolbar.appendChild(all);
+22941:         }
+22942:         records.forEach(record => {
+22943:             const controls = operationalFeatureOwn(doc.createElement('span'), `list-controls-${record.id}`); controls.className = 'mcms-operational-controls';
+22944:             if (settings.starrableMissions) {
+22945:                 const star = doc.createElement('button'); star.type = 'button'; star.className = 'btn btn-default btn-xs'; star.textContent = settings.starredMissions.includes(record.id) ? '★' : '☆';
+22946:                 star.onclick = event => { event.preventDefault(); settings.starredMissions = settings.starredMissions.includes(record.id) ? settings.starredMissions.filter(id => id !== record.id) : [...settings.starredMissions, record.id]; saveState(); scheduleOperationalSuiteScan(0); }; controls.appendChild(star);
+22947:                 record.row.classList.toggle('mcms-operational-starred', settings.starredMissions.includes(record.id));
+22948:             }
+22949:             if (settings.collapsibleMissions) {
+22950:                 const collapse = doc.createElement('button'); collapse.type = 'button'; collapse.className = 'btn btn-default btn-xs'; collapse.textContent = settings.collapsedMissions.includes(record.id) ? '＋' : '−';
+22951:                 collapse.onclick = event => { event.preventDefault(); settings.collapsedMissions = settings.collapsedMissions.includes(record.id) ? settings.collapsedMissions.filter(id => id !== record.id) : [...settings.collapsedMissions, record.id]; saveState(); scheduleOperationalSuiteScan(0); }; controls.appendChild(collapse);
+22952:                 record.row.classList.toggle('mcms-operational-collapsed', settings.collapsedMissions.includes(record.id));
+22953:             }
+22954:             if (settings.shareMissions) {
+22955:                 const native = operationalQuery(record.row, 'a[href*="share"],button[data-action*="share"],.mission-share-button');
+22956:                 if (native) { const share = doc.createElement('button'); share.type = 'button'; share.className = 'btn btn-success btn-xs'; share.textContent = 'Share'; share.onclick = event => { event.preventDefault(); native.click(); }; controls.appendChild(share); }
+22957:             }
+22958:             (operationalQuery(record.row, 'a[href*="/missions/"]') || record.row).appendChild(controls);
+22959:             const badges = [];
+22960:             if (settings.currentPatients && (!settings.hideZeroCurrentPatients || record.patients)) badges.push(`Patients ${record.patients}`);
+22961:             if (settings.currentPrisoners && (!settings.hideZeroCurrentPrisoners || record.prisoners)) badges.push(`Prisoners ${record.prisoners}`);
+22962:             if (settings.averageCredits && record.credits) badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);
+22963:             if (settings.remainingTime && record.time) badges.push(`Time ${record.time}s`);
+22964:             if (badges.length) { const badge = operationalFeatureOwn(doc.createElement('div'), `list-badges-${record.id}`); badge.className = 'mcms-operational-bar'; badge.innerHTML = badges.map(text => `<span class="mcms-operational-pill">${operationalEscape(text)}</span>`).join(''); record.row.appendChild(badge); }
+22965:         });
+22966:         if (settings.sortMissions) operationalMissionListComputeOrder(records, settings.sortMissionsType, settings.sortMissionsDirection, settings.starredMissions).forEach(record => record.row.parentNode?.appendChild(record.row));
+22967:     }
+22968: 
+22969:     function operationalTransportChooseAction(route, candidates, settings, usedTokens = []) {
+22970:         const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
+22971:         const mode = settings?.enabled && mission && settings.autoOpenTransportRequest ? 'open' : settings?.enabled && vehicle && settings.autoClickSuccessButtons ? 'success' : '';
+22972:         const used = new Set((usedTokens || []).map(String));
+22973:         const eligible = (candidates || []).filter(item => item?.mode === mode && item.visible !== false && item.disabled !== true && !used.has(String(item.token || '')));
+22974:         return eligible.length === 1 ? eligible[0] : null;
+22975:     }
+22976:     function operationalTransportApply(context) {
+22977:         const settings = state.operationalWindow?.transport || {}; const doc = context.doc;
+22978:         if (!settings.enabled || operationalQuery(doc, '[data-module="enhancedTransportRequests"]')) return;
+22979:         const feature = operationalFeatureState(context); const route = String(doc.defaultView?.location?.pathname || '');
+22980:         if (feature.route !== route) { feature.route = route; feature.transportTokens.clear(); }
+22981:         const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
+22982:         const selector = mission ? 'a[href*="/patient/"],a[href*="/gefangener/"],a[href*="/prisoner/"],a[href*="transport"],button[data-action*="transport"],.transport_request' : vehicle ? 'a.btn-success,button.btn-success,input.btn-success' : '';
+22983:         const mode = mission ? 'open' : 'success';
+22984:         const candidates = selector ? operationalQueryAll(doc, selector).filter(node => /transport|hospital|prison|patient|continue|confirm|select/i.test(String(node.textContent || node.value || node.title || node.getAttribute?.('href') || ''))).map(node => ({
+22985:             node, mode, visible: operationalVisible(node), disabled: Boolean(node.disabled || node.classList?.contains('disabled') || node.getAttribute?.('aria-disabled') === 'true'),
+22986:             token: `${route}|${mode}|${node.id || node.getAttribute?.('href') || node.textContent || node.value}`
+22987:         })) : [];
+22988:         const action = operationalTransportChooseAction(route, candidates, settings, feature.transportTokens);
+22989:         if (!action?.node) return; feature.transportTokens.add(action.token);
+22990:         runtimeSetTimeout(() => { if (!runtime.destroyed && operationalVisible(action.node)) action.node.click(); }, 80);
+22991:     }
+22992: 
+22993:     function operationalFeatureObservationRoots(doc) {
+22994:         return [operationalMissionListRoot(doc), operationalQuery(doc, '#mission_patients,.mission_patients'), operationalQuery(doc, '#aao,#aao_search_results,.aao-container'), operationalQuery(doc, '#mission_general_info,.mission_general_info'), operationalQuery(doc, '.vehicle_patient_select,.vehicle_prisoner_select')].filter(Boolean);
+22995:     }
+22996:     function operationalFeatureRenderContext(context) {
+22997:         if (!context?.doc || runtime.destroyed || !operationalSuiteEnabled()) return;
+22998:         operationalCallWindowApply(context); operationalMissionListApply(context); operationalTransportApply(context);
+22999:     }
+23000:     function operationalFeatureCleanupContext(context) {
+23001:         const feature = operationalFeatureContexts.get(context);
+23002:         for (const [row, previous] of feature?.arrHandlers || []) { try { row.onclick = previous || null; } catch (error) {} }
+23003:         operationalFeatureRemove(context);
+23004:         operationalQueryAll(context?.doc, '[data-mcms-operational-sticky="true"]').forEach(node => { node.style.removeProperty('position'); node.style.removeProperty('top'); node.style.removeProperty('z-index'); delete node.dataset.mcmsOperationalSticky; });
+23005:         operationalQueryAll(context?.doc, '.mcms-operational-starred,.mcms-operational-collapsed,.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden,.mcms-operational-arr-match').forEach(node => node.classList.remove('mcms-operational-starred','mcms-operational-collapsed','mcms-operational-patient-hidden','mcms-operational-vehicle-hidden','mcms-operational-arr-match'));
+23006:         operationalFeatureContexts.delete(context);
+23007:     }
+23008:     // Issue #378 end complete operational feature suite.
+23009: 
+23010: 
+23011:     // Issue #378 LSSM operational-suite lifecycle shell.
+23012:     // This phase owns settings, context identity, scheduling and teardown only. It must not
+23013:     // render a second requirements surface while the legacy Matrix remains the stable runtime.
+23014:     function operationalSuiteEnabled() {
+23015:         return state.operationalWindow?.enabled === true;
+23016:     }
+23017: 
+23018:     function operationalSuiteDocumentContexts() {
+23019:         const contexts = [];
+23020:         const seen = new Set();
+23021:         for (const candidate of transportSweepDocumentContexts()) {
+23022:             const doc = candidate?.doc;
+23023:             if (!doc?.querySelector || seen.has(doc)) continue;
+23024:             seen.add(doc);
+23025:             contexts.push(doc);
+23026:         }
+23027:         return contexts;
+23028:     }
+23029: 
+23030:     function operationalSuiteDisposeContext(context) {
+23031:         if (!context) return;
+23032:         operationalFeatureCleanupContext(context);
+23033:         try { context.observer?.disconnect?.(); } catch (err) {}
+23034:         context.observer = null;
+23035:         runtimeClearTimeout(context.renderTimer);
+23036:         context.renderTimer = null;
+23037:         if (context.changeHandler && context.doc) context.doc.removeEventListener('change', context.changeHandler, true);
+23038:         context.changeHandler = null;
+23039:         context.panel?.remove?.();
+23040:         context.panel = null;
+23041:         context.root = null;
+23042:         if (context.doc) operationalSuiteContexts.delete(context.doc);
+23043:         context.doc = null;
+23044:     }
+23045: 
+23046:     function clearOperationalSuiteContexts() {
+23047:         for (const context of Array.from(operationalSuiteContexts.values())) operationalSuiteDisposeContext(context);
+23048:         operationalSuiteContexts.clear();
+23049:     }
+23050: 
+23051:     function operationalSuiteEnsureContext(doc) {
+23052:         if (!doc?.querySelector) return null;
+23053:         const existing = operationalSuiteContexts.get(doc);
+23054:         if (existing) {
+23055:             existing.root = doc.documentElement || doc.body || existing.root;
+23056:             existing.seenAt = Date.now();
+23057:             operationalRequirementsBindContext(existing);
+23058:             return existing;
+23059:         }
+23060:         const context = {
+23061:             doc,
+23062:             root: doc.documentElement || doc.body || null,
+23063:             observer: null,
+23064:             renderTimer: null,
+23065:             changeHandler: null,
+23066:             panel: null,
+23067:             fingerprint: '',
+23068:             minified: state.operationalWindow?.requirements?.minified === true,
+23069:             boundRequirementRoot: null,
+23070:             observedRootCount: 0,
+23071:             generation: 0,
+23072:             seenAt: Date.now(),
+23073:             baseline: OPERATIONAL_SUITE_LSSM_BASELINE.commit
+23074:         };
+23075:         operationalSuiteContexts.set(doc, context);
+23076:         operationalRequirementsBindContext(context);
+23077:         return context;
+23078:     }
+23079: 
+23080:     function scanOperationalSuiteShell() {
+23081:         if (runtime.destroyed) return;
+23082:         if (!operationalSuiteEnabled()) {
+23083:             clearOperationalSuiteContexts();
+23084:             return;
+23085:         }
+23086:         const activeDocuments = new Set();
+23087:         for (const doc of operationalSuiteDocumentContexts()) {
+23088:             const context = operationalSuiteEnsureContext(doc);
+23089:             if (!context) continue;
+23090:             activeDocuments.add(doc);
+23091:             context.generation = ++operationalSuiteRevision;
+23092:             operationalRequirementsBindContext(context);
+23093:             operationalRequirementsScheduleContext(context, 0);
+23094:         }
+23095:         for (const [doc, context] of Array.from(operationalSuiteContexts.entries())) {
+23096:             if (!activeDocuments.has(doc) || context.root?.isConnected === false) operationalSuiteDisposeContext(context);
+23097:         }
+23098:     }
+23099: 
+23100:     function scheduleOperationalSuiteScan(delay = 0) {
+23101:         if (runtime.destroyed) return;
+23102:         runtimeClearTimeout(operationalSuiteScanTimer);
+23103:         operationalSuiteScanTimer = runtimeSetTimeout(() => {
+23104:             operationalSuiteScanTimer = null;
+23105:             scanOperationalSuiteShell();
+23106:         }, Math.max(0, Number(delay) || 0));
+23107:     }
+23108: 
+23109:     function installOperationalSuiteShell() {
+23110:         if (operationalSuiteInstalled) {
+23111:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+23112:             return;
+23113:         }
+23114:         operationalSuiteInstalled = true;
+23115:         runtime.operationalSuite = Object.freeze({
+23116:             baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
+23117:             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+23118:             phase: 'operational-suite',
+23119:             schedule: scheduleOperationalSuiteScan,
+23120:             contextCount: () => operationalSuiteContexts.size
+23121:         });
+23122:         runtimeOnCleanup(() => {
+23123:             runtimeClearTimeout(operationalSuiteScanTimer);
+23124:             operationalSuiteScanTimer = null;
+23125:             clearOperationalSuiteContexts();
+23126:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+23127:         });
+23128:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+23129:     }
+23130: 
+23131:     // Issue #133 clean-room live mission requirements matrix.
+23132:     // MissionChief's active mission DOM is authoritative. Unknown labels remain unresolved.
+23133:     const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([{"key":"police-helicopter-or-drone","label":"Police Helicopter or Drone","aliases":["Police Helicopter or Drone","Police Helicopters or Drones"],"types":[11,89,90,91],"equipment":["drone"]},{"key":"riv-or-major-foam","label":"RIV or Major Foam Tender","aliases":["RIV or Major Foam Tender","RIVs or Major Foam Tenders"],"types":[75,76]},{"key":"fire-engine-or-major-foam","label":"Fire Engine or Major Foam Tender","aliases":["Fire Engine or Major Foam Tender","Fire Engines or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75]},{"key":"fire-engine-riv-or-major-foam","label":"Fire Engine, RIV or Major Foam Tender","aliases":["Fire Engine, RIV or Major Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-or-sar-4x4","label":"Mountain Rescue 4x4 or SAR 4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic","label":"RRV or Specialist Paramedic RRV","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]},{"key":"fire-engine-or-riv","label":"Fire Engine or RIV","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-or-stairs","label":"Aerial Appliance or Rescue Stairs","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-rescue-aerial","label":"Fire, rescue or aerial appliance","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-or-rescue","label":"Fire Engine or Rescue Support Vehicle","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"police-or-arv","label":"Police Car or ARV","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"rsu-or-rescue-pump","label":"Rescue Support Unit or Rescue Pump","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"rescue-support-vehicle","label":"Rescue Support Vehicle","aliases":["Rescue Support Vehicle","Rescue Support Vehicles"],"types":[4,16,38,43]},{"key":"iccu-or-control","label":"ICCU or Ambulance Control Unit","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units","ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle","ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"],"types":[15,31,44,77]},{"key":"hazmat-or-cbrn","label":"HazMat Unit or CBRN Vehicle","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"boat-or-inland","label":"Inland Rescue Boat (Trailer)","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats","Inland Rescue Boat (Trailer)","Inland Rescue Boats (Trailer)","Inland Rescue Boat (Trailers)","Inland Rescue Boats (Trailers)"],"types":[67,74],"pair":true},{"key":"ilb-or-alb","label":"Seagoing Vessel","aliases":["ILB or ALB","ILBs or ALBs","Seagoing Vessel","Seagoing Vessels","ALB or ILB","ALBs or ILBs"],"types":[68,69]},{"key":"sar-support","label":"Operational Support or SAR Vehicle","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle","Operational Support Vans, Trailers or Personal SAR Vehicles"],"types":[86,87,92],"pair":true},{"key":"fire-engine","label":"Fire Engine","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"aerial","label":"Aerial Appliance Truck","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"fire-officer","label":"Fire Officer","aliases":["Fire Officer","Fire Officers","Fire Officer or Airfield Firefighting Command Vehicle","Fire Officers or Airfield Firefighting Command Vehicles"],"types":[3,15,44,77]},{"key":"basu","label":"Breathing Apparatus Support Unit (BASU)","aliases":["BASU","BASUs","Breathing Apparatus Support Unit","Breathing Apparatus Support Units"],"types":[14,39,46,49],"details":"Eligible vehicles: BASU, OSU, BASU Pod and OSU Pod. Prime Movers only count when paired with an eligible pod."},{"key":"water-carrier","label":"Water Carrier","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone","label":"Drone","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"control-van","label":"Control Van","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"ambulance","label":"Ambulance","aliases":["Ambulance","Ambulances"],"types":[5,9]},{"key":"police-car","label":"Police Car","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems","label":"HEMS","aliases":["HEMS"],"types":[9]},{"key":"critical-care-patient","label":"Critical Care","aliases":["Critical Care"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"patient-transport","label":"Patient Transport","aliases":["Patient Transport"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"police-helicopter","label":"Police Helicopter","aliases":["Police helicopter","Police helicopters","Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response","label":"Armed Response","aliases":["Armed Response","Armed Response Vehicle","Armed Response Vehicles"],"types":[13,25,52,56,82]},{"key":"dsu","label":"Dog Support Unit (DSU)","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"otl","label":"Operational Team Leader","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car","label":"Traffic Car","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier","label":"ATV Carrier","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response","label":"Primary Response Vehicle","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response","label":"Secondary Response Vehicle","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare","label":"Welfare Vehicle","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer","label":"Ambulance Officer","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit","label":"Foam Unit","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty","label":"Mass Casualty Equipment","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted","label":"Mounted Unit","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4","label":"4x4 Vehicle","aliases":["4x4 Vehicle","4x4 Vehicles","4x4 Unit","4x4 Units"],"types":[66,73,93]},{"key":"coastguard-rope","label":"Coastguard Rope Rescue Unit","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue","label":"Flood Rescue Unit","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv","label":"CRV","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander","label":"Coastguard Commander","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"ilb","label":"ILB","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-helicopter","label":"Coastguard Rescue Helicopter","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb","label":"ALB","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decon","label":"Mud Decontamination Unit","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit","label":"Support Unit","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft","label":"Rescue Watercraft Trailer","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70],"pair":true},{"key":"coastguard-mud","label":"Coastguard Mud Rescue Unit","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft","label":"Hovercraft Trailer","aliases":["Hovercraft (trailer)","Hovercrafts (trailer)"],"types":[71],"pair":true},{"key":"major-foam","label":"Major Foam Tender","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair","label":"Rescue Stair","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-command","label":"Airfield Firefighting Command Vehicle","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations","label":"Airfield Operations Vehicle","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv","label":"RIV","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-trailer","label":"Medical Equipment Trailer","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81],"pair":true},{"key":"airfield-supervisor","label":"Airfield Operations Supervisor","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell","label":"Armed Cell Van","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"cycle-responder","label":"Medical Cycle Responder","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"midwife","label":"Community Midwife","aliases":["Community Midwife","Community Midwives","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic","label":"Specialist Paramedic RRV","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog","label":"Rescue Dog","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-4x4","label":"Mountain Rescue 4x4","aliases":["Mountain Rescue 4x4","Mountain Rescue 4x4s"],"types":[99]},{"key":"car-recovery","label":"Car Recovery","aliases":["car to tow","cars to tow"],"types":[104,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"training":["Level 1 Public Order Officer","Level 1 Public Order","Level 1 Public Order Training","level_1_public_order"],"countable":true,"arrAttributes":["level_1_public_order"]},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[108],"training":["Railway Police Officer","Railway Police","railway_police"],"countable":true,"requireExplicitTraining":true,"arrAttributes":["railway_police"]},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Training","search_and_rescue"],"arrAttributes":["search_and_rescue"],"countable":true},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[85,100],"training":["SAR Commander","Search Management Training","search_and_rescue_command"],"arrAttributes":["search_and_rescue_command"],"countable":true},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases":["Water","litres of water","liters of water"],"group":"other","bar":"water","types":[]},{"key":"foam-resource","label":"Foam","aliases":["Foam","litres of foam","liters of foam"],"group":"other","bar":"foam","types":[]},{"key":"pump-resource","label":"Pumping Capacity","aliases":["l/min pumping process","l/min pumping capacity","Pumping Capacity"],"group":"other","bar":"pump","types":[]},{"key":"fire-engine-2","group":"vehicles","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"fire-engine-or-riv-2","group":"vehicles","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-appliance-truck","group":"vehicles","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"aerial-appliance-truck-or-rescue-stairs","group":"vehicles","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-officer-2","group":"vehicles","aliases":["Fire Officer","Fire Officers"],"types":[3,15,44,77]},{"key":"rescue-support-unit-or-rescue-pump","group":"vehicles","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"fire-engine-rescue-support-vehicle-or-aerial-appliance-truck","group":"vehicles","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-engine-or-rescue-support-vehicle","group":"vehicles","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"basu-2","group":"vehicles","aliases":["BASU","BASUs"],"types":[14,39,46,49]},{"key":"water-carrier-2","group":"vehicles","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone-2","group":"vehicles","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"operational-support-van-trailer-or-personal-sar-vehicle","group":"vehicles","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle"],"types":[86,87,92]},{"key":"control-van-2","group":"vehicles","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"iccu-or-ambulance-control-unit","group":"vehicles","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units"],"types":[15,31,44,77]},{"key":"hazmat-unit-or-cbrn-vehicle","group":"vehicles","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"ambulance-2","group":"vehicles","aliases":["Ambulance","Ambulances"],"types":[5]},{"key":"police-car-2","group":"vehicles","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"police-car-or-armed-response-vehicle","group":"vehicles","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems-2","group":"vehicles","aliases":["HEMS"],"types":[9]},{"key":"policehelicopter","group":"vehicles","aliases":["Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response-2","group":"vehicles","aliases":["Armed Response"],"types":[13,25,52,56,82]},{"key":"dog-support-unit","group":"vehicles","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"operational-team-leader","group":"vehicles","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car-2","group":"vehicles","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier-2","group":"vehicles","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response-vehicle","group":"vehicles","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response-vehicle","group":"vehicles","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare-vehicle","group":"vehicles","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer-2","group":"vehicles","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit-2","group":"vehicles","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty-equipment","group":"vehicles","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted-unit","group":"vehicles","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4-vehicle","group":"vehicles","aliases":["4x4 Vehicle","4x4 Vehicles"],"types":[66,73,93]},{"key":"coastguard-rope-rescue-unit","group":"vehicles","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue-unit","group":"vehicles","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv-2","group":"vehicles","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander-2","group":"vehicles","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"boat-trailer-or-inland-rescue-boat","group":"vehicles","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats"],"types":[67,74]},{"key":"ilb-or-alb-2","group":"vehicles","aliases":["ILB or ALB","ILBs or ALBs"],"types":[68,69]},{"key":"ilb-2","group":"vehicles","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-rescue-helicopter","group":"vehicles","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb-2","group":"vehicles","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decontamination-unit","group":"vehicles","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit-2","group":"vehicles","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft-trailer","group":"vehicles","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70]},{"key":"coastguard-mud-rescue-unit","group":"vehicles","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft-trailer","group":"vehicles","aliases":["Hovercraft (trailer)","hovercrafts (trailer)"],"types":[71]},{"key":"major-foam-tender","group":"vehicles","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair-2","group":"vehicles","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-firefighting-command-vehicle","group":"vehicles","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations-vehicle","group":"vehicles","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv-2","group":"vehicles","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-equipment-trailer","group":"vehicles","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81]},{"key":"airfield-operations-supervisor","group":"vehicles","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell-van","group":"vehicles","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"medical-cycle-responder","group":"vehicles","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"community-midwife","group":"vehicles","aliases":["Community Midwife","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic-rrv","group":"vehicles","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog-2","group":"vehicles","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-rescue-4x4","group":"vehicles","aliases":["Mountain Rescue 4x4"],"types":[99]},{"key":"road-rail-unit","group":"vehicles","aliases":["Road Rail Unit"],"types":[107]},{"key":"eiu-2","group":"vehicles","aliases":["EIU"],"types":[108]},{"key":"eod-commander-2","group":"vehicles","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response-vehicle","group":"vehicles","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium-equipment-van","group":"vehicles","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy-equipment-vehicle","group":"vehicles","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response-vehicle","group":"vehicles","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment-van","group":"vehicles","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]}].map(definition => Object.freeze({ group: 'vehicles', aliases: [], types: [], equipment: [], factors: {}, ...definition })));
+23134:     const MISSION_REQUIREMENT_PARSE_DEFINITIONS = Object.freeze([...MISSION_REQUIREMENT_DEFINITIONS].sort((left, right) => Math.max(...((right.aliases && right.aliases.length) ? right.aliases : ['']).map(value => String(value).length)) - Math.max(...((left.aliases && left.aliases.length) ? left.aliases : ['']).map(value => String(value).length))));
+23135: 
+23136:     function missionRequirementsEscapeRegex(value) {
+23137:         return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+23138:     }
+23139: 
+23140:     function missionRequirementsNumber(value) {
+23141:         const digits = String(value ?? '').replace(/[^0-9-]/g, '');
+23142:         const number = Number.parseInt(digits, 10);
+23143:         return Number.isFinite(number) ? Math.max(0, number) : 0;
+23144:     }
+23145: 
+23146:     function missionRequirementsOptionalNumber(value) {
+23147:         const text = String(value ?? '').trim();
+23148:         if (!/\d/u.test(text)) return null;
+23149:         return missionRequirementsNumber(text);
+23150:     }
+23151: 
+23152:     function missionRequirementsCapacity(min = 0, max = min, known = null) {
+23153:         const safeMin = Math.max(0, Number(min) || 0);
+23154:         let safeMax = max === null || max === undefined ? null : Math.max(safeMin, Number(max) || 0);
+23155:         if (safeMax !== null && !Number.isFinite(safeMax)) safeMax = null;
+23156:         const exact = known === true ? true : known === false ? false : safeMax !== null && safeMin === safeMax;
+23157:         return { min: safeMin, max: safeMax, known: exact, value: safeMin };
+23158:     }
+23159: 
+23160:     function missionRequirementsCapacityText(capacity) {
+23161:         const value = missionRequirementsCapacity(capacity?.min ?? capacity?.value ?? 0, capacity?.max, capacity?.known);
+23162:         if (value.known || value.max === value.min) return value.min.toLocaleString('en-GB');
+23163:         if (value.max === null) return value.min > 0 ? `${value.min.toLocaleString('en-GB')}+` : '?';
+23164:         return `${value.min.toLocaleString('en-GB')}–${value.max.toLocaleString('en-GB')}`;
+23165:     }
+23166: 
+23167:     function missionRequirementsCoverageRow(requirement, selectedCapacity, respondingCapacity, onSiteCapacity = null, requiredCapacity = null) {
+23168:         const missing = Math.max(0, Number(requirement?.missing) || 0);
+23169:         const selected = missionRequirementsCapacity(selectedCapacity?.min ?? selectedCapacity?.value ?? 0, selectedCapacity?.max, selectedCapacity?.known);
+23170:         const responding = missionRequirementsCapacity(respondingCapacity?.min ?? respondingCapacity?.value ?? 0, respondingCapacity?.max, respondingCapacity?.known);
+23171:         const onSite = missionRequirementsCapacity(onSiteCapacity?.min ?? onSiteCapacity?.value ?? 0, onSiteCapacity?.max, onSiteCapacity?.known);
+23172:         const derivedRequiredMin = missing + onSite.min;
+23173:         const derivedRequiredMax = onSite.max === null ? null : missing + onSite.max;
+23174:         const required = requiredCapacity
+23175:             ? missionRequirementsCapacity(requiredCapacity?.min ?? requiredCapacity?.value ?? derivedRequiredMin, requiredCapacity?.max, requiredCapacity?.known)
+23176:             : missionRequirementsCapacity(derivedRequiredMin, derivedRequiredMax, onSite.known && derivedRequiredMax !== null && derivedRequiredMin === derivedRequiredMax);
+23177:         const fulfilledMin = onSite.min + responding.min + selected.min;
+23178:         const fulfilledMax = onSite.max === null || responding.max === null || selected.max === null
+23179:             ? null
+23180:             : onSite.max + responding.max + selected.max;
+23181:         const covered = required.max !== null && fulfilledMin >= required.max;
+23182:         const definitelyOpen = !covered && fulfilledMax !== null && fulfilledMax < required.min;
+23183:         const uncertain = !covered && !definitelyOpen;
+23184:         const stillMin = fulfilledMax === null ? 0 : Math.max(0, required.min - fulfilledMax);
+23185:         const stillMax = required.max === null ? null : Math.max(0, required.max - fulfilledMin);
+23186:         const stillKnown = covered || (stillMax !== null && stillMin === stillMax && required.known && onSite.known && responding.known && selected.known);
+23187:         const still = missionRequirementsCapacity(stillMin, stillMax, stillKnown);
+23188:         const partial = !covered && fulfilledMin > 0;
+23189:         return {
+23190:             ...requirement,
+23191:             required: required.min,
+23192:             requiredMin: required.min,
+23193:             requiredMax: required.max,
+23194:             requiredKnown: required.known,
+23195:             requiredText: missionRequirementsCapacityText(required),
+23196:             onSite: onSite.min,
+23197:             onSiteMin: onSite.min,
+23198:             onSiteMax: onSite.max,
+23199:             onSiteKnown: onSite.known,
+23200:             onSiteText: missionRequirementsCapacityText(onSite),
+23201:             responding: responding.min,
+23202:             respondingMin: responding.min,
+23203:             respondingMax: responding.max,
+23204:             respondingKnown: responding.known,
+23205:             respondingText: missionRequirementsCapacityText(responding),
+23206:             enRoute: responding.min,
+23207:             enRouteMin: responding.min,
+23208:             enRouteMax: responding.max,
+23209:             enRouteKnown: responding.known,
+23210:             enRouteText: missionRequirementsCapacityText(responding),
+23211:             selected: selected.min,
+23212:             selectedMin: selected.min,
+23213:             selectedMax: selected.max,
+23214:             selectedKnown: selected.known,
+23215:             selectedText: missionRequirementsCapacityText(selected),
+23216:             stillNeeded: still.max === null ? still.min : still.max,
+23217:             stillNeededMin: still.min,
+23218:             stillNeededMax: still.max,
+23219:             stillNeededKnown: still.known,
+23220:             stillNeededText: missionRequirementsCapacityText(still),
+23221:             covered,
+23222:             definitelyOpen,
+23223:             uncertain,
+23224:             partial,
+23225:             coverageKnown: covered || definitelyOpen
+23226:         };
+23227:     }
+23228: 
+23229:     function missionRequirementsCleanRemaining(value) {
+23230:         return String(value || '')
+23231:         .replace(/\b(?:we\s+need|needed|required)\b\s*:*/giu, ' ')
+23232:         .replace(/\s*[,;]\s*(?=[,;]|$)/gu, ' ')
+23233:         .replace(/^(?:\s|[,;.])+|(?:\s|[,;.])+$/gu, '')
+23234:         .replace(/\s+/gu, ' ')
+23235:         .trim();
+23236:     }
+23237: 
+23238:     function missionRequirementsFindDefinitionMatch(text, definition) {
+23239:         const aliases = Array.from(new Set([definition.label, ...(definition.aliases || [])]))
+23240:         .filter(Boolean)
+23241:         .sort((a, b) => b.length - a.length)
+23242:         .map(missionRequirementsEscapeRegex);
+23243:         if (!aliases.length) return null;
+23244:         const numberPattern = '(\\d{1,3}(?:[\\s,.]\\d{3})*|\\d+)';
+23245:         const labelPattern = aliases.join('|');
+23246:         const prefix = '(^|[,;]\\s*)';
+23247:         const suffix = '(?=\\s*(?:[,;]|$))';
+23248:         const before = new RegExp(
+23249:         `${prefix}\\s*(?:at\\s+least\\s+)?(?:x\\s*)?${numberPattern}\\s*(?:x\\s*)?(${labelPattern})${suffix}`,
+23250:             'iu'

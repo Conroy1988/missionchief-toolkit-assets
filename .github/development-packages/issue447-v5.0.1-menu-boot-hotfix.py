@@ -24,6 +24,7 @@ def replace_exact(text: str, old: str, new: str, label: str, count: int = 1) -> 
         raise RuntimeError(f"{label}: expected {count}, found {actual}")
     return text.replace(old, new, count)
 
+
 source = SOURCE.read_text(encoding="utf-8")
 old_source_lines = len(source.splitlines())
 
@@ -180,11 +181,11 @@ install_start = text.index("    function installOperationalSuiteShell")
 install_end = text.index("    // Issue #378 retained UK operational capability catalogue", install_start)
 install = text[install_start:install_end]
 assert boot.index("startBootAttemptCoordinator(bootPerformanceStartedAt);") < boot.index("installOperationalSuiteShell();")
-assert "try {\n            installOperationalSuiteShell();" in boot
+assert "try {\\n            installOperationalSuiteShell();" in boot
 assert "core Toolkit menu startup continues" in boot
 assert "if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);" in coordinator
 assert coordinator.index("const ready = ensureUi();") < coordinator.index("if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);")
-assert "try {\n                scanOperationalSuiteShell();" in schedule
+assert "try {\\n                scanOperationalSuiteShell();" in schedule
 assert "failed without blocking the Toolkit menu" in schedule
 assert install.count("operationalStartupComplete") == 2
 assert "if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);" not in install
@@ -237,5 +238,6 @@ subprocess.run(["node", "--check", str(SOURCE)], cwd=ROOT, env=ENV, check=True)
 
 for path in (ROOT / ".github" / "diagnostics").glob("v5-*.txt"):
     path.unlink(missing_ok=True)
+(ROOT / ".github" / "diagnostics" / "issue447-v501-hotfix-preflight-failure.txt").unlink(missing_ok=True)
 
 print(f"Prepared v5.0.1 menu boot hotfix; source line delta {delta:+d}.")

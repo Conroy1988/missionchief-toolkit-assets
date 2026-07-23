@@ -17,7 +17,7 @@ required = {
     "boot installation": "installOperationalSuiteShell();",
     "safe auto-open default": "autoOpenTransportRequest: false",
     "upstream continuation default": "autoClickSuccessButtons: true",
-    "suite renderer default": "enabled: true,\n            phase: 'requirements-renderer'",
+    "suite renderer default": "enabled: true,\n            phase: 'operational-suite'",
     "legacy Matrix retained": "// Issue #133 clean-room live mission requirements matrix.",
 }
 for label, needle in required.items():
@@ -48,6 +48,7 @@ expected_changes = [
     {'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317},
     {'issue': 378, 'phase': 'enhanced-requirements-engine-core', 'lines': 331},
     {'issue': 378, 'phase': 'enhanced-requirements-renderer', 'lines': 412},
+    {'issue': 378, 'phase': 'operational-feature-suite', 'lines': 348},
 ]
 if approved_changes != expected_changes:
     raise SystemExit('Issue #378 source-headroom phase ledger is missing or altered')

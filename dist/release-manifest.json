@@ -6,9 +6,9 @@
     "dist/MissionChief_Map_Command_Toolkit.user.js",
     "dist/MissionChief_Map_Command_Toolkit.txt"
   ],
-  "sha256": "fab502e09098b69ed28ea4e21e5299991ff4ab889406819578800af187aea4f0",
-  "bytes": 2134691,
-  "lines": 32714,
+  "sha256": "5360e00b99e3a947bed209ed3196117a412aefc6d4c695b2ca207df2c1ea3137",
+  "bytes": 2164065,
+  "lines": 33062,
   "metadata": {
     "name": "MissionChief Map Command Toolkit",
     "runtimeVersion": "4.20.37",

@@ -1350,7 +1350,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return {
             schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
             enabled: true,
-            phase: 'requirements-renderer',
+            phase: 'operational-suite',
             requirements: {
                 enabled: legacyMatrixEnabled !== false,
                 calcMaxStaff: false,
@@ -1476,7 +1476,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             ...base,
             ...parsed,
             schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'requirements-renderer',
+            phase: 'operational-suite',
             requirements: { ...base.requirements, ...requirements },
             callWindow: { ...base.callWindow, ...callWindow },
             missionList: { ...base.missionList, ...missionList },
@@ -22624,6 +22624,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         context.renderTimer = runtimeSetTimeout(() => {
             context.renderTimer = null;
             operationalRequirementsRenderContext(context);
+            operationalFeatureRenderContext(context);
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -22631,13 +22632,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const doc = context?.doc;
         if (!doc?.querySelector || !operationalRequirementsActive()) return;
         const requirementRoot = doc.querySelector('#missing_text');
-        if (!requirementRoot) return;
         const roots = Array.from(new Set([
             requirementRoot,
             doc.querySelector('#mission_vehicle_driving'),
             doc.querySelector('#vehicle_show_table_body_all'),
-            doc.querySelector('#occupied')
+            doc.querySelector('#occupied'),
+            ...operationalFeatureObservationRoots(doc)
         ].filter(Boolean)));
+        if (!roots.length) return;
         const rootFingerprint = roots.map(root => root).join('|');
         if (context.boundRequirementRoot === requirementRoot && context.observer && context.observedRootCount === roots.length) return;
         try { context.observer?.disconnect?.(); } catch (error) {}
@@ -22664,6 +22666,348 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
     // Issue #378 end enhanced requirements runtime renderer.
 
+    // Issue #378 complete operational feature suite.
+    const OP_FEATURE_ATTR = 'data-mcms-operational-feature';
+    const OP_BOOL_KEYS = Object.freeze({
+        requirements: 'enabled,calcMaxStaff,hoverTip,overlay,minified,pushRight',
+        callWindow: 'enabled,generationDate,redBorder,patientSummary,collapsiblePatients,arrCounter,arrCounterAsBadge,arrClickHighlight,arrCounterResetSelection,arrMatchHighlight,arrMatchHighlightAllWords,arrTime,arrSpecs,alarmTime,stickyHeader,loadMoreVehiclesInHeader,hideVehicleList,centerMap,stagingAreaSelectedCounter,vehicleTypeInList,remainingPatientTime,vehicleCounter,vehicleListPermanentSearch,playerCounter,selectedVehicleCounter,arrSearch,arrSearchDissolveCategories,arrSearchCompactResults,arrSearchSelectOnEnter,arrSearchClearOnEnter,arrSearchAutoFocus,arrSearchDropdown,arrSearchCloseDropdownOnSelect,moreReleasePatientButtons',
+        missionList: 'enabled,remainingTime,remainingTimeGreenOnly,remainingPatientTime,remainingPumpingTime,starrableMissions,averageCredits,collapsibleMissions,collapsibleMissionsAllButton,shareMissions,sortMissions,sortMissionsInMissionWindow,sortMissionsInMissionWindowChecked,currentPatients,hideZeroCurrentPatients,currentPatientsInTooltips,currentPrisoners,hideZeroCurrentPrisoners,currentPrisonersInTooltips,fixedEventInfo',
+        transport: 'enabled,autoClickSuccessButtons,autoOpenTransportRequest'
+    });
+    const OP_LABELS = Object.freeze({
+        requirements: 'Enhanced requirements', callWindow: 'Extended Call Window',
+        missionList: 'Extended Call List', transport: 'Enhanced Transport Requests'
+    });
+    const operationalFeatureContexts = new WeakMap();
+
+    function operationalQuery(root, selector) {
+        try { return root?.querySelector?.(selector) || null; } catch (error) { return null; }
+    }
+    function operationalQueryAll(root, selector) {
+        try { return Array.from(root?.querySelectorAll?.(selector) || []); } catch (error) { return []; }
+    }
+    function operationalEscape(value) {
+        return String(value ?? '').replace(/[&<>"']/gu, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+    }
+    function operationalVisible(node) {
+        if (!node?.isConnected || node.hidden || node.disabled || node.getAttribute?.('aria-hidden') === 'true') return false;
+        try {
+            const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
+            const rect = node.getBoundingClientRect?.();
+            return style?.display !== 'none' && style?.visibility !== 'hidden' && (!rect || rect.width > 0 || rect.height > 0);
+        } catch (error) { return true; }
+    }
+    function operationalFeatureState(context) {
+        let value = operationalFeatureContexts.get(context);
+        if (!value) {
+            value = { transportTokens: new Set(), route: '', arrHandlers: new Map() };
+            operationalFeatureContexts.set(context, value);
+        }
+        return value;
+    }
+    function operationalFeatureValue(path) {
+        return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
+    }
+    function operationalFeatureSet(path, value) {
+        const parts = String(path || '').split('.').filter(Boolean);
+        let target = state.operationalWindow;
+        for (const part of parts.slice(0, -1)) target = target[part] ??= {};
+        target[parts.at(-1)] = value;
+    }
+    function operationalFeatureMissionId(row) {
+        return String(row?.dataset?.missionId || row?.id?.match(/mission[_-](\d+)/u)?.[1]
+            || operationalQuery(row, 'a[href*="/missions/"]')?.href?.match(/\/missions\/(\d+)/u)?.[1] || '');
+    }
+    function operationalFeatureNumber(node, names) {
+        for (const name of names) {
+            const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+        return 0;
+    }
+    function operationalFeatureOwn(node, kind) {
+        node?.setAttribute?.(OP_FEATURE_ATTR, kind);
+        return node;
+    }
+    function operationalFeatureRemove(context, prefix = '') {
+        const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+        operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+    }
+
+    function operationalWindowSettingsMarkup() {
+        const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+            <details class="mcms-operational-settings-group" open>
+                <summary>${OP_LABELS[group]}</summary>
+                ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+            </details>`).join('');
+        const advanced = [
+            ['requirements.viewMode', 'Requirements view', 'table,text'],
+            ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+            ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+            ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+            ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+        ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+        const json = [
+            'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+            'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+            'missionList.shareMissionTypes','missionList.eventMissions'
+        ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+        return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+    }
+    function operationalWindowSyncSettingsUi(panel = document.getElementById(SCRIPT.panelId)) {
+        operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+            const value = operationalFeatureValue(control.dataset.operationalSetting);
+            if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+            else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+        });
+    }
+    function handleOperationalWindowSettingChange(target) {
+        const path = target?.dataset?.operationalSetting;
+        if (!path) return false;
+        try {
+            const type = target.dataset.operationalType;
+            const value = type === 'boolean' ? target.checked : type === 'json' ? JSON.parse(target.value || '[]') : target.value;
+            operationalFeatureSet(path, value);
+            state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow, state.missionRequirements !== false);
+            saveState(); updateUI(); showToast('Operational Window setting saved');
+        } catch (error) {
+            showToast('Operational setting contains invalid JSON');
+        }
+        return true;
+    }
+
+    function operationalFeatureStyle(doc) {
+        if (doc.getElementById?.('mcms-operational-feature-style')) return;
+        const style = doc.createElement('style');
+        style.id = 'mcms-operational-feature-style';
+        style.textContent = `
+            [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
+            .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
+            .mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden{display:none!important}
+            .mcms-operational-arr-match{outline:2px solid var(--mcms-arr-colour,#008000);outline-offset:1px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}.mcms-operational-json-row{display:grid;gap:4px;margin:8px 0}
+            @media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}}
+        `;
+        (doc.head || doc.documentElement)?.appendChild(style);
+    }
+    function operationalFeatureBar(doc, anchor, kind) {
+        let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
+        if (!bar) {
+            bar = operationalFeatureOwn(doc.createElement('div'), kind);
+            bar.className = 'mcms-operational-bar';
+            anchor?.parentNode?.insertBefore(bar, anchor);
+        }
+        bar.innerHTML = '';
+        return bar;
+    }
+    function operationalPill(doc, text, kind) {
+        const node = operationalFeatureOwn(doc.createElement('span'), kind);
+        node.className = 'mcms-operational-pill'; node.textContent = text; return node;
+    }
+
+    function operationalCallWindowApply(context) {
+        const settings = state.operationalWindow?.callWindow || {};
+        const doc = context.doc;
+        const path = String(doc.defaultView?.location?.pathname || '');
+        if (!settings.enabled || !/^\/missions\/\d+\/?$/u.test(path) || operationalQuery(doc, '[data-module="extendedCallWindow"]')) {
+            operationalFeatureRemove(context, 'call-'); return;
+        }
+        operationalFeatureStyle(doc);
+        operationalFeatureRemove(context, 'call-');
+        const anchor = operationalQuery(doc, '#missing_text, #mission_general_info, .mission_general_info, h1');
+        if (!anchor) return;
+        const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');
+        const patients = operationalQueryAll(doc, '#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');
+        const vehicles = operationalQueryAll(doc, '#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr');
+        const selected = operationalRequirementsSelectedSnapshot(doc);
+        const arr = operationalQueryAll(doc, '[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);
+        if (settings.patientSummary) bar.appendChild(operationalPill(doc, `Patients ${patients.length}`, 'call-patients'));
+        if (settings.vehicleCounter) bar.appendChild(operationalPill(doc, `Vehicles ${vehicles.length}`, 'call-vehicles'));
+        if (settings.selectedVehicleCounter || settings.stagingAreaSelectedCounter) bar.appendChild(operationalPill(doc, `Selected ${selected.length}`, 'call-selected'));
+        if (settings.playerCounter) {
+            const players = new Set(vehicles.map(row => row.dataset?.userId || row.getAttribute?.('data-user-id')).filter(Boolean));
+            bar.appendChild(operationalPill(doc, `Players ${players.size}`, 'call-players'));
+        }
+        if (settings.arrCounter) bar.appendChild(operationalPill(doc, `ARR ${arr.length}`, 'call-arr-count'));
+        if (settings.generationDate || settings.alarmTime) {
+            const time = operationalQuery(doc, 'time[datetime],[data-generation-date],[data-alarm-time]');
+            const raw = time?.getAttribute?.('datetime') || time?.getAttribute?.('data-generation-date') || time?.getAttribute?.('data-alarm-time');
+            if (raw) bar.appendChild(operationalPill(doc, `${settings.alarmTime ? 'Alarm' : 'Generated'} ${raw}`, 'call-time'));
+        }
+        if (settings.collapsiblePatients && patients.length >= Number(settings.collapsiblePatientsMinPatients || 0)) {
+            const button = operationalFeatureOwn(doc.createElement('button'), 'call-patient-toggle');
+            button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Toggle patients';
+            button.onclick = () => patients.forEach(node => node.classList.toggle('mcms-operational-patient-hidden'));
+            bar.appendChild(button);
+        }
+        const search = (label, rows, kind) => {
+            const input = operationalFeatureOwn(doc.createElement('input'), kind);
+            input.type = 'search'; input.className = 'form-control input-sm'; input.placeholder = label;
+            input.oninput = () => {
+                const query = input.value.trim().toLocaleLowerCase('en-GB');
+                rows.forEach(row => { row.hidden = Boolean(query) && !String(row.textContent || '').toLocaleLowerCase('en-GB').includes(query); });
+            };
+            bar.appendChild(input); return input;
+        };
+        if (settings.vehicleListPermanentSearch && vehicles.length) search('Search vehicles', vehicles, 'call-vehicle-search');
+        if (settings.arrSearch && arr.length) {
+            const input = search('Search ARR', arr, 'call-arr-search');
+            input.onkeydown = event => {
+                if (event.key !== 'Enter') return;
+                const visible = arr.filter(row => !row.hidden);
+                if (settings.arrSearchSelectOnEnter && visible.length === 1) operationalQuery(visible[0], 'a,button,input')?.click?.();
+                if (settings.arrSearchClearOnEnter) { input.value = ''; input.oninput(); }
+            };
+            if (settings.arrSearchAutoFocus) runtimeSetTimeout(() => input.focus(), 0);
+        }
+        if (settings.hideVehicleList) {
+            const list = operationalQuery(doc, '#vehicle_show_table_body_all');
+            const button = operationalFeatureOwn(doc.createElement('button'), 'call-vehicle-toggle');
+            button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Toggle vehicles';
+            button.onclick = () => list?.classList.toggle('mcms-operational-vehicle-hidden'); bar.appendChild(button);
+        }
+        if (settings.centerMap) {
+            const native = operationalQuery(doc, '.map_position_mover,[data-action="center-map"],#map_position');
+            if (native) {
+                const button = operationalFeatureOwn(doc.createElement('button'), 'call-center-map');
+                button.type = 'button'; button.className = 'btn btn-default btn-sm'; button.textContent = 'Centre map'; button.onclick = () => native.click(); bar.appendChild(button);
+            }
+        }
+        if (settings.vehicleTypeInList) vehicles.forEach(row => {
+            if (operationalQuery(row, `[${OP_FEATURE_ATTR}="call-vehicle-type"]`)) return;
+            const type = operationalRequirementsVehicleType(row); if (type < 0) return;
+            const badge = operationalPill(doc, `Type ${type}`, 'call-vehicle-type'); (operationalQuery(row, 'td') || row).appendChild(badge);
+        });
+        if (settings.stickyHeader) operationalQueryAll(doc, '#vehicle_show_table thead').forEach(node => {
+            node.style.position = 'sticky'; node.style.top = '0'; node.style.zIndex = '4'; node.dataset.mcmsOperationalSticky = 'true';
+        });
+        for (const keyword of settings.missionKeywords || []) {
+            const text = String(keyword?.keyword || keyword?.text || ''); const title = operationalQuery(doc, 'h1,.mission_title')?.textContent || '';
+            if (text && title.toLocaleLowerCase('en-GB').includes(text.toLocaleLowerCase('en-GB'))) bar.appendChild(operationalPill(doc, text, 'call-keyword'));
+        }
+        if (settings.arrClickHighlight || settings.arrMatchHighlight) {
+            const feature = operationalFeatureState(context);
+            arr.forEach(row => {
+                if (feature.arrHandlers.has(row)) return;
+                const previous = row.onclick; feature.arrHandlers.set(row, previous);
+                row.onclick = function (event) {
+                    previous?.call?.(this, event);
+                    if (state.operationalWindow?.callWindow?.arrCounterResetSelection) arr.forEach(item => item.classList.remove('mcms-operational-arr-match'));
+                    row.style.setProperty('--mcms-arr-colour', state.operationalWindow?.callWindow?.arrClickHighlightColor || '#008000');
+                    row.classList.add('mcms-operational-arr-match');
+                };
+            });
+        }
+    }
+
+    function operationalMissionListRoot(doc) {
+        for (const selector of ['#mission_list','#missions','#mission-list','#missions-panel','#mission_panel','.mission-list','.missionSideBarList','[data-mission-list]']) {
+            const root = operationalQuery(doc, selector);
+            if (root && operationalQuery(root, 'a[href*="/missions/"]')) return root;
+        }
+        return null;
+    }
+    function operationalMissionRows(root) {
+        const rows = operationalQueryAll(root, '.missionSideBarEntry,.mission-side-bar-entry,[data-mission-id],[id^="mission_"]').filter(operationalFeatureMissionId);
+        return rows.length ? Array.from(new Set(rows)) : Array.from(new Set(operationalQueryAll(root, 'a[href*="/missions/"]').map(link => link.closest?.('li,.panel,[id^="mission_"]')).filter(Boolean)));
+    }
+    function operationalMissionListComputeOrder(records, type = '', direction = '', starredIds = []) {
+        const starred = new Set((starredIds || []).map(String)); const multiplier = direction === 'desc' ? -1 : 1;
+        const value = record => type === 'name' ? record.name.toLocaleLowerCase('en-GB') : type ? Number(record[type]) || 0 : record.index;
+        return records.slice().sort((left, right) => {
+            const stars = Number(starred.has(right.id)) - Number(starred.has(left.id)); if (stars) return stars;
+            const a = value(left), b = value(right); return (typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - b) * multiplier;
+        });
+    }
+    function operationalMissionListApply(context) {
+        const settings = state.operationalWindow?.missionList || {}; const doc = context.doc; const root = operationalMissionListRoot(doc);
+        if (!settings.enabled || !root || operationalQuery(doc, '[data-module="extendedCallList"]')) { operationalFeatureRemove(context, 'list-'); return; }
+        operationalFeatureStyle(doc); operationalFeatureRemove(context, 'list-');
+        const rows = operationalMissionRows(root);
+        const records = rows.map((row, index) => {
+            const id = operationalFeatureMissionId(row); const name = String(operationalQuery(row, 'a[href*="/missions/"]')?.textContent || row.textContent || '').trim();
+            return { id, row, name, credits: operationalFeatureNumber(row, ['data-credits','data-average-credits']), patients: operationalFeatureNumber(row, ['data-patients','data-patient-count']), prisoners: operationalFeatureNumber(row, ['data-prisoners','data-prisoner-count']), time: operationalFeatureNumber(row, ['data-remaining-time','data-time-left']), index };
+        });
+        const toolbar = operationalFeatureBar(doc, root.firstChild || root, 'list-toolbar'); root.insertBefore(toolbar, root.firstChild);
+        if (settings.sortMissions) {
+            const select = operationalFeatureOwn(doc.createElement('select'), 'list-sort'); select.className = 'form-control input-sm';
+            select.innerHTML = '<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>'; select.value = settings.sortMissionsType || '';
+            select.onchange = () => { settings.sortMissionsType = select.value; saveState(); scheduleOperationalSuiteScan(0); }; toolbar.appendChild(select);
+        }
+        if (settings.collapsibleMissionsAllButton) {
+            const all = operationalFeatureOwn(doc.createElement('button'), 'list-collapse-all'); all.type = 'button'; all.className = 'btn btn-default btn-sm'; all.textContent = settings.allMissionsCollapsed ? 'Expand all' : 'Collapse all';
+            all.onclick = () => { settings.allMissionsCollapsed = !settings.allMissionsCollapsed; settings.collapsedMissions = settings.allMissionsCollapsed ? records.map(record => record.id) : []; saveState(); scheduleOperationalSuiteScan(0); }; toolbar.appendChild(all);
+        }
+        records.forEach(record => {
+            const controls = operationalFeatureOwn(doc.createElement('span'), `list-controls-${record.id}`); controls.className = 'mcms-operational-controls';
+            if (settings.starrableMissions) {
+                const star = doc.createElement('button'); star.type = 'button'; star.className = 'btn btn-default btn-xs'; star.textContent = settings.starredMissions.includes(record.id) ? '★' : '☆';
+                star.onclick = event => { event.preventDefault(); settings.starredMissions = settings.starredMissions.includes(record.id) ? settings.starredMissions.filter(id => id !== record.id) : [...settings.starredMissions, record.id]; saveState(); scheduleOperationalSuiteScan(0); }; controls.appendChild(star);
+                record.row.classList.toggle('mcms-operational-starred', settings.starredMissions.includes(record.id));
+            }
+            if (settings.collapsibleMissions) {
+                const collapse = doc.createElement('button'); collapse.type = 'button'; collapse.className = 'btn btn-default btn-xs'; collapse.textContent = settings.collapsedMissions.includes(record.id) ? '＋' : '−';
+                collapse.onclick = event => { event.preventDefault(); settings.collapsedMissions = settings.collapsedMissions.includes(record.id) ? settings.collapsedMissions.filter(id => id !== record.id) : [...settings.collapsedMissions, record.id]; saveState(); scheduleOperationalSuiteScan(0); }; controls.appendChild(collapse);
+                record.row.classList.toggle('mcms-operational-collapsed', settings.collapsedMissions.includes(record.id));
+            }
+            if (settings.shareMissions) {
+                const native = operationalQuery(record.row, 'a[href*="share"],button[data-action*="share"],.mission-share-button');
+                if (native) { const share = doc.createElement('button'); share.type = 'button'; share.className = 'btn btn-success btn-xs'; share.textContent = 'Share'; share.onclick = event => { event.preventDefault(); native.click(); }; controls.appendChild(share); }
+            }
+            (operationalQuery(record.row, 'a[href*="/missions/"]') || record.row).appendChild(controls);
+            const badges = [];
+            if (settings.currentPatients && (!settings.hideZeroCurrentPatients || record.patients)) badges.push(`Patients ${record.patients}`);
+            if (settings.currentPrisoners && (!settings.hideZeroCurrentPrisoners || record.prisoners)) badges.push(`Prisoners ${record.prisoners}`);
+            if (settings.averageCredits && record.credits) badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);
+            if (settings.remainingTime && record.time) badges.push(`Time ${record.time}s`);
+            if (badges.length) { const badge = operationalFeatureOwn(doc.createElement('div'), `list-badges-${record.id}`); badge.className = 'mcms-operational-bar'; badge.innerHTML = badges.map(text => `<span class="mcms-operational-pill">${operationalEscape(text)}</span>`).join(''); record.row.appendChild(badge); }
+        });
+        if (settings.sortMissions) operationalMissionListComputeOrder(records, settings.sortMissionsType, settings.sortMissionsDirection, settings.starredMissions).forEach(record => record.row.parentNode?.appendChild(record.row));
+    }
+
+    function operationalTransportChooseAction(route, candidates, settings, usedTokens = []) {
+        const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
+        const mode = settings?.enabled && mission && settings.autoOpenTransportRequest ? 'open' : settings?.enabled && vehicle && settings.autoClickSuccessButtons ? 'success' : '';
+        const used = new Set((usedTokens || []).map(String));
+        const eligible = (candidates || []).filter(item => item?.mode === mode && item.visible !== false && item.disabled !== true && !used.has(String(item.token || '')));
+        return eligible.length === 1 ? eligible[0] : null;
+    }
+    function operationalTransportApply(context) {
+        const settings = state.operationalWindow?.transport || {}; const doc = context.doc;
+        if (!settings.enabled || operationalQuery(doc, '[data-module="enhancedTransportRequests"]')) return;
+        const feature = operationalFeatureState(context); const route = String(doc.defaultView?.location?.pathname || '');
+        if (feature.route !== route) { feature.route = route; feature.transportTokens.clear(); }
+        const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
+        const selector = mission ? 'a[href*="/patient/"],a[href*="/gefangener/"],a[href*="/prisoner/"],a[href*="transport"],button[data-action*="transport"],.transport_request' : vehicle ? 'a.btn-success,button.btn-success,input.btn-success' : '';
+        const mode = mission ? 'open' : 'success';
+        const candidates = selector ? operationalQueryAll(doc, selector).filter(node => /transport|hospital|prison|patient|continue|confirm|select/i.test(String(node.textContent || node.value || node.title || node.getAttribute?.('href') || ''))).map(node => ({
+            node, mode, visible: operationalVisible(node), disabled: Boolean(node.disabled || node.classList?.contains('disabled') || node.getAttribute?.('aria-disabled') === 'true'),
+            token: `${route}|${mode}|${node.id || node.getAttribute?.('href') || node.textContent || node.value}`
+        })) : [];
+        const action = operationalTransportChooseAction(route, candidates, settings, feature.transportTokens);
+        if (!action?.node) return; feature.transportTokens.add(action.token);
+        runtimeSetTimeout(() => { if (!runtime.destroyed && operationalVisible(action.node)) action.node.click(); }, 80);
+    }
+
+    function operationalFeatureObservationRoots(doc) {
+        return [operationalMissionListRoot(doc), operationalQuery(doc, '#mission_patients,.mission_patients'), operationalQuery(doc, '#aao,#aao_search_results,.aao-container'), operationalQuery(doc, '#mission_general_info,.mission_general_info'), operationalQuery(doc, '.vehicle_patient_select,.vehicle_prisoner_select')].filter(Boolean);
+    }
+    function operationalFeatureRenderContext(context) {
+        if (!context?.doc || runtime.destroyed || !operationalSuiteEnabled()) return;
+        operationalCallWindowApply(context); operationalMissionListApply(context); operationalTransportApply(context);
+    }
+    function operationalFeatureCleanupContext(context) {
+        const feature = operationalFeatureContexts.get(context);
+        for (const [row, previous] of feature?.arrHandlers || []) { try { row.onclick = previous || null; } catch (error) {} }
+        operationalFeatureRemove(context);
+        operationalQueryAll(context?.doc, '[data-mcms-operational-sticky="true"]').forEach(node => { node.style.removeProperty('position'); node.style.removeProperty('top'); node.style.removeProperty('z-index'); delete node.dataset.mcmsOperationalSticky; });
+        operationalQueryAll(context?.doc, '.mcms-operational-starred,.mcms-operational-collapsed,.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden,.mcms-operational-arr-match').forEach(node => node.classList.remove('mcms-operational-starred','mcms-operational-collapsed','mcms-operational-patient-hidden','mcms-operational-vehicle-hidden','mcms-operational-arr-match'));
+        operationalFeatureContexts.delete(context);
+    }
+    // Issue #378 end complete operational feature suite.
+
+
     // Issue #378 LSSM operational-suite lifecycle shell.
     // This phase owns settings, context identity, scheduling and teardown only. It must not
     // render a second requirements surface while the legacy Matrix remains the stable runtime.
@@ -22685,6 +23029,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
 
     function operationalSuiteDisposeContext(context) {
         if (!context) return;
+        operationalFeatureCleanupContext(context);
         try { context.observer?.disconnect?.(); } catch (err) {}
         context.observer = null;
         runtimeClearTimeout(context.renderTimer);
@@ -22770,7 +23115,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtime.operationalSuite = Object.freeze({
             baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'requirements-renderer',
+            phase: 'operational-suite',
             schedule: scheduleOperationalSuiteScan,
             contextCount: () => operationalSuiteContexts.size
         });
@@ -22778,7 +23123,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             runtimeClearTimeout(operationalSuiteScanTimer);
             operationalSuiteScanTimer = null;
             clearOperationalSuiteContexts();
-            if (runtime.operationalSuite?.phase === 'requirements-renderer') delete runtime.operationalSuite;
+            if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
         });
         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
     }
@@ -31092,6 +31437,7 @@ Create the private backup now?`);
                 <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
             </section>
             <section class="mcms-tab-panel" data-panel="settings">
+                ${operationalWindowSettingsMarkup()}
                 <div class="mcms-section-label">Device layout</div>
                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
@@ -31448,6 +31794,7 @@ Create the private backup now?`);
         showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
         return true; }
     function handleSettingChange(target) {
+        if (handleOperationalWindowSettingChange(target)) return;
         const setting = target.dataset.setting;
         if (!setting) return;
         if (handleDeviceLayoutSettingChange(target, setting)) return;
@@ -31556,6 +31903,7 @@ Create the private backup now?`);
     }
     function updateUI() {
         applyRootAttributes();
+        operationalWindowSyncSettingsUi();
         if (state.missionRequirements) scheduleMissionRequirementsScan(0);
         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);

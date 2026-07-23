@@ -1,0 +1,13 @@
+package_exit=1
+
+=== PACKAGE STDOUT ===
+
+=== PACKAGE STDERR ===
+Traceback (most recent call last):
+  File "/tmp/issue464-v5-validation-_i0nsicv/repo/.github/development-packages/issue464-complete-v5.py", line 35, in <module>
+    exec(compile(code, __file__, 'exec'))
+  File "/tmp/issue464-v5-validation-_i0nsicv/repo/.github/development-packages/issue464-complete-v5.py", line 122, in <module>
+  File "/tmp/issue464-v5-validation-_i0nsicv/repo/.github/development-packages/issue464-complete-v5.py", line 290
+    old_guard='        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or lines < 0:
+              ^
+SyntaxError: unterminated string literal (detected at line 290)

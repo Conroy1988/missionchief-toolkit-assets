@@ -28889,7 +28889,7 @@ Create the private backup now?`);
         else return false;
         return true;
     }
-    function applyMapVisibilityToggleEffects(feature) { if(feature==='vehicles')synchroniseVehicleMarkerClasses();if(feature==='buildings')synchronisePersonalBuildingVisibility();if(state.economyMode&&(feature==='vehicles'||feature==='buildings'))scheduleEconomyLayerSync(0);if(feature==='missionAge'){runtimeClearTimeout(missionAgeTimer);missionAgeTimer=null;if(state.missionAge){inlineMissionDataScanned=false;scanInlineMissionMarkerData(true);invalidateMarkerRegistryCaches('mission');scheduleMarkerStateSync(0,true);scheduleMissionAgeRefresh(0);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000);}else clearMissionAgeLabels();} }
+    function applyMapVisibilityToggleEffects(feature) { if(feature==='vehicles')synchroniseVehicleMarkerClasses();if(feature==='buildings')synchronisePersonalBuildingVisibility();if(state.economyMode&&(feature==='vehicles'||feature==='buildings'))scheduleEconomyLayerSync(0);if(feature==='missionAge'){runtimeClearTimeout(missionAgeTimer);missionAgeTimer=null;if(state.missionAge){inlineMissionDataScanned=false;scanInlineMissionMarkerData(true);invalidateMarkerRegistryCaches('mission');scheduleMarkerStateSync(0,true);scheduleMissionAgeRefresh(0);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000);}else clearMissionAgeLabels();} }
     function handleMissionWindowToggle(feature) {
         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
         else if (feature === 'missionValue') state.missionValue = !state.missionValue;

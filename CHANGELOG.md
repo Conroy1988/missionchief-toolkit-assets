@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Added responsive two-column desktop and single-column Tablet/iOS layouts with safe text wrapping and no horizontal overflow.
 - Restored Mission Age labels and shortcut `6` with forced late-data recovery, immediate controlled retries, marker replacement reconciliation and clean teardown.
 - Completed the runtime mapping for Extended Call Window and Extended Mission List controls, including ARR counters/search/highlighting, patient and vehicle summaries, structured categories/icons/keywords, sharing gates, sorting and configured badge colours.
-- Preserved the established managed-timeout performance budget by moving ARR autofocus onto microtasks while retaining Mission Age late-data recovery retries.
+- Preserved the established managed-timeout performance budget by moving ARR autofocus onto microtasks and retaining one 1,000 ms Mission Age late-data recovery retry.
 
 ## [Unreleased]
 

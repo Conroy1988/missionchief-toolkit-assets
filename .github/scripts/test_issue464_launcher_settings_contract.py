@@ -37,10 +37,10 @@ assert 'inlineMissionDataScanned=captured>0' in text
 assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());' in call
 assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());' in call
 assert not re.search(r'arrSearchAutoFocus\s*\)\s*runtimeSetTimeout', call)
-assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" in text
+assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" not in text
 assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000)" in text
 runtime_timeout_sites = len(re.findall(r'runtimeSetTimeout\s*\(', text)) - len(re.findall(r'function\s+runtimeSetTimeout\s*\(', text))
-assert runtime_timeout_sites <= 99
+assert runtime_timeout_sites <= 98
 visibility=section('    function applyMapVisibilityToggleEffects(','    function toggleFeature(')
 assert "feature==='missionAge'" in visibility and 'scheduleMissionAgeRefresh(0)' in visibility and 'clearMissionAgeLabels()' in visibility
 feature_block=section('    // Issue #378 complete operational feature suite.','    // Issue #378 end complete operational feature suite.')

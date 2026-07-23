@@ -17,27 +17,29 @@ text = SOURCE.read_text(encoding='utf-8')
 if '// @version      5.0.6' not in text or "version: '5.0.6'" not in text:
     raise SystemExit('Issue #464 performance correction requires Toolkit v5.0.6')
 
+# The v5.0.6 call-window renderer added separate zero-delay timeout sites for
+# dropdown and text-search autofocus. Microtasks retain post-mount focus without
+# increasing the managed runtime timeout budget. Mission Age's two deliberate
+# late-data retries remain intact.
 replacements = [
     (
-        r'runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*button\.focus\?\.\(\)\s*,\s*0\s*\)\s*;',
-        'button.focus?.();',
-        'ARR dropdown focus deferral',
+        r'if\s*\(\s*settings\.arrSearchAutoFocus\s*\)\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*select\.focus\(\)\s*,\s*0\s*\)\s*;',
+        'if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());',
+        'ARR dropdown autofocus timeout',
     ),
     (
-        r'if\s*\(\s*settings\.arrSearchAutoFocus\s*\)\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*arrSearch\.focus\(\)\s*,\s*0\s*\)\s*;',
-        'if(settings.arrSearchAutoFocus) queueMicrotask(()=>arrSearch.focus());',
-        'ARR search autofocus deferral',
-    ),
-    (
-        r'if\s*\(\s*state\.missionAge\s*\)\s*\{\s*missionOverlayData\.clear\(\)\s*;\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*scheduleMissionAgeRefresh\(0\)\s*,\s*0\s*\)\s*;\s*\}',
-        'if (state.missionAge) { missionOverlayData.clear(); scheduleMissionAgeRefresh(0); }',
-        'Mission Age immediate refresh wrapper',
+        r'if\s*\(\s*settings\.arrSearchAutoFocus\s*\)\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*input\.focus\(\)\s*,\s*0\s*\)\s*;',
+        'if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());',
+        'ARR text-search autofocus timeout',
     ),
 ]
 for pattern, replacement, label in replacements:
     text, count = re.subn(pattern, replacement, text, count=1)
     if count != 1:
         raise SystemExit(f'Expected one {label} anchor, found {count}')
+
+if len(re.findall(r'runtimeSetTimeout\s*\(', text)) > 99:
+    raise SystemExit('Managed runtime timeout call-site budget remains above 99')
 
 SOURCE.write_text(text, encoding='utf-8')
 for target in (ROOT / 'MissionChief_Map_Command_Toolkit.user.js', ROOT / 'MissionChief_Map_Command_Toolkit.txt'):
@@ -52,12 +54,12 @@ FIXTURE.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
 test = TEST.read_text(encoding='utf-8')
 anchor = "assert 'inlineMissionDataScanned=captured>0' in text\n"
 addition = """assert 'inlineMissionDataScanned=captured>0' in text
-assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*button\\.focus', block)
-assert 'button.focus?.();' in block
-assert 'if(settings.arrSearchAutoFocus) queueMicrotask(()=>arrSearch.focus());' in call
-assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*arrSearch\\.focus', call)
-assert 'if (state.missionAge) { missionOverlayData.clear(); scheduleMissionAgeRefresh(0); }' in toggle
-assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*scheduleMissionAgeRefresh', toggle)
+assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());' in call
+assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());' in call
+assert not re.search(r'arrSearchAutoFocus\\s*\\)\\s*runtimeSetTimeout', call)
+assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" in visibility
+assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000)" in visibility
+assert len(re.findall(r'runtimeSetTimeout\\s*\\(', text)) <= 99
 """
 if anchor not in test:
     raise SystemExit('Issue #464 performance contract anchor is missing')
@@ -65,17 +67,21 @@ test = test.replace(anchor, addition, 1)
 TEST.write_text(test, encoding='utf-8')
 
 changelog = CHANGELOG.read_text(encoding='utf-8')
-anchor = '- Restored immediate Mission Age rendering for the button and shortcut `6`, forced fresh late-data scans after early empty pages, rebound labels to replaced maps/markers, prevented duplicates and removed labels cleanly when disabled.\n'
-addition = anchor + '- Preserved the established managed-timeout performance budget by removing three redundant scheduling wrappers from ARR focus and Mission Age refresh paths.\n'
+anchor = '- Completed the runtime mapping for Extended Call Window and Extended Mission List controls, including ARR counters/search/highlighting, patient and vehicle summaries, structured categories/icons/keywords, sharing gates, sorting and configured badge colours.\n'
+addition = anchor + '- Preserved the established managed-timeout performance budget by moving ARR autofocus onto microtasks while retaining Mission Age late-data recovery retries.\n'
 if anchor not in changelog:
     raise SystemExit('v5.0.6 changelog anchor is missing')
-if 'three redundant scheduling wrappers' not in changelog:
+if 'moving ARR autofocus onto microtasks' not in changelog:
     changelog = changelog.replace(anchor, addition, 1)
 CHANGELOG.write_text(changelog, encoding='utf-8')
 
 for disposable in [
     ROOT / '.github/diagnostics/issue464-performance-correction-traceback.txt',
+    ROOT / '.github/diagnostics/issue464-performance-correction-v2-traceback.txt',
+    ROOT / '.github/diagnostics/issue464-timeout-contexts.txt',
     ROOT / '.github/development-packages/issue464-performance-correction-traceback.py',
+    ROOT / '.github/development-packages/issue464-performance-correction-v2-traceback.py',
+    ROOT / '.github/development-packages/issue464-timeout-context-diagnostic.py',
 ]:
     disposable.unlink(missing_ok=True)
 
@@ -83,6 +89,8 @@ SELF.unlink(missing_ok=True)
 print(json.dumps({
     'version': '5.0.6',
     'sha256': fixture['candidateSourceSha256'],
-    'removedRuntimeTimeoutSites': 3,
+    'runtimeTimeoutCallSites': len(re.findall(r'runtimeSetTimeout\s*\(', text)),
+    'removedRuntimeTimeoutSites': 2,
+    'missionAgeRetriesPreserved': True,
     'sourceLines': len(text.splitlines()),
 }, indent=2))

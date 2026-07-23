@@ -1,0 +1,43 @@
+package_exit=0
+
+=== PACKAGE STDOUT ===
+{
+  "version": "5.0.6",
+  "sourceLines": 31907,
+  "lineDelta": 56,
+  "sha256": "8b34071a6f62eec35f89d4b87047548d23892d62a30449e38183364c216b8afe"
+}
+{
+  "version": "5.0.6",
+  "sourceLines": 31648,
+  "sha256": "2e9e4517e5fc4ce33173a0ef3197a831eafe3d36da360ff5937ebde4f7d484fa",
+  "runtimeMapping": "complete",
+  "missionAgeRecovery": true
+}
+
+=== PACKAGE STDERR ===
+
+validator_exit=1
+syntax_exit=0
+
+=== VALIDATOR STDOUT ===
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Code-integrity release baseline unavailable; current-state checks will still run.
+
+=== VALIDATOR STDERR ===
+MAIN STYLE HEADROOM CONTRACT ERROR: approved non-style source change entry is malformed
+VALIDATION ERROR: main-style source-headroom contract failed
+
+=== SYNTAX STDOUT ===
+
+=== SYNTAX STDERR ===

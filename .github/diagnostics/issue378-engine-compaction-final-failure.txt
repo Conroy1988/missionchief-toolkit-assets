@@ -1,0 +1,9 @@
+ISSUE378_ENGINE_COMPACTION_DIAGNOSTIC_V3
+returncode=1
+--- stdout ---
+
+--- stderr ---
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue378-compact-engine-source.py", line 71, in <module>
+    raise RuntimeError(f"compacted engine still exceeds source ceiling: {source_lines}")
+RuntimeError: compacted engine still exceeds source ceiling: 32001

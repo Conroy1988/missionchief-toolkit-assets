@@ -31,6 +31,8 @@ DIAGNOSTICS = (
     ROOT / ".github" / "diagnostics" / "issue391-matrix-full-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-matrix-hook-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-retirement-preflight-failure.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-retirement-preflight-failure-v2.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-shared-catalogue-map.txt",
 )
 
 
@@ -111,10 +113,11 @@ shared_names = (
 )
 shared = []
 for name in shared_names:
-    token = f"    const {name} ="
-    declaration_start = source.find(token)
-    if declaration_start < 0 or source.count(token) != 1:
-        raise RuntimeError(f"shared capability declaration count changed: {name}")
+    declaration_pattern = re.compile(rf"^\s*const\s+{re.escape(name)}\s*=", re.MULTILINE)
+    declaration_matches = list(declaration_pattern.finditer(source))
+    if len(declaration_matches) != 1:
+        raise RuntimeError(f"shared capability declaration count changed: {name} ({len(declaration_matches)})")
+    declaration_start = declaration_matches[0].start()
     if start <= declaration_start < end:
         shared.append(extract_declaration(source, name, start, end))
 replacement = (

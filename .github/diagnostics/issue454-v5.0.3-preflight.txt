@@ -1,0 +1,13 @@
+ISSUE 454 V5.0.3 PREFLIGHT DIAGNOSTIC
+returncode=1
+
+===== STDOUT =====
+
+
+===== STDERR =====
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue454-v5.0.3-preboot-tdz-recovery.py", line 40, in <module>
+    if source.index(state_initializer) >= source.index(late_declaration):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: substring not found
+

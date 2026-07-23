@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.4
+// @version      5.0.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.4',
+        version: '5.0.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22278,8 +22278,93 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return operationalSuiteEnabled() && state.operationalWindow?.requirements?.enabled !== false;
     }
 
+    function operationalRequirementsCandidateVisible(node) {
+        if (!node?.isConnected || node.hidden || node.getAttribute?.('aria-hidden') === 'true') return false;
+        try {
+            const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
+            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
+            const rect = node.getBoundingClientRect?.();
+            if (rect && Number.isFinite(rect.width) && Number.isFinite(rect.height)) return rect.width > 1 || rect.height > 1;
+            if (node.getClientRects?.().length) return true;
+        } catch (error) {}
+        return true;
+    }
+
+    function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
+        return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+            || doc?.querySelector?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+            || null;
+    }
+
+    function operationalRequirementsRawHtmlRoot(doc, carrier) {
+        const rawHtml = String(carrier?.getAttribute?.('data-raw-html') || '').trim();
+        if (!rawHtml || !doc?.createElement) return null;
+        const holder = doc.createElement('div');
+        holder.setAttribute('data-mcms-requirement-source', 'lssm-raw');
+        holder.innerHTML = rawHtml;
+        return holder.querySelector?.('[data-requirement-type]') ? holder : null;
+    }
+
+    function operationalRequirementsCandidateRecord(root, anchor, kind, index) {
+        if (!root || !anchor || root.closest?.('[data-mcms-operational-suite="requirements"]')) return null;
+        const grouped = Array.from(root.querySelectorAll?.('[data-requirement-type]') || []);
+        const raw = operationalRequirementNormaliseText(root.textContent || '');
+        const missionContainer = operationalRequirementsMissionContainer(anchor);
+        const missionVisible = operationalRequirementsCandidateVisible(missionContainer);
+        const visible = operationalRequirementsCandidateVisible(anchor);
+        const score = grouped.length * 300 + (raw ? 100 : 0) + (missionVisible ? 400 : 0)
+            + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0) + (kind === 'lssm-raw' ? 10 : 0);
+        return { root, anchor, kind, index, groupedCount: grouped.length, raw, visible, missionContainer, score,
+            fingerprint: `${kind}:${index}:${grouped.length}:${raw}` };
+    }
+
+    function operationalRequirementsSourceCandidates(doc) {
+        if (!doc?.querySelectorAll) return [];
+        const candidates = [];
+        const seenRoots = new Set();
+        const nativeRoots = Array.from(doc.querySelectorAll('[id="missing_text"]') || []);
+        const add = (root, anchor = root, kind = 'native') => {
+            if (!root || !anchor || seenRoots.has(root)) return;
+            const record = operationalRequirementsCandidateRecord(root, anchor, kind, candidates.length);
+            if (!record) return;
+            seenRoots.add(root);
+            candidates.push(record);
+        };
+        nativeRoots.forEach(root => add(root, root, 'native'));
+        for (const group of Array.from(doc.querySelectorAll('[data-requirement-type]') || [])) {
+            const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles') || group.parentElement;
+            add(root, root, 'grouped');
+        }
+        for (const carrier of Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || [])) {
+            if (carrier.closest?.('[data-mcms-operational-suite="requirements"]')) continue;
+            const rawHtml = String(carrier.getAttribute?.('data-raw-html') || '').trim();
+            if (!rawHtml) continue;
+            if (operationalRequirementsCandidateVisible(carrier)) {
+                candidates.push({ root: carrier, anchor: carrier, kind: 'lssm-live', index: candidates.length,
+                    groupedCount: 0, raw: rawHtml, visible: true,
+                    missionContainer: operationalRequirementsMissionContainer(carrier), score: Number.POSITIVE_INFINITY,
+                    fingerprint: `lssm-live:${rawHtml}`, suppressesToolkit: true });
+                continue;
+            }
+            const root = operationalRequirementsRawHtmlRoot(doc, carrier);
+            const preferredAnchor = nativeRoots.find(node => node?.isConnected && node?.parentNode) || carrier;
+            add(root, preferredAnchor, 'lssm-raw');
+        }
+        return candidates;
+    }
+
+    function operationalRequirementsResolveSource(doc) {
+        const candidates = operationalRequirementsSourceCandidates(doc);
+        const activeLssm = candidates.find(candidate => candidate.suppressesToolkit === true);
+        if (activeLssm) return { ...activeLssm, suppressed: true, candidates };
+        const evidenced = candidates.filter(candidate => candidate.groupedCount > 0 || candidate.raw);
+        const pool = evidenced.length ? evidenced : candidates;
+        const selected = pool.slice().sort((left, right) => right.score - left.score || right.index - left.index)[0] || null;
+        return selected ? { ...selected, suppressed: false, candidates } : null;
+    }
+
     function operationalRequirementsEquivalentLssmActive(doc) {
-        return Boolean(doc?.querySelector?.('.alert-missing-vehicles[data-raw-html], [data-module="extendedCallWindow"] .alert-missing-vehicles'));
+        return operationalRequirementsResolveSource(doc)?.suppressed === true;
     }
 
     function operationalRequirementsRuntimeCatalog() {
@@ -22436,11 +22521,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             const type = String(element.getAttribute('data-requirement-type') || '').toLowerCase();
             const group = type === 'personnel' || type === 'staff' ? 'staff' : type === 'other' ? 'other' : type === 'vehicles' ? 'vehicles' : null;
             if (!group) continue;
-            const raw = operationalRequirementNormaliseText(element.textContent || '');
+            const infoText = operationalRequirementNormaliseText(
+                element.querySelector?.('b')?.textContent || element.getAttribute('data-info-text') || ''
+            );
+            const fullText = operationalRequirementNormaliseText(element.textContent || '');
+            const raw = operationalRequirementNormaliseText(
+                infoText && fullText.startsWith(infoText) ? fullText.slice(infoText.length) : fullText
+            );
             if (!raw) continue;
             texts[group] = texts[group]
-                ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || '' }
-                : { raw, infoText: operationalRequirementNormaliseText(element.getAttribute('data-info-text') || '') };
+                ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || infoText }
+                : { raw, infoText };
         }
         if (!groups.length) {
             const raw = operationalRequirementNormaliseText(root?.textContent || '');
@@ -22630,8 +22721,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             context.panel = null;
             return;
         }
-        const requirementRoot = context.doc.querySelector?.('#missing_text');
-        if (!requirementRoot?.isConnected || operationalRequirementsEquivalentLssmActive(context.doc)) {
+        const requirementSource = operationalRequirementsResolveSource(context.doc);
+        const requirementRoot = requirementSource?.root;
+        if (!requirementRoot || requirementSource?.suppressed === true) {
             context.panel?.remove?.();
             context.panel = null;
             context.fingerprint = '';
@@ -22647,10 +22739,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             sort: settings.sort,
             sortDir: settings.sortDir,
             viewMode: settings.viewMode,
-            minified: context.minified === true
+            minified: context.minified === true,
+            source: requirementSource.fingerprint
         });
         if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
-        const panel = operationalRequirementsMount(context, requirementRoot);
+        const panel = operationalRequirementsMount(context, requirementSource.anchor || requirementRoot);
         const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true, input.source);
         panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
         panel.dataset.requirementState = rendered.state;
@@ -22672,19 +22765,28 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     function operationalRequirementsBindContext(context) {
         const doc = context?.doc;
         if (!doc?.querySelector || !operationalRequirementsActive()) return;
-        const requirementRoot = doc.querySelector('#missing_text');
+        const requirementSource = operationalRequirementsResolveSource(doc);
+        const requirementRoot = requirementSource?.root || null;
+        const candidateAnchors = requirementSource?.candidates?.map(candidate => candidate.anchor) || [];
+        const missionHost = requirementSource?.missionContainer
+            || operationalRequirementsMissionContainer(requirementSource?.anchor, doc);
         const roots = Array.from(new Set([
-            requirementRoot,
+            ...candidateAnchors,
+            missionHost,
             doc.querySelector('#mission_vehicle_driving'),
             doc.querySelector('#vehicle_show_table_body_all'),
             doc.querySelector('#occupied'),
             ...operationalFeatureObservationRoots(doc)
-        ].filter(Boolean)));
+        ].filter(root => root?.isConnected !== false)));
         if (!roots.length) return;
-        const rootFingerprint = roots.map(root => root).join('|');
-        if (context.boundRequirementRoot === requirementRoot && context.observer && context.observedRootCount === roots.length) return;
+        const sourceFingerprint = requirementSource?.fingerprint || '';
+        if (context.boundRequirementRoot === requirementSource?.anchor
+            && context.boundRequirementSource === sourceFingerprint
+            && context.observer
+            && context.observedRootCount === roots.length) return;
         try { context.observer?.disconnect?.(); } catch (error) {}
-        context.boundRequirementRoot = requirementRoot;
+        context.boundRequirementRoot = requirementSource?.anchor || null;
+        context.boundRequirementSource = sourceFingerprint;
         context.observedRootCount = roots.length;
         const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;
         context.observer = new OperationalMutationObserver(() => operationalRequirementsScheduleContext(context, 25));
@@ -23101,6 +23203,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             fingerprint: '',
             minified: state.operationalWindow?.requirements?.minified === true,
             boundRequirementRoot: null,
+            boundRequirementSource: '',
             observedRootCount: 0,
             generation: 0,
             seenAt: Date.now(),

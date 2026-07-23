@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "5.0.4",
+  "candidateVersion": "5.0.5",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -15,9 +15,9 @@
   "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
   "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "2d29f2ec25aa3de027b7133f98471b5581286fc1509b76f17094e1115768ae47",
-  "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while Operational Requirements fails safe on empty parsing and enforces one authoritative panel per document.",
-  "approvedNonStyleSourceLines": 1493,
+  "candidateSourceSha256": "1d07bd3dc896a880330aaa3f8db63e36190b60bdab18cbeae56a9fcad6237059",
+  "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while Operational Requirements selects and observes the authoritative active mission requirement source.",
+  "approvedNonStyleSourceLines": 1596,
   "approvedNonStyleChanges": [
     {
       "issue": 378,
@@ -53,9 +53,14 @@
       "issue": 456,
       "phase": "requirements-truth-state-and-panel-dedupe",
       "lines": 42
+    },
+    {
+      "issue": 458,
+      "phase": "authoritative-requirement-source-discovery",
+      "lines": 103
     }
   ],
-  "expectedSourceLines": 31748,
+  "expectedSourceLines": 31851,
   "retiredNonStyleSourceLines": 1398,
   "retiredNonStyleChanges": [
     {

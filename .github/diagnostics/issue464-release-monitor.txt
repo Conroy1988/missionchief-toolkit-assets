@@ -1,0 +1,81 @@
+Issue #464 production release monitor
+LATEST COMMENTS
+
+=========================================================================================================
+id=5063359121 created_at=2026-07-23T20:57:20Z author=github-actions[bot]
+Development-package apply skipped safely: This exact package has not passed preflight against the current main branch. No branch was changed.
+
+=========================================================================================================
+id=5063370715 created_at=2026-07-23T20:58:47Z author=Conroy1988
+/preflight-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py 91c3c39bc6a47256931d6ee9d970a41f5c88ed56
+
+=========================================================================================================
+id=5063374145 created_at=2026-07-23T20:59:13Z author=github-actions[bot]
+<!-- development-package-preflight-passed:69a47d9a99f2e42c9f998d6c01f2fe115dd69a1fe3320625e76aec0b91361d91 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+=========================================================================================================
+id=5063377813 created_at=2026-07-23T20:59:41Z author=Conroy1988
+/apply-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py 91c3c39bc6a47256931d6ee9d970a41f5c88ed56
+
+=========================================================================================================
+id=5063380989 created_at=2026-07-23T21:00:03Z author=github-actions[bot]
+The publish-capable development package failed during **validate-canonical-userscript**. No failed gate was bypassed.\n- Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30044397319
+
+=========================================================================================================
+id=5063396302 created_at=2026-07-23T21:01:55Z author=Conroy1988
+/preflight-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py c7be60a7942126d515efb153affa522790fceb40
+
+=========================================================================================================
+id=5063399312 created_at=2026-07-23T21:02:17Z author=github-actions[bot]
+<!-- development-package-preflight-passed:71e02599bf71c510c7fb8d7281a1298aef1d02066e3926a8fd95d1a2d8380bfb -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+=========================================================================================================
+id=5063402912 created_at=2026-07-23T21:02:43Z author=Conroy1988
+/apply-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py c7be60a7942126d515efb153affa522790fceb40
+
+=========================================================================================================
+id=5063406435 created_at=2026-07-23T21:03:08Z author=github-actions[bot]
+<!-- development-package-apply:71e02599bf71c510c7fb8d7281a1298aef1d02066e3926a8fd95d1a2d8380bfb -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `679371215048e39b9eb2ae886d3734acbb480582`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/468\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+=========================================================================================================
+id=5063427799 created_at=2026-07-23T21:05:48Z author=Conroy1988
+/release-toolkit 5.0.6 RELEASE
+
+=========================================================================================================
+id=5063429372 created_at=2026-07-23T21:06:00Z author=github-actions[bot]
+Toolkit v5.0.6 passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: `30044819008`.
+
+=========================================================================================================
+id=5063432805 created_at=2026-07-23T21:06:25Z author=github-actions[bot]
+Toolkit v5.0.6 release stopped fail-closed. Readiness result: `failure`; production result: `skipped`. No safeguard was bypassed. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30044819008
+
+=========================================================================================================
+id=5063440657 created_at=2026-07-23T21:07:24Z author=Conroy1988
+/preflight-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-monitor.py a772ff874f6079d57574be0ca9c7a07cf13c3dff
+
+=========================================================================================================
+id=5063444122 created_at=2026-07-23T21:07:50Z author=github-actions[bot]
+<!-- development-package-preflight-passed:c3626c77687c45f50c795f8294efbcd9022e8a2d8516183ea6a7c25086e7e50d -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+=========================================================================================================
+id=5063445848 created_at=2026-07-23T21:08:04Z author=Conroy1988
+/apply-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-monitor.py a772ff874f6079d57574be0ca9c7a07cf13c3dff
+
+
+LATEST ISSUE-COMMENT WORKFLOW RUNS
+
+id=30044966470 name=Owner Release Command status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:08:07Z updated_at=2026-07-23T21:08:08Z
+id=30044966181 name=Apply Reviewed Development Package status=in_progress conclusion=None head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:08:07Z updated_at=2026-07-23T21:08:15Z
+id=30044966960 name=Release embed preview by @Conroy1988 status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:08:07Z updated_at=2026-07-23T21:08:17Z
+id=30044925367 name=Owner Release Command status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:07:28Z updated_at=2026-07-23T21:07:29Z
+id=30044925230 name=Release embed preview by @Conroy1988 status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:07:27Z updated_at=2026-07-23T21:07:37Z
+id=30044925174 name=Apply Reviewed Development Package status=completed conclusion=success head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:07:27Z updated_at=2026-07-23T21:07:54Z
+id=30044818667 name=Release embed preview by @Conroy1988 status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:05:52Z updated_at=2026-07-23T21:05:53Z
+id=30044818692 name=Apply Reviewed Development Package status=completed conclusion=skipped head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:05:52Z updated_at=2026-07-23T21:05:53Z
+id=30044819008 name=Owner Release Command status=completed conclusion=failure head_sha=817f4ba6cd751a92c4922878179b5abcecf26d26 created_at=2026-07-23T21:05:52Z updated_at=2026-07-23T21:06:27Z
+id=30044609096 name=Owner Release Command status=completed conclusion=skipped head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:02:47Z updated_at=2026-07-23T21:02:49Z
+id=30044607501 name=Release embed preview by @Conroy1988 status=completed conclusion=skipped head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:02:46Z updated_at=2026-07-23T21:02:47Z
+id=30044607813 name=Apply Reviewed Development Package status=completed conclusion=success head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:02:46Z updated_at=2026-07-23T21:03:11Z
+id=30044552027 name=Owner Release Command status=completed conclusion=skipped head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:01:58Z updated_at=2026-07-23T21:01:59Z
+id=30044551879 name=Release embed preview by @Conroy1988 status=completed conclusion=skipped head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:01:57Z updated_at=2026-07-23T21:01:58Z
+id=30044551944 name=Apply Reviewed Development Package status=completed conclusion=success head_sha=165eb35a1894c5fc8d143f0f30fa2927a9af9ba2 created_at=2026-07-23T21:01:57Z updated_at=2026-07-23T21:02:21Z

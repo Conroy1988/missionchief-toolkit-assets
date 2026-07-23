@@ -1,0 +1,28 @@
+Issue #464 complete package traceback
+exit_code=1
+
+=== STDOUT ===
+
+=== STDERR ===
+Missing function: operationalWindowSyncSettingsUi
+
+=== REMAINING ISSUE464 FILES IN SANDBOX ===
+.github/development-packages/issue464-complete.payload.00
+.github/development-packages/issue464-complete.payload.01
+.github/development-packages/issue464-complete.payload.02
+.github/development-packages/issue464-complete.payload.03
+.github/development-packages/issue464-complete.payload.04
+.github/development-packages/issue464-complete.payload.05
+.github/development-packages/issue464-complete.py
+.github/development-packages/issue464-final-package-traceback.py
+.github/development-packages/issue464-launcher-settings-final.py
+.github/development-packages/issue464-preflight-log-diagnostic.py
+.github/diagnostics/issue464-call-window-runtime.txt
+.github/diagnostics/issue464-latest-comments-v2.txt
+.github/diagnostics/issue464-latest-comments.txt
+.github/diagnostics/issue464-mission-age-dependencies.txt
+.github/diagnostics/issue464-mission-age-runtime.txt
+.github/diagnostics/issue464-mission-age-v4-comparison.txt
+.github/diagnostics/issue464-operational-runtime.txt
+.github/diagnostics/issue464-runtime-settings.txt
+.github/diagnostics/issue464-ui-lifecycle.txt

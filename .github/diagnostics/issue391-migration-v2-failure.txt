@@ -1,0 +1,41 @@
+ISSUE391_MIGRATION_V2_FAILURE_V1
+returncode=1
+
+=== STDOUT ===
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Issue #378 operational-suite lifecycle/settings shell contract passed.
+Issue #378 enhanced requirements renderer contract passed.
+Main-style source-headroom contract passed: 504 lines recovered (304 blank, 185 standalone comment, 15 closing-brace joins), 31653 source lines remain.
+[preflight] Verify JavaScript syntax
+[preflight] Verify distribution parity
+[preflight] Run test_financial_ledger_contract.py
+Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.
+[preflight] Run test_financial_overview_contract.py
+Financial overview contract fixtures passed.
+[preflight] Run test_financial_discord_image_layout_contract.py
+Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.
+[preflight] Run test_mission_marker_ingestion_contract.py
+Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.
+[preflight] Run test_boot_lifecycle_contract.py
+Boot lifecycle contract passed: extracted boot coordinator and maintenance-task registration, runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.
+[preflight] Run test_settings_ui_contract.py
+Traceback (most recent call last):
+  File "/tmp/issue391-complete-retirement-v3-selftest-ul6ossh9/repo/.github/scripts/test_settings_ui_contract.py", line 1043, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue391-complete-retirement-v3-selftest-ul6ossh9/repo/.github/scripts/test_settings_ui_contract.py", line 1022, in main
+    assert_static_routes(source, fixtures)
+  File "/tmp/issue391-complete-retirement-v3-selftest-ul6ossh9/repo/.github/scripts/test_settings_ui_contract.py", line 123, in assert_static_routes
+    assert toggle_routes == sorted(fixtures["toggleRoutes"]), "Feature toggle routing inventory changed"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Feature toggle routing inventory changed
+Traceback (most recent call last):
+  File "/tmp/issue391-complete-retirement-v3-selftest-ul6ossh9/repo/.github/development-packages/issue391-retire-matrix.py", line 370, in <module>
+    subprocess.run(["bash", str(PREFLIGHT), "--contracts"], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['bash', '/tmp/issue391-complete-retirement-v3-selftest-ul6ossh9/repo/.github/scripts/run_userscript_preflight.sh', '--contracts']' returned non-zero exit status 1.
+Issue #391 retirement package v3 failed sandbox self-test
+
+=== STDERR ===
+Issue #391 migration-cleanup v2 correction failed full retirement sandbox

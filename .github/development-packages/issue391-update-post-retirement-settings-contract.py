@@ -115,6 +115,13 @@ settings_test = replace_exact(
     "",
     "settings contract obsolete Matrix effect case",
 )
+settings_test = replace_exact(
+    settings_test,
+    """        ["missionRequirements", "installMissionRequirementsWindows"],
+""",
+    "",
+    "settings contract obsolete Matrix mission-effect ordering case",
+)
 SETTINGS_TEST.write_text(settings_test, encoding="utf-8")'''
 if text.count(runtime_anchor) != 1:
     raise RuntimeError(f"canonical meta settings-test runtime anchor drifted: {text.count(runtime_anchor)}")
@@ -129,6 +136,7 @@ new_diagnostic = '''    ROOT / ".github" / "diagnostics" / "issue391-migration-v
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v2.txt",
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v3.txt",
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v4.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v5.txt",
 )'''
 if text.count(old_diagnostic) != 1:
     raise RuntimeError("canonical meta final diagnostic cleanup anchor drifted")
@@ -157,7 +165,7 @@ with tempfile.TemporaryDirectory(prefix="issue391-post-retirement-settings-selft
 for obsolete in (
     ROOT / ".github" / "development-packages" / "issue391-canonical-retirement-diagnostic.py",
     ROOT / ".github" / "development-packages" / "issue391-operational-settings-helper-map.py",
-    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic-v4.py",
+    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic-v5.py",
 ):
     obsolete.unlink(missing_ok=True)
 

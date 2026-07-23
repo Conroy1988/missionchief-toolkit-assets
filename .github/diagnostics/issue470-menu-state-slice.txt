@@ -1,0 +1,1944 @@
+ISSUE #470 SOURCE SLICE menu-state-slice
+lines=28780-30720
+
+28780:         const animatedItems = control
+28781:             ? Array.from(control.querySelectorAll('.mcms-float-btn, .mcms-screen-pin-btn'))
+28782:             : [];
+28783:         const reduceMotion = Boolean(state.economyMode || pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+28784:         const duration = reduceMotion ? 0 : (mobileModeActive ? 145 : 175);
+28785:         const stagger = reduceMotion ? 0 : (mobileModeActive ? 5 : 7);
+28786:         const maxDelay = Math.min(Math.max(0, animatedItems.length - 1) * stagger, 70);
+28787:         const clearAnimationStyles = () => {
+28788:             for (const item of animatedItems) {
+28789:                 item.style.removeProperty('opacity');
+28790:                 item.style.removeProperty('transform');
+28791:                 item.style.removeProperty('transition');
+28792:                 item.style.removeProperty('transition-delay');
+28793:                 item.style.removeProperty('will-change');
+28794:             }
+28795:         };
+28796:         if (commandBarAnimationTimer !== null) {
+28797:             runtimeClearTimeout(commandBarAnimationTimer);
+28798:             commandBarAnimationTimer = null;
+28799:         }
+28800:         if (opening) {
+28801:             state.commandBarOpen = true;
+28802:             saveState();
+28803:             updateUI();
+28804:             fitControlToMap();
+28805:             if (duration > 0 && animatedItems.length) {
+28806:                 commandBarAnimating = true;
+28807:                 const targetStyles = animatedItems.map(item => {
+28808:                     const computed = pageWindow.getComputedStyle(item);
+28809:                     return {
+28810:                         opacity: computed.opacity || '1',
+28811:                         transform: computed.transform === 'none' ? 'none' : computed.transform
+28812:                     };
+28813:                 });
+28814:                 animatedItems.forEach(item => {
+28815:                     item.style.setProperty('transition', 'none', 'important');
+28816:                     item.style.setProperty('transition-delay', '0ms', 'important');
+28817:                     item.style.setProperty('opacity', '0', 'important');
+28818:                     item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
+28819:                     item.style.setProperty('will-change', 'opacity, transform', 'important');
+28820:                 });
+28821:                 void control.offsetWidth;
+28822:                 runtimeRequestAnimationFrame(() => {
+28823:                     animatedItems.forEach((item, index) => {
+28824:                         item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.2,.78,.22,1), transform ${duration}ms cubic-bezier(.2,.78,.22,1)`, 'important');
+28825:                         item.style.setProperty('transition-delay', `${Math.min(index * stagger, 70)}ms`, 'important');
+28826:                         item.style.setProperty('opacity', targetStyles[index].opacity, 'important');
+28827:                         item.style.setProperty('transform', targetStyles[index].transform, 'important');
+28828:                     });
+28829:                 });
+28830:                 commandBarAnimationTimer = runtimeSetTimeout(() => {
+28831:                     commandBarAnimationTimer = null;
+28832:                     clearAnimationStyles();
+28833:                     commandBarAnimating = false;
+28834:                 }, duration + maxDelay + 35);
+28835:             }
+28836:             showToast('Command bar expanded');
+28837:             return;
+28838:         }
+28839:         if (duration <= 0 || !animatedItems.length) {
+28840:             state.commandBarOpen = false;
+28841:             saveState();
+28842:             updateUI();
+28843:             fitControlToMap();
+28844:             showToast('Command bar collapsed');
+28845:             return;
+28846:         }
+28847:         commandBarAnimating = true;
+28848:         animatedItems.forEach((item, index) => {
+28849:             const computed = pageWindow.getComputedStyle(item);
+28850:             item.style.setProperty('transition', 'none', 'important');
+28851:             item.style.setProperty('transition-delay', '0ms', 'important');
+28852:             item.style.setProperty('opacity', computed.opacity || '1', 'important');
+28853:             item.style.setProperty('transform', computed.transform === 'none' ? 'none' : computed.transform, 'important');
+28854:             item.style.setProperty('will-change', 'opacity, transform', 'important');
+28855:             item.dataset.mcmsCollapseDelay = String(Math.min(index * stagger, 70));
+28856:         });
+28857:         void control.offsetWidth;
+28858:         runtimeRequestAnimationFrame(() => {
+28859:             for (const item of animatedItems) {
+28860:                 item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.4,0,.2,1), transform ${duration}ms cubic-bezier(.4,0,.2,1)`, 'important');
+28861:                 item.style.setProperty('transition-delay', `${item.dataset.mcmsCollapseDelay || 0}ms`, 'important');
+28862:                 item.style.setProperty('opacity', '0', 'important');
+28863:                 item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
+28864:                 delete item.dataset.mcmsCollapseDelay;
+28865:             }
+28866:         });
+28867:         commandBarAnimationTimer = runtimeSetTimeout(() => {
+28868:             commandBarAnimationTimer = null;
+28869:             state.commandBarOpen = false;
+28870:             saveState();
+28871:             updateUI();
+28872:             fitControlToMap();
+28873:             clearAnimationStyles();
+28874:             commandBarAnimating = false;
+28875:         }, duration + maxDelay + 25);
+28876:         showToast('Command bar collapsed');
+28877:     }
+28878: 
+28879:     function handleMapVisibilityToggle(feature) {
+28880:         if (feature === 'markerFocus') state.markerFocus = !state.markerFocus;
+28881:         else if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
+28882:         else if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
+28883:         else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
+28884:         else if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+28885:         else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+28886:         else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+28887:         else if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+28888:         else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+28889:         else return false;
+28890:         return true;
+28891:     }
+28892:     function applyMapVisibilityToggleEffects(feature) { if(feature==='vehicles')synchroniseVehicleMarkerClasses();if(feature==='buildings')synchronisePersonalBuildingVisibility();if(state.economyMode&&(feature==='vehicles'||feature==='buildings'))scheduleEconomyLayerSync(0);if(feature==='missionAge'){runtimeClearTimeout(missionAgeTimer);missionAgeTimer=null;if(state.missionAge){inlineMissionDataScanned=false;scanInlineMissionMarkerData(true);invalidateMarkerRegistryCaches('mission');scheduleMarkerStateSync(0,true);scheduleMissionAgeRefresh(0);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000);}else clearMissionAgeLabels();} }
+28893:     function handleMissionWindowToggle(feature) {
+28894:         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+28895:         else if (feature === 'missionValue') state.missionValue = !state.missionValue;
+28896:         else if (feature === 'customVehicleBadges') state.customVehicleBadges = !state.customVehicleBadges;
+28897:         else return false;
+28898:         return true;
+28899:     }
+28900:     function applyMissionWindowToggleEffects(feature) {
+28901:         if (feature === 'missionValue') { if (state.missionValue) installMissionValueWindows(); else clearMissionValueIndicators(); showToast(state.missionValue ? 'Mission Value on' : 'Mission Value off'); }
+28902:         if (feature === 'customVehicleBadges') { if (state.customVehicleBadges) installCustomVehicleBadges(); else clearCustomVehicleBadges(); showToast(state.customVehicleBadges ? 'Custom Vehicle Badges on' : 'Custom Vehicle Badges off'); }
+28903:         if (feature === 'missionInspector') showToast(state.missionInspector ? 'Mission Inspector on' : 'Mission Inspector off');
+28904:     }
+28905:     function handlePayoutAudioToggle(feature) {
+28906:         if (feature === 'missionLockAudio') { state.missionLockAudio = !state.missionLockAudio; if (state.missionLockAudio) unlockPayoutAudio(true); }
+28907:         else if (feature === 'payoutFlash') state.payoutFlash.enabled = !state.payoutFlash.enabled;
+28908:         else if (feature === 'payoutSound') { state.payoutFlash.soundEnabled = !state.payoutFlash.soundEnabled; if (state.payoutFlash.soundEnabled) unlockPayoutAudio(); else disposePayoutMediaAudio(); }
+28909:         else return false;
+28910:         return true; }
+28911:     function applyPayoutAudioToggleEffects(feature) {
+28912:         if (feature === 'missionLockAudio') showToast(state.missionLockAudio ? 'Mission tracking audio on' : 'Mission tracking audio off');
+28913:         else if (feature === 'payoutSound') showToast(state.payoutFlash.soundEnabled ? 'Theme audio on · hosted MP3 cues load only when played' : 'Theme audio off');
+28914:         else if (feature === 'payoutFlash') showToast(state.payoutFlash.enabled ? 'Emergency payout flash on' : 'Emergency payout flash off');
+28915:     }
+28916:     function handleMissionMonitoringToggle(feature) {
+28917:         if (feature === 'stuckDetector') state.stuckDetector.enabled = !state.stuckDetector.enabled;
+28918:         else if (feature === 'missionSpawn') { state.missionSpawn.enabled = !state.missionSpawn.enabled; missionSpawnArmed = false; runtimeClearTimeout(missionSpawnPrimeTimer); knownMissionIds.clear(); if (state.missionSpawn.enabled) primeMissionSpawnDetector(); }
+28919:         else return false;
+28920:         return true; }
+28921:     function applyMissionMonitoringToggleEffects(feature) {
+28922:         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
+28923:         else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
+28924:     function handleInterfaceShellToggle(feature) {
+28925:         if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else return false; return true; }
+28926:     function toggleFeature(feature) {
+28927:         handleMapVisibilityToggle(feature);
+28928:         handleMissionWindowToggle(feature);
+28929:         handlePayoutAudioToggle(feature);
+28930:         handleMissionMonitoringToggle(feature);
+28931:         handleInterfaceShellToggle(feature);
+28932:         if (feature === 'autoLoadAllVehicles') {
+28933:             state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
+28934:             if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+28935:             else stopAutoLoadAllVehicles();
+28936:         }
+28937:         if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
+28938:         if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
+28939:         if (feature === 'allianceCredits') state.allianceCredits = !state.allianceCredits;
+28940:         if (feature === 'missionAge') state.missionAge = !state.missionAge;
+28941:         if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
+28942:         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
+28943:         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
+28944:         if (feature === 'criticalView') { toggleCriticalView(); return; }
+28945:         if (feature === 'autoNight') {
+28946:             state.autoNight.enabled = !state.autoNight.enabled;
+28947:             state.autoNight.lastBucket = '';
+28948:         }
+28949:         if (state.cleanMode) closePanel();
+28950:         if (!criticalViewActive) saveState();
+28951:         applyRootAttributes();
+28952:         updateUI();
+28953:         applyMapVisibilityToggleEffects(feature);
+28954:         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+28955:         applyMissionWindowToggleEffects(feature);
+28956:         applyPayoutAudioToggleEffects(feature);
+28957:         applyMissionMonitoringToggleEffects(feature);
+28958:         if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+28959:         if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
+28960:         if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+28961:         if (feature === 'unitCommitment') {
+28962:             if (state.unitCommitment) {
+28963:                 showToast('Loading unit assignments…');
+28964:                 refreshPersonalVehicleData(true).then(ok => {
+28965:                     scheduleUnitCommitmentRefresh(0);
+28966:                     showToast(ok ? 'Unit Count on' : 'Unit Count on · live vehicle data unavailable');
+28967:                 });
+28968:             } else showToast('Unit Count off');
+28969:         }
+28970:         if (feature === 'transportWatcher') showToast(state.transportWatcher ? 'Transport Watcher on' : 'Transport Watcher off');
+28971:         if (feature === 'majorIncidentFeed') {
+28972:             if (state.majorIncidentFeed.enabled) {
+28973:                 refreshMissionSnapshots();
+28974:                 scheduleMajorIncidentFeedRender(0);
+28975:             } else removeMajorIncidentFeed();
+28976:             showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
+28977:         }
+28978:         if (feature === 'allianceBuildingsMapBlocker') {
+28979:             if (state.allianceBuildingsMap === false) {
+28980:                 installAllianceBuildingsEarlyStyle();
+28981:                 installAllianceBuildingsLeafletAssignmentGuard();
+28982:                 installAllianceBuildingsContextWatcherEarly();
+28983:             } else {
+28984:                 clearAllianceBuildingsEarlyContext();
+28985:             }
+28986:             showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
+28987:             if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
+28988:         }
+28989:         if (feature === 'resourceGap') {
+28990:             if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
+28991:             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
+28992:         }
+28993:         if (feature === 'autoNight') runAutoNight(true);
+28994:     }
+28995:     function runAutoNight(force = false) {
+28996:         if (!state.autoNight.enabled) return;
+28997:         const bucket = isNightNow(state.autoNight.nightStart, state.autoNight.dayStart) ? 'night' : 'day';
+28998:         if (!force && state.autoNight.lastBucket === bucket) return;
+28999:         state.autoNight.lastBucket = bucket;
+29000:         state.theme = bucket === 'night' ? normaliseTheme(state.autoNight.nightTheme) : normaliseTheme(state.autoNight.dayTheme);
+29001:         saveState();
+29002:         applyRootAttributes();
+29003:         updateUI();
+29004:     }
+29005:     function isNightNow(start, end) {
+29006:         const now = new Date();
+29007:         const current = now.getHours() * 60 + now.getMinutes();
+29008:         const startMin = parseTime(start, 19 * 60);
+29009:         const endMin = parseTime(end, 7 * 60);
+29010:         if (startMin === endMin) return false;
+29011:         if (startMin < endMin) return current >= startMin && current < endMin;
+29012:         return current >= startMin || current < endMin;
+29013:     }
+29014:     function parseTime(value, fallback) {
+29015:         const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+29016:         if (!match) return fallback;
+29017:         return clamp(match[1], 0, 23, Math.floor(fallback / 60)) * 60 + clamp(match[2], 0, 59, fallback % 60);
+29018:     }
+29019:     function shouldSuppressControl() {
+29020:         if (state.cleanMode) return false;
+29021:         if (document.body && document.body.classList.contains('modal-open')) return true;
+29022:         return SUPPRESSION_SELECTORS.some(selector => {
+29023:             let nodes;
+29024:             try { nodes = Array.from(document.querySelectorAll(selector)); } catch (err) { return false; }
+29025:             return nodes.some(el => {
+29026:                 if (!el || el.closest(`#${SCRIPT.controlId}`) || el.closest(`#${SCRIPT.panelId}`)) return false;
+29027:                 if (!isVisible(el)) return false;
+29028:                 const rect = el.getBoundingClientRect();
+29029:                 return (rect.width * rect.height) > 1200;
+29030:             });
+29031:         });
+29032:     }
+29033:     function refreshSuppression() {
+29034:         const control = document.getElementById(SCRIPT.controlId);
+29035:         if (!control) return;
+29036:         control.classList.toggle('mcms-hidden-by-menu', shouldSuppressControl());
+29037:     }
+29038:     function fitControlToMap() {
+29039:         runtimeClearTimeout(fitTimer);
+29040:         fitTimer = runtimeSetTimeout(() => {
+29041:             const panel = document.getElementById(SCRIPT.panelId);
+29042:             const mapEl = getLargestLeafletMap();
+29043:             if (!mapEl) {
+29044:                 if (!isTouchLayoutActive()) {
+29045:                     observeDesktopPanelWorkspace(null);
+29046:                     applyDesktopPanelSizing(panel, null);
+29047:                 }
+29048:                 return;
+29049:             }
+29050:             if (mobileModeActive) {
+29051:                 clearDesktopPanelSizing(panel);
+29052:                 applyMobileDockLayout(mapEl);
+29053:             } else if (tabletModeActive) {
+29054:                 clearDesktopPanelSizing(panel);
+29055:                 applyTabletDockLayout(mapEl);
+29056:             } else {
+29057:                 clearTabletDockSizing();
+29058:                 observeDesktopPanelWorkspace(mapEl);
+29059:                 applyDesktopPanelSizing(panel, mapEl);
+29060:             }
+29061:             if (!panel) return;
+29062:             const rect = mapEl.getBoundingClientRect();
+29063:             panel.classList.toggle('mcms-map-small', rect.height < 560 || rect.width < 650);
+29064:         }, 60);
+29065:     }
+29066:     function setPanelCssPosition(left, top) {
+29067:         const panel = document.getElementById(SCRIPT.panelId);
+29068:         if (!panel) return;
+29069:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+29070:         clearTabletPanelSizing(panel);
+29071:         panel.style.setProperty('position', 'fixed', 'important');
+29072:         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
+29073:         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
+29074:         panel.style.setProperty('right', 'auto', 'important');
+29075:         panel.style.setProperty('bottom', 'auto', 'important');
+29076:         panel.style.setProperty('transform', 'none', 'important');
+29077:     }
+29078:     function clampPanelPosition(left, top) {
+29079:         const panel = document.getElementById(SCRIPT.panelId);
+29080:         if (!panel) return { left: 12, top: 12 };
+29081:         const mapEl = getLargestLeafletMap();
+29082:         const bounds = applyDesktopPanelSizing(panel, mapEl) || resolveDesktopPanelBounds(null);
+29083:         const panelWidth = Math.min(panel.offsetWidth || 318, Math.max(1, bounds.right - bounds.left));
+29084:         const panelHeight = Math.min(panel.offsetHeight || 500, bounds.maxHeight);
+29085:         return clampDesktopPanelPoint(left, top, panelWidth, panelHeight, bounds);
+29086:     }
+29087:     function getDefaultPanelPosition() {
+29088:         const control = document.getElementById(SCRIPT.controlId);
+29089:         const panel = document.getElementById(SCRIPT.panelId);
+29090:         const margin = 12;
+29091:         if (!control || !panel) return { left: margin, top: margin };
+29092:         const controlRect = control.getBoundingClientRect();
+29093:         const panelWidth = panel.offsetWidth || 318;
+29094:         const viewportWidth = pageWindow.innerWidth || document.documentElement.clientWidth;
+29095:         const spaceRight = viewportWidth - controlRect.right - margin;
+29096:         const spaceLeft = controlRect.left - margin;
+29097:         return {
+29098:             left: (spaceRight >= panelWidth || spaceRight >= spaceLeft) ? controlRect.right + margin : controlRect.left - panelWidth - margin,
+29099:             top: controlRect.top
+29100:         };
+29101:     }
+29102:     function positionPanelOverlay(useSavedPosition = true) {
+29103:         if (dragState) return;
+29104:         const panel = document.getElementById(SCRIPT.panelId);
+29105:         if (!panel || !panel.classList.contains('mcms-open')) return;
+29106:         if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
+29107:         clearTabletPanelSizing(panel);
+29108:         let left;
+29109:         let top;
+29110:         if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
+29111:             left = Number(state.panelPosition.left);
+29112:             top = Number(state.panelPosition.top);
+29113:         } else {
+29114:             const pos = getDefaultPanelPosition();
+29115:             left = pos.left;
+29116:             top = pos.top;
+29117:         }
+29118:         const clamped = clampPanelPosition(left, top);
+29119:         setPanelCssPosition(clamped.left, clamped.top);
+29120:     }
+29121: 
+29122:     function resetPanelPosition() {
+29123:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+29124:         state.panelPosition = null;
+29125:         saveState();
+29126:         positionPanelOverlay(false);
+29127:         showToast('Menu position reset');
+29128:     }
+29129: 
+29130:     function nudgePanel(dx, dy) {
+29131:         if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+29132:         const panel = document.getElementById(SCRIPT.panelId);
+29133:         if (!panel) return;
+29134:         const rect = panel.getBoundingClientRect();
+29135:         const pos = clampPanelPosition(rect.left + dx, rect.top + dy);
+29136:         setPanelCssPosition(pos.left, pos.top);
+29137:         state.panelPosition = { left: pos.left, top: pos.top };
+29138:         saveState();
+29139:         showToast(`Menu ${pos.left}, ${pos.top}`);
+29140:     }
+29141: 
+29142:     function startPanelDrag(event) {
+29143:         if (isTouchLayoutActive()) return;
+29144:         const isMouse = event.type === 'mousedown';
+29145:         const isTouch = event.type === 'touchstart';
+29146:         if (isMouse && event.button !== 0) return;
+29147:         if (!isMouse && !isTouch) return;
+29148:         const panel = document.getElementById(SCRIPT.panelId);
+29149:         if (!panel || !panel.classList.contains('mcms-open')) return;
+29150:         const point = isTouch ? event.touches[0] : event;
+29151:         if (!point) return;
+29152:         const rect = panel.getBoundingClientRect();
+29153:         dragState = {
+29154:             startX: point.clientX,
+29155:             startY: point.clientY,
+29156:             startLeft: rect.left,
+29157:             startTop: rect.top,
+29158:             moved: false
+29159:         };
+29160:         panel.classList.add('mcms-dragging');
+29161:         document.documentElement.style.cursor = 'grabbing';
+29162:         document.body.style.userSelect = 'none';
+29163:         document.addEventListener('mousemove', movePanelDrag, true);
+29164:         document.addEventListener('mouseup', endPanelDrag, true);
+29165:         document.addEventListener('touchmove', movePanelDrag, { capture: true, passive: false });
+29166:         document.addEventListener('touchend', endPanelDrag, true);
+29167:         document.addEventListener('touchcancel', endPanelDrag, true);
+29168:         event.preventDefault();
+29169:         event.stopPropagation();
+29170:     }
+29171: 
+29172:     function movePanelDrag(event) {
+29173:         if (!dragState) return;
+29174:         const isTouch = event.type === 'touchmove';
+29175:         const point = isTouch ? event.touches[0] : event;
+29176:         if (!point) return;
+29177:         const dx = point.clientX - dragState.startX;
+29178:         const dy = point.clientY - dragState.startY;
+29179:         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragState.moved = true;
+29180:         const pos = clampPanelPosition(dragState.startLeft + dx, dragState.startTop + dy);
+29181:         setPanelCssPosition(pos.left, pos.top);
+29182:         event.preventDefault();
+29183:         event.stopPropagation();
+29184:     }
+29185: 
+29186:     function endPanelDrag(event) {
+29187:         if (!dragState) return;
+29188:         const didMove = Boolean(dragState.moved);
+29189:         const panel = document.getElementById(SCRIPT.panelId);
+29190:         if (panel) {
+29191:             panel.classList.remove('mcms-dragging');
+29192:             const rect = panel.getBoundingClientRect();
+29193:             const pos = clampPanelPosition(rect.left, rect.top);
+29194:             setPanelCssPosition(pos.left, pos.top);
+29195:             state.panelPosition = { left: pos.left, top: pos.top };
+29196:             saveState();
+29197:         }
+29198:         dragState = null;
+29199:         document.documentElement.style.cursor = '';
+29200:         document.body.style.userSelect = '';
+29201:         document.removeEventListener('mousemove', movePanelDrag, true);
+29202:         document.removeEventListener('mouseup', endPanelDrag, true);
+29203:         document.removeEventListener('touchmove', movePanelDrag, true);
+29204:         document.removeEventListener('touchend', endPanelDrag, true);
+29205:         document.removeEventListener('touchcancel', endPanelDrag, true);
+29206:         if (didMove) {
+29207:             suppressNextOutsideClick = true;
+29208:             showToast('Menu position saved');
+29209:             runtimeSetTimeout(() => { suppressNextOutsideClick = false; }, 250);
+29210:         }
+29211:         if (event) {
+29212:             event.preventDefault();
+29213:             event.stopPropagation();
+29214:         }
+29215:     }
+29216: 
+29217:     function openPanel() {
+29218:         const panel = document.getElementById(SCRIPT.panelId) || createPanel();
+29219:         if (!panel) return;
+29220:         applyRootAttributes();
+29221:         refreshTabletModeUi(panel);
+29222:         panel.classList.add('mcms-open');
+29223:         panel.setAttribute('aria-hidden', 'false');
+29224:         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
+29225:         menuButton?.setAttribute('aria-expanded', 'true');
+29226:         fitControlToMap();
+29227:         runtimeSetTimeout(() => positionPanelOverlay(true), 0);
+29228:     }
+29229: 
+29230:     function closePanel({ restoreFocus = false } = {}) {
+29231:         const panel = document.getElementById(SCRIPT.panelId);
+29232:         if (!panel) return;
+29233:         panel.classList.remove('mcms-open');
+29234:         panel.setAttribute('aria-hidden', 'true');
+29235:         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
+29236:         menuButton?.setAttribute('aria-expanded', 'false');
+29237:         if (restoreFocus && menuButton?.isConnected) runtimeSetTimeout(() => menuButton.focus({ preventScroll: true }), 0);
+29238:     }
+29239: 
+29240:     function togglePanel() {
+29241:         const panel = document.getElementById(SCRIPT.panelId);
+29242:         if (!panel) { openPanel(); return; }
+29243:         panel.classList.contains('mcms-open') ? closePanel() : openPanel();
+29244:     }
+29245: 
+29246:     function closeHelpCenter({ restoreFocus = true } = {}) {
+29247:         const overlay = document.getElementById(SCRIPT.helpCenterId);
+29248:         if (!overlay?.classList.contains('mcms-open')) return false;
+29249:         overlay.classList.remove('mcms-open', 'mcms-loading', 'mcms-error');
+29250:         overlay.setAttribute('aria-hidden', 'true');
+29251:         document.documentElement.removeAttribute('data-mcms-help-open');
+29252:         if (restoreFocus && helpCenterReturnFocus?.isConnected) {
+29253:             runtimeSetTimeout(() => { try { helpCenterReturnFocus.focus({ preventScroll: true }); } catch (err) {} }, 0);
+29254:         }
+29255:         helpCenterReturnFocus = null;
+29256:         return true;
+29257:     }
+29258: 
+29259:     function helpGuideRequestUrl(force = false) {
+29260:         const separator = HELP_CENTER.rawUrl.includes('?') ? '&' : '?';
+29261:         const cacheKey = force ? `${SCRIPT.version}-${Date.now()}` : SCRIPT.version;
+29262:         return `${HELP_CENTER.rawUrl}${separator}toolkit=${encodeURIComponent(cacheKey)}`;
+29263:     }
+29264: 
+29265:     function requestHelpGuideDocument(force = false) {
+29266:         if (!force && helpGuideDocumentCache) return Promise.resolve(helpGuideDocumentCache);
+29267:         if (helpGuideLoadPromise) return helpGuideLoadPromise;
+29268:         const url = helpGuideRequestUrl(force);
+29269:         helpGuideLoadPromise = new Promise((resolve, reject) => {
+29270:             if (runtime.destroyed) {
+29271:                 reject(new Error('Toolkit runtime stopped.'));
+29272:                 return;
+29273:             }
+29274:             const validate = text => {
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+29280:                 helpGuideLoadedAt = Date.now();
+29281:                 return documentText;
+29282:             };
+29283:             if (typeof GM_xmlhttpRequest === 'function') {
+29284:                 let request = null;
+29285:                 let settled = false;
+29286:                 const finish = (error, response = null) => {
+29287:                     if (settled) return;
+29288:                     settled = true;
+29289:                     if (request) runtime.requests.delete(request);
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+29295:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29296:                     }
+29297:                 };
+29298:                 try {
+29299:                     request = GM_xmlhttpRequest({
+29300:                         method: 'GET', url, timeout: HELP_CENTER.requestTimeoutMs, responseType: 'text',
+29301:                         headers: { Accept: 'text/html, text/plain;q=0.9, */*;q=0.8' },
+29302:                         onload: response => finish(null, response),
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+29308:                 } catch (err) {
+29309:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29310:                 }
+29311:                 return;
+29312:             }
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+29317:                 })
+29318:                 .then(text => resolve(validate(text)))
+29319:                 .catch(error => reject(error instanceof Error ? error : new Error('GitHub could not be reached.')));
+29320:         }).finally(() => { helpGuideLoadPromise = null; });
+29321:         return helpGuideLoadPromise;
+29322:     }
+29323: 
+29324:     function patchHelpGuideDocument(documentText) {
+29325:         let source = String(documentText || '');
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+29331:                 '<div class="card"><h3>Umbrella Containment</h3><p>Corporate BSL-4 command styling with original transparent emblem, facility schematic, surveillance terminal, specimen vial and containment-division artwork.</p></div>'
+29332:             )
+29333:             .replace('Biohazard Containment</span>', 'Umbrella Containment</span>')
+29334:             .replace(
+29335:                 'Set a minimum payout threshold, duration, theme, audio state and volume. Use the test amount control before relying on a new setup.',
+29336:                 'Set a minimum payout threshold, duration, theme, audio state and volume. Umbrella Containment uses the same identity, artwork package and renamed hosted audio as the Umbrella UI theme. Use the test amount control before relying on a new setup.'
+29337:             )
+29338:             .replace(
+29339:                 '<li>Presentation titles and particle treatment scale by payout tier.</li>',
+29340:                 '<li>Presentation titles and particle treatment scale by payout tier.</li><li>Umbrella Containment displays BSL-4 facility, surveillance, corporate emblem and transfer-authorisation artwork.</li>'
+29341:             );
+29342:         const semanticMarker = '<div class="callout warning"><strong>Protected semantic colours:</strong> clearing, assistance, warning, critical and syncing states retain their operational meaning across every theme.</div>';
+29343:         if (!source.includes('Umbrella Containment asset package:') && source.includes(semanticMarker)) {
+29344:             source = source.replace(
+29345:                 semanticMarker,
+29346:                 '<div class="callout"><strong>Umbrella Containment asset package:</strong> decorative artwork is loaded from the public Toolkit assets repository only while the theme is in use. Missing artwork never blocks the Toolkit, and the graphics do not replace protected operational colours.</div>' + semanticMarker
+29347:             );
+29348:         }
+29349:         if (!source.includes('id="financial-command"')) {
+29350:             const financialSection = `<section class="section" id="financial-command" data-title="Discord Financial Command" data-keywords="discord finance archive ledger audit github rules policy deep scan forecast risk capital investment webhook">
+29351: <div class="head"><span class="num">19</span><div><h2>Discord Financial Command</h2><p class="summary">MissionChief ledger extraction, daily `/credits/overview` reconciliation, local historical archiving and GitHub-hosted financial intelligence.</p></div></div>
+29352: <h3>Supreme financial audit</h3><p>The Discord tab can generate an Executive Brief or a complete Executive + Full Audit report. The audit separates operating income, other income, operating expenditure and capital investment so expansion spending does not automatically make healthy operations look unprofitable.</p>
+29353: <div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Daily aggregate audit</h4><p>MissionChief Revenue, Spendings and Sum rows verify complete days without double-counting the detailed ledger. Any unresolved variance remains visible.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights overview variance, revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
+29354: <h3>Player-linked Local Financial Archive</h3><ol class="steps"><li>Keep Local Financial Archive enabled to retain discovered transactions by MissionChief player ID/name.</li><li>Select All Available History or run Deep Scan All Available to extend the archive as far back as MissionChief exposes.</li><li>Use Export Archive and Import Archive to transfer or merge history between your devices without exposing repository credentials.</li><li>Export All also includes the local archive and Discord webhook for complete private recovery.</li><li>GitHub hosts only public rules, audit policy and Toolkit assets; player financial data remains in the browser and private backups.</li></ol>
+29355: <div class="call warn"><strong>Private backup:</strong> Export All includes the saved Discord webhook and local financial history. Store the JSON privately; anyone holding it may be able to post through the webhook and inspect the exported game ledger.</div>
+29356: </section>`;
+29357:             source = source.replace('</main>', `${financialSection}</main>`);
+29358:         }
+29359:         if (!source.includes('id="economy-mode"')) {
+29360:             const economySection = `<section class="section" id="economy-mode" data-title="Economy Mode" data-keywords="economy eco performance low end laptop ram cpu gpu lag leaflet markers">
+29361: <div class="head"><span class="num">20</span><div><h2>Economy Mode</h2><p class="summary">A reversible lower-overhead operating policy for large maps and lower-end computers.</p></div></div>
+29362: <p>Use the leaf button beside the Toolkit opener to switch Economy Mode on or off. Your normal themes, overlays and feature selections remain saved; Economy Mode temporarily renders and refreshes them more efficiently.</p>
+29363: <div class="grid"><div class="card"><h4>Map workload</h4><p>Off-screen vehicle and building layers are detached with a safety buffer, then restored automatically when they enter the current map area or Economy Mode is disabled.</p></div><div class="card"><h4>Rendering</h4><p>Continuous decorative animation, tile-filter chains, backdrop blur and heavy payout particles are replaced by static equivalents while operational colours remain intact.</p></div><div class="card"><h4>Background work</h4><p>Mission, vehicle, building and maintenance refreshes use longer idle intervals. Opening a module, changing a setting or pressing Refresh still requests current data immediately.</p></div><div class="card"><h4>Large panels</h4><p>Mission Age Watch and long MissionChief lists use browser rendering containment so off-screen rows do not require full layout and painting.</p></div></div>
+29364: <div class="call"><strong>Full restoration:</strong> switching Economy Mode off reattaches quarantined layers, restores Leaflet options, map skins, animation and normal scheduler intervals.</div>
+29365: </section>`;
+29366:             source = source.replace('</main>', `${economySection}</main>`);
+29367:         }
+29368:         return source;
+29369:     }
+29370: 
+29371:     function protectHelpGuideDocument(documentText) {
+29372:         const navigationGuard = `
+29373: <script data-mcms-help-navigation-guard>
+29374: (() => {
+29375:     'use strict';
+29376:     const scrollToGuideSection = rawHref => {
+29377:         const href = String(rawHref || '');
+29378:         if (!href.startsWith('#')) return false;
+29379:         let id = '';
+29380:         try { id = decodeURIComponent(href.slice(1)); } catch (error) { id = href.slice(1); }
+29381:         const target = id ? document.getElementById(id) : document.documentElement;
+29382:         if (!target) return true;
+29383:         const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+29384:         target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+29385:         return true;
+29386:     };
+29387:     document.addEventListener('click', event => {
+29388:         const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+29389:         if (!link) return;
+29390:         const href = link.getAttribute('href') || '';
+29391:         if (href.startsWith('#')) {
+29392:             event.preventDefault();
+29393:             scrollToGuideSection(href);
+29394:             return;
+29395:         }
+29396:         if (/^(?:https?:)?\/\//i.test(href)) {
+29397:             event.preventDefault();
+29398:             try { window.open(href, '_blank', 'noopener,noreferrer'); } catch (error) {}
+29399:         }
+29400:     }, true);
+29401: })();
+29402: \x3C/script>`;
+29403:         const source = patchHelpGuideDocument(documentText);
+29404:         if (source.includes('data-mcms-help-navigation-guard')) return source;
+29405:         if (/<\/body\s*>/iu.test(source)) return source.replace(/<\/body\s*>/iu, `${navigationGuard}</body>`);
+29406:         return `${source}${navigationGuard}`;
+29407:     }
+29408: 
+29409:     function createHelpCenter() {
+29410:         const existing = document.getElementById(SCRIPT.helpCenterId);
+29411:         if (existing) return existing;
+29412:         const overlay = document.createElement('div');
+29413:         overlay.id = SCRIPT.helpCenterId;
+29414:         overlay.setAttribute('role', 'dialog');
+29415:         overlay.setAttribute('aria-modal', 'true');
+29416:         overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);
+29417:         overlay.setAttribute('aria-hidden', 'true');
+29418:         overlay.innerHTML = `
+29419:             <div class="mcms-help-window" role="document">
+29420:                 <div class="mcms-help-toolbar">
+29421:                     <div class="mcms-help-brand">
+29422:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+29423:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+29424:                     </div>
+29425:                     <div class="mcms-help-actions">
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+29431:                 <div class="mcms-help-address"><span class="mcms-help-address-lock" aria-hidden="true">●</span><span class="mcms-help-address-text">github.com/Conroy1988/missionchief-toolkit-assets/help/index.html</span><span class="mcms-help-status" data-help-status>Ready</span></div>
+29432:                 <div class="mcms-help-progress" aria-hidden="true"></div>
+29433:                 <div class="mcms-help-content">
+29434:                     <iframe class="mcms-help-frame" title="MissionChief Map Command Toolkit searchable guide" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
+29435:                     <div class="mcms-help-fallback">
+29436:                         <div class="mcms-help-error-card">
+29437:                             <strong>Help Centre unavailable</strong>
+29438:                             <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>
+29439:                             <div class="mcms-help-error-actions"><button type="button" data-help-action="reload">Retry</button><button type="button" data-help-action="source">Open GitHub source</button></div>
+29440:                         </div>
+29441:                     </div>
+29442:                 </div>
+29443:             </div>`;
+29444:         runtimeListen(overlay, 'click', event => {
+29445:             const actionButton = closestEventTarget(event, '[data-help-action]');
+29446:             if (actionButton) {
+29447:                 event.preventDefault();
+29448:                 const action = actionButton.dataset.helpAction;
+29449:                 if (action === 'close') closeHelpCenter();
+29450:                 if (action === 'reload') loadHelpCenterGuide(true);
+29451:                 if (action === 'source') {
+29452:                     try { pageWindow.open(HELP_CENTER.sourceUrl, '_blank', 'noopener,noreferrer'); } catch (err) { location.href = HELP_CENTER.sourceUrl; }
+29453:                 }
+29454:                 return;
+29455:             }
+29456:             if (event.target === overlay) closeHelpCenter();
+29457:         });
+29458:         runtimeListen(overlay, 'mousedown', stopMapInteraction);
+29459:         runtimeListen(overlay, 'wheel', stopMapInteraction, { passive: true });
+29460:         runtimeListen(overlay, 'touchstart', stopMapInteraction, { passive: true });
+29461:         document.body.appendChild(overlay);
+29462:         return overlay;
+29463:     }
+29464: 
+29465:     async function loadHelpCenterGuide(force = false) {
+29466:         const overlay = createHelpCenter();
+29467:         const frame = overlay.querySelector('.mcms-help-frame');
+29468:         const status = overlay.querySelector('[data-help-status]');
+29469:         const errorText = overlay.querySelector('[data-help-error]');
+29470:         overlay.classList.add('mcms-loading');
+29471:         overlay.classList.remove('mcms-error');
+29472:         if (status) status.textContent = force ? 'Refreshing…' : 'Loading…';
+29473:         try {
+29474:             const documentText = await requestHelpGuideDocument(force);
+29475:             if (!overlay.isConnected || runtime.destroyed) return false;
+29476:             frame.srcdoc = protectHelpGuideDocument(documentText);
+29477:             overlay.classList.remove('mcms-error');
+29478:             if (status) status.textContent = `Guide ${HELP_CENTER.guideVersion} · online`;
+29479:             return true;
+29480:         } catch (err) {
+29481:             if (!overlay.isConnected || runtime.destroyed) return false;
+29482:             overlay.classList.add('mcms-error');
+29483:             if (status) status.textContent = 'Offline fallback';
+29484:             if (errorText) errorText.textContent = `${err?.message || 'The public guide could not be loaded.'} The main Toolkit remains fully operational.`;
+29485:             return false;
+29486:         } finally {
+29487:             overlay.classList.remove('mcms-loading');
+29488:         }
+29489:     }
+29490: 
+29491:     function openHelpCenter() {
+29492:         const overlay = createHelpCenter();
+29493:         helpCenterReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+29494:         closePanel();
+29495:         overlay.classList.add('mcms-open');
+29496:         overlay.setAttribute('aria-hidden', 'false');
+29497:         document.documentElement.setAttribute('data-mcms-help-open', 'true');
+29498:         const closeButton = overlay.querySelector('[data-help-action="close"]');
+29499:         runtimeSetTimeout(() => { try { closeButton?.focus({ preventScroll: true }); } catch (err) {} }, 0);
+29500:         const frame = overlay.querySelector('.mcms-help-frame');
+29501:         if (!frame?.srcdoc) loadHelpCenterGuide(false);
+29502:         else {
+29503:             const status = overlay.querySelector('[data-help-status]');
+29504:             if (status) status.textContent = helpGuideLoadedAt ? `Guide ${HELP_CENTER.guideVersion} · cached` : `Guide ${HELP_CENTER.guideVersion}`;
+29505:         }
+29506:     }
+29507: 
+29508:     function stopMapInteraction(event) {
+29509:         event.stopPropagation();
+29510:     }
+29511: 
+29512:     function isTypingTarget(target) {
+29513:         if (!target) return false;
+29514:         const tag = String(target.tagName || '').toLowerCase();
+29515:         return tag === 'input' || tag === 'textarea' || tag === 'select' || target.isContentEditable;
+29516:     }
+29517: 
+29518:     function handleKeyboard(event) {
+29519:         if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
+29520:         if (event.key === 'Escape' && closeCriticalViewControls()) { event.preventDefault(); return; }
+29521:         if (event.key === 'Escape') {
+29522:             const hadOpenUi = Boolean(
+29523:                 document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open') ||
+29524:                 document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ||
+29525:                 document.getElementById(SCRIPT.vehicleStatusId)?.classList.contains('mcms-open')
+29526:             );
+29527:             if (state.cleanMode && state.shortcuts) toggleFeature('clean');
+29528:             closePanel({ restoreFocus: hadOpenUi });
+29529:             closeCriticalDrawer();
+29530:             closeVehicleCodeStatus();
+29531:             if (hadOpenUi) event.preventDefault();
+29532:             return;
+29533:         }
+29534:         if (!state.shortcuts || isTypingTarget(event.target)) return;
+29535:         const key = String(event.key || '').toLowerCase();
+29536:         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'm') { event.preventDefault(); togglePanel(); return; }
+29537:         if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && /^[1-9]$/.test(event.key)) {
+29538:             const visibilityShortcut = {
+29539:                 '1': 'myMissions',
+29540:                 '2': 'allianceMissions',
+29541:                 '3': 'vehicles',
+29542:                 '4': 'buildings',
+29543:                 '5': 'allianceCredits',
+29544:                 '6': 'missionAge',
+29545:                 '7': 'transportWatcher',
+29546:                 '8': 'unitCommitment',
+29547:                 '9': 'criticalView'
+29548:             };
+29549:             event.preventDefault();
+29550:             toggleFeature(visibilityShortcut[event.key]);
+29551:             return;
+29552:         }
+29553:         if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'v') { event.preventDefault(); toggleVehicleCodeStatus(); return; }
+29554:         if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'w') { event.preventDefault(); toggleCriticalDrawer(); return; }
+29555:         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'c') { event.preventDefault(); toggleFeature('clean'); return; }
+29556:         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'f') { event.preventDefault(); toggleFeature('markerFocus'); return; }
+29557:         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'p') { event.preventDefault(); toggleFeature('missionPulse'); return; }
+29558:         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'r') { event.preventDefault(); toggleFeature('roadPriority'); }
+29559:     }
+29560: 
+29561:     function buildThemeOptions(selected) {
+29562:         return THEME_ORDER.map(key => `<option value="${key}" ${key === selected ? 'selected' : ''}>${THEMES[key].full}</option>`).join('');
+29563:     }
+29564: 
+29565:     function makeToggleButton(key, icon, label, title) {
+29566:         return `
+29567:             <button class="mcms-toggle-btn" type="button" data-toggle="${key}" title="${escapeHtml(title || label)}">
+29568:                 <span class="mcms-iconbox">${icon}</span>
+29569:                 <span class="mcms-text">
+29570:                     <span class="mcms-label">${escapeHtml(label)}</span>
+29571:                     <span class="mcms-pill">OFF</span>
+29572:                 </span>
+29573:             </button>
+29574:         `;
+29575:     }
+29576: 
+29577:     function makeFloatButton(key, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel) {
+29578:         return `
+29579:             <button class="mcms-float-btn" type="button" data-toggle="${key}" title="${escapeHtml(title)}" aria-pressed="false">
+29580:                 <span class="mcms-float-key">${escapeHtml(shortcut)}</span>
+29581:                 <span class="mcms-float-label mcms-float-label-desktop">${escapeHtml(label)}</span>
+29582:                 <span class="mcms-float-label mcms-float-label-tablet">${escapeHtml(tabletLabel)}</span>
+29583:                 <span class="mcms-float-label mcms-float-label-mobile">${escapeHtml(mobileLabel)}</span>
+29584:             </button>
+29585:         `;
+29586:     }
+29587: 
+29588:     function makeActionFloatButton(action, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel) {
+29589:         return `
+29590:             <button class="mcms-float-btn mcms-float-action-btn" type="button" data-action="${escapeHtml(action)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" aria-keyshortcuts="${escapeHtml(shortcut)}" aria-pressed="false">
+29591:                 <span class="mcms-float-key">${escapeHtml(shortcut)}</span>
+29592:                 <span class="mcms-float-label mcms-float-label-desktop">${escapeHtml(label)}</span>
+29593:                 <span class="mcms-float-label mcms-float-label-tablet">${escapeHtml(tabletLabel)}</span>
+29594:                 <span class="mcms-float-label mcms-float-label-mobile">${escapeHtml(mobileLabel)}</span>
+29595:             </button>
+29596:         `;
+29597:     }
+29598: 
+29599:     // Issue #153: stable live Toolkit version-status control.
+29600:     const VERSION_STATUS = Object.freeze({ manifestUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json', cacheKey: 'mcms_version_status_cache_v1', failureKey: 'mcms_version_status_failure_v1', cacheMs: 30 * 60 * 1000, autoIntervalMs: 30 * 60 * 1000, failureCooldownMs: 10 * 60 * 1000, requestTimeoutMs: 8 * 1000, bootDelayMs: 15 * 1000, longPressMs: 650, styleId: 'mcms-version-status-style', buttonId: 'mcms-version-status-control' });
+29601:     let versionStatusModel = { state: 'idle', manifest: null, checkedAt: 0, failedAt: 0, error: '' }; let versionStatusCheckPromise = null; let versionStatusHydrationPromise = null; let versionStatusTimer = null; let versionStatusRequest = null; let versionStatusLongPressTimer = null; let versionStatusSuppressClick = false;
+29602:     function versionStatusParse(value) { const match = String(value || '').trim().match(/^(\d+)\.(\d+)\.(\d+)$/u); return match ? match.slice(1).map(Number) : null; }
+29603:     function versionStatusCompare(left, right) { const a = versionStatusParse(left); const b = versionStatusParse(right); if (!a || !b) return null; for (let index = 0; index < 3; index += 1) { if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1; } return 0; }
+29604:     function versionStatusUrl(value, kind, version) { let url; try { url = new URL(String(value || '')); } catch (err) { throw new Error(`Invalid ${kind} URL.`); } if (url.protocol !== 'https:') throw new Error(`${kind} URL must use HTTPS.`); if (kind === 'release') { const expected = `/Conroy1988/missionchief-toolkit-assets/releases/tag/v${version}`; if (url.hostname !== 'github.com' || url.pathname !== expected) throw new Error('Release URL is not canonical.'); } else if (url.hostname !== 'update.greasyfork.org' || !/^\/scripts\/586018\/.+\.user\.js$/u.test(url.pathname)) throw new Error('Update URL is not canonical.'); return url.href; }
+29605:     function versionStatusValidateManifest(payload) { if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error('Version manifest is not an object.'); if (Number(payload.schemaVersion) !== 1 || payload.channel !== 'stable') throw new Error('Version manifest channel is invalid.'); const version = String(payload.version || '').trim(); if (!versionStatusParse(version)) throw new Error('Version manifest does not contain a stable semantic version.'); return { schemaVersion: 1, channel: 'stable', version, releaseNotesUrl: versionStatusUrl(payload.releaseNotesUrl, 'release', version), updateUrl: versionStatusUrl(payload.updateUrl, 'update', version), publishedAt: String(payload.publishedAt || '') }; }
+29606:     function versionStatusPresentation(installedVersion, manifest) { const comparison = versionStatusCompare(manifest?.version, installedVersion); if (comparison === null) throw new Error('Installed or published version is malformed.'); return comparison > 0 ? { state: 'update', destination: manifest.updateUrl } : { state: 'latest', destination: manifest.releaseNotesUrl }; }
+29607:     function versionStatusCacheIsFresh(cache, now = Date.now()) { if (!cache || typeof cache !== 'object') return false; const checkedAt = Number(cache.checkedAt); if (!Number.isFinite(checkedAt) || checkedAt > now || now - checkedAt >= VERSION_STATUS.cacheMs) return false; try { versionStatusValidateManifest(cache.manifest); return true; } catch (err) { return false; } }
+29608:     function versionStatusFailureCooling(value, now = Date.now()) { const failedAt = Number(value?.failedAt ?? value); return Number.isFinite(failedAt) && failedAt <= now && now - failedAt < VERSION_STATUS.failureCooldownMs; }
+29609:     async function versionStatusStorageRead(key) { try { if (typeof GM_getValue === 'function') return await GM_getValue(key, null); } catch (err) {} try { const raw = pageWindow.localStorage?.getItem(key); return raw ? JSON.parse(raw) : null; } catch (err) { return null; } }
+29610:     async function versionStatusStorageWrite(key, value) { try { if (typeof GM_setValue === 'function') { await GM_setValue(key, value); return; } } catch (err) {} try { pageWindow.localStorage?.setItem(key, JSON.stringify(value)); } catch (err) {} }
+29611:     async function versionStatusStorageDelete(key) { try { if (typeof GM_deleteValue === 'function') { await GM_deleteValue(key); return; } } catch (err) {} try { pageWindow.localStorage?.removeItem(key); } catch (err) {} }
+29612:     function versionStatusRender() { const button = document.getElementById(VERSION_STATUS.buttonId); if (!button) return; const installed = SCRIPT.version; const available = versionStatusModel.manifest?.version || ''; const stateName = versionStatusModel.state; const labels = { idle: 'CHECK', checking: 'CHECK', latest: 'LATEST', update: 'UPDATE', error: 'RETRY' }; const label = labels[stateName] || 'CHECK'; button.textContent = ''; button.dataset.label = label; button.dataset.state = stateName; button.setAttribute('aria-busy', String(stateName === 'checking')); let title = `Check Toolkit ${installed} against the verified production release.`; if (stateName === 'checking') title = `Checking Toolkit ${installed} for updates…`; if (stateName === 'latest') title = `Toolkit ${installed} is current — open release notes. Shift-click, right-click or long-press to recheck.`; if (stateName === 'update') title = `Toolkit ${installed} installed; ${available} available — open update page. Shift-click, right-click or long-press to recheck.`; if (stateName === 'error') title = 'Version check unavailable — activate to retry.'; button.title = title; button.setAttribute('aria-label', title); }
+29613:     function ensureVersionStatusStyle() { if (document.getElementById(VERSION_STATUS.styleId)) return; const style = document.createElement('style'); style.id = VERSION_STATUS.styleId; style.textContent = `#${VERSION_STATUS.buttonId}{--mcms-version-accent:#6fb7ff;--mcms-version-accent-rgb:111,183,255;box-sizing:border-box!important;position:relative;display:inline-flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;align-self:flex-start;flex:0 0 48px!important;width:48px!important;min-width:48px!important;max-width:48px!important;height:48px!important;min-height:48px!important;max-height:48px!important;margin:0!important;padding:4px 3px 3px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.26)!important;border-radius:9px!important;background:linear-gradient(180deg,rgba(48,53,59,.98) 0%,rgba(15,19,23,.98) 100%)!important;color:#f5f7fa!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;box-shadow:0 3px 9px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(var(--mcms-version-accent-rgb),.11)!important;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}#${VERSION_STATUS.buttonId}::before{content:"•"!important;box-sizing:border-box;display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important;padding:0!important;border:1px solid rgba(var(--mcms-version-accent-rgb),.72)!important;border-radius:50%!important;background:rgba(var(--mcms-version-accent-rgb),.16)!important;color:var(--mcms-version-accent)!important;font:900 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;box-shadow:0 0 7px rgba(var(--mcms-version-accent-rgb),.22),inset 0 1px 0 rgba(255,255,255,.1)!important}#${VERSION_STATUS.buttonId}::after{content:attr(data-label)!important;box-sizing:border-box;display:block!important;width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;color:#f5f7fa!important;font:800 7.2px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;letter-spacing:.12px!important;text-align:center!important;text-transform:uppercase!important;white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;text-overflow:clip!important}#${VERSION_STATUS.buttonId}:focus-visible{outline:2px solid var(--mcms-version-accent)!important;outline-offset:2px}#${VERSION_STATUS.buttonId}[data-state="latest"]{--mcms-version-accent:#5bd391;--mcms-version-accent-rgb:91,211,145}#${VERSION_STATUS.buttonId}[data-state="latest"]::before{content:"✓"!important}#${VERSION_STATUS.buttonId}[data-state="update"]{--mcms-version-accent:#ffc452;--mcms-version-accent-rgb:255,196,82}#${VERSION_STATUS.buttonId}[data-state="update"]::before{content:"↑"!important}#${VERSION_STATUS.buttonId}[data-state="checking"]{--mcms-version-accent:#76c7ff;--mcms-version-accent-rgb:118,199,255;cursor:progress;opacity:.88}#${VERSION_STATUS.buttonId}[data-state="checking"]::before{content:"…"!important}#${VERSION_STATUS.buttonId}[data-state="error"]{--mcms-version-accent:#ff7e7e;--mcms-version-accent-rgb:255,126,126}#${VERSION_STATUS.buttonId}[data-state="error"]::before{content:"!"!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:44px!important;width:44px!important;min-width:44px!important;max-width:44px!important;height:44px!important;min-height:44px!important;max-height:44px!important;padding:3px 2px!important;border-radius:8px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:18px!important;width:18px!important;height:18px!important;font-size:11px!important}html[data-mcms-tablet-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.7px!important;letter-spacing:0!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}{flex-basis:46px!important;width:46px!important;min-width:46px!important;max-width:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;padding:3px 2px!important;border-radius:9px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::before{flex-basis:19px!important;width:19px!important;height:19px!important;font-size:11px!important}html[data-mcms-mobile-active="true"] #${VERSION_STATUS.buttonId}::after{font-size:6.9px!important;letter-spacing:0!important}@media (prefers-reduced-motion:reduce){#${VERSION_STATUS.buttonId}{transition:none!important}}`; (document.head || document.documentElement).appendChild(style); }
+29614:     function versionStatusOpen() { const manifest = versionStatusModel.manifest; if (!manifest) { scheduleVersionStatusCheck(0, true); return; } let destination; try { destination = versionStatusPresentation(SCRIPT.version, manifest).destination; } catch (err) { scheduleVersionStatusCheck(0, true); return; } const opened = pageWindow.open(destination, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
+29615:     function ensureVersionStatusButton() { ensureVersionStatusStyle(); const control = document.getElementById(SCRIPT.controlId); const row = control?.querySelector?.('.mcms-launch-row'); if (!control || !row) return null; let button = document.getElementById(VERSION_STATUS.buttonId); if (button && !control.contains(button)) { button.remove(); button = null; } if (!button) { button = document.createElement('button'); button.id = VERSION_STATUS.buttonId; button.type = 'button'; button.className = 'mcms-version-btn mcms-version-btn--unified'; button.dataset.variant = 'control-family'; button.setAttribute('aria-live', 'polite'); const economy = row.querySelector?.('.mcms-economy-btn') || null; row.insertBefore(button, economy); runtimeListen(button, 'click', event => { event.preventDefault(); if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; } if (event.shiftKey || versionStatusModel.state === 'idle' || versionStatusModel.state === 'error') { scheduleVersionStatusCheck(0, true); return; } if (versionStatusModel.state !== 'checking') versionStatusOpen(); }); runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); }); runtimeListen(button, 'pointerdown', event => { if (event.pointerType === 'mouse') return; runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = runtimeSetTimeout(() => { versionStatusSuppressClick = true; scheduleVersionStatusCheck(0, true); showToast('Checking Toolkit version…'); }, VERSION_STATUS.longPressMs); }); for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) runtimeListen(button, eventName, () => { runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = null; }, { passive: true }); } versionStatusRender(); if (!versionStatusHydrationPromise) void hydrateVersionStatus(); return button; }
+29616:     async function hydrateVersionStatus() { if (versionStatusHydrationPromise) return versionStatusHydrationPromise; versionStatusHydrationPromise = (async () => { const now = Date.now(); const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); } })().finally(() => { versionStatusHydrationPromise = null; }); return versionStatusHydrationPromise; }
+29617:     function versionStatusRequestManifest() { return new Promise((resolve, reject) => { let settled = false; let timeoutTimer = null; const finish = (error, text) => { if (settled) return; settled = true; runtimeClearTimeout(timeoutTimer); if (versionStatusRequest?.abort) runtime.requests?.delete?.(versionStatusRequest); versionStatusRequest = null; if (error) { reject(error); return; } try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); } catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); } }; const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}`; if (typeof GM_xmlhttpRequest === 'function') { try { versionStatusRequest = GM_xmlhttpRequest({ method: 'GET', url, timeout: VERSION_STATUS.requestTimeoutMs, responseType: 'text', headers: { Accept: 'application/json' }, onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300 ? finish(null, response.responseText) : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)), onerror: () => finish(new Error('Version endpoint could not be reached.')), ontimeout: () => finish(new Error('Version check timed out.')), onabort: () => finish(new Error('Version check was cancelled.')) }); if (versionStatusRequest?.abort) runtime.requests?.add?.(versionStatusRequest); } catch (err) { finish(err); } return; } const Controller = pageWindow.AbortController || globalThis.AbortController; const controller = typeof Controller === 'function' ? new Controller() : null; if (controller) runtime.fetchControllers?.add?.(controller); timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs); Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, { cache: 'no-store', credentials: 'omit', signal: controller?.signal, headers: { Accept: 'application/json' } })).then(response => { if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`); return response.text(); }).then(text => finish(null, text)).catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.'))).finally(() => { if (controller) runtime.fetchControllers?.delete?.(controller); }); }); }
+29618:     async function runVersionStatusCheck(force = false) { ensureVersionStatusButton(); if (versionStatusCheckPromise) return versionStatusCheckPromise; versionStatusCheckPromise = (async () => { const now = Date.now(); if (!force) { const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return versionStatusModel; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); return versionStatusModel; } } versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, error: '' }; versionStatusRender(); try { const manifest = await versionStatusRequestManifest(); const checkedAt = Date.now(); const presentation = versionStatusPresentation(SCRIPT.version, manifest); versionStatusModel = { state: presentation.state, manifest, checkedAt, error: '' }; await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest }); await versionStatusStorageDelete(VERSION_STATUS.failureKey); } catch (err) { const failedAt = Date.now(); versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt, error: String(err?.message || err || 'failed') }; await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt }); } versionStatusRender(); return versionStatusModel; })().finally(() => { versionStatusCheckPromise = null; }); return versionStatusCheckPromise; }
+29619:     function versionStatusAutomaticDelay(now = Date.now()) {
+29620:         const current = Number(now) || Date.now();
+29621:         if (versionStatusModel.state === 'error') {
+29622:             const failedAt = Number(versionStatusModel.failedAt) || 0;
+29623:             if (failedAt > 0) {
+29624:                 const elapsed = Math.max(0, current - failedAt);
+29625:                 return Math.max(1000, VERSION_STATUS.failureCooldownMs - Math.min(VERSION_STATUS.failureCooldownMs, elapsed));
+29626:             }
+29627:             return VERSION_STATUS.failureCooldownMs;
+29628:         }
+29629:         const checkedAt = Number(versionStatusModel.checkedAt) || 0;
+29630:         if (checkedAt > 0 && versionStatusModel.manifest) {
+29631:             const elapsed = Math.max(0, current - checkedAt);
+29632:             return Math.max(1000, VERSION_STATUS.cacheMs - Math.min(VERSION_STATUS.cacheMs, elapsed));
+29633:         }
+29634:         return VERSION_STATUS.autoIntervalMs;
+29635:     }
+29636:     function scheduleVersionStatusCheck(delay = VERSION_STATUS.bootDelayMs, force = false) {
+29637:         if (runtime.destroyed) return;
+29638:         ensureVersionStatusButton();
+29639:         if (versionStatusTimer !== null) {
+29640:             if (!force && Number(delay) === VERSION_STATUS.bootDelayMs) return;
+29641:             runtimeClearTimeout(versionStatusTimer);
+29642:         }
+29643:         versionStatusTimer = runtimeSetTimeout(async () => {
+29644:             versionStatusTimer = null;
+29645:             if (runtime.destroyed) return;
+29646:             if (!force && document.visibilityState === 'hidden') return;
+29647:             try {
+29648:                 await runVersionStatusCheck(force);
+29649:             } finally {
+29650:                 if (!runtime.destroyed && document.visibilityState !== 'hidden') {
+29651:                     scheduleVersionStatusCheck(versionStatusAutomaticDelay(), false);
+29652:                 }
+29653:             }
+29654:         }, Math.max(0, Number(delay) || 0));
+29655:     }
+29656:     function disposeVersionStatus() { runtimeClearTimeout(versionStatusTimer); runtimeClearTimeout(versionStatusLongPressTimer); versionStatusTimer = null; versionStatusLongPressTimer = null; try { versionStatusRequest?.abort?.(); } catch (err) {} versionStatusRequest = null; document.getElementById(VERSION_STATUS.buttonId)?.remove(); document.getElementById(VERSION_STATUS.styleId)?.remove(); }
+29657: 
+29658:     function createCleanExit() {
+29659:         if (document.getElementById(SCRIPT.cleanExitId)) return;
+29660:         const button = document.createElement('button');
+29661:         button.id = SCRIPT.cleanExitId;
+29662:         button.type = 'button';
+29663:         button.textContent = 'Exit Clean Mode';
+29664:         button.title = 'Exit clean mode. Shortcut: C or Esc.';
+29665:         button.addEventListener('click', () => toggleFeature('clean'));
+29666:         document.body.appendChild(button);
+29667:     }
+29668: 
+29669:     function createControl(mapEl) {
+29670:         const host = toolkitControlHost(mapEl, document);
+29671:         if (!host) return null;
+29672:         const existing = document.getElementById(SCRIPT.controlId);
+29673:         if (existing) {
+29674:             if (existing.parentElement !== host) host.appendChild(existing);
+29675:             existing.classList.toggle('mcms-control-fallback', !mapEl);
+29676:             return existing;
+29677:         }
+29678:         const control = document.createElement('div');
+29679:         control.id = SCRIPT.controlId;
+29680:         control.className = 'mcms-control';
+29681:         control.setAttribute('aria-label', `${SCRIPT.name} control`);
+29682:         control.innerHTML = `
+29683:             <div class="mcms-launch-row">
+29684:                 <div class="mcms-shell">
+29685:                     <button class="mcms-menu-btn" type="button" title="Open or close toolkit settings" aria-label="Open or close toolkit settings" aria-expanded="false" aria-controls="${SCRIPT.panelId}">🗺️</button>
+29686:                     <button class="mcms-dock-toggle-btn" type="button" title="Collapse command bar" aria-label="Collapse command bar" aria-expanded="true"><span class="mcms-dock-toggle-icon" aria-hidden="true">▴</span></button>
+29687:                 </div>
+29688:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+29689:             </div>
+29690:             <div class="mcms-floating-filter" title="Persistent map visibility filters">
+29691:                 ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
+29692:                 ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
+29693:                 ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+29694:                 ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
+29695:                 ${makeFloatButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally Credits', 'Ally £')}
+29696:                 ${makeFloatButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
+29697:                 ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
+29698:                 ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+29699:                 ${makeFloatButton('criticalView', '9', 'Crit View', 'Show only personal missions aged 8 hours or more and frame them on the map. Shortcut: 9', 'Critical View', 'Critical')}
+29700:                 ${makeActionFloatButton('open-vehicle-status', 'V', 'Veh Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Veh Codes', 'Codes')}
+29701:                 ${makeActionFloatButton('open-critical-drawer', 'W', 'Age Watch', 'Open or close Mission Age Watch. Shortcut: W', 'Age Watch', 'Watch')}
+29702:             </div>
+29703:             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
+29704:         `;
+29705:         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+29706:             control.addEventListener(eventName, stopMapInteraction, { passive: false });
+29707:         });
+29708:         let screenPinLongPressTimer = 0;
+29709:         let screenPinLongPressButton = null;
+29710:         const cancelScreenPinLongPress = () => {
+29711:             runtimeClearTimeout(screenPinLongPressTimer);
+29712:             screenPinLongPressTimer = 0;
+29713:             screenPinLongPressButton = null;
+29714:         };
+29715:         control.addEventListener('pointerdown', event => {
+29716:             const pinButton = closestEventTarget(event, '.mcms-screen-pin-btn[data-full-label]');
+29717:             if (!pinButton || event.pointerType === 'mouse') return;
+29718:             cancelScreenPinLongPress();
+29719:             screenPinLongPressButton = pinButton;
+29720:             screenPinLongPressTimer = runtimeSetTimeout(() => {
+29721:                 if (screenPinLongPressButton !== pinButton) return;
+29722:                 pinButton.dataset.mcmsLongPress = 'true';
+29723:                 showToast(pinButton.dataset.fullLabel || pinButton.textContent || 'Bookmark');
+29724:             }, 560);
+29725:         });
+29726:         control.addEventListener('pointermove', cancelScreenPinLongPress, { passive: true });
+29727:         control.addEventListener('pointercancel', cancelScreenPinLongPress, { passive: true });
+29728:         control.addEventListener('pointerup', () => {
+29729:             runtimeClearTimeout(screenPinLongPressTimer);
+29730:             screenPinLongPressTimer = 0;
+29731:             screenPinLongPressButton = null;
+29732:         }, { passive: true });
+29733:         control.addEventListener('click', event => {
+29734:             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
+29735:             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
+29736:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+29737:             const actionButton = closestEventTarget(event, '[data-action]');
+29738:             if (actionButton?.dataset.mcmsLongPress === 'true') {
+29739:                 delete actionButton.dataset.mcmsLongPress;
+29740:                 event.preventDefault();
+29741:                 return;
+29742:             }
+29743:             if (menuButton) { togglePanel(); return; }
+29744:             if (dockToggleButton) { toggleCommandBar(); return; }
+29745:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+29746:             if (actionButton) handleAction(actionButton);
+29747:         });
+29748:         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+29749:         host.appendChild(control);
+29750:         control.classList.toggle('mcms-control-fallback', !mapEl);
+29751:         renderScreenPins();
+29752:         updateUI();
+29753:         return control;
+29754:     }
+29755: 
+29756:     function createPanel() {
+29757:         const existingPanel = document.getElementById(SCRIPT.panelId);
+29758:         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
+29759:         const panelStartedAt = startupClock();
+29760:         settingsPanelActivated = true;
+29761:         const panel = document.createElement('div');
+29762:         panel.id = SCRIPT.panelId;
+29763:         panel.setAttribute('role', 'dialog');
+29764:         panel.setAttribute('aria-modal', 'false');
+29765:         panel.setAttribute('aria-hidden', 'true');
+29766:         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
+29767:         const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
+29768:             const theme = UI_THEMES[key];
+29769:             return `
+29770:                 <button class="mcms-ui-theme-btn" type="button" data-ui-theme="${key}" title="${escapeHtml(theme.description)}" aria-pressed="false">
+29771:                     <span class="mcms-ui-theme-preview mcms-ui-theme-preview-${key}" aria-hidden="true"><span></span><span></span><span></span></span>
+29772:                     <span class="mcms-ui-theme-copy"><strong>${escapeHtml(theme.label)}</strong><small>${escapeHtml(theme.short)}</small></span>
+29773:                 </button>
+29774:             `;
+29775:         }).join('');
+29776:         const buildThemeButtons = keys => keys.map(key => {
+29777:             const theme = THEMES[key];
+29778:             return `
+29779:                 <button class="mcms-theme-btn" type="button" data-theme="${key}" title="${theme.full}">
+29780:                     <span class="mcms-iconbox">${theme.icon}</span>
+29781:                     <span class="mcms-text">
+29782:                         <span class="mcms-label">${theme.label}</span>
+29783:                         <span class="mcms-pill">${theme.short}</span>
+29784:                     </span>
+29785:                 </button>
+29786:             `;
+29787:         }).join('');
+29788:         const uiThemeButtons = buildUiThemeButtons();
+29789:         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
+29790:         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
+29791:         const positionButtons = Object.entries(POSITIONS).map(([key, pos]) => `<button class="mcms-position-btn" type="button" data-position="${key}" title="${pos.label}">${pos.short}</button>`).join('');
+29792:         panel.innerHTML = `
+29793:             <div class="mcms-panel-sticky-stack">
+29794:                 <div class="mcms-header">
+29795:                     <div class="mcms-drag-handle" title="Hold left-click and drag this bar to move the menu">
+29796:                         <span class="mcms-title">☰ DRAG MENU HERE</span>
+29797:                         <span class="mcms-subtitle">Hold left-click on this title area. Position saves.</span>
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+29803:                 <div class="mcms-tabs">
+29804:                     <button class="mcms-tab-btn" type="button" data-tab="skins">Skins</button>
+29805:                     <button class="mcms-tab-btn" type="button" data-tab="tools">Tools</button>
+29806:                     <button class="mcms-tab-btn" type="button" data-tab="resources">Resources</button>
+29807:                     <button class="mcms-tab-btn" type="button" data-tab="ops">Ops</button>
+29808:                     <button class="mcms-tab-btn" type="button" data-tab="payouts">Payouts</button>
+29809:                     <button class="mcms-tab-btn" type="button" data-tab="discord">Finance</button>
+29810:                     <button class="mcms-tab-btn" type="button" data-tab="places">Places</button>
+29811:                     <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
+29812:                 </div>
+29813:             </div>
+29814:             <section class="mcms-tab-panel" data-panel="skins">
+29815:                 <div class="mcms-section-label">Interface theme</div>
+29816:                 <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+29817:                 <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
+29818:                 <div class="mcms-section-label">Core skins</div>
+29819:                 <div class="mcms-grid-2">${coreThemeButtons}</div>
+29820:                 <div class="mcms-section-label">Emergency services</div>
+29821:                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
+29822:                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+29823:                 <div class="mcms-section-label">Automatic day / night</div>
+29824:                 <div class="mcms-grid-2">
+29825:                     ${makeToggleButton('autoNight', '◑', 'Auto Night', 'Automatically switch operational map skins at the configured day and night times.')}
+29826:                 </div>
+29827:                 <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+29828:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+29829:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+29830:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+29831:             </section>
+29832:             <section class="mcms-tab-panel" data-panel="tools">
+29833:                 <div class="mcms-section-label">Map tools</div>
+29834:                 <div class="mcms-grid-2">
+29835:                     ${makeToggleButton('clean', '▢', 'Clean', 'Hide map controls for screenshots. Shortcut: C')}
+29836:                     ${makeToggleButton('markerFocus', '◉', 'Focus', 'Dim detected buildings/vehicles and keep missions clearer. Shortcut: F')}
+29837:                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
+29838:                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
+29839:                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+29840:                     ${makeToggleButton('heatmap', '▦', 'Heatmap', 'Show strong and weak operational coverage across the visible map.')}
+29841:                 </div>
+29842:                 <div class="mcms-row" style="margin-top:8px">
+29843:                     <span class="mcms-row-label">Ring radius</span>
+29844:                     <select class="mcms-select" data-setting="coverage-radius">
+29845:                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
+29846:                     </select>
+29847:                 </div>
+29848:                 <div class="mcms-section-label">Coverage Heatmap</div>
+29849:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+29850:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+29851:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+29852:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+29853:                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+29854:                 <div class="mcms-section-label">Map performance</div>
+29855:                 <div class="mcms-grid-2">
+29856:                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Alliance Map Blocker', 'Blocks the heavy map in the Alliance Buildings/Courses menu. ON means blocked. Reload required.')}
+29857:                 </div>
+29858:                 <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map, expands the courses list and prevents its heavy marker layer attaching.</div>
+29859:                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
+29860:                 <div class="mcms-grid-2">
+29861:                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
+29862:                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
+29863:                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+29864:                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+29865:                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
+29866:                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+29867:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
+29868:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
+29869:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Temporarily show only personal missions aged 8 hours or more. Shortcut: 9')}
+29870:                 </div>
+29871:                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
+29872:                 <div class="mcms-status">Ready.</div>
+29873:             </section>
+29874:             <section class="mcms-tab-panel" data-panel="resources">
+29875:                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
+29876:                 <div class="mcms-grid-2">
+29877:                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
+29878:                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
+29879:                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
+29880:                 </div>
+29881:                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
+29882:                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
+29883:                 <div data-transport-sweep></div>
+29884:                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+29885:                 <div class="mcms-section-label">Resource Gap Finder</div>
+29886:                 <div class="mcms-grid-2">
+29887:                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates in Mission Inspector.')}
+29888:                 </div>
+29889:                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+29890:                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+29891:                 <div class="mcms-section-label">Vehicle loading</div>
+29892:                 <div class="mcms-grid-2">
+29893:                     ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically activates MissionChief’s native Load more vehicles control inside an opened mission.')}
+29894:                 </div>
+29895:                 <div class="mcms-status">Transport Watcher and Unit Count remain under Tools as the canonical map-overlay controls for shortcuts 7 and 8.</div>
+29896:             </section>
+29897:             <section class="mcms-tab-panel" data-panel="ops">
+29898:                 <div class="mcms-section-label">Mission Intelligence</div>
+29899:                 <div class="mcms-grid-2">
+29900:                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+29901:                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
+29902:                     ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
+29903:                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
+29904:                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
+29905:                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
+29906:                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
+29907:                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
+29908:                         <span class="mcms-iconbox">V</span>
+29909:                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
+29910:                     </button>
+29911:                 </div>
+29912:                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+29913:                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+29914:                 <div class="mcms-section-label">Session Performance</div>
+29915:                 <div data-ops-session></div>
+29916:                 <div class="mcms-section-label">Mission Age Workflow</div>
+29917:                 <div class="mcms-grid-2">
+29918:                     <button class="mcms-small-btn" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+29919:                     <button class="mcms-small-btn" type="button" data-action="fit-critical">Frame Aged</button>
+29920:                 </div>
+29921:                 <div class="mcms-status">Mission Age and Critical View remain under Tools as the canonical shortcut controls for 6 and 9. Ops provides the mission workflow and dashboard actions.</div>
+29922:                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
+29923:                 <div class="mcms-ops-list" data-ops-critical-preview></div>
+29924:                 <div class="mcms-section-label">Completion History</div>
+29925:                 <div class="mcms-ops-list" data-ops-history></div>
+29926:                 <div class="mcms-grid-2" style="margin-top:7px !important">
+29927:                     <button class="mcms-small-btn" type="button" data-action="reset-session">Reset Session</button>
+29928:                     <button class="mcms-small-btn" type="button" data-action="clear-payout-history">Clear History</button>
+29929:                 </div>
+29930:             </section>
+29931:             <section class="mcms-tab-panel" data-panel="payouts">
+29932:                 <div class="mcms-section-label">Emergency Payout Flash</div>
+29933:                 <div class="mcms-grid-2">
+29934:                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
+29935:                     ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+29936:                 </div>
+29937:                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
+29938:                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
+29939:                 <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+29940:                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
+29941:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+29942:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+29943:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+29944:             </section>
+29945:             <section class="mcms-tab-panel" data-panel="discord">
+29946:                 <div class="mcms-section-label">Discord Financial Command</div>
+29947:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
+29948:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
+29949:                 <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+29950:                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
+29951:                 <div class="mcms-discord-date-grid">
+29952:                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
+29953:                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
+29954:                 </div>
+29955:                 <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+29956:                 <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+29957:                 <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+29958:                 <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+29959:                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
+29960:                 <div class="mcms-grid-2">
+29961:                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
+29962:                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
+29963:                 </div>
+29964:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate & Post Audit</button>
+29965:                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+29966: 
+29967:                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
+29968:                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+29969:                 <div class="mcms-row"><span class="mcms-row-label">History retention</span><select class="mcms-select" data-setting="finance-vault-retention"><option value="all">All available</option><option value="1825">5 years</option><option value="730">2 years</option><option value="365">1 year</option><option value="180">180 days</option><option value="90">90 days</option></select></div>
+29970:                 <div class="mcms-row"><span class="mcms-row-label">GitHub intelligence feeds</span><select class="mcms-select" data-setting="finance-rule-feed"><option value="true">Automatic rules + policy</option><option value="false">Built-in intelligence only</option></select></div>
+29971:                 <div class="mcms-grid-2">
+29972:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-scan">Deep Scan All Available</button>
+29973:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-cancel">Stop Scan</button>
+29974:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
+29975:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
+29976:                 </div>
+29977:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh Financial Intelligence</button>
+29978:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear Player Archive</button>
+29979:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
+29980:                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
+29981:                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
+29982:                 <div class="mcms-status mcms-discord-status" data-finance-rule-status data-tone="neutral">Built-in financial intelligence active.</div>
+29983:                 <div class="mcms-status">GitHub hosts public transaction-classification rules and audit policy only. The Toolkit never uploads player ledger data, Discord webhooks or repository credentials. The local archive is indexed by MissionChief player ID/name and can be transferred between devices using Export Archive / Import Archive or the complete private Toolkit backup.</div>
+29984:                 <div class="mcms-status mcms-finance-private-note">Private backup warning: Export All includes your Discord webhook and locally stored MissionChief financial history. Anyone holding the file may post through the webhook and inspect the exported game ledger.</div>
+29985:             </section>
+29986:             <section class="mcms-tab-panel" data-panel="places">
+29987:                 <div class="mcms-section-label">Quick jumps + screen shortcuts</div>
+29988:                 <div class="mcms-quick-list"></div>
+29989:                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
+29990:                 <div class="mcms-bookmark-list"></div>
+29991:                 <div class="mcms-section-label">Saved Map Profiles</div>
+29992:                 <div class="mcms-profile-list" data-profile-list></div>
+29993:                 <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
+29994:             </section>
+29995:             <section class="mcms-tab-panel" data-panel="settings">
+29996:                 ${operationalWindowSettingsMarkup()}
+29997:                 <div class="mcms-section-label">Device layout</div>
+29998:                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+29999:                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+30000:                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
+30001:                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+30002:                 <div class="mcms-section-label">Dock position</div>
+30003:                 <div class="mcms-position-grid">${positionButtons}</div>
+30004:                 <div class="mcms-desktop-position-controls">
+30005:                     <div class="mcms-section-label">Fine nudge</div>
+30006:                     <div class="mcms-nudge-grid">
+30007:                         <button class="mcms-small-btn" type="button" data-action="nudge-left">←</button>
+30008:                         <button class="mcms-small-btn" type="button" data-action="nudge-up">↑</button>
+30009:                         <button class="mcms-small-btn" type="button" data-action="nudge-down">↓</button>
+30010:                         <button class="mcms-small-btn" type="button" data-action="nudge-right">→</button>
+30011:                         <button class="mcms-small-btn" type="button" data-action="nudge-reset">0</button>
+30012:                     </div>
+30013:                     <div class="mcms-status mcms-nudge-value">X 0 / Y 0</div>
+30014:                     <div class="mcms-section-label">Menu panel</div>
+30015:                     <div class="mcms-nudge-grid">
+30016:                         <button class="mcms-small-btn" type="button" data-action="panel-left">←</button>
+30017:                         <button class="mcms-small-btn" type="button" data-action="panel-up">↑</button>
+30018:                         <button class="mcms-small-btn" type="button" data-action="panel-down">↓</button>
+30019:                         <button class="mcms-small-btn" type="button" data-action="panel-right">→</button>
+30020:                         <button class="mcms-small-btn" type="button" data-action="panel-reset">↺</button>
+30021:                     </div>
+30022:                 </div>
+30023:                 <div class="mcms-section-label">Input</div>
+30024:                 <div class="mcms-grid-2">
+30025:                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
+30026:                 </div>
+30027:                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
+30028:                 <div class="mcms-section-label">Economy Mode</div>
+30029:                 <div class="mcms-status mcms-economy-status">Use the leaf button beside the map-menu opener. Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+30030:                 <div class="mcms-section-label">Settings Backup</div>
+30031:                 <div class="mcms-config-actions">
+30032:                     <button class="mcms-small-btn" type="button" data-action="export-config" title="Export every toolkit setting, private integration, profile, bookmark and Financial Archive history" aria-label="Export all toolkit settings">Export All</button>
+30033:                     <button class="mcms-small-btn" type="button" data-action="import-config" title="Import a current or legacy toolkit settings backup" aria-label="Import all toolkit settings">Import All</button>
+30034:                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
+30035:                 </div>
+30036:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-config-file>
+30037:                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
+30038:             </section>
+30039:             <div class="mcms-footer">
+30040:                 <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
+30041:                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
+30042:             </div>
+30043:         `;
+30044:         const tabList = panel.querySelector('.mcms-tabs');
+30045:         if (tabList) tabList.setAttribute('role', 'tablist');
+30046:         panel.querySelectorAll('.mcms-tab-btn').forEach(button => {
+30047:             const tab = button.dataset.tab;
+30048:             button.id = `mcms-tab-${tab}`;
+30049:             button.setAttribute('role', 'tab');
+30050:             button.setAttribute('aria-controls', `mcms-tabpanel-${tab}`);
+30051:             button.setAttribute('aria-selected', 'false');
+30052:             button.tabIndex = -1;
+30053:         });
+30054:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+30055:             const tab = tabPanel.dataset.panel;
+30056:             tabPanel.id = `mcms-tabpanel-${tab}`;
+30057:             tabPanel.setAttribute('role', 'tabpanel');
+30058:             tabPanel.setAttribute('aria-labelledby', `mcms-tab-${tab}`);
+30059:             tabPanel.hidden = true;
+30060:         });
+30061:         panel.addEventListener('keydown', event => {
+30062:             const current = closestEventTarget(event, '.mcms-tab-btn');
+30063:             if (!current || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+30064:             const buttons = Array.from(panel.querySelectorAll('.mcms-tab-btn'));
+30065:             const currentIndex = Math.max(0, buttons.indexOf(current));
+30066:             const nextIndex = event.key === 'Home' ? 0
+30067:                 : event.key === 'End' ? buttons.length - 1
+30068:                 : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+30069:             event.preventDefault();
+30070:             const nextButton = buttons[nextIndex];
+30071:             setActiveTab(nextButton.dataset.tab);
+30072:             nextButton.focus({ preventScroll: true });
+30073:         });
+30074:         panel.addEventListener('click', event => {
+30075:             const closeButton = closestEventTarget(event, '.mcms-close');
+30076:             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
+30077:             const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
+30078:             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
+30079:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+30080:             const positionButton = closestEventTarget(event, '.mcms-position-btn');
+30081:             const actionButton = closestEventTarget(event, '[data-action]');
+30082:             const operationalAction = closestEventTarget(event, '[data-operational-action]');
+30083:             if (operationalAction && handleOperationalWindowAction(operationalAction)) { event.preventDefault(); return; }
+30084:             if (closeButton) { closePanel({ restoreFocus: true }); return; }
+30085:             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+30086:             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
+30087:             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
+30088:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+30089:             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
+30090:             if (actionButton) {
+30091:                 event.preventDefault();
+30092:                 handleAction(actionButton);
+30093:                 return;
+30094:             }
+30095:         });
+30096:         panel.addEventListener('change', event => handleSettingChange(event.target));
+30097:         const dragHandle = panel.querySelector('.mcms-drag-handle');
+30098:         if (dragHandle) {
+30099:             dragHandle.addEventListener('mousedown', startPanelDrag, true);
+30100:             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
+30101:         }
+30102:         ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
+30103:             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
+30104:         });
+30105:         document.body.appendChild(panel);
+30106:         const importInput = panel.querySelector('[data-import-config-file]');
+30107:         if (importInput) {
+30108:             importInput.addEventListener('change', () => {
+30109:                 const file = importInput.files?.[0];
+30110:                 if (file) importToolkitConfigFile(file);
+30111:                 importInput.value = '';
+30112:             });
+30113:         }
+30114:         const financeImportInput = panel.querySelector('[data-import-finance-file]');
+30115:         if (financeImportInput) {
+30116:             financeImportInput.addEventListener('change', () => {
+30117:                 const file = financeImportInput.files?.[0];
+30118:                 if (file) importFinancialArchiveFile(file);
+30119:                 financeImportInput.value = '';
+30120:             });
+30121:         }
+30122:         renderQuickPlaces();
+30123:         renderBookmarks();
+30124:         renderProfiles();
+30125:         updateUI();
+30126:         recordStartupMetric('settingsPanelBuildMs', panelStartedAt, { settingsPanelLazy: true });
+30127:         return panel;
+30128:     }
+30129: 
+30130:     function renderQuickPlaces() {
+30131:         const list = document.querySelector(`#${SCRIPT.panelId} .mcms-quick-list`);
+30132:         if (!list) return;
+30133:         list.innerHTML = QUICK_PLACES.map(place => `
+30134:             <div class="mcms-quick-row">
+30135:                 <button class="mcms-place-main" type="button" data-action="place-go" data-place="${place.id}" title="Jump to ${escapeHtml(place.name)}">
+30136:                     <span class="mcms-iconbox">⌖</span><span class="mcms-text"><span class="mcms-label">${escapeHtml(place.name)}</span><span class="mcms-pill">${place.label}</span></span>
+30137:                 </button>
+30138:                 <button class="mcms-pin-btn ${state.quickPins[place.id] ? 'mcms-on' : ''}" type="button" data-action="quick-pin" data-place="${place.id}" title="Pin as persistent screen shortcut">${state.quickPins[place.id] ? 'ON' : 'PIN'}</button>
+30139:             </div>
+30140:         `).join('');
+30141:     }
+30142: 
+30143:     function renderBookmarks() {
+30144:         const list = document.querySelector(`#${SCRIPT.panelId} .mcms-bookmark-list`);
+30145:         if (!list) return;
+30146:         list.innerHTML = state.bookmarks.map((bookmark, index) => {
+30147:             if (!bookmark) {
+30148:                 return `<div class="mcms-bookmark-row"><span class="mcms-bookmark-name">Slot ${index + 1} empty</span><span></span><span></span><button class="mcms-bookmark-btn" type="button" data-action="bookmark-save" data-slot="${index}">Save</button><span></span></div>`;
+30149:             }
+30150:             const screenLabel = bookmarkScreenLabel(bookmark);
+30151:             const labelMode = bookmark.shortLabel ? 'CUSTOM' : 'AUTO';
+30152:             const labelTitle = `${bookmark.name} · Screen label: ${screenLabel} (${labelMode.toLowerCase()})`;
+30153:             return `
+30154:                 <div class="mcms-bookmark-row">
+30155:                     <button class="mcms-bookmark-name mcms-bookmark-name-btn" type="button" data-action="bookmark-label" data-slot="${index}" title="${escapeHtml(labelTitle)}" aria-label="Edit ${escapeHtml(bookmark.name)} name and short label">
+30156:                         <span class="mcms-bookmark-name-main">${escapeHtml(bookmark.name)}</span>
+30157:                         <span class="mcms-bookmark-short">${escapeHtml(screenLabel)} · ${labelMode}</span>
+30158:                     </button>
+30159:                     <button class="mcms-bookmark-btn" type="button" data-action="bookmark-go" data-slot="${index}">Go</button>
+30160:                     <button class="mcms-pin-btn ${bookmark.pinned ? 'mcms-on' : ''}" type="button" data-action="bookmark-pin" data-slot="${index}" title="Pin as persistent screen shortcut">${bookmark.pinned ? 'ON' : 'PIN'}</button>
+30161:                     <button class="mcms-bookmark-btn" type="button" data-action="bookmark-save" data-slot="${index}" title="Update this bookmark from the current map view">Save</button>
+30162:                     <button class="mcms-bookmark-btn" type="button" data-action="bookmark-delete" data-slot="${index}">×</button>
+30163:                 </div>`;
+30164:         }).join('');
+30165:     }
+30166: 
+30167:     function renderScreenPins() {
+30168:         const dock = document.querySelector(`#${SCRIPT.controlId} .mcms-screen-pins`);
+30169:         if (!dock) return;
+30170:         const entries = [];
+30171:         for (const place of QUICK_PLACES) {
+30172:             if (!state.quickPins[place.id]) continue;
+30173:             entries.push({
+30174:                 kind: 'quick',
+30175:                 id: place.id,
+30176:                 fullName: place.name,
+30177:                 baseLabel: sanitiseBookmarkShortLabel(place.label) || makeSmartBookmarkLabel(place.name)
+30178:             });
+30179:         }
+30180:         state.bookmarks.forEach((bookmark, index) => {
+30181:             if (!bookmark || !bookmark.pinned) return;
+30182:             entries.push({
+30183:                 kind: 'bookmark',
+30184:                 index,
+30185:                 fullName: bookmark.name,
+30186:                 baseLabel: bookmarkScreenLabel(bookmark)
+30187:             });
+30188:         });
+30189:         dock.innerHTML = resolveScreenPinLabels(entries).map(entry => {
+30190:             const action = entry.kind === 'quick'
+30191:                 ? `data-action="place-go" data-place="${escapeHtml(entry.id)}"`
+30192:                 : `data-action="bookmark-go" data-slot="${entry.index}"`;
+30193:             const className = entry.kind === 'quick' ? 'mcms-pin-quick' : 'mcms-pin-custom';
+30194:             return `<button class="mcms-screen-pin-btn ${className}" type="button" ${action} data-full-label="${escapeHtml(entry.fullName)}" data-smart-label="${escapeHtml(entry.label)}" title="Jump to ${escapeHtml(entry.fullName)}" aria-label="Jump to ${escapeHtml(entry.fullName)}">${escapeHtml(entry.label)}</button>`;
+30195:         }).join('');
+30196:         if (isTouchLayoutActive()) fitControlToMap();
+30197:     }
+30198: 
+30199:     function handleAction(button) {
+30200:         const action = button.dataset.action;
+30201:         if (action === 'place-go') {
+30202:             const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
+30203:             if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
+30204:             return;
+30205:         }
+30206:         if (action === 'quick-pin') { toggleQuickPin(button.dataset.place); return; }
+30207:         if (action === 'bookmark-save') { saveBookmark(Number(button.dataset.slot)); return; }
+30208:         if (action === 'bookmark-label') { editBookmarkLabel(Number(button.dataset.slot)); return; }
+30209:         if (action === 'bookmark-go') { goBookmark(Number(button.dataset.slot)); return; }
+30210:         if (action === 'bookmark-delete') { deleteBookmark(Number(button.dataset.slot)); return; }
+30211:         if (action === 'bookmark-pin') { toggleBookmarkPin(Number(button.dataset.slot)); return; }
+30212:         if (action === 'nudge-left') { nudgeControl(-4, 0); return; }
+30213:         if (action === 'nudge-right') { nudgeControl(4, 0); return; }
+30214:         if (action === 'nudge-up') { nudgeControl(0, -4); return; }
+30215:         if (action === 'nudge-down') { nudgeControl(0, 4); return; }
+30216:         if (action === 'nudge-reset') { resetNudge(); return; }
+30217:         if (action === 'panel-left') { nudgePanel(-24, 0); return; }
+30218:         if (action === 'panel-right') { nudgePanel(24, 0); return; }
+30219:         if (action === 'panel-up') { nudgePanel(0, -24); return; }
+30220:         if (action === 'panel-down') { nudgePanel(0, 24); return; }
+30221:         if (action === 'open-help-center') { openHelpCenter(); return; }
+30222:         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
+30223:         if (action === 'open-critical-drawer') { toggleCriticalDrawer(); return; }
+30224:         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
+30225:         if (action === 'fit-critical') { fitCriticalMissions(); return; }
+30226:         if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
+30227:         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
+30228:         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
+30229:         if (action === 'reset-session') { resetSessionPerformance(); return; }
+30230:         if (action === 'clear-payout-history') { clearPayoutHistory(); return; }
+30231:         if (action === 'critical-go') { focusMissionById(button.dataset.missionId, false); return; }
+30232:         if (action === 'profile-save') { saveMapProfile(Number(button.dataset.slot)); return; }
+30233:         if (action === 'profile-load') { loadMapProfile(Number(button.dataset.slot)); return; }
+30234:         if (action === 'profile-delete') { deleteMapProfile(Number(button.dataset.slot)); return; }
+30235:         if (action === 'export-config') { exportToolkitConfig(); return; }
+30236:         if (action === 'import-config') { document.querySelector(`#${SCRIPT.panelId} [data-import-config-file]`)?.click?.(); return; }
+30237:         if (action === 'reset-config') { resetToolkitConfiguration(); return; }
+30238:         if (action === 'discord-test') { testDiscordWebhook(); return; }
+30239:         if (action === 'discord-generate-post') { postDiscordFinancialReport(); return; }
+30240:         if (action === 'discord-clear') { clearDiscordWebhook(); return; }
+30241:         if (action === 'finance-archive-scan') { scanFinancialArchive(); return; }
+30242:         if (action === 'finance-archive-cancel') { cancelFinancialArchiveScan(); return; }
+30243:         if (action === 'finance-archive-export') { exportFinancialArchive(); return; }
+30244:         if (action === 'finance-archive-import') { document.querySelector(`#${SCRIPT.panelId} [data-import-finance-file]`)?.click?.(); return; }
+30245:         if (action === 'finance-archive-clear') { clearFinancialArchive(); return; }
+30246:         if (action === 'finance-rules-refresh') { refreshFinancialIntelligenceFeeds(true).then(() => { renderFinanceVaultStatus(); showToast('GitHub financial intelligence refreshed'); }); return; }
+30247:         if (action === 'test-payout-flash') {
+30248:             const testAmount = Math.max(1000, Number(document.querySelector(`#${SCRIPT.panelId} [data-setting="payout-test-amount"]`)?.value) || state.payoutFlash.threshold);
+30249:             const triggered = triggerPayoutFlash(testAmount, true, { source: 'personal', caption: 'Emergency Response Test' });
+30250:             showToast(triggered ? 'Emergency flash test' : 'Emergency flash unavailable: map not detected');
+30251:             return;
+30252:         }
+30253:         if (action === 'panel-reset') resetPanelPosition();
+30254:     }
+30255:     function handleDiscordFinancialSettingChange(target, setting) {
+30256:         if (setting === 'discord-webhook') {
+30257:             try {
+30258:                 saveDiscordWebhookUrl(target.value);
+30259:                 setDiscordStatus(target.value ? 'Webhook saved securely in Tampermonkey storage.' : 'Webhook removed.', 'good');
+30260:             } catch (err) {
+30261:                 setDiscordStatus(err?.message || 'Webhook URL is invalid.', 'bad');
+30262:             }
+30263:             return true;
+30264:         }
+30265:         if (setting === 'discord-name') {
+30266:             state.discordReport.webhookName = String(target.value || 'MissionChief Finance').trim().slice(0, 80) || 'MissionChief Finance';
+30267:             saveState(); updateUI();
+30268:             return true;
+30269:         }
+30270:         if (setting === 'discord-top-categories') {
+30271:             state.discordReport.topCategories = [3, 5, 8].includes(Number(target.value)) ? Number(target.value) : 5;
+30272:             invalidateDiscordFinancialPreview();
+30273:             saveState(); updateUI();
+30274:             return true;
+30275:         }
+30276:         if (setting === 'discord-period') {
+30277:             state.discordReport.period = ['today', 'yesterday', 'last24', 'last7', 'last30', 'last90', 'last180', 'last365', 'allAvailable', 'session', 'sinceLast', 'custom'].includes(target.value) ? target.value : 'today';
+30278:             invalidateDiscordFinancialPreview();
+30279:             saveState(); updateUI();
+30280:             return true;
+30281:         }
+30282:         if (setting === 'discord-custom-start' || setting === 'discord-custom-end') {
+30283:             const key = setting === 'discord-custom-start' ? 'customStart' : 'customEnd';
+30284:             if (/^\d{4}-\d{2}-\d{2}$/u.test(String(target.value || ''))) state.discordReport[key] = String(target.value);
+30285:             invalidateDiscordFinancialPreview();
+30286:             saveState(); updateUI();
+30287:             return true;
+30288:         }
+30289:         if (setting === 'discord-comparison') {
+30290:             state.discordReport.includeComparison = String(target.value) !== 'false';
+30291:             invalidateDiscordFinancialPreview();
+30292:             saveState(); updateUI();
+30293:             return true;
+30294:         }
+30295:         if (setting === 'discord-chart') {
+30296:             state.discordReport.includeChart = String(target.value) !== 'false';
+30297:             invalidateDiscordFinancialPreview();
+30298:             saveState(); updateUI();
+30299:             return true;
+30300:         }
+30301:         if (setting === 'discord-report-mode') {
+30302:             state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
+30303:             invalidateDiscordFinancialPreview();
+30304:             saveState(); updateUI();
+30305:             return true;
+30306:         }
+30307:         if (setting === 'discord-risk' || setting === 'discord-forecast') {
+30308:             const key = setting === 'discord-risk' ? 'includeRisk' : 'includeForecast';
+30309:             state.discordReport[key] = String(target.value) !== 'false';
+30310:             invalidateDiscordFinancialPreview();
+30311:             saveState(); updateUI();
+30312:             return true;
+30313:         }
+30314:         if (setting === 'finance-vault-enabled') {
+30315:             state.financialVault.enabled = String(target.value) !== 'false';
+30316:             saveState(); updateUI();
+30317:             setFinanceVaultStatus(state.financialVault.enabled ? 'Local Financial Archive enabled.' : 'Local Financial Archive disabled; reports will scan MissionChief directly without retaining history.', 'neutral');
+30318:             return true;
+30319:         }
+30320:         if (setting === 'finance-vault-retention') {
+30321:             state.financialVault.retentionDays = String(target.value) === 'all' ? 'all' : ([90, 180, 365, 730, 1825].includes(Number(target.value)) ? Number(target.value) : 'all');
+30322:             saveState(); updateUI(); renderFinanceVaultStatus();
+30323:             return true;
+30324:         }
+30325:         if (setting === 'finance-rule-feed') {
+30326:             state.financialVault.ruleFeedEnabled = String(target.value) !== 'false';
+30327:             saveState();
+30328:             refreshFinancialIntelligenceFeeds(true).then(() => { updateUI(); renderFinanceVaultStatus(); });
+30329:             return true;
+30330:         }
+30331:         return false;
+30332:     }
+30333:     function handleDeviceLayoutSettingChange(target, setting) {
+30334:         const nextValue = ['auto', 'on', 'off'].includes(String(target.value)) ? String(target.value) : 'auto';
+30335:         const previousLayout = activeDeviceLayout;
+30336:         if (setting === 'mobile-mode') {
+30337:             state.mobileMode = nextValue;
+30338:             if (nextValue === 'on') state.tabletMode = 'off';
+30339:         } else if (setting === 'tablet-mode') {
+30340:             state.tabletMode = nextValue;
+30341:             if (nextValue === 'on') state.mobileMode = 'off';
+30342:         } else return false;
+30343:         saveState();
+30344:         applyRootAttributes();
+30345:         refreshTabletModeUi();
+30346:         if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+30347:             clearTabletPanelSizing();
+30348:             clearTabletDockSizing();
+30349:         }
+30350:         fitControlToMap();
+30351:         positionPanelOverlay(true);
+30352:         showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
+30353:         return true; }
+30354:     function handleSettingChange(target) {
+30355:         if (handleOperationalWindowSettingChange(target)) return;
+30356:         const setting = target.dataset.setting;
+30357:         if (!setting) return;
+30358:         if (handleDeviceLayoutSettingChange(target, setting)) return;
+30359:         if (setting === 'major-incident-minimum') {
+30360:             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
+30361:             saveState();
+30362:             updateUI();
+30363:             refreshMissionSnapshots();
+30364:             scheduleMajorIncidentFeedRender(0);
+30365:             showToast(`Major Incident Feed: ${formatOperationalCompactCredits(state.majorIncidentFeed.minimumCredits)}+ credits`);
+30366:             return;
+30367:         }
+30368:         if (setting === 'coverage-radius') {
+30369:             state.coverage.radiusMi = Number(target.value) || 10;
+30370:             saveState();
+30371:             updateUI();
+30372:             scheduleCoverageRefresh();
+30373:             return;
+30374:         }
+30375:         if (setting === 'heatmap-source') state.heatmap.source = target.value === 'vehicles' ? 'vehicles' : 'stations';
+30376:         if (setting === 'heatmap-service') state.heatmap.service = ['all', 'fire', 'ambulance', 'police', 'air', 'water'].includes(target.value) ? target.value : 'all';
+30377:         if (setting === 'heatmap-radius') state.heatmap.radiusMi = Number(target.value) || 10;
+30378:         if (setting === 'heatmap-opacity') state.heatmap.opacity = clamp(target.value, 0.12, 0.55, 0.30);
+30379:         if (setting.startsWith('heatmap-')) {
+30380:             saveState(); updateUI(); scheduleHeatmapRefresh(); return;
+30381:         }
+30382:         if (setting === 'transport-sweep-delay') {
+30383:             state.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 2000;
+30384:             saveState(); updateUI();
+30385:             showToast(`Transport Sweep delay: ${state.transportSweep.delayMs / 1000}s`);
+30386:             return;
+30387:         }
+30388:         if (setting === 'transport-sweep-max') {
+30389:             state.transportSweep.maxPerRun = Math.round(clamp(target.value, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
+30390:             saveState(); updateUI();
+30391:             showToast(`Transport Sweep maximum: ${state.transportSweep.maxPerRun}`);
+30392:             return;
+30393:         }
+30394:         if (setting === 'resource-gap-radius') {
+30395:             state.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25;
+30396:             resourceGapAnalysisCache.clear();
+30397:             saveState(); updateUI(); scheduleResourceGapRefresh(0); refreshVisibleMissionInspector();
+30398:             showToast(`Resource Gap radius: ${state.resourceGap.radiusMi}mi`);
+30399:             return;
+30400:         }
+30401:         if (setting === 'stuck-threshold') {
+30402:             state.stuckDetector.thresholdMin = Math.round(clamp(target.value, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
+30403:             saveState();
+30404:             updateUI();
+30405:             scheduleStuckMissionRefresh(0);
+30406:             showToast(`Stuck missions: ${state.stuckDetector.thresholdMin} minutes`);
+30407:             return;
+30408:         }
+30409:         if (setting === 'alliance-credit-minimum') {
+30410:             state.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(target.value)) ? Number(target.value) : 0;
+30411:             saveState();
+30412:             updateUI();
+30413:             scheduleAllianceCreditRefresh(0);
+30414:             showToast(state.allianceCreditMinimum ? `Alliance credits: ${state.allianceCreditMinimum / 1000}K+` : 'Alliance credits: all values');
+30415:             return;
+30416:         }
+30417:         if (handleDiscordFinancialSettingChange(target, setting)) return;
+30418:         if (setting === 'payout-template') {
+30419:             state.payoutFlash.template = PAYOUT_TEMPLATES[target.value] ? target.value : 'gta5';
+30420:             disposePayoutMediaAudio();
+30421:             saveState();
+30422:             updateUI();
+30423:             const hostedCue = PAYOUT_MEDIA_SOUNDS[state.payoutFlash.template];
+30424:             showToast(hostedCue
+30425:                 ? `${payoutTemplateMeta(state.payoutFlash.template).label} · ${hostedCue.label} ready`
+30426:                 : `${payoutTemplateMeta(state.payoutFlash.template).label} payout template`);
+30427:             return;
+30428:         }
+30429:         if (setting === 'payout-threshold') {
+30430:             state.payoutFlash.threshold = Math.round(clamp(target.value, 1000, 1000000000, 10000));
+30431:             saveState();
+30432:             updateUI();
+30433:             showToast(`Payout flash: ${state.payoutFlash.threshold.toLocaleString()}+`);
+30434:             return;
+30435:         }
+30436:         if (setting === 'payout-duration') {
+30437:             state.payoutFlash.durationMs = normalisePayoutFlashDuration(Number(target.value) * 1000);
+30438:             saveState();
+30439:             updateUI();
+30440:             showToast(`Payout flash: ${state.payoutFlash.durationMs / 1000} seconds`);
+30441:             return;
+30442:         }
+30443:         if (setting === 'payout-volume') {
+30444:             state.payoutFlash.soundVolume = clamp(target.value, 0, 1, 0.35);
+30445:             if (payoutMediaAudio && !payoutMediaAudio.paused) payoutMediaAudio.volume = state.payoutFlash.soundVolume;
+30446:             saveState();
+30447:             updateUI();
+30448:             return;
+30449:         }
+30450:         if (setting === 'payout-test-amount') return;
+30451:         if (setting === 'auto-night-start') state.autoNight.nightStart = target.value || '19:00';
+30452:         if (setting === 'auto-day-start') state.autoNight.dayStart = target.value || '07:00';
+30453:         if (setting === 'auto-night-theme') state.autoNight.nightTheme = normaliseTheme(target.value);
+30454:         if (setting === 'auto-day-theme') state.autoNight.dayTheme = normaliseTheme(target.value);
+30455:         if (setting.startsWith('auto-')) {
+30456:             state.autoNight.lastBucket = '';
+30457:             saveState();
+30458:             runAutoNight(true);
+30459:             updateUI();
+30460:         }
+30461:     }
+30462:     function updateUI() {
+30463:         applyRootAttributes();
+30464:         operationalWindowSyncSettingsUi();
+30465:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+30466:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+30467:         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30468:         const control = document.getElementById(SCRIPT.controlId);
+30469:         const panel = document.getElementById(SCRIPT.panelId);
+30470:         if (control) {
+30471:             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
+30472:             control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
+30473:             control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+30474:             const controlToggleValues = {
+30475:                 allianceMissions: state.visibility.allianceMissions,
+30476:                 myMissions: state.visibility.myMissions,
+30477:                 vehicles: state.visibility.vehicles,
+30478:                 buildings: state.visibility.buildings,
+30479:                 allianceCredits: state.allianceCredits,
+30480:                 missionAge: state.missionAge,
+30481:                 transportWatcher: state.transportWatcher,
+30482:                 unitCommitment: state.unitCommitment,
+30483:                 criticalView: criticalViewActive
+30484:             };
+30485:             control.querySelectorAll('[data-toggle]').forEach(btn => {
+30486:                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
+30487:                 btn.classList.toggle('mcms-on', on);
+30488:                 btn.setAttribute('aria-pressed', String(on));
+30489:                 btn.dataset.mcmsState = on ? 'on' : 'off';
+30490:             });
+30491:             const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
+30492:             if (vehicleStatusButton) {
+30493:                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
+30494:                 vehicleStatusButton.classList.toggle('mcms-on', open);
+30495:                 vehicleStatusButton.setAttribute('aria-pressed', String(open));
+30496:                 vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
+30497:             }
+30498:             const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
+30499:             if (missionAgeWatchButton) {
+30500:                 const open = Boolean(document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open'));
+30501:                 missionAgeWatchButton.classList.toggle('mcms-on', open);
+30502:                 missionAgeWatchButton.setAttribute('aria-pressed', String(open));
+30503:                 missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
+30504:             }
+30505:             const economyButton = control.querySelector('.mcms-economy-btn');
+30506:             if (economyButton) {
+30507:                 const on = Boolean(state.economyMode);
+30508:                 const label = on ? 'Disable Economy Mode' : 'Enable Economy Mode';
+30509:                 economyButton.classList.toggle('mcms-on', on);
+30510:                 economyButton.setAttribute('aria-pressed', String(on));
+30511:                 economyButton.setAttribute('aria-label', label);
+30512:                 economyButton.title = label;
+30513:                 economyButton.dataset.mcmsState = on ? 'on' : 'off';
+30514:             }
+30515:             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+30516:             if (dockToggleButton) {
+30517:                 const open = state.commandBarOpen !== false;
+30518:                 const label = open ? 'Collapse command bar' : 'Expand command bar';
+30519:                 dockToggleButton.classList.toggle('mcms-open', open);
+30520:                 dockToggleButton.setAttribute('aria-expanded', String(open));
+30521:                 dockToggleButton.setAttribute('aria-label', label);
+30522:                 dockToggleButton.title = label;
+30523:                 const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
+30524:                 if (icon) icon.textContent = open ? '▴' : '▾';
+30525:             }
+30526:         }
+30527:         if (!panel) return;
+30528:         refreshTabletModeUi(panel);
+30529:         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
+30530:             const active = btn.dataset.tab === state.activeTab;
+30531:             btn.classList.toggle('mcms-active', active);
+30532:             btn.setAttribute('aria-selected', String(active));
+30533:             btn.tabIndex = active ? 0 : -1;
+30534:         });
+30535:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+30536:             const active = tabPanel.dataset.panel === state.activeTab;
+30537:             tabPanel.classList.toggle('mcms-active', active);
+30538:             tabPanel.hidden = !active;
+30539:         });
+30540:         const panelOpen = panel.classList.contains('mcms-open');
+30541:         panel.setAttribute('aria-hidden', String(!panelOpen));
+30542:         control?.querySelector('.mcms-menu-btn')?.setAttribute('aria-expanded', String(panelOpen));
+30543:         panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
+30544:             const active = btn.dataset.uiTheme === state.uiTheme;
+30545:             btn.classList.toggle('mcms-active', active);
+30546:             btn.setAttribute('aria-pressed', String(active));
+30547:         });
+30548:         panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
+30549:         panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
+30550:         const toggleValues = {
+30551:             clean: state.cleanMode,
+30552:             markerFocus: state.markerFocus,
+30553:             missionPulse: state.missionPulse,
+30554:             roadPriority: state.roadPriority,
+30555:             coverage: state.coverage.enabled,
+30556:             heatmap: state.heatmap.enabled,
+30557:             shortcuts: state.shortcuts,
+30558:             autoLoadAllVehicles: state.autoLoadAllVehicles,
+30559:             allianceBuildingsMapBlocker: state.allianceBuildingsMap === false,
+30560:             majorIncidentFeed: state.majorIncidentFeed.enabled,
+30561:             missionLockAudio: state.missionLockAudio,
+30562:             autoNight: state.autoNight.enabled,
+30563:             payoutFlash: state.payoutFlash.enabled,
+30564:             payoutSound: state.payoutFlash.soundEnabled,
+30565:             missionInspector: state.missionInspector,
+30566:             missionValue: state.missionValue,
+30567:             customVehicleBadges: state.customVehicleBadges,
+30568:             stuckDetector: state.stuckDetector.enabled,
+30569:             missionSpawn: state.missionSpawn.enabled,
+30570:             resourceGap: state.resourceGap.enabled,
+30571:             allianceMissions: state.visibility.allianceMissions,
+30572:             myMissions: state.visibility.myMissions,
+30573:             vehicles: state.visibility.vehicles,
+30574:             buildings: state.visibility.buildings,
+30575:             allianceCredits: state.allianceCredits,
+30576:             missionAge: state.missionAge,
+30577:             transportWatcher: state.transportWatcher,
+30578:             unitCommitment: state.unitCommitment,
+30579:             criticalView: criticalViewActive
+30580:         };
+30581:         panel.querySelectorAll('[data-toggle]').forEach(btn => {
+30582:             const key = btn.dataset.toggle;
+30583:             const on = Boolean(toggleValues[key]);
+30584:             btn.classList.toggle('mcms-on', on);
+30585:             const pill = btn.querySelector('.mcms-pill');
+30586:             if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : key === 'heatmap' ? (on ? `${state.heatmap.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
+30587:         });
+30588:         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
+30589:         if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
+30590:         const radius = panel.querySelector('[data-setting="coverage-radius"]');
+30591:         if (radius) radius.value = String(state.coverage.radiusMi);
+30592:         const heatmapSource = panel.querySelector('[data-setting="heatmap-source"]');
+30593:         if (heatmapSource) heatmapSource.value = state.heatmap.source;
+30594:         const heatmapService = panel.querySelector('[data-setting="heatmap-service"]');
+30595:         if (heatmapService) heatmapService.value = state.heatmap.service;
+30596:         const heatmapRadius = panel.querySelector('[data-setting="heatmap-radius"]');
+30597:         if (heatmapRadius) heatmapRadius.value = String(state.heatmap.radiusMi);
+30598:         const heatmapOpacity = panel.querySelector('[data-setting="heatmap-opacity"]');
+30599:         if (heatmapOpacity) heatmapOpacity.value = String(state.heatmap.opacity);
+30600:         const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
+30601:         if (allianceCreditMinimum) allianceCreditMinimum.value = String(state.allianceCreditMinimum);
+30602:         const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
+30603:         if (transportSweepDelay) transportSweepDelay.value = String(state.transportSweep.delayMs);
+30604:         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
+30605:         if (transportSweepMax) transportSweepMax.value = String(state.transportSweep.maxPerRun);
+30606:         if (panel.classList.contains('mcms-open') && state.activeTab === 'resources') renderTransportSweepPanel();
+30607:         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
+30608:         if (payoutTemplate) payoutTemplate.value = state.payoutFlash.template;
+30609:         const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) resourceGapRadius.value = String(state.resourceGap.radiusMi);
+30610:         const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
+30611:         if (stuckThreshold) stuckThreshold.value = String(state.stuckDetector.thresholdMin);
+30612:         const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
+30613:         if (payoutThreshold) payoutThreshold.value = String(state.payoutFlash.threshold);
+30614:         const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
+30615:         if (payoutDuration) payoutDuration.value = String(state.payoutFlash.durationMs / 1000);
+30616:         const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
+30617:         if (payoutVolume) payoutVolume.value = String(state.payoutFlash.soundVolume);
+30618:         const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
+30619:         if (discordWebhook && document.activeElement !== discordWebhook) discordWebhook.value = getDiscordWebhookUrl();
+30620:         const discordName = panel.querySelector('[data-setting="discord-name"]');
+30621:         if (discordName && document.activeElement !== discordName) discordName.value = state.discordReport.webhookName;
+30622:         const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
+30623:         if (discordTopCategories) discordTopCategories.value = String(state.discordReport.topCategories);
+30624:         const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
+30625:         if (discordPeriod) discordPeriod.value = state.discordReport.period;
+30626:         const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
+30627:         if (discordCustomStart && document.activeElement !== discordCustomStart) discordCustomStart.value = state.discordReport.customStart;
+30628:         const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
+30629:         if (discordCustomEnd && document.activeElement !== discordCustomEnd) discordCustomEnd.value = state.discordReport.customEnd;
+30630:         const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
+30631:         if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+30632:         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
+30633:         if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+30634:         const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
+30635:         if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+30636:         const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
+30637:         if (discordRisk) discordRisk.value = String(state.discordReport.includeRisk);
+30638:         const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
+30639:         if (discordForecast) discordForecast.value = String(state.discordReport.includeForecast);
+30640:         const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
+30641:         if (financeVaultEnabled) financeVaultEnabled.value = String(state.financialVault.enabled);
+30642:         const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
+30643:         if (financeVaultRetention) financeVaultRetention.value = String(state.financialVault.retentionDays);
+30644:         const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
+30645:         if (financeRuleFeed) financeRuleFeed.value = String(state.financialVault.ruleFeedEnabled);
+30646:         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
+30647:         if (panel.classList.contains('mcms-open') && state.activeTab === 'discord') renderFinanceVaultStatus();
+30648:         const nightStart = panel.querySelector('[data-setting="auto-night-start"]');
+30649:         if (nightStart) nightStart.value = state.autoNight.nightStart;
+30650:         const dayStart = panel.querySelector('[data-setting="auto-day-start"]');
+30651:         if (dayStart) dayStart.value = state.autoNight.dayStart;
+30652:         const nightTheme = panel.querySelector('[data-setting="auto-night-theme"]');
+30653:         if (nightTheme) nightTheme.value = state.autoNight.nightTheme;
+30654:         const dayTheme = panel.querySelector('[data-setting="auto-day-theme"]');
+30655:         if (dayTheme) dayTheme.value = state.autoNight.dayTheme;
+30656:         const economyStatus = panel.querySelector('.mcms-economy-status');
+30657:         if (economyStatus) economyStatus.textContent = state.economyMode
+30658:             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
+30659:             : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+30660:         const nudge = panel.querySelector('.mcms-nudge-value');
+30661:         if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+30662:         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+30663:         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+30664:     }
+30665:     function ensureUi() {
+30666:         operationalWindowEnsureSettingsStyle(document);
+30667:         const mapEl = getLargestLeafletMap();
+30668:         const control = createControl(mapEl);
+30669:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+30670:         if (control) ensureVersionStatusButton();
+30671:         if (mapEl) {
+30672:             const map = findLeafletMapInstance(false);
+30673:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+30674:             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+30675:             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30676:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+30677:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+30678:         }
+30679:         return Boolean(control || document.getElementById(SCRIPT.controlId));
+30680:     }
+30681: 
+30682:     function mutationBelongsToToolkit(mutation) {
+30683:         const target = mutation.target;
+30684:         const toolkitTarget = Boolean(
+30685:             target &&
+30686:             target.nodeType === 1 &&
+30687:             (
+30688:                 target.id === SCRIPT.controlId ||
+30689:                 target.id === SCRIPT.panelId ||
+30690:                 target.id === SCRIPT.toastId ||
+30691:                 target.id === SCRIPT.payoutFlashId ||
+30692:                 target.id === SCRIPT.criticalDrawerId ||
+30693:                 target.id === SCRIPT.vehicleStatusId ||
+30694:                 target.id === SCRIPT.majorIncidentFeedId ||
+30695:                 target.id === SCRIPT.missionInspectorId ||
+30696:                 target.closest?.(`#${SCRIPT.controlId}`) ||
+30697:                 target.closest?.(`#${SCRIPT.panelId}`) ||
+30698:                 target.closest?.(`#${SCRIPT.toastId}`) ||
+30699:                 target.closest?.(`#${SCRIPT.payoutFlashId}`) ||
+30700:                 target.closest?.(`#${SCRIPT.criticalDrawerId}`) ||
+30701:                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
+30702:                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
+30703:                 target.closest?.(`#${SCRIPT.missionInspectorId}`)
+30704:             )
+30705:         );
+30706:         if (toolkitTarget) return true;
+30707:         if (mutation.type === 'attributes' && mutation.attributeName === 'class' && target?.classList) {
+30708:             for (const className of target.classList) {
+30709:                 if (String(className).startsWith('mcms-')) return true;
+30710:             }
+30711:         }
+30712:         const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+30713:         let elementCount = 0;
+30714:         for (const collection of [mutation.addedNodes, mutation.removedNodes]) {
+30715:             if (!collection?.length) continue;
+30716:             for (const node of collection) {
+30717:                 if (!node || node.nodeType !== 1) continue;
+30718:                 elementCount += 1;
+30719:                 if (!(node.matches?.(toolkitSelector) || node.querySelector?.(toolkitSelector))) return false;
+30720:             }

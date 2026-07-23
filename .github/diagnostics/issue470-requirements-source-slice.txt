@@ -1,0 +1,624 @@
+ISSUE #470 SOURCE SLICE requirements-source-slice
+lines=22120-22740
+
+22120:             requirementTexts,
+22121:             requirementsForVehicle,
+22122:             requirementsForEquipment
+22123:         };
+22124:     }
+22125: 
+22126:     function operationalRequirementRows(model, options = {}) {
+22127:         const calcMaxStaff = options.calcMaxStaff === true;
+22128:         const rows = [];
+22129:         for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+22130:             for (const requirement of model?.requirements?.[group] ?? []) {
+22131:                 const selectedValue = typeof requirement.selected === 'number'
+22132:                     ? requirement.selected
+22133:                     : calcMaxStaff
+22134:                       ? requirement.selected.max
+22135:                       : requirement.selected.min;
+22136:                 const remainingOnMission = requirement.missing - requirement.driving;
+22137:                 rows.push({
+22138:                     ...requirement,
+22139:                     group,
+22140:                     remainingOnMission,
+22141:                     selectedValue,
+22142:                     covered: remainingOnMission <= selectedValue
+22143:                 });
+22144:             }
+22145:         }
+22146:         return rows;
+22147:     }
+22148: 
+22149:     function operationalRequirementFingerprint(model, options = {}) {
+22150:         return JSON.stringify({
+22151:             rows: operationalRequirementRows(model, options),
+22152:             remaining: OPERATIONAL_REQUIREMENT_GROUPS.map(group => model?.requirementTexts?.[group]?.remaining ?? null)
+22153:         });
+22154:     }
+22155:     // Issue #378 end enhanced requirements pure engine.
+22156: 
+22157:     // Issue #378 enhanced requirements runtime renderer.
+22158:     const OPERATIONAL_REQUIREMENTS_STYLE_ID = 'mcms-operational-requirements-style';
+22159:     const OPERATIONAL_REQUIREMENTS_PANEL_CLASS = 'mcms-operational-suite-panel';
+22160:     let operationalRequirementsCatalogCache = null;
+22161: 
+22162:     function operationalRequirementsActive() {
+22163:         return operationalSuiteEnabled() && state.operationalWindow?.requirements?.enabled !== false;
+22164:     }
+22165: 
+22166:     function operationalRequirementsCandidateVisible(node) {
+22167:         if (!node?.isConnected || node.hidden || node.getAttribute?.('aria-hidden') === 'true') return false;
+22168:         try {
+22169:             const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
+22170:             if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
+22171:             const rect = node.getBoundingClientRect?.();
+22172:             if (rect && Number.isFinite(rect.width) && Number.isFinite(rect.height)) return rect.width > 1 || rect.height > 1;
+22173:             if (node.getClientRects?.().length) return true;
+22174:         } catch (error) {}
+22175:         return true;
+22176:     }
+22177: 
+22178:     function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
+22179:         return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22180:             || doc?.querySelector?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22181:             || null;
+22182:     }
+22183: 
+22184:     function operationalRequirementsRawHtmlRoot(doc, carrier) {
+22185:         const rawHtml = String(carrier?.getAttribute?.('data-raw-html') || '').trim();
+22186:         if (!rawHtml || !doc?.createRange) return null;
+22187:         const range = doc.createRange();
+22188:         const fragment = range?.createContextualFragment?.(rawHtml);
+22189:         if (!fragment?.querySelector?.('[data-requirement-type]')) return null;
+22190:         return fragment;
+22191:     }
+22192: 
+22193:     function operationalRequirementsCandidateRecord(root, anchor, kind, index) {
+22194:         if (!root || !anchor || root.closest?.('[data-mcms-operational-suite="requirements"]')) return null;
+22195:         const grouped = Array.from(root.querySelectorAll?.('[data-requirement-type]') || []);
+22196:         const raw = operationalRequirementNormaliseText(root.textContent || '');
+22197:         const missionContainer = operationalRequirementsMissionContainer(anchor);
+22198:         const missionVisible = operationalRequirementsCandidateVisible(missionContainer);
+22199:         const visible = operationalRequirementsCandidateVisible(anchor);
+22200:         const score = grouped.length * 300 + (raw ? 100 : 0) + (missionVisible ? 400 : 0)
+22201:             + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0) + (kind === 'lssm-raw' ? 10 : 0);
+22202:         return { root, anchor, kind, index, groupedCount: grouped.length, raw, visible, missionContainer, score,
+22203:             fingerprint: `${kind}:${index}:${grouped.length}:${raw}` };
+22204:     }
+22205: 
+22206:     function operationalRequirementsSourceCandidates(doc) {
+22207:         if (!doc?.querySelectorAll) return [];
+22208:         const candidates = [];
+22209:         const seenRoots = new Set();
+22210:         const nativeRoots = Array.from(doc.querySelectorAll('[id="missing_text"]') || []);
+22211:         const add = (root, anchor = root, kind = 'native') => {
+22212:             if (!root || !anchor || seenRoots.has(root)) return;
+22213:             const record = operationalRequirementsCandidateRecord(root, anchor, kind, candidates.length);
+22214:             if (!record) return;
+22215:             seenRoots.add(root);
+22216:             candidates.push(record);
+22217:         };
+22218:         nativeRoots.forEach(root => add(root, root, 'native'));
+22219:         for (const group of Array.from(doc.querySelectorAll('[data-requirement-type]') || [])) {
+22220:             const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles') || group.parentElement;
+22221:             add(root, root, 'grouped');
+22222:         }
+22223:         for (const carrier of Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || [])) {
+22224:             if (carrier.closest?.('[data-mcms-operational-suite="requirements"]')) continue;
+22225:             const rawHtml = String(carrier.getAttribute?.('data-raw-html') || '').trim();
+22226:             if (!rawHtml) continue;
+22227:             if (operationalRequirementsCandidateVisible(carrier)) {
+22228:                 candidates.push({ root: carrier, anchor: carrier, kind: 'lssm-live', index: candidates.length,
+22229:                     groupedCount: 0, raw: rawHtml, visible: true,
+22230:                     missionContainer: operationalRequirementsMissionContainer(carrier), score: Number.POSITIVE_INFINITY,
+22231:                     fingerprint: `lssm-live:${rawHtml}`, suppressesToolkit: true });
+22232:                 continue;
+22233:             }
+22234:             const root = operationalRequirementsRawHtmlRoot(doc, carrier);
+22235:             const preferredAnchor = nativeRoots.find(node => node?.isConnected && node?.parentNode) || carrier;
+22236:             add(root, preferredAnchor, 'lssm-raw');
+22237:         }
+22238:         return candidates;
+22239:     }
+22240: 
+22241:     function operationalRequirementsResolveSource(doc) {
+22242:         const candidates = operationalRequirementsSourceCandidates(doc);
+22243:         const activeLssm = candidates.find(candidate => candidate.suppressesToolkit === true);
+22244:         if (activeLssm) return { ...activeLssm, suppressed: true, candidates };
+22245:         const evidenced = candidates.filter(candidate => candidate.groupedCount > 0 || candidate.raw);
+22246:         const pool = evidenced.length ? evidenced : candidates;
+22247:         const selected = pool.slice().sort((left, right) => right.score - left.score || right.index - left.index)[0] || null;
+22248:         return selected ? { ...selected, suppressed: false, candidates } : null;
+22249:     }
+22250: 
+22251:     function operationalRequirementsEquivalentLssmActive(doc) {
+22252:         return operationalRequirementsResolveSource(doc)?.suppressed === true;
+22253:     }
+22254: 
+22255:     function operationalRequirementsRuntimeCatalog() {
+22256:         if (operationalRequirementsCatalogCache) return operationalRequirementsCatalogCache;
+22257:         const catalog = { vehicles: [], staff: [], other: [] };
+22258:         for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
+22259:             const sourceGroup = String(definition?.group || 'vehicles').toLowerCase();
+22260:             const group = sourceGroup === 'personnel' || sourceGroup === 'staff'
+22261:                 ? 'staff'
+22262:                 : sourceGroup === 'other'
+22263:                   ? 'other'
+22264:                   : 'vehicles';
+22265:             const texts = Array.from(new Set([definition?.label, ...(definition?.aliases || [])]))
+22266:                 .map(value => String(value || '').trim())
+22267:                 .filter(Boolean);
+22268:             if (!texts.length) continue;
+22269:             catalog[group].push({
+22270:                 key: String(definition?.key || `${group}:${catalog[group].length}`),
+22271:                 texts,
+22272:                 vehicles: Array.from(new Set((definition?.types || []).map(Number).filter(Number.isFinite))),
+22273:                 equipment: Array.from(new Set((definition?.equipment || []).map(value => String(value || '').trim()).filter(Boolean))),
+22274:                 conditionalVehicles: definition?.conditionalVehicles && typeof definition.conditionalVehicles === 'object'
+22275:                     ? { ...definition.conditionalVehicles }
+22276:                     : {},
+22277:                 factors: definition?.factors && typeof definition.factors === 'object' ? { ...definition.factors } : {}
+22278:             });
+22279:         }
+22280:         operationalRequirementsCatalogCache = Object.freeze({
+22281:             vehicles: Object.freeze(catalog.vehicles),
+22282:             staff: Object.freeze(catalog.staff),
+22283:             other: Object.freeze(catalog.other)
+22284:         });
+22285:         return operationalRequirementsCatalogCache;
+22286:     }
+22287: 
+22288:     function operationalRequirementsAttribute(node, names) {
+22289:         for (const name of names) {
+22290:             const value = node?.getAttribute?.(name);
+22291:             if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+22292:         }
+22293:         return '';
+22294:     }
+22295: 
+22296:     function operationalRequirementsNumberFrom(value, fallback = 0) {
+22297:         const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/gu, ''), 10);
+22298:         return Number.isFinite(parsed) ? parsed : fallback;
+22299:     }
+22300: 
+22301:     function operationalRequirementsVehicleType(node) {
+22302:         const row = node?.closest?.('tr') || node;
+22303:         return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+22304:             'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+22305:         ]) || operationalRequirementsAttribute(row, [
+22306:             'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+22307:         ]), -1);
+22308:     }
+22309: 
+22310:     function operationalRequirementsVehicleId(node) {
+22311:         const row = node?.closest?.('tr') || node;
+22312:         return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+22313:             'value', 'vehicle_id', 'data-vehicle-id'
+22314:         ]) || operationalRequirementsAttribute(row, ['vehicle_id', 'data-vehicle-id']), -1);
+22315:     }
+22316: 
+22317:     function operationalRequirementsEquipment(node) {
+22318:         const row = node?.closest?.('tr') || node;
+22319:         const raw = operationalRequirementsAttribute(node, ['data-equipment-types', 'data-equipment-type', 'equipment_types'])
+22320:             || operationalRequirementsAttribute(row, ['data-equipment-types', 'data-equipment-type', 'equipment_types']);
+22321:         if (!raw) return [];
+22322:         try {
+22323:             const parsed = JSON.parse(raw);
+22324:             if (Array.isArray(parsed)) return parsed.map(value => String(value)).filter(Boolean);
+22325:         } catch (error) {}
+22326:         return raw.split(/[|,;\s]+/gu).map(value => value.trim()).filter(Boolean);
+22327:     }
+22328: 
+22329:     function operationalRequirementsStaffRange(typeId, node = null) {
+22330:         const row = node?.closest?.('tr') || node;
+22331:         const explicitMin = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+22332:             'data-staff-min', 'data-personnel-min', 'data-crew-min'
+22333:         ]), -1);
+22334:         const explicitMax = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+22335:             'data-staff-max', 'data-personnel-max', 'data-crew-max', 'data-max-personnel-override'
+22336:         ]), -1);
+22337:         if (explicitMin >= 0 || explicitMax >= 0) {
+22338:             const min = Math.max(0, explicitMin >= 0 ? explicitMin : explicitMax);
+22339:             return { min, max: Math.max(min, explicitMax >= 0 ? explicitMax : min) };
+22340:         }
+22341:         const fallback = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[String(typeId)]
+22342:             || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[typeId];
+22343:         if (!Array.isArray(fallback) || fallback.length < 2) return { min: 0, max: 0 };
+22344:         return { min: Math.max(0, Number(fallback[0]) || 0), max: Math.max(0, Number(fallback[1]) || 0) };
+22345:     }
+22346: 
+22347:     function operationalRequirementsResolveVehicleType(doc, vehicleId) {
+22348:         if (!doc?.querySelector || !Number.isFinite(Number(vehicleId)) || Number(vehicleId) < 0) return -1;
+22349:         const selector = `.vehicle_checkbox[value="${Number(vehicleId)}"], [data-vehicle-id="${Number(vehicleId)}"], [vehicle_id="${Number(vehicleId)}"]`;
+22350:         return operationalRequirementsVehicleType(doc.querySelector(selector));
+22351:     }
+22352: 
+22353:     function operationalRequirementsSelectedSnapshot(doc) {
+22354:         const selector = '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked';
+22355:         return Array.from(doc?.querySelectorAll?.(selector) || []).map(node => {
+22356:             const vehicleType = operationalRequirementsVehicleType(node);
+22357:             const tractiveVehicleId = operationalRequirementsNumberFrom(
+22358:                 operationalRequirementsAttribute(node, ['tractive_vehicle_id', 'data-tractive-vehicle-id'])
+22359:                 || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_vehicle_id', 'data-tractive-vehicle-id']),
+22360:                 -1
+22361:             );
+22362:             const tractiveRaw = operationalRequirementsAttribute(node, ['tractive_random', 'data-tractive-random'])
+22363:                 || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_random', 'data-tractive-random']);
+22364:             return {
+22365:                 id: operationalRequirementsVehicleId(node),
+22366:                 vehicleType,
+22367:                 equipment: operationalRequirementsEquipment(node),
+22368:                 staff: operationalRequirementsStaffRange(vehicleType, node),
+22369:                 tractiveVehicleId,
+22370:                 tractiveVehicleType: operationalRequirementsResolveVehicleType(doc, tractiveVehicleId),
+22371:                 tractiveStaff: operationalRequirementsStaffRange(operationalRequirementsResolveVehicleType(doc, tractiveVehicleId), null),
+22372:                 tractiveRandom: tractiveRaw === '' ? null : !['0', 'false', 'no'].includes(tractiveRaw.toLowerCase())
+22373:             };
+22374:         }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
+22375:     }
+22376: 
+22377:     function operationalRequirementsDrivingStaff(row, typeId) {
+22378:         const explicit = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+22379:             'data-staff', 'data-personnel', 'data-personnel-count', 'personnel_count'
+22380:         ]), -1);
+22381:         if (explicit >= 0) return explicit;
+22382:         for (const cell of Array.from(row?.querySelectorAll?.('[data-column="personnel"], [data-column="staff"], .vehicle_staff, .staff') || [])) {
+22383:             const value = operationalRequirementsNumberFrom(cell?.getAttribute?.('sortvalue') ?? cell?.textContent, -1);
+22384:             if (value >= 0) return value;
+22385:         }
+22386:         const fallback = operationalRequirementsStaffRange(typeId, row);
+22387:         return fallback.min;
+22388:     }
+22389: 
+22390:     function operationalRequirementsDrivingSnapshot(doc) {
+22391:         return Array.from(doc?.querySelectorAll?.('#mission_vehicle_driving tbody tr') || []).map(row => {
+22392:             const vehicleType = operationalRequirementsVehicleType(row);
+22393:             return {
+22394:                 id: operationalRequirementsVehicleId(row),
+22395:                 vehicleType,
+22396:                 equipment: operationalRequirementsEquipment(row),
+22397:                 staff: operationalRequirementsDrivingStaff(row, vehicleType)
+22398:             };
+22399:         }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
+22400:     }
+22401: 
+22402:     function operationalRequirementsTexts(root) {
+22403:         const texts = { vehicles: null, staff: null, other: null };
+22404:         const groups = Array.from(root?.querySelectorAll?.('[data-requirement-type]') || []);
+22405:         for (const element of groups) {
+22406:             const type = String(element.getAttribute('data-requirement-type') || '').toLowerCase();
+22407:             const group = type === 'personnel' || type === 'staff' ? 'staff' : type === 'other' ? 'other' : type === 'vehicles' ? 'vehicles' : null;
+22408:             if (!group) continue;
+22409:             const infoText = operationalRequirementNormaliseText(
+22410:                 element.querySelector?.('b')?.textContent || element.getAttribute('data-info-text') || ''
+22411:             );
+22412:             const fullText = operationalRequirementNormaliseText(element.textContent || '');
+22413:             const raw = operationalRequirementNormaliseText(
+22414:                 infoText && fullText.startsWith(infoText) ? fullText.slice(infoText.length) : fullText
+22415:             );
+22416:             if (!raw) continue;
+22417:             texts[group] = texts[group]
+22418:                 ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || infoText }
+22419:                 : { raw, infoText };
+22420:         }
+22421:         if (!groups.length) {
+22422:             const raw = operationalRequirementNormaliseText(root?.textContent || '');
+22423:             if (raw) texts.other = { raw, infoText: '' };
+22424:         }
+22425:         return texts;
+22426:     }
+22427: 
+22428:     function operationalRequirementsVehicleTypes() {
+22429:         const result = {};
+22430:         for (const [trailerType, tractives] of Object.entries(MISSION_REQUIREMENTS_TRACTIVE_TYPES || {})) {
+22431:             result[String(trailerType)] = { tractiveVehicles: Array.from(tractives || []).map(Number).filter(Number.isFinite) };
+22432:         }
+22433:         return result;
+22434:     }
+22435: 
+22436:     function operationalRequirementsProgress(root) {
+22437:         const result = {};
+22438:         const selectors = {
+22439:             water: '[data-mcms-requirement-progress="water"], [data-requirement-progress="water"], #water_missing',
+22440:             foam: '[data-mcms-requirement-progress="foam"], [data-requirement-progress="foam"], #foam_missing',
+22441:             pump: '[data-mcms-requirement-progress="pump"], [data-requirement-progress="pump"], #pump_missing'
+22442:         };
+22443:         for (const [key, selector] of Object.entries(selectors)) {
+22444:             const node = root?.querySelector?.(selector) || root?.ownerDocument?.querySelector?.(selector);
+22445:             if (!node) continue;
+22446:             result[key] = {
+22447:                 texts: [key, key === 'water' ? 'litres of water' : key === 'foam' ? 'litres of foam' : 'pump capacity'],
+22448:                 missing: operationalRequirementsNumberFrom(node.getAttribute?.('data-missing') ?? node.textContent, 0),
+22449:                 driving: operationalRequirementsNumberFrom(node.getAttribute?.('data-driving'), 0),
+22450:                 selected: operationalRequirementsNumberFrom(node.getAttribute?.('data-selected'), 0)
+22451:             };
+22452:         }
+22453:         return result;
+22454:     }
+22455: 
+22456:     function operationalRequirementsSourceState(requirementRoot, texts, progress) {
+22457:         const raw = operationalRequirementNormaliseText(requirementRoot?.textContent || '');
+22458:         const groupedEvidence = OPERATIONAL_REQUIREMENT_GROUPS.some(group =>
+22459:             Boolean(operationalRequirementNormaliseText(texts?.[group]?.raw || ''))
+22460:         );
+22461:         const progressEvidence = Object.keys(progress || {}).length > 0;
+22462:         return {
+22463:             state: groupedEvidence || progressEvidence ? 'available' : raw ? 'unparsed' : 'pending',
+22464:             raw,
+22465:             evidenceCount: Number(groupedEvidence) + Object.keys(progress || {}).length
+22466:         };
+22467:     }
+22468: 
+22469:     function operationalRequirementsInput(context, requirementRoot) {
+22470:         const doc = context.doc;
+22471:         const texts = operationalRequirementsTexts(requirementRoot);
+22472:         const progress = operationalRequirementsProgress(requirementRoot);
+22473:         return {
+22474:             texts,
+22475:             catalog: operationalRequirementsRuntimeCatalog(),
+22476:             vehicleTypes: operationalRequirementsVehicleTypes(),
+22477:             driving: operationalRequirementsDrivingSnapshot(doc),
+22478:             selected: operationalRequirementsSelectedSnapshot(doc),
+22479:             progress,
+22480:             missionAdditional: {},
+22481:             source: operationalRequirementsSourceState(requirementRoot, texts, progress)
+22482:         };
+22483:     }
+22484: 
+22485:     function operationalRequirementsEscapeHtml(value) {
+22486:         return String(value ?? '').replace(/[&<>"']/gu, character => ({
+22487:             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+22488:         })[character]);
+22489:     }
+22490: 
+22491:     function operationalRequirementsSelectedText(row, calcMaxStaff = false) {
+22492:         if (typeof row?.selected === 'number') return Math.max(0, Number(row.selected) || 0).toLocaleString('en-GB');
+22493:         const min = Math.max(0, Number(row?.selected?.min) || 0);
+22494:         const max = Math.max(min, Number(row?.selected?.max) || 0);
+22495:         if (calcMaxStaff || min === max) return (calcMaxStaff ? max : min).toLocaleString('en-GB');
+22496:         return `${min.toLocaleString('en-GB')}–${max.toLocaleString('en-GB')}`;
+22497:     }
+22498: 
+22499:     function operationalRequirementsSortRows(rows, settings) {
+22500:         const key = String(settings?.sort || 'requirement');
+22501:         const direction = settings?.sortDir === 'desc' ? -1 : 1;
+22502:         const value = row => {
+22503:             if (key === 'missing') return Number(row.missing) || 0;
+22504:             if (key === 'driving') return Number(row.driving) || 0;
+22505:             if (key === 'selected') return Number(row.selectedValue) || 0;
+22506:             if (key === 'total') return (Number(row.driving) || 0) + (Number(row.selectedValue) || 0);
+22507:             return String(row.requirement || row.key || '').toLocaleLowerCase('en-GB');
+22508:         };
+22509:         return rows.slice().sort((left, right) => {
+22510:             const a = value(left);
+22511:             const b = value(right);
+22512:             const comparison = typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - Number(b);
+22513:             return comparison * direction;
+22514:         });
+22515:     }
+22516: 
+22517:     function operationalRequirementsEnsureStyle(doc) {
+22518:         if (!doc?.createElement || doc.getElementById?.(OPERATIONAL_REQUIREMENTS_STYLE_ID)) return;
+22519:         const style = doc.createElement('style');
+22520:         style.id = OPERATIONAL_REQUIREMENTS_STYLE_ID;
+22521:         style.textContent = `
+22522:             .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{margin:0 0 12px;padding:0;border:1px solid rgba(220,53,69,.72);border-radius:12px;background:linear-gradient(180deg,rgba(79,16,25,.97),rgba(39,9,15,.97));color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);overflow:hidden;position:relative;z-index:2}
+22523:             .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-covered="true"]{border-color:rgba(40,167,69,.78);background:linear-gradient(180deg,rgba(20,82,39,.97),rgba(9,42,21,.97))}
+22524:             .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="pending"],.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="unparsed"]{border-color:rgba(255,193,7,.78);background:linear-gradient(180deg,rgba(92,70,12,.97),rgba(48,36,6,.97))}
+22525:             .mcms-operational-suite-header{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.14)}
+22526:             .mcms-operational-suite-title{font-weight:800;letter-spacing:.02em;flex:1}.mcms-operational-suite-summary{font-size:12px;opacity:.84}
+22527:             .mcms-operational-suite-toggle{min-width:42px;min-height:36px;border:1px solid rgba(255,255,255,.24);border-radius:8px;background:rgba(255,255,255,.1);color:inherit;font-weight:800;touch-action:manipulation}
+22528:             .mcms-operational-suite-body{padding:10px 12px 12px}.mcms-operational-suite-panel[data-minified="true"] .mcms-operational-suite-body{display:none}
+22529:             .mcms-operational-suite-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}.mcms-operational-suite-table th,.mcms-operational-suite-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.12);text-align:right;vertical-align:middle}
+22530:             .mcms-operational-suite-table th:first-child,.mcms-operational-suite-table td:first-child{text-align:left}.mcms-operational-suite-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
+22531:             .mcms-operational-suite-row[data-covered="true"]{opacity:.62}.mcms-operational-suite-needed{font-weight:800}.mcms-operational-suite-unresolved{margin-top:9px;padding:8px 10px;border:1px dashed rgba(255,193,7,.7);border-radius:8px;background:rgba(255,193,7,.1);font-size:12px}
+22532:             @media(max-width:760px){.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{border-radius:10px;margin-left:0;margin-right:0}.mcms-operational-suite-header{align-items:flex-start;flex-wrap:wrap;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left))}.mcms-operational-suite-summary{width:100%}.mcms-operational-suite-table thead{display:none}.mcms-operational-suite-table,.mcms-operational-suite-table tbody,.mcms-operational-suite-table tr,.mcms-operational-suite-table td{display:block;width:100%}.mcms-operational-suite-table tr{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.16)}.mcms-operational-suite-table td{display:grid;grid-template-columns:minmax(118px,1fr) minmax(70px,auto);gap:10px;padding:4px 2px;border:0;text-align:right}.mcms-operational-suite-table td::before{content:attr(data-label);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72}.mcms-operational-suite-table td:first-child{font-weight:800;grid-template-columns:1fr}.mcms-operational-suite-table td:first-child::before{display:none}}
+22533:         `;
+22534:         (doc.head || doc.documentElement)?.appendChild(style);
+22535:     }
+22536: 
+22537:     function operationalRequirementsPanelHtml(rows, model, settings, minified, source = null) {
+22538:         const sorted = operationalRequirementsSortRows(rows, settings);
+22539:         const open = sorted.filter(row => !row.covered);
+22540:         const unresolved = OPERATIONAL_REQUIREMENT_GROUPS
+22541:             .map(group => model?.requirementTexts?.[group]?.remaining)
+22542:             .filter(Boolean);
+22543:         const sourceState = String(source?.state || 'pending');
+22544:         const hasParsedRows = sorted.length > 0;
+22545:         const unknown = !hasParsedRows && unresolved.length === 0;
+22546:         const allCovered = sourceState === 'available' && hasParsedRows && open.length === 0 && unresolved.length === 0;
+22547:         const bodyRows = sorted.map(row => {
+22548:             const stillNeeded = Math.max(0, Number(row.remainingOnMission) - Number(row.selectedValue));
+22549:             return `<tr class="mcms-operational-suite-row" data-covered="${row.covered ? 'true' : 'false'}"><td data-label="Requirement">${operationalRequirementsEscapeHtml(row.requirement || row.key)}</td><td data-label="Required">${Math.max(0, Number(row.missing) || 0).toLocaleString('en-GB')}</td><td data-label="Responding">${Math.max(0, Number(row.driving) || 0).toLocaleString('en-GB')}</td><td data-label="Selected">${operationalRequirementsEscapeHtml(operationalRequirementsSelectedText(row, settings?.calcMaxStaff === true))}</td><td class="mcms-operational-suite-needed" data-label="Still needed">${stillNeeded.toLocaleString('en-GB')}</td></tr>`;
+22550:         }).join('');
+22551:         const unresolvedHtml = unresolved.length
+22552:             ? `<div class="mcms-operational-suite-unresolved"><strong>Unresolved MissionChief requirement</strong><br>${unresolved.map(operationalRequirementsEscapeHtml).join('<br>')}</div>`
+22553:             : '';
+22554:         const unknownMessage = sourceState === 'pending'
+22555:             ? 'Waiting for MissionChief requirement data.'
+22556:             : 'MissionChief requirement data could not be interpreted safely.';
+22557:         const emptyHtml = unknown
+22558:             ? `<div class="mcms-operational-suite-unresolved"><strong>Requirement status not confirmed</strong><br>${unknownMessage}</div>`
+22559:             : '';
+22560:         const summary = allCovered
+22561:             ? 'All displayed requirements covered'
+22562:             : unknown
+22563:                 ? (sourceState === 'pending' ? 'Waiting for requirement data' : 'Requirement status unresolved')
+22564:                 : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`;
+22565:         return {
+22566:             allCovered,
+22567:             state: allCovered ? 'covered' : unknown ? sourceState : 'open',
+22568:             html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${summary}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
+22569:         };
+22570:     }
+22571: 
+22572:     function operationalRequirementsMount(context, requirementRoot) {
+22573:         const doc = context.doc;
+22574:         operationalRequirementsEnsureStyle(doc);
+22575:         const selector = '[data-mcms-operational-suite="requirements"]';
+22576:         const mounted = Array.from(doc.querySelectorAll?.(selector) || []).filter(candidate => candidate?.isConnected);
+22577:         let panel = context.panel;
+22578:         if (!panel?.isConnected) panel = mounted[0] || null;
+22579:         for (const duplicate of mounted) {
+22580:             if (duplicate !== panel) duplicate.remove?.();
+22581:         }
+22582:         if (!panel?.isConnected) {
+22583:             panel = doc.createElement('section');
+22584:             panel.className = OPERATIONAL_REQUIREMENTS_PANEL_CLASS;
+22585:             panel.setAttribute('data-mcms-operational-suite', 'requirements');
+22586:             panel.setAttribute('aria-live', 'polite');
+22587:         }
+22588:         if (requirementRoot.parentNode && (panel.parentNode !== requirementRoot.parentNode || panel.nextSibling !== requirementRoot)) {
+22589:             requirementRoot.parentNode.insertBefore(panel, requirementRoot);
+22590:         }
+22591:         context.panel = panel;
+22592:         panel.onclick = event => {
+22593:             const button = event.target?.closest?.('.mcms-operational-suite-toggle');
+22594:             if (!button) return;
+22595:             context.minified = !context.minified;
+22596:             context.fingerprint = '';
+22597:             operationalRequirementsScheduleContext(context, 0);
+22598:         };
+22599:         return panel;
+22600:     }
+22601: 
+22602:     function operationalRequirementsRenderContext(context) {
+22603:         if (!context?.doc || runtime.destroyed) return;
+22604:         if (!operationalRequirementsActive()) {
+22605:             context.panel?.remove?.();
+22606:             context.panel = null;
+22607:             return;
+22608:         }
+22609:         const requirementSource = operationalRequirementsResolveSource(context.doc);
+22610:         const requirementRoot = requirementSource?.root;
+22611:         if (!requirementRoot || requirementSource?.suppressed === true) {
+22612:             context.panel?.remove?.();
+22613:             context.panel = null;
+22614:             context.fingerprint = '';
+22615:             return;
+22616:         }
+22617:         const settings = state.operationalWindow?.requirements || {};
+22618:         const input = operationalRequirementsInput(context, requirementRoot);
+22619:         const model = operationalRequirementCreateModel(input);
+22620:         const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
+22621:         const fingerprint = JSON.stringify({
+22622:             model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
+22623:             source: input.source,
+22624:             sort: settings.sort,
+22625:             sortDir: settings.sortDir,
+22626:             viewMode: settings.viewMode,
+22627:             minified: context.minified === true,
+22628:             source: requirementSource.fingerprint
+22629:         });
+22630:         if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
+22631:         const panel = operationalRequirementsMount(context, requirementSource.anchor || requirementRoot);
+22632:         const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true, input.source);
+22633:         panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
+22634:         panel.dataset.requirementState = rendered.state;
+22635:         panel.dataset.minified = context.minified === true ? 'true' : 'false';
+22636:         operationalReplaceContent(panel, rendered.html);
+22637:         context.fingerprint = fingerprint;
+22638:     }
+22639: 
+22640:     function operationalRequirementsScheduleContext(context, delay = 0) {
+22641:         if (!context || runtime.destroyed) return;
+22642:         runtimeClearTimeout(context.renderTimer);
+22643:         context.renderTimer = runtimeSetTimeout(() => {
+22644:             context.renderTimer = null;
+22645:             operationalRequirementsRenderContext(context);
+22646:             operationalFeatureRenderContext(context);
+22647:         }, Math.max(0, Number(delay) || 0));
+22648:     }
+22649: 
+22650:     function operationalRequirementsBindContext(context) {
+22651:         const doc = context?.doc;
+22652:         if (!doc?.querySelector || !operationalRequirementsActive()) return;
+22653:         const requirementSource = operationalRequirementsResolveSource(doc);
+22654:         const requirementRoot = requirementSource?.root || null;
+22655:         const candidateAnchors = requirementSource?.candidates?.map(candidate => candidate.anchor) || [];
+22656:         const missionHost = requirementSource?.missionContainer
+22657:             || operationalRequirementsMissionContainer(requirementSource?.anchor, doc);
+22658:         const roots = Array.from(new Set([
+22659:             ...candidateAnchors,
+22660:             missionHost,
+22661:             doc.querySelector('#mission_vehicle_driving'),
+22662:             doc.querySelector('#vehicle_show_table_body_all'),
+22663:             doc.querySelector('#occupied'),
+22664:             ...operationalFeatureObservationRoots(doc)
+22665:         ].filter(root => root && root.isConnected !== false)));
+22666:         if (!roots.length) return;
+22667:         const sourceFingerprint = requirementSource?.fingerprint || '';
+22668:         if (context.boundRequirementRoot === requirementSource?.anchor
+22669:             && context.boundRequirementSource === sourceFingerprint
+22670:             && context.observer
+22671:             && context.observedRootCount === roots.length) return;
+22672:         try { context.observer?.disconnect?.(); } catch (error) {}
+22673:         context.boundRequirementRoot = requirementSource?.anchor || null;
+22674:         context.boundRequirementSource = sourceFingerprint;
+22675:         context.observedRootCount = roots.length;
+22676:         const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;
+22677:         context.observer = new OperationalMutationObserver(() => operationalRequirementsScheduleContext(context, 25));
+22678:         for (const root of roots) {
+22679:             context.observer.observe(root, {
+22680:                 childList: true,
+22681:                 subtree: true,
+22682:                 characterData: true,
+22683:                 attributes: true,
+22684:                 attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value']
+22685:             });
+22686:         }
+22687:         if (!context.changeHandler) {
+22688:             context.changeHandler = event => {
+22689:                 if (event.target?.matches?.('.vehicle_checkbox, #vehicle_show_table_body_all input, #occupied input')) {
+22690:                     operationalRequirementsScheduleContext(context, 0);
+22691:                 }
+22692:             };
+22693:             doc.addEventListener('change', context.changeHandler, true);
+22694:         }
+22695:     }
+22696:     // Issue #378 end enhanced requirements runtime renderer.
+22697: 
+22698:     // Issue #378 complete operational feature suite.
+22699:     const OP_FEATURE_ATTR = 'data-mcms-operational-feature';
+22700:     const OP_BOOL_KEYS = Object.freeze({
+22701:         requirements: 'enabled,calcMaxStaff,hoverTip,overlay,minified,pushRight',
+22702:         callWindow: 'enabled,generationDate,redBorder,patientSummary,collapsiblePatients,arrCounter,arrCounterAsBadge,arrClickHighlight,arrCounterResetSelection,arrMatchHighlight,arrMatchHighlightAllWords,arrTime,arrSpecs,alarmTime,stickyHeader,loadMoreVehiclesInHeader,hideVehicleList,centerMap,stagingAreaSelectedCounter,vehicleTypeInList,remainingPatientTime,vehicleCounter,vehicleListPermanentSearch,playerCounter,selectedVehicleCounter,arrSearch,arrSearchDissolveCategories,arrSearchCompactResults,arrSearchSelectOnEnter,arrSearchClearOnEnter,arrSearchAutoFocus,arrSearchDropdown,arrSearchCloseDropdownOnSelect,moreReleasePatientButtons',
+22703:         missionList: 'enabled,remainingTime,remainingTimeGreenOnly,remainingPatientTime,remainingPumpingTime,starrableMissions,averageCredits,collapsibleMissions,collapsibleMissionsAllButton,shareMissions,sortMissions,sortMissionsInMissionWindow,sortMissionsInMissionWindowChecked,currentPatients,hideZeroCurrentPatients,currentPatientsInTooltips,currentPrisoners,hideZeroCurrentPrisoners,currentPrisonersInTooltips,fixedEventInfo',
+22704:         transport: 'enabled,autoClickSuccessButtons,autoOpenTransportRequest'
+22705:     });
+22706:     const OP_LABELS = Object.freeze({
+22707:         requirements: 'Enhanced requirements', callWindow: 'Extended Call Window',
+22708:         missionList: 'Extended Call List', transport: 'Enhanced Transport Requests'
+22709:     });
+22710:     const operationalFeatureContexts = new WeakMap();
+22711: 
+22712:     function operationalQuery(root, selector) {
+22713:         try { return root?.querySelector?.(selector) || null; } catch (error) { return null; }
+22714:     }
+22715:     function operationalQueryAll(root, selector) {
+22716:         try { return Array.from(root?.querySelectorAll?.(selector) || []); } catch (error) { return []; }
+22717:     }
+22718:     function operationalEscape(value) {
+22719:         return String(value ?? '').replace(/[&<>"']/gu, character => ({
+22720:             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+22721:         })[character]);
+22722:     }
+22723:     function operationalVisible(node) {
+22724:         if (!node?.isConnected || node.hidden || node.disabled || node.getAttribute?.('aria-hidden') === 'true') return false;
+22725:         try {
+22726:             const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
+22727:             const rect = node.getBoundingClientRect?.();
+22728:             return style?.display !== 'none' && style?.visibility !== 'hidden' && (!rect || rect.width > 0 || rect.height > 0);
+22729:         } catch (error) { return true; }
+22730:     }
+22731:     function operationalFeatureState(context) { let value=operationalFeatureContexts.get(context); if(!value){value={transportTokens:new Set(),route:'',arrHandlers:new Map(),arrCounts:new Map(),arrClicked:new Set(),patientCollapsed:null,vehicleListHidden:null,vehicleTab:'all',arrQuery:'',nativeRows:new Set()};operationalFeatureContexts.set(context,value);} return value; }
+22732:     function operationalFeatureValue(path) {
+22733:         return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
+22734:     }
+22735:     function operationalFeatureSet(path, value) {
+22736:         const parts = String(path || '').split('.').filter(Boolean);
+22737:         let target = state.operationalWindow;
+22738:         for (const part of parts.slice(0, -1)) target = target[part] ??= {};
+22739:         target[parts.at(-1)] = value;
+22740:     }

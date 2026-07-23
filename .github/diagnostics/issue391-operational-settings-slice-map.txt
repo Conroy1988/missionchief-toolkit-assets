@@ -1,0 +1,203 @@
+ISSUE391_OPERATIONAL_SETTINGS_SLICE_MAP_V1
+range=22620-22820
+22620: 
+22621:     function operationalRequirementsScheduleContext(context, delay = 0) {
+22622:         if (!context || runtime.destroyed) return;
+22623:         runtimeClearTimeout(context.renderTimer);
+22624:         context.renderTimer = runtimeSetTimeout(() => {
+22625:             context.renderTimer = null;
+22626:             operationalRequirementsRenderContext(context);
+22627:             operationalFeatureRenderContext(context);
+22628:         }, Math.max(0, Number(delay) || 0));
+22629:     }
+22630: 
+22631:     function operationalRequirementsBindContext(context) {
+22632:         const doc = context?.doc;
+22633:         if (!doc?.querySelector || !operationalRequirementsActive()) return;
+22634:         const requirementRoot = doc.querySelector('#missing_text');
+22635:         const roots = Array.from(new Set([
+22636:             requirementRoot,
+22637:             doc.querySelector('#mission_vehicle_driving'),
+22638:             doc.querySelector('#vehicle_show_table_body_all'),
+22639:             doc.querySelector('#occupied'),
+22640:             ...operationalFeatureObservationRoots(doc)
+22641:         ].filter(Boolean)));
+22642:         if (!roots.length) return;
+22643:         const rootFingerprint = roots.map(root => root).join('|');
+22644:         if (context.boundRequirementRoot === requirementRoot && context.observer && context.observedRootCount === roots.length) return;
+22645:         try { context.observer?.disconnect?.(); } catch (error) {}
+22646:         context.boundRequirementRoot = requirementRoot;
+22647:         context.observedRootCount = roots.length;
+22648:         context.observer = new MutationObserver(() => operationalRequirementsScheduleContext(context, 25));
+22649:         for (const root of roots) {
+22650:             context.observer.observe(root, {
+22651:                 childList: true,
+22652:                 subtree: true,
+22653:                 characterData: true,
+22654:                 attributes: true,
+22655:                 attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value']
+22656:             });
+22657:         }
+22658:         if (!context.changeHandler) {
+22659:             context.changeHandler = event => {
+22660:                 if (event.target?.matches?.('.vehicle_checkbox, #vehicle_show_table_body_all input, #occupied input')) {
+22661:                     operationalRequirementsScheduleContext(context, 0);
+22662:                 }
+22663:             };
+22664:             doc.addEventListener('change', context.changeHandler, true);
+22665:         }
+22666:     }
+22667:     // Issue #378 end enhanced requirements runtime renderer.
+22668: 
+22669:     // Issue #378 complete operational feature suite.
+22670:     const OP_FEATURE_ATTR = 'data-mcms-operational-feature';
+22671:     const OP_BOOL_KEYS = Object.freeze({
+22672:         requirements: 'enabled,calcMaxStaff,hoverTip,overlay,minified,pushRight',
+22673:         callWindow: 'enabled,generationDate,redBorder,patientSummary,collapsiblePatients,arrCounter,arrCounterAsBadge,arrClickHighlight,arrCounterResetSelection,arrMatchHighlight,arrMatchHighlightAllWords,arrTime,arrSpecs,alarmTime,stickyHeader,loadMoreVehiclesInHeader,hideVehicleList,centerMap,stagingAreaSelectedCounter,vehicleTypeInList,remainingPatientTime,vehicleCounter,vehicleListPermanentSearch,playerCounter,selectedVehicleCounter,arrSearch,arrSearchDissolveCategories,arrSearchCompactResults,arrSearchSelectOnEnter,arrSearchClearOnEnter,arrSearchAutoFocus,arrSearchDropdown,arrSearchCloseDropdownOnSelect,moreReleasePatientButtons',
+22674:         missionList: 'enabled,remainingTime,remainingTimeGreenOnly,remainingPatientTime,remainingPumpingTime,starrableMissions,averageCredits,collapsibleMissions,collapsibleMissionsAllButton,shareMissions,sortMissions,sortMissionsInMissionWindow,sortMissionsInMissionWindowChecked,currentPatients,hideZeroCurrentPatients,currentPatientsInTooltips,currentPrisoners,hideZeroCurrentPrisoners,currentPrisonersInTooltips,fixedEventInfo',
+22675:         transport: 'enabled,autoClickSuccessButtons,autoOpenTransportRequest'
+22676:     });
+22677:     const OP_LABELS = Object.freeze({
+22678:         requirements: 'Enhanced requirements', callWindow: 'Extended Call Window',
+22679:         missionList: 'Extended Call List', transport: 'Enhanced Transport Requests'
+22680:     });
+22681:     const operationalFeatureContexts = new WeakMap();
+22682: 
+22683:     function operationalQuery(root, selector) {
+22684:         try { return root?.querySelector?.(selector) || null; } catch (error) { return null; }
+22685:     }
+22686:     function operationalQueryAll(root, selector) {
+22687:         try { return Array.from(root?.querySelectorAll?.(selector) || []); } catch (error) { return []; }
+22688:     }
+22689:     function operationalEscape(value) {
+22690:         return String(value ?? '').replace(/[&<>"']/gu, character => ({
+22691:             '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+22692:         })[character]);
+22693:     }
+22694:     function operationalVisible(node) {
+22695:         if (!node?.isConnected || node.hidden || node.disabled || node.getAttribute?.('aria-hidden') === 'true') return false;
+22696:         try {
+22697:             const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
+22698:             const rect = node.getBoundingClientRect?.();
+22699:             return style?.display !== 'none' && style?.visibility !== 'hidden' && (!rect || rect.width > 0 || rect.height > 0);
+22700:         } catch (error) { return true; }
+22701:     }
+22702:     function operationalFeatureState(context) {
+22703:         let value = operationalFeatureContexts.get(context);
+22704:         if (!value) {
+22705:             value = { transportTokens: new Set(), route: '', arrHandlers: new Map() };
+22706:             operationalFeatureContexts.set(context, value);
+22707:         }
+22708:         return value;
+22709:     }
+22710:     function operationalFeatureValue(path) {
+22711:         return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
+22712:     }
+22713:     function operationalFeatureSet(path, value) {
+22714:         const parts = String(path || '').split('.').filter(Boolean);
+22715:         let target = state.operationalWindow;
+22716:         for (const part of parts.slice(0, -1)) target = target[part] ??= {};
+22717:         target[parts.at(-1)] = value;
+22718:     }
+22719:     function operationalFeatureMissionId(row) {
+22720:         return String(row?.dataset?.missionId || row?.id?.match(/mission[_-](\d+)/u)?.[1]
+22721:             || operationalQuery(row, 'a[href*="/missions/"]')?.href?.match(/\/missions\/(\d+)/u)?.[1] || '');
+22722:     }
+22723:     function operationalFeatureNumber(node, names) {
+22724:         for (const name of names) {
+22725:             const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
+22726:             if (Number.isFinite(parsed)) return parsed;
+22727:         }
+22728:         return 0;
+22729:     }
+22730:     function operationalFeatureOwn(node, kind) {
+22731:         node?.setAttribute?.(OP_FEATURE_ATTR, kind);
+22732:         return node;
+22733:     }
+22734:     function operationalFeatureRemove(context, prefix = '') {
+22735:         const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+22736:         operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+22737:     }
+22738: 
+22739:     function operationalWindowSettingsMarkup() {
+22740:         const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+22741:             <details class="mcms-operational-settings-group" open>
+22742:                 <summary>${OP_LABELS[group]}</summary>
+22743:                 ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+22744:             </details>`).join('');
+22745:         const advanced = [
+22746:             ['requirements.viewMode', 'Requirements view', 'table,text'],
+22747:             ['requirements.sort', 'Requirement sorting', 'requirement,missing,driving,selected,total'],
+22748:             ['requirements.sortDir', 'Requirement direction', 'asc,desc'],
+22749:             ['missionList.sortMissionsType', 'Mission sorting', ',name,credits,patients,prisoners,time'],
+22750:             ['missionList.sortMissionsDirection', 'Mission direction', ',asc,desc']
+22751:         ].map(([path, label, values]) => `<label class="mcms-row"><span class="mcms-row-label">${label}</span><select class="mcms-select" data-operational-setting="${path}" data-operational-type="string">${values.split(',').map(value => `<option value="${value}">${value || 'Default'}</option>`).join('')}</select></label>`).join('');
+22752:         const json = [
+22753:             'callWindow.tailoredTabs','callWindow.missionKeywords','callWindow.alarmIcons',
+22754:             'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+22755:             'missionList.shareMissionTypes','missionList.eventMissions'
+22756:         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+22757:         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+22758:     }
+22759:     function operationalWindowSyncSettingsUi(panel = document.getElementById(SCRIPT.panelId)) {
+22760:         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+22761:             const value = operationalFeatureValue(control.dataset.operationalSetting);
+22762:             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+22763:             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+22764:         });
+22765:     }
+22766:     function handleOperationalWindowSettingChange(target) {
+22767:         const path = target?.dataset?.operationalSetting;
+22768:         if (!path) return false;
+22769:         try {
+22770:             const type = target.dataset.operationalType;
+22771:             const value = type === 'boolean' ? target.checked : type === 'json' ? JSON.parse(target.value || '[]') : target.value;
+22772:             operationalFeatureSet(path, value);
+22773:             state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow, state.missionRequirements !== false);
+22774:             saveState(); updateUI(); showToast('Operational Window setting saved');
+22775:         } catch (error) {
+22776:             showToast('Operational setting contains invalid JSON');
+22777:         }
+22778:         return true;
+22779:     }
+22780: 
+22781:     function operationalFeatureStyle(doc) {
+22782:         if (doc.getElementById?.('mcms-operational-feature-style')) return;
+22783:         const style = doc.createElement('style');
+22784:         style.id = 'mcms-operational-feature-style';
+22785:         style.textContent = `
+22786:             [${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}
+22787:             .mcms-operational-pill{padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}
+22788:             .mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden{display:none!important}
+22789:             .mcms-operational-arr-match{outline:2px solid var(--mcms-arr-colour,#008000);outline-offset:1px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}.mcms-operational-json-row{display:grid;gap:4px;margin:8px 0}
+22790:             @media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}}
+22791:         `;
+22792:         (doc.head || doc.documentElement)?.appendChild(style);
+22793:     }
+22794:     function operationalFeatureBar(doc, anchor, kind) {
+22795:         let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
+22796:         if (!bar) {
+22797:             bar = operationalFeatureOwn(doc.createElement('div'), kind);
+22798:             bar.className = 'mcms-operational-bar';
+22799:             anchor?.parentNode?.insertBefore(bar, anchor);
+22800:         }
+22801:         bar.innerHTML = '';
+22802:         return bar;
+22803:     }
+22804:     function operationalPill(doc, text, kind) {
+22805:         const node = operationalFeatureOwn(doc.createElement('span'), kind);
+22806:         node.className = 'mcms-operational-pill'; node.textContent = text; return node;
+22807:     }
+22808: 
+22809:     function operationalCallWindowApply(context) {
+22810:         const settings = state.operationalWindow?.callWindow || {};
+22811:         const doc = context.doc;
+22812:         const path = String(doc.defaultView?.location?.pathname || '');
+22813:         if (!settings.enabled || !/^\/missions\/\d+\/?$/u.test(path) || operationalQuery(doc, '[data-module="extendedCallWindow"]')) {
+22814:             operationalFeatureRemove(context, 'call-'); return;
+22815:         }
+22816:         operationalFeatureStyle(doc);
+22817:         operationalFeatureRemove(context, 'call-');
+22818:         const anchor = operationalQuery(doc, '#missing_text, #mission_general_info, .mission_general_info, h1');
+22819:         if (!anchor) return;
+22820:         const bar = operationalFeatureBar(doc, anchor, 'call-toolbar');

@@ -1,0 +1,29 @@
+ISSUE391_POST_RETIREMENT_SETTINGS_FAILURE_V4
+returncode=1
+
+=== STDOUT ===
+
+=== STDERR ===
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/py_compile.py", line 144, in compile
+    code = loader.source_to_code(source_bytes, dfile or file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 1059, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/tmp/issue391-post-retirement-settings-diagnostic-v4-im7h57nz/repo/.github/development-packages/issue391-finalize-canonical-retirement.py", line 135
+    '''FUNCTION_NAMES = [
+       ^^^^^^^^^^^^^^
+SyntaxError: invalid syntax
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/issue391-post-retirement-settings-diagnostic-v4-im7h57nz/repo/.github/development-packages/issue391-update-post-retirement-settings-contract.py", line 137, in <module>
+    py_compile.compile(str(META), doraise=True)
+  File "/usr/lib/python3.12/py_compile.py", line 150, in compile
+    raise py_exc
+py_compile.PyCompileError:   File "/tmp/issue391-post-retirement-settings-diagnostic-v4-im7h57nz/repo/.github/development-packages/issue391-finalize-canonical-retirement.py", line 135
+    '''FUNCTION_NAMES = [
+       ^^^^^^^^^^^^^^
+SyntaxError: invalid syntax
+

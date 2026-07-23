@@ -1,0 +1,1271 @@
+ISSUE #470 STATE / SELECTOR DIAGNOSTIC
+lines=31648
+
+====================================================================================================
+PATTERN commandBarOpen
+01552:         missionPulse: false,
+01553:         roadPriority: false,
+01554:         compactDock: false,
+01555:         commandBarOpen: true,
+01556:         economyMode: false,
+01557:         tabletMode: 'auto',
+01558:         mobileMode: 'auto',
+---
+01649:         merged.heatmap.radiusMi = Number(merged.heatmap.radiusMi) || 10;
+01650:         merged.heatmap.opacity = clamp(merged.heatmap.opacity, 0.12, 0.55, 0.30);
+01651:         merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
+01652:         merged.commandBarOpen = merged.commandBarOpen !== false;
+01653:         merged.economyMode = Boolean(merged.economyMode);
+01654:         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
+01655:         merged.customVehicleBadges = merged.customVehicleBadges !== false;
+---
+14455:         setAttributeIfChanged(root, 'data-mcms-mission-pulse', String(Boolean(state.missionPulse)));
+14456:         setAttributeIfChanged(root, 'data-mcms-road-priority', String(Boolean(state.roadPriority)));
+14457:         setAttributeIfChanged(root, 'data-mcms-compact-dock', String(Boolean(state.compactDock)));
+14458:         setAttributeIfChanged(root, 'data-mcms-command-bar-open', String(state.commandBarOpen !== false));
+14459:         setAttributeIfChanged(root, 'data-mcms-economy', String(Boolean(state.economyMode)));
+14460:         setAttributeIfChanged(root, 'data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
+14461:         activeDeviceLayout = resolveDeviceLayout();
+---
+28776:     function toggleCommandBar() {
+28777:         if (commandBarAnimating) return;
+28778:         const control = document.getElementById(SCRIPT.controlId);
+28779:         const opening = state.commandBarOpen === false;
+28780:         const animatedItems = control
+28781:             ? Array.from(control.querySelectorAll('.mcms-float-btn, .mcms-screen-pin-btn'))
+28782:             : [];
+---
+28798:             commandBarAnimationTimer = null;
+28799:         }
+28800:         if (opening) {
+28801:             state.commandBarOpen = true;
+28802:             saveState();
+28803:             updateUI();
+28804:             fitControlToMap();
+---
+28837:             return;
+28838:         }
+28839:         if (duration <= 0 || !animatedItems.length) {
+28840:             state.commandBarOpen = false;
+28841:             saveState();
+28842:             updateUI();
+28843:             fitControlToMap();
+---
+28866:         });
+28867:         commandBarAnimationTimer = runtimeSetTimeout(() => {
+28868:             commandBarAnimationTimer = null;
+28869:             state.commandBarOpen = false;
+28870:             saveState();
+28871:             updateUI();
+28872:             fitControlToMap();
+---
+30514:             }
+30515:             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+30516:             if (dockToggleButton) {
+30517:                 const open = state.commandBarOpen !== false;
+30518:                 const label = open ? 'Collapse command bar' : 'Expand command bar';
+30519:                 dockToggleButton.classList.toggle('mcms-open', open);
+30520:                 dockToggleButton.setAttribute('aria-expanded', String(open));
+---
+count=8
+
+====================================================================================================
+PATTERN mcms-dock-toggle
+02428:         }
+02429:         #${SCRIPT.controlId} .mcms-menu-btn:hover,
+02430:         #${SCRIPT.controlId} .mcms-menu-btn:focus-visible { background: rgba(255,255,255,.12) !important; }
+02431:         #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+02432:             width: 100% !important; height: 15px !important; flex: 0 0 15px !important; border: 0 !important; border-top: 1px solid rgba(255,255,255,.16) !important;
+02433:             padding: 0 !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.82) !important; cursor: pointer !important;
+02434:             display: flex !important; align-items: center !important; justify-content: center !important; font-size: 11px !important; line-height: 1 !important; font-weight: 900 !important;
+---
+02433:             padding: 0 !important; background: rgba(255,255,255,.055) !important; color: rgba(255,255,255,.82) !important; cursor: pointer !important;
+02434:             display: flex !important; align-items: center !important; justify-content: center !important; font-size: 11px !important; line-height: 1 !important; font-weight: 900 !important;
+02435:         }
+02436:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+---
+02434:             display: flex !important; align-items: center !important; justify-content: center !important; font-size: 11px !important; line-height: 1 !important; font-weight: 900 !important;
+02435:         }
+02436:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+---
+02435:         }
+02436:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+---
+03811:             pointer-events: auto !important;
+03812:         }
+03813:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn { font-size: 22px !important; }
+03814:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn { height: 16px !important; flex-basis: 16px !important; font-size: 12px !important; }
+03815:         html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
+03816:             width: 52px !important; max-width: 52px !important; grid-template-columns: 52px !important; grid-template-areas: "menu" !important;
+03817:         }
+---
+04050:             backdrop-filter: none !important; -webkit-backdrop-filter: none !important; pointer-events: auto !important;
+04051:         }
+04052:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn { font-size: 19px !important; }
+04053:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn { height: 14px !important; flex-basis: 14px !important; font-size: 10px !important; }
+04054:         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {
+04055:             width: 50px !important; max-width: 50px !important; grid-template-columns: 50px !important;
+04056:         }
+---
+04557:             color: var(--mcms-cp-ink) !important;
+04558:             filter: brightness(1.08) !important;
+04559:         }
+04560:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+04561:             border-top: 1px solid rgba(0,240,255,.64) !important;
+04562:             background: rgba(0,240,255,.08) !important;
+04563:             color: var(--mcms-cp-cyan) !important;
+---
+04562:             background: rgba(0,240,255,.08) !important;
+04563:             color: var(--mcms-cp-cyan) !important;
+04564:         }
+04565:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+04566:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+04567:             background: var(--mcms-cp-cyan) !important;
+04568:             color: var(--mcms-cp-ink) !important;
+---
+04563:             color: var(--mcms-cp-cyan) !important;
+04564:         }
+04565:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+04566:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+04567:             background: var(--mcms-cp-cyan) !important;
+04568:             color: var(--mcms-cp-ink) !important;
+04569:         }
+---
+05112:             text-shadow: none !important;
+05113:             box-shadow: inset 0 0 0 2px rgba(6,16,8,.35) !important;
+05114:         }
+05115:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+05116:             border-top: 1px solid rgba(185,255,114,.42) !important;
+05117:             background: rgba(84,126,66,.22) !important;
+05118:             color: var(--mcms-fo-green-strong) !important;
+---
+05118:             color: var(--mcms-fo-green-strong) !important;
+05119:             text-shadow: 0 0 5px rgba(185,255,114,.45) !important;
+05120:         }
+05121:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+05122:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+05123:             background: var(--mcms-fo-amber) !important;
+05124:             color: var(--mcms-fo-ink) !important;
+---
+05119:             text-shadow: 0 0 5px rgba(185,255,114,.45) !important;
+05120:         }
+05121:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+05122:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+05123:             background: var(--mcms-fo-amber) !important;
+05124:             color: var(--mcms-fo-ink) !important;
+05125:             text-shadow: none !important;
+---
+05815:             text-shadow: none !important;
+05816:             box-shadow: inset 0 0 0 2px rgba(6,16,8,.35) !important;
+05817:         }
+05818:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+05819:             border-top: 1px solid rgba(216,25,63,.42) !important;
+05820:             background: rgba(200,16,46,.22) !important;
+05821:             color: var(--mcms-um-white-strong) !important;
+---
+05821:             color: var(--mcms-um-white-strong) !important;
+05822:             text-shadow: 0 0 5px rgba(216,25,63,.45) !important;
+05823:         }
+05824:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+05825:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+05826:             background: var(--mcms-um-amber) !important;
+05827:             color: var(--mcms-um-ink) !important;
+---
+05822:             text-shadow: 0 0 5px rgba(216,25,63,.45) !important;
+05823:         }
+05824:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+05825:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+05826:             background: var(--mcms-um-amber) !important;
+05827:             color: var(--mcms-um-ink) !important;
+05828:             text-shadow: none !important;
+---
+06494:             text-shadow: none !important;
+06495:             box-shadow: inset 0 0 0 2px #c8102e !important;
+06496:         }
+06497:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+06498:             border-top-color: rgba(255,255,255,.20) !important;
+06499:             background: #12151b !important;
+06500:             color: #ffffff !important;
+---
+06500:             color: #ffffff !important;
+06501:             text-shadow: none !important;
+06502:         }
+06503:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+06504:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+06505:             background: var(--mcms-um-amber) !important;
+06506:             color: #11141a !important;
+---
+06501:             text-shadow: none !important;
+06502:         }
+06503:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+06504:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+06505:             background: var(--mcms-um-amber) !important;
+06506:             color: #11141a !important;
+06507:         }
+---
+06994:             color: #ffd18a !important;
+06995:             box-shadow: inset 0 1px rgba(255,255,255,.13), 0 0 12px rgba(226,129,40,.28) !important;
+06996:         }
+06997:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+06998:             border-top-color: rgba(230,151,72,.55) !important;
+06999:             background: #1c1e1b !important;
+07000:             color: #d6bd8d !important;
+---
+06999:             background: #1c1e1b !important;
+07000:             color: #d6bd8d !important;
+07001:         }
+07002:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+07003:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+07004:             background: #2b2d28 !important;
+07005:             color: #f0a24e !important;
+---
+07000:             color: #d6bd8d !important;
+07001:         }
+07002:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+07003:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible {
+07004:             background: #2b2d28 !important;
+07005:             color: #f0a24e !important;
+07006:         }
+---
+10023:             box-shadow:0 11px 25px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.75) !important;
+10024:         }
+10025:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-menu-btn,
+10026:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+10027:             border:1px solid #5d6268 !important;
+10028:             border-radius:2px !important;
+10029:             background:linear-gradient(180deg,#272a2f,#0b0c0e) !important;
+---
+10031:             box-shadow:inset 0 1px rgba(255,255,255,.10),0 2px 6px rgba(0,0,0,.45) !important;
+10032:         }
+10033:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+10034:         html[data-mcms-ui-theme="bond007"] #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover {
+10035:             border-color:#d2b662 !important;
+10036:             color:#f3d989 !important;
+10037:             box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 12px rgba(202,170,84,.22) !important;
+---
+13359:             box-shadow:inset 0 0 0 2px rgba(120,74,22,.9),0 0 17px rgba(74,255,236,.48),0 0 7px rgba(255,222,83,.55) !important;
+13360:             transform:translateY(-1px) scale(1.025) !important;
+13361:         }
+13362:         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-dock-toggle-btn,
+13363:         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-float-btn,
+13364:         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+13365:             border:1px solid rgba(223,190,84,.72) !important;
+---
+13751:             animation:none !important;
+13752:             display:none !important;
+13753:         }
+13754:         html[data-mcms-mobile-active="true"],html[data-mcms-tablet-active="true"]{--mcms-touch-target:44px}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important;width:100%!important;height:var(--mcms-mobile-filter-height,44px)!important;min-height:44px!important;flex-direction:row!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:14px!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId}{width:140px!important;max-width:140px!important;grid-template-columns:repeat(3,44px)!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}{grid-template-columns:145px minmax(0,1fr)!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row{width:145px!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell{width:92px!important;height:48px!important;flex-direction:row!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:15px!important}html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId}{width:145px!important;max-width:145px!important;grid-template-columns:145px!important;grid-template-areas:"menu"!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:1px 0 3px!important;pointer-events:auto!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins::-webkit-scrollbar{display:none!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{flex:0 0 clamp(88px,28vw,118px)!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;scroll-snap-align:start!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{height:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important;padding-bottom:max(10px,calc(8px + env(safe-area-inset-bottom)))!important;scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:3px 2px 7px!important;touch-action:pan-x!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn{flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 11px!important;font-size:10px!important;scroll-snap-align:start!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row{grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-name{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-row{grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-main{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId},html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId}{max-height:calc(var(--mcms-visual-height,100dvh) - 20px)!important;max-width:calc(var(--mcms-visual-width,100vw) - 20px)!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card),html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter),html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId} button,html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId} button{min-width:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.toastId}{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important;max-width:min(320px,calc(var(--mcms-visual-width,100vw) - 20px))!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]){-webkit-touch-callout:none!important;touch-action:manipulation!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]):active{filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important}html[data-mcms-keyboard-open="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important}
+13755:         @media (prefers-reduced-motion:reduce) {
+13756:             html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
+13757:             #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
+---
+29683:             <div class="mcms-launch-row">
+29684:                 <div class="mcms-shell">
+29685:                     <button class="mcms-menu-btn" type="button" title="Open or close toolkit settings" aria-label="Open or close toolkit settings" aria-expanded="false" aria-controls="${SCRIPT.panelId}">🗺️</button>
+29686:                     <button class="mcms-dock-toggle-btn" type="button" title="Collapse command bar" aria-label="Collapse command bar" aria-expanded="true"><span class="mcms-dock-toggle-icon" aria-hidden="true">▴</span></button>
+29687:                 </div>
+29688:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+29689:             </div>
+---
+29732:         }, { passive: true });
+29733:         control.addEventListener('click', event => {
+29734:             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
+29735:             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
+29736:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+29737:             const actionButton = closestEventTarget(event, '[data-action]');
+29738:             if (actionButton?.dataset.mcmsLongPress === 'true') {
+---
+30512:                 economyButton.title = label;
+30513:                 economyButton.dataset.mcmsState = on ? 'on' : 'off';
+30514:             }
+30515:             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
+30516:             if (dockToggleButton) {
+30517:                 const open = state.commandBarOpen !== false;
+30518:                 const label = open ? 'Collapse command bar' : 'Expand command bar';
+---
+30520:                 dockToggleButton.setAttribute('aria-expanded', String(open));
+30521:                 dockToggleButton.setAttribute('aria-label', label);
+30522:                 dockToggleButton.title = label;
+30523:                 const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
+30524:                 if (icon) icon.textContent = open ? '▴' : '▾';
+30525:             }
+30526:         }
+---
+count=29
+
+====================================================================================================
+PATTERN mcms-floating-filter
+02436:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+02442:             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
+---
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+02442:             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
+02443:         }
+02444:         #${SCRIPT.panelId} .mcms-grid-2 [data-toggle="criticalView"] {
+---
+03815:         html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
+03816:             width: 52px !important; max-width: 52px !important; grid-template-columns: 52px !important; grid-template-areas: "menu" !important;
+03817:         }
+03818:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-floating-filter {
+03819:             grid-area: filters !important;
+03820:             display: grid !important;
+03821:             grid-template-columns: repeat(var(--mcms-tablet-filter-columns, 6), minmax(0,1fr)) !important;
+---
+03826:             -webkit-overflow-scrolling: auto !important; touch-action: manipulation !important;
+03827:             pointer-events: none !important;
+03828:         }
+03829:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-floating-filter [data-toggle="criticalView"] { grid-column: auto !important; }
+03830:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-float-btn {
+03831:             position: relative !important; isolation: isolate !important; box-sizing: border-box !important;
+03832:             flex: 0 1 auto !important; width: auto !important; min-width: 0 !important;
+---
+04054:         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {
+04055:             width: 50px !important; max-width: 50px !important; grid-template-columns: 50px !important;
+04056:         }
+04057:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-floating-filter {
+04058:             display: contents !important; grid-area: auto !important; width: auto !important; max-width: none !important;
+04059:             overflow: visible !important; padding: 0 !important; margin: 0 !important; pointer-events: none !important;
+04060:         }
+---
+04058:             display: contents !important; grid-area: auto !important; width: auto !important; max-width: none !important;
+04059:             overflow: visible !important; padding: 0 !important; margin: 0 !important; pointer-events: none !important;
+04060:         }
+04061:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-floating-filter [data-toggle="criticalView"] { grid-column: auto !important; }
+04062:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-float-btn {
+04063:             position: relative !important; isolation: isolate !important; width: auto !important; min-width: 0 !important;
+04064:             height: var(--mcms-mobile-filter-height,44px) !important; display: grid !important;
+---
+04227:         #${SCRIPT.controlId} {
+04228:             transition: width 180ms cubic-bezier(.2,.78,.22,1), max-width 180ms cubic-bezier(.2,.78,.22,1) !important;
+04229:         }
+04230:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+04231:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins {
+04232:             display: none !important;
+04233:             pointer-events: none !important;
+---
+04567:             background: var(--mcms-cp-cyan) !important;
+04568:             color: var(--mcms-cp-ink) !important;
+04569:         }
+04570:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+04571:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-float-btn,
+04572:         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+04573:             position: relative !important;
+---
+05124:             color: var(--mcms-fo-ink) !important;
+05125:             text-shadow: none !important;
+05126:         }
+05127:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+05128:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-float-btn,
+05129:         html[data-mcms-ui-theme="fallout4"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+05130:             border: 1px solid rgba(137,191,92,.72) !important;
+---
+05827:             color: var(--mcms-um-ink) !important;
+05828:             text-shadow: none !important;
+05829:         }
+05830:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+05831:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-float-btn,
+05832:         html[data-mcms-ui-theme="umbrella"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+05833:             border: 1px solid rgba(216,25,63,.72) !important;
+---
+07004:             background: #2b2d28 !important;
+07005:             color: #f0a24e !important;
+07006:         }
+07007:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-floating-filter { gap: 5px !important; }
+07008:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-float-btn,
+07009:         html[data-mcms-ui-theme="factorio"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+07010:             border: 1px solid #55584f !important;
+---
+14285:         const dockWidth = Math.max(1, Math.min(960, availableMapWidth));
+14286:         const contentWidth = Math.max(1, dockWidth - menuWidth - gap);
+14287: 
+14288:         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+14289:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+14290:         const preferredFilterWidth = contentWidth >= 600 ? 92 : 82;
+14291:         const preferredPinWidth = contentWidth >= 600 ? 78 : 70;
+---
+14352:         const nudgeY = Math.abs(Number(state.nudge?.y) || 0);
+14353:         const mapWidth = Math.min(rect.width, viewport.width);
+14354:         const dockWidth = Math.max(1, Math.min(1000, mapWidth - (margin * 2) - nudgeX));
+14355:         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+14356:         const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;
+14357:         const commandCount = launchSlotCount + filterCount;
+14358:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+---
+29687:                 </div>
+29688:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+29689:             </div>
+29690:             <div class="mcms-floating-filter" title="Persistent map visibility filters">
+29691:                 ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
+29692:                 ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
+29693:                 ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+---
+count=14
+
+====================================================================================================
+PATTERN mcms-screen-pins
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+02442:             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
+02443:         }
+---
+02467:         #${SCRIPT.controlId} .mcms-float-label-mobile { display: none !important; }
+02468:         #${SCRIPT.controlId} .mcms-float-btn.mcms-on { background: rgba(25,118,210,.78) !important; color: #fff !important; border-color: rgba(120,190,255,.8) !important; }
+02469:         #${SCRIPT.controlId} .mcms-float-btn.mcms-on .mcms-float-key { background: rgba(255,255,255,.22) !important; }
+02470:         #${SCRIPT.controlId} .mcms-screen-pins {
+02471:             display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 4px !important; margin-top: 6px !important;
+02472:             width: 160px !important; max-height: 156px !important; overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin !important;
+02473:         }
+---
+02471:             display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 4px !important; margin-top: 6px !important;
+02472:             width: 160px !important; max-height: 156px !important; overflow-y: auto !important; overflow-x: hidden !important; scrollbar-width: thin !important;
+02473:         }
+02474:         #${SCRIPT.controlId} .mcms-screen-pins:empty { display: none !important; }
+02475:         #${SCRIPT.controlId} .mcms-screen-pin-btn {
+02476:             height: 25px !important; min-width: 0 !important; padding: 0 6px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; color: #fff !important;
+02477:         }
+---
+03879:             font-size: clamp(9px,1.1vw,10.25px) !important; line-height: 1.03 !important; letter-spacing: -.08px !important;
+03880:             font-weight: 900 !important; text-align: left !important; padding-right: 4px !important; text-shadow: 0 1px 2px rgba(0,0,0,.72) !important;
+03881:         }
+03882:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+03883:             grid-area: pins !important;
+03884:             display: grid !important;
+03885:             grid-template-columns: repeat(var(--mcms-tablet-pin-columns, 4), minmax(0,1fr)) !important;
+---
+03889:             overscroll-behavior: auto !important; -webkit-overflow-scrolling: auto !important; touch-action: manipulation !important;
+03890:             pointer-events: none !important;
+03891:         }
+03892:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pins:empty { display: none !important; }
+03893:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+03894:             flex: 0 1 auto !important; width: auto !important; min-width: 0 !important;
+03895:             height: var(--mcms-tablet-pin-height, 42px) !important; padding: 0 12px !important;
+---
+04101:             font-size:clamp(7.5px,2.15vw,9px) !important; line-height:1 !important; font-weight:950 !important; letter-spacing:-.15px !important;
+04102:             text-align:left !important; text-shadow:0 1px 2px rgba(0,0,0,.78) !important;
+04103:         }
+04104:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+04105:             grid-area:auto !important; grid-column:1 / -1 !important; display:grid !important;
+04106:             grid-template-columns:repeat(var(--mcms-mobile-pin-columns,4),minmax(0,1fr)) !important;
+04107:             grid-auto-flow:row !important; justify-self:stretch !important; align-self:stretch !important;
+---
+04110:             box-sizing:border-box !important; margin:0 !important; padding:0 !important;
+04111:             overflow:visible !important; pointer-events:none !important;
+04112:         }
+04113:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins:empty { display:none !important; }
+04114:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+04115:             -webkit-appearance:none !important; appearance:none !important;
+04116:             display:flex !important; align-items:center !important; justify-content:center !important;
+---
+04228:             transition: width 180ms cubic-bezier(.2,.78,.22,1), max-width 180ms cubic-bezier(.2,.78,.22,1) !important;
+04229:         }
+04230:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+04231:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins {
+04232:             display: none !important;
+04233:             pointer-events: none !important;
+04234:         }
+---
+13146:                 display:none !important;
+13147:             }
+13148:         }
+13149:         #${SCRIPT.controlId} .mcms-screen-pins {
+13150:             display:flex !important;
+13151:             flex-wrap:wrap !important;
+13152:             grid-template-columns:none !important;
+---
+13218:         #${SCRIPT.panelId} .mcms-bookmark-name-btn:focus-visible .mcms-bookmark-name-main {
+13219:             text-decoration:underline !important;
+13220:         }
+13221:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+13222:             display:flex !important;
+13223:             flex-wrap:wrap !important;
+13224:             justify-content:flex-start !important;
+---
+13239:             border-radius:9px !important;
+13240:             font-size:10px !important;
+13241:         }
+13242:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {
+13243:             display:flex !important;
+13244:             flex-wrap:wrap !important;
+13245:             justify-content:flex-start !important;
+---
+13751:             animation:none !important;
+13752:             display:none !important;
+13753:         }
+13754:         html[data-mcms-mobile-active="true"],html[data-mcms-tablet-active="true"]{--mcms-touch-target:44px}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important;width:100%!important;height:var(--mcms-mobile-filter-height,44px)!important;min-height:44px!important;flex-direction:row!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:14px!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId}{width:140px!important;max-width:140px!important;grid-template-columns:repeat(3,44px)!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}{grid-template-columns:145px minmax(0,1fr)!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row{width:145px!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell{width:92px!important;height:48px!important;flex-direction:row!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:15px!important}html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId}{width:145px!important;max-width:145px!important;grid-template-columns:145px!important;grid-template-areas:"menu"!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:1px 0 3px!important;pointer-events:auto!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins::-webkit-scrollbar{display:none!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{flex:0 0 clamp(88px,28vw,118px)!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;scroll-snap-align:start!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{height:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important;padding-bottom:max(10px,calc(8px + env(safe-area-inset-bottom)))!important;scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:3px 2px 7px!important;touch-action:pan-x!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn{flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 11px!important;font-size:10px!important;scroll-snap-align:start!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row{grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-name{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-row{grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-main{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId},html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId}{max-height:calc(var(--mcms-visual-height,100dvh) - 20px)!important;max-width:calc(var(--mcms-visual-width,100vw) - 20px)!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card),html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter),html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId} button,html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId} button{min-width:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.toastId}{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important;max-width:min(320px,calc(var(--mcms-visual-width,100vw) - 20px))!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]){-webkit-touch-callout:none!important;touch-action:manipulation!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]):active{filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important}html[data-mcms-keyboard-open="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important}
+13755:         @media (prefers-reduced-motion:reduce) {
+13756:             html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
+13757:             #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
+---
+14286:         const contentWidth = Math.max(1, dockWidth - menuWidth - gap);
+14287: 
+14288:         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+14289:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+14290:         const preferredFilterWidth = contentWidth >= 600 ? 92 : 82;
+14291:         const preferredPinWidth = contentWidth >= 600 ? 78 : 70;
+14292: 
+---
+14355:         const filterCount = Math.max(1, control.querySelectorAll('.mcms-floating-filter .mcms-float-btn').length);
+14356:         const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;
+14357:         const commandCount = launchSlotCount + filterCount;
+14358:         const pinCount = control.querySelectorAll('.mcms-screen-pins .mcms-screen-pin-btn').length;
+14359:         const minCommandWidth = viewport.orientation === 'landscape' ? 68 : 62;
+14360:         const maxPortraitColumns = viewport.orientation === 'portrait' ? 5 : commandCount;
+14361:         let columns = Math.max(3, Math.min(commandCount, maxPortraitColumns, Math.floor((dockWidth + gap) / (minCommandWidth + gap)) || 3));
+---
+29700:                 ${makeActionFloatButton('open-vehicle-status', 'V', 'Veh Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Veh Codes', 'Codes')}
+29701:                 ${makeActionFloatButton('open-critical-drawer', 'W', 'Age Watch', 'Open or close Mission Age Watch. Shortcut: W', 'Age Watch', 'Watch')}
+29702:             </div>
+29703:             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
+29704:         `;
+29705:         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+29706:             control.addEventListener(eventName, stopMapInteraction, { passive: false });
+---
+30165:     }
+30166: 
+30167:     function renderScreenPins() {
+30168:         const dock = document.querySelector(`#${SCRIPT.controlId} .mcms-screen-pins`);
+30169:         if (!dock) return;
+30170:         const entries = [];
+30171:         for (const place of QUICK_PLACES) {
+---
+count=16
+
+====================================================================================================
+PATTERN data-mcms-command
+02436:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:hover,
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+02442:             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
+---
+02437:         #${SCRIPT.controlId} .mcms-dock-toggle-btn:focus-visible { background: rgba(86,169,255,.22) !important; color: #fff !important; }
+02438:         #${SCRIPT.controlId} .mcms-dock-toggle-icon { display: block !important; transform: translateY(-1px) !important; }
+02439:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+02440:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins { display: none !important; }
+02441:         #${SCRIPT.controlId} .mcms-floating-filter {
+02442:             display: grid !important; grid-template-columns: repeat(2, 82px) !important; gap: 4px !important; margin-top: 6px !important; width: 168px !important;
+02443:         }
+---
+03812:         }
+03813:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn { font-size: 22px !important; }
+03814:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn { height: 16px !important; flex-basis: 16px !important; font-size: 12px !important; }
+03815:         html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
+03816:             width: 52px !important; max-width: 52px !important; grid-template-columns: 52px !important; grid-template-areas: "menu" !important;
+03817:         }
+03818:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-floating-filter {
+---
+04051:         }
+04052:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn { font-size: 19px !important; }
+04053:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn { height: 14px !important; flex-basis: 14px !important; font-size: 10px !important; }
+04054:         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {
+04055:             width: 50px !important; max-width: 50px !important; grid-template-columns: 50px !important;
+04056:         }
+04057:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-floating-filter {
+---
+04227:         #${SCRIPT.controlId} {
+04228:             transition: width 180ms cubic-bezier(.2,.78,.22,1), max-width 180ms cubic-bezier(.2,.78,.22,1) !important;
+04229:         }
+04230:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+04231:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins {
+04232:             display: none !important;
+04233:             pointer-events: none !important;
+---
+04228:             transition: width 180ms cubic-bezier(.2,.78,.22,1), max-width 180ms cubic-bezier(.2,.78,.22,1) !important;
+04229:         }
+04230:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-floating-filter,
+04231:         html[data-mcms-command-bar-open="false"] #${SCRIPT.controlId} .mcms-screen-pins {
+04232:             display: none !important;
+04233:             pointer-events: none !important;
+04234:         }
+---
+11677:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row { grid-area:menu !important; width:109px !important; gap:5px !important; }
+11678:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell { grid-area:auto !important; width:52px !important; }
+11679:         html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-economy-btn { width:52px !important; height:48px !important; border-radius:13px !important; }
+11680:         html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {
+11681:             width:109px !important; max-width:109px !important; grid-template-columns:109px !important; grid-template-areas:"menu" !important;
+11682:         }
+11683:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-launch-row { display:contents !important; }
+---
+11684:         html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-economy-btn {
+11685:             width:auto !important; min-width:0 !important; height:var(--mcms-mobile-filter-height,44px) !important; border-radius:10px !important; pointer-events:auto !important;
+11686:         }
+11687:         html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {
+11688:             width:104px !important; max-width:104px !important; grid-template-columns:50px 50px !important;
+11689:         }
+11690:         html[data-mcms-economy="true"] .leaflet-tile-pane img.leaflet-tile { filter:none !important; }
+---
+13751:             animation:none !important;
+13752:             display:none !important;
+13753:         }
+13754:         html[data-mcms-mobile-active="true"],html[data-mcms-tablet-active="true"]{--mcms-touch-target:44px}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tr{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-bl{left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-br{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important;width:100%!important;height:var(--mcms-mobile-filter-height,44px)!important;min-height:44px!important;flex-direction:row!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:14px!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId}{width:140px!important;max-width:140px!important;grid-template-columns:repeat(3,44px)!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell{grid-column:span 2!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}{grid-template-columns:145px minmax(0,1fr)!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row{width:145px!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell{width:92px!important;height:48px!important;flex-direction:row!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn{min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn{width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:15px!important}html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId}{width:145px!important;max-width:145px!important;grid-template-columns:145px!important;grid-template-areas:"menu"!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:1px 0 3px!important;pointer-events:auto!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins::-webkit-scrollbar{display:none!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{flex:0 0 clamp(88px,28vw,118px)!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;scroll-snap-align:start!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn{height:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important;padding-bottom:max(10px,calc(8px + env(safe-area-inset-bottom)))!important;scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs{display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:3px 2px 7px!important;touch-action:pan-x!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn{flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 11px!important;font-size:10px!important;scroll-snap-align:start!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row{grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-name{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-row{grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-main{grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId},html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId},html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId},html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId}{max-height:calc(var(--mcms-visual-height,100dvh) - 20px)!important;max-width:calc(var(--mcms-visual-width,100vw) - 20px)!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}html[data-mcms-mobile-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter,.mcms-critical-summary-card),html[data-mcms-tablet-active="true"] #${SCRIPT.criticalDrawerId} :is(button,.mcms-critical-filter,.mcms-critical-type-filter,.mcms-critical-category-filter),html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId} :is(button,.mcms-vcs-refresh,.mcms-vcs-close),html[data-mcms-mobile-active="true"] #${SCRIPT.majorIncidentFeedId} button,html[data-mcms-tablet-active="true"] #${SCRIPT.majorIncidentFeedId} button{min-width:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.toastId}{right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important;max-width:min(320px,calc(var(--mcms-visual-width,100vw) - 20px))!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]){-webkit-touch-callout:none!important;touch-action:manipulation!important}html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.criticalDrawerId},#${SCRIPT.vehicleStatusId},#${SCRIPT.majorIncidentFeedId}) :is(button,[role="button"]):active{filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important}html[data-mcms-keyboard-open="true"] #${SCRIPT.panelId}{max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important}
+13755:         @media (prefers-reduced-motion:reduce) {
+13756:             html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
+13757:             #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
+---
+14455:         setAttributeIfChanged(root, 'data-mcms-mission-pulse', String(Boolean(state.missionPulse)));
+14456:         setAttributeIfChanged(root, 'data-mcms-road-priority', String(Boolean(state.roadPriority)));
+14457:         setAttributeIfChanged(root, 'data-mcms-compact-dock', String(Boolean(state.compactDock)));
+14458:         setAttributeIfChanged(root, 'data-mcms-command-bar-open', String(state.commandBarOpen !== false));
+14459:         setAttributeIfChanged(root, 'data-mcms-economy', String(Boolean(state.economyMode)));
+14460:         setAttributeIfChanged(root, 'data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
+14461:         activeDeviceLayout = resolveDeviceLayout();
+---
+31625:             criticalMissionStableCache.clear();
+31626:             removeOldInstances();
+31627:             const root = document.documentElement;
+31628:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+31629:         });
+31630:         runtimeSetTimeout(() => runAutoNight(true), 180);
+31631:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+---
+count=11
+
+====================================================================================================
+PATTERN applyRootAttributes
+13765:     removeOldInstances();
+13766:     try { localStorage.removeItem('mc_map_command_toolkit_attention_v170'); } catch (err) {}
+13767:     installMainStyles();
+13768:     applyRootAttributes();
+13769: 
+13770:     function isVisible(el) {
+13771:         if (!el || !(el instanceof Element)) return false;
+---
+13893:     function setRootStylePropertyIfChanged(root,name,value){if(!root?.style||root.style.getPropertyValue(name)===value)return false;root.style.setProperty(name,value);return true;}
+13894:     function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
+13895:     for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
+13896:     function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))applyTabletPanelPosition();scheduleCriticalDrawerDock(0);scheduleMajorIncidentFeedLayout();}
+13897:     function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
+13898:     function hasCoarsePointer() {
+13899:         try {
+---
+14427:         tabletLayoutTimer = runtimeSetTimeout(() => {
+14428:         tabletLayoutTimer = null;
+14429:         const previousLayout = activeDeviceLayout;
+14430:         applyRootAttributes();
+14431:         const panel = document.getElementById(SCRIPT.panelId);
+14432:         refreshTabletModeUi(panel);
+14433:         if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+---
+14446:         return true;
+14447:     }
+14448: 
+14449:     function applyRootAttributes() {
+14450:         const root = document.documentElement;
+14451:         setAttributeIfChanged(root, 'data-mcms-ui-theme', normaliseUiTheme(state.uiTheme));
+14452:         setAttributeIfChanged(root, 'data-mc-map-skin', state.theme);
+---
+17989:         }
+17990:         state.economyMode = next;
+17991:         saveState();
+17992:         applyRootAttributes();
+17993:         const map = findLeafletMapInstance(false);
+17994:         if (next) {
+17995:         applyLeafletEconomyPolicy(map);
+---
+23805:             criticalDrawer?.classList.remove('mcms-open');
+23806:             criticalDrawer?.setAttribute('aria-hidden', 'true');
+23807:             saveState();
+23808:             applyRootAttributes();
+23809:             updateUI();
+23810:             synchroniseVehicleMarkerClasses();
+23811:             synchronisePersonalBuildingVisibility();
+---
+23854:             state.missionAge = true;
+23855:             state.unitCommitment = true;
+23856: 
+23857:             applyRootAttributes();
+23858:             updateUI();
+23859:             synchroniseVehicleMarkerClasses();
+23860:             synchronisePersonalBuildingVisibility();
+---
+24442:         if (state.missionSpawn.enabled) primeMissionSpawnDetector();
+24443:         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+24444:         else stopAutoLoadAllVehicles();
+24445:         applyRootAttributes();
+24446:         renderQuickPlaces();
+24447:         renderBookmarks();
+24448:         renderProfiles();
+---
+28739:     function applyTheme(themeKey, persist = true) {
+28740:         state.theme = normaliseTheme(themeKey);
+28741:         if (persist) saveState();
+28742:         applyRootAttributes();
+28743:         updateUI();
+28744:         showToast(THEMES[state.theme].full);
+28745:     }
+---
+28948:         }
+28949:         if (state.cleanMode) closePanel();
+28950:         if (!criticalViewActive) saveState();
+28951:         applyRootAttributes();
+28952:         updateUI();
+28953:         applyMapVisibilityToggleEffects(feature);
+28954:         reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+---
+28999:         state.autoNight.lastBucket = bucket;
+29000:         state.theme = bucket === 'night' ? normaliseTheme(state.autoNight.nightTheme) : normaliseTheme(state.autoNight.dayTheme);
+29001:         saveState();
+29002:         applyRootAttributes();
+29003:         updateUI();
+29004:     }
+29005:     function isNightNow(start, end) {
+---
+29217:     function openPanel() {
+29218:         const panel = document.getElementById(SCRIPT.panelId) || createPanel();
+29219:         if (!panel) return;
+29220:         applyRootAttributes();
+29221:         refreshTabletModeUi(panel);
+29222:         panel.classList.add('mcms-open');
+29223:         panel.setAttribute('aria-hidden', 'false');
+---
+30341:             if (nextValue === 'on') state.mobileMode = 'off';
+30342:         } else return false;
+30343:         saveState();
+30344:         applyRootAttributes();
+30345:         refreshTabletModeUi();
+30346:         if (previousLayout !== activeDeviceLayout && !isTouchLayoutActive()) {
+30347:             clearTabletPanelSizing();
+---
+30460:         }
+30461:     }
+30462:     function updateUI() {
+30463:         applyRootAttributes();
+30464:         operationalWindowSyncSettingsUi();
+30465:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+30466:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+---
+31400:         const bootPerformanceStartedAt = startupClock();
+31401:         const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
+31402:         if (!allianceBuildingsOnly) startBootAttemptCoordinator(bootPerformanceStartedAt);
+31403:         runBootIntegration('root attributes', applyRootAttributes);
+31404:         runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
+31405:         if (allianceBuildingsOnly) return;
+31406:         runBootIntegration('clean-mode exit', createCleanExit);
+---
+31496:         }, true);
+31497:         runtimeListen(pageWindow, 'resize', () => {
+31498:             invalidateMapElementCache();
+31499:             applyRootAttributes();
+31500:             refreshTabletModeUi();
+31501:             scheduleVisualViewportStabilisation('window-resize');
+31502:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+---
+count=16
+
+====================================================================================================
+PATTERN toggleCommandBar
+28773:         updateUI();
+28774:     }
+28775: 
+28776:     function toggleCommandBar() {
+28777:         if (commandBarAnimating) return;
+28778:         const control = document.getElementById(SCRIPT.controlId);
+28779:         const opening = state.commandBarOpen === false;
+---
+29741:                 return;
+29742:             }
+29743:             if (menuButton) { togglePanel(); return; }
+29744:             if (dockToggleButton) { toggleCommandBar(); return; }
+29745:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+29746:             if (actionButton) handleAction(actionButton);
+29747:         });
+---
+count=2
+
+====================================================================================================
+PATTERN operationalSuiteScan
+01320:     const missionRequirementsObservedDocuments = new WeakSet();
+01321:     const missionRequirementsObservedFrames = new WeakSet();
+01322:     const missionRequirementsRecords = new Map();
+01323:     let operationalSuiteScanTimer = null;
+01324:     let operationalSuiteInstalled = false;
+01325:     let operationalSuiteRevision = 0;
+01326:     const operationalSuiteContexts = new Map();
+---
+22793: 
+22794:     function operationalWindowApplyDependencies(panel) { const root = operationalQuery(panel, '[data-operational-settings-root]'); if (!root) return; operationalQueryAll(root, '[data-operational-row],[data-operational-editor]').forEach(row => { const path = operationalQuery(row, '[data-operational-setting]')?.dataset?.operationalSetting; const enabled = path === 'enabled' || operationalWindowDependenciesMet(row.dataset.operationalRequires,row.dataset.operationalForbids); row.classList.toggle('mcms-op-disabled',!enabled); row.setAttribute('aria-disabled',String(!enabled)); operationalQueryAll(row,'input,select,textarea,button').forEach(control => { control.disabled = !enabled; }); }); }
+22795:     function operationalWindowParseValue(type,value,checked=false,control=null) { if(type==='boolean')return checked===true;if(type==='number')return Number(value);if(type==='csv')return String(value||'').split(',').map(item=>item.trim()).filter(Boolean);if(type==='multiselect')return Array.from(control?.selectedOptions||[],option=>String(option.value));return String(value??''); }
+22796:     function operationalWindowCommit(message = 'Operational Window setting saved') { state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow,state.operationalWindow?.requirements?.enabled !== false); saveState(); scheduleOperationalSuiteScan(0); updateUI(); showToast(message); }
+22797:     function operationalWindowRefreshSettingsPanel(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) { const root = operationalQuery(panel,'[data-operational-settings-root]'); if (!root) return; const scroll = panel.scrollTop; operationalReplaceContent(root,operationalWindowSettingsInnerMarkup()); operationalWindowSyncSettingsUi(panel); panel.scrollTop = scroll; }
+22798: 
+22799:     function handleOperationalWindowAction(button) { const action = button?.dataset?.operationalAction; const path = button?.dataset?.operationalPath; if (!action || !path) return false; const editor = OP_OPERATIONAL_EDITORS.find(item => item.p === path); if (!editor) return false; const list = [...(operationalFeatureValue(path) || [])]; const index = Number(button.dataset.operationalIndex); if (action === 'add') list.push(JSON.parse(JSON.stringify(editor.v))); else if (action === 'remove' && Number.isInteger(index)) list.splice(index,1); else if (action === 'up' && index > 0) [list[index-1],list[index]] = [list[index],list[index-1]]; else if (action === 'down' && index >= 0 && index < list.length - 1) [list[index+1],list[index]] = [list[index],list[index+1]]; else return true; operationalFeatureSet(path,list); operationalWindowCommit(`${editor.l} updated`); operationalWindowRefreshSettingsPanel(); return true; }
+---
+22873:         const patientText=patients.map(node=>String(node.textContent||'').toLocaleLowerCase('en-GB')).join(' '),equipment=[['Ambulance',/ambulance|transport|hospital/u],['Critical care',/critical care|doctor|physician|ccp/u],['HEMS',/hems|helicopter/u]].map(([label,pattern])=>[label,patients.filter(node=>pattern.test(String(node.textContent||'').toLocaleLowerCase('en-GB'))).length]).filter(([,count])=>count);if(settings.patientSummary){const summary=[`Patients ${patients.length}`,...equipment.map(([label,count])=>`${label} ${count}`)].join(' · ');bar.appendChild(operationalFeatureBadge(doc,summary,'call-patients','info'));}
+22874:         const generation=operationalGenerationTimestamp(doc);if(settings.generationDate&&generation.raw){const label=operationalFeatureBadge(doc,`Generated ${generation.raw}`,'call-generation','default'),age=Number.isFinite(generation.timestamp)?Date.now()-generation.timestamp:0,expiryNode=operationalQuery(doc,'[data-expires-at],[data-expire-at],.mission-expiring,.mission_expiring'),expiryRaw=expiryNode?.getAttribute?.('data-expires-at')||expiryNode?.getAttribute?.('data-expire-at'),expiry=Date.parse(String(expiryRaw||''));if(settings.yellowBorderHours>0&&age>=Number(settings.yellowBorderHours)*3600000)label.classList.add('mcms-operational-generation-aged');if(settings.redBorder&&(expiryNode?.matches?.('.mission-expiring,.mission_expiring')||(Number.isFinite(expiry)&&expiry-Date.now()<=86400000)))label.classList.add('mcms-operational-generation-expiring');bar.appendChild(label);}
+22875:         const grouped=new Map();for(const row of selectedRows){const token=operationalVehicleTypeToken(row)||'Unknown';grouped.set(token,(grouped.get(token)||0)+1);}const selectedCount=Math.max(selectedRows.length,selectedSnapshot.length);if(settings.selectedVehicleCounter||settings.stagingAreaSelectedCounter){let text=`Selected ${selectedCount}`;if(settings.selectedVehicleCounter){const quick=(settings.selectedVehicleCounterVehicleTypes||[]).map(String),parts=[...grouped].filter(([type])=>!quick.length||quick.includes(type)).map(([type,count])=>`Type ${type} ×${count}`);if(parts.length)text+=` · ${parts.join(' · ')}`;}bar.appendChild(operationalFeatureBadge(doc,text,'call-selected','primary'));}if(settings.vehicleCounter)bar.appendChild(operationalFeatureBadge(doc,`Vehicles ${vehicles.length}`,'call-vehicles',settings.vehicleCounterColor));if(settings.playerCounter){const players=new Set(vehicles.map(row=>row.dataset?.userId||row.getAttribute?.('data-user-id')||row.dataset?.userName||row.getAttribute?.('data-user-name')).filter(Boolean));bar.appendChild(operationalFeatureBadge(doc,`Players ${players.size}`,'call-players',settings.playerCounterColor));}
+22876:         if(settings.collapsiblePatients&&patients.length>=Number(settings.collapsiblePatientsMinPatients||0)){if(feature.patientCollapsed===null)feature.patientCollapsed=true;patients.forEach(node=>node.classList.toggle('mcms-operational-patient-hidden',feature.patientCollapsed));bar.appendChild(operationalFeatureButton(doc,feature.patientCollapsed?'Show patients':'Minimise patients','call-patient-toggle',()=>{feature.patientCollapsed=!feature.patientCollapsed;scheduleOperationalSuiteScan(0);}));}else feature.patientCollapsed=null;if(settings.remainingPatientTime)patients.forEach((node,index)=>{const seconds=operationalNodeDuration(node);if(seconds)(operationalQuery(node,'td:last-child,.patient-actions')||node).appendChild(operationalFeatureBadge(doc,operationalFormatDuration(seconds),`call-patient-time-${index}`,'info'));});
+22877:         const vehicleList=operationalQuery(doc,'#vehicle_show_table_body_all,#vehicle_show_table,.vehicle-list,.available-vehicles');if(settings.hideVehicleList&&vehicleList){if(feature.vehicleListHidden===null)feature.vehicleListHidden=true;vehicleList.classList.toggle('mcms-operational-vehicle-hidden',feature.vehicleListHidden);bar.appendChild(operationalFeatureButton(doc,feature.vehicleListHidden?'Show vehicles':'Hide vehicles','call-vehicle-toggle',()=>{feature.vehicleListHidden=!feature.vehicleListHidden;scheduleOperationalSuiteScan(0);}));}else feature.vehicleListHidden=null;if(settings.vehicleListPermanentSearch&&vehicles.length){const input=operationalFeatureOwn(doc.createElement('input'),'call-vehicle-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search vehicles';input.oninput=()=>{const query=input.value.trim().toLocaleLowerCase('en-GB');vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',Boolean(query)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(query)));};bar.appendChild(input);}if(settings.vehicleTypeInList)vehicles.forEach((row,index)=>{const type=operationalVehicleTypeToken(row);if(type)(operationalQuery(row,'td')||row).appendChild(operationalFeatureBadge(doc,`Type ${type}`,`call-vehicle-type-${index}`,'default'));});
+22878:         if((settings.tailoredTabs||[]).length&&vehicles.length){const tabs=operationalFeatureOwn(doc.createElement('div'),'call-tailored-tabs');tabs.className='mcms-operational-tailored-tabs';const configs=[{name:'All',vehicleTypes:[],color:''},...(settings.tailoredTabs||[])];configs.forEach((config,index)=>{const key=index?'tab-'+index:'all',button=operationalFeatureButton(doc,String(config?.name||`Tab ${index}`),`call-tab-${index}`,()=>{feature.vehicleTab=key;scheduleOperationalSuiteScan(0);},'btn btn-default btn-sm');button.setAttribute('aria-pressed',String(feature.vehicleTab===key));if(config?.color)button.style.borderColor=operationalSafeColour(config.color);tabs.appendChild(button);});bar.appendChild(tabs);const active=configs[feature.vehicleTab==='all'?0:Number(String(feature.vehicleTab).replace('tab-',''))]||configs[0],allowed=new Set((active.vehicleTypes||[]).map(String));vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',allowed.size&&!allowed.has(operationalVehicleTypeToken(row))));}
+22879:         const durations=selectedRows.map(operationalNodeDuration).filter(Boolean);if(settings.alarmTime&&durations.length)bar.appendChild(operationalFeatureBadge(doc,`Longest journey ${operationalFormatDuration(Math.max(...durations))}`,'call-alarm-time','warning'));const reload=operationalQuery(doc,'#load_more_vehicles,[data-action="load-more-vehicles"],a[href*="load_more_vehicles"],button[name="load_more_vehicles"]');if(settings.loadMoreVehiclesInHeader&&reload)bar.appendChild(operationalFeatureButton(doc,'Reload vehicles','call-reload-vehicles',()=>reload.click()));const center=operationalQuery(doc,'.map_position_mover,[data-action="center-map"],#map_position');if(settings.centerMap&&center)bar.appendChild(operationalFeatureButton(doc,'Centre map','call-center-map',()=>center.click()));if(settings.stickyHeader)operationalQueryAll(doc,'#vehicle_show_table thead,.mission-header,.panel-heading').forEach(node=>{node.style.position='sticky';node.style.top='0';node.style.zIndex='4';node.dataset.mcmsOperationalSticky='true';});
+---
+22874:         const generation=operationalGenerationTimestamp(doc);if(settings.generationDate&&generation.raw){const label=operationalFeatureBadge(doc,`Generated ${generation.raw}`,'call-generation','default'),age=Number.isFinite(generation.timestamp)?Date.now()-generation.timestamp:0,expiryNode=operationalQuery(doc,'[data-expires-at],[data-expire-at],.mission-expiring,.mission_expiring'),expiryRaw=expiryNode?.getAttribute?.('data-expires-at')||expiryNode?.getAttribute?.('data-expire-at'),expiry=Date.parse(String(expiryRaw||''));if(settings.yellowBorderHours>0&&age>=Number(settings.yellowBorderHours)*3600000)label.classList.add('mcms-operational-generation-aged');if(settings.redBorder&&(expiryNode?.matches?.('.mission-expiring,.mission_expiring')||(Number.isFinite(expiry)&&expiry-Date.now()<=86400000)))label.classList.add('mcms-operational-generation-expiring');bar.appendChild(label);}
+22875:         const grouped=new Map();for(const row of selectedRows){const token=operationalVehicleTypeToken(row)||'Unknown';grouped.set(token,(grouped.get(token)||0)+1);}const selectedCount=Math.max(selectedRows.length,selectedSnapshot.length);if(settings.selectedVehicleCounter||settings.stagingAreaSelectedCounter){let text=`Selected ${selectedCount}`;if(settings.selectedVehicleCounter){const quick=(settings.selectedVehicleCounterVehicleTypes||[]).map(String),parts=[...grouped].filter(([type])=>!quick.length||quick.includes(type)).map(([type,count])=>`Type ${type} ×${count}`);if(parts.length)text+=` · ${parts.join(' · ')}`;}bar.appendChild(operationalFeatureBadge(doc,text,'call-selected','primary'));}if(settings.vehicleCounter)bar.appendChild(operationalFeatureBadge(doc,`Vehicles ${vehicles.length}`,'call-vehicles',settings.vehicleCounterColor));if(settings.playerCounter){const players=new Set(vehicles.map(row=>row.dataset?.userId||row.getAttribute?.('data-user-id')||row.dataset?.userName||row.getAttribute?.('data-user-name')).filter(Boolean));bar.appendChild(operationalFeatureBadge(doc,`Players ${players.size}`,'call-players',settings.playerCounterColor));}
+22876:         if(settings.collapsiblePatients&&patients.length>=Number(settings.collapsiblePatientsMinPatients||0)){if(feature.patientCollapsed===null)feature.patientCollapsed=true;patients.forEach(node=>node.classList.toggle('mcms-operational-patient-hidden',feature.patientCollapsed));bar.appendChild(operationalFeatureButton(doc,feature.patientCollapsed?'Show patients':'Minimise patients','call-patient-toggle',()=>{feature.patientCollapsed=!feature.patientCollapsed;scheduleOperationalSuiteScan(0);}));}else feature.patientCollapsed=null;if(settings.remainingPatientTime)patients.forEach((node,index)=>{const seconds=operationalNodeDuration(node);if(seconds)(operationalQuery(node,'td:last-child,.patient-actions')||node).appendChild(operationalFeatureBadge(doc,operationalFormatDuration(seconds),`call-patient-time-${index}`,'info'));});
+22877:         const vehicleList=operationalQuery(doc,'#vehicle_show_table_body_all,#vehicle_show_table,.vehicle-list,.available-vehicles');if(settings.hideVehicleList&&vehicleList){if(feature.vehicleListHidden===null)feature.vehicleListHidden=true;vehicleList.classList.toggle('mcms-operational-vehicle-hidden',feature.vehicleListHidden);bar.appendChild(operationalFeatureButton(doc,feature.vehicleListHidden?'Show vehicles':'Hide vehicles','call-vehicle-toggle',()=>{feature.vehicleListHidden=!feature.vehicleListHidden;scheduleOperationalSuiteScan(0);}));}else feature.vehicleListHidden=null;if(settings.vehicleListPermanentSearch&&vehicles.length){const input=operationalFeatureOwn(doc.createElement('input'),'call-vehicle-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search vehicles';input.oninput=()=>{const query=input.value.trim().toLocaleLowerCase('en-GB');vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',Boolean(query)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(query)));};bar.appendChild(input);}if(settings.vehicleTypeInList)vehicles.forEach((row,index)=>{const type=operationalVehicleTypeToken(row);if(type)(operationalQuery(row,'td')||row).appendChild(operationalFeatureBadge(doc,`Type ${type}`,`call-vehicle-type-${index}`,'default'));});
+22878:         if((settings.tailoredTabs||[]).length&&vehicles.length){const tabs=operationalFeatureOwn(doc.createElement('div'),'call-tailored-tabs');tabs.className='mcms-operational-tailored-tabs';const configs=[{name:'All',vehicleTypes:[],color:''},...(settings.tailoredTabs||[])];configs.forEach((config,index)=>{const key=index?'tab-'+index:'all',button=operationalFeatureButton(doc,String(config?.name||`Tab ${index}`),`call-tab-${index}`,()=>{feature.vehicleTab=key;scheduleOperationalSuiteScan(0);},'btn btn-default btn-sm');button.setAttribute('aria-pressed',String(feature.vehicleTab===key));if(config?.color)button.style.borderColor=operationalSafeColour(config.color);tabs.appendChild(button);});bar.appendChild(tabs);const active=configs[feature.vehicleTab==='all'?0:Number(String(feature.vehicleTab).replace('tab-',''))]||configs[0],allowed=new Set((active.vehicleTypes||[]).map(String));vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',allowed.size&&!allowed.has(operationalVehicleTypeToken(row))));}
+22879:         const durations=selectedRows.map(operationalNodeDuration).filter(Boolean);if(settings.alarmTime&&durations.length)bar.appendChild(operationalFeatureBadge(doc,`Longest journey ${operationalFormatDuration(Math.max(...durations))}`,'call-alarm-time','warning'));const reload=operationalQuery(doc,'#load_more_vehicles,[data-action="load-more-vehicles"],a[href*="load_more_vehicles"],button[name="load_more_vehicles"]');if(settings.loadMoreVehiclesInHeader&&reload)bar.appendChild(operationalFeatureButton(doc,'Reload vehicles','call-reload-vehicles',()=>reload.click()));const center=operationalQuery(doc,'.map_position_mover,[data-action="center-map"],#map_position');if(settings.centerMap&&center)bar.appendChild(operationalFeatureButton(doc,'Centre map','call-center-map',()=>center.click()));if(settings.stickyHeader)operationalQueryAll(doc,'#vehicle_show_table thead,.mission-header,.panel-heading').forEach(node=>{node.style.position='sticky';node.style.top='0';node.style.zIndex='4';node.dataset.mcmsOperationalSticky='true';});
+22880:         if(settings.moreReleasePatientButtons){const releases=operationalQueryAll(doc,'a[href*="release"],button[data-action*="release"],a[href*="discharge"],button[data-action*="discharge"]').filter(operationalVisible).slice(0,6);releases.forEach((native,index)=>bar.appendChild(operationalFeatureButton(doc,`Release ${index+1}`,`call-release-${index}`,()=>native.click(),'btn btn-success btn-sm')));}
+---
+22875:         const grouped=new Map();for(const row of selectedRows){const token=operationalVehicleTypeToken(row)||'Unknown';grouped.set(token,(grouped.get(token)||0)+1);}const selectedCount=Math.max(selectedRows.length,selectedSnapshot.length);if(settings.selectedVehicleCounter||settings.stagingAreaSelectedCounter){let text=`Selected ${selectedCount}`;if(settings.selectedVehicleCounter){const quick=(settings.selectedVehicleCounterVehicleTypes||[]).map(String),parts=[...grouped].filter(([type])=>!quick.length||quick.includes(type)).map(([type,count])=>`Type ${type} ×${count}`);if(parts.length)text+=` · ${parts.join(' · ')}`;}bar.appendChild(operationalFeatureBadge(doc,text,'call-selected','primary'));}if(settings.vehicleCounter)bar.appendChild(operationalFeatureBadge(doc,`Vehicles ${vehicles.length}`,'call-vehicles',settings.vehicleCounterColor));if(settings.playerCounter){const players=new Set(vehicles.map(row=>row.dataset?.userId||row.getAttribute?.('data-user-id')||row.dataset?.userName||row.getAttribute?.('data-user-name')).filter(Boolean));bar.appendChild(operationalFeatureBadge(doc,`Players ${players.size}`,'call-players',settings.playerCounterColor));}
+22876:         if(settings.collapsiblePatients&&patients.length>=Number(settings.collapsiblePatientsMinPatients||0)){if(feature.patientCollapsed===null)feature.patientCollapsed=true;patients.forEach(node=>node.classList.toggle('mcms-operational-patient-hidden',feature.patientCollapsed));bar.appendChild(operationalFeatureButton(doc,feature.patientCollapsed?'Show patients':'Minimise patients','call-patient-toggle',()=>{feature.patientCollapsed=!feature.patientCollapsed;scheduleOperationalSuiteScan(0);}));}else feature.patientCollapsed=null;if(settings.remainingPatientTime)patients.forEach((node,index)=>{const seconds=operationalNodeDuration(node);if(seconds)(operationalQuery(node,'td:last-child,.patient-actions')||node).appendChild(operationalFeatureBadge(doc,operationalFormatDuration(seconds),`call-patient-time-${index}`,'info'));});
+22877:         const vehicleList=operationalQuery(doc,'#vehicle_show_table_body_all,#vehicle_show_table,.vehicle-list,.available-vehicles');if(settings.hideVehicleList&&vehicleList){if(feature.vehicleListHidden===null)feature.vehicleListHidden=true;vehicleList.classList.toggle('mcms-operational-vehicle-hidden',feature.vehicleListHidden);bar.appendChild(operationalFeatureButton(doc,feature.vehicleListHidden?'Show vehicles':'Hide vehicles','call-vehicle-toggle',()=>{feature.vehicleListHidden=!feature.vehicleListHidden;scheduleOperationalSuiteScan(0);}));}else feature.vehicleListHidden=null;if(settings.vehicleListPermanentSearch&&vehicles.length){const input=operationalFeatureOwn(doc.createElement('input'),'call-vehicle-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search vehicles';input.oninput=()=>{const query=input.value.trim().toLocaleLowerCase('en-GB');vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',Boolean(query)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(query)));};bar.appendChild(input);}if(settings.vehicleTypeInList)vehicles.forEach((row,index)=>{const type=operationalVehicleTypeToken(row);if(type)(operationalQuery(row,'td')||row).appendChild(operationalFeatureBadge(doc,`Type ${type}`,`call-vehicle-type-${index}`,'default'));});
+22878:         if((settings.tailoredTabs||[]).length&&vehicles.length){const tabs=operationalFeatureOwn(doc.createElement('div'),'call-tailored-tabs');tabs.className='mcms-operational-tailored-tabs';const configs=[{name:'All',vehicleTypes:[],color:''},...(settings.tailoredTabs||[])];configs.forEach((config,index)=>{const key=index?'tab-'+index:'all',button=operationalFeatureButton(doc,String(config?.name||`Tab ${index}`),`call-tab-${index}`,()=>{feature.vehicleTab=key;scheduleOperationalSuiteScan(0);},'btn btn-default btn-sm');button.setAttribute('aria-pressed',String(feature.vehicleTab===key));if(config?.color)button.style.borderColor=operationalSafeColour(config.color);tabs.appendChild(button);});bar.appendChild(tabs);const active=configs[feature.vehicleTab==='all'?0:Number(String(feature.vehicleTab).replace('tab-',''))]||configs[0],allowed=new Set((active.vehicleTypes||[]).map(String));vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',allowed.size&&!allowed.has(operationalVehicleTypeToken(row))));}
+22879:         const durations=selectedRows.map(operationalNodeDuration).filter(Boolean);if(settings.alarmTime&&durations.length)bar.appendChild(operationalFeatureBadge(doc,`Longest journey ${operationalFormatDuration(Math.max(...durations))}`,'call-alarm-time','warning'));const reload=operationalQuery(doc,'#load_more_vehicles,[data-action="load-more-vehicles"],a[href*="load_more_vehicles"],button[name="load_more_vehicles"]');if(settings.loadMoreVehiclesInHeader&&reload)bar.appendChild(operationalFeatureButton(doc,'Reload vehicles','call-reload-vehicles',()=>reload.click()));const center=operationalQuery(doc,'.map_position_mover,[data-action="center-map"],#map_position');if(settings.centerMap&&center)bar.appendChild(operationalFeatureButton(doc,'Centre map','call-center-map',()=>center.click()));if(settings.stickyHeader)operationalQueryAll(doc,'#vehicle_show_table thead,.mission-header,.panel-heading').forEach(node=>{node.style.position='sticky';node.style.top='0';node.style.zIndex='4';node.dataset.mcmsOperationalSticky='true';});
+22880:         if(settings.moreReleasePatientButtons){const releases=operationalQueryAll(doc,'a[href*="release"],button[data-action*="release"],a[href*="discharge"],button[data-action*="discharge"]').filter(operationalVisible).slice(0,6);releases.forEach((native,index)=>bar.appendChild(operationalFeatureButton(doc,`Release ${index+1}`,`call-release-${index}`,()=>native.click(),'btn btn-success btn-sm')));}
+22881:         const arrContainer=arr[0]?.parentElement;const applyArrFilter=(query)=>{const needle=String(query||'').trim().toLocaleLowerCase('en-GB');arr.forEach(row=>row.classList.toggle('mcms-operational-arr-filtered',Boolean(needle)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(needle)));if(settings.arrSearchDissolveCategories&&needle)operationalQueryAll(doc,'.aao-category,.panel,.alarm-and-response-regulation-category').forEach(node=>node.classList.add('mcms-operational-category-open'));};if(arrContainer)arrContainer.classList.toggle('mcms-operational-arr-compact',Boolean(settings.arrSearchCompactResults&&!settings.arrSearchDropdown));
+---
+22879:         const durations=selectedRows.map(operationalNodeDuration).filter(Boolean);if(settings.alarmTime&&durations.length)bar.appendChild(operationalFeatureBadge(doc,`Longest journey ${operationalFormatDuration(Math.max(...durations))}`,'call-alarm-time','warning'));const reload=operationalQuery(doc,'#load_more_vehicles,[data-action="load-more-vehicles"],a[href*="load_more_vehicles"],button[name="load_more_vehicles"]');if(settings.loadMoreVehiclesInHeader&&reload)bar.appendChild(operationalFeatureButton(doc,'Reload vehicles','call-reload-vehicles',()=>reload.click()));const center=operationalQuery(doc,'.map_position_mover,[data-action="center-map"],#map_position');if(settings.centerMap&&center)bar.appendChild(operationalFeatureButton(doc,'Centre map','call-center-map',()=>center.click()));if(settings.stickyHeader)operationalQueryAll(doc,'#vehicle_show_table thead,.mission-header,.panel-heading').forEach(node=>{node.style.position='sticky';node.style.top='0';node.style.zIndex='4';node.dataset.mcmsOperationalSticky='true';});
+22880:         if(settings.moreReleasePatientButtons){const releases=operationalQueryAll(doc,'a[href*="release"],button[data-action*="release"],a[href*="discharge"],button[data-action*="discharge"]').filter(operationalVisible).slice(0,6);releases.forEach((native,index)=>bar.appendChild(operationalFeatureButton(doc,`Release ${index+1}`,`call-release-${index}`,()=>native.click(),'btn btn-success btn-sm')));}
+22881:         const arrContainer=arr[0]?.parentElement;const applyArrFilter=(query)=>{const needle=String(query||'').trim().toLocaleLowerCase('en-GB');arr.forEach(row=>row.classList.toggle('mcms-operational-arr-filtered',Boolean(needle)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(needle)));if(settings.arrSearchDissolveCategories&&needle)operationalQueryAll(doc,'.aao-category,.panel,.alarm-and-response-regulation-category').forEach(node=>node.classList.add('mcms-operational-category-open'));};if(arrContainer)arrContainer.classList.toggle('mcms-operational-arr-compact',Boolean(settings.arrSearchCompactResults&&!settings.arrSearchDropdown));
+22882:         arr.forEach((row,index)=>{const token=operationalArrToken(row,index),previous=feature.arrHandlers.get(row);if(!feature.arrHandlers.has(row)){feature.arrHandlers.set(row,row.onclick||null);row.onclick=function(event){feature.arrHandlers.get(row)?.call?.(this,event);const live=state.operationalWindow?.callWindow||{};if(live.arrCounter)feature.arrCounts.set(token,(feature.arrCounts.get(token)||0)+1);if(live.arrClickHighlight)feature.arrClicked.add(token);scheduleOperationalSuiteScan(0);};}row.style.setProperty('--mcms-arr-colour',operationalSafeColour(settings.arrClickHighlightColor,'#008000'));row.style.setProperty('--mcms-arr-width',`${Math.max(1,Math.min(12,Number(settings.arrClickHighlightWidth)||2))}px`);row.setAttribute('data-mcms-operational-colour','true');row.classList.toggle('mcms-operational-arr-clicked',Boolean(settings.arrClickHighlight&&feature.arrClicked.has(token)));row.classList.toggle('mcms-operational-arr-unmatched',Boolean(settings.arrMatchHighlight&&!operationalArrMatchesText(missionTitle,row.textContent,settings.arrMatchHighlightAllWords)));if(settings.arrCounterAsBadge){const count=feature.arrCounts.get(token)||0;(operationalQuery(row,'.btn,a,td')||row).appendChild(operationalFeatureBadge(doc,String(count),`call-arr-badge-${index}`,'info')).classList.add('mcms-operational-arr-badge');}const title=[];if(settings.arrTime){const seconds=operationalNodeDuration(row);if(seconds)title.push(`Longest journey ${operationalFormatDuration(seconds)}`);}if(settings.arrSpecs){const specs=row.getAttribute?.('data-requirements')||row.getAttribute?.('data-vehicles')||row.getAttribute?.('data-description');if(specs)title.push(String(specs));}if(title.length)operationalApplyTitle(row,title);});
+22883:         if(settings.arrCounter){const total=[...feature.arrCounts.values()].reduce((sum,value)=>sum+Number(value||0),0);bar.appendChild(operationalFeatureBadge(doc,`ARR clicks ${total}`,'call-arr-count','info'));}if(settings.arrCounterResetSelection)bar.appendChild(operationalFeatureButton(doc,'Reset ARR / selection','call-arr-reset',()=>{feature.arrCounts.clear();feature.arrClicked.clear();operationalQueryAll(doc,'#vehicle_show_table_body_all input[type="checkbox"]:checked,#vehicle_show_table input[type="checkbox"]:checked').forEach(input=>input.click?.());scheduleOperationalSuiteScan(0);}));
+22884:         if(settings.arrSearch&&arr.length){if(settings.arrSearchDropdown){arr.forEach(row=>row.classList.add('mcms-operational-arr-dropdown-hidden'));const select=operationalFeatureOwn(doc.createElement('select'),'call-arr-dropdown');select.className='form-control input-sm';operationalReplaceContent(select,`<option value="">Select ARR…</option>${arr.map((row,index)=>`<option value="${index}">${operationalEscape(String(row.textContent||`ARR ${index+1}`).trim())}</option>`).join('')}`);select.onchange=()=>{const row=arr[Number(select.value)];if(row)operationalNativeAction(row)?.click?.();if(settings.arrSearchCloseDropdownOnSelect){select.value='';select.blur?.();}};bar.appendChild(select);if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());}else{const input=operationalFeatureOwn(doc.createElement('input'),'call-arr-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search ARR';input.value=feature.arrQuery||'';input.oninput=()=>{feature.arrQuery=input.value;applyArrFilter(input.value);};input.onkeydown=event=>{if(event.key!=='Enter')return;const visible=arr.filter(row=>!row.classList.contains('mcms-operational-arr-filtered'));if(settings.arrSearchSelectOnEnter&&visible[0])operationalNativeAction(visible[0])?.click?.();if(settings.arrSearchClearOnEnter){feature.arrQuery='';input.value='';applyArrFilter('');}};bar.appendChild(input);applyArrFilter(feature.arrQuery);if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());}}
+22885:         for(const keyword of settings.missionKeywords||[]){const word=String(keyword?.keyword||'').trim();if(!word||!missionTitle.toLocaleLowerCase('en-GB').includes(word.toLocaleLowerCase('en-GB')))continue;const badge=operationalFeatureBadge(doc,word,`call-keyword-${word.replace(/[^a-z0-9]/giu,'-')}`,'default');badge.style.backgroundColor=operationalSafeColour(keyword.color,'#777777');badge.style.color=keyword.autotextcolor===false?operationalSafeColour(keyword.textcolor,'#ffffff'):'#ffffff';if(keyword.prefix)bar.insertBefore(badge,bar.firstChild);else bar.appendChild(badge);}const selectedTypes=new Set([...grouped.keys()]);const alarm=operationalQuery(doc,'#alarm_button,button[name="commit"],input[name="commit"],.alarm-button');for(const config of settings.alarmIcons||[]){const types=new Set((config?.vehicleTypes||[]).map(String));if(!alarm||!config?.icon||(types.size&&![...types].some(type=>selectedTypes.has(type))))continue;const icon=operationalFeatureOwn(doc.createElement('span'),`call-alarm-icon-${String(config.icon).replace(/[^a-z0-9]/giu,'-')}`),glyph=doc.createElement('i');icon.className='mcms-operational-alarm-icon';glyph.className=`${String(config.type||'fas').replace(/[^a-z]/giu,'')} fa-${String(config.icon).replace(/[^a-z0-9-]/giu,'')}`;glyph.setAttribute('aria-hidden','true');icon.appendChild(glyph);alarm.insertBefore(icon,alarm.firstChild);}
+---
+22880:         if(settings.moreReleasePatientButtons){const releases=operationalQueryAll(doc,'a[href*="release"],button[data-action*="release"],a[href*="discharge"],button[data-action*="discharge"]').filter(operationalVisible).slice(0,6);releases.forEach((native,index)=>bar.appendChild(operationalFeatureButton(doc,`Release ${index+1}`,`call-release-${index}`,()=>native.click(),'btn btn-success btn-sm')));}
+22881:         const arrContainer=arr[0]?.parentElement;const applyArrFilter=(query)=>{const needle=String(query||'').trim().toLocaleLowerCase('en-GB');arr.forEach(row=>row.classList.toggle('mcms-operational-arr-filtered',Boolean(needle)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(needle)));if(settings.arrSearchDissolveCategories&&needle)operationalQueryAll(doc,'.aao-category,.panel,.alarm-and-response-regulation-category').forEach(node=>node.classList.add('mcms-operational-category-open'));};if(arrContainer)arrContainer.classList.toggle('mcms-operational-arr-compact',Boolean(settings.arrSearchCompactResults&&!settings.arrSearchDropdown));
+22882:         arr.forEach((row,index)=>{const token=operationalArrToken(row,index),previous=feature.arrHandlers.get(row);if(!feature.arrHandlers.has(row)){feature.arrHandlers.set(row,row.onclick||null);row.onclick=function(event){feature.arrHandlers.get(row)?.call?.(this,event);const live=state.operationalWindow?.callWindow||{};if(live.arrCounter)feature.arrCounts.set(token,(feature.arrCounts.get(token)||0)+1);if(live.arrClickHighlight)feature.arrClicked.add(token);scheduleOperationalSuiteScan(0);};}row.style.setProperty('--mcms-arr-colour',operationalSafeColour(settings.arrClickHighlightColor,'#008000'));row.style.setProperty('--mcms-arr-width',`${Math.max(1,Math.min(12,Number(settings.arrClickHighlightWidth)||2))}px`);row.setAttribute('data-mcms-operational-colour','true');row.classList.toggle('mcms-operational-arr-clicked',Boolean(settings.arrClickHighlight&&feature.arrClicked.has(token)));row.classList.toggle('mcms-operational-arr-unmatched',Boolean(settings.arrMatchHighlight&&!operationalArrMatchesText(missionTitle,row.textContent,settings.arrMatchHighlightAllWords)));if(settings.arrCounterAsBadge){const count=feature.arrCounts.get(token)||0;(operationalQuery(row,'.btn,a,td')||row).appendChild(operationalFeatureBadge(doc,String(count),`call-arr-badge-${index}`,'info')).classList.add('mcms-operational-arr-badge');}const title=[];if(settings.arrTime){const seconds=operationalNodeDuration(row);if(seconds)title.push(`Longest journey ${operationalFormatDuration(seconds)}`);}if(settings.arrSpecs){const specs=row.getAttribute?.('data-requirements')||row.getAttribute?.('data-vehicles')||row.getAttribute?.('data-description');if(specs)title.push(String(specs));}if(title.length)operationalApplyTitle(row,title);});
+22883:         if(settings.arrCounter){const total=[...feature.arrCounts.values()].reduce((sum,value)=>sum+Number(value||0),0);bar.appendChild(operationalFeatureBadge(doc,`ARR clicks ${total}`,'call-arr-count','info'));}if(settings.arrCounterResetSelection)bar.appendChild(operationalFeatureButton(doc,'Reset ARR / selection','call-arr-reset',()=>{feature.arrCounts.clear();feature.arrClicked.clear();operationalQueryAll(doc,'#vehicle_show_table_body_all input[type="checkbox"]:checked,#vehicle_show_table input[type="checkbox"]:checked').forEach(input=>input.click?.());scheduleOperationalSuiteScan(0);}));
+22884:         if(settings.arrSearch&&arr.length){if(settings.arrSearchDropdown){arr.forEach(row=>row.classList.add('mcms-operational-arr-dropdown-hidden'));const select=operationalFeatureOwn(doc.createElement('select'),'call-arr-dropdown');select.className='form-control input-sm';operationalReplaceContent(select,`<option value="">Select ARR…</option>${arr.map((row,index)=>`<option value="${index}">${operationalEscape(String(row.textContent||`ARR ${index+1}`).trim())}</option>`).join('')}`);select.onchange=()=>{const row=arr[Number(select.value)];if(row)operationalNativeAction(row)?.click?.();if(settings.arrSearchCloseDropdownOnSelect){select.value='';select.blur?.();}};bar.appendChild(select);if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());}else{const input=operationalFeatureOwn(doc.createElement('input'),'call-arr-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search ARR';input.value=feature.arrQuery||'';input.oninput=()=>{feature.arrQuery=input.value;applyArrFilter(input.value);};input.onkeydown=event=>{if(event.key!=='Enter')return;const visible=arr.filter(row=>!row.classList.contains('mcms-operational-arr-filtered'));if(settings.arrSearchSelectOnEnter&&visible[0])operationalNativeAction(visible[0])?.click?.();if(settings.arrSearchClearOnEnter){feature.arrQuery='';input.value='';applyArrFilter('');}};bar.appendChild(input);applyArrFilter(feature.arrQuery);if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());}}
+22885:         for(const keyword of settings.missionKeywords||[]){const word=String(keyword?.keyword||'').trim();if(!word||!missionTitle.toLocaleLowerCase('en-GB').includes(word.toLocaleLowerCase('en-GB')))continue;const badge=operationalFeatureBadge(doc,word,`call-keyword-${word.replace(/[^a-z0-9]/giu,'-')}`,'default');badge.style.backgroundColor=operationalSafeColour(keyword.color,'#777777');badge.style.color=keyword.autotextcolor===false?operationalSafeColour(keyword.textcolor,'#ffffff'):'#ffffff';if(keyword.prefix)bar.insertBefore(badge,bar.firstChild);else bar.appendChild(badge);}const selectedTypes=new Set([...grouped.keys()]);const alarm=operationalQuery(doc,'#alarm_button,button[name="commit"],input[name="commit"],.alarm-button');for(const config of settings.alarmIcons||[]){const types=new Set((config?.vehicleTypes||[]).map(String));if(!alarm||!config?.icon||(types.size&&![...types].some(type=>selectedTypes.has(type))))continue;const icon=operationalFeatureOwn(doc.createElement('span'),`call-alarm-icon-${String(config.icon).replace(/[^a-z0-9]/giu,'-')}`),glyph=doc.createElement('i');icon.className='mcms-operational-alarm-icon';glyph.className=`${String(config.type||'fas').replace(/[^a-z]/giu,'')} fa-${String(config.icon).replace(/[^a-z0-9-]/giu,'')}`;glyph.setAttribute('aria-hidden','true');icon.appendChild(glyph);alarm.insertBefore(icon,alarm.firstChild);}
+22886:         for(const config of settings.arrCategoryColors||[]){const name=String(config?.categoryName||'').trim().toLocaleLowerCase('en-GB');if(!name)continue;operationalQueryAll(doc,'.aao-category,.alarm-and-response-regulation-category,.panel').filter(node=>String(operationalQuery(node,'.panel-heading,h3,h4,legend')?.textContent||node.getAttribute?.('data-category')||'').trim().toLocaleLowerCase('en-GB')===name).forEach(node=>{node.classList.add('mcms-operational-category-coloured');node.style.setProperty('background-color',operationalSafeColour(config.bgColor,'#505050'));node.style.setProperty('color',operationalSafeColour(config.color,'#ffffff'));node.setAttribute('data-mcms-operational-colour','true');});}
+---
+22906:         });
+22907:     }
+22908:     function operationalMissionListApply(context) { const settings=state.operationalWindow?.missionList||{},doc=context.doc,root=operationalMissionListRoot(doc),feature=operationalFeatureState(context);operationalFeatureRemove(context,'list-');operationalResetNativeDecorations(doc);if(!settings.enabled||!root||operationalQuery(doc,'[data-module="extendedCallList"]'))return;operationalFeatureStyle(doc);const rows=operationalMissionRows(root),records=rows.map((row,index)=>{const id=operationalFeatureMissionId(row),link=operationalQuery(row,'a[href*="/missions/"]'),name=String(link?.textContent||row.textContent||'').trim(),type=String(row.dataset?.missionType??row.dataset?.missionTypeId??row.getAttribute?.('data-mission-type')??row.getAttribute?.('data-mission-type-id')??new URL(link?.href||location.href,location.href).searchParams.get('mission_type_id')??'');return{id,row,name,type,credits:operationalFeatureNumber(row,['data-credits','data-average-credits']),patients:operationalFeatureNumber(row,['data-patients','data-patient-count']),prisoners:operationalFeatureNumber(row,['data-prisoners','data-prisoner-count']),time:operationalFeatureNumber(row,['data-remaining-time','data-time-left']),patientTime:operationalFeatureNumber(row,['data-patient-time','data-treatment-time']),pumpingTime:operationalFeatureNumber(row,['data-pumping-time','data-water-time','data-foam-time']),index};});const toolbar=operationalFeatureBar(doc,root.firstChild||root,'list-toolbar');root.insertBefore(toolbar,root.firstChild);
+22909:         if(settings.sortMissions){const sort=operationalFeatureOwn(doc.createElement('select'),'list-sort');sort.className='form-control input-sm';operationalReplaceContent(sort,'<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>');sort.value=settings.sortMissionsType||'';sort.onchange=()=>{settings.sortMissionsType=sort.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(sort);const direction=operationalFeatureOwn(doc.createElement('select'),'list-sort-direction');direction.className='form-control input-sm';operationalReplaceContent(direction,'<option value="">Default</option><option value="asc">Ascending</option><option value="desc">Descending</option>');direction.value=settings.sortMissionsDirection||'';direction.onchange=()=>{settings.sortMissionsDirection=direction.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(direction);toolbar.classList.add(...operationalBootstrapClass(settings.sortMissionsButtonColor,'btn').split(' '));}
+22910:         if(settings.collapsibleMissions&&settings.collapsibleMissionsAllButton)toolbar.appendChild(operationalFeatureButton(doc,settings.allMissionsCollapsed?'Expand all':'Collapse all','list-collapse-all',()=>{settings.allMissionsCollapsed=!settings.allMissionsCollapsed;settings.collapsedMissions=settings.allMissionsCollapsed?records.map(record=>record.id):[];saveState();scheduleOperationalSuiteScan(0);}));records.forEach(record=>{const controls=operationalFeatureOwn(doc.createElement('span'),`list-controls-${record.id}`);controls.className='mcms-operational-controls';if(settings.starrableMissions){const star=operationalFeatureButton(doc,settings.starredMissions.includes(record.id)?'★':'☆',`list-star-${record.id}`,event=>{event?.preventDefault?.();settings.starredMissions=settings.starredMissions.includes(record.id)?settings.starredMissions.filter(id=>id!==record.id):[...settings.starredMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs');controls.appendChild(star);record.row.classList.toggle('mcms-operational-starred',settings.starredMissions.includes(record.id));}if(settings.collapsibleMissions){controls.appendChild(operationalFeatureButton(doc,settings.collapsedMissions.includes(record.id)?'＋':'−',`list-collapse-${record.id}`,event=>{event?.preventDefault?.();settings.collapsedMissions=settings.collapsedMissions.includes(record.id)?settings.collapsedMissions.filter(id=>id!==record.id):[...settings.collapsedMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs'));record.row.classList.toggle('mcms-operational-collapsed',settings.collapsedMissions.includes(record.id));}if(operationalMissionShareEligible(record,settings)){const native=operationalQuery(record.row,'a[href*="share"],button[data-action*="share"],.mission-share-button');if(native)controls.appendChild(operationalFeatureButton(doc,'Share',`list-share-${record.id}`,event=>{event?.preventDefault?.();native.click();},`btn btn-${['success','warning','danger','primary','info','default'].includes(settings.shareMissionsButtonColor)?settings.shareMissionsButtonColor:'success'} btn-xs`));}(operationalQuery(record.row,'a[href*="/missions/"]')||record.row).appendChild(controls);const badges=[];if(settings.currentPatients&&(!settings.hideZeroCurrentPatients||record.patients))badges.push(`Patients ${record.patients}`);if(settings.currentPrisoners&&(!settings.hideZeroCurrentPrisoners||record.prisoners))badges.push(`Prisoners ${record.prisoners}`);if(settings.averageCredits&&record.credits)badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);const green=!record.row.matches?.('.danger,.alert-danger,.mission-red,[data-state="red"]');if(settings.remainingTime&&record.time&&(!settings.remainingTimeGreenOnly||green))badges.push(`Time ${operationalFormatDuration(record.time)}`);if(settings.remainingPatientTime&&record.patientTime)badges.push(`Patient ${operationalFormatDuration(record.patientTime)}`);if(settings.remainingPumpingTime&&record.pumpingTime)badges.push(`Pump ${operationalFormatDuration(record.pumpingTime)}`);if(settings.fixedEventInfo&&(settings.eventMissions||[]).map(String).includes(String(record.id))){badges.push('Event');record.row.classList.add('mcms-operational-event');}if(settings.currentPatientsInTooltips||settings.currentPrisonersInTooltips)operationalApplyTitle(record.row,[settings.currentPatientsInTooltips?`Patients ${record.patients}`:'',settings.currentPrisonersInTooltips?`Prisoners ${record.prisoners}`:'']);if(badges.length){const badge=operationalFeatureOwn(doc.createElement('div'),`list-badges-${record.id}`);badge.className='mcms-operational-bar';operationalReplaceContent(badge,badges.map(value=>`<span class="mcms-operational-pill">${operationalEscape(value)}</span>`).join(''));record.row.appendChild(badge);}});if(settings.sortMissions)operationalMissionListComputeOrder(records,settings.sortMissionsType,settings.sortMissionsDirection,settings.starredMissions).forEach(record=>record.row.parentNode?.appendChild(record.row)); }
+22911: 
+22912:     function operationalTransportChooseAction(route, candidates, settings, usedTokens = []) {
+---
+22907:     }
+22908:     function operationalMissionListApply(context) { const settings=state.operationalWindow?.missionList||{},doc=context.doc,root=operationalMissionListRoot(doc),feature=operationalFeatureState(context);operationalFeatureRemove(context,'list-');operationalResetNativeDecorations(doc);if(!settings.enabled||!root||operationalQuery(doc,'[data-module="extendedCallList"]'))return;operationalFeatureStyle(doc);const rows=operationalMissionRows(root),records=rows.map((row,index)=>{const id=operationalFeatureMissionId(row),link=operationalQuery(row,'a[href*="/missions/"]'),name=String(link?.textContent||row.textContent||'').trim(),type=String(row.dataset?.missionType??row.dataset?.missionTypeId??row.getAttribute?.('data-mission-type')??row.getAttribute?.('data-mission-type-id')??new URL(link?.href||location.href,location.href).searchParams.get('mission_type_id')??'');return{id,row,name,type,credits:operationalFeatureNumber(row,['data-credits','data-average-credits']),patients:operationalFeatureNumber(row,['data-patients','data-patient-count']),prisoners:operationalFeatureNumber(row,['data-prisoners','data-prisoner-count']),time:operationalFeatureNumber(row,['data-remaining-time','data-time-left']),patientTime:operationalFeatureNumber(row,['data-patient-time','data-treatment-time']),pumpingTime:operationalFeatureNumber(row,['data-pumping-time','data-water-time','data-foam-time']),index};});const toolbar=operationalFeatureBar(doc,root.firstChild||root,'list-toolbar');root.insertBefore(toolbar,root.firstChild);
+22909:         if(settings.sortMissions){const sort=operationalFeatureOwn(doc.createElement('select'),'list-sort');sort.className='form-control input-sm';operationalReplaceContent(sort,'<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>');sort.value=settings.sortMissionsType||'';sort.onchange=()=>{settings.sortMissionsType=sort.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(sort);const direction=operationalFeatureOwn(doc.createElement('select'),'list-sort-direction');direction.className='form-control input-sm';operationalReplaceContent(direction,'<option value="">Default</option><option value="asc">Ascending</option><option value="desc">Descending</option>');direction.value=settings.sortMissionsDirection||'';direction.onchange=()=>{settings.sortMissionsDirection=direction.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(direction);toolbar.classList.add(...operationalBootstrapClass(settings.sortMissionsButtonColor,'btn').split(' '));}
+22910:         if(settings.collapsibleMissions&&settings.collapsibleMissionsAllButton)toolbar.appendChild(operationalFeatureButton(doc,settings.allMissionsCollapsed?'Expand all':'Collapse all','list-collapse-all',()=>{settings.allMissionsCollapsed=!settings.allMissionsCollapsed;settings.collapsedMissions=settings.allMissionsCollapsed?records.map(record=>record.id):[];saveState();scheduleOperationalSuiteScan(0);}));records.forEach(record=>{const controls=operationalFeatureOwn(doc.createElement('span'),`list-controls-${record.id}`);controls.className='mcms-operational-controls';if(settings.starrableMissions){const star=operationalFeatureButton(doc,settings.starredMissions.includes(record.id)?'★':'☆',`list-star-${record.id}`,event=>{event?.preventDefault?.();settings.starredMissions=settings.starredMissions.includes(record.id)?settings.starredMissions.filter(id=>id!==record.id):[...settings.starredMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs');controls.appendChild(star);record.row.classList.toggle('mcms-operational-starred',settings.starredMissions.includes(record.id));}if(settings.collapsibleMissions){controls.appendChild(operationalFeatureButton(doc,settings.collapsedMissions.includes(record.id)?'＋':'−',`list-collapse-${record.id}`,event=>{event?.preventDefault?.();settings.collapsedMissions=settings.collapsedMissions.includes(record.id)?settings.collapsedMissions.filter(id=>id!==record.id):[...settings.collapsedMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs'));record.row.classList.toggle('mcms-operational-collapsed',settings.collapsedMissions.includes(record.id));}if(operationalMissionShareEligible(record,settings)){const native=operationalQuery(record.row,'a[href*="share"],button[data-action*="share"],.mission-share-button');if(native)controls.appendChild(operationalFeatureButton(doc,'Share',`list-share-${record.id}`,event=>{event?.preventDefault?.();native.click();},`btn btn-${['success','warning','danger','primary','info','default'].includes(settings.shareMissionsButtonColor)?settings.shareMissionsButtonColor:'success'} btn-xs`));}(operationalQuery(record.row,'a[href*="/missions/"]')||record.row).appendChild(controls);const badges=[];if(settings.currentPatients&&(!settings.hideZeroCurrentPatients||record.patients))badges.push(`Patients ${record.patients}`);if(settings.currentPrisoners&&(!settings.hideZeroCurrentPrisoners||record.prisoners))badges.push(`Prisoners ${record.prisoners}`);if(settings.averageCredits&&record.credits)badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);const green=!record.row.matches?.('.danger,.alert-danger,.mission-red,[data-state="red"]');if(settings.remainingTime&&record.time&&(!settings.remainingTimeGreenOnly||green))badges.push(`Time ${operationalFormatDuration(record.time)}`);if(settings.remainingPatientTime&&record.patientTime)badges.push(`Patient ${operationalFormatDuration(record.patientTime)}`);if(settings.remainingPumpingTime&&record.pumpingTime)badges.push(`Pump ${operationalFormatDuration(record.pumpingTime)}`);if(settings.fixedEventInfo&&(settings.eventMissions||[]).map(String).includes(String(record.id))){badges.push('Event');record.row.classList.add('mcms-operational-event');}if(settings.currentPatientsInTooltips||settings.currentPrisonersInTooltips)operationalApplyTitle(record.row,[settings.currentPatientsInTooltips?`Patients ${record.patients}`:'',settings.currentPrisonersInTooltips?`Prisoners ${record.prisoners}`:'']);if(badges.length){const badge=operationalFeatureOwn(doc.createElement('div'),`list-badges-${record.id}`);badge.className='mcms-operational-bar';operationalReplaceContent(badge,badges.map(value=>`<span class="mcms-operational-pill">${operationalEscape(value)}</span>`).join(''));record.row.appendChild(badge);}});if(settings.sortMissions)operationalMissionListComputeOrder(records,settings.sortMissionsType,settings.sortMissionsDirection,settings.starredMissions).forEach(record=>record.row.parentNode?.appendChild(record.row)); }
+22911: 
+22912:     function operationalTransportChooseAction(route, candidates, settings, usedTokens = []) {
+22913:         const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
+---
+23034:         }
+23035:     }
+23036: 
+23037:     function scheduleOperationalSuiteScan(delay = 0) {
+23038:         if (runtime.destroyed) return;
+23039:         runtimeClearTimeout(operationalSuiteScanTimer);
+23040:         operationalSuiteScanTimer = runtimeSetTimeout(() => {
+---
+23036: 
+23037:     function scheduleOperationalSuiteScan(delay = 0) {
+23038:         if (runtime.destroyed) return;
+23039:         runtimeClearTimeout(operationalSuiteScanTimer);
+23040:         operationalSuiteScanTimer = runtimeSetTimeout(() => {
+23041:             operationalSuiteScanTimer = null;
+23042:             try {
+---
+23037:     function scheduleOperationalSuiteScan(delay = 0) {
+23038:         if (runtime.destroyed) return;
+23039:         runtimeClearTimeout(operationalSuiteScanTimer);
+23040:         operationalSuiteScanTimer = runtimeSetTimeout(() => {
+23041:             operationalSuiteScanTimer = null;
+23042:             try {
+23043:                 scanOperationalSuiteShell();
+---
+23038:         if (runtime.destroyed) return;
+23039:         runtimeClearTimeout(operationalSuiteScanTimer);
+23040:         operationalSuiteScanTimer = runtimeSetTimeout(() => {
+23041:             operationalSuiteScanTimer = null;
+23042:             try {
+23043:                 scanOperationalSuiteShell();
+23044:             } catch (error) {
+---
+23049: 
+23050:     function installOperationalSuiteShell() {
+23051:         if (operationalSuiteInstalled) {
+23052:             if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
+23053:             return;
+23054:         }
+23055:         operationalSuiteInstalled = true;
+---
+23057:             baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
+23058:             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+23059:             phase: 'operational-suite',
+23060:             schedule: scheduleOperationalSuiteScan,
+23061:             contextCount: () => operationalSuiteContexts.size
+23062:         });
+23063:         runtimeOnCleanup(() => {
+---
+23061:             contextCount: () => operationalSuiteContexts.size
+23062:         });
+23063:         runtimeOnCleanup(() => {
+23064:             runtimeClearTimeout(operationalSuiteScanTimer);
+23065:             operationalSuiteScanTimer = null;
+23066:             clearOperationalSuiteContexts();
+23067:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+---
+23062:         });
+23063:         runtimeOnCleanup(() => {
+23064:             runtimeClearTimeout(operationalSuiteScanTimer);
+23065:             operationalSuiteScanTimer = null;
+23066:             clearOperationalSuiteContexts();
+23067:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+23068:         });
+---
+23066:             clearOperationalSuiteContexts();
+23067:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+23068:         });
+23069:         if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
+23070:     }
+23071: 
+23072:     // Issue #378 retained UK operational capability catalogue.
+---
+30462:     function updateUI() {
+30463:         applyRootAttributes();
+30464:         operationalWindowSyncSettingsUi();
+30465:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+30466:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+30467:         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+30468:         const control = document.getElementById(SCRIPT.controlId);
+---
+31295:                     scheduleDeferredOperationalStartup();
+31296:                 });
+31297:                 runBootIntegration('operational suite scan', () => {
+31298:                     if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+31299:                 });
+31300:                 runBootIntegration('version status check', () => {
+31301:                     scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+---
+31468:                 }
+31469:                 if (missionChanged) {
+31470:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31471:                     scheduleOperationalSuiteScan(35);
+31472:                     if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(35);
+31473:                 }
+31474:             }, mutationDelay);
+---
+31469:                 if (missionChanged) {
+31470:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+31471:                     scheduleOperationalSuiteScan(35);
+31472:                     if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(35);
+31473:                 }
+31474:             }, mutationDelay);
+31475:         }));
+---
+31559:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+31560:             if (state.economyMode) scheduleEconomyLayerSync(0);
+31561:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+31562:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+31563:             scheduleMajorIncidentFeedRender(80);
+31564:         });
+31565:         runtimeSetTimeout(() => {
+---
+count=23
+
+====================================================================================================
+PATTERN operationalDocument
+count=0
+
+====================================================================================================
+PATTERN operationalSuiteContexts
+01323:     let operationalSuiteScanTimer = null;
+01324:     let operationalSuiteInstalled = false;
+01325:     let operationalSuiteRevision = 0;
+01326:     const operationalSuiteContexts = new Map();
+01327:     let customVehicleBadgeScanTimer = null;
+01328:     let customVehicleBadgeRefreshPromise = null;
+01329:     let customVehicleBadgeFeatureInstalled = false;
+---
+22975:         context.panel?.remove?.();
+22976:         context.panel = null;
+22977:         context.root = null;
+22978:         if (context.doc) operationalSuiteContexts.delete(context.doc);
+22979:         context.doc = null;
+22980:     }
+22981: 
+---
+22979:         context.doc = null;
+22980:     }
+22981: 
+22982:     function clearOperationalSuiteContexts() {
+22983:         for (const context of Array.from(operationalSuiteContexts.values())) operationalSuiteDisposeContext(context);
+22984:         operationalSuiteContexts.clear();
+22985:     }
+---
+22980:     }
+22981: 
+22982:     function clearOperationalSuiteContexts() {
+22983:         for (const context of Array.from(operationalSuiteContexts.values())) operationalSuiteDisposeContext(context);
+22984:         operationalSuiteContexts.clear();
+22985:     }
+22986: 
+---
+22981: 
+22982:     function clearOperationalSuiteContexts() {
+22983:         for (const context of Array.from(operationalSuiteContexts.values())) operationalSuiteDisposeContext(context);
+22984:         operationalSuiteContexts.clear();
+22985:     }
+22986: 
+22987:     function operationalSuiteEnsureContext(doc) {
+---
+22986: 
+22987:     function operationalSuiteEnsureContext(doc) {
+22988:         if (!doc?.querySelector) return null;
+22989:         const existing = operationalSuiteContexts.get(doc);
+22990:         if (existing) {
+22991:             existing.root = doc.documentElement || doc.body || existing.root;
+22992:             existing.seenAt = Date.now();
+---
+23009:             seenAt: Date.now(),
+23010:             baseline: OPERATIONAL_SUITE_LSSM_BASELINE.commit
+23011:         };
+23012:         operationalSuiteContexts.set(doc, context);
+23013:         operationalRequirementsBindContext(context);
+23014:         return context;
+23015:     }
+---
+23017:     function scanOperationalSuiteShell() {
+23018:         if (runtime.destroyed) return;
+23019:         if (!operationalSuiteEnabled()) {
+23020:             clearOperationalSuiteContexts();
+23021:             return;
+23022:         }
+23023:         const activeDocuments = new Set();
+---
+23029:             operationalRequirementsBindContext(context);
+23030:             operationalRequirementsScheduleContext(context, 0);
+23031:         }
+23032:         for (const [doc, context] of Array.from(operationalSuiteContexts.entries())) {
+23033:             if (!activeDocuments.has(doc) || context.root?.isConnected === false) operationalSuiteDisposeContext(context);
+23034:         }
+23035:     }
+---
+23058:             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+23059:             phase: 'operational-suite',
+23060:             schedule: scheduleOperationalSuiteScan,
+23061:             contextCount: () => operationalSuiteContexts.size
+23062:         });
+23063:         runtimeOnCleanup(() => {
+23064:             runtimeClearTimeout(operationalSuiteScanTimer);
+---
+23063:         runtimeOnCleanup(() => {
+23064:             runtimeClearTimeout(operationalSuiteScanTimer);
+23065:             operationalSuiteScanTimer = null;
+23066:             clearOperationalSuiteContexts();
+23067:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+23068:         });
+23069:         if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
+---
+count=11
+
+====================================================================================================
+PATTERN DOMParser
+14812:                 if (!response.ok) continue;
+14813:                 const html = await response.text();
+14814:                 if (!html || !html.includes('missionMarkerAdd')) continue;
+14815:                 const doc = new DOMParser().parseFromString(html, 'text/html');
+14816:                 if (captureMissionMarkerDataFromDocument(doc) > 0) {
+14817:                     succeeded = true;
+14818:                     missionProgressPageLastSuccessAt = Date.now();
+---
+16781:                 if (!response.ok) continue;
+16782:                 const html = await response.text();
+16783:                 if (!html || html.length < 100) continue;
+16784:                 const doc = new DOMParser().parseFromString(html, 'text/html');
+16785:                 const anchors = Array.from(doc.querySelectorAll('a[href*="/vehicles/"]'))
+16786:                     .filter(anchor => transportSweepVehicleIdFromHref(anchor.getAttribute('href')));
+16787:                 if (!anchors.length) continue;
+---
+27010:         });
+27011:         if (!response.ok) throw new Error(`MissionChief returned HTTP ${response.status} for ${url.pathname}.`);
+27012:         const html = await response.text();
+27013:         return { doc: new DOMParser().parseFromString(html, 'text/html'), url: url.href };
+27014:     }
+27015: 
+27016:     async function fetchCreditLedgerPage(pageNumber) {
+---
+count=3
+
+====================================================================================================
+PATTERN fetch(
+00762:         return elapsedMs;
+00763:     }
+00764: 
+00765:     function runtimeFetch(input, init = {}) {
+00766:         if (runtime.destroyed) return Promise.reject(new Error('Toolkit runtime stopped.'));
+00767:         const Controller = pageWindow.AbortController || globalThis.AbortController;
+00768:         const controller = typeof Controller === 'function' ? new Controller() : null;
+---
+14803:                 { Accept: 'text/html,application/xhtml+xml' }
+14804:             ];
+14805:             for (const headers of requestModes) {
+14806:                 const response = await runtimeFetch('/', {
+14807:                     method: 'GET',
+14808:                     credentials: 'same-origin',
+14809:                     cache: 'no-store',
+---
+15696:         if (!force && vehicleApiLastError && now - vehicleApiLastError < VEHICLE_API_ERROR_BACKOFF_MS) return Promise.resolve(false);
+15697:         if (!force && vehicleApiReady && now - vehicleApiLastFetch < VEHICLE_API_MIN_REFRESH_MS) return Promise.resolve(true);
+15698: 
+15699:         vehicleApiFetchPromise = runtimeFetch(new URL('/api/vehicles', document.baseURI || pageWindow.location.href), {
+15700:         credentials: 'same-origin',
+15701:         cache: 'no-store',
+15702:         headers: { Accept: 'application/json' }
+---
+16772:         for (const mode of requestModes) {
+16773:             if (transportSweepRuntime.stopRequested) return null;
+16774:             try {
+16775:                 const response = await runtimeFetch(`/missions/${id}`, {
+16776:                     method: 'GET',
+16777:                     credentials: 'same-origin',
+16778:                     cache: 'no-store',
+---
+27002:     async function fetchSameOriginDocument(pathOrUrl) {
+27003:         const url = new URL(pathOrUrl, document.baseURI || pageWindow.location.href);
+27004:         if (url.origin !== pageWindow.location.origin) throw new Error('Blocked an unexpected external financial-data URL.');
+27005:         const response = await runtimeFetch(url.href, {
+27006:             method: 'GET',
+27007:             credentials: 'same-origin',
+27008:             cache: 'no-store',
+---
+27035: 
+27036:     async function fetchCreditAccount() {
+27037:         try {
+27038:             const response = await runtimeFetch(new URL('/api/credits', document.baseURI || pageWindow.location.href).href, {
+27039:                 method: 'GET',
+27040:                 credentials: 'same-origin',
+27041:                 cache: 'no-store',
+---
+29310:                 }
+29311:                 return;
+29312:             }
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+---
+count=7
+
+====================================================================================================
+PATTERN GM_xmlhttpRequest
+00017: // @match        *://meldkamerspel.com/*
+00018: // @match        *://www.meldkamerspel.com/*
+00019: // @match        *://*.meldkamerspel.com/*
+00020: // @grant        GM_xmlhttpRequest
+00021: // @grant        GM_getValue
+00022: // @grant        GM_setValue
+00023: // @grant        GM_deleteValue
+---
+26194:                 reject(new Error('Toolkit runtime stopped.'));
+26195:                 return;
+26196:             }
+26197:             if (typeof GM_xmlhttpRequest !== 'function') {
+26198:                 reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+26199:                 return;
+26200:             }
+---
+26207:                 if (error) reject(error); else resolve(response);
+26208:             };
+26209:             try {
+26210:                 request = GM_xmlhttpRequest({
+26211:                     method,
+26212:                     url,
+26213:                     data: body,
+---
+26659:                 reject(new Error('Toolkit runtime stopped.'));
+26660:                 return;
+26661:             }
+26662:             if (typeof GM_xmlhttpRequest !== 'function') {
+26663:                 reject(new Error('Tampermonkey cross-origin requests are unavailable.'));
+26664:                 return;
+26665:             }
+---
+26673:                 else resolve(response);
+26674:             };
+26675:             try {
+26676:                 request = GM_xmlhttpRequest({
+26677:                     method,
+26678:                     url,
+26679:                     data,
+---
+29280:                 helpGuideLoadedAt = Date.now();
+29281:                 return documentText;
+29282:             };
+29283:             if (typeof GM_xmlhttpRequest === 'function') {
+29284:                 let request = null;
+29285:                 let settled = false;
+29286:                 const finish = (error, response = null) => {
+---
+29296:                     }
+29297:                 };
+29298:                 try {
+29299:                     request = GM_xmlhttpRequest({
+29300:                         method: 'GET', url, timeout: HELP_CENTER.requestTimeoutMs, responseType: 'text',
+29301:                         headers: { Accept: 'text/html, text/plain;q=0.9, */*;q=0.8' },
+29302:                         onload: response => finish(null, response),
+---
+29614:     function versionStatusOpen() { const manifest = versionStatusModel.manifest; if (!manifest) { scheduleVersionStatusCheck(0, true); return; } let destination; try { destination = versionStatusPresentation(SCRIPT.version, manifest).destination; } catch (err) { scheduleVersionStatusCheck(0, true); return; } const opened = pageWindow.open(destination, '_blank', 'noopener,noreferrer'); try { if (opened) opened.opener = null; } catch (err) {} }
+29615:     function ensureVersionStatusButton() { ensureVersionStatusStyle(); const control = document.getElementById(SCRIPT.controlId); const row = control?.querySelector?.('.mcms-launch-row'); if (!control || !row) return null; let button = document.getElementById(VERSION_STATUS.buttonId); if (button && !control.contains(button)) { button.remove(); button = null; } if (!button) { button = document.createElement('button'); button.id = VERSION_STATUS.buttonId; button.type = 'button'; button.className = 'mcms-version-btn mcms-version-btn--unified'; button.dataset.variant = 'control-family'; button.setAttribute('aria-live', 'polite'); const economy = row.querySelector?.('.mcms-economy-btn') || null; row.insertBefore(button, economy); runtimeListen(button, 'click', event => { event.preventDefault(); if (versionStatusSuppressClick) { versionStatusSuppressClick = false; return; } if (event.shiftKey || versionStatusModel.state === 'idle' || versionStatusModel.state === 'error') { scheduleVersionStatusCheck(0, true); return; } if (versionStatusModel.state !== 'checking') versionStatusOpen(); }); runtimeListen(button, 'contextmenu', event => { event.preventDefault(); scheduleVersionStatusCheck(0, true); }); runtimeListen(button, 'pointerdown', event => { if (event.pointerType === 'mouse') return; runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = runtimeSetTimeout(() => { versionStatusSuppressClick = true; scheduleVersionStatusCheck(0, true); showToast('Checking Toolkit version…'); }, VERSION_STATUS.longPressMs); }); for (const eventName of ['pointermove', 'pointerup', 'pointercancel']) runtimeListen(button, eventName, () => { runtimeClearTimeout(versionStatusLongPressTimer); versionStatusLongPressTimer = null; }, { passive: true }); } versionStatusRender(); if (!versionStatusHydrationPromise) void hydrateVersionStatus(); return button; }
+29616:     async function hydrateVersionStatus() { if (versionStatusHydrationPromise) return versionStatusHydrationPromise; versionStatusHydrationPromise = (async () => { const now = Date.now(); const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); } })().finally(() => { versionStatusHydrationPromise = null; }); return versionStatusHydrationPromise; }
+29617:     function versionStatusRequestManifest() { return new Promise((resolve, reject) => { let settled = false; let timeoutTimer = null; const finish = (error, text) => { if (settled) return; settled = true; runtimeClearTimeout(timeoutTimer); if (versionStatusRequest?.abort) runtime.requests?.delete?.(versionStatusRequest); versionStatusRequest = null; if (error) { reject(error); return; } try { resolve(versionStatusValidateManifest(JSON.parse(String(text || '')))); } catch (err) { reject(err instanceof Error ? err : new Error('Version manifest is invalid.')); } }; const url = `${VERSION_STATUS.manifestUrl}?cache_bust=${Date.now()}`; if (typeof GM_xmlhttpRequest === 'function') { try { versionStatusRequest = GM_xmlhttpRequest({ method: 'GET', url, timeout: VERSION_STATUS.requestTimeoutMs, responseType: 'text', headers: { Accept: 'application/json' }, onload: response => Number(response?.status) >= 200 && Number(response?.status) < 300 ? finish(null, response.responseText) : finish(new Error(`Version endpoint returned HTTP ${response?.status || 'error'}.`)), onerror: () => finish(new Error('Version endpoint could not be reached.')), ontimeout: () => finish(new Error('Version check timed out.')), onabort: () => finish(new Error('Version check was cancelled.')) }); if (versionStatusRequest?.abort) runtime.requests?.add?.(versionStatusRequest); } catch (err) { finish(err); } return; } const Controller = pageWindow.AbortController || globalThis.AbortController; const controller = typeof Controller === 'function' ? new Controller() : null; if (controller) runtime.fetchControllers?.add?.(controller); timeoutTimer = runtimeSetTimeout(() => controller?.abort?.(), VERSION_STATUS.requestTimeoutMs); Promise.resolve((pageWindow.fetch || globalThis.fetch).call(pageWindow, url, { cache: 'no-store', credentials: 'omit', signal: controller?.signal, headers: { Accept: 'application/json' } })).then(response => { if (!response.ok) throw new Error(`Version endpoint returned HTTP ${response.status}.`); return response.text(); }).then(text => finish(null, text)).catch(error => finish(error instanceof Error ? error : new Error('Version endpoint could not be reached.'))).finally(() => { if (controller) runtime.fetchControllers?.delete?.(controller); }); }); }
+29618:     async function runVersionStatusCheck(force = false) { ensureVersionStatusButton(); if (versionStatusCheckPromise) return versionStatusCheckPromise; versionStatusCheckPromise = (async () => { const now = Date.now(); if (!force) { const cache = await versionStatusStorageRead(VERSION_STATUS.cacheKey); if (versionStatusCacheIsFresh(cache, now)) { const manifest = versionStatusValidateManifest(cache.manifest); versionStatusModel = { state: versionStatusPresentation(SCRIPT.version, manifest).state, manifest, checkedAt: Number(cache.checkedAt), error: '' }; versionStatusRender(); return versionStatusModel; } const failure = await versionStatusStorageRead(VERSION_STATUS.failureKey); if (versionStatusFailureCooling(failure, now)) { versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt: Number(failure.failedAt) || now, error: 'cooldown' }; versionStatusRender(); return versionStatusModel; } } versionStatusModel = { state: 'checking', manifest: null, checkedAt: 0, error: '' }; versionStatusRender(); try { const manifest = await versionStatusRequestManifest(); const checkedAt = Date.now(); const presentation = versionStatusPresentation(SCRIPT.version, manifest); versionStatusModel = { state: presentation.state, manifest, checkedAt, error: '' }; await versionStatusStorageWrite(VERSION_STATUS.cacheKey, { checkedAt, manifest }); await versionStatusStorageDelete(VERSION_STATUS.failureKey); } catch (err) { const failedAt = Date.now(); versionStatusModel = { state: 'error', manifest: null, checkedAt: 0, failedAt, error: String(err?.message || err || 'failed') }; await versionStatusStorageWrite(VERSION_STATUS.failureKey, { failedAt }); } versionStatusRender(); return versionStatusModel; })().finally(() => { versionStatusCheckPromise = null; }); return versionStatusCheckPromise; }
+29619:     function versionStatusAutomaticDelay(now = Date.now()) {
+29620:         const current = Number(now) || Date.now();
+---
+count=8
+
+====================================================================================================
+PATTERN mission-form
+22176:     }
+22177: 
+22178:     function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
+22179:         return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22180:             || doc?.querySelector?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22181:             || null;
+22182:     }
+---
+22177: 
+22178:     function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
+22179:         return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22180:             || doc?.querySelector?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
+22181:             || null;
+22182:     }
+22183: 
+---
+count=2
+
+====================================================================================================
+PATTERN mission_type_id
+22905:             const a = value(left), b = value(right); return (typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - b) * multiplier;
+22906:         });
+22907:     }
+22908:     function operationalMissionListApply(context) { const settings=state.operationalWindow?.missionList||{},doc=context.doc,root=operationalMissionListRoot(doc),feature=operationalFeatureState(context);operationalFeatureRemove(context,'list-');operationalResetNativeDecorations(doc);if(!settings.enabled||!root||operationalQuery(doc,'[data-module="extendedCallList"]'))return;operationalFeatureStyle(doc);const rows=operationalMissionRows(root),records=rows.map((row,index)=>{const id=operationalFeatureMissionId(row),link=operationalQuery(row,'a[href*="/missions/"]'),name=String(link?.textContent||row.textContent||'').trim(),type=String(row.dataset?.missionType??row.dataset?.missionTypeId??row.getAttribute?.('data-mission-type')??row.getAttribute?.('data-mission-type-id')??new URL(link?.href||location.href,location.href).searchParams.get('mission_type_id')??'');return{id,row,name,type,credits:operationalFeatureNumber(row,['data-credits','data-average-credits']),patients:operationalFeatureNumber(row,['data-patients','data-patient-count']),prisoners:operationalFeatureNumber(row,['data-prisoners','data-prisoner-count']),time:operationalFeatureNumber(row,['data-remaining-time','data-time-left']),patientTime:operationalFeatureNumber(row,['data-patient-time','data-treatment-time']),pumpingTime:operationalFeatureNumber(row,['data-pumping-time','data-water-time','data-foam-time']),index};});const toolbar=operationalFeatureBar(doc,root.firstChild||root,'list-toolbar');root.insertBefore(toolbar,root.firstChild);
+22909:         if(settings.sortMissions){const sort=operationalFeatureOwn(doc.createElement('select'),'list-sort');sort.className='form-control input-sm';operationalReplaceContent(sort,'<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>');sort.value=settings.sortMissionsType||'';sort.onchange=()=>{settings.sortMissionsType=sort.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(sort);const direction=operationalFeatureOwn(doc.createElement('select'),'list-sort-direction');direction.className='form-control input-sm';operationalReplaceContent(direction,'<option value="">Default</option><option value="asc">Ascending</option><option value="desc">Descending</option>');direction.value=settings.sortMissionsDirection||'';direction.onchange=()=>{settings.sortMissionsDirection=direction.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(direction);toolbar.classList.add(...operationalBootstrapClass(settings.sortMissionsButtonColor,'btn').split(' '));}
+22910:         if(settings.collapsibleMissions&&settings.collapsibleMissionsAllButton)toolbar.appendChild(operationalFeatureButton(doc,settings.allMissionsCollapsed?'Expand all':'Collapse all','list-collapse-all',()=>{settings.allMissionsCollapsed=!settings.allMissionsCollapsed;settings.collapsedMissions=settings.allMissionsCollapsed?records.map(record=>record.id):[];saveState();scheduleOperationalSuiteScan(0);}));records.forEach(record=>{const controls=operationalFeatureOwn(doc.createElement('span'),`list-controls-${record.id}`);controls.className='mcms-operational-controls';if(settings.starrableMissions){const star=operationalFeatureButton(doc,settings.starredMissions.includes(record.id)?'★':'☆',`list-star-${record.id}`,event=>{event?.preventDefault?.();settings.starredMissions=settings.starredMissions.includes(record.id)?settings.starredMissions.filter(id=>id!==record.id):[...settings.starredMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs');controls.appendChild(star);record.row.classList.toggle('mcms-operational-starred',settings.starredMissions.includes(record.id));}if(settings.collapsibleMissions){controls.appendChild(operationalFeatureButton(doc,settings.collapsedMissions.includes(record.id)?'＋':'−',`list-collapse-${record.id}`,event=>{event?.preventDefault?.();settings.collapsedMissions=settings.collapsedMissions.includes(record.id)?settings.collapsedMissions.filter(id=>id!==record.id):[...settings.collapsedMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs'));record.row.classList.toggle('mcms-operational-collapsed',settings.collapsedMissions.includes(record.id));}if(operationalMissionShareEligible(record,settings)){const native=operationalQuery(record.row,'a[href*="share"],button[data-action*="share"],.mission-share-button');if(native)controls.appendChild(operationalFeatureButton(doc,'Share',`list-share-${record.id}`,event=>{event?.preventDefault?.();native.click();},`btn btn-${['success','warning','danger','primary','info','default'].includes(settings.shareMissionsButtonColor)?settings.shareMissionsButtonColor:'success'} btn-xs`));}(operationalQuery(record.row,'a[href*="/missions/"]')||record.row).appendChild(controls);const badges=[];if(settings.currentPatients&&(!settings.hideZeroCurrentPatients||record.patients))badges.push(`Patients ${record.patients}`);if(settings.currentPrisoners&&(!settings.hideZeroCurrentPrisoners||record.prisoners))badges.push(`Prisoners ${record.prisoners}`);if(settings.averageCredits&&record.credits)badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);const green=!record.row.matches?.('.danger,.alert-danger,.mission-red,[data-state="red"]');if(settings.remainingTime&&record.time&&(!settings.remainingTimeGreenOnly||green))badges.push(`Time ${operationalFormatDuration(record.time)}`);if(settings.remainingPatientTime&&record.patientTime)badges.push(`Patient ${operationalFormatDuration(record.patientTime)}`);if(settings.remainingPumpingTime&&record.pumpingTime)badges.push(`Pump ${operationalFormatDuration(record.pumpingTime)}`);if(settings.fixedEventInfo&&(settings.eventMissions||[]).map(String).includes(String(record.id))){badges.push('Event');record.row.classList.add('mcms-operational-event');}if(settings.currentPatientsInTooltips||settings.currentPrisonersInTooltips)operationalApplyTitle(record.row,[settings.currentPatientsInTooltips?`Patients ${record.patients}`:'',settings.currentPrisonersInTooltips?`Prisoners ${record.prisoners}`:'']);if(badges.length){const badge=operationalFeatureOwn(doc.createElement('div'),`list-badges-${record.id}`);badge.className='mcms-operational-bar';operationalReplaceContent(badge,badges.map(value=>`<span class="mcms-operational-pill">${operationalEscape(value)}</span>`).join(''));record.row.appendChild(badge);}});if(settings.sortMissions)operationalMissionListComputeOrder(records,settings.sortMissionsType,settings.sortMissionsDirection,settings.starredMissions).forEach(record=>record.row.parentNode?.appendChild(record.row)); }
+22911: 
+---
+count=1
+

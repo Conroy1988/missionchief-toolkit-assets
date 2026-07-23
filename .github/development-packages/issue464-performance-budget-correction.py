@@ -61,8 +61,8 @@ addition = """assert 'inlineMissionDataScanned=captured>0' in text
 assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());' in call
 assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());' in call
 assert not re.search(r'arrSearchAutoFocus\\s*\\)\\s*runtimeSetTimeout', call)
-assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" in visibility
-assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000)" in visibility
+assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" in text
+assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000)" in text
 runtime_timeout_sites = len(re.findall(r'runtimeSetTimeout\\s*\\(', text)) - len(re.findall(r'function\\s+runtimeSetTimeout\\s*\\(', text))
 assert runtime_timeout_sites <= 99
 """

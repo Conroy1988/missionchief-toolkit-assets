@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.2] - 2026-07-23
+
+### Emergency launcher recovery
+- Rebuilt startup so the core Toolkit launcher mounts before optional MissionChief hooks and operational integrations.
+- Isolated every pre-launch DOM/API integration so one changing MissionChief surface cannot terminate the launcher retry loop.
+- Added an immediate first mount attempt and a managed fallback when idle scheduling is unavailable.
+- Expanded map discovery to support the live `#map` container when the Leaflet class is delayed or changed.
+
+### Reliability corrections
+- Removed an empty `closest()` selector left by Matrix retirement that could throw during DOM mutation handling.
+- Restricted Alliance Buildings boot suppression to the exact Alliance Buildings route, preventing normal map pages being misclassified.
+- Existing Toolkit and operational-window settings remain intact; no reset is required.
+
+
 ## [5.0.1] - 2026-07-23
 
 ### Emergency menu recovery

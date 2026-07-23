@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.1
+// @version      5.0.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.1',
+        version: '5.0.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -13859,7 +13859,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         cachedMapElementCheckedAt = now;
         return cachedMapElement;
         }
-        const candidates = Array.from(document.querySelectorAll('.leaflet-container')).filter(isVisible);
+        const candidates = Array.from(document.querySelectorAll('.leaflet-container, #map, [data-leaflet-map]')).filter(isVisible);
         let largest = null;
         let largestArea = 0;
         for (const candidate of candidates) {
@@ -30761,8 +30761,7 @@ Create the private backup now?`);
                 target.closest?.(`#${SCRIPT.criticalDrawerId}`) ||
                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
-                target.closest?.(`#${SCRIPT.missionInspectorId}`) ||
-                target.closest?.(``)
+                target.closest?.(`#${SCRIPT.missionInspectorId}`)
             )
         );
         if (toolkitTarget) return true;
@@ -30999,7 +30998,7 @@ Create the private backup now?`);
             });
             document.documentElement?.removeAttribute('data-mcms-alliance-buildings-page');
         });
-        return initiallyInContext && !enabled;
+        return isAllianceBuildingsPath() && !enabled;
     }
 
 
@@ -31322,30 +31321,56 @@ Create the private backup now?`);
     }
 
 
+    function runBootIntegration(label, callback) {
+        try {
+            return callback();
+        } catch (error) {
+            console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
+            return null;
+        }
+    }
+
     function startBootAttemptCoordinator(bootPerformanceStartedAt) {
         let attempts = 0;
-        const runBootAttempt = () => {
-            attempts += 1;
-            installMissionMarkerAddHook();
-            installRadioMessageHook();
-            installCreditsUpdateHook();
-            observeCreditValue();
-            const ready = ensureUi();
-            const mapReady = Boolean(getLargestLeafletMap());
-            if (ready && (mapReady || attempts >= 12)) {
-                recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
-                scheduleMarkerStateSync(0, false);
-                scheduleDeferredOperationalStartup();
-                if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
-                scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
-                runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
-                return;
-            }
-            if (attempts >= 90 || runtime.destroyed) return;
-            const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+        let complete = false;
+        const scheduleAttempt = delay => {
+            if (complete || runtime.destroyed) return;
             runtimeSetTimeout(runBootAttempt, delay);
         };
-        runtimeSetTimeout(runBootAttempt, 250);
+        const runBootAttempt = () => {
+            if (complete || runtime.destroyed) return;
+            attempts += 1;
+            const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
+            const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+            runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+            runBootIntegration('radio message hook', installRadioMessageHook);
+            runBootIntegration('credits update hook', installCreditsUpdateHook);
+            runBootIntegration('credits observer', observeCreditValue);
+            if (ready && (mapReady || attempts >= 12)) {
+                complete = true;
+                runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                runBootIntegration('marker state sync', () => {
+                    scheduleMarkerStateSync(0, false);
+                });
+                runBootIntegration('deferred operational startup', () => {
+                    scheduleDeferredOperationalStartup();
+                });
+                runBootIntegration('operational suite scan', () => {
+                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+                });
+                runBootIntegration('version status check', () => {
+                    scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+                });
+                runBootIntegration('main observer connection', () => {
+                    runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+                });
+                return;
+            }
+            if (attempts >= 90) return;
+            const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+            scheduleAttempt(delay);
+        };
+        runBootAttempt();
     }
     function registerBootMaintenanceTasks() {
         runtimeRegisterTask('vehicle-data-refresh', VEHICLE_API_REFRESH_MS, () => {
@@ -31433,22 +31458,20 @@ Create the private backup now?`);
         bootStarted = true;
         bootStartedAt = Date.now();
         const bootPerformanceStartedAt = startupClock();
-        applyRootAttributes();
-        if (installAllianceBuildingsPageOptimisation()) return;
-        createCleanExit();
-        if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
-        installMissionMarkerAddHook();
-        installRadioMessageHook();
-        lastObservedCredits = readCurrentCreditTotal();
-        installCreditsUpdateHook();
-        observeCreditValue();
-        startBootAttemptCoordinator(bootPerformanceStartedAt);
-        try {
-            installOperationalSuiteShell();
-        } catch (error) {
-            console.error(`[${SCRIPT.name}] Operational suite shell failed; core Toolkit menu startup continues.`, error);
-        }
-        installCustomVehicleBadges();
+        const allianceBuildingsOnly = isAllianceBuildingsPath() && state.allianceBuildingsMap === false;
+        if (!allianceBuildingsOnly) startBootAttemptCoordinator(bootPerformanceStartedAt);
+        runBootIntegration('root attributes', applyRootAttributes);
+        runBootIntegration('Alliance Buildings optimisation', installAllianceBuildingsPageOptimisation);
+        if (allianceBuildingsOnly) return;
+        runBootIntegration('clean-mode exit', createCleanExit);
+        if (state.autoLoadAllVehicles) runBootIntegration('auto-load all vehicles', installAutoLoadAllVehicles);
+        runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+        runBootIntegration('radio message hook', installRadioMessageHook);
+        lastObservedCredits = runBootIntegration('initial credit total', readCurrentCreditTotal);
+        runBootIntegration('credits update hook', installCreditsUpdateHook);
+        runBootIntegration('credits observer', observeCreditValue);
+        runBootIntegration('operational suite shell', installOperationalSuiteShell);
+        runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {
                 economyDeferredDomMutation = true;
@@ -31669,7 +31692,10 @@ Create the private backup now?`);
 
     function scheduleBoot() {
         if (runtime.destroyed || bootStarted) return;
-        runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS);
+        runBootIntegration('idle boot scheduling', () => runtimeRunWhenIdle(boot, STARTUP_IDLE_TIMEOUT_MS));
+        runtimeSetTimeout(() => {
+            if (!runtime.destroyed && !bootStarted) boot();
+        }, Math.min(1200, STARTUP_IDLE_TIMEOUT_MS));
     }
 
     if (document.readyState === 'loading') {

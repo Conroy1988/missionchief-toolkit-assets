@@ -179,7 +179,7 @@ with tempfile.TemporaryDirectory(prefix="issue378-release-ci-") as temporary:
     performance_md = temp / "performance.md"
     subprocess.run(["python3", str(PERFORMANCE), "--candidate", str(SOURCE), "--base", str(base), "--policy", str(PERFORMANCE_POLICY), "--json-output", str(performance_json), "--markdown-output", str(performance_md)], cwd=ROOT, env=ENV, check=True)
     performance = json.loads(performance_json.read_text(encoding="utf-8"))
-    if performance.get("result") != "pass":
+    if performance.get("result") != "success":
         raise RuntimeError(performance_md.read_text(encoding="utf-8"))
 for obsolete in (
     ROOT / ".github" / "development-packages" / "issue378-release-ci-diagnostic-v2.py",

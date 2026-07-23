@@ -1,0 +1,11 @@
+ISSUE391_MIGRATION_CLEANUP_FAILURE_V1
+returncode=1
+
+=== STDOUT ===
+Traceback (most recent call last):
+  File "/tmp/issue391-migration-cleanup-selftest-bjlz05tk/repo/.github/development-packages/issue391-complete-retirement-package-v3.py", line 66, in <module>
+    raise RuntimeError("retirement migration cleanup anchor drifted")
+RuntimeError: retirement migration cleanup anchor drifted
+
+=== STDERR ===
+Issue #391 migration-cleanup correction failed full retirement sandbox

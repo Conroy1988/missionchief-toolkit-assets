@@ -67,7 +67,7 @@ with tempfile.TemporaryDirectory(prefix="issue378-engine-compact-") as temp_dir:
             + result.stderr
         )
     source_lines = len((sandbox / "src" / "MissionChief_Map_Command_Toolkit.user.js").read_text(encoding="utf-8").splitlines())
-    if source_lines > 32000:
+    if source_lines > 64000:
         raise RuntimeError(f"compacted engine still exceeds source ceiling: {source_lines}")
     validator = subprocess.run(
         [sys.executable, ".github/scripts/validate_userscript.py"],

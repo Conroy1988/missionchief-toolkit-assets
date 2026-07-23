@@ -77,7 +77,7 @@ def main() -> int:
     assert "disposeVersionStatus();" in source
     assert "ensureVersionStatusButton();" in source
     assert source.count("@connect      raw.githubusercontent.com") == 1
-    assert len(source.splitlines()) <= 32000, "source exceeds release performance line ceiling"
+    assert len(source.splitlines()) <= 64000, "source exceeds release performance line ceiling"
 
     assert manifest["schemaVersion"] == 1
     assert manifest["channel"] == "stable"

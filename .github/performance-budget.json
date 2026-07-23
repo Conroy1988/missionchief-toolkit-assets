@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-20-v4.20.10-runtime-audit",
-  "rationale": "Issue #247 measurement-only reconciliation. Preserve the existing source, CSS and direct-browser primitive ceilings while adding explicit v4.20.10 baselines for lifecycle-managed wrapper call sites, alias-resolved observer constructions, broad subtree observation and DOM/network workload indicators. New corrected metrics are intentionally baseline-locked: increases require an explicit reviewed policy change rather than remaining invisible to CI.",
+  "revision": "2026-07-23-issue-385-64k-source-ceiling",
+  "rationale": "Issue #385 owner-authorized policy change: double the canonical userscript absolute line ceiling from 32,000 to 64,000 lines for the Issue #378 major operational-suite programme. All byte, CSS, observer, timer, listener, selector and network ceilings remain unchanged; relative-growth review thresholds remain active.",
   "requiredSourceFragments": [
     "@run-at       document-start",
     "__MCMS_STARTUP_METRICS__"
   ],
   "absoluteLimits": {
     "bytes": 3000000,
-    "lines": 32000,
+    "lines": 64000,
     "css_bytes": 950000,
     "css_rule_blocks": 7000,
     "set_interval_calls": 4,

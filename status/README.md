@@ -8,16 +8,16 @@
 |---|:---:|---|
 | Canonical source | 🟢 | Validated Canonical Source |
 | Validation | 🟢 | Passed |
-| GitHub Release | ⚪ | Not Published |
-| Greasy Fork | 🟡 | Pending Release |
-| Private backup | ⚪ | Not Created |
+| GitHub Release | 🟢 | Published |
+| Greasy Fork | 🟢 | Verified |
+| Private backup | 🟢 | Private Repository Verified |
 | Discord development | 🟢 | Configured |
-| Discord releases | ⚪ | Not Posted |
+| Discord releases | 🟢 | Posted |
 | Asset audit | 🟢 | Passed |
 
 ## Release state
 
-- **Latest recorded version:** `5.0.2`
+- **Latest recorded version:** `5.0.3`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
 - **Validated SHA-256:** `42f043b695efe1ef9bf1c95acba30d5deda401de0da0bf79f9967fbcfa0d45b1`
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-23T14:53:16Z`
+- **Last dashboard update:** `2026-07-23T14:54:37Z`
 
 ## Release channels
 

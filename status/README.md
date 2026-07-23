@@ -20,7 +20,7 @@
 - **Latest recorded version:** `5.0.5`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `730939855897b5a8522cdf2141a3dff0df7d94347c5c212272e5adb0e21cff70`
+- **Validated SHA-256:** `795bacf43d82be8d8c6e66e43bf6a564bcaae979bf571b3d90765f048d159a67`
 - **Distribution candidate:** `dist/MissionChief_Map_Command_Toolkit.user.js`
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-23T21:05:00Z`
+- **Last dashboard update:** `2026-07-23T21:13:33Z`
 
 ## Release channels
 

@@ -24,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-23T21:05:00Z",
+  "lastUpdated": "2026-07-23T21:13:33Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "730939855897b5a8522cdf2141a3dff0df7d94347c5c212272e5adb0e21cff70",
+    "validatedSha256": "795bacf43d82be8d8c6e66e43bf6a564bcaae979bf571b3d90765f048d159a67",
     "state": "validated-canonical-source"
   },
   "distributionCandidate": {

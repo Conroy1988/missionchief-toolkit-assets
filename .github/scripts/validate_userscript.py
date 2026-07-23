@@ -39,6 +39,8 @@ ISSUE450_CORE_BOOTSTRAP_CONTRACT = ROOT / ".github" / "scripts" / "test_issue450
 ISSUE454_PREBOOT_STATE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue454_preboot_state_order.py"
 ISSUE456_REQUIREMENTS_TRUTH_RUNTIME = ROOT / ".github" / "scripts" / "test_issue456_requirements_truth_runtime.js"
 ISSUE458_REQUIREMENTS_SOURCE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue458_requirements_source_runtime.js"
+ISSUE464_LAUNCHER_SETTINGS_CONTRACT = ROOT / ".github" / "scripts" / "test_issue464_launcher_settings_contract.py"
+ISSUE464_OPERATIONAL_RUNTIME = ROOT / ".github" / "scripts" / "test_issue464_operational_runtime.js"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -165,7 +167,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME, ISSUE458_REQUIREMENTS_SOURCE_RUNTIME]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME, ISSUE458_REQUIREMENTS_SOURCE_RUNTIME, ISSUE464_LAUNCHER_SETTINGS_CONTRACT, ISSUE464_OPERATIONAL_RUNTIME]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -315,6 +317,18 @@ def run_integrity_gate() -> None:
         )
         if issue458_requirements_source.returncode != 0:
             fail("Issue #458 requirements source-discovery runtime failed")
+
+        issue464_launcher_settings = subprocess.run(
+            [sys.executable, str(ISSUE464_LAUNCHER_SETTINGS_CONTRACT)], cwd=ROOT,
+        )
+        if issue464_launcher_settings.returncode != 0:
+            fail("Issue #464 launcher/settings contract failed")
+
+        issue464_operational_runtime = subprocess.run(
+            ["node", str(ISSUE464_OPERATIONAL_RUNTIME)], cwd=ROOT,
+        )
+        if issue464_operational_runtime.returncode != 0:
+            fail("Issue #464 operational runtime fixtures failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

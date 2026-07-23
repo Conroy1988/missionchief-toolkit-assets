@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const root=path.resolve(__dirname,'..','..');
+const source=fs.readFileSync(path.join(root,'src','MissionChief_Map_Command_Toolkit.user.js'),'utf8');
+const start=source.indexOf('    // Issue #464 resilient launcher and typed operational settings.');
+const end=source.indexOf('    // Issue #464 end resilient launcher and typed operational settings.',start);
+if(start<0||end<0)throw new Error('Issue #464 block missing');
+const block=source.slice(start,end);
+const values=new Map([['requirements.enabled',true],['callWindow.enabled',true],['callWindow.arrSearch',true],['callWindow.arrSearchDropdown',false]]);
+const sandbox={console,Object,Set,Map,JSON,Math,Number,String,Array,RegExp,Date,MISSION_AGE_LABEL_REFRESH_MS:60000,state:{operationalWindow:{enabled:true}},operationalFeatureValue:path=>values.get(path),operationalRequirementsVehicleType:()=>0,operationalQuery:()=>null,operationalQueryAll:()=>[],operationalEscape:value=>String(value),SCRIPT:{panelId:'panel',controlId:'control'}};
+sandbox.globalThis=sandbox;vm.createContext(sandbox);
+vm.runInContext(`${block}\nglobalThis.dep=operationalWindowDependenciesMet;globalThis.match=operationalArrMatchesText;globalThis.share=operationalMissionShareEligible;globalThis.duration=operationalParseDurationSeconds;globalThis.plan=operationalMissionAgeRefreshPlan;`,sandbox);
+if(!sandbox.dep('requirements.enabled',''))throw new Error('dependency true path failed');
+if(sandbox.dep('callWindow.enabled,callWindow.arrSearch','callWindow.arrSearchDropdown')!==true)throw new Error('ARR dependency failed');
+values.set('callWindow.arrSearchDropdown',true);if(sandbox.dep('callWindow.enabled,callWindow.arrSearch','callWindow.arrSearchDropdown')!==false)throw new Error('ARR forbidden dependency failed');
+if(!sandbox.match('Large Public Disturbance','Public order response for disturbance',false))throw new Error('ARR any-word match failed');
+if(sandbox.match('Large Public Disturbance','Large response',true))throw new Error('ARR all-word match failed');
+if(!sandbox.share({type:'fire',credits:12000},{shareMissions:true,shareMissionTypes:['fire'],shareMissionsMinCredits:10000}))throw new Error('share eligibility failed');
+if(sandbox.share({type:'police',credits:12000},{shareMissions:true,shareMissionTypes:['fire'],shareMissionsMinCredits:10000}))throw new Error('share type gate failed');
+if(sandbox.duration('1:02:03')!==3723||sandbox.duration('12m 30s')!==750)throw new Error('duration parser failed');
+if(sandbox.plan({enabled:true,moving:true,mapReady:true,markers:1,candidates:1,labels:0}).delay!==700)throw new Error('moving retry failed');
+if(sandbox.plan({enabled:true,moving:false,mapReady:true,markers:3,candidates:2,labels:0}).delay!==1000)throw new Error('missing-label retry failed');
+if(sandbox.plan({enabled:true,moving:false,mapReady:true,markers:3,candidates:2,labels:2}).delay!==60000)throw new Error('steady refresh failed');
+console.log('Issue #464 operational runtime fixtures passed.');

@@ -4,6 +4,19 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [5.0.6] - 2026-07-23
+
+### Fixed
+
+- Made the Toolkit launcher independent of Leaflet map discovery, with a safe fixed fallback that reparents to the live map when available.
+- Added a permanent idempotent UI-integrity task and corrected mutation ordering so MissionChief map replacements cannot silently remove the launcher.
+- Replaced the Operational Window label dump with typed, persisted switches, number inputs, colour controls, selects, dependency states and structured list editors.
+- Mapped the complete Enhanced Requirements, Extended Call Window, Extended Mission List and opt-in Transport settings to their Toolkit runtime state.
+- Hid internal overlay, minimised, push-right, drag, starred and collapsed state from user-facing settings.
+- Added responsive two-column desktop and single-column Tablet/iOS layouts with safe text wrapping and no horizontal overflow.
+- Restored Mission Age labels and shortcut `6` with forced late-data recovery, immediate controlled retries, marker replacement reconciliation and clean teardown.
+- Completed the runtime mapping for Extended Call Window and Extended Mission List controls, including ARR counters/search/highlighting, patient and vehicle summaries, structured categories/icons/keywords, sharing gates, sorting and configured badge colours.
+
 ## [Unreleased]
 
 ## [5.0.5] - 2026-07-23

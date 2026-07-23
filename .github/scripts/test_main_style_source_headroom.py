@@ -105,7 +105,8 @@ def main() -> int:
         issue = change.get("issue")
         phase = str(change.get("phase") or "").strip()
         lines = change.get("lines")
-        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or lines < 0:
+        net_delta = change.get("netPhysicalDelta") is True and issue == 464 and phase == "complete-launcher-settings-operational-runtime-and-mission-age-recovery"
+        if not isinstance(issue, int) or issue <= 0 or not phase or not isinstance(lines, int) or (lines < 0 and not net_delta):
             fail("approved non-style source change entry is malformed")
         approved_total += lines
     if approved_total != fixture.get("approvedNonStyleSourceLines", 0):

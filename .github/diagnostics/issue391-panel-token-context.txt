@@ -1,0 +1,11 @@
+ISSUE391_PANEL_TOKEN_CONTEXT_V2
+returncode=1
+
+=== STDOUT ===
+Traceback (most recent call last):
+  File "/tmp/issue391-complete-retirement-v2-selftest-gqhe9ve3/repo/.github/development-packages/issue391-retire-matrix.py", line 185, in <module>
+    raise RuntimeError(f"legacy Matrix token survived retirement: {token}; positions={positions}; contexts={contexts!r}")
+RuntimeError: legacy Matrix token survived retirement: missionRequirementsPanelId; positions=[1942061]; contexts=['erId ||\n                target.id === SCRIPT.vehicleStatusId ||\n                target.id === SCRIPT.majorIncidentFeedId ||\n                target.id === SCRIPT.missionInspectorId ||\n                target.id === SCRIPT.missionRequirementsPanelId ||\n                target.closest?.(`#${SCRIPT.controlId}`) ||\n                target.closest?.(`#${SCRIPT.panelId}`) ||\n                target.closest?.(`#${SCRIPT.toastId}`) ||\n                target.closest?.(`#${SCR']
+
+=== STDERR ===
+Issue #391 retirement package v2 failed sandbox self-test

@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "5.0.0",
+  "candidateVersion": "5.0.1",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -17,7 +17,7 @@
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
   "candidateSourceSha256": "690088591fd205f845960c44ecc4b6e6560b49a1da50d8eddf430de961e296ef",
   "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while authoritative empty live requirements clear false shortages and explicit Level 1 Public Order evidence contributes exact personnel.",
-  "approvedNonStyleSourceLines": 1416,
+  "approvedNonStyleSourceLines": 1425,
   "approvedNonStyleChanges": [
     {
       "issue": 378,
@@ -38,9 +38,14 @@
       "issue": 378,
       "phase": "operational-feature-suite",
       "lines": 356
+    },
+    {
+      "issue": 447,
+      "phase": "menu-boot-fail-open-hotfix",
+      "lines": 9
     }
   ],
-  "expectedSourceLines": 31671,
+  "expectedSourceLines": 31680,
   "retiredNonStyleSourceLines": 1398,
   "retiredNonStyleChanges": [
     {

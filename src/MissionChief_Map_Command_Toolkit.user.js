@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.0
+// @version      5.0.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.0',
+        version: '5.0.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -23094,13 +23094,17 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtimeClearTimeout(operationalSuiteScanTimer);
         operationalSuiteScanTimer = runtimeSetTimeout(() => {
             operationalSuiteScanTimer = null;
-            scanOperationalSuiteShell();
+            try {
+                scanOperationalSuiteShell();
+            } catch (error) {
+                console.error(`[${SCRIPT.name}] Operational suite scan failed without blocking the Toolkit menu.`, error);
+            }
         }, Math.max(0, Number(delay) || 0));
     }
 
     function installOperationalSuiteShell() {
         if (operationalSuiteInstalled) {
-            if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+            if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
             return;
         }
         operationalSuiteInstalled = true;
@@ -23117,7 +23121,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             clearOperationalSuiteContexts();
             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
         });
-        if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+        if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
     }
 
     // Issue #378 retained UK operational capability catalogue.
@@ -31332,6 +31336,7 @@ Create the private backup now?`);
                 recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
                 scheduleMarkerStateSync(0, false);
                 scheduleDeferredOperationalStartup();
+                if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
                 scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
                 runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
                 return;
@@ -31437,9 +31442,13 @@ Create the private backup now?`);
         lastObservedCredits = readCurrentCreditTotal();
         installCreditsUpdateHook();
         observeCreditValue();
-        installOperationalSuiteShell();
-        installCustomVehicleBadges();
         startBootAttemptCoordinator(bootPerformanceStartedAt);
+        try {
+            installOperationalSuiteShell();
+        } catch (error) {
+            console.error(`[${SCRIPT.name}] Operational suite shell failed; core Toolkit menu startup continues.`, error);
+        }
+        installCustomVehicleBadges();
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {
                 economyDeferredDomMutation = true;

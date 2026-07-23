@@ -34,6 +34,7 @@ MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_s
 ISSUE378_REQUIREMENTS_RENDERER_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_requirements_renderer.py"
 ISSUE378_OPERATIONAL_FEATURE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_suite.py"
 ISSUE378_OPERATIONAL_FEATURE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_runtime.js"
+ISSUE447_MENU_BOOT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue447_menu_boot_fail_open.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -276,6 +277,13 @@ def run_integrity_gate() -> None:
         )
         if issue378_feature_runtime.returncode != 0:
             fail("Issue #378 operational feature runtime fixtures failed")
+
+        issue447_menu_boot = subprocess.run(
+            [sys.executable, str(ISSUE447_MENU_BOOT_CONTRACT)],
+            cwd=ROOT,
+        )
+        if issue447_menu_boot.returncode != 0:
+            fail("Issue #447 menu boot fail-open contract failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

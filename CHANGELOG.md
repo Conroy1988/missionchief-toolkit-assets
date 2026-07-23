@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-07-23
+
+### Emergency menu recovery
+- Restored the Toolkit launcher and settings menu for users upgrading from v4.20.37 to v5.0.0.
+- Made core UI startup fail-open so an operational-suite initialisation or scan error cannot prevent the map command bar from mounting.
+- Deferred the first operational DOM scan until after `ensureUi()` has created the launcher.
+- Isolated operational scan failures with explicit diagnostics while preserving the rest of the Toolkit runtime.
+
+### Compatibility
+- No settings reset is required. Existing v5.0.0 operational-window preferences are retained.
+- Enhanced Requirements, Extended Call Window, Extended Call List and Enhanced Transport Requests remain available after the core launcher mounts.
+
+
 ## [5.0.0] - 2026-07-23
 
 ### Major operational-window replacement

@@ -102,6 +102,13 @@ start_marker = "    // Issue #133 clean-room live mission requirements matrix."
 end_marker = "    function criticalMissionValueForEntry"
 start = source.index(start_marker)
 end = source.index(end_marker, start)
+settings_handler_start = source.index("    function handleOperationalWindowSettingChange")
+settings_handler_end = source.index("    function operationalFeatureStyle", settings_handler_start)
+preserved_operational_settings_handler = source[settings_handler_start:settings_handler_end]
+if settings_handler_start < start:
+    source = source[:settings_handler_start] + source[settings_handler_end:]
+    start = source.index(start_marker)
+    end = source.index(end_marker, start)
 old_block = source[start:end]
 if len(old_block.splitlines()) != 1395:
     raise RuntimeError(f"Matrix retirement boundary drifted: {len(old_block.splitlines())} lines")
@@ -123,6 +130,7 @@ for name in shared_names:
 replacement = (
     "    // Issue #378 retained UK operational capability catalogue.\n"
     + "".join(shared)
+    + preserved_operational_settings_handler
     + "    // Issue #391: legacy Mission Requirements Matrix retired; operationalWindow is authoritative.\n\n"
 )
 source = source[:start] + replacement + source[end:]
@@ -177,6 +185,8 @@ if source.count("parsed?.missionRequirements") != 1:
 for name in shared_names:
     if source.count(f"const {name} =") != 1:
         raise RuntimeError(f"shared capability catalogue count changed: {name}")
+if source.count("function handleOperationalWindowSettingChange(") != 1:
+    raise RuntimeError("operational settings handler declaration count changed during Matrix retirement")
 if source.count("matrixRetired: true") < 1:
     raise RuntimeError("Matrix retirement migration flag is missing")
 

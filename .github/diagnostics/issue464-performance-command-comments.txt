@@ -1,0 +1,90 @@
+5062797079
+2026-07-23T20:01:36Z
+Conroy1988
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py f429f5813287e737d01759d378199edabe17df14
+---
+5062801047
+2026-07-23T20:01:59Z
+github-actions[bot]
+<!-- development-package-preflight-passed:479f86f7261068401e8807a6757c0f96da783e526f3952b09ffef516cb0878b9 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+---
+5062803749
+2026-07-23T20:02:15Z
+Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py f429f5813287e737d01759d378199edabe17df14
+---
+5062809354
+2026-07-23T20:02:49Z
+github-actions[bot]
+<!-- development-package-apply:479f86f7261068401e8807a6757c0f96da783e526f3952b09ffef516cb0878b9 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `5b7e8de7fa4cb3c2e79807c666d8a50fb745297f`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+---
+5062886754
+2026-07-23T20:10:04Z
+Conroy1988
+/release-toolkit 5.0.6 RELEASE
+---
+5062888771
+2026-07-23T20:10:15Z
+github-actions[bot]
+Toolkit v5.0.6 passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: `30040972239`.
+---
+5062894638
+2026-07-23T20:10:47Z
+github-actions[bot]
+Toolkit v5.0.6 release stopped fail-closed. Readiness result: `failure`; production result: `skipped`. No safeguard was bypassed. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30040972239
+---
+5062980989
+2026-07-23T20:19:03Z
+Conroy1988
+/preflight-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-comments-diagnostic.py 7e5f0bcf34027b898380838d26036a486648d3ed
+---
+5062984421
+2026-07-23T20:19:23Z
+github-actions[bot]
+<!-- development-package-preflight-passed:87138c26ccb7b2667695e20673d540060a15643cd6d93c47f8c2db48b6c59b56 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+---
+5062987483
+2026-07-23T20:19:40Z
+Conroy1988
+/apply-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-comments-diagnostic.py 7e5f0bcf34027b898380838d26036a486648d3ed
+---
+5062993356
+2026-07-23T20:20:12Z
+github-actions[bot]
+<!-- development-package-apply:87138c26ccb7b2667695e20673d540060a15643cd6d93c47f8c2db48b6c59b56 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `59878cc2c50e588e075df452763596cba1c46d8a`\n- Pull request opened: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/466\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+---
+5063035456
+2026-07-23T20:24:13Z
+Conroy1988
+/preflight-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py ef25fd91f7c9d0a0f49e9e6fe40d1a1433e2753b
+---
+5063038683
+2026-07-23T20:24:29Z
+github-actions[bot]
+<!-- development-package-preflight-stopped:d7a26b3fa8de8763b297cd92d5b6d76c8dad01746005b45d124ea38d56c380d5 -->\nDevelopment-package preflight stopped safely during **apply-development-package**. No branch was changed and no failed workflow notification is required. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30041937948
+---
+5063044662
+2026-07-23T20:25:01Z
+Conroy1988
+/apply-development-package fix/issue464-v5.0.6-performance-budget .github/development-packages/issue464-performance-budget-correction.py ef25fd91f7c9d0a0f49e9e6fe40d1a1433e2753b
+---
+5063047802
+2026-07-23T20:25:18Z
+github-actions[bot]
+Development-package apply skipped safely: This exact package has not passed preflight against the current main branch. No branch was changed.
+---
+5063063353
+2026-07-23T20:26:49Z
+Conroy1988
+/preflight-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-performance-command-comments.py aeda0c5774bc5f00f1f48d2726ba651b0828ce85
+---
+5063067789
+2026-07-23T20:27:15Z
+github-actions[bot]
+<!-- development-package-preflight-passed:15fcf6c4007d0934b48db5a6fcdfa00707fb01b095dea7a1a1771b3974995b79 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+---
+5063069123
+2026-07-23T20:27:24Z
+Conroy1988
+/apply-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-performance-command-comments.py aeda0c5774bc5f00f1f48d2726ba651b0828ce85
+---

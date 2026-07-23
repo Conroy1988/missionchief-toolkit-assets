@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+PACKAGE_NAME = "issue391-retire-matrix.py"
+OUTPUT = ROOT / ".github" / "diagnostics" / "issue391-retirement-preflight-failure-v2.txt"
+
+with tempfile.TemporaryDirectory(prefix="issue391-retirement-diagnostic-v2-") as temp_dir:
+    sandbox = Path(temp_dir) / "repo"
+    shutil.copytree(ROOT, sandbox, ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc", "*.pyo"))
+    result = subprocess.run(
+        [sys.executable, str(sandbox / ".github" / "development-packages" / PACKAGE_NAME)],
+        cwd=sandbox,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+OUTPUT.write_text(
+    "ISSUE391_RETIREMENT_PREFLIGHT_FAILURE_V2\n"
+    f"returncode={result.returncode}\n"
+    "\n=== STDOUT ===\n" + result.stdout + "\n=== STDERR ===\n" + result.stderr,
+    encoding="utf-8",
+)
+print(f"Captured corrected Issue #391 retirement result with return code {result.returncode}.")

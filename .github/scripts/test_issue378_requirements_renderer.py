@@ -48,8 +48,10 @@ if "doc.removeEventListener('change', context.changeHandler, true)" not in sourc
     raise SystemExit("Issue #378 renderer checkbox listener teardown is missing")
 if "operationalReplaceContent(panel, rendered.html)" not in block:
     raise SystemExit("Issue #378 renderer bounded output replacement is missing")
-if "requirementRoot.parentNode?.insertBefore(panel, requirementRoot)" not in block:
-    raise SystemExit("Issue #378 renderer must remain in normal document flow")
+if "requirementRoot.parentNode.insertBefore(panel, requirementRoot)" not in block:
+    raise SystemExit("Issue #378 renderer must insert the panel in normal document flow")
+if "panel.parentNode !== requirementRoot.parentNode || panel.nextSibling !== requirementRoot" not in block:
+    raise SystemExit("Issue #378 renderer must keep the panel immediately before the requirement root")
 
 print("Issue #378 enhanced requirements renderer contract passed.")
 

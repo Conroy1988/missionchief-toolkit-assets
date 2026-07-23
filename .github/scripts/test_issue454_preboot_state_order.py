@@ -16,8 +16,11 @@ state_initializer = state_match.group(0)
 assert text.index(settings_declaration) < state_match.start()
 assert state_match.start() < text.index(default_function)
 assert "schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION" in text
-assert "// @version      5.0.3" in text
-assert "version: '5.0.3'," in text
+metadata_version = re.search(r"(?m)^//\s*@version\s+([^\s]+)\s*$", text)
+runtime_version = re.search(r"version:\s*'([^']+)',", text)
+assert metadata_version is not None
+assert runtime_version is not None
+assert metadata_version.group(1) == runtime_version.group(1)
 assert len(text.encode("utf-8")) > 500_000
 assert text.rstrip().endswith("})();")
 print("Issue #454 preboot state-order contract passed.")

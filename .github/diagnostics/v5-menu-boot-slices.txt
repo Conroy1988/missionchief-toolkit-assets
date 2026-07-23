@@ -1,0 +1,1056 @@
+V5_MENU_BOOT_FOCUSED_SLICES
+
+===== loadState at line 1735 =====
+001735: function loadState() {
+001736:         const base = defaultState();
+001737:         const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
+001738:         if (!raw) return base;
+001739: 
+001740:         try {
+001741:         return normaliseLoadedState(JSON.parse(raw), base);
+001742:         } catch (err) {
+001743:         return base;
+001744:         }
+001745:     }
+
+===== normaliseOperationalWindowSettings: NOT FOUND =====
+===== installOperationalSuiteShell at line 23101 =====
+023101: function installOperationalSuiteShell() {
+023102:         if (operationalSuiteInstalled) {
+023103:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+023104:             return;
+023105:         }
+023106:         operationalSuiteInstalled = true;
+023107:         runtime.operationalSuite = Object.freeze({
+023108:             baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
+023109:             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+023110:             phase: 'operational-suite',
+023111:             schedule: scheduleOperationalSuiteScan,
+023112:             contextCount: () => operationalSuiteContexts.size
+023113:         });
+023114:         runtimeOnCleanup(() => {
+023115:             runtimeClearTimeout(operationalSuiteScanTimer);
+023116:             operationalSuiteScanTimer = null;
+023117:             clearOperationalSuiteContexts();
+023118:             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
+023119:         });
+023120:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+023121:     }
+
+===== operationalSuiteEnabled at line 23006 =====
+023006: function operationalSuiteEnabled() {
+023007:         return state.operationalWindow?.enabled === true;
+023008:     }
+
+===== scheduleDeferredOperationalStartup at line 31058 =====
+031058: function scheduleDeferredOperationalStartup(delay = STARTUP_OPERATIONAL_DELAY_MS) {
+031059:         if (operationalStartupStarted || runtime.destroyed) return;
+031060:         runtimeSetTimeout(() => runtimeRunWhenIdle(() => {
+031061:             runDeferredOperationalStartup().catch(err => {
+031062:                 operationalStartupComplete = true;
+031063:                 startupDataPassActive = false;
+031064:                 console.debug(`[${SCRIPT.name}] Deferred startup recovered after an operational initialisation error.`, err);
+031065:                 connectMainMutationObserver();
+031066:             });
+031067:         }, STARTUP_IDLE_TIMEOUT_MS), Math.max(0, Number(delay) || 0));
+031068:     }
+
+===== ensureUi at line 30723 =====
+030723: function ensureUi() {
+030724:         const mapEl = getLargestLeafletMap();
+030725:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+030726:         if (mapEl) {
+030727:             createControl(mapEl);
+030728:             ensureVersionStatusButton();
+030729:             const map = findLeafletMapInstance(false);
+030730:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+030731:             if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(0);
+030732:             else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+030733:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+030734:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
+030735:         }
+030736:         return Boolean(mapEl && document.getElementById(SCRIPT.controlId));
+030737:     }
+
+===== createControl at line 29737 =====
+029737: function createControl(mapEl) {
+029738:         if (!mapEl || document.getElementById(SCRIPT.controlId)) return;
+029739:         const control = document.createElement('div');
+029740:         control.id = SCRIPT.controlId;
+029741:         control.className = 'mcms-control';
+029742:         control.setAttribute('aria-label', `${SCRIPT.name} control`);
+029743:         control.innerHTML = `
+029744:             <div class="mcms-launch-row">
+029745:                 <div class="mcms-shell">
+029746:                     <button class="mcms-menu-btn" type="button" title="Open or close toolkit settings" aria-label="Open or close toolkit settings" aria-expanded="false" aria-controls="${SCRIPT.panelId}">🗺️</button>
+029747:                     <button class="mcms-dock-toggle-btn" type="button" title="Collapse command bar" aria-label="Collapse command bar" aria-expanded="true"><span class="mcms-dock-toggle-icon" aria-hidden="true">▴</span></button>
+029748:                 </div>
+029749:                 <button class="mcms-economy-btn" type="button" data-action="toggle-economy" title="Enable Economy Mode" aria-label="Enable Economy Mode" aria-pressed="false"><span aria-hidden="true">🍃</span><small>ECO</small></button>
+029750:             </div>
+029751:             <div class="mcms-floating-filter" title="Persistent map visibility filters">
+029752:                 ${makeFloatButton('myMissions', '1', 'Personal', 'Show/hide confidently detected personal missions. Shortcut: 1', 'Personal', 'Mine')}
+029753:                 ${makeFloatButton('allianceMissions', '2', 'Alliance', 'Show/hide confidently detected alliance missions. Shortcut: 2', 'Alliance', 'Ally')}
+029754:                 ${makeFloatButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3', 'Vehicles', 'Units')}
+029755:                 ${makeFloatButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4', 'Buildings', 'Bldgs')}
+029756:                 ${makeFloatButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5', 'Ally Credits', 'Ally £')}
+029757:                 ${makeFloatButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
+029758:                 ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
+029759:                 ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+029760:                 ${makeFloatButton('criticalView', '9', 'Crit View', 'Show only personal missions aged 8 hours or more and frame them on the map. Shortcut: 9', 'Critical View', 'Critical')}
+029761:                 ${makeActionFloatButton('open-vehicle-status', 'V', 'Veh Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Veh Codes', 'Codes')}
+029762:                 ${makeActionFloatButton('open-critical-drawer', 'W', 'Age Watch', 'Open or close Mission Age Watch. Shortcut: W', 'Age Watch', 'Watch')}
+029763:             </div>
+029764:             <div class="mcms-screen-pins" title="Pinned screen shortcuts"></div>
+029765:         `;
+029766:         ['click', 'dblclick', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'pointercancel', 'touchstart', 'touchmove', 'touchend', 'wheel', 'contextmenu'].forEach(eventName => {
+029767:             control.addEventListener(eventName, stopMapInteraction, { passive: false });
+029768:         });
+029769:         let screenPinLongPressTimer = 0;
+029770:         let screenPinLongPressButton = null;
+029771:         const cancelScreenPinLongPress = () => {
+029772:             runtimeClearTimeout(screenPinLongPressTimer);
+029773:             screenPinLongPressTimer = 0;
+029774:             screenPinLongPressButton = null;
+029775:         };
+029776:         control.addEventListener('pointerdown', event => {
+029777:             const pinButton = closestEventTarget(event, '.mcms-screen-pin-btn[data-full-label]');
+029778:             if (!pinButton || event.pointerType === 'mouse') return;
+029779:             cancelScreenPinLongPress();
+029780:             screenPinLongPressButton = pinButton;
+029781:             screenPinLongPressTimer = runtimeSetTimeout(() => {
+029782:                 if (screenPinLongPressButton !== pinButton) return;
+029783:                 pinButton.dataset.mcmsLongPress = 'true';
+029784:                 showToast(pinButton.dataset.fullLabel || pinButton.textContent || 'Bookmark');
+029785:             }, 560);
+029786:         });
+029787:         control.addEventListener('pointermove', cancelScreenPinLongPress, { passive: true });
+029788:         control.addEventListener('pointercancel', cancelScreenPinLongPress, { passive: true });
+029789:         control.addEventListener('pointerup', () => {
+029790:             runtimeClearTimeout(screenPinLongPressTimer);
+029791:             screenPinLongPressTimer = 0;
+029792:             screenPinLongPressButton = null;
+029793:         }, { passive: true });
+029794:         control.addEventListener('click', event => {
+029795:             const menuButton = closestEventTarget(event, '.mcms-menu-btn');
+029796:             const dockToggleButton = closestEventTarget(event, '.mcms-dock-toggle-btn');
+029797:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+029798:             const actionButton = closestEventTarget(event, '[data-action]');
+029799:             if (actionButton?.dataset.mcmsLongPress === 'true') {
+029800:                 delete actionButton.dataset.mcmsLongPress;
+029801:                 event.preventDefault();
+029802:                 return;
+029803:             }
+029804:             if (menuButton) { togglePanel(); return; }
+029805:             if (dockToggleButton) { toggleCommandBar(); return; }
+029806:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+029807:             if (actionButton) handleAction(actionButton);
+029808:         });
+029809:         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+029810:         mapEl.appendChild(control);
+029811:         renderScreenPins();
+029812:         updateUI();
+029813:     }
+
+===== createPanel at line 29815 =====
+029815: function createPanel() {
+029816:         const existingPanel = document.getElementById(SCRIPT.panelId);
+029817:         if (existingPanel) { settingsPanelActivated = true; return existingPanel; }
+029818:         const panelStartedAt = startupClock();
+029819:         settingsPanelActivated = true;
+029820:         const panel = document.createElement('div');
+029821:         panel.id = SCRIPT.panelId;
+029822:         panel.setAttribute('role', 'dialog');
+029823:         panel.setAttribute('aria-modal', 'false');
+029824:         panel.setAttribute('aria-hidden', 'true');
+029825:         panel.setAttribute('aria-label', `${SCRIPT.name} menu`);
+029826:         const buildUiThemeButtons = () => UI_THEME_ORDER.map(key => {
+029827:             const theme = UI_THEMES[key];
+029828:             return `
+029829:                 <button class="mcms-ui-theme-btn" type="button" data-ui-theme="${key}" title="${escapeHtml(theme.description)}" aria-pressed="false">
+029830:                     <span class="mcms-ui-theme-preview mcms-ui-theme-preview-${key}" aria-hidden="true"><span></span><span></span><span></span></span>
+029831:                     <span class="mcms-ui-theme-copy"><strong>${escapeHtml(theme.label)}</strong><small>${escapeHtml(theme.short)}</small></span>
+029832:                 </button>
+029833:             `;
+029834:         }).join('');
+029835:         const buildThemeButtons = keys => keys.map(key => {
+029836:             const theme = THEMES[key];
+029837:             return `
+029838:                 <button class="mcms-theme-btn" type="button" data-theme="${key}" title="${theme.full}">
+029839:                     <span class="mcms-iconbox">${theme.icon}</span>
+029840:                     <span class="mcms-text">
+029841:                         <span class="mcms-label">${theme.label}</span>
+029842:                         <span class="mcms-pill">${theme.short}</span>
+029843:                     </span>
+029844:                 </button>
+029845:             `;
+029846:         }).join('');
+029847:         const uiThemeButtons = buildUiThemeButtons();
+029848:         const coreThemeButtons = buildThemeButtons(CORE_THEME_ORDER);
+029849:         const serviceThemeButtons = buildThemeButtons(SERVICE_THEME_ORDER);
+029850:         const positionButtons = Object.entries(POSITIONS).map(([key, pos]) => `<button class="mcms-position-btn" type="button" data-position="${key}" title="${pos.label}">${pos.short}</button>`).join('');
+029851:         panel.innerHTML = `
+029852:             <div class="mcms-panel-sticky-stack">
+029853:                 <div class="mcms-header">
+029854:                     <div class="mcms-drag-handle" title="Hold left-click and drag this bar to move the menu">
+029855:                         <span class="mcms-title">☰ DRAG MENU HERE</span>
+029856:                         <span class="mcms-subtitle">Hold left-click on this title area. Position saves.</span>
+029857:                     </div>
+029858:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+029859:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+029860:                     <button class="mcms-close" type="button" title="Close">×</button>
+029861:                 </div>
+029862:                 <div class="mcms-tabs">
+029863:                     <button class="mcms-tab-btn" type="button" data-tab="skins">Skins</button>
+029864:                     <button class="mcms-tab-btn" type="button" data-tab="tools">Tools</button>
+029865:                     <button class="mcms-tab-btn" type="button" data-tab="resources">Resources</button>
+029866:                     <button class="mcms-tab-btn" type="button" data-tab="ops">Ops</button>
+029867:                     <button class="mcms-tab-btn" type="button" data-tab="payouts">Payouts</button>
+029868:                     <button class="mcms-tab-btn" type="button" data-tab="discord">Finance</button>
+029869:                     <button class="mcms-tab-btn" type="button" data-tab="places">Places</button>
+029870:                     <button class="mcms-tab-btn" type="button" data-tab="settings">Settings</button>
+029871:                 </div>
+029872:             </div>
+029873:             <section class="mcms-tab-panel" data-panel="skins">
+029874:                 <div class="mcms-section-label">Interface theme</div>
+029875:                 <div class="mcms-ui-theme-grid">${uiThemeButtons}</div>
+029876:                 <div class="mcms-status mcms-ui-theme-status">Interface themes restyle the complete toolkit without changing your selected operational map skin.</div>
+029877:                 <div class="mcms-section-label">Core skins</div>
+029878:                 <div class="mcms-grid-2">${coreThemeButtons}</div>
+029879:                 <div class="mcms-section-label">Emergency services</div>
+029880:                 <div class="mcms-grid-2">${serviceThemeButtons}</div>
+029881:                 <div class="mcms-status">Fire Command, Police Tactical, Medical Control and Coastal Command use lightweight local tile filters and remain compatible with map overlays.</div>
+029882:                 <div class="mcms-section-label">Automatic day / night</div>
+029883:                 <div class="mcms-grid-2">
+029884:                     ${makeToggleButton('autoNight', '◑', 'Auto Night', 'Automatically switch operational map skins at the configured day and night times.')}
+029885:                 </div>
+029886:                 <div class="mcms-row"><span class="mcms-row-label">Night starts</span><input class="mcms-input" type="time" data-setting="auto-night-start"></div>
+029887:                 <div class="mcms-row"><span class="mcms-row-label">Day starts</span><input class="mcms-input" type="time" data-setting="auto-day-start"></div>
+029888:                 <div class="mcms-row"><span class="mcms-row-label">Night skin</span><select class="mcms-select" data-setting="auto-night-theme">${buildThemeOptions(state.autoNight.nightTheme)}</select></div>
+029889:                 <div class="mcms-row"><span class="mcms-row-label">Day skin</span><select class="mcms-select" data-setting="auto-day-theme">${buildThemeOptions(state.autoNight.dayTheme)}</select></div>
+029890:             </section>
+029891:             <section class="mcms-tab-panel" data-panel="tools">
+029892:                 <div class="mcms-section-label">Map tools</div>
+029893:                 <div class="mcms-grid-2">
+029894:                     ${makeToggleButton('clean', '▢', 'Clean', 'Hide map controls for screenshots. Shortcut: C')}
+029895:                     ${makeToggleButton('markerFocus', '◉', 'Focus', 'Dim detected buildings/vehicles and keep missions clearer. Shortcut: F')}
+029896:                     ${makeToggleButton('missionPulse', '✦', 'Pulse', 'Pulse detected mission markers. Shortcut: P')}
+029897:                     ${makeToggleButton('roadPriority', '═', 'Roads+', 'Increase road contrast. Shortcut: R')}
+029898:                     ${makeToggleButton('coverage', '◎', 'Rings', 'Draw coverage rings around detected buildings/stations.')}
+029899:                     ${makeToggleButton('heatmap', '▦', 'Heatmap', 'Show strong and weak operational coverage across the visible map.')}
+029900:                 </div>
+029901:                 <div class="mcms-row" style="margin-top:8px">
+029902:                     <span class="mcms-row-label">Ring radius</span>
+029903:                     <select class="mcms-select" data-setting="coverage-radius">
+029904:                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
+029905:                     </select>
+029906:                 </div>
+029907:                 <div class="mcms-section-label">Coverage Heatmap</div>
+029908:                 <div class="mcms-row"><span class="mcms-row-label">Coverage source</span><select class="mcms-select" data-setting="heatmap-source"><option value="stations">Personal stations</option><option value="vehicles">Current vehicles</option></select></div>
+029909:                 <div class="mcms-row"><span class="mcms-row-label">Service</span><select class="mcms-select" data-setting="heatmap-service"><option value="all">All services</option><option value="fire">Fire & rescue</option><option value="ambulance">Ambulance</option><option value="police">Police</option><option value="air">Air assets</option><option value="water">Water/coastal</option></select></div>
+029910:                 <div class="mcms-row"><span class="mcms-row-label">Planning radius</span><select class="mcms-select" data-setting="heatmap-radius"><option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option></select></div>
+029911:                 <div class="mcms-row"><span class="mcms-row-label">Overlay strength</span><select class="mcms-select" data-setting="heatmap-opacity"><option value="0.18">Light</option><option value="0.30">Normal</option><option value="0.42">Strong</option></select></div>
+029912:                 <div class="mcms-heat-legend"><span class="mcms-heat-key" style="background:#00c853">Strong</span><span class="mcms-heat-key" style="background:#64dd17">Good</span><span class="mcms-heat-key" style="background:#ffd600">Covered</span><span class="mcms-heat-key" style="background:#ff9100">Weak</span><span class="mcms-heat-key" style="background:#d50000">Gap</span></div>
+029913:                 <div class="mcms-section-label">Map performance</div>
+029914:                 <div class="mcms-grid-2">
+029915:                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Alliance Map Blocker', 'Blocks the heavy map in the Alliance Buildings/Courses menu. ON means blocked. Reload required.')}
+029916:                 </div>
+029917:                 <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map, expands the courses list and prevents its heavy marker layer attaching.</div>
+029918:                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
+029919:                 <div class="mcms-grid-2">
+029920:                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
+029921:                     ${makeToggleButton('allianceMissions', '2', 'Alliance Missions', 'Show/hide confidently detected alliance missions. Shortcut: 2')}
+029922:                     ${makeToggleButton('vehicles', '3', 'Vehicles', 'Show/hide confidently detected vehicles. Shortcut: 3')}
+029923:                     ${makeToggleButton('buildings', '4', 'Buildings', 'Show/hide confidently detected buildings/stations. Shortcut: 4')}
+029924:                     ${makeToggleButton('allianceCredits', '5', 'Ally Cred', 'Show/hide approximate credit values beside alliance mission markers. Shortcut: 5')}
+029925:                     ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+029926:                     ${makeToggleButton('transportWatcher', '7', 'Transport Watcher', 'Show amber transport-required badges beside personal and alliance missions. Shortcut: 7')}
+029927:                     ${makeToggleButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside personal and alliance missions. Shortcut: 8')}
+029928:                     ${makeToggleButton('criticalView', '9', 'Critical View', 'Temporarily show only personal missions aged 8 hours or more. Shortcut: 9')}
+029929:                 </div>
+029930:                 <div class="mcms-row" style="margin-top:8px"><span class="mcms-row-label">Ally Credits filter</span><select class="mcms-select" data-setting="alliance-credit-minimum"><option value="0">All values</option><option value="5000">5K+</option><option value="10000">10K+</option><option value="15000">15K+</option><option value="20000">20K+</option></select></div>
+029931:                 <div class="mcms-status">Ready.</div>
+029932:             </section>
+029933:             <section class="mcms-tab-panel" data-panel="resources">
+029934:                 <div class="mcms-section-label">Co-admin Patient Transport Sweep</div>
+029935:                 <div class="mcms-grid-2">
+029936:                     <button class="mcms-small-btn" type="button" data-action="scan-transport-sweep">Scan Transports</button>
+029937:                     <button class="mcms-small-btn" type="button" data-action="start-transport-sweep">Start Sweep</button>
+029938:                     <button class="mcms-small-btn" type="button" data-action="stop-transport-sweep">Stop</button>
+029939:                 </div>
+029940:                 <div class="mcms-row"><span class="mcms-row-label">Delay between clears</span><select class="mcms-select" data-setting="transport-sweep-delay"><option value="1500">1.5 seconds</option><option value="2000">2 seconds</option><option value="2500">2.5 seconds</option><option value="3000">3 seconds</option><option value="4000">4 seconds</option><option value="5000">5 seconds</option></select></div>
+029941:                 <div class="mcms-row"><span class="mcms-row-label">Maximum per run</span><input class="mcms-input" type="number" min="1" max="50" step="1" data-setting="transport-sweep-max"></div>
+029942:                 <div data-transport-sweep></div>
+029943:                 <div class="mcms-status">Manual start only. The sweep excludes your personal vehicle IDs, checks every non-personal FMS 5 patient vehicle in each affected alliance mission, and only clears a vehicle when MissionChief exposes the visible <b>Discharge patient</b> button. Prisoner transports are not included.</div>
+029944:                 <div class="mcms-section-label">Resource Gap Finder</div>
+029945:                 <div class="mcms-grid-2">
+029946:                     ${makeToggleButton('resourceGap', '⚠', 'Resource Gap', 'Show missing-resource badges and nearby available-unit estimates in Mission Inspector.')}
+029947:                 </div>
+029948:                 <div class="mcms-row"><span class="mcms-row-label">Nearby radius</span><select class="mcms-select" data-setting="resource-gap-radius"><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+029949:                 <div class="mcms-status">Resource Gap uses MissionChief's missing-requirement text and performs best-effort matching against your currently available vehicle types. It never selects or dispatches units.</div>
+029950:                 <div class="mcms-section-label">Vehicle loading</div>
+029951:                 <div class="mcms-grid-2">
+029952:                     ${makeToggleButton('autoLoadAllVehicles', '⇊', 'Auto-load all vehicles', 'Automatically activates MissionChief’s native Load more vehicles control inside an opened mission.')}
+029953:                 </div>
+029954:                 <div class="mcms-status">Transport Watcher and Unit Count remain under Tools as the canonical map-overlay controls for shortcuts 7 and 8.</div>
+029955:             </section>
+029956:             <section class="mcms-tab-panel" data-panel="ops">
+029957:                 <div class="mcms-section-label">Mission Intelligence</div>
+029958:                 <div class="mcms-grid-2">
+029959:                     ${makeToggleButton('missionInspector', 'ⓘ', 'Inspector', 'Hover a mission marker for a live mission summary.')}
+029960:                     ${makeToggleButton('missionValue', '£', 'Mission Value', 'Show a formatted mission value in opened MissionChief windows.')}
+029961:                     ${makeToggleButton('customVehicleBadges', '▣', 'Custom Vehicle Badges', 'Show custom vehicle categories in available vehicles list.')}
+029962:                     ${makeToggleButton('stuckDetector', '⚠', 'Stuck Detect', 'Flag personal or joined missions that show no meaningful progress.')}
+029963:                     ${makeToggleButton('missionSpawn', '◎', 'New Mission', 'Animate genuinely new mission spawns with a radar pulse.')}
+029964:                     ${makeToggleButton('majorIncidentFeed', '▰', 'Incident Feed', 'Show the theme-aware major incident ticker in the top status bar. Hover pauses; click a mission to zoom.')}
+029965:                     ${makeToggleButton('missionLockAudio', '⌁', 'Tracking Audio', 'Play a short synthesized tracking cue during mission zoom and target acquisition.')}
+029966:                     <button class="mcms-toggle-btn mcms-action-btn" type="button" data-action="open-vehicle-status" title="Open or close a live table of personal vehicles grouped by MissionChief status code. Shortcut: V">
+029967:                         <span class="mcms-iconbox">V</span>
+029968:                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
+029969:                     </button>
+029970:                 </div>
+029971:                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
+029972:                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+029973:                 <div class="mcms-section-label">Session Performance</div>
+029974:                 <div data-ops-session></div>
+029975:                 <div class="mcms-section-label">Mission Age Workflow</div>
+029976:                 <div class="mcms-grid-2">
+029977:                     <button class="mcms-small-btn" type="button" data-action="open-critical-drawer">Open Mission Drawer (W)</button>
+029978:                     <button class="mcms-small-btn" type="button" data-action="fit-critical">Frame Aged</button>
+029979:                 </div>
+029980:                 <div class="mcms-status">Mission Age and Critical View remain under Tools as the canonical shortcut controls for 6 and 9. Ops provides the mission workflow and dashboard actions.</div>
+029981:                 <div class="mcms-section-label">Mission Age Watch · 8H Amber · 16H Orange · 24H Red</div>
+029982:                 <div class="mcms-ops-list" data-ops-critical-preview></div>
+029983:                 <div class="mcms-section-label">Completion History</div>
+029984:                 <div class="mcms-ops-list" data-ops-history></div>
+029985:                 <div class="mcms-grid-2" style="margin-top:7px !important">
+029986:                     <button class="mcms-small-btn" type="button" data-action="reset-session">Reset Session</button>
+029987:                     <button class="mcms-small-btn" type="button" data-action="clear-payout-history">Clear History</button>
+029988:                 </div>
+029989:             </section>
+029990:             <section class="mcms-tab-panel" data-panel="payouts">
+029991:                 <div class="mcms-section-label">Emergency Payout Flash</div>
+029992:                 <div class="mcms-grid-2">
+029993:                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
+029994:                     ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+029995:                 </div>
+029996:                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
+029997:                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
+029998:                 <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+029999:                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
+030000:                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
+030001:                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>
+030002:                 <div class="mcms-status">Vice City Inspired, Bad Company Inspired, Scarface Inspired and Cyberpunk Inspired use hosted cashout MP3s from your public GitHub asset repository. Other templates retain synthesized cues. Enable Theme Audio, set the volume, then use Test Emergency Flash.</div>
+030003:             </section>
+030004:             <section class="mcms-tab-panel" data-panel="discord">
+030005:                 <div class="mcms-section-label">Discord Financial Command</div>
+030006:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
+030007:                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
+030008:                 <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+030009:                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
+030010:                 <div class="mcms-discord-date-grid">
+030011:                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
+030012:                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
+030013:                 </div>
+030014:                 <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+030015:                 <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+030016:                 <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+030017:                 <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+030018:                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
+030019:                 <div class="mcms-grid-2">
+030020:                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
+030021:                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
+030022:                 </div>
+030023:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate & Post Audit</button>
+030024:                 <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+030025: 
+030026:                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
+030027:                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
+030028:                 <div class="mcms-row"><span class="mcms-row-label">History retention</span><select class="mcms-select" data-setting="finance-vault-retention"><option value="all">All available</option><option value="1825">5 years</option><option value="730">2 years</option><option value="365">1 year</option><option value="180">180 days</option><option value="90">90 days</option></select></div>
+030029:                 <div class="mcms-row"><span class="mcms-row-label">GitHub intelligence feeds</span><select class="mcms-select" data-setting="finance-rule-feed"><option value="true">Automatic rules + policy</option><option value="false">Built-in intelligence only</option></select></div>
+030030:                 <div class="mcms-grid-2">
+030031:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-scan">Deep Scan All Available</button>
+030032:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-cancel">Stop Scan</button>
+030033:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-export">Export Archive</button>
+030034:                     <button class="mcms-small-btn" type="button" data-action="finance-archive-import">Import Archive</button>
+030035:                 </div>
+030036:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-rules-refresh">Refresh Financial Intelligence</button>
+030037:                 <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="finance-archive-clear">Clear Player Archive</button>
+030038:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-finance-file>
+030039:                 <div class="mcms-finance-vault-summary" data-finance-vault-summary></div>
+030040:                 <div class="mcms-status mcms-discord-status" data-finance-vault-status data-tone="neutral">Local Financial Archive ready.</div>
+030041:                 <div class="mcms-status mcms-discord-status" data-finance-rule-status data-tone="neutral">Built-in financial intelligence active.</div>
+030042:                 <div class="mcms-status">GitHub hosts public transaction-classification rules and audit policy only. The Toolkit never uploads player ledger data, Discord webhooks or repository credentials. The local archive is indexed by MissionChief player ID/name and can be transferred between devices using Export Archive / Import Archive or the complete private Toolkit backup.</div>
+030043:                 <div class="mcms-status mcms-finance-private-note">Private backup warning: Export All includes your Discord webhook and locally stored MissionChief financial history. Anyone holding the file may post through the webhook and inspect the exported game ledger.</div>
+030044:             </section>
+030045:             <section class="mcms-tab-panel" data-panel="places">
+030046:                 <div class="mcms-section-label">Quick jumps + screen shortcuts</div>
+030047:                 <div class="mcms-quick-list"></div>
+030048:                 <div class="mcms-section-label">Custom bookmarks + screen shortcuts</div>
+030049:                 <div class="mcms-bookmark-list"></div>
+030050:                 <div class="mcms-section-label">Saved Map Profiles</div>
+030051:                 <div class="mcms-profile-list" data-profile-list></div>
+030052:                 <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
+030053:             </section>
+030054:             <section class="mcms-tab-panel" data-panel="settings">
+030055:                 ${operationalWindowSettingsMarkup()}
+030056:                 <div class="mcms-section-label">Device layout</div>
+030057:                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+030058:                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+030059:                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
+030060:                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+030061:                 <div class="mcms-section-label">Dock position</div>
+030062:                 <div class="mcms-position-grid">${positionButtons}</div>
+030063:                 <div class="mcms-desktop-position-controls">
+030064:                     <div class="mcms-section-label">Fine nudge</div>
+030065:                     <div class="mcms-nudge-grid">
+030066:                         <button class="mcms-small-btn" type="button" data-action="nudge-left">←</button>
+030067:                         <button class="mcms-small-btn" type="button" data-action="nudge-up">↑</button>
+030068:                         <button class="mcms-small-btn" type="button" data-action="nudge-down">↓</button>
+030069:                         <button class="mcms-small-btn" type="button" data-action="nudge-right">→</button>
+030070:                         <button class="mcms-small-btn" type="button" data-action="nudge-reset">0</button>
+030071:                     </div>
+030072:                     <div class="mcms-status mcms-nudge-value">X 0 / Y 0</div>
+030073:                     <div class="mcms-section-label">Menu panel</div>
+030074:                     <div class="mcms-nudge-grid">
+030075:                         <button class="mcms-small-btn" type="button" data-action="panel-left">←</button>
+030076:                         <button class="mcms-small-btn" type="button" data-action="panel-up">↑</button>
+030077:                         <button class="mcms-small-btn" type="button" data-action="panel-down">↓</button>
+030078:                         <button class="mcms-small-btn" type="button" data-action="panel-right">→</button>
+030079:                         <button class="mcms-small-btn" type="button" data-action="panel-reset">↺</button>
+030080:                     </div>
+030081:                 </div>
+030082:                 <div class="mcms-section-label">Input</div>
+030083:                 <div class="mcms-grid-2">
+030084:                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–9. Vehicle Codes: V. Mission Age Watch: W. Menu: M.')}
+030085:                 </div>
+030086:                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
+030087:                 <div class="mcms-section-label">Economy Mode</div>
+030088:                 <div class="mcms-status mcms-economy-status">Use the leaf button beside the map-menu opener. Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+030089:                 <div class="mcms-section-label">Settings Backup</div>
+030090:                 <div class="mcms-config-actions">
+030091:                     <button class="mcms-small-btn" type="button" data-action="export-config" title="Export every toolkit setting, private integration, profile, bookmark and Financial Archive history" aria-label="Export all toolkit settings">Export All</button>
+030092:                     <button class="mcms-small-btn" type="button" data-action="import-config" title="Import a current or legacy toolkit settings backup" aria-label="Import all toolkit settings">Import All</button>
+030093:                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
+030094:                 </div>
+030095:                 <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-config-file>
+030096:                 <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
+030097:             </section>
+030098:             <div class="mcms-footer">
+030099:                 <span>Audited runtime: compact Smart Bookmark Labels, responsive modes and every interface theme remain fully preserved.</span>
+030100:                 <span class="mcms-build">${SCRIPT.name} v${SCRIPT.version} · MIT · ${SCRIPT.author}</span>
+030101:             </div>
+030102:         `;
+030103:         const tabList = panel.querySelector('.mcms-tabs');
+030104:         if (tabList) tabList.setAttribute('role', 'tablist');
+030105:         panel.querySelectorAll('.mcms-tab-btn').forEach(button => {
+030106:             const tab = button.dataset.tab;
+030107:             button.id = `mcms-tab-${tab}`;
+030108:             button.setAttribute('role', 'tab');
+030109:             button.setAttribute('aria-controls', `mcms-tabpanel-${tab}`);
+030110:             button.setAttribute('aria-selected', 'false');
+030111:             button.tabIndex = -1;
+030112:         });
+030113:         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
+030114:             const tab = tabPanel.dataset.panel;
+030115:             tabPanel.id = `mcms-tabpanel-${tab}`;
+030116:             tabPanel.setAttribute('role', 'tabpanel');
+030117:             tabPanel.setAttribute('aria-labelledby', `mcms-tab-${tab}`);
+030118:             tabPanel.hidden = true;
+030119:         });
+030120:         panel.addEventListener('keydown', event => {
+030121:             const current = closestEventTarget(event, '.mcms-tab-btn');
+030122:             if (!current || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+030123:             const buttons = Array.from(panel.querySelectorAll('.mcms-tab-btn'));
+030124:             const currentIndex = Math.max(0, buttons.indexOf(current));
+030125:             const nextIndex = event.key === 'Home' ? 0
+030126:                 : event.key === 'End' ? buttons.length - 1
+030127:                 : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
+030128:             event.preventDefault();
+030129:             const nextButton = buttons[nextIndex];
+030130:             setActiveTab(nextButton.dataset.tab);
+030131:             nextButton.focus({ preventScroll: true });
+030132:         });
+030133:         panel.addEventListener('click', event => {
+030134:             const closeButton = closestEventTarget(event, '.mcms-close');
+030135:             const tabButton = closestEventTarget(event, '.mcms-tab-btn');
+030136:             const uiThemeButton = closestEventTarget(event, '.mcms-ui-theme-btn');
+030137:             const themeButton = closestEventTarget(event, '.mcms-theme-btn');
+030138:             const toggleButton = closestEventTarget(event, '[data-toggle]');
+030139:             const positionButton = closestEventTarget(event, '.mcms-position-btn');
+030140:             const actionButton = closestEventTarget(event, '[data-action]');
+030141:             if (closeButton) { closePanel({ restoreFocus: true }); return; }
+030142:             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
+030143:             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
+030144:             if (themeButton) { applyTheme(themeButton.dataset.theme, true); return; }
+030145:             if (toggleButton) { toggleFeature(toggleButton.dataset.toggle); return; }
+030146:             if (positionButton) { applyPosition(positionButton.dataset.position, true); return; }
+030147:             if (actionButton) {
+030148:                 event.preventDefault();
+030149:                 handleAction(actionButton);
+030150:                 return;
+030151:             }
+030152:         });
+030153:         panel.addEventListener('change', event => handleSettingChange(event.target));
+030154:         const dragHandle = panel.querySelector('.mcms-drag-handle');
+030155:         if (dragHandle) {
+030156:             dragHandle.addEventListener('mousedown', startPanelDrag, true);
+030157:             dragHandle.addEventListener('touchstart', startPanelDrag, { capture: true, passive: false });
+030158:         }
+030159:         ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
+030160:             panel.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
+030161:         });
+030162:         document.body.appendChild(panel);
+030163:         const importInput = panel.querySelector('[data-import-config-file]');
+030164:         if (importInput) {
+030165:             importInput.addEventListener('change', () => {
+030166:                 const file = importInput.files?.[0];
+030167:                 if (file) importToolkitConfigFile(file);
+030168:                 importInput.value = '';
+030169:             });
+030170:         }
+030171:         const financeImportInput = panel.querySelector('[data-import-finance-file]');
+030172:         if (financeImportInput) {
+030173:             financeImportInput.addEventListener('change', () => {
+030174:                 const file = financeImportInput.files?.[0];
+030175:                 if (file) importFinancialArchiveFile(file);
+030176:                 financeImportInput.value = '';
+030177:             });
+030178:         }
+030179:         renderQuickPlaces();
+030180:         renderBookmarks();
+030181:         renderProfiles();
+030182:         updateUI();
+030183:         recordStartupMetric('settingsPanelBuildMs', panelStartedAt, { settingsPanelLazy: true });
+030184:         return panel;
+030185:     }
+
+===== createCleanExit at line 29726 =====
+029726: function createCleanExit() {
+029727:         if (document.getElementById(SCRIPT.cleanExitId)) return;
+029728:         const button = document.createElement('button');
+029729:         button.id = SCRIPT.cleanExitId;
+029730:         button.type = 'button';
+029731:         button.textContent = 'Exit Clean Mode';
+029732:         button.title = 'Exit clean mode. Shortcut: C or Esc.';
+029733:         button.addEventListener('click', () => toggleFeature('clean'));
+029734:         document.body.appendChild(button);
+029735:     }
+
+===== handleOperationalWindowSettingChange at line 23127 =====
+023127: function handleOperationalWindowSettingChange(target) {
+023128:         const path = target?.dataset?.operationalSetting;
+023129:         if (!path) return false;
+023130:         try {
+023131:             const type = target.dataset.operationalType;
+023132:             const value = type === 'boolean' ? target.checked : type === 'json' ? JSON.parse(target.value || '[]') : target.value;
+023133:             operationalFeatureSet(path, value);
+023134:             state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow, state.operationalWindow?.requirements?.enabled !== false);
+023135:             saveState(); updateUI(); showToast('Operational Window setting saved');
+023136:         } catch (error) {
+023137:             showToast('Operational setting contains invalid JSON');
+023138:         }
+023139:         return true;
+023140:     }
+
+===== operationalWindowSyncSettingsUi at line 22759 =====
+022759: function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}
+
+===== operationalQuery at line 22683 =====
+022683: function operationalQuery(root, selector) {
+022684:         try { return root?.querySelector?.(selector) || null; } catch (error) { return null; }
+022685:     }
+
+===== boot at line 31426 =====
+031426: function boot() {
+031427:         if (runtime.destroyed || bootStarted) return;
+031428:         bootStarted = true;
+031429:         bootStartedAt = Date.now();
+031430:         const bootPerformanceStartedAt = startupClock();
+031431:         applyRootAttributes();
+031432:         if (installAllianceBuildingsPageOptimisation()) return;
+031433:         createCleanExit();
+031434:         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+031435:         installMissionMarkerAddHook();
+031436:         installRadioMessageHook();
+031437:         lastObservedCredits = readCurrentCreditTotal();
+031438:         installCreditsUpdateHook();
+031439:         observeCreditValue();
+031440:         installOperationalSuiteShell();
+031441:         installCustomVehicleBadges();
+031442:         startBootAttemptCoordinator(bootPerformanceStartedAt);
+031443:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+031444:             if (state.economyMode && economyMapMoving) {
+031445:                 economyDeferredDomMutation = true;
+031446:                 return;
+031447:             }
+031448:             let externalMutationFound = false;
+031449:             let addedLeafletMarker = false;
+031450:             let missionChanged = false;
+031451:             let layoutChanged = false;
+031452:             let toolkitUiRemoved = false;
+031453:             for (const mutation of mutations) {
+031454:                 if (mutationBelongsToToolkit(mutation)) continue;
+031455:                 externalMutationFound = true;
+031456:                 if (!addedLeafletMarker && mutationAddsLeafletMarkerIcon(mutation)) {
+031457:                     addedLeafletMarker = true;
+031458:                     missionChanged = true;
+031459:                 }
+031460:                 if (!missionChanged && mutationAffectsMissionData(mutation)) missionChanged = true;
+031461:                 if (!layoutChanged && mutationAffectsMapLayout(mutation)) layoutChanged = true;
+031462:                 if (!toolkitUiRemoved && mutationRemovesToolkitUi(mutation)) toolkitUiRemoved = true;
+031463:                 if (addedLeafletMarker && missionChanged && layoutChanged && toolkitUiRemoved) break;
+031464:             }
+031465:             if (!externalMutationFound) return;
+031466:             missionChanged ||= addedLeafletMarker;
+031467:             if (!missionChanged && !layoutChanged && !toolkitUiRemoved) return;
+031468:             if (addedLeafletMarker) {
+031469:                 invalidateMarkerRegistryCaches('all');
+031470:                 scheduleMarkerStateSync(0, false);
+031471:                 if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+031472:             }
+031473:             if (layoutChanged) invalidateMapElementCache();
+031474:             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
+031475:             runtimeClearTimeout(mutationTimer);
+031476:             const startupSettling = bootStartedAt > 0 && Date.now() - bootStartedAt < STARTUP_SETTLE_WINDOW_MS;
+031477:             const mutationDelay = startupSettling
+031478:                 ? STARTUP_MUTATION_DEBOUNCE_MS
+031479:                 : (state.economyMode ? Math.max(320, DOM_REFRESH_DEBOUNCE_MS) : DOM_REFRESH_DEBOUNCE_MS);
+031480:             mutationTimer = runtimeSetTimeout(() => {
+031481:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+031482:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+031483:                 const mapElement = getLargestLeafletMap();
+031484:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+031485:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+031486:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+031487:                     connectMainMutationObserver();
+031488:                 }
+031489:                 if (layoutChanged) {
+031490:                     refreshSuppression();
+031491:                     fitControlToMap();
+031492:                     schedulePanelPosition(true, 50);
+031493:                     scheduleCriticalDrawerDock(60);
+031494:                 }
+031495:                 if (missionChanged) {
+031496:                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+031497:                     scheduleOperationalSuiteScan(35);
+031498:                     if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(35);
+031499:                 }
+031500:             }, mutationDelay);
+031501:         }));
+031502:         mainMutationObserver = observer;
+031503:         runtimeListen(document, 'keydown', handleKeyboard);
+031504:         runtimeListen(document, 'pointerover', handleMissionInspectorPointerOver, true);
+031505:         runtimeListen(document, 'pointermove', handleMissionInspectorPointerMove, true);
+031506:         runtimeListen(document, 'pointerout', handleMissionInspectorPointerOut, true);
+031507:         runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
+031508:         runtimeListen(document, 'click', event => {
+031509:             runtimeSetTimeout(refreshSuppression, 0);
+031510:             if (suppressNextOutsideClick) {
+031511:                 event.preventDefault();
+031512:                 event.stopPropagation();
+031513:                 suppressNextOutsideClick = false;
+031514:                 return;
+031515:             }
+031516:             const control = document.getElementById(SCRIPT.controlId);
+031517:             const panel = document.getElementById(SCRIPT.panelId);
+031518:             if (!panel || !panel.classList.contains('mcms-open')) return;
+031519:             if (control && control.contains(event.target)) return;
+031520:             if (panel.contains(event.target)) return;
+031521:             closePanel();
+031522:         }, true);
+031523:         runtimeListen(pageWindow, 'resize', () => {
+031524:             invalidateMapElementCache();
+031525:             applyRootAttributes();
+031526:             refreshTabletModeUi();
+031527:             scheduleVisualViewportStabilisation('window-resize');
+031528:             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
+031529:             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay);
+031530:             if (dragState) return;
+031531:             refreshSuppression();
+031532:             fitControlToMap();
+031533:             schedulePanelPosition(true, 40);
+031534:             scheduleCriticalDrawerDock(30);
+031535:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+031536:             scheduleMajorIncidentFeedLayout();
+031537:         });
+031538:         runtimeListen(pageWindow, 'scroll', scheduleMajorIncidentFeedLayout, { passive: true });
+031539:         runtimeListen(pageWindow,'orientationchange',()=>scheduleVisualViewportStabilisation('orientationchange'));
+031540:         if(pageWindow.visualViewport){
+031541:             runtimeListen(pageWindow.visualViewport,'resize',()=>scheduleVisualViewportStabilisation('visual-viewport-resize'));
+031542:             runtimeListen(pageWindow.visualViewport,'scroll',()=>{if(isTouchLayoutActive())scheduleVisualViewportStabilisation('visual-viewport-scroll');},{passive:true});
+031543:         }
+031544:         applyVisualViewportGeometry();
+031545:         scheduleVisualViewportStabilisation('boot-viewport');
+031546:         try {
+031547:             const coarsePointerQuery = pageWindow.matchMedia?.('(any-pointer: coarse)');
+031548:             if (coarsePointerQuery?.addEventListener) runtimeListen(coarsePointerQuery, 'change', () => scheduleTabletLayoutRefresh(20));
+031549:         } catch (err) {}
+031550:         runtimeListen(pageWindow, 'focus', () => {
+031551:             scheduleVisualViewportStabilisation('window-focus'); if (dragState) return;
+031552:             refreshSuppression();
+031553:             fitControlToMap();
+031554:             schedulePanelPosition(true, 40);
+031555:             installRadioMessageHook();
+031556:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+031557:             if (state.economyMode) scheduleEconomyLayerSync(0);
+031558:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+031559:             scheduleOperationalPanelsRender(500);
+031560:             scheduleMajorIncidentFeedRender(80);
+031561:         });
+031562:         const recoverUiAfterNavigation = event => {
+031563:             runtimeSetTimeout(() => {
+031564:                 if (runtime.destroyed || document.hidden) return;
+031565:                 invalidateMapElementCache();
+031566:                 ensureUi();
+031567:                 connectMainMutationObserver();
+031568:                 recoverMajorIncidentFeed(event?.type || 'navigation');
+031569:             }, 120);
+031570:             runtimeSetTimeout(() => {
+031571:                 if (runtime.destroyed || document.hidden) return;
+031572:                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+031573:             }, 650);
+031574:         };
+031575:         runtimeListen(pageWindow, 'pageshow', recoverUiAfterNavigation);
+031576:         runtimeListen(pageWindow, 'popstate', recoverUiAfterNavigation);
+031577:         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+031578:         registerBootMaintenanceTasks();
+031579:         runtimeListen(document, 'visibilitychange', () => {
+031580:             if (document.hidden) return;
+031581:             runtimeWakeTaskScheduler(0);
+031582:             ensureUi();
+031583:             scheduleVersionStatusCheck(0, false);
+031584:             refreshSuppression();
+031585:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+031586:             if (state.economyMode) scheduleEconomyLayerSync(0);
+031587:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+031588:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+031589:             scheduleMajorIncidentFeedRender(80);
+031590:         });
+031591:         runtimeSetTimeout(() => {
+031592:             if (document.hidden || !operationalStartupComplete) return;
+031593:             scheduleEnabledMapRefreshes({ includeSnapshots: false, positionPanel: false, mapOnly: true });
+031594:         }, 2200);
+031595:         runtimeOnCleanup(() => {
+031596:             stopAutoLoadAllVehicles();
+031597:             transportSweepRuntime.stopRequested = true;
+031598:             document.removeEventListener('mousemove', movePanelDrag, true);
+031599:             document.removeEventListener('mouseup', endPanelDrag, true);
+031600:             document.removeEventListener('touchmove', movePanelDrag, true);
+031601:             document.removeEventListener('touchend', endPanelDrag, true);
+031602:             document.removeEventListener('touchcancel', endPanelDrag, true);
+031603:             document.documentElement.style.cursor = '';
+031604:             if (document.body) document.body.style.userSelect = '';
+031605:             restoreEconomyLayers();
+031606:             restoreLeafletEconomyPolicy();
+031607:             disposeEconomyCanvasRenderer();
+031608:             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
+031609:             majorIncidentFeedLayoutTimer = null;
+031610:             const originalBuildingVisibility = state.visibility.buildings;
+031611:             try {
+031612:                 state.visibility.buildings = true;
+031613:                 synchronisePersonalBuildingVisibility(cachedMap);
+031614:             } catch (err) {
+031615:                 console.debug(`[${SCRIPT.name}] Building visibility restoration skipped during teardown.`, err);
+031616:             } finally {
+031617:                 state.visibility.buildings = originalBuildingVisibility;
+031618:             }
+031619:             try { creditsValueObserver?.disconnect(); } catch (err) {}
+031620:             removeMajorIncidentFeed();
+031621:             clearMissionLockOnEffect();
+031622:             clearAllianceCreditLabels();
+031623:             clearMissionAgeLabels();
+031624:             clearUnitCommitmentLabels();
+031625:             clearTransportWatcherLabels();
+031626:             clearResourceGapLabels();
+031627:             clearStuckMissionLabels();
+031628:             clearCoverageHeatmap();
+031629:             if (coverageGroup) {
+031630:                 try { coverageGroup.clearLayers(); coverageGroup.remove(); } catch (err) {}
+031631:                 coverageGroup = null;
+031632:             }
+031633:             stopPayoutFlashAnimation();
+031634:             disposePayoutMediaAudio();
+031635:             try { payoutAudioContext?.close?.(); } catch (err) {}
+031636:             clearDiscordPreviewChartUrl();
+031637:             closeHelpCenter({ restoreFocus: false });
+031638:             disposeVersionStatus();
+031639:             helpGuideDocumentCache = '';
+031640:             helpGuideLoadedAt = 0;
+031641:             stopDesktopPanelWorkspaceObservation();
+031642:             runtimeUntrackObserver(desktopPanelResizeObserver);
+031643:             desktopPanelResizeObserver = null;
+031644:             runtimeUntrackObserver(majorIncidentFeedResizeObserver);
+031645:             majorIncidentFeedResizeObserver = null;
+031646:             majorIncidentFeedObservedElement = null;
+031647:             missionSnapshotCache.clear();
+031648:             missionPanelCache.clear();
+031649:             missionOverlayVersions.clear();
+031650:             markerRegistryCache.clear();
+031651:             criticalMissionStableCache.clear();
+031652:             removeOldInstances();
+031653:             const root = document.documentElement;
+031654:             for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-critical-view', 'data-mcms-help-open']) root.removeAttribute(attribute);
+031655:         });
+031656:         runtimeSetTimeout(() => runAutoNight(true), 180);
+031657:         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
+031658:         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);
+031659:     }
+
+===== REFERENCES 'installOperationalSuiteShell();' =====
+031435:         installMissionMarkerAddHook();
+031436:         installRadioMessageHook();
+031437:         lastObservedCredits = readCurrentCreditTotal();
+031438:         installCreditsUpdateHook();
+031439:         observeCreditValue();
+031440:         installOperationalSuiteShell();
+031441:         installCustomVehicleBadges();
+031442:         startBootAttemptCoordinator(bootPerformanceStartedAt);
+031443:         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
+031444:             if (state.economyMode && economyMapMoving) {
+031445:                 economyDeferredDomMutation = true;
+031446:                 return;
+031447:             }
+
+===== REFERENCES 'ensureUi();' =====
+018661:         const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
+018662:         economyDeferredMapRefresh = false;
+018663:         economyDeferredDomMutation = false;
+018664:         if (deferredRefresh) {
+018665:             invalidateMarkerRegistryCaches('all');
+018666:             ensureUi();
+018667:         }
+018668:         if (state.economyMode) scheduleEconomyLayerSync(80);
+018669:         if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings)) scheduleMarkerStateSync(0, false);
+018670:         scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
+018671:         if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') && selectedCriticalDistanceOrigin() === 'live') {
+018672:             if (selectedCriticalSortMode() === 'closest' || selectedCriticalSortMode() === 'furthest') runtimeSetTimeout(() => renderCriticalDrawer(null, { updateViewTime: false }), 40);
+018673:             else runtimeSetTimeout(refreshCriticalDistanceNodes, 40);
+
+031324:             attempts += 1;
+031325:             installMissionMarkerAddHook();
+031326:             installRadioMessageHook();
+031327:             installCreditsUpdateHook();
+031328:             observeCreditValue();
+031329:             const ready = ensureUi();
+031330:             const mapReady = Boolean(getLargestLeafletMap());
+031331:             if (ready && (mapReady || attempts >= 12)) {
+031332:                 recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
+031333:                 scheduleMarkerStateSync(0, false);
+031334:                 scheduleDeferredOperationalStartup();
+031335:                 scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+031336:                 runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+
+031480:             mutationTimer = runtimeSetTimeout(() => {
+031481:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+031482:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+031483:                 const mapElement = getLargestLeafletMap();
+031484:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+031485:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+031486:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+031487:                     connectMainMutationObserver();
+031488:                 }
+031489:                 if (layoutChanged) {
+031490:                     refreshSuppression();
+031491:                     fitControlToMap();
+031492:                     schedulePanelPosition(true, 50);
+
+031561:         });
+031562:         const recoverUiAfterNavigation = event => {
+031563:             runtimeSetTimeout(() => {
+031564:                 if (runtime.destroyed || document.hidden) return;
+031565:                 invalidateMapElementCache();
+031566:                 ensureUi();
+031567:                 connectMainMutationObserver();
+031568:                 recoverMajorIncidentFeed(event?.type || 'navigation');
+031569:             }, 120);
+031570:             runtimeSetTimeout(() => {
+031571:                 if (runtime.destroyed || document.hidden) return;
+031572:                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+031573:             }, 650);
+
+031577:         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+031578:         registerBootMaintenanceTasks();
+031579:         runtimeListen(document, 'visibilitychange', () => {
+031580:             if (document.hidden) return;
+031581:             runtimeWakeTaskScheduler(0);
+031582:             ensureUi();
+031583:             scheduleVersionStatusCheck(0, false);
+031584:             refreshSuppression();
+031585:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+031586:             if (state.economyMode) scheduleEconomyLayerSync(0);
+031587:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+031588:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+031589:             scheduleMajorIncidentFeedRender(80);
+
+===== REFERENCES 'ensureUi()' =====
+018661:         const deferredRefresh = economyDeferredMapRefresh || economyDeferredDomMutation;
+018662:         economyDeferredMapRefresh = false;
+018663:         economyDeferredDomMutation = false;
+018664:         if (deferredRefresh) {
+018665:             invalidateMarkerRegistryCaches('all');
+018666:             ensureUi();
+018667:         }
+018668:         if (state.economyMode) scheduleEconomyLayerSync(80);
+018669:         if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings)) scheduleMarkerStateSync(0, false);
+018670:         scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
+018671:         if (document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') && selectedCriticalDistanceOrigin() === 'live') {
+018672:             if (selectedCriticalSortMode() === 'closest' || selectedCriticalSortMode() === 'furthest') runtimeSetTimeout(() => renderCriticalDrawer(null, { updateViewTime: false }), 40);
+018673:             else runtimeSetTimeout(refreshCriticalDistanceNodes, 40);
+
+030718:         if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+030719:         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
+030720:         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
+030721:     }
+030722: 
+030723:     function ensureUi() {
+030724:         const mapEl = getLargestLeafletMap();
+030725:         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
+030726:         if (mapEl) {
+030727:             createControl(mapEl);
+030728:             ensureVersionStatusButton();
+030729:             const map = findLeafletMapInstance(false);
+030730:             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
+
+031324:             attempts += 1;
+031325:             installMissionMarkerAddHook();
+031326:             installRadioMessageHook();
+031327:             installCreditsUpdateHook();
+031328:             observeCreditValue();
+031329:             const ready = ensureUi();
+031330:             const mapReady = Boolean(getLargestLeafletMap());
+031331:             if (ready && (mapReady || attempts >= 12)) {
+031332:                 recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts });
+031333:                 scheduleMarkerStateSync(0, false);
+031334:                 scheduleDeferredOperationalStartup();
+031335:                 scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+031336:                 runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+
+031480:             mutationTimer = runtimeSetTimeout(() => {
+031481:                 if (dragState || document.hidden || runtime.destroyed || (state.economyMode && economyMapMoving)) return;
+031482:                 const panelMissing = settingsPanelActivated && !document.getElementById(SCRIPT.panelId);
+031483:                 const mapElement = getLargestLeafletMap();
+031484:                 const controlMissing = Boolean(mapElement && !document.getElementById(SCRIPT.controlId));
+031485:                 if (toolkitUiRemoved || panelMissing || controlMissing) ensureUi();
+031486:                 if (mainMutationObserverFallbackActive && (mapElement || document.querySelector('#missions, #mission_list, .missions-panel, .mission-list'))) {
+031487:                     connectMainMutationObserver();
+031488:                 }
+031489:                 if (layoutChanged) {
+031490:                     refreshSuppression();
+031491:                     fitControlToMap();
+031492:                     schedulePanelPosition(true, 50);
+
+031561:         });
+031562:         const recoverUiAfterNavigation = event => {
+031563:             runtimeSetTimeout(() => {
+031564:                 if (runtime.destroyed || document.hidden) return;
+031565:                 invalidateMapElementCache();
+031566:                 ensureUi();
+031567:                 connectMainMutationObserver();
+031568:                 recoverMajorIncidentFeed(event?.type || 'navigation');
+031569:             }, 120);
+031570:             runtimeSetTimeout(() => {
+031571:                 if (runtime.destroyed || document.hidden) return;
+031572:                 recoverMajorIncidentFeed(`${event?.type || 'navigation'} settle`);
+031573:             }, 650);
+
+031577:         runtimeListen(pageWindow, 'hashchange', recoverUiAfterNavigation);
+031578:         registerBootMaintenanceTasks();
+031579:         runtimeListen(document, 'visibilitychange', () => {
+031580:             if (document.hidden) return;
+031581:             runtimeWakeTaskScheduler(0);
+031582:             ensureUi();
+031583:             scheduleVersionStatusCheck(0, false);
+031584:             refreshSuppression();
+031585:             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
+031586:             if (state.economyMode) scheduleEconomyLayerSync(0);
+031587:             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
+031588:             if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+031589:             scheduleMajorIncidentFeedRender(80);
+
+===== REFERENCES 'operationalWindowSettingsMarkup()' =====
+022734:     function operationalFeatureRemove(context, prefix = '') {
+022735:         const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
+022736:         operationalQueryAll(context?.doc, safe ? `[${OP_FEATURE_ATTR}^="${safe}"]` : `[${OP_FEATURE_ATTR}]`).forEach(node => node.remove());
+022737:     }
+022738: 
+022739:     function operationalWindowSettingsMarkup() {
+022740:         const groups = Object.entries(OP_BOOL_KEYS).map(([group, csv]) => `
+022741:             <details class="mcms-operational-settings-group" open>
+022742:                 <summary>${OP_LABELS[group]}</summary>
+022743:                 ${csv.split(',').map(key => `<label class="mcms-row"><span class="mcms-row-label">${operationalEscape(key.replace(/([A-Z])/gu, ' $1').replace(/^./u, value => value.toUpperCase()))}</span><input type="checkbox" data-operational-setting="${group}.${key}" data-operational-type="boolean"></label>`).join('')}
+022744:             </details>`).join('');
+022745:         const advanced = [
+022746:             ['requirements.viewMode', 'Requirements view', 'table,text'],
+
+030050:                 <div class="mcms-section-label">Saved Map Profiles</div>
+030051:                 <div class="mcms-profile-list" data-profile-list></div>
+030052:                 <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
+030053:             </section>
+030054:             <section class="mcms-tab-panel" data-panel="settings">
+030055:                 ${operationalWindowSettingsMarkup()}
+030056:                 <div class="mcms-section-label">Device layout</div>
+030057:                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+030058:                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
+030059:                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
+030060:                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+030061:                 <div class="mcms-section-label">Dock position</div>
+030062:                 <div class="mcms-position-grid">${positionButtons}</div>
+
+===== REFERENCES 'handleOperationalWindowSettingChange(' =====
+023122: 
+023123:     // Issue #378 retained UK operational capability catalogue.
+023124:     const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([{"key":"police-helicopter-or-drone","label":"Police Helicopter or Drone","aliases":["Police Helicopter or Drone","Police Helicopters or Drones"],"types":[11,89,90,91],"equipment":["drone"]},{"key":"riv-or-major-foam","label":"RIV or Major Foam Tender","aliases":["RIV or Major Foam Tender","RIVs or Major Foam Tenders"],"types":[75,76]},{"key":"fire-engine-or-major-foam","label":"Fire Engine or Major Foam Tender","aliases":["Fire Engine or Major Foam Tender","Fire Engines or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75]},{"key":"fire-engine-riv-or-major-foam","label":"Fire Engine, RIV or Major Foam Tender","aliases":["Fire Engine, RIV or Major Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-or-sar-4x4","label":"Mountain Rescue 4x4 or SAR 4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic","label":"RRV or Specialist Paramedic RRV","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]},{"key":"fire-engine-or-riv","label":"Fire Engine or RIV","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-or-stairs","label":"Aerial Appliance or Rescue Stairs","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-rescue-aerial","label":"Fire, rescue or aerial appliance","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-or-rescue","label":"Fire Engine or Rescue Support Vehicle","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"police-or-arv","label":"Police Car or ARV","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"rsu-or-rescue-pump","label":"Rescue Support Unit or Rescue Pump","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"rescue-support-vehicle","label":"Rescue Support Vehicle","aliases":["Rescue Support Vehicle","Rescue Support Vehicles"],"types":[4,16,38,43]},{"key":"iccu-or-control","label":"ICCU or Ambulance Control Unit","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units","ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle","ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"],"types":[15,31,44,77]},{"key":"hazmat-or-cbrn","label":"HazMat Unit or CBRN Vehicle","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"boat-or-inland","label":"Inland Rescue Boat (Trailer)","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats","Inland Rescue Boat (Trailer)","Inland Rescue Boats (Trailer)","Inland Rescue Boat (Trailers)","Inland Rescue Boats (Trailers)"],"types":[67,74],"pair":true},{"key":"ilb-or-alb","label":"Seagoing Vessel","aliases":["ILB or ALB","ILBs or ALBs","Seagoing Vessel","Seagoing Vessels","ALB or ILB","ALBs or ILBs"],"types":[68,69]},{"key":"sar-support","label":"Operational Support or SAR Vehicle","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle","Operational Support Vans, Trailers or Personal SAR Vehicles"],"types":[86,87,92],"pair":true},{"key":"fire-engine","label":"Fire Engine","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"aerial","label":"Aerial Appliance Truck","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"fire-officer","label":"Fire Officer","aliases":["Fire Officer","Fire Officers","Fire Officer or Airfield Firefighting Command Vehicle","Fire Officers or Airfield Firefighting Command Vehicles"],"types":[3,15,44,77]},{"key":"basu","label":"Breathing Apparatus Support Unit (BASU)","aliases":["BASU","BASUs","Breathing Apparatus Support Unit","Breathing Apparatus Support Units"],"types":[14,39,46,49],"details":"Eligible vehicles: BASU, OSU, BASU Pod and OSU Pod. Prime Movers only count when paired with an eligible pod."},{"key":"water-carrier","label":"Water Carrier","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone","label":"Drone","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"control-van","label":"Control Van","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"ambulance","label":"Ambulance","aliases":["Ambulance","Ambulances"],"types":[5,9]},{"key":"police-car","label":"Police Car","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems","label":"HEMS","aliases":["HEMS"],"types":[9]},{"key":"critical-care-patient","label":"Critical Care","aliases":["Critical Care"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"patient-transport","label":"Patient Transport","aliases":["Patient Transport"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"police-helicopter","label":"Police Helicopter","aliases":["Police helicopter","Police helicopters","Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response","label":"Armed Response","aliases":["Armed Response","Armed Response Vehicle","Armed Response Vehicles"],"types":[13,25,52,56,82]},{"key":"dsu","label":"Dog Support Unit (DSU)","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"otl","label":"Operational Team Leader","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car","label":"Traffic Car","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier","label":"ATV Carrier","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response","label":"Primary Response Vehicle","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response","label":"Secondary Response Vehicle","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare","label":"Welfare Vehicle","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer","label":"Ambulance Officer","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit","label":"Foam Unit","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty","label":"Mass Casualty Equipment","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted","label":"Mounted Unit","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4","label":"4x4 Vehicle","aliases":["4x4 Vehicle","4x4 Vehicles","4x4 Unit","4x4 Units"],"types":[66,73,93]},{"key":"coastguard-rope","label":"Coastguard Rope Rescue Unit","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue","label":"Flood Rescue Unit","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv","label":"CRV","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander","label":"Coastguard Commander","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"ilb","label":"ILB","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-helicopter","label":"Coastguard Rescue Helicopter","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb","label":"ALB","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decon","label":"Mud Decontamination Unit","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit","label":"Support Unit","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft","label":"Rescue Watercraft Trailer","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70],"pair":true},{"key":"coastguard-mud","label":"Coastguard Mud Rescue Unit","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft","label":"Hovercraft Trailer","aliases":["Hovercraft (trailer)","Hovercrafts (trailer)"],"types":[71],"pair":true},{"key":"major-foam","label":"Major Foam Tender","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair","label":"Rescue Stair","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-command","label":"Airfield Firefighting Command Vehicle","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations","label":"Airfield Operations Vehicle","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv","label":"RIV","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-trailer","label":"Medical Equipment Trailer","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81],"pair":true},{"key":"airfield-supervisor","label":"Airfield Operations Supervisor","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell","label":"Armed Cell Van","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"cycle-responder","label":"Medical Cycle Responder","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"midwife","label":"Community Midwife","aliases":["Community Midwife","Community Midwives","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic","label":"Specialist Paramedic RRV","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog","label":"Rescue Dog","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-4x4","label":"Mountain Rescue 4x4","aliases":["Mountain Rescue 4x4","Mountain Rescue 4x4s"],"types":[99]},{"key":"car-recovery","label":"Car Recovery","aliases":["car to tow","cars to tow"],"types":[104,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"training":["Level 1 Public Order Officer","Level 1 Public Order","Level 1 Public Order Training","level_1_public_order"],"countable":true,"arrAttributes":["level_1_public_order"]},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[108],"training":["Railway Police Officer","Railway Police","railway_police"],"countable":true,"requireExplicitTraining":true,"arrAttributes":["railway_police"]},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Training","search_and_rescue"],"arrAttributes":["search_and_rescue"],"countable":true},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[85,100],"training":["SAR Commander","Search Management Training","search_and_rescue_command"],"arrAttributes":["search_and_rescue_command"],"countable":true},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases":["Water","litres of water","liters of water"],"group":"other","bar":"water","types":[]},{"key":"foam-resource","label":"Foam","aliases":["Foam","litres of foam","liters of foam"],"group":"other","bar":"foam","types":[]},{"key":"pump-resource","label":"Pumping Capacity","aliases":["l/min pumping process","l/min pumping capacity","Pumping Capacity"],"group":"other","bar":"pump","types":[]},{"key":"fire-engine-2","group":"vehicles","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"fire-engine-or-riv-2","group":"vehicles","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-appliance-truck","group":"vehicles","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"aerial-appliance-truck-or-rescue-stairs","group":"vehicles","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-officer-2","group":"vehicles","aliases":["Fire Officer","Fire Officers"],"types":[3,15,44,77]},{"key":"rescue-support-unit-or-rescue-pump","group":"vehicles","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"fire-engine-rescue-support-vehicle-or-aerial-appliance-truck","group":"vehicles","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-engine-or-rescue-support-vehicle","group":"vehicles","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"basu-2","group":"vehicles","aliases":["BASU","BASUs"],"types":[14,39,46,49]},{"key":"water-carrier-2","group":"vehicles","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone-2","group":"vehicles","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"operational-support-van-trailer-or-personal-sar-vehicle","group":"vehicles","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle"],"types":[86,87,92]},{"key":"control-van-2","group":"vehicles","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"iccu-or-ambulance-control-unit","group":"vehicles","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units"],"types":[15,31,44,77]},{"key":"hazmat-unit-or-cbrn-vehicle","group":"vehicles","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"ambulance-2","group":"vehicles","aliases":["Ambulance","Ambulances"],"types":[5]},{"key":"police-car-2","group":"vehicles","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"police-car-or-armed-response-vehicle","group":"vehicles","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems-2","group":"vehicles","aliases":["HEMS"],"types":[9]},{"key":"policehelicopter","group":"vehicles","aliases":["Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response-2","group":"vehicles","aliases":["Armed Response"],"types":[13,25,52,56,82]},{"key":"dog-support-unit","group":"vehicles","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"operational-team-leader","group":"vehicles","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car-2","group":"vehicles","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier-2","group":"vehicles","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response-vehicle","group":"vehicles","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response-vehicle","group":"vehicles","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare-vehicle","group":"vehicles","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer-2","group":"vehicles","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit-2","group":"vehicles","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty-equipment","group":"vehicles","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted-unit","group":"vehicles","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4-vehicle","group":"vehicles","aliases":["4x4 Vehicle","4x4 Vehicles"],"types":[66,73,93]},{"key":"coastguard-rope-rescue-unit","group":"vehicles","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue-unit","group":"vehicles","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv-2","group":"vehicles","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander-2","group":"vehicles","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"boat-trailer-or-inland-rescue-boat","group":"vehicles","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats"],"types":[67,74]},{"key":"ilb-or-alb-2","group":"vehicles","aliases":["ILB or ALB","ILBs or ALBs"],"types":[68,69]},{"key":"ilb-2","group":"vehicles","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-rescue-helicopter","group":"vehicles","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb-2","group":"vehicles","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decontamination-unit","group":"vehicles","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit-2","group":"vehicles","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft-trailer","group":"vehicles","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70]},{"key":"coastguard-mud-rescue-unit","group":"vehicles","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft-trailer","group":"vehicles","aliases":["Hovercraft (trailer)","hovercrafts (trailer)"],"types":[71]},{"key":"major-foam-tender","group":"vehicles","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair-2","group":"vehicles","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-firefighting-command-vehicle","group":"vehicles","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations-vehicle","group":"vehicles","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv-2","group":"vehicles","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-equipment-trailer","group":"vehicles","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81]},{"key":"airfield-operations-supervisor","group":"vehicles","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell-van","group":"vehicles","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"medical-cycle-responder","group":"vehicles","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"community-midwife","group":"vehicles","aliases":["Community Midwife","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic-rrv","group":"vehicles","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog-2","group":"vehicles","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-rescue-4x4","group":"vehicles","aliases":["Mountain Rescue 4x4"],"types":[99]},{"key":"road-rail-unit","group":"vehicles","aliases":["Road Rail Unit"],"types":[107]},{"key":"eiu-2","group":"vehicles","aliases":["EIU"],"types":[108]},{"key":"eod-commander-2","group":"vehicles","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response-vehicle","group":"vehicles","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium-equipment-van","group":"vehicles","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy-equipment-vehicle","group":"vehicles","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response-vehicle","group":"vehicles","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment-van","group":"vehicles","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]}].map(definition => Object.freeze({ group: 'vehicles', aliases: [], types: [], equipment: [], factors: {}, ...definition })));
+023125: const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"85":[1,3],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"100":[1,3],"101":[1,1],"102":[1,1],"116":[1,5]});
+023126: const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
+023127:     function handleOperationalWindowSettingChange(target) {
+023128:         const path = target?.dataset?.operationalSetting;
+023129:         if (!path) return false;
+023130:         try {
+023131:             const type = target.dataset.operationalType;
+023132:             const value = type === 'boolean' ? target.checked : type === 'json' ? JSON.parse(target.value || '[]') : target.value;
+023133:             operationalFeatureSet(path, value);
+023134:             state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow, state.operationalWindow?.requirements?.enabled !== false);
+
+030407:         fitControlToMap();
+030408:         positionPanelOverlay(true);
+030409:         showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
+030410:         return true; }
+030411:     function handleSettingChange(target) {
+030412:         if (handleOperationalWindowSettingChange(target)) return;
+030413:         const setting = target.dataset.setting;
+030414:         if (!setting) return;
+030415:         if (handleDeviceLayoutSettingChange(target, setting)) return;
+030416:         if (setting === 'major-incident-minimum') {
+030417:             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
+030418:             saveState();
+030419:             updateUI();
+
+===== REFERENCES 'operationalWindowSyncSettingsUi(' =====
+022754:             'callWindow.arrCategoryColors','callWindow.selectedVehicleCounterVehicleTypes',
+022755:             'missionList.shareMissionTypes','missionList.eventMissions'
+022756:         ].map(path => `<label class="mcms-operational-json-row"><span>${path}</span><textarea rows="2" class="mcms-input" data-operational-setting="${path}" data-operational-type="json"></textarea></label>`).join('');
+022757:         return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Toolkit-native operational controls. Transport automation remains opt-in.</div><label class="mcms-row"><span class="mcms-row-label">Suite enabled</span><input type="checkbox" data-operational-setting="enabled" data-operational-type="boolean"></label>${groups}<details class="mcms-operational-settings-group"><summary>Sorting and advanced data</summary>${advanced}${json}</details>`;
+022758:     }
+022759:     function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) {
+022760:         operationalQueryAll(panel, '[data-operational-setting]').forEach(control => {
+022761:             const value = operationalFeatureValue(control.dataset.operationalSetting);
+022762:             if (control.dataset.operationalType === 'boolean') control.checked = value === true;
+022763:             else if (document.activeElement !== control) control.value = control.dataset.operationalType === 'json' ? JSON.stringify(value ?? []) : value ?? '';
+022764:         });
+022765:     }
+022766:     const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
+
+030516:             updateUI();
+030517:         }
+030518:     }
+030519:     function updateUI() {
+030520:         applyRootAttributes();
+030521:         operationalWindowSyncSettingsUi();
+030522:         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+030523:         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
+030524:         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
+030525:         const control = document.getElementById(SCRIPT.controlId);
+030526:         const panel = document.getElementById(SCRIPT.panelId);
+030527:         if (control) {
+030528:             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
+

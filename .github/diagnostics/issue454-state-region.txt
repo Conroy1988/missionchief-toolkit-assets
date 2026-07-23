@@ -1,0 +1,146 @@
+01260:         queue: [],
+01261:         scannedAt: 0,
+01262:         currentMissionId: null,
+01263:         currentVehicleHref: '',
+01264:         cleared: 0,
+01265:         skipped: 0,
+01266:         errors: 0,
+01267:         processed: 0,
+01268:         confirmedReleaseKeys: new Set(),
+01269:         rejectedOwn: 0,
+01270:         missionAnchorBaseline: new Set(),
+01271:         vehicleButtonBaseline: new Set(),
+01272:         ownVehicleIds: new Set(),
+01273:         missionWindowRoot: null,
+01274:         activeWindowRoot: null,
+01275:         ownedWindowLayers: new Set(),
+01276:         activeWindowCreatedLayer: false,
+01277:         lastCandidateStats: null,
+01278:         startedAt: 0,
+01279:         missionIndex: 0,
+01280:         missionTotal: 0,
+01281:         currentItem: '',
+01282:         statusMessage: '',
+01283:         statusLevel: 'info',
+01284:         hudFinal: false,
+01285:         hudDismissTimer: null,
+01286:         log: []
+01287:     };
+01288:     const personalVehicleApiCache = new Map();
+01289:     const missionCommitmentIndex = new Map();
+01290:     const payoutHistory = loadPayoutHistory();
+01291:     const sessionPerformance = loadSessionPerformance();
+01292:     let discordFinanceBusy = false;
+01293:     let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
+01294:     let discordFinanceStatusTone = 'neutral';
+01295:     let financeVaultStatus = 'Local Financial Archive ready.';
+01296:     let financeVaultStatusTone = 'neutral';
+01297:     let financeRuleFeedStatus = 'Built-in financial intelligence active.';
+01298:     let financeRuleFeedStatusTone = 'neutral';
+01299:     let financeArchiveScanBusy = false;
+01300:     let financeArchiveScanCancelled = false;
+01301:     let financeRuleRefreshPromise = null;
+01302:     let financePolicyRefreshPromise = null;
+01303:     let tabletModeActive = false;
+01304:     let mobileModeActive = false;
+01305:     let activeDeviceLayout = 'desktop';
+01306:     let tabletLayoutTimer = null; let visualViewportRefreshGeneration = 0;
+01307:     let tabletDockResizeObserver = null;
+01308:     let tabletDockObservedMap = null;
+01309:     let desktopPanelResizeObserver = null;
+01310:     let desktopPanelObservedElements = new Set();
+01311:     let missionValueScanTimer = null;
+01312:     let missionValueFeatureInstalled = false;
+01313:     const missionValueObservedDocuments = new WeakSet();
+01314:     const missionValueObservedFrames = new WeakSet();
+01315:     const missionValueHostObservers = new Map();
+01316:     const missionValueRetryState = new WeakMap();
+01317:     let missionRequirementsScanTimer = null;
+01318:     let missionRequirementsFeatureInstalled = false;
+01319:     const missionRequirementsObservedDocuments = new WeakSet();
+01320:     const missionRequirementsObservedFrames = new WeakSet();
+01321:     const missionRequirementsRecords = new Map();
+01322:     let operationalSuiteScanTimer = null;
+01323:     let operationalSuiteInstalled = false;
+01324:     let operationalSuiteRevision = 0;
+01325:     const operationalSuiteContexts = new Map();
+01326:     let customVehicleBadgeScanTimer = null;
+01327:     let customVehicleBadgeRefreshPromise = null;
+01328:     let customVehicleBadgeFeatureInstalled = false;
+01329:     const customVehicleBadgeObservedDocuments = new WeakSet();
+01330:     const customVehicleBadgeObservedFrames = new WeakSet();
+01331:     const customVehicleClassificationCache = new Map();
+01332:     let customVehicleClassificationRevision = -1;
+01333:     let commandBarAnimationTimer = null;
+01334:     let commandBarAnimating = false;
+01335:     let helpGuideDocumentCache = '';
+01336:     let helpGuideLoadedAt = 0;
+01337:     let helpGuideLoadPromise = null;
+01338:     let helpCenterReturnFocus = null;
+01339: 
+01340:     const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
+01341:     const OPERATIONAL_SUITE_LSSM_BASELINE = Object.freeze({
+01342:         repository: 'LSSM-V.4',
+01343:         branch: 'dev',
+01344:         commit: '88e41646e59a7d620624f90f1d9a0a62320c2775'
+01345:     });
+01346: 
+01347:     function defaultOperationalWindowState(legacyRequirementsEnabled = true) {
+01348:         return {
+01349:             schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
+01350:             enabled: true,
+01351:             phase: 'operational-suite',
+01352:             requirements: {
+01353:                 enabled: legacyRequirementsEnabled !== false,
+01354:                 calcMaxStaff: false,
+01355:                 hoverTip: true,
+01356:                 viewMode: 'table',
+01357:                 overlay: false,
+01358:                 minified: false,
+01359:                 pushRight: false,
+01360:                 sort: 'requirement',
+01361:                 sortDir: 'asc',
+01362:                 drag: { active: false, top: 60, left: null, offset: { x: 0, y: 0 } }
+01363:             },
+01364:             callWindow: {
+01365:                 enabled: false,
+01366:                 generationDate: true,
+01367:                 yellowBorderHours: 0,
+01368:                 redBorder: false,
+01369:                 patientSummary: true,
+01370:                 collapsiblePatients: false,
+01371:                 collapsiblePatientsMinPatients: 7,
+01372:                 arrCounter: false,
+01373:                 arrCounterAsBadge: false,
+01374:                 arrClickHighlight: false,
+01375:                 arrClickHighlightColor: '#008000',
+01376:                 arrClickHighlightWidth: 2,
+01377:                 arrCounterResetSelection: false,
+01378:                 arrMatchHighlight: false,
+01379:                 arrMatchHighlightAllWords: false,
+01380:                 arrTime: false,
+01381:                 arrSpecs: false,
+01382:                 alarmTime: false,
+01383:                 stickyHeader: false,
+01384:                 loadMoreVehiclesInHeader: false,
+01385:                 hideVehicleList: false,
+01386:                 centerMap: false,
+01387:                 stagingAreaSelectedCounter: true,
+01388:                 vehicleTypeInList: false,
+01389:                 remainingPatientTime: true,
+01390:                 vehicleCounter: false,
+01391:                 vehicleCounterColor: 'info',
+01392:                 vehicleListPermanentSearch: false,
+01393:                 playerCounter: false,
+01394:                 playerCounterColor: 'danger',
+01395:                 selectedVehicleCounter: false,
+01396:                 selectedVehicleCounterVehicleTypes: [],
+01397:                 arrSearch: false,
+01398:                 arrSearchDissolveCategories: false,
+01399:                 arrSearchCompactResults: false,
+01400:                 arrSearchSelectOnEnter: false,
+01401:                 arrSearchClearOnEnter: false,
+01402:                 arrSearchAutoFocus: false,
+01403:                 arrSearchDropdown: false,
+01404:                 arrSearchCloseDropdownOnSelect: false,
+01405:                 moreReleasePatientButtons: false,

@@ -1,0 +1,362 @@
+ISSUE #464 MISSION AGE DEPENDENCY COMPARISON
+
+==============================================================================================================
+getMissionMarkerLayers
+[identical]
+
+    function getMissionMarkerLayers() {
+        return getCachedRegistry('mission_markers');
+    }
+
+==============================================================================================================
+missionIdFromMarker
+[identical]
+
+    function missionIdFromMarker(marker) {
+        return normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+    }
+
+==============================================================================================================
+isPersonalMissionLayer
+[identical]
+
+    function isPersonalMissionLayer(marker, missionId) {
+        const id = normaliseMissionId(missionId);
+        if (id === null) return false;
+        if (missionHasExplicitPersonalOwner(marker, id)) return true;
+        if (missionHasExplicitAllianceOwner(marker, id)) return false;
+        return Boolean(marker?._icon?.classList?.contains('mcms-marker-my-mission'));
+    }
+
+==============================================================================================================
+captureMissionMarkerDataFromDocument
+[identical]
+
+    function captureMissionMarkerDataFromDocument(doc) {
+        let captured = 0;
+        for (const script of Array.from(doc?.scripts || [])) captured += captureMissionMarkerDataFromSource(script.textContent || '');
+        return captured;
+    }
+
+==============================================================================================================
+captureMissionMarkerData
+[identical]
+    function captureMissionMarkerData(payload) {
+        for (const { item, missionId } of resolveMissionMarkerCandidates(payload)) {
+        const existing = missionOverlayData.get(missionId) || {};
+        setMissionOverlayRecord(missionId, normaliseMissionOverlayRecord(item, existing));
+        }
+    }
+
+==============================================================================================================
+exactMissionTimestampFromObject
+[identical]
+
+    function exactMissionTimestampFromObject(source) {
+        if (!source || typeof source !== 'object') return null;
+        const direct = parseMissionTimestamp(source.created_at ?? source.createdAt ?? source.date_created ?? source.dateCreated);
+        if (direct !== null) return direct;
+
+        for (const key of ['options', 'params', 'mission', 'data', 'missionData', '_missionData']) {
+        const nested = source[key];
+        if (!nested || typeof nested !== 'object') continue;
+        const value = parseMissionTimestamp(nested.created_at ?? nested.createdAt ?? nested.date_created ?? nested.dateCreated);
+        if (value !== null) return value;
+        }
+        return null;
+    }
+
+==============================================================================================================
+timestampFromMissionPanel
+[identical]
+
+    function timestampFromMissionPanel(missionId) {
+        const panel = getMissionPanelElement(missionId);
+        if (!panel) return null;
+
+        const attributes = [
+        'created_at', 'created-at', 'data-created-at', 'data-created_at',
+        'mission-created-at', 'data-mission-created-at'
+        ];
+        const selectors = attributes.map(attribute => `[${attribute}]`).join(',');
+        const nodes = [panel, ...panel.querySelectorAll(selectors)];
+
+        for (const node of nodes) {
+        for (const attribute of attributes) {
+            const value = parseMissionTimestamp(node.getAttribute?.(attribute));
+            if (value !== null) return value;
+        }
+        }
+        return null;
+    }
+
+==============================================================================================================
+findLeafletMapInstance
+[identical]
+
+    function findLeafletMapInstance(showStatus = true) {
+        const mapEl = getLargestLeafletMap();
+        if (!mapEl) {
+        detachMapEvents(cachedMap);
+        cachedMap = null;
+        cachedMapElement = null;
+        return null;
+        }
+
+        if (cachedMap && typeof cachedMap.getContainer === 'function') {
+        try {
+            const container = cachedMap.getContainer();
+            if (container === mapEl && container?.isConnected !== false) return cachedMap;
+        } catch (err) {}
+        detachMapEvents(cachedMap);
+        cachedMap = null;
+        cachedMapElement = null;
+        }
+
+        const now = Date.now();
+        if (now - mapDiscoveryLastAttempt < MAP_DISCOVERY_RETRY_MS) return null;
+        mapDiscoveryLastAttempt = now;
+
+        const candidates = [];
+        const seen = new Set();
+        const candidateRoots = Array.from(new Set([pageWindow, window].filter(Boolean)));
+        const names = [
+        'map', 'missionMap', 'mission_map', 'missionChiefMap', 'missionchiefMap',
+        'leafletMap', 'leaflet_map', 'mainMap', 'gameMap', 'mapInstance',
+        'osmMap', 'osm_map', 'lssmMap'
+        ];
+
+        const addCandidate = value => {
+        if (!value || seen.has(value) || (typeof value !== 'object' && typeof value !== 'function')) return;
+        try {
+            if (typeof value.getCenter === 'function' && typeof value.setView === 'function' && typeof value.getZoom === 'function' && typeof value.addLayer === 'function') {
+                seen.add(value);
+                candidates.push(value);
+            }
+        } catch (err) {}
+        };
+
+        for (const root of candidateRoots) {
+        for (const name of names) {
+            try { addCandidate(root[name]); } catch (err) {}
+        }
+        }
+
+        // Scan data properties without invoking arbitrary page getters. MissionChief and
+        // extensions expose many globals; reading every accessor was an avoidable hot path.
+        for (const root of candidateRoots) {
+        let properties;
+        try { properties = Object.getOwnPropertyNames(root); } catch (err) { continue; }
+        const prioritised = properties.filter(name => /map|leaflet/i.test(name));
+        const fallback = properties.filter(name => !/map|leaflet/i.test(name)).slice(0, 160);
+        for (const prop of [...prioritised, ...fallback]) {
+            if (candidates.length >= 80) break;
+            try {
+                const descriptor = Object.getOwnPropertyDescriptor(root, prop);
+                if (descriptor && Object.prototype.hasOwnProperty.call(descriptor, 'value')) addCandidate(descriptor.value);
+            } catch (err) {}
+        }
+        }
+
+        for (const map of candidates) {
+        try {
+            if (map.getContainer?.() === mapEl) {
+                cachedMap = map;
+                cachedMapElement = mapEl;
+                attachMapEvents(map);
+                return map;
+            }
+        } catch (err) {}
+        }
+
+        // Only use a container-agnostic fallback when exactly one credible map exists.
+        if (candidates.length === 1) {
+        cachedMap = candidates[0];
+        cachedMapElement = mapEl;
+        attachMapEvents(cachedMap);
+        return cachedMap;
+        }
+
+        if (showStatus) setStatus('Leaflet map object not detected. Map jumps/rings may be unavailable on this page.');
+        return null;
+    }
+
+==============================================================================================================
+invalidateMarkerRegistryCaches
+[identical]
+
+    function invalidateMarkerRegistryCaches(scope = 'all') {
+        markerRegistryRevision += 1;
+        if (scope === 'all' || scope === 'mission') {
+        markerRegistryCache.delete('mission_markers');
+        missionIconMarkerCache = new WeakMap();
+        missionRegistryRevision += 1;
+        missionMarkerIndexCache = { revision: -1, registry: null, markers: [], byId: new Map() };
+        }
+        if (scope === 'all' || scope === 'vehicle') {
+        markerRegistryCache.delete('vehicle_markers');
+        vehicleRegistryRevision += 1;
+        personalVehicleRecordsCache.vehicleRevision = -1;
+        }
+        if (scope === 'all' || scope === 'building') {
+        markerRegistryCache.delete('building_markers');
+        markerRegistryCache.delete('building_markers_cache');
+        buildingRegistryRevision += 1;
+        personalBuildingIdsCache.createdAt = 0;
+        heatmapSourceCache.createdAt = 0;
+        }
+    }
+
+==============================================================================================================
+scheduleEnabledMapRefreshes
+[identical]
+
+    function scheduleEnabledMapRefreshes({ includeSnapshots = true, positionPanel = false, refreshOperational = true, mapOnly = false } = {}) {
+        pendingEnabledMapRefresh.includeSnapshots ||= Boolean(includeSnapshots);
+        pendingEnabledMapRefresh.positionPanel ||= Boolean(positionPanel);
+        pendingEnabledMapRefresh.refreshOperational ||= Boolean(refreshOperational);
+        pendingEnabledMapRefresh.fullRefresh ||= !mapOnly;
+        if (state.economyMode && economyMapMoving) return;
+        if (enabledMapRefreshTimer !== null) return;
+        enabledMapRefreshTimer = runtimeSetTimeout(flushEnabledMapRefreshes, state.economyMode ? 180 : 35);
+    }
+
+==============================================================================================================
+reconcileFeatureRefreshes
+[identical]
+
+    function reconcileFeatureRefreshes({ includeSnapshots = true, positionPanel = false } = {}) {
+        if (!state.coverage.enabled) clearCoverageRings();
+        if (!state.heatmap.enabled) clearCoverageHeatmap();
+        if (!state.allianceCredits) clearAllianceCreditLabels();
+        if (!state.missionAge) clearMissionAgeLabels();
+        if (!state.unitCommitment) clearUnitCommitmentLabels();
+        if (!state.transportWatcher) clearTransportWatcherLabels();
+        if (!state.stuckDetector.enabled) clearStuckMissionLabels();
+        if (!state.resourceGap.enabled) {
+        clearResourceGapLabels();
+        resourceGapAnalysisCache.clear();
+        resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [], byToken: new Map() };
+        }
+        if (!state.missionInspector) hideMissionInspector();
+        if (state.majorIncidentFeed.enabled) scheduleMajorIncidentFeedRender(80);
+        else removeMajorIncidentFeed();
+        scheduleEnabledMapRefreshes({ includeSnapshots, positionPanel });
+    }
+
+==============================================================================================================
+missionSnapshotsNeeded
+[identical]
+
+    function missionSnapshotsNeeded() {
+        return Boolean(
+        state.payoutFlash.enabled || state.transportWatcher || state.stuckDetector.enabled ||
+        state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
+        state.unitCommitment || state.resourceGap.enabled || state.majorIncidentFeed.enabled || criticalViewActive ||
+        operationalUiIsVisible() || missionInspectorMarker
+        );
+    }
+
+==============================================================================================================
+handleMapVisibilityToggle
+[identical]
+
+    function handleMapVisibilityToggle(feature) {
+        if (feature === 'markerFocus') state.markerFocus = !state.markerFocus;
+        else if (feature === 'missionPulse') state.missionPulse = !state.missionPulse;
+        else if (feature === 'roadPriority') state.roadPriority = !state.roadPriority;
+        else if (feature === 'coverage') state.coverage.enabled = !state.coverage.enabled;
+        else if (feature === 'heatmap') state.heatmap.enabled = !state.heatmap.enabled;
+        else if (feature === 'allianceMissions') state.visibility.allianceMissions = !state.visibility.allianceMissions;
+        else if (feature === 'myMissions') state.visibility.myMissions = !state.visibility.myMissions;
+        else if (feature === 'vehicles') state.visibility.vehicles = !state.visibility.vehicles;
+        else if (feature === 'buildings') state.visibility.buildings = !state.visibility.buildings;
+        else return false;
+        return true;
+    }
+
+==============================================================================================================
+CSS .mcms-mission-age-icon
+--- v4.20.37/.mcms-mission-age-icon
++++ v5.0.5/.mcms-mission-age-icon
+@@ -26,8 +26,8 @@
+             white-space: nowrap !important; pointer-events: none !important; touch-action: none !important;
+ ---
+ 
+-                target.closest?.(`#${SCRIPT.missionInspectorId}`) ||
+-                target.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)
++                target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
++                target.closest?.(`#${SCRIPT.missionInspectorId}`)
+             )
+         );
+         if (toolkitTarget) return true;
+
+==============================================================================================================
+CSS .mcms-mission-age-badge
+--- v4.20.37/.mcms-mission-age-badge
++++ v5.0.5/.mcms-mission-age-badge
+@@ -455,7 +455,7 @@
+         ? Math.ceil((occupiedWidth / 2) + watcherHalfWidth + gap)
+ ---
+ 
+-                target.closest?.(`#${SCRIPT.missionRequirementsPanelId}`)
++                target.closest?.(`#${SCRIPT.missionInspectorId}`)
+             )
+         );
+         if (toolkitTarget) return true;
+
+==============================================================================================================
+CSS .mcms-mission-float-pane
+[identical]
+
+        #${SCRIPT.panelId} .mcms-heat-key { padding: 4px 2px !important; border-radius: 6px !important; color: #fff !important; font-size: 7px !important; font-weight: 900 !important; text-align: center !important; text-shadow: 0 1px 2px #000 !important; }
+        #${SCRIPT.panelId} .mcms-footer { margin: 9px 0 0 0 !important; padding: 7px 0 0 0 !important; border-top: 1px solid rgba(255,255,255,.10) !important; color: rgba(233,238,245,.58) !important; font-size: 9px !important; line-height: 1.25 !important; overflow: hidden !important; }
+        #${SCRIPT.panelId} .mcms-build { display: block !important; margin-top: 4px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+        .mcms-mission-float-pane,
+        .mcms-mission-float-pane * {
+            pointer-events: none !important;
+            touch-action: none !important;
+        }
+        .mcms-alliance-credit-icon,
+        .mcms-mission-age-icon,
+        .mcms-unit-commitment-icon,
+        .mcms-transport-watcher-icon,
+        .mcms-resource-gap-icon {
+            width: 0 !important; height: 0 !important; overflow: visible !important;
+            border: 0 !important; background: transparent !important;
+            pointer-events: none !important; touch-action: none !important;
+        }
+        .mcms-alliance-credit-badge,
+        .mcms-mission-age-badge,
+        .mcms-unit-commitment-badge,
+        .mcms-transport-watcher-badge,
+        .mcms-resource-gap-badge {
+            position: absolute !important; left: 0 !important; top: 0 !important;
+            transform: translate(-50%, -50%) !important;
+            display: inline-flex !important; align-items: center !important; justify-content: center !important;
+---
+
+        #${SCRIPT.panelId} .mcms-footer { margin: 9px 0 0 0 !important; padding: 7px 0 0 0 !important; border-top: 1px solid rgba(255,255,255,.10) !important; color: rgba(233,238,245,.58) !important; font-size: 9px !important; line-height: 1.25 !important; overflow: hidden !important; }
+        #${SCRIPT.panelId} .mcms-build { display: block !important; margin-top: 4px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+        .mcms-mission-float-pane,
+        .mcms-mission-float-pane * {
+            pointer-events: none !important;
+            touch-action: none !important;
+        }
+        .mcms-alliance-credit-icon,
+        .mcms-mission-age-icon,
+        .mcms-unit-commitment-icon,
+        .mcms-transport-watcher-icon,
+        .mcms-resource-gap-icon {
+            width: 0 !important; height: 0 !important; overflow: visible !important;
+            border: 0 !important; background: transparent !important;
+            pointer-events: none !important; touch-action: none !important;
+        }
+        .mcms-alliance-credit-badge,
+        .mcms-mission-age-badge,
+        .mcms-unit-commitment-badge,
+        .mcms-transport-watcher-badge,
+        .mcms-resource-gap-badge {
+            position: absolute !important; left: 0 !important; top: 0 !important;
+            transform: translate(-50%, -50%) !important;
+            display: inline-flex !important; align-items: center !important; justify-content: center !important;

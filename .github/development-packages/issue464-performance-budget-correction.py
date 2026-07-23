@@ -38,8 +38,12 @@ for pattern, replacement, label in replacements:
     if count != 1:
         raise SystemExit(f'Expected one {label} anchor, found {count}')
 
-if len(re.findall(r'runtimeSetTimeout\s*\(', text)) > 99:
-    raise SystemExit('Managed runtime timeout call-site budget remains above 99')
+runtime_timeout_sites = (
+    len(re.findall(r'runtimeSetTimeout\s*\(', text))
+    - len(re.findall(r'function\s+runtimeSetTimeout\s*\(', text))
+)
+if runtime_timeout_sites > 99:
+    raise SystemExit(f'Managed runtime timeout call-site budget remains above 99: {runtime_timeout_sites}')
 
 SOURCE.write_text(text, encoding='utf-8')
 for target in (ROOT / 'MissionChief_Map_Command_Toolkit.user.js', ROOT / 'MissionChief_Map_Command_Toolkit.txt'):
@@ -59,7 +63,8 @@ assert 'if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());' in ca
 assert not re.search(r'arrSearchAutoFocus\\s*\\)\\s*runtimeSetTimeout', call)
 assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250)" in visibility
 assert "runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000)" in visibility
-assert len(re.findall(r'runtimeSetTimeout\\s*\\(', text)) <= 99
+runtime_timeout_sites = len(re.findall(r'runtimeSetTimeout\\s*\\(', text)) - len(re.findall(r'function\\s+runtimeSetTimeout\\s*\\(', text))
+assert runtime_timeout_sites <= 99
 """
 if anchor not in test:
     raise SystemExit('Issue #464 performance contract anchor is missing')
@@ -89,7 +94,7 @@ SELF.unlink(missing_ok=True)
 print(json.dumps({
     'version': '5.0.6',
     'sha256': fixture['candidateSourceSha256'],
-    'runtimeTimeoutCallSites': len(re.findall(r'runtimeSetTimeout\s*\(', text)),
+    'runtimeTimeoutCallSites': runtime_timeout_sites,
     'removedRuntimeTimeoutSites': 2,
     'missionAgeRetriesPreserved': True,
     'sourceLines': len(text.splitlines()),

@@ -14,6 +14,7 @@ CHAIN = (
 )
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 PREFLIGHT = ROOT / ".github" / "scripts" / "run_userscript_preflight.sh"
+WORKFLOW = ROOT / ".github" / "workflows" / "full-userscript-audit.yml"
 CANONICAL = (
     SOURCE,
     ROOT / "MissionChief_Map_Command_Toolkit.user.js",
@@ -22,10 +23,16 @@ CANONICAL = (
     ROOT / "dist" / "MissionChief_Map_Command_Toolkit.txt",
 )
 
+original_workflow = WORKFLOW.read_text(encoding="utf-8")
 for package in CHAIN:
     if not package.exists():
         raise RuntimeError(f"retirement chain package missing: {package.relative_to(ROOT)}")
     subprocess.run(["python3", str(package)], cwd=ROOT, env=ENV, check=True)
+
+# The GitHub Actions token used by the guarded publisher may not update workflow
+# files. Publish the validated runtime/contract cutover first; the equivalent
+# workflow path update is committed separately through the repository connector.
+WORKFLOW.write_text(original_workflow, encoding="utf-8")
 
 source = SOURCE.read_text(encoding="utf-8")
 for token in (
@@ -58,4 +65,4 @@ for path in (ROOT / ".github" / "development-packages").glob("issue391-*.py"):
 for path in (ROOT / ".github" / "diagnostics").glob("issue391-*.txt"):
     path.unlink(missing_ok=True)
 
-print("Issue #391 Matrix retirement published; full contract suite passed.")
+print("Issue #391 Matrix retirement published; full contract suite passed. Workflow path update deferred to connector commit.")

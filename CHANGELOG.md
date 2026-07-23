@@ -6,6 +6,39 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.0] - 2026-07-23
+
+### Major operational-window replacement
+- Replaced the legacy Mission Requirements Matrix with a Toolkit-native operational suite built from the authorised LSSM Extended Call Window, Extended Call List and Enhanced Transport Requests behaviour.
+- Added one versioned `operationalWindow` settings model, one lifecycle coordinator per active document, coalesced rendering and deterministic teardown across MissionChief navigation.
+- Migrated the former Matrix preference once into the new requirements setting and permanently retired the old parser, panel, observers, scheduler and toggle.
+
+### Enhanced mission requirements
+- Added a fixture-first requirements engine covering vehicle, equipment, personnel, conditional, capacity, trailer and tractive requirements.
+- Added selected, en-route and on-scene reconciliation, water/foam/pump progress, unresolved-text preservation and immutable render fingerprints.
+- Added a responsive normal-flow requirements surface for Desktop, Tablet and iOS, with LSSM coexistence detection to prevent duplicate panels.
+
+### Extended Call Window
+- Added patient and vehicle summaries, selected-unit and ARR counters, generation/alarm information, collapsible patient and vehicle areas, permanent vehicle and ARR search, mission keyword badges, map-centre controls and ARR highlighting.
+- Added sticky headers, vehicle-type badges and mobile safe-area handling without creating a second mission-window lifecycle.
+
+### Extended Call List
+- Added mission sorting, starring, collapsing, patient/prisoner/credit/time badges and native share controls.
+- Preserved deterministic ordering and state across live list refreshes while remaining compatible with MissionChief and equivalent LSSM modules.
+
+### Enhanced Transport Requests
+- Added opt-in transport automation with strict route validation, visible/enabled candidate filtering, single-candidate ambiguity rejection and per-route idempotency tokens.
+- Kept automatic transport opening disabled by default; successful vehicle transport controls retain their reviewed safe default.
+
+### Performance and validation
+- Reduced total observer constructions from twelve to eleven and broad subtree observers from ten to nine compared with v4.20.37.
+- Held direct MutationObserver, `getElementById` and `innerHTML` metrics at their existing release ceilings while reducing source bytes, selectors, managed timers, listeners and observer trackers.
+- Added deterministic engine, renderer, runtime, Matrix-retirement, structural, performance and mobile compatibility contracts.
+
+### Upgrade compatibility
+- Existing Toolkit settings are retained. The former Matrix enablement preference is migrated automatically; no manual reset is required.
+- The operational suite supports Desktop, Tablet and iOS/Safari and suppresses equivalent Toolkit surfaces when the matching LSSM module is active.
+
 ## [4.20.37] - 2026-07-22
 
 ### Critical Mission Requirements fixes

@@ -25,13 +25,8 @@ if text.count(old_constant) != 1:
     raise RuntimeError("canonical meta settings-test constant anchor drifted")
 text = text.replace(old_constant, new_constant)
 
-old_runtime = '''SETTINGS_FIXTURE.write_text(json.dumps(settings_fixture, indent=2) + "\\n", encoding="utf-8")
-
-fixture = json.loads(HEADROOM_FIXTURE.read_text(encoding="utf-8"))
-'''
-new_runtime = """SETTINGS_FIXTURE.write_text(json.dumps(settings_fixture, indent=2) + "\\n", encoding="utf-8")
-
-settings_test = SETTINGS_TEST.read_text(encoding="utf-8")
+runtime_anchor = 'SETTINGS_FIXTURE.write_text(json.dumps(settings_fixture, indent=2) + "\\n", encoding="utf-8")'
+settings_block = """settings_test = SETTINGS_TEST.read_text(encoding="utf-8")
 settings_test = replace_exact(
     settings_test,
     '''FUNCTION_NAMES = [
@@ -120,13 +115,10 @@ settings_test = replace_exact(
     '',
     "settings contract obsolete Matrix effect case",
 )
-SETTINGS_TEST.write_text(settings_test, encoding="utf-8")
-
-fixture = json.loads(HEADROOM_FIXTURE.read_text(encoding="utf-8"))
-"""
-if text.count(old_runtime) != 1:
-    raise RuntimeError("canonical meta settings-test runtime anchor drifted")
-text = text.replace(old_runtime, new_runtime)
+SETTINGS_TEST.write_text(settings_test, encoding="utf-8")"""
+if text.count(runtime_anchor) != 1:
+    raise RuntimeError(f"canonical meta settings-test runtime anchor drifted: {text.count(runtime_anchor)}")
+text = text.replace(runtime_anchor, runtime_anchor + "\n\n" + settings_block, 1)
 
 old_diagnostic = '''    ROOT / ".github" / "diagnostics" / "issue391-migration-v2-failure.txt",
 )'''
@@ -134,6 +126,7 @@ new_diagnostic = '''    ROOT / ".github" / "diagnostics" / "issue391-migration-v
     ROOT / ".github" / "diagnostics" / "issue391-canonical-retirement-failure.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-settings-helper-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v2.txt",
 )'''
 if text.count(old_diagnostic) != 1:
     raise RuntimeError("canonical meta final diagnostic cleanup anchor drifted")
@@ -162,7 +155,7 @@ with tempfile.TemporaryDirectory(prefix="issue391-post-retirement-settings-selft
 for obsolete in (
     ROOT / ".github" / "development-packages" / "issue391-canonical-retirement-diagnostic.py",
     ROOT / ".github" / "development-packages" / "issue391-operational-settings-helper-map.py",
-    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic.py",
+    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic-v2.py",
 ):
     obsolete.unlink(missing_ok=True)
 

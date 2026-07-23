@@ -43,7 +43,8 @@ fixture = __import__('json').loads((ROOT / '.github' / 'fixtures' / 'main-style-
 expected_lines = fixture['candidateSourceLines'] + fixture.get('approvedNonStyleSourceLines', 0)
 if fixture.get('expectedSourceLines') != expected_lines or expected_lines != len(source.splitlines()):
     raise SystemExit('Issue #378 source-headroom additive accounting is inconsistent')
-if fixture.get('approvedNonStyleChanges') != [{'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317}]:
-    raise SystemExit('Issue #378 source-headroom change ledger is missing or altered')
+approved_changes = fixture.get('approvedNonStyleChanges', [])
+if not approved_changes or approved_changes[0] != {'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317}:
+    raise SystemExit('Issue #378 operational-suite shell source-headroom ledger entry is missing or altered')
 
 print("Issue #378 operational-suite lifecycle/settings shell contract passed.")

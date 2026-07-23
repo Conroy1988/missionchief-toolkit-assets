@@ -17,13 +17,18 @@
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
   "candidateSourceSha256": "690088591fd205f845960c44ecc4b6e6560b49a1da50d8eddf430de961e296ef",
   "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while authoritative empty live requirements clear false shortages and explicit Level 1 Public Order evidence contributes exact personnel.",
-  "approvedNonStyleSourceLines": 317,
+  "approvedNonStyleSourceLines": 648,
   "approvedNonStyleChanges": [
     {
       "issue": 378,
       "phase": "operational-suite-shell",
       "lines": 317
+    },
+    {
+      "issue": 378,
+      "phase": "enhanced-requirements-engine-core",
+      "lines": 331
     }
   ],
-  "expectedSourceLines": 31970
+  "expectedSourceLines": 32301
 }

@@ -21939,6 +21939,337 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
 
+    // Issue #378 enhanced requirements pure engine.
+    // This block is intentionally DOM-free. Phase 3 validates the data model before any
+    // renderer or observer can replace the stable Matrix runtime.
+    const OPERATIONAL_REQUIREMENT_GROUPS = Object.freeze(['vehicles', 'staff', 'other']);
+
+    function operationalRequirementEscapeRegex(value) {
+        return String(value ?? '').replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    }
+
+    function operationalRequirementNormaliseText(value) {
+        return String(value ?? '')
+            .replace(/[\u00a0\s]+/gu, ' ')
+            .replace(/\s+([,.:])/gu, '$1')
+            .trim();
+    }
+
+    function operationalRequirementNumber(value, fallback = 0) {
+        const normalised = String(value ?? '').replace(/[^0-9-]/gu, '');
+        const parsed = Number.parseInt(normalised, 10);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function operationalRequirementCloneRange(value) {
+        return {
+            min: Math.max(0, Number(value?.min) || 0),
+            max: Math.max(0, Number(value?.max) || 0)
+        };
+    }
+
+    function operationalRequirementDefinitionList(value) {
+        return Array.isArray(value) ? value.filter(item => item && typeof item === 'object') : [];
+    }
+
+    function operationalRequirementMatcher(texts) {
+        const labels = (Array.isArray(texts) ? texts : [texts])
+            .map(operationalRequirementNormaliseText)
+            .filter(Boolean)
+            .sort((left, right) => right.length - left.length)
+            .map(operationalRequirementEscapeRegex);
+        if (!labels.length) return null;
+        const number = '\\d{1,3}(?:[,.\\s]?\\d{3})*x?';
+        return new RegExp(`((?:${number}\\s+(?:${labels.join('|')}))|(?:(?:${labels.join('|')}):\\s*${number}))(?=[,.]|$)`, 'iu');
+    }
+
+    function operationalRequirementSplitMatch(value) {
+        const match = operationalRequirementNormaliseText(value);
+        const colon = /:\s*[0-9][0-9,.\s]*x?$/u.test(match);
+        const amountText = match.match(colon ? /[0-9][0-9,.\s]*x?$/u : /^[0-9][0-9,.\s]*x?/u)?.[0] ?? '0';
+        return {
+            requirement: match
+                .replace(colon ? /:\s*[0-9][0-9,.\s]*x?$/u : /^[0-9][0-9,.\s]*x?/u, '')
+                .trim(),
+            missing: Math.max(0, operationalRequirementNumber(amountText, 0))
+        };
+    }
+
+    function operationalRequirementCleanRemaining(value) {
+        return operationalRequirementNormaliseText(value)
+            .replace(/,\s*(?=,|$)/gmu, '')
+            .replace(/^,\s*/gmu, '')
+            .replace(/\s+,/gmu, ',')
+            .trim();
+    }
+
+    function operationalRequirementIndexAdd(index, type, group, requirementIndex) {
+        const key = String(type);
+        index[key] ??= {};
+        index[key][group] ??= [];
+        if (!index[key][group].includes(requirementIndex)) index[key][group].push(requirementIndex);
+    }
+
+    function operationalRequirementFactor(requirement, type, fallback = 1) {
+        const factor = requirement?.additional?.factors?.[String(type)];
+        return Number.isFinite(Number(factor)) ? Number(factor) : fallback;
+    }
+
+    function operationalRequirementCreateModel(input = {}) {
+        const catalog = input.catalog && typeof input.catalog === 'object' ? input.catalog : {};
+        const missionAdditional = input.missionAdditional && typeof input.missionAdditional === 'object'
+            ? input.missionAdditional
+            : {};
+        const requirements = { vehicles: [], staff: [], other: [] };
+        const requirementTexts = { vehicles: null, staff: null, other: null };
+        const requirementsForVehicle = {};
+        const requirementsForEquipment = {};
+
+        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+            const supplied = input.texts?.[group];
+            if (supplied === undefined || supplied === null) continue;
+            const raw = operationalRequirementNormaliseText(
+                typeof supplied === 'object' && !Array.isArray(supplied) ? supplied.raw : supplied
+            );
+            const infoText = operationalRequirementNormaliseText(
+                typeof supplied === 'object' && !Array.isArray(supplied) ? supplied.infoText : ''
+            );
+            requirementTexts[group] = { infoText, raw, remaining: raw };
+        }
+
+        for (const bar of ['water', 'foam', 'pump']) {
+            const progress = input.progress?.[bar];
+            const textGroup = requirementTexts.other;
+            if (!progress || !textGroup) continue;
+            const matcher = operationalRequirementMatcher(progress.texts ?? progress.requirement ?? bar);
+            const match = matcher?.exec(textGroup.remaining)?.[0];
+            if (!match) continue;
+            textGroup.remaining = textGroup.remaining.replace(match, '');
+            const driving = Math.max(0, Number(progress.driving) || 0);
+            requirements.other.push({
+                key: `progress:${bar}`,
+                requirement: operationalRequirementSplitMatch(match).requirement,
+                missing: Math.max(0, Number(progress.missing) || 0) + driving,
+                driving,
+                selected: Math.max(0, Number(progress.selected) || 0),
+                bar
+            });
+        }
+
+        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+            const textGroup = requirementTexts[group];
+            if (!textGroup) continue;
+            const preprocessors = Array.isArray(input.preprocessors?.[group]) ? input.preprocessors[group] : [];
+            for (const processor of preprocessors) {
+                if (!processor || typeof processor.pattern !== 'string') continue;
+                try {
+                    textGroup.remaining = textGroup.remaining.replace(
+                        new RegExp(processor.pattern, processor.flags || 'gu'),
+                        String(processor.replace ?? '')
+                    );
+                } catch (error) {
+                    // Invalid optional locale preprocessors are ignored without corrupting raw text.
+                }
+            }
+
+            for (const [definitionIndex, definition] of operationalRequirementDefinitionList(catalog[group]).entries()) {
+                const matcher = operationalRequirementMatcher(definition.texts);
+                const match = matcher?.exec(textGroup.remaining)?.[0];
+                if (!match) continue;
+                textGroup.remaining = textGroup.remaining.replace(match, '');
+                const parsed = operationalRequirementSplitMatch(match);
+                const requirementIndex = requirements[group].length;
+                const vehicles = new Set(
+                    operationalRequirementDefinitionList([])
+                );
+                for (const vehicle of Array.isArray(definition.vehicles) ? definition.vehicles : []) {
+                    if (Number.isFinite(Number(vehicle))) vehicles.add(Number(vehicle));
+                }
+                for (const [condition, conditional] of Object.entries(definition.conditionalVehicles ?? {})) {
+                    if (!missionAdditional[condition]) continue;
+                    for (const vehicle of Array.isArray(conditional) ? conditional : []) {
+                        if (Number.isFinite(Number(vehicle))) vehicles.add(Number(vehicle));
+                    }
+                }
+                for (const vehicle of vehicles) {
+                    operationalRequirementIndexAdd(requirementsForVehicle, vehicle, group, requirementIndex);
+                }
+                for (const equipment of Array.isArray(definition.equipment) ? definition.equipment : []) {
+                    if (String(equipment).trim()) {
+                        operationalRequirementIndexAdd(requirementsForEquipment, String(equipment), group, requirementIndex);
+                    }
+                }
+                requirements[group].push({
+                    key: String(definition.key ?? `${group}:${definitionIndex}`),
+                    requirement: parsed.requirement,
+                    missing: parsed.missing,
+                    driving: 0,
+                    selected: group === 'staff' ? { min: 0, max: 0 } : 0,
+                    additional: {
+                        texts: Array.isArray(definition.texts) ? definition.texts.slice() : [String(definition.texts ?? '')],
+                        vehicles: Array.from(vehicles),
+                        equipment: Array.isArray(definition.equipment) ? definition.equipment.slice() : [],
+                        conditionalVehicles: { ...(definition.conditionalVehicles ?? {}) },
+                        factors: { ...(definition.factors ?? {}) }
+                    }
+                });
+            }
+            textGroup.remaining = operationalRequirementCleanRemaining(textGroup.remaining);
+        }
+
+        const addDriving = (type, group, amount, isEquipment = false) => {
+            const index = isEquipment ? requirementsForEquipment : requirementsForVehicle;
+            for (const requirementIndex of index[String(type)]?.[group] ?? []) {
+                const requirement = requirements[group][requirementIndex];
+                requirement.driving += operationalRequirementFactor(requirement, type, amount);
+            }
+        };
+
+        for (const vehicle of Array.isArray(input.driving) ? input.driving : []) {
+            const vehicleType = Number(vehicle?.vehicleType);
+            if (Number.isFinite(vehicleType) && vehicleType >= 0) {
+                addDriving(vehicleType, 'vehicles', 1);
+                addDriving(vehicleType, 'other', 1);
+                const staff = Math.max(0, Number(vehicle?.staff) || 0);
+                if (staff > 0) addDriving(vehicleType, 'staff', staff);
+            }
+            for (const equipment of Array.isArray(vehicle?.equipment) ? vehicle.equipment : []) {
+                for (const group of OPERATIONAL_REQUIREMENT_GROUPS) addDriving(String(equipment), group, 1, true);
+            }
+        }
+
+        const selected = {
+            vehicles: new Array(requirements.vehicles.length).fill(0),
+            staff: new Array(requirements.staff.length).fill(0).map(() => ({ min: 0, max: 0 })),
+            other: new Array(requirements.other.length).fill(0)
+        };
+        const selectedVehicles = Array.isArray(input.selected) ? input.selected : [];
+        const selectedIds = new Set(selectedVehicles.map(vehicle => Number(vehicle?.id)).filter(Number.isFinite));
+
+        const increaseSelected = (type, group, amount = 1, range = null, isEquipment = false) => {
+            const index = isEquipment ? requirementsForEquipment : requirementsForVehicle;
+            for (const requirementIndex of index[String(type)]?.[group] ?? []) {
+                if (group === 'staff') {
+                    const staff = operationalRequirementCloneRange(range);
+                    selected.staff[requirementIndex].min += staff.min;
+                    selected.staff[requirementIndex].max += staff.max;
+                } else {
+                    selected[group][requirementIndex] += operationalRequirementFactor(
+                        requirements[group][requirementIndex],
+                        type,
+                        amount
+                    );
+                }
+            }
+        };
+
+        const vehicleTypes = input.vehicleTypes && typeof input.vehicleTypes === 'object' ? input.vehicleTypes : {};
+        const requirementsByRandomTractive = {};
+        for (const [trailerType, metadata] of Object.entries(vehicleTypes)) {
+            const tractives = Array.isArray(metadata?.tractiveVehicles)
+                ? metadata.tractiveVehicles.map(Number).filter(Number.isFinite)
+                : [];
+            if (!tractives.length) continue;
+            requirementsByRandomTractive[trailerType] = {};
+            for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+                let intersection = null;
+                for (const tractiveType of tractives) {
+                    const values = new Set(requirementsForVehicle[String(tractiveType)]?.[group] ?? []);
+                    intersection = intersection === null
+                        ? values
+                        : new Set(Array.from(intersection).filter(value => values.has(value)));
+                }
+                requirementsByRandomTractive[trailerType][group] = Array.from(intersection ?? []);
+            }
+        }
+
+        const randomTractiveCounts = {};
+        for (const vehicle of selectedVehicles) {
+            const vehicleType = Number(vehicle?.vehicleType);
+            if (!Number.isFinite(vehicleType) || vehicleType < 0) continue;
+            const staff = operationalRequirementCloneRange(vehicle?.staff);
+            increaseSelected(vehicleType, 'vehicles', 1);
+            increaseSelected(vehicleType, 'other', 1);
+            increaseSelected(vehicleType, 'staff', 1, staff);
+            for (const equipment of Array.isArray(vehicle?.equipment) ? vehicle.equipment : []) {
+                for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+                    increaseSelected(String(equipment), group, 1, null, true);
+                }
+            }
+
+            const tractiveId = Number(vehicle?.tractiveVehicleId);
+            const tractiveType = Number(vehicle?.tractiveVehicleType);
+            const explicitTractive = vehicle?.tractiveRandom === false || vehicle?.tractiveRandom === 0 || vehicle?.tractiveRandom === '0';
+            if (explicitTractive && Number.isFinite(tractiveType) && !selectedIds.has(tractiveId)) {
+                const tractiveStaff = operationalRequirementCloneRange(vehicle?.tractiveStaff);
+                increaseSelected(tractiveType, 'vehicles', 1);
+                increaseSelected(tractiveType, 'other', 1);
+                increaseSelected(tractiveType, 'staff', 1, tractiveStaff);
+            } else if (vehicleTypes[String(vehicleType)]?.tractiveVehicles) {
+                randomTractiveCounts[String(vehicleType)] = (randomTractiveCounts[String(vehicleType)] ?? 0) + 1;
+            }
+        }
+
+        for (const [trailerType, amount] of Object.entries(randomTractiveCounts)) {
+            for (const group of ['vehicles', 'other']) {
+                for (const requirementIndex of requirementsByRandomTractive[trailerType]?.[group] ?? []) {
+                    selected[group][requirementIndex] += Number(amount) || 0;
+                }
+            }
+        }
+
+        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+            requirements[group].forEach((requirement, index) => {
+                if (requirement.bar) {
+                    const progress = input.progress?.[requirement.bar];
+                    requirement.selected = Math.max(0, Number(progress?.selected) || 0);
+                } else {
+                    requirement.selected = group === 'staff'
+                        ? operationalRequirementCloneRange(selected.staff[index])
+                        : Math.max(0, Number(selected[group][index]) || 0);
+                }
+            });
+        }
+
+        return {
+            requirements,
+            requirementTexts,
+            requirementsForVehicle,
+            requirementsForEquipment
+        };
+    }
+
+    function operationalRequirementRows(model, options = {}) {
+        const calcMaxStaff = options.calcMaxStaff === true;
+        const rows = [];
+        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
+            for (const requirement of model?.requirements?.[group] ?? []) {
+                const selectedValue = typeof requirement.selected === 'number'
+                    ? requirement.selected
+                    : calcMaxStaff
+                      ? requirement.selected.max
+                      : requirement.selected.min;
+                const remainingOnMission = requirement.missing - requirement.driving;
+                rows.push({
+                    ...requirement,
+                    group,
+                    remainingOnMission,
+                    selectedValue,
+                    covered: remainingOnMission <= selectedValue
+                });
+            }
+        }
+        return rows;
+    }
+
+    function operationalRequirementFingerprint(model, options = {}) {
+        return JSON.stringify({
+            rows: operationalRequirementRows(model, options),
+            remaining: OPERATIONAL_REQUIREMENT_GROUPS.map(group => model?.requirementTexts?.[group]?.remaining ?? null)
+        });
+    }
+    // Issue #378 end enhanced requirements pure engine.
+
     // Issue #378 LSSM operational-suite lifecycle shell.
     // This phase owns settings, context identity, scheduling and teardown only. It must not
     // render a second requirements surface while the legacy Matrix remains the stable runtime.

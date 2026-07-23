@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "upstreamCommit": "88e41646e59a7d620624f90f1d9a0a62320c2775",
+  "catalog": {
+    "vehicles": [
+      {
+        "key": "fire-engine",
+        "texts": [
+          "Fire engine",
+          "Fire engines"
+        ],
+        "vehicles": [
+          0,
+          1,
+          16
+        ],
+        "factors": {
+          "16": 2
+        }
+      },
+      {
+        "key": "drone",
+        "texts": [
+          "Drone",
+          "Drones"
+        ],
+        "vehicles": [
+          89
+        ],
+        "equipment": [
+          "drone"
+        ]
+      },
+      {
+        "key": "boat",
+        "texts": [
+          "Rescue Boat",
+          "Rescue Boats"
+        ],
+        "vehicles": [
+          67
+        ],
+        "conditionalVehicles": {
+          "allowPoweredBoat": [
+            68
+          ]
+        }
+      },
+      {
+        "key": "tractive",
+        "texts": [
+          "Towing Unit",
+          "Towing Units"
+        ],
+        "vehicles": [
+          57,
+          58
+        ]
+      }
+    ],
+    "staff": [
+      {
+        "key": "firefighters",
+        "texts": [
+          "more firefighter",
+          "more firefighters"
+        ],
+        "vehicles": [
+          0,
+          1,
+          16
+        ]
+      }
+    ],
+    "other": []
+  },
+  "vehicleTypes": {
+    "70": {
+      "tractiveVehicles": [
+        57,
+        58
+      ]
+    }
+  },
+  "cases": [
+    {
+      "name": "x-prefix and unresolved text",
+      "input": {
+        "texts": {
+          "vehicles": "2x Fire engines, 1x Mystery Unit"
+        }
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "fire-engine",
+            "missing": 2,
+            "driving": 0,
+            "selectedValue": 0,
+            "covered": false
+          }
+        ],
+        "remaining": {
+          "vehicles": "1x Mystery Unit"
+        }
+      }
+    },
+    {
+      "name": "colon requirement syntax",
+      "input": {
+        "texts": {
+          "vehicles": "Fire engines: 3"
+        }
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "fire-engine",
+            "missing": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "vehicle factors apply to driving and selected",
+      "input": {
+        "texts": {
+          "vehicles": "3x Fire engines"
+        },
+        "driving": [
+          {
+            "vehicleType": 16
+          }
+        ],
+        "selected": [
+          {
+            "id": 100,
+            "vehicleType": 0
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "fire-engine",
+            "driving": 2,
+            "selectedValue": 1,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "equipment contributes independently",
+      "input": {
+        "texts": {
+          "vehicles": "2x Drones"
+        },
+        "driving": [
+          {
+            "vehicleType": 500,
+            "equipment": [
+              "drone"
+            ]
+          }
+        ],
+        "selected": [
+          {
+            "id": 101,
+            "vehicleType": 501,
+            "equipment": [
+              "drone"
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "drone",
+            "driving": 1,
+            "selectedValue": 1,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "staff minimum and maximum ranges",
+      "input": {
+        "texts": {
+          "staff": "6x more firefighters"
+        },
+        "driving": [
+          {
+            "vehicleType": 0,
+            "staff": 4
+          }
+        ],
+        "selected": [
+          {
+            "id": 102,
+            "vehicleType": 1,
+            "staff": {
+              "min": 2,
+              "max": 6
+            }
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "firefighters",
+            "driving": 4,
+            "selected": {
+              "min": 2,
+              "max": 6
+            },
+            "selectedValue": 2,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "selected is recomputed from current snapshot",
+      "input": {
+        "texts": {
+          "vehicles": "1x Fire engine"
+        },
+        "selected": []
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "fire-engine",
+            "selectedValue": 0,
+            "covered": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "conditional vehicle capability",
+      "input": {
+        "texts": {
+          "vehicles": "1x Rescue Boat"
+        },
+        "missionAdditional": {
+          "allowPoweredBoat": true
+        },
+        "selected": [
+          {
+            "id": 103,
+            "vehicleType": 68
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "boat",
+            "selectedValue": 1,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "random tractive contributes common capability",
+      "input": {
+        "texts": {
+          "vehicles": "1x Towing Unit"
+        },
+        "selected": [
+          {
+            "id": 104,
+            "vehicleType": 70,
+            "tractiveRandom": true
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "tractive",
+            "selectedValue": 1,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "explicit unselected tractive contributes once",
+      "input": {
+        "texts": {
+          "vehicles": "1x Towing Unit"
+        },
+        "selected": [
+          {
+            "id": 105,
+            "vehicleType": 70,
+            "tractiveRandom": false,
+            "tractiveVehicleId": 900,
+            "tractiveVehicleType": 57
+          }
+        ]
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "tractive",
+            "selectedValue": 1,
+            "covered": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "progress requirement uses live bar values",
+      "input": {
+        "texts": {
+          "other": "5,000x litres of water"
+        },
+        "progress": {
+          "water": {
+            "texts": [
+              "litres of water"
+            ],
+            "missing": 4000,
+            "driving": 1000,
+            "selected": 2000
+          }
+        }
+      },
+      "expect": {
+        "rows": [
+          {
+            "key": "progress:water",
+            "missing": 5000,
+            "driving": 1000,
+            "selectedValue": 2000,
+            "covered": false
+          }
+        ],
+        "remaining": {
+          "other": ""
+        }
+      }
+    }
+  ]
+}

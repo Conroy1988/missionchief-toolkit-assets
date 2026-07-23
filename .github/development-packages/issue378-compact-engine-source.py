@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import py_compile
 import shutil
 import subprocess
@@ -56,7 +57,7 @@ with tempfile.TemporaryDirectory(prefix="issue378-engine-compact-") as temp_dir:
         cwd=sandbox,
         text=True,
         capture_output=True,
-        env={"PYTHONDONTWRITEBYTECODE": "1"},
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     if result.returncode != 0:
         raise RuntimeError(
@@ -73,7 +74,7 @@ with tempfile.TemporaryDirectory(prefix="issue378-engine-compact-") as temp_dir:
         cwd=sandbox,
         text=True,
         capture_output=True,
-        env={"PYTHONDONTWRITEBYTECODE": "1"},
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     if validator.returncode != 0:
         raise RuntimeError(

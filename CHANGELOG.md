@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.5] - 2026-07-23
+
+### Critical requirement-source discovery recovery
+- Replaced first-match `#missing_text` binding with authoritative candidate discovery across active, duplicated, replaced and LSSM-transformed mission markup.
+- Added active-mission and visibility scoring so retained empty or stale roots cannot trap the requirements panel in a permanent waiting state.
+- Recovered requirement evidence from hidden LSSM `data-raw-html` carriers while continuing to suppress a genuinely visible equivalent LSSM panel.
+- Removed native MissionChief requirement headings before parsing, matching the authorised LSSM parser contract.
+- Rebound the operational observer whenever the authoritative source changes and added behavioural coverage for duplicate, stale, delayed, LSSM and Toolkit-owned roots.
+
+
 ## [5.0.4] - 2026-07-23
 
 ### Critical requirements truth-state recovery

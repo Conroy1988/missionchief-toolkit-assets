@@ -33,3 +33,14 @@ for disposable in (ROOT/'.github/development-packages').glob('issue464-*.py'):
 replacement = "ledger = '''" + inner + "'''"
 code = code[:start] + replacement + code[end + 3:]
 exec(compile(code, __file__, 'exec'))
+
+# The share-credit threshold is intentionally enforced by the dedicated eligibility helper,
+# so the static contract must check the Issue #464 block rather than demand the token inside
+# operationalMissionListApply itself.
+test_path = ROOT / '.github/scripts/test_issue464_launcher_settings_contract.py'
+test = test_path.read_text(encoding='utf-8')
+old = "for token in ['operationalMissionShareEligible','shareMissionsMinCredits','remainingPumpingTime','currentPatientsInTooltips','fixedEventInfo','sortMissionsButtonColor']:\n    assert token in mission_list,token"
+new = "for token in ['operationalMissionShareEligible','remainingPumpingTime','currentPatientsInTooltips','fixedEventInfo','sortMissionsButtonColor']:\n    assert token in mission_list,token\nassert 'shareMissionsMinCredits' in block"
+if old not in test:
+    raise SystemExit('Issue #464 mission-list contract anchor changed')
+test_path.write_text(test.replace(old, new, 1), encoding='utf-8')

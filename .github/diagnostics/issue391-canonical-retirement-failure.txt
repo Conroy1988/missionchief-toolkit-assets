@@ -1,0 +1,41 @@
+ISSUE391_CANONICAL_RETIREMENT_FAILURE_V1
+returncode=1
+
+=== STDOUT ===
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Issue #378 operational-suite lifecycle/settings shell contract passed.
+Issue #378 enhanced requirements renderer contract passed.
+Main-style source-headroom contract passed: 504 lines recovered (304 blank, 185 standalone comment, 15 closing-brace joins), 31653 source lines remain.
+[preflight] Verify JavaScript syntax
+[preflight] Verify distribution parity
+[preflight] Run test_financial_ledger_contract.py
+Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.
+[preflight] Run test_financial_overview_contract.py
+Financial overview contract fixtures passed.
+[preflight] Run test_financial_discord_image_layout_contract.py
+Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.
+[preflight] Run test_mission_marker_ingestion_contract.py
+Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.
+[preflight] Run test_boot_lifecycle_contract.py
+Boot lifecycle contract passed: extracted boot coordinator and maintenance-task registration, runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.
+[preflight] Run test_settings_ui_contract.py
+ReferenceError: defaultOperationalWindowState is not defined
+    at defaultState (/tmp/missionchief-settings-ui-contract-b6mysaa4/settings-ui-contract.cjs:228:28)
+    at resetEnvironment (/tmp/missionchief-settings-ui-contract-b6mysaa4/settings-ui-contract.cjs:966:13)
+    at testStateMigration (/tmp/missionchief-settings-ui-contract-b6mysaa4/settings-ui-contract.cjs:985:5)
+    at /tmp/missionchief-settings-ui-contract-b6mysaa4/settings-ui-contract.cjs:1587:5
+    at Object.<anonymous> (/tmp/missionchief-settings-ui-contract-b6mysaa4/settings-ui-contract.cjs:1600:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+Traceback (most recent call last):
+  File "/tmp/issue391-canonical-retirement-selftest-bs7ofvvf/repo/.github/development-packages/issue391-retire-matrix.py", line 395, in <module>
+    subprocess.run(["bash", str(PREFLIGHT), "--contracts"], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['bash', '/tmp/issue391-canonical-retirement-selftest-bs7ofvvf/repo/.github/scripts/run_userscript_preflight.sh', '--contracts']' returned non-zero exit status 1.
+
+=== STDERR ===
+Canonical Issue #391 retirement package failed full sandbox self-test

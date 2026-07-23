@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,25 +19,25 @@ if '// @version      5.0.6' not in text or "version: '5.0.6'" not in text:
 
 replacements = [
     (
-        "runtimeSetTimeout(() => button.focus?.(),0);",
-        "button.focus?.();",
+        r'runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*button\.focus\?\.\(\)\s*,\s*0\s*\)\s*;',
+        'button.focus?.();',
         'ARR dropdown focus deferral',
     ),
     (
-        "if(settings.arrSearchAutoFocus) runtimeSetTimeout(()=>arrSearch.focus(),0);",
-        "if(settings.arrSearchAutoFocus) queueMicrotask(()=>arrSearch.focus());",
+        r'if\s*\(\s*settings\.arrSearchAutoFocus\s*\)\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*arrSearch\.focus\(\)\s*,\s*0\s*\)\s*;',
+        'if(settings.arrSearchAutoFocus) queueMicrotask(()=>arrSearch.focus());',
         'ARR search autofocus deferral',
     ),
     (
-        "if (state.missionAge) { missionOverlayData.clear(); runtimeSetTimeout(() => scheduleMissionAgeRefresh(0), 0); }",
-        "if (state.missionAge) { missionOverlayData.clear(); scheduleMissionAgeRefresh(0); }",
+        r'if\s*\(\s*state\.missionAge\s*\)\s*\{\s*missionOverlayData\.clear\(\)\s*;\s*runtimeSetTimeout\s*\(\s*\(\)\s*=>\s*scheduleMissionAgeRefresh\(0\)\s*,\s*0\s*\)\s*;\s*\}',
+        'if (state.missionAge) { missionOverlayData.clear(); scheduleMissionAgeRefresh(0); }',
         'Mission Age immediate refresh wrapper',
     ),
 ]
-for old, new, label in replacements:
-    if text.count(old) != 1:
-        raise SystemExit(f'Expected one {label} anchor, found {text.count(old)}')
-    text = text.replace(old, new, 1)
+for pattern, replacement, label in replacements:
+    text, count = re.subn(pattern, replacement, text, count=1)
+    if count != 1:
+        raise SystemExit(f'Expected one {label} anchor, found {count}')
 
 SOURCE.write_text(text, encoding='utf-8')
 for target in (ROOT / 'MissionChief_Map_Command_Toolkit.user.js', ROOT / 'MissionChief_Map_Command_Toolkit.txt'):
@@ -51,12 +52,12 @@ FIXTURE.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
 test = TEST.read_text(encoding='utf-8')
 anchor = "assert 'inlineMissionDataScanned=captured>0' in text\n"
 addition = """assert 'inlineMissionDataScanned=captured>0' in text
-assert 'runtimeSetTimeout(() => button.focus?.(),0)' not in block
+assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*button\\.focus', block)
 assert 'button.focus?.();' in block
 assert 'if(settings.arrSearchAutoFocus) queueMicrotask(()=>arrSearch.focus());' in call
-assert 'runtimeSetTimeout(()=>arrSearch.focus(),0)' not in call
+assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*arrSearch\\.focus', call)
 assert 'if (state.missionAge) { missionOverlayData.clear(); scheduleMissionAgeRefresh(0); }' in toggle
-assert 'runtimeSetTimeout(() => scheduleMissionAgeRefresh(0), 0)' not in toggle
+assert not re.search(r'runtimeSetTimeout\\s*\\(\\s*\\(\\)\\s*=>\\s*scheduleMissionAgeRefresh', toggle)
 """
 if anchor not in test:
     raise SystemExit('Issue #464 performance contract anchor is missing')
@@ -71,6 +72,12 @@ if anchor not in changelog:
 if 'three redundant scheduling wrappers' not in changelog:
     changelog = changelog.replace(anchor, addition, 1)
 CHANGELOG.write_text(changelog, encoding='utf-8')
+
+for disposable in [
+    ROOT / '.github/diagnostics/issue464-performance-correction-traceback.txt',
+    ROOT / '.github/development-packages/issue464-performance-correction-traceback.py',
+]:
+    disposable.unlink(missing_ok=True)
 
 SELF.unlink(missing_ok=True)
 print(json.dumps({

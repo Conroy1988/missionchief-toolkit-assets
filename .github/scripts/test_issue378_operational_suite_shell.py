@@ -17,7 +17,7 @@ required = {
     "boot installation": "installOperationalSuiteShell();",
     "safe auto-open default": "autoOpenTransportRequest: false",
     "upstream continuation default": "autoClickSuccessButtons: true",
-    "suite disabled default": "enabled: false,\n            phase: 'shell'",
+    "suite renderer default": "enabled: true,\n            phase: 'requirements-renderer'",
     "legacy Matrix retained": "// Issue #133 clean-room live mission requirements matrix.",
 }
 for label, needle in required.items():
@@ -27,8 +27,8 @@ for label, needle in required.items():
 if source.index("installOperationalSuiteShell();") > source.index("startBootAttemptCoordinator(bootPerformanceStartedAt);"):
     raise SystemExit("Issue #378 shell must install before the boot-attempt coordinator")
 
-if "data-mcms-operational-suite" in source or "mcms-operational-suite-panel" in source:
-    raise SystemExit("Phase 2 shell must not render a competing operational-suite surface")
+if "data-mcms-operational-suite" not in source or "mcms-operational-suite-panel" not in source:
+    raise SystemExit("Issue #378 requirements renderer surface is missing")
 
 for path in (
     ROOT / "MissionChief_Map_Command_Toolkit.user.js",
@@ -44,7 +44,12 @@ expected_lines = fixture['candidateSourceLines'] + fixture.get('approvedNonStyle
 if fixture.get('expectedSourceLines') != expected_lines or expected_lines != len(source.splitlines()):
     raise SystemExit('Issue #378 source-headroom additive accounting is inconsistent')
 approved_changes = fixture.get('approvedNonStyleChanges', [])
-if not approved_changes or approved_changes[0] != {'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317}:
-    raise SystemExit('Issue #378 operational-suite shell source-headroom ledger entry is missing or altered')
+expected_changes = [
+    {'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317},
+    {'issue': 378, 'phase': 'enhanced-requirements-engine-core', 'lines': 331},
+    {'issue': 378, 'phase': 'enhanced-requirements-renderer', 'lines': 412},
+]
+if approved_changes != expected_changes:
+    raise SystemExit('Issue #378 source-headroom phase ledger is missing or altered')
 
 print("Issue #378 operational-suite lifecycle/settings shell contract passed.")

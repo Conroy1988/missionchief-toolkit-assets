@@ -1349,8 +1349,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function defaultOperationalWindowState(legacyMatrixEnabled = true) {
         return {
             schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            enabled: false,
-            phase: 'shell',
+            enabled: true,
+            phase: 'requirements-renderer',
             requirements: {
                 enabled: legacyMatrixEnabled !== false,
                 calcMaxStaff: false,
@@ -1476,14 +1476,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             ...base,
             ...parsed,
             schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'shell',
+            phase: 'requirements-renderer',
             requirements: { ...base.requirements, ...requirements },
             callWindow: { ...base.callWindow, ...callWindow },
             missionList: { ...base.missionList, ...missionList },
             transport: { ...base.transport, ...transport },
             migration: { ...base.migration, ...migration }
         };
-        merged.enabled = operationalSuiteBoolean(parsed.enabled, false);
+        merged.enabled = parsed.phase === 'shell' ? true : operationalSuiteBoolean(parsed.enabled, parsed.phase === undefined);
         merged.requirements.enabled = operationalSuiteBoolean(requirements.enabled, legacyMatrixEnabled !== false);
         merged.requirements.calcMaxStaff = operationalSuiteBoolean(requirements.calcMaxStaff, false);
         merged.requirements.hoverTip = operationalSuiteBoolean(requirements.hoverTip, true);
@@ -22270,6 +22270,400 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
     // Issue #378 end enhanced requirements pure engine.
 
+    // Issue #378 enhanced requirements runtime renderer.
+    const OPERATIONAL_REQUIREMENTS_STYLE_ID = 'mcms-operational-requirements-style';
+    const OPERATIONAL_REQUIREMENTS_PANEL_CLASS = 'mcms-operational-suite-panel';
+    let operationalRequirementsCatalogCache = null;
+
+    function operationalRequirementsActive() {
+        return operationalSuiteEnabled() && state.operationalWindow?.requirements?.enabled !== false;
+    }
+
+    function operationalRequirementsEquivalentLssmActive(doc) {
+        return Boolean(doc?.querySelector?.('.alert-missing-vehicles[data-raw-html], [data-module="extendedCallWindow"] .alert-missing-vehicles'));
+    }
+
+    function operationalRequirementsRuntimeCatalog() {
+        if (operationalRequirementsCatalogCache) return operationalRequirementsCatalogCache;
+        const catalog = { vehicles: [], staff: [], other: [] };
+        for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
+            const sourceGroup = String(definition?.group || 'vehicles').toLowerCase();
+            const group = sourceGroup === 'personnel' || sourceGroup === 'staff'
+                ? 'staff'
+                : sourceGroup === 'other'
+                  ? 'other'
+                  : 'vehicles';
+            const texts = Array.from(new Set([definition?.label, ...(definition?.aliases || [])]))
+                .map(value => String(value || '').trim())
+                .filter(Boolean);
+            if (!texts.length) continue;
+            catalog[group].push({
+                key: String(definition?.key || `${group}:${catalog[group].length}`),
+                texts,
+                vehicles: Array.from(new Set((definition?.types || []).map(Number).filter(Number.isFinite))),
+                equipment: Array.from(new Set((definition?.equipment || []).map(value => String(value || '').trim()).filter(Boolean))),
+                conditionalVehicles: definition?.conditionalVehicles && typeof definition.conditionalVehicles === 'object'
+                    ? { ...definition.conditionalVehicles }
+                    : {},
+                factors: definition?.factors && typeof definition.factors === 'object' ? { ...definition.factors } : {}
+            });
+        }
+        operationalRequirementsCatalogCache = Object.freeze({
+            vehicles: Object.freeze(catalog.vehicles),
+            staff: Object.freeze(catalog.staff),
+            other: Object.freeze(catalog.other)
+        });
+        return operationalRequirementsCatalogCache;
+    }
+
+    function operationalRequirementsAttribute(node, names) {
+        for (const name of names) {
+            const value = node?.getAttribute?.(name);
+            if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+        }
+        return '';
+    }
+
+    function operationalRequirementsNumberFrom(value, fallback = 0) {
+        const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/gu, ''), 10);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+
+    function operationalRequirementsVehicleType(node) {
+        const row = node?.closest?.('tr') || node;
+        return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+            'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+        ]) || operationalRequirementsAttribute(row, [
+            'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+        ]), -1);
+    }
+
+    function operationalRequirementsVehicleId(node) {
+        const row = node?.closest?.('tr') || node;
+        return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+            'value', 'vehicle_id', 'data-vehicle-id'
+        ]) || operationalRequirementsAttribute(row, ['vehicle_id', 'data-vehicle-id']), -1);
+    }
+
+    function operationalRequirementsEquipment(node) {
+        const row = node?.closest?.('tr') || node;
+        const raw = operationalRequirementsAttribute(node, ['data-equipment-types', 'data-equipment-type', 'equipment_types'])
+            || operationalRequirementsAttribute(row, ['data-equipment-types', 'data-equipment-type', 'equipment_types']);
+        if (!raw) return [];
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.map(value => String(value)).filter(Boolean);
+        } catch (error) {}
+        return raw.split(/[|,;\s]+/gu).map(value => value.trim()).filter(Boolean);
+    }
+
+    function operationalRequirementsStaffRange(typeId, node = null) {
+        const row = node?.closest?.('tr') || node;
+        const explicitMin = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+            'data-staff-min', 'data-personnel-min', 'data-crew-min'
+        ]), -1);
+        const explicitMax = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+            'data-staff-max', 'data-personnel-max', 'data-crew-max', 'data-max-personnel-override'
+        ]), -1);
+        if (explicitMin >= 0 || explicitMax >= 0) {
+            const min = Math.max(0, explicitMin >= 0 ? explicitMin : explicitMax);
+            return { min, max: Math.max(min, explicitMax >= 0 ? explicitMax : min) };
+        }
+        const fallback = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[String(typeId)]
+            || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[typeId];
+        if (!Array.isArray(fallback) || fallback.length < 2) return { min: 0, max: 0 };
+        return { min: Math.max(0, Number(fallback[0]) || 0), max: Math.max(0, Number(fallback[1]) || 0) };
+    }
+
+    function operationalRequirementsResolveVehicleType(doc, vehicleId) {
+        if (!doc?.querySelector || !Number.isFinite(Number(vehicleId)) || Number(vehicleId) < 0) return -1;
+        const selector = `.vehicle_checkbox[value="${Number(vehicleId)}"], [data-vehicle-id="${Number(vehicleId)}"], [vehicle_id="${Number(vehicleId)}"]`;
+        return operationalRequirementsVehicleType(doc.querySelector(selector));
+    }
+
+    function operationalRequirementsSelectedSnapshot(doc) {
+        const selector = '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked';
+        return Array.from(doc?.querySelectorAll?.(selector) || []).map(node => {
+            const vehicleType = operationalRequirementsVehicleType(node);
+            const tractiveVehicleId = operationalRequirementsNumberFrom(
+                operationalRequirementsAttribute(node, ['tractive_vehicle_id', 'data-tractive-vehicle-id'])
+                || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_vehicle_id', 'data-tractive-vehicle-id']),
+                -1
+            );
+            const tractiveRaw = operationalRequirementsAttribute(node, ['tractive_random', 'data-tractive-random'])
+                || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_random', 'data-tractive-random']);
+            return {
+                id: operationalRequirementsVehicleId(node),
+                vehicleType,
+                equipment: operationalRequirementsEquipment(node),
+                staff: operationalRequirementsStaffRange(vehicleType, node),
+                tractiveVehicleId,
+                tractiveVehicleType: operationalRequirementsResolveVehicleType(doc, tractiveVehicleId),
+                tractiveStaff: operationalRequirementsStaffRange(operationalRequirementsResolveVehicleType(doc, tractiveVehicleId), null),
+                tractiveRandom: tractiveRaw === '' ? null : !['0', 'false', 'no'].includes(tractiveRaw.toLowerCase())
+            };
+        }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
+    }
+
+    function operationalRequirementsDrivingStaff(row, typeId) {
+        const explicit = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+            'data-staff', 'data-personnel', 'data-personnel-count', 'personnel_count'
+        ]), -1);
+        if (explicit >= 0) return explicit;
+        for (const cell of Array.from(row?.querySelectorAll?.('[data-column="personnel"], [data-column="staff"], .vehicle_staff, .staff') || [])) {
+            const value = operationalRequirementsNumberFrom(cell?.getAttribute?.('sortvalue') ?? cell?.textContent, -1);
+            if (value >= 0) return value;
+        }
+        const fallback = operationalRequirementsStaffRange(typeId, row);
+        return fallback.min;
+    }
+
+    function operationalRequirementsDrivingSnapshot(doc) {
+        return Array.from(doc?.querySelectorAll?.('#mission_vehicle_driving tbody tr') || []).map(row => {
+            const vehicleType = operationalRequirementsVehicleType(row);
+            return {
+                id: operationalRequirementsVehicleId(row),
+                vehicleType,
+                equipment: operationalRequirementsEquipment(row),
+                staff: operationalRequirementsDrivingStaff(row, vehicleType)
+            };
+        }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
+    }
+
+    function operationalRequirementsTexts(root) {
+        const texts = { vehicles: null, staff: null, other: null };
+        const groups = Array.from(root?.querySelectorAll?.('[data-requirement-type]') || []);
+        for (const element of groups) {
+            const type = String(element.getAttribute('data-requirement-type') || '').toLowerCase();
+            const group = type === 'personnel' || type === 'staff' ? 'staff' : type === 'other' ? 'other' : type === 'vehicles' ? 'vehicles' : null;
+            if (!group) continue;
+            const raw = operationalRequirementNormaliseText(element.textContent || '');
+            if (!raw) continue;
+            texts[group] = texts[group]
+                ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || '' }
+                : { raw, infoText: operationalRequirementNormaliseText(element.getAttribute('data-info-text') || '') };
+        }
+        if (!groups.length) {
+            const raw = operationalRequirementNormaliseText(root?.textContent || '');
+            if (raw) texts.other = { raw, infoText: '' };
+        }
+        return texts;
+    }
+
+    function operationalRequirementsVehicleTypes() {
+        const result = {};
+        for (const [trailerType, tractives] of Object.entries(MISSION_REQUIREMENTS_TRACTIVE_TYPES || {})) {
+            result[String(trailerType)] = { tractiveVehicles: Array.from(tractives || []).map(Number).filter(Number.isFinite) };
+        }
+        return result;
+    }
+
+    function operationalRequirementsProgress(root) {
+        const result = {};
+        const selectors = {
+            water: '[data-mcms-requirement-progress="water"], [data-requirement-progress="water"], #water_missing',
+            foam: '[data-mcms-requirement-progress="foam"], [data-requirement-progress="foam"], #foam_missing',
+            pump: '[data-mcms-requirement-progress="pump"], [data-requirement-progress="pump"], #pump_missing'
+        };
+        for (const [key, selector] of Object.entries(selectors)) {
+            const node = root?.querySelector?.(selector) || root?.ownerDocument?.querySelector?.(selector);
+            if (!node) continue;
+            result[key] = {
+                texts: [key, key === 'water' ? 'litres of water' : key === 'foam' ? 'litres of foam' : 'pump capacity'],
+                missing: operationalRequirementsNumberFrom(node.getAttribute?.('data-missing') ?? node.textContent, 0),
+                driving: operationalRequirementsNumberFrom(node.getAttribute?.('data-driving'), 0),
+                selected: operationalRequirementsNumberFrom(node.getAttribute?.('data-selected'), 0)
+            };
+        }
+        return result;
+    }
+
+    function operationalRequirementsInput(context, requirementRoot) {
+        const doc = context.doc;
+        return {
+            texts: operationalRequirementsTexts(requirementRoot),
+            catalog: operationalRequirementsRuntimeCatalog(),
+            vehicleTypes: operationalRequirementsVehicleTypes(),
+            driving: operationalRequirementsDrivingSnapshot(doc),
+            selected: operationalRequirementsSelectedSnapshot(doc),
+            progress: operationalRequirementsProgress(requirementRoot),
+            missionAdditional: {}
+        };
+    }
+
+    function operationalRequirementsEscapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/gu, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+    }
+
+    function operationalRequirementsSelectedText(row, calcMaxStaff = false) {
+        if (typeof row?.selected === 'number') return Math.max(0, Number(row.selected) || 0).toLocaleString('en-GB');
+        const min = Math.max(0, Number(row?.selected?.min) || 0);
+        const max = Math.max(min, Number(row?.selected?.max) || 0);
+        if (calcMaxStaff || min === max) return (calcMaxStaff ? max : min).toLocaleString('en-GB');
+        return `${min.toLocaleString('en-GB')}–${max.toLocaleString('en-GB')}`;
+    }
+
+    function operationalRequirementsSortRows(rows, settings) {
+        const key = String(settings?.sort || 'requirement');
+        const direction = settings?.sortDir === 'desc' ? -1 : 1;
+        const value = row => {
+            if (key === 'missing') return Number(row.missing) || 0;
+            if (key === 'driving') return Number(row.driving) || 0;
+            if (key === 'selected') return Number(row.selectedValue) || 0;
+            if (key === 'total') return (Number(row.driving) || 0) + (Number(row.selectedValue) || 0);
+            return String(row.requirement || row.key || '').toLocaleLowerCase('en-GB');
+        };
+        return rows.slice().sort((left, right) => {
+            const a = value(left);
+            const b = value(right);
+            const comparison = typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - Number(b);
+            return comparison * direction;
+        });
+    }
+
+    function operationalRequirementsEnsureStyle(doc) {
+        if (!doc?.createElement || doc.getElementById?.(OPERATIONAL_REQUIREMENTS_STYLE_ID)) return;
+        const style = doc.createElement('style');
+        style.id = OPERATIONAL_REQUIREMENTS_STYLE_ID;
+        style.textContent = `
+            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{margin:0 0 12px;padding:0;border:1px solid rgba(220,53,69,.72);border-radius:12px;background:linear-gradient(180deg,rgba(79,16,25,.97),rgba(39,9,15,.97));color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);overflow:hidden;position:relative;z-index:2}
+            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-covered="true"]{border-color:rgba(40,167,69,.78);background:linear-gradient(180deg,rgba(20,82,39,.97),rgba(9,42,21,.97))}
+            .mcms-operational-suite-header{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.14)}
+            .mcms-operational-suite-title{font-weight:800;letter-spacing:.02em;flex:1}.mcms-operational-suite-summary{font-size:12px;opacity:.84}
+            .mcms-operational-suite-toggle{min-width:42px;min-height:36px;border:1px solid rgba(255,255,255,.24);border-radius:8px;background:rgba(255,255,255,.1);color:inherit;font-weight:800;touch-action:manipulation}
+            .mcms-operational-suite-body{padding:10px 12px 12px}.mcms-operational-suite-panel[data-minified="true"] .mcms-operational-suite-body{display:none}
+            .mcms-operational-suite-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}.mcms-operational-suite-table th,.mcms-operational-suite-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.12);text-align:right;vertical-align:middle}
+            .mcms-operational-suite-table th:first-child,.mcms-operational-suite-table td:first-child{text-align:left}.mcms-operational-suite-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
+            .mcms-operational-suite-row[data-covered="true"]{opacity:.62}.mcms-operational-suite-needed{font-weight:800}.mcms-operational-suite-unresolved{margin-top:9px;padding:8px 10px;border:1px dashed rgba(255,193,7,.7);border-radius:8px;background:rgba(255,193,7,.1);font-size:12px}
+            @media(max-width:760px){.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{border-radius:10px;margin-left:0;margin-right:0}.mcms-operational-suite-header{align-items:flex-start;flex-wrap:wrap;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left))}.mcms-operational-suite-summary{width:100%}.mcms-operational-suite-table thead{display:none}.mcms-operational-suite-table,.mcms-operational-suite-table tbody,.mcms-operational-suite-table tr,.mcms-operational-suite-table td{display:block;width:100%}.mcms-operational-suite-table tr{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.16)}.mcms-operational-suite-table td{display:grid;grid-template-columns:minmax(118px,1fr) minmax(70px,auto);gap:10px;padding:4px 2px;border:0;text-align:right}.mcms-operational-suite-table td::before{content:attr(data-label);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72}.mcms-operational-suite-table td:first-child{font-weight:800;grid-template-columns:1fr}.mcms-operational-suite-table td:first-child::before{display:none}}
+        `;
+        (doc.head || doc.documentElement)?.appendChild(style);
+    }
+
+    function operationalRequirementsPanelHtml(rows, model, settings, minified) {
+        const sorted = operationalRequirementsSortRows(rows, settings);
+        const open = sorted.filter(row => !row.covered);
+        const unresolved = OPERATIONAL_REQUIREMENT_GROUPS
+            .map(group => model?.requirementTexts?.[group]?.remaining)
+            .filter(Boolean);
+        const allCovered = open.length === 0 && unresolved.length === 0;
+        const bodyRows = sorted.map(row => {
+            const stillNeeded = Math.max(0, Number(row.remainingOnMission) - Number(row.selectedValue));
+            return `<tr class="mcms-operational-suite-row" data-covered="${row.covered ? 'true' : 'false'}"><td data-label="Requirement">${operationalRequirementsEscapeHtml(row.requirement || row.key)}</td><td data-label="Required">${Math.max(0, Number(row.missing) || 0).toLocaleString('en-GB')}</td><td data-label="Responding">${Math.max(0, Number(row.driving) || 0).toLocaleString('en-GB')}</td><td data-label="Selected">${operationalRequirementsEscapeHtml(operationalRequirementsSelectedText(row, settings?.calcMaxStaff === true))}</td><td class="mcms-operational-suite-needed" data-label="Still needed">${stillNeeded.toLocaleString('en-GB')}</td></tr>`;
+        }).join('');
+        const unresolvedHtml = unresolved.length
+            ? `<div class="mcms-operational-suite-unresolved"><strong>Unresolved MissionChief requirement</strong><br>${unresolved.map(operationalRequirementsEscapeHtml).join('<br>')}</div>`
+            : '';
+        const emptyHtml = bodyRows || unresolvedHtml ? '' : '<div class="mcms-operational-suite-unresolved">No active missing requirements reported.</div>';
+        return {
+            allCovered,
+            html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${allCovered ? 'All displayed requirements covered' : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
+        };
+    }
+
+    function operationalRequirementsMount(context, requirementRoot) {
+        const doc = context.doc;
+        operationalRequirementsEnsureStyle(doc);
+        let panel = context.panel;
+        if (!panel?.isConnected) {
+            panel = doc.createElement('section');
+            panel.className = OPERATIONAL_REQUIREMENTS_PANEL_CLASS;
+            panel.setAttribute('data-mcms-operational-suite', 'requirements');
+            panel.setAttribute('aria-live', 'polite');
+            requirementRoot.parentNode?.insertBefore(panel, requirementRoot);
+            context.panel = panel;
+            panel.addEventListener('click', event => {
+                const button = event.target?.closest?.('.mcms-operational-suite-toggle');
+                if (!button) return;
+                context.minified = !context.minified;
+                context.fingerprint = '';
+                operationalRequirementsScheduleContext(context, 0);
+            });
+        }
+        return panel;
+    }
+
+    function operationalRequirementsRenderContext(context) {
+        if (!context?.doc || runtime.destroyed) return;
+        if (!operationalRequirementsActive()) {
+            context.panel?.remove?.();
+            context.panel = null;
+            return;
+        }
+        const requirementRoot = context.doc.querySelector?.('#missing_text');
+        if (!requirementRoot?.isConnected || operationalRequirementsEquivalentLssmActive(context.doc)) {
+            context.panel?.remove?.();
+            context.panel = null;
+            context.fingerprint = '';
+            return;
+        }
+        const settings = state.operationalWindow?.requirements || {};
+        const model = operationalRequirementCreateModel(operationalRequirementsInput(context, requirementRoot));
+        const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
+        const fingerprint = JSON.stringify({
+            model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
+            sort: settings.sort,
+            sortDir: settings.sortDir,
+            viewMode: settings.viewMode,
+            minified: context.minified === true
+        });
+        if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
+        const panel = operationalRequirementsMount(context, requirementRoot);
+        const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true);
+        panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
+        panel.dataset.minified = context.minified === true ? 'true' : 'false';
+        panel.innerHTML = rendered.html;
+        context.fingerprint = fingerprint;
+    }
+
+    function operationalRequirementsScheduleContext(context, delay = 0) {
+        if (!context || runtime.destroyed) return;
+        runtimeClearTimeout(context.renderTimer);
+        context.renderTimer = runtimeSetTimeout(() => {
+            context.renderTimer = null;
+            operationalRequirementsRenderContext(context);
+        }, Math.max(0, Number(delay) || 0));
+    }
+
+    function operationalRequirementsBindContext(context) {
+        const doc = context?.doc;
+        if (!doc?.querySelector || !operationalRequirementsActive()) return;
+        const requirementRoot = doc.querySelector('#missing_text');
+        if (!requirementRoot) return;
+        const roots = Array.from(new Set([
+            requirementRoot,
+            doc.querySelector('#mission_vehicle_driving'),
+            doc.querySelector('#vehicle_show_table_body_all'),
+            doc.querySelector('#occupied')
+        ].filter(Boolean)));
+        const rootFingerprint = roots.map(root => root).join('|');
+        if (context.boundRequirementRoot === requirementRoot && context.observer && context.observedRootCount === roots.length) return;
+        try { context.observer?.disconnect?.(); } catch (error) {}
+        context.boundRequirementRoot = requirementRoot;
+        context.observedRootCount = roots.length;
+        context.observer = new MutationObserver(() => operationalRequirementsScheduleContext(context, 25));
+        for (const root of roots) {
+            context.observer.observe(root, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+                attributes: true,
+                attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value']
+            });
+        }
+        if (!context.changeHandler) {
+            context.changeHandler = event => {
+                if (event.target?.matches?.('.vehicle_checkbox, #vehicle_show_table_body_all input, #occupied input')) {
+                    operationalRequirementsScheduleContext(context, 0);
+                }
+            };
+            doc.addEventListener('change', context.changeHandler, true);
+        }
+    }
+    // Issue #378 end enhanced requirements runtime renderer.
+
     // Issue #378 LSSM operational-suite lifecycle shell.
     // This phase owns settings, context identity, scheduling and teardown only. It must not
     // render a second requirements surface while the legacy Matrix remains the stable runtime.
@@ -22293,6 +22687,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!context) return;
         try { context.observer?.disconnect?.(); } catch (err) {}
         context.observer = null;
+        runtimeClearTimeout(context.renderTimer);
+        context.renderTimer = null;
+        if (context.changeHandler && context.doc) context.doc.removeEventListener('change', context.changeHandler, true);
+        context.changeHandler = null;
+        context.panel?.remove?.();
+        context.panel = null;
         context.root = null;
         if (context.doc) operationalSuiteContexts.delete(context.doc);
         context.doc = null;
@@ -22309,17 +22709,26 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (existing) {
             existing.root = doc.documentElement || doc.body || existing.root;
             existing.seenAt = Date.now();
+            operationalRequirementsBindContext(existing);
             return existing;
         }
         const context = {
             doc,
             root: doc.documentElement || doc.body || null,
             observer: null,
+            renderTimer: null,
+            changeHandler: null,
+            panel: null,
+            fingerprint: '',
+            minified: state.operationalWindow?.requirements?.minified === true,
+            boundRequirementRoot: null,
+            observedRootCount: 0,
             generation: 0,
             seenAt: Date.now(),
             baseline: OPERATIONAL_SUITE_LSSM_BASELINE.commit
         };
         operationalSuiteContexts.set(doc, context);
+        operationalRequirementsBindContext(context);
         return context;
     }
 
@@ -22335,6 +22744,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             if (!context) continue;
             activeDocuments.add(doc);
             context.generation = ++operationalSuiteRevision;
+            operationalRequirementsBindContext(context);
+            operationalRequirementsScheduleContext(context, 0);
         }
         for (const [doc, context] of Array.from(operationalSuiteContexts.entries())) {
             if (!activeDocuments.has(doc) || context.root?.isConnected === false) operationalSuiteDisposeContext(context);
@@ -22359,7 +22770,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtime.operationalSuite = Object.freeze({
             baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
             settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'shell',
+            phase: 'requirements-renderer',
             schedule: scheduleOperationalSuiteScan,
             contextCount: () => operationalSuiteContexts.size
         });
@@ -22367,7 +22778,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             runtimeClearTimeout(operationalSuiteScanTimer);
             operationalSuiteScanTimer = null;
             clearOperationalSuiteContexts();
-            if (runtime.operationalSuite?.phase === 'shell') delete runtime.operationalSuite;
+            if (runtime.operationalSuite?.phase === 'requirements-renderer') delete runtime.operationalSuite;
         });
         if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
     }
@@ -23673,6 +24084,7 @@ function missionRequirementsCatalogueParseDocument(doc, descriptor = {}) { if (!
     }
 
     function scanMissionRequirementsWindows() {
+        if (typeof operationalRequirementsActive === 'function' && operationalRequirementsActive()) { clearMissionRequirementsPanels(); return; }
         if (runtime.destroyed || !missionRequirementsPrimaryRuntime()) return;
         if (!state.missionRequirements) {
             clearMissionRequirementsPanels();

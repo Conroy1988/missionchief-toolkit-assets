@@ -64,8 +64,8 @@ const staffModel = engine.operationalRequirementCreateModel(mergeInput(staffCase
 const maxRow = engine.operationalRequirementRows(staffModel, { calcMaxStaff: true }).find(row => row.key === 'firefighters');
 assertEqual({ selectedValue: maxRow.selectedValue, covered: maxRow.covered }, { selectedValue: 6, covered: true }, 'staff maximum mode');
 
-if (source.includes('data-mcms-operational-suite') || source.includes('mcms-operational-suite-panel')) {
-    throw new Error('Phase 3 engine core must not render a competing operational-suite surface');
+if (!source.includes('data-mcms-operational-suite') || !source.includes('mcms-operational-suite-panel')) {
+    throw new Error('Phase 3 renderer must expose the operational-suite requirements surface');
 }
 if (!source.includes('// Issue #133 clean-room live mission requirements matrix.')) {
     throw new Error('Phase 3 engine core must retain the legacy Matrix rollback runtime');

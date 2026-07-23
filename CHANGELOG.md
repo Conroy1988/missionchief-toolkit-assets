@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.3] - 2026-07-23
+
+### Critical preboot recovery
+- Fixed a JavaScript temporal-dead-zone failure that terminated the userscript during state hydration before `boot()` or `ensureUi()` could execute.
+- Moved the Operational Window settings schema constant ahead of the top-level `loadState()` call while retaining every v5 operational feature and existing user setting.
+- Added a permanent declaration-order regression contract and executable launcher-mount smoke coverage for desktop, tablet and iOS layouts.
+- Verified the corrected runtime against the last confirmed working v4.20.37 launcher under the same browser-like MissionChief DOM.
+
+
 ## [5.0.2] - 2026-07-23
 
 ### Emergency launcher recovery

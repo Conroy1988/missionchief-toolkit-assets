@@ -36,6 +36,7 @@ ISSUE378_OPERATIONAL_FEATURE_CONTRACT = ROOT / ".github" / "scripts" / "test_iss
 ISSUE378_OPERATIONAL_FEATURE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_runtime.js"
 ISSUE447_MENU_BOOT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue447_menu_boot_fail_open.py"
 ISSUE450_CORE_BOOTSTRAP_CONTRACT = ROOT / ".github" / "scripts" / "test_issue450_core_launcher_bootstrap.py"
+ISSUE454_PREBOOT_STATE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue454_preboot_state_order.py"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -292,6 +293,13 @@ def run_integrity_gate() -> None:
         )
         if issue450_core_bootstrap.returncode != 0:
             fail("Issue #450 core launcher bootstrap contract failed")
+
+        issue454_preboot_state = subprocess.run(
+            [sys.executable, str(ISSUE454_PREBOOT_STATE_CONTRACT)],
+            cwd=ROOT,
+        )
+        if issue454_preboot_state.returncode != 0:
+            fail("Issue #454 preboot state-order contract failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.2
+// @version      5.0.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.2',
+        version: '5.0.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1111,6 +1111,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         '.fancybox-overlay', '#fancybox-wrap'
     ];
 
+    const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
     let state = loadState();
     let cachedMap = null;
     let cachedMapElement = null;
@@ -1337,7 +1338,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let helpGuideLoadPromise = null;
     let helpCenterReturnFocus = null;
 
-    const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
     const OPERATIONAL_SUITE_LSSM_BASELINE = Object.freeze({
         repository: 'LSSM-V.4',
         branch: 'dev',

@@ -1,84 +1,4 @@
-count=33
-
-====================================================================================================
-id=5063780143 at=2026-07-23T21:36:39Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-runtime-diagnostic.py 87a8d77c696d4a55c349ef46ba78278effcfd52e
-
-====================================================================================================
-id=5063782655 at=2026-07-23T21:36:57Z author=github-actions[bot]
-<!-- development-package-preflight-stopped:c2732fa2fc89c94b408ed84a877cb64e4dd9db23d245c1e762d8921cea38a84e -->\nDevelopment-package preflight stopped safely during **apply-development-package**. No branch was changed and no failed workflow notification is required. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30046858056
-
-====================================================================================================
-id=5063800690 at=2026-07-23T21:39:13Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-runtime-diagnostic.py e57e7252c30e5db180d584b9f66b90ede746a34c
-
-====================================================================================================
-id=5063803943 at=2026-07-23T21:39:38Z author=github-actions[bot]
-<!-- development-package-preflight-passed:c813732dbcb8fce8384218312c950a4320eee0d17e09150b18e4fd57e8e3a548 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
-
-====================================================================================================
-id=5063807473 at=2026-07-23T21:40:07Z author=Conroy1988
-/apply-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-runtime-diagnostic.py e57e7252c30e5db180d584b9f66b90ede746a34c
-
-====================================================================================================
-id=5063810806 at=2026-07-23T21:40:35Z author=github-actions[bot]
-<!-- development-package-apply:c813732dbcb8fce8384218312c950a4320eee0d17e09150b18e4fd57e8e3a548 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `14b7918f1af9b5225fa3bc488ccbb9531262ee9f`\n- Pull request opened: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/471\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
-
-====================================================================================================
-id=5063830022 at=2026-07-23T21:43:00Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-focused-diagnostic.py e4a57c69978d2400c0cf98f1ab430161a0f4d975
-
-====================================================================================================
-id=5063834101 at=2026-07-23T21:43:33Z author=github-actions[bot]
-<!-- development-package-preflight-passed:08f4c63315bf4054557041b14220874714d714ff47608cf586eb4ef66e89e00e -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
-
-====================================================================================================
-id=5063839523 at=2026-07-23T21:44:09Z author=Conroy1988
-/apply-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-focused-diagnostic.py e4a57c69978d2400c0cf98f1ab430161a0f4d975
-
-====================================================================================================
-id=5063843479 at=2026-07-23T21:44:34Z author=github-actions[bot]
-<!-- development-package-apply:08f4c63315bf4054557041b14220874714d714ff47608cf586eb4ef66e89e00e -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `c4aaeced5de6ca930f4752de1da543b01a8f6ac5`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/471\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
-
-====================================================================================================
-id=5063869682 at=2026-07-23T21:48:00Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-source-slices.py 1c5f6ebfd220093a250b3f0701dd1f6e19c6171d
-
-====================================================================================================
-id=5063872801 at=2026-07-23T21:48:26Z author=github-actions[bot]
-<!-- development-package-preflight-passed:d54e58dd95646b8e1fb93b96011097064aeed40686430ae2ec1bd6ab5fbd1877 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
-
-====================================================================================================
-id=5063875326 at=2026-07-23T21:48:47Z author=Conroy1988
-/apply-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-source-slices.py 1c5f6ebfd220093a250b3f0701dd1f6e19c6171d
-
-====================================================================================================
-id=5063878070 at=2026-07-23T21:49:10Z author=github-actions[bot]
-<!-- development-package-apply:d54e58dd95646b8e1fb93b96011097064aeed40686430ae2ec1bd6ab5fbd1877 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `36edcac2e3550102f76910186bf3011012d548c1`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/471\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
-
-====================================================================================================
-id=5063919225 at=2026-07-23T21:55:00Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-state-diagnostic.py 510d53bdb623b2f7fa9c3340cb452eabf62fcafd
-
-====================================================================================================
-id=5063922376 at=2026-07-23T21:55:26Z author=github-actions[bot]
-<!-- development-package-preflight-passed:286f220a56c20f6859e5226793052cfcf36e8f1817265a18d6c3d71030ee29b6 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
-
-====================================================================================================
-id=5063927229 at=2026-07-23T21:56:04Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-command-state-diagnostic.py 40b551a39fdb042e4293e4b1d6b2dc3ea15a83ef
-
-====================================================================================================
-id=5063930287 at=2026-07-23T21:56:30Z author=github-actions[bot]
-<!-- development-package-preflight-passed:9d9ec2779ca130aaffc77d71788731dce0a9af4383443183584c8a100f46deb5 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
-
-====================================================================================================
-id=5064167791 at=2026-07-23T22:29:59Z author=Conroy1988
-/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-state-selectors.py f6fe94e1d30a4ca6d189f23ca96d1b8cf9c2c6b3
-
-====================================================================================================
-id=5064169922 at=2026-07-23T22:30:20Z author=github-actions[bot]
-<!-- development-package-preflight-passed:4e3a8eebb34c28682a809a69bb3dbc9045375c04edae4098508eb883dcf89b5e -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+count=45
 
 ====================================================================================================
 id=5064175826 at=2026-07-23T22:31:17Z author=Conroy1988
@@ -131,3 +51,51 @@ id=5064315921 at=2026-07-23T22:52:49Z author=github-actions[bot]
 ====================================================================================================
 id=5064317803 at=2026-07-23T22:53:05Z author=Conroy1988
 /apply-development-package chore/issue470-release-monitor .github/development-packages/issue470-monitor-comments-v2.py c98cb5cf898736769ad6da0472e165bea38efc74
+
+====================================================================================================
+id=5064320524 at=2026-07-23T22:53:31Z author=github-actions[bot]
+<!-- development-package-apply:0564e7605050c6702554141efa7db4b882c3d4c5c9088dae5b95be3a94ade322 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `cbcd8a28e038547c0d9d2709d89be255efe78142`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/472\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+====================================================================================================
+id=5064328082 at=2026-07-23T22:54:43Z author=Conroy1988
+/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-release-traceback.py c24129b2d09de434901b9367515fe42263973d1f
+
+====================================================================================================
+id=5064330945 at=2026-07-23T22:55:13Z author=github-actions[bot]
+<!-- development-package-preflight-passed:c07907568ca847d39279ad95dd79b980612e20feda0e42e9bdca7bc3055a06a5 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+====================================================================================================
+id=5064331110 at=2026-07-23T22:55:14Z author=Conroy1988
+/apply-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-release-traceback.py c24129b2d09de434901b9367515fe42263973d1f
+
+====================================================================================================
+id=5064333825 at=2026-07-23T22:55:42Z author=github-actions[bot]
+<!-- development-package-apply:c07907568ca847d39279ad95dd79b980612e20feda0e42e9bdca7bc3055a06a5 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `0b323bd49e8f26fccf9cdf749aae2b00291d3bfc`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/471\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+====================================================================================================
+id=5064344237 at=2026-07-23T22:57:25Z author=Conroy1988
+/preflight-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-release-v2.py 1ef03f189e176fd079a63f762bc3a2b456988340
+
+====================================================================================================
+id=5064346211 at=2026-07-23T22:57:45Z author=github-actions[bot]
+<!-- development-package-preflight-passed:d0dceb1f08529b5b9e65700a56b6847e894918bfc4f771865d7f4dee83b1d67c -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+====================================================================================================
+id=5064347413 at=2026-07-23T22:57:57Z author=Conroy1988
+/apply-development-package fix/issue-470-menu-requirements .github/development-packages/issue470-release-v2.py 1ef03f189e176fd079a63f762bc3a2b456988340
+
+====================================================================================================
+id=5064350030 at=2026-07-23T22:58:24Z author=github-actions[bot]
+The publish-capable development package failed during **validate-canonical-userscript**. No failed gate was bypassed.\n- Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30051677127
+
+====================================================================================================
+id=5064359065 at=2026-07-23T22:59:58Z author=Conroy1988
+/preflight-development-package chore/issue470-release-monitor .github/development-packages/issue470-monitor-comments-v3.py a336dbf23bf2ed71fd8e6060a79892a58aa94919
+
+====================================================================================================
+id=5064361339 at=2026-07-23T23:00:20Z author=github-actions[bot]
+<!-- development-package-preflight-passed:91fd73f0ffe7b9734a0ab1f1d728f5d4aea2f456b6d306cbac6ef62b6d7eea4f -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+====================================================================================================
+id=5064363090 at=2026-07-23T23:00:36Z author=Conroy1988
+/apply-development-package chore/issue470-release-monitor .github/development-packages/issue470-monitor-comments-v3.py a336dbf23bf2ed71fd8e6060a79892a58aa94919

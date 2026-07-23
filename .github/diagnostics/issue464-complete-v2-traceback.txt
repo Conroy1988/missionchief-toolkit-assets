@@ -1,0 +1,7 @@
+Issue #464 complete-v2 package traceback
+package_exit=1
+
+=== PACKAGE STDOUT ===
+
+=== PACKAGE STDERR ===
+Missing function: operationalWindowSyncSettingsUi

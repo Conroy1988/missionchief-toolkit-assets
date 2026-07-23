@@ -40,5 +40,13 @@
       "lines": 348
     }
   ],
-  "expectedSourceLines": 33061
+  "expectedSourceLines": 31663,
+  "retiredNonStyleSourceLines": 1398,
+  "retiredNonStyleChanges": [
+    {
+      "issue": 391,
+      "phase": "legacy-mission-requirements-matrix",
+      "lines": 1398
+    }
+  ]
 }

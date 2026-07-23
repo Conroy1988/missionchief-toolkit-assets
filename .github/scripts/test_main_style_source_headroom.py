@@ -110,7 +110,10 @@ def main() -> int:
         approved_total += lines
     if approved_total != fixture.get("approvedNonStyleSourceLines", 0):
         fail("approved non-style source-line ledger total is inconsistent")
-    expected_source_lines = fixture["candidateSourceLines"] + approved_total
+    retired_total = fixture.get("retiredNonStyleSourceLines", 0)
+    if not isinstance(retired_total, int) or retired_total < 0:
+        fail("retired non-style source-line total is malformed")
+    expected_source_lines = fixture["candidateSourceLines"] + approved_total - retired_total
     if fixture.get("expectedSourceLines", expected_source_lines) != expected_source_lines:
         fail("expected source line count is inconsistent with the approved non-style ledger")
     if source_lines != expected_source_lines:

@@ -9,7 +9,7 @@ required = {
     "baseline": "const OPERATIONAL_SUITE_LSSM_BASELINE = Object.freeze({",
     "baseline commit": "commit: '88e41646e59a7d620624f90f1d9a0a62320c2775'",
     "settings namespace": "operationalWindow: defaultOperationalWindowState(true)",
-    "normaliser": "function normaliseOperationalWindowState(value, legacyMatrixEnabled = true)",
+    "normaliser": "function normaliseOperationalWindowState(value, legacyRequirementsEnabled = true)",
     "runtime shell": "function installOperationalSuiteShell()",
     "context map": "const operationalSuiteContexts = new Map();",
     "coalesced scheduler": "function scheduleOperationalSuiteScan(delay = 0)",
@@ -18,7 +18,7 @@ required = {
     "safe auto-open default": "autoOpenTransportRequest: false",
     "upstream continuation default": "autoClickSuccessButtons: true",
     "suite renderer default": "enabled: true,\n            phase: 'operational-suite'",
-    "legacy Matrix retained": "// Issue #133 clean-room live mission requirements matrix.",
+    "legacy Matrix retired": "// Issue #391: legacy Mission Requirements Matrix retired; operationalWindow is authoritative.",
 }
 for label, needle in required.items():
     if needle not in source:
@@ -40,9 +40,9 @@ for path in (
         raise SystemExit(f"canonical parity failed: {path}")
 
 fixture = __import__('json').loads((ROOT / '.github' / 'fixtures' / 'main-style-source-headroom.json').read_text(encoding='utf-8'))
-expected_lines = fixture['candidateSourceLines'] + fixture.get('approvedNonStyleSourceLines', 0)
+expected_lines = fixture['candidateSourceLines'] + fixture.get('approvedNonStyleSourceLines', 0) - fixture.get('retiredNonStyleSourceLines', 0)
 if fixture.get('expectedSourceLines') != expected_lines or expected_lines != len(source.splitlines()):
-    raise SystemExit('Issue #378 source-headroom additive accounting is inconsistent')
+    raise SystemExit('Issue #378 source-headroom signed accounting is inconsistent')
 approved_changes = fixture.get('approvedNonStyleChanges', [])
 expected_changes = [
     {'issue': 378, 'phase': 'operational-suite-shell', 'lines': 317},

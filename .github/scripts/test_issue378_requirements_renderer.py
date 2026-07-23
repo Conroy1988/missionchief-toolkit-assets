@@ -23,7 +23,6 @@ required = [
     "env(safe-area-inset-top)",
     "operationalRequirementFingerprint(model",
     "fingerprint === context.fingerprint",
-    "if (typeof operationalRequirementsActive === 'function' && operationalRequirementsActive()) { clearMissionRequirementsPanels(); return; }",
 ]
 for needle in required:
     if needle not in source:
@@ -53,3 +52,6 @@ if "requirementRoot.parentNode?.insertBefore(panel, requirementRoot)" not in blo
     raise SystemExit("Issue #378 renderer must remain in normal document flow")
 
 print("Issue #378 enhanced requirements renderer contract passed.")
+
+if '// Issue #133 clean-room live mission requirements matrix.' in source:
+    raise SystemExit('legacy Matrix marker survived renderer cutover')

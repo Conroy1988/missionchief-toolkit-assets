@@ -27,7 +27,7 @@ INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
-MISSION_REQUIREMENTS_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
+ISSUE391_MATRIX_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue391_matrix_retirement.py"
 VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
 FINANCIAL_OVERVIEW_CONTRACT = ROOT / ".github" / "scripts" / "test_financial_overview_contract.py"
 MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_source_headroom.py"
@@ -160,7 +160,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -228,12 +228,12 @@ def run_integrity_gate() -> None:
         if audio_aliases.returncode != 0:
             fail("audio compatibility alias contract failed")
 
-        mission_requirements = subprocess.run(
-            [sys.executable, str(MISSION_REQUIREMENTS_CONTRACT)],
+        matrix_retirement = subprocess.run(
+            [sys.executable, str(ISSUE391_MATRIX_RETIREMENT_CONTRACT)],
             cwd=ROOT,
         )
-        if mission_requirements.returncode != 0:
-            fail("live mission requirements contract failed")
+        if matrix_retirement.returncode != 0:
+            fail("Issue #391 Matrix retirement contract failed")
 
         version_status = subprocess.run(
             [sys.executable, str(VERSION_STATUS_CONTRACT)],

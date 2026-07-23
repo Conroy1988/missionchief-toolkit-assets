@@ -20,6 +20,10 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURES = ROOT / ".github" / "fixtures" / "settings-ui-contract.json"
 
 FUNCTION_NAMES = [
+    "defaultOperationalWindowState",
+    "operationalSuiteBoolean",
+    "operationalSuiteArray",
+    "normaliseOperationalWindowState",
     "defaultState",
     "normaliseLoadedState",
     "loadState",
@@ -50,6 +54,7 @@ FUNCTION_NAMES = [
     "handleAction",
     "handleDiscordFinancialSettingChange",
     "handleDeviceLayoutSettingChange",
+    "handleOperationalWindowSettingChange",
     "handleSettingChange",
 ]
 
@@ -200,6 +205,7 @@ const STUCK_MAX_MINUTES = 120;
 const RESOURCE_GAP_RADIUS_OPTIONS = [10, 25, 50];
 const TRANSPORT_SWEEP_DELAY_OPTIONS = [1000, 2000, 3000, 5000];
 const TRANSPORT_SWEEP_MAX_REQUESTS = 100;
+const OPERATIONAL_SUITE_SETTINGS_VERSION = 1;
 
 const SCRIPT = {{
     storageState: "current-state",
@@ -278,8 +284,6 @@ function installAutoLoadAllVehicles() {{ record("installAutoLoadAllVehicles"); }
 function stopAutoLoadAllVehicles() {{ record("stopAutoLoadAllVehicles"); }}
 function installMissionValueWindows() {{ record("installMissionValueWindows"); }}
 function clearMissionValueIndicators() {{ record("clearMissionValueIndicators"); }}
-function installMissionRequirementsWindows() {{ record("installMissionRequirementsWindows"); }}
-function clearMissionRequirementsPanels() {{ record("clearMissionRequirementsPanels"); }}
 function installCustomVehicleBadges() {{ record("installCustomVehicleBadges"); }}
 function clearCustomVehicleBadges() {{ record("clearCustomVehicleBadges"); }}
 function unlockPayoutAudio(value) {{ record("unlockPayoutAudio", value); }}
@@ -390,7 +394,9 @@ function assertDefaultShape(value) {{
     assert.equal(value.visibility.vehicles, true);
     assert.equal(value.payoutFlash.template, "gta5");
     assert.equal(value.missionValue, true);
-    assert.equal(value.missionRequirements, true);
+    assert.equal(Object.hasOwn(value, "missionRequirements"), false);
+    assert.equal(value.operationalWindow.requirements.enabled, true);
+    assert.equal(value.operationalWindow.migration.matrixRetired, true);
 }}
 
 function testStateMigration() {{
@@ -408,7 +414,9 @@ function testStateMigration() {{
     assert.equal(directMigrated.visibility.buildings, true);
     assert.equal(directMigrated.payoutFlash.template, "gta5");
     assert.equal(directMigrated.missionValue, false);
-    assert.equal(directMigrated.missionRequirements, false);
+    assert.equal(Object.hasOwn(directMigrated, "missionRequirements"), false);
+    assert.equal(directMigrated.operationalWindow.requirements.enabled, false);
+    assert.equal(directMigrated.operationalWindow.migration.matrixRetired, true);
 
     localStorage.setItem(SCRIPT.storageState, "{{not-json");
     localStorage.setItem(SCRIPT.oldStorageKeys[0], JSON.stringify(fixtures.modernState));
@@ -433,7 +441,9 @@ function testStateMigration() {{
     assert.equal(migrated.allianceCreditMinimum, 0);
     assert.equal(migrated.autoLoadAllVehicles, true);
     assert.equal(migrated.missionValue, false);
-    assert.equal(migrated.missionRequirements, false);
+    assert.equal(Object.hasOwn(migrated, "missionRequirements"), false);
+    assert.equal(migrated.operationalWindow.requirements.enabled, false);
+    assert.equal(migrated.operationalWindow.migration.matrixRetired, true);
     assert.equal(migrated.allianceBuildingsMap, false);
     assert.equal(migrated.majorIncidentFeed.enabled, false);
     assert.equal(migrated.majorIncidentFeed.minimumCredits, 25000);
@@ -477,7 +487,9 @@ function testStateMigration() {{
     assert.equal(modern.payoutFlash.template, "hyruleQuest");
     assert.equal(modern.discordReport.reportMode, "executive");
     assert.equal(modern.missionValue, true);
-    assert.equal(modern.missionRequirements, true);
+    assert.equal(Object.hasOwn(modern, "missionRequirements"), false);
+    assert.equal(modern.operationalWindow.requirements.enabled, true);
+    assert.equal(modern.operationalWindow.migration.matrixRetired, true);
 
     state = modern;
     saveState();
@@ -582,7 +594,6 @@ function testExtractedMissionWindowToggleContracts() {{
 
     const effects = [
         ["missionValue", "installMissionValueWindows", "clearMissionValueIndicators"],
-        ["missionRequirements", "installMissionRequirementsWindows", "clearMissionRequirementsPanels"],
         ["customVehicleBadges", "installCustomVehicleBadges", "clearCustomVehicleBadges"],
     ];
     for (const [feature, installCall, clearCall] of effects) {{
@@ -732,7 +743,6 @@ async function testToggleContracts() {{
 
     const missionEffects = [
         ["missionValue", "installMissionValueWindows"],
-        ["missionRequirements", "installMissionRequirementsWindows"],
         ["customVehicleBadges", "installCustomVehicleBadges"],
         ["missionInspector", "showToast"],
     ];

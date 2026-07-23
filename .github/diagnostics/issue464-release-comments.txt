@@ -1,0 +1,102 @@
+Issue #464 release comment diagnostic
+page_count=31
+
+==============================================================================================================
+id=5062691316 created_at=2026-07-23T19:51:01Z author=github-actions[bot]
+<!-- development-package-preflight-passed:d395f4f002b23fbff2028a8df5d654b893a99a1e6edfe269b5bdd6d6143452f0 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062691852 created_at=2026-07-23T19:51:04Z author=Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-current-validation-traceback.py 2d97e89dbe63e4d0e23d6067ed328c4e689783cf
+
+==============================================================================================================
+id=5062696402 created_at=2026-07-23T19:51:33Z author=github-actions[bot]
+<!-- development-package-apply:d395f4f002b23fbff2028a8df5d654b893a99a1e6edfe269b5bdd6d6143452f0 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `4dae9b228ac07c9a2679f85af19b44712af69277`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+==============================================================================================================
+id=5062712990 created_at=2026-07-23T19:53:18Z author=Conroy1988
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py a7fce1e0681ddc7c047713ba4e4cf0dba0826b41
+
+==============================================================================================================
+id=5062717006 created_at=2026-07-23T19:53:43Z author=github-actions[bot]
+<!-- development-package-preflight-passed:8d1cee7df7bb0bda8cfce731dfa2f1f5f385e4980d8015618f7aad098db32e94 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062720976 created_at=2026-07-23T19:54:06Z author=Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py a7fce1e0681ddc7c047713ba4e4cf0dba0826b41
+
+==============================================================================================================
+id=5062725591 created_at=2026-07-23T19:54:32Z author=github-actions[bot]
+The publish-capable development package failed during **validate-canonical-userscript**. No failed gate was bypassed.\n- Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30039867009
+
+==============================================================================================================
+id=5062741945 created_at=2026-07-23T19:56:09Z author=Conroy1988
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-comments-v6.py b6aec467207c69cdb48cfc89b00e5f0eb7a21151
+
+==============================================================================================================
+id=5062745797 created_at=2026-07-23T19:56:30Z author=github-actions[bot]
+<!-- development-package-preflight-passed:3c98845d54450e6bd55108f43077adbfa8d482f9a869f86612b4c30828387c44 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062747377 created_at=2026-07-23T19:56:39Z author=Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-comments-v6.py b6aec467207c69cdb48cfc89b00e5f0eb7a21151
+
+==============================================================================================================
+id=5062751988 created_at=2026-07-23T19:57:07Z author=github-actions[bot]
+<!-- development-package-apply:3c98845d54450e6bd55108f43077adbfa8d482f9a869f86612b4c30828387c44 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `4571a42b200614c78e265fa1bc554cfc2a614802`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+==============================================================================================================
+id=5062762123 created_at=2026-07-23T19:58:08Z author=Conroy1988
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-post-contract-validation.py 0cc9386403f90bb2a40e23eea26c240803a016d9
+
+==============================================================================================================
+id=5062767992 created_at=2026-07-23T19:58:46Z author=github-actions[bot]
+<!-- development-package-preflight-passed:c1eec143fca9c4ee3c7dab6e85e531d1ea30cb36a5c9ef477f378baa55b1b1c7 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062777634 created_at=2026-07-23T19:59:41Z author=Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-post-contract-validation.py 0cc9386403f90bb2a40e23eea26c240803a016d9
+
+==============================================================================================================
+id=5062781958 created_at=2026-07-23T20:00:07Z author=github-actions[bot]
+<!-- development-package-apply:c1eec143fca9c4ee3c7dab6e85e531d1ea30cb36a5c9ef477f378baa55b1b1c7 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `8f1e6c5b9ef358e1456516f19c927c22b20e8563`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+==============================================================================================================
+id=5062797079 created_at=2026-07-23T20:01:36Z author=Conroy1988
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py f429f5813287e737d01759d378199edabe17df14
+
+==============================================================================================================
+id=5062801047 created_at=2026-07-23T20:01:59Z author=github-actions[bot]
+<!-- development-package-preflight-passed:479f86f7261068401e8807a6757c0f96da783e526f3952b09ffef516cb0878b9 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062803749 created_at=2026-07-23T20:02:15Z author=Conroy1988
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete-v5.py f429f5813287e737d01759d378199edabe17df14
+
+==============================================================================================================
+id=5062809354 created_at=2026-07-23T20:02:49Z author=github-actions[bot]
+<!-- development-package-apply:479f86f7261068401e8807a6757c0f96da783e526f3952b09ffef516cb0878b9 -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `5b7e8de7fa4cb3c2e79807c666d8a50fb745297f`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+==============================================================================================================
+id=5062886754 created_at=2026-07-23T20:10:04Z author=Conroy1988
+/release-toolkit 5.0.6 RELEASE
+
+==============================================================================================================
+id=5062888771 created_at=2026-07-23T20:10:15Z author=github-actions[bot]
+Toolkit v5.0.6 passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: `30040972239`.
+
+==============================================================================================================
+id=5062894638 created_at=2026-07-23T20:10:47Z author=github-actions[bot]
+Toolkit v5.0.6 release stopped fail-closed. Readiness result: `failure`; production result: `skipped`. No safeguard was bypassed. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30040972239
+
+==============================================================================================================
+id=5062980989 created_at=2026-07-23T20:19:03Z author=Conroy1988
+/preflight-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-comments-diagnostic.py 7e5f0bcf34027b898380838d26036a486648d3ed
+
+==============================================================================================================
+id=5062984421 created_at=2026-07-23T20:19:23Z author=github-actions[bot]
+<!-- development-package-preflight-passed:87138c26ccb7b2667695e20673d540060a15643cd6d93c47f8c2db48b6c59b56 -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+==============================================================================================================
+id=5062987483 created_at=2026-07-23T20:19:40Z author=Conroy1988
+/apply-development-package chore/issue464-release-diagnostic .github/development-packages/issue464-release-comments-diagnostic.py 7e5f0bcf34027b898380838d26036a486648d3ed

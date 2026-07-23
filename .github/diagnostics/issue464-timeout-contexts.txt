@@ -1,0 +1,74 @@
+Issue #464 timeout call-site contexts
+total_runtimeSetTimeout=102
+
+========================================================================================================================
+line=16009
+16007:     function scheduleMissionAgeRefresh(delay = 220) {
+16008:         runtimeClearTimeout(missionAgeTimer);
+16009:         missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
+16010:     }
+16011: 
+
+========================================================================================================================
+line=20701
+20699:         renderVehicleCodeStatus();
+20700:         refreshVehicleCodeStatus(false);
+20701:         runtimeSetTimeout(() => drawer.querySelector('.mcms-vcs-close')?.focus?.(), 0);
+20702:     }
+20703: 
+
+========================================================================================================================
+line=22884
+22882:         arr.forEach((row,index)=>{const token=operationalArrToken(row,index),previous=feature.arrHandlers.get(row);if(!feature.arrHandlers.has(row)){feature.arrHandlers.set(row,row.onclick||null);row.onclick=function(event){feature.arrHandlers.get(row)?.call?.(this,event);const live=state.operationalWindow?.callWindow||{};if(live.arrCounter)feature.arrCounts.set(token,(feature.arrCounts.get(token)||0)+1);if(live.arrClickHighlight)feature.arrClicked.add(token);scheduleOperationalSuiteScan(0);};}row.style.setProperty('--mcms-arr-colour',operationalSafeColour(settings.arrClickHighlightColor,'#008000'));row.style.setProperty('--mcms-arr-width',`${Math.max(1,Math.min(12,Number(settings.arrClickHighlightWidth)||2))}px`);row.setAttribute('data-mcms-operational-colour','true');row.classList.toggle('mcms-operational-arr-clicked',Boolean(settings.arrClickHighlight&&feature.arrClicked.has(token)));row.classList.toggle('mcms-operational-arr-unmatched',Boolean(settings.arrMatchHighlight&&!operationalArrMatchesText(missionTitle,row.textContent,settings.arrMatchHighlightAllWords)));if(settings.arrCounterAsBadge){const count=feature.arrCounts.get(token)||0;(operationalQuery(row,'.btn,a,td')||row).appendChild(operationalFeatureBadge(doc,String(count),`call-arr-badge-${index}`,'info')).classList.add('mcms-operational-arr-badge');}const title=[];if(settings.arrTime){const seconds=operationalNodeDuration(row);if(seconds)title.push(`Longest journey ${operationalFormatDuration(seconds)}`);}if(settings.arrSpecs){const specs=row.getAttribute?.('data-requirements')||row.getAttribute?.('data-vehicles')||row.getAttribute?.('data-description');if(specs)title.push(String(specs));}if(title.length)operationalApplyTitle(row,title);});
+22883:         if(settings.arrCounter){const total=[...feature.arrCounts.values()].reduce((sum,value)=>sum+Number(value||0),0);bar.appendChild(operationalFeatureBadge(doc,`ARR clicks ${total}`,'call-arr-count','info'));}if(settings.arrCounterResetSelection)bar.appendChild(operationalFeatureButton(doc,'Reset ARR / selection','call-arr-reset',()=>{feature.arrCounts.clear();feature.arrClicked.clear();operationalQueryAll(doc,'#vehicle_show_table_body_all input[type="checkbox"]:checked,#vehicle_show_table input[type="checkbox"]:checked').forEach(input=>input.click?.());scheduleOperationalSuiteScan(0);}));
+22884:         if(settings.arrSearch&&arr.length){if(settings.arrSearchDropdown){arr.forEach(row=>row.classList.add('mcms-operational-arr-dropdown-hidden'));const select=operationalFeatureOwn(doc.createElement('select'),'call-arr-dropdown');select.className='form-control input-sm';operationalReplaceContent(select,`<option value="">Select ARR…</option>${arr.map((row,index)=>`<option value="${index}">${operationalEscape(String(row.textContent||`ARR ${index+1}`).trim())}</option>`).join('')}`);select.onchange=()=>{const row=arr[Number(select.value)];if(row)operationalNativeAction(row)?.click?.();if(settings.arrSearchCloseDropdownOnSelect){select.value='';select.blur?.();}};bar.appendChild(select);if(settings.arrSearchAutoFocus)runtimeSetTimeout(()=>select.focus(),0);}else{const input=operationalFeatureOwn(doc.createElement('input'),'call-arr-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search ARR';input.value=feature.arrQuery||'';input.oninput=()=>{feature.arrQuery=input.value;applyArrFilter(input.value);};input.onkeydown=event=>{if(event.key!=='Enter')return;const visible=arr.filter(row=>!row.classList.contains('mcms-operational-arr-filtered'));if(settings.arrSearchSelectOnEnter&&visible[0])operationalNativeAction(visible[0])?.click?.();if(settings.arrSearchClearOnEnter){feature.arrQuery='';input.value='';applyArrFilter('');}};bar.appendChild(input);applyArrFilter(feature.arrQuery);if(settings.arrSearchAutoFocus)runtimeSetTimeout(()=>input.focus(),0);}}
+22885:         for(const keyword of settings.missionKeywords||[]){const word=String(keyword?.keyword||'').trim();if(!word||!missionTitle.toLocaleLowerCase('en-GB').includes(word.toLocaleLowerCase('en-GB')))continue;const badge=operationalFeatureBadge(doc,word,`call-keyword-${word.replace(/[^a-z0-9]/giu,'-')}`,'default');badge.style.backgroundColor=operationalSafeColour(keyword.color,'#777777');badge.style.color=keyword.autotextcolor===false?operationalSafeColour(keyword.textcolor,'#ffffff'):'#ffffff';if(keyword.prefix)bar.insertBefore(badge,bar.firstChild);else bar.appendChild(badge);}const selectedTypes=new Set([...grouped.keys()]);const alarm=operationalQuery(doc,'#alarm_button,button[name="commit"],input[name="commit"],.alarm-button');for(const config of settings.alarmIcons||[]){const types=new Set((config?.vehicleTypes||[]).map(String));if(!alarm||!config?.icon||(types.size&&![...types].some(type=>selectedTypes.has(type))))continue;const icon=operationalFeatureOwn(doc.createElement('span'),`call-alarm-icon-${String(config.icon).replace(/[^a-z0-9]/giu,'-')}`),glyph=doc.createElement('i');icon.className='mcms-operational-alarm-icon';glyph.className=`${String(config.type||'fas').replace(/[^a-z]/giu,'')} fa-${String(config.icon).replace(/[^a-z0-9-]/giu,'')}`;glyph.setAttribute('aria-hidden','true');icon.appendChild(glyph);alarm.insertBefore(icon,alarm.firstChild);}
+22886:         for(const config of settings.arrCategoryColors||[]){const name=String(config?.categoryName||'').trim().toLocaleLowerCase('en-GB');if(!name)continue;operationalQueryAll(doc,'.aao-category,.alarm-and-response-regulation-category,.panel').filter(node=>String(operationalQuery(node,'.panel-heading,h3,h4,legend')?.textContent||node.getAttribute?.('data-category')||'').trim().toLocaleLowerCase('en-GB')===name).forEach(node=>{node.classList.add('mcms-operational-category-coloured');node.style.setProperty('background-color',operationalSafeColour(config.bgColor,'#505050'));node.style.setProperty('color',operationalSafeColour(config.color,'#ffffff'));node.setAttribute('data-mcms-operational-colour','true');});}
+
+========================================================================================================================
+line=23472
+23470:         scheduleCriticalDrawerDock(140);
+23471:         updateUI();
+23472:         runtimeSetTimeout(() => drawer.querySelector('.mcms-drawer-close')?.focus?.(), 0);
+23473:     }
+23474: 
+
+========================================================================================================================
+line=23748
+23746:         else if (marker._icon?.classList) {
+23747:             marker._icon.classList.add('mcms-critical-view-focus');
+23748:             runtimeSetTimeout(() => marker._icon?.classList?.remove('mcms-critical-view-focus'), 1800);
+23749:         }
+23750:         if (openMission) {
+
+========================================================================================================================
+line=28892
+28890:         return true;
+28891:     }
+28892:     function applyMapVisibilityToggleEffects(feature) { if(feature==='vehicles')synchroniseVehicleMarkerClasses();if(feature==='buildings')synchronisePersonalBuildingVisibility();if(state.economyMode&&(feature==='vehicles'||feature==='buildings'))scheduleEconomyLayerSync(0);if(feature==='missionAge'){runtimeClearTimeout(missionAgeTimer);missionAgeTimer=null;if(state.missionAge){inlineMissionDataScanned=false;scanInlineMissionMarkerData(true);invalidateMarkerRegistryCaches('mission');scheduleMarkerStateSync(0,true);scheduleMissionAgeRefresh(0);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},250);runtimeSetTimeout(()=>{if(state.missionAge)scheduleMissionAgeRefresh(0);},1000);}else clearMissionAgeLabels();} }
+28893:     function handleMissionWindowToggle(feature) {
+28894:         if (feature === 'missionInspector') state.missionInspector = !state.missionInspector;
+
+========================================================================================================================
+line=29237
+29235:         const menuButton = document.querySelector(`#${SCRIPT.controlId} .mcms-menu-btn`);
+29236:         menuButton?.setAttribute('aria-expanded', 'false');
+29237:         if (restoreFocus && menuButton?.isConnected) runtimeSetTimeout(() => menuButton.focus({ preventScroll: true }), 0);
+29238:     }
+29239: 
+
+========================================================================================================================
+line=29253
+29251:         document.documentElement.removeAttribute('data-mcms-help-open');
+29252:         if (restoreFocus && helpCenterReturnFocus?.isConnected) {
+29253:             runtimeSetTimeout(() => { try { helpCenterReturnFocus.focus({ preventScroll: true }); } catch (err) {} }, 0);
+29254:         }
+29255:         helpCenterReturnFocus = null;
+
+========================================================================================================================
+line=29499
+29497:         document.documentElement.setAttribute('data-mcms-help-open', 'true');
+29498:         const closeButton = overlay.querySelector('[data-help-action="close"]');
+29499:         runtimeSetTimeout(() => { try { closeButton?.focus({ preventScroll: true }); } catch (err) {} }, 0);
+29500:         const frame = overlay.querySelector('.mcms-help-frame');
+29501:         if (!frame?.srcdoc) loadHelpCenterGuide(false);

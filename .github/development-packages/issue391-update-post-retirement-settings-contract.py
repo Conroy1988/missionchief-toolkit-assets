@@ -43,6 +43,17 @@ settings_test = replace_exact(
 )
 settings_test = replace_exact(
     settings_test,
+    """    "handleDeviceLayoutSettingChange",
+    "handleSettingChange",
+""",
+    """    "handleDeviceLayoutSettingChange",
+    "handleOperationalWindowSettingChange",
+    "handleSettingChange",
+""",
+    "settings contract operational setting router extraction",
+)
+settings_test = replace_exact(
+    settings_test,
     """const TRANSPORT_SWEEP_MAX_REQUESTS = 100;
 """,
     """const TRANSPORT_SWEEP_MAX_REQUESTS = 100;
@@ -137,6 +148,7 @@ new_diagnostic = '''    ROOT / ".github" / "diagnostics" / "issue391-migration-v
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v3.txt",
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v4.txt",
     ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v5.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-post-retirement-settings-failure-v6.txt",
 )'''
 if text.count(old_diagnostic) != 1:
     raise RuntimeError("canonical meta final diagnostic cleanup anchor drifted")
@@ -165,7 +177,7 @@ with tempfile.TemporaryDirectory(prefix="issue391-post-retirement-settings-selft
 for obsolete in (
     ROOT / ".github" / "development-packages" / "issue391-canonical-retirement-diagnostic.py",
     ROOT / ".github" / "development-packages" / "issue391-operational-settings-helper-map.py",
-    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic-v5.py",
+    ROOT / ".github" / "development-packages" / "issue391-post-retirement-settings-diagnostic-v6.py",
 ):
     obsolete.unlink(missing_ok=True)
 

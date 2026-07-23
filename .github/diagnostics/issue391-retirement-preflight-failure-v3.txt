@@ -1,0 +1,14 @@
+ISSUE391_RETIREMENT_PREFLIGHT_FAILURE_V3
+returncode=1
+
+=== STDOUT ===
+
+
+=== STDERR ===
+Traceback (most recent call last):
+  File "/tmp/issue391-retirement-diagnostic-v3-k7yjmiyy/repo/.github/development-packages/issue391-retire-matrix.py", line 122, in <module>
+    shared.append(extract_declaration(source, name, start, end))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/issue391-retirement-diagnostic-v3-k7yjmiyy/repo/.github/development-packages/issue391-retire-matrix.py", line 50, in extract_declaration
+    raise RuntimeError(f"shared capability declaration missing: {name}")
+RuntimeError: shared capability declaration missing: MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE

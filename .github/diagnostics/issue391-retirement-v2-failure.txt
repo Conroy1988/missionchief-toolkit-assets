@@ -1,0 +1,11 @@
+ISSUE391_RETIREMENT_V2_FAILURE_V1
+returncode=1
+
+=== STDOUT ===
+Traceback (most recent call last):
+  File "/tmp/issue391-complete-retirement-v2-selftest-s1y9f09p/repo/.github/development-packages/issue391-retire-matrix.py", line 181, in <module>
+    raise RuntimeError(f"legacy Matrix token survived retirement: {token}")
+RuntimeError: legacy Matrix token survived retirement: missionRequirementsPanelId
+
+=== STDERR ===
+Issue #391 retirement package v2 failed sandbox self-test

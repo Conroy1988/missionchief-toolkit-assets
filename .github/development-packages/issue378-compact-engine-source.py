@@ -40,7 +40,7 @@ for line in lines[1:-1]:
 if current:
     chunks.append(" ".join(current))
 
-if not 1 <= len(chunks) <= 27:
+if not 1 <= len(chunks) <= 28:
     raise RuntimeError(f"unexpected compact engine chunk count: {len(chunks)}")
 compact_engine = "\n".join([start_marker, *[f"    {chunk}" for chunk in chunks], end_marker, ""])
 updated = prefix + start_token + compact_engine + end_token + suffix

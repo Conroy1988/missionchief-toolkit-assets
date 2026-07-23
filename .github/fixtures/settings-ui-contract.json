@@ -122,7 +122,6 @@
     "missionInspector",
     "missionLockAudio",
     "missionPulse",
-    "missionRequirements",
     "missionSpawn",
     "missionValue",
     "myMissions",
@@ -156,7 +155,6 @@
     "missionInspector": "missionInspector",
     "missionLockAudio": "missionLockAudio",
     "missionPulse": "missionPulse",
-    "missionRequirements": "missionRequirements",
     "missionSpawn": "missionSpawn.enabled",
     "missionValue": "missionValue",
     "myMissions": "visibility.myMissions",
@@ -322,19 +320,16 @@
   "extractedMissionWindowToggleRoutes": [
     "customVehicleBadges",
     "missionInspector",
-    "missionRequirements",
     "missionValue"
   ],
   "extractedMissionWindowEffectRoutes": [
     "customVehicleBadges",
     "missionInspector",
-    "missionRequirements",
     "missionValue"
   ],
   "extractedMissionWindowToggleStatePaths": {
     "customVehicleBadges": "customVehicleBadges",
     "missionInspector": "missionInspector",
-    "missionRequirements": "missionRequirements",
     "missionValue": "missionValue"
   },
   "extractedPayoutAudioToggleRoutes": [

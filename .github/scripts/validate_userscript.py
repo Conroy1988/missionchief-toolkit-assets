@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+sys.dont_write_bytecode = True
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 BASELINE = ROOT / "status" / "source-baseline.json"
 CHANGELOG = ROOT / "CHANGELOG.md"
@@ -23,10 +27,13 @@ INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
-MISSION_REQUIREMENTS_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_requirements_contract.py"
+ISSUE391_MATRIX_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue391_matrix_retirement.py"
 VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
 FINANCIAL_OVERVIEW_CONTRACT = ROOT / ".github" / "scripts" / "test_financial_overview_contract.py"
 MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_source_headroom.py"
+ISSUE378_REQUIREMENTS_RENDERER_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_requirements_renderer.py"
+ISSUE378_OPERATIONAL_FEATURE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_suite.py"
+ISSUE378_OPERATIONAL_FEATURE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_runtime.js"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -42,6 +49,17 @@ SCRIPT_VERSION_RE = re.compile(
 
 def fail(message: str) -> None:
     raise SystemExit(f"VALIDATION ERROR: {message}")
+
+
+def cleanup_repository_bytecode() -> None:
+    for cache_dir in sorted(ROOT.rglob("__pycache__"), reverse=True):
+        if ".git" in cache_dir.parts:
+            continue
+        shutil.rmtree(cache_dir, ignore_errors=True)
+    for suffix in ("*.pyc", "*.pyo"):
+        for bytecode in ROOT.rglob(suffix):
+            if ".git" not in bytecode.parts:
+                bytecode.unlink(missing_ok=True)
 
 
 def sha256(path: Path) -> str:
@@ -142,7 +160,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, MISSION_REQUIREMENTS_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -210,12 +228,12 @@ def run_integrity_gate() -> None:
         if audio_aliases.returncode != 0:
             fail("audio compatibility alias contract failed")
 
-        mission_requirements = subprocess.run(
-            [sys.executable, str(MISSION_REQUIREMENTS_CONTRACT)],
+        matrix_retirement = subprocess.run(
+            [sys.executable, str(ISSUE391_MATRIX_RETIREMENT_CONTRACT)],
             cwd=ROOT,
         )
-        if mission_requirements.returncode != 0:
-            fail("live mission requirements contract failed")
+        if matrix_retirement.returncode != 0:
+            fail("Issue #391 Matrix retirement contract failed")
 
         version_status = subprocess.run(
             [sys.executable, str(VERSION_STATUS_CONTRACT)],
@@ -237,6 +255,27 @@ def run_integrity_gate() -> None:
         )
         if main_style_headroom.returncode != 0:
             fail("main-style source-headroom contract failed")
+
+        issue378_renderer = subprocess.run(
+            [sys.executable, str(ISSUE378_REQUIREMENTS_RENDERER_CONTRACT)],
+            cwd=ROOT,
+        )
+        if issue378_renderer.returncode != 0:
+            fail("Issue #378 requirements renderer contract failed")
+
+        issue378_feature = subprocess.run(
+            [sys.executable, str(ISSUE378_OPERATIONAL_FEATURE_CONTRACT)],
+            cwd=ROOT,
+        )
+        if issue378_feature.returncode != 0:
+            fail("Issue #378 operational feature-suite contract failed")
+
+        issue378_feature_runtime = subprocess.run(
+            ["node", str(ISSUE378_OPERATIONAL_FEATURE_RUNTIME)],
+            cwd=ROOT,
+        )
+        if issue378_feature_runtime.returncode != 0:
+            fail("Issue #378 operational feature runtime fixtures failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})
@@ -369,4 +408,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    finally:
+        cleanup_repository_bytecode()

@@ -1,0 +1,67 @@
+
+        const allCovered = open.length === 0 && unresolved.length === 0;
+        const bodyRows = sorted.map(row => {
+            const stillNeeded = Math.max(0, Number(row.remainingOnMission) - Number(row.selectedValue));
+            return `<tr class="mcms-operational-suite-row" data-covered="${row.covered ? 'true' : 'false'}"><td data-label="Requirement">${operationalRequirementsEscapeHtml(row.requirement || row.key)}</td><td data-label="Required">${Math.max(0, Number(row.missing) || 0).toLocaleString('en-GB')}</td><td data-label="Responding">${Math.max(0, Number(row.driving) || 0).toLocaleString('en-GB')}</td><td data-label="Selected">${operationalRequirementsEscapeHtml(operationalRequirementsSelectedText(row, settings?.calcMaxStaff === true))}</td><td class="mcms-operational-suite-needed" data-label="Still needed">${stillNeeded.toLocaleString('en-GB')}</td></tr>`;
+        }).join('');
+        const unresolvedHtml = unresolved.length
+            ? `<div class="mcms-operational-suite-unresolved"><strong>Unresolved MissionChief requirement</strong><br>${unresolved.map(operationalRequirementsEscapeHtml).join('<br>')}</div>`
+            : '';
+        const emptyHtml = bodyRows || unresolvedHtml ? '' : '<div class="mcms-operational-suite-unresolved">No active missing requirements reported.</div>';
+        return {
+            allCovered,
+            html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${allCovered ? 'All displayed requirements covered' : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
+        };
+    }
+
+    function operationalRequirementsMount(context, requirementRoot) {
+        const doc = context.doc;
+        operationalRequirementsEnsureStyle(doc);
+        let panel = context.panel;
+        if (!panel?.isConnected) {
+            panel = doc.createElement('section');
+            panel.className = OPERATIONAL_REQUIREMENTS_PANEL_CLASS;
+            panel.setAttribute('data-mcms-operational-suite', 'requirements');
+            panel.setAttribute('aria-live', 'polite');
+            requirementRoot.parentNode?.insertBefore(panel, requirementRoot);
+            context.panel = panel;
+            panel.addEventListener('click', event => {
+                const button = event.target?.closest?.('.mcms-operational-suite-toggle');
+                if (!button) return;
+                context.minified = !context.minified;
+                context.fingerprint = '';
+                operationalRequirementsScheduleContext(context, 0);
+            });
+        }
+        return panel;
+    }
+
+    function operationalRequirementsRenderContext(context) {
+        if (!context?.doc || runtime.destroyed) return;
+        if (!operationalRequirementsActive()) {
+            context.panel?.remove?.();
+            context.panel = null;
+            return;
+        }
+        const requirementRoot = context.doc.querySelector?.('#missing_text');
+        if (!requirementRoot?.isConnected || operationalRequirementsEquivalentLssmActive(context.doc)) {
+            context.panel?.remove?.();
+            context.panel = null;
+            context.fingerprint = '';
+            return;
+        }
+        const settings = state.operationalWindow?.requirements || {};
+        const model = operationalRequirementCreateModel(operationalRequirementsInput(context, requirementRoot));
+        const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
+        const fingerprint = JSON.stringify({
+            model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
+            sort: settings.sort,
+            sortDir: settings.sortDir,
+            viewMode: settings.viewMode,
+            minified: context.minified === true
+        });
+        if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
+        const panel = operationalRequirementsMount(context, requirementRoot);
+        const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true);
+        panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
+        pane

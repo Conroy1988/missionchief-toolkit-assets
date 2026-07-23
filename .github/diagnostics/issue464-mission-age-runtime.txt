@@ -1,0 +1,1021 @@
+ISSUE #464 MISSION AGE RUNTIME DIAGNOSTIC
+source_lines=31851
+
+MISSION AGE TOKEN LOCATIONS
+01172: let missionAgeGroup = null;
+01173: let missionAgeTimer = null;
+01252: const missionAgeLabels = new Map();
+01563: missionAgeWatch: {
+01583: missionAge: false,
+01627: missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+01627: missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+01627: missionAgeWatch: { ...base.missionAgeWatch, ...(parsed.missionAgeWatch || {}) },
+01659: merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+01659: merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+01659: merged.missionAgeWatch.ageFilter = CRITICAL_AGE_FILTER_KEYS.includes(String(merged.missionAgeWatch.ageFilter)) ? String(merged.missionAgeWatch.ageFilter) : '8h';
+01660: merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+01660: merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+01660: merged.missionAgeWatch.sortMode = CRITICAL_SORT_KEYS.includes(String(merged.missionAgeWatch.sortMode)) ? String(merged.missionAgeWatch.sortMode) : 'age';
+01661: merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+01661: merged.missionAgeWatch.expanded = Boolean(merged.missionAgeWatch.expanded);
+01662: merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+01662: merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+01662: merged.missionAgeWatch.ownershipFilter = CRITICAL_OWNERSHIP_FILTER_KEYS.includes(String(merged.missionAgeWatch.ownershipFilter)) ? String(merged.missionAgeWatch.ownershipFilter) : 'personal';
+01663: merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+01663: merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+01663: merged.missionAgeWatch.categoryFilter = CRITICAL_CATEGORY_FILTER_KEYS.includes(String(merged.missionAgeWatch.categoryFilter)) ? String(merged.missionAgeWatch.categoryFilter) : 'all';
+01664: merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+01664: merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+01664: merged.missionAgeWatch.primaryStatus = CRITICAL_PRIMARY_STATUS_KEYS.includes(String(merged.missionAgeWatch.primaryStatus)) ? String(merged.missionAgeWatch.primaryStatus) : 'all';
+01665: merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+01665: merged.missionAgeWatch.hasVehiclesOnWay = Boolean(merged.missionAgeWatch.hasVehiclesOnWay);
+01666: merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+01666: merged.missionAgeWatch.onlyMyUnits = Boolean(merged.missionAgeWatch.onlyMyUnits);
+01667: merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+01667: merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+01667: merged.missionAgeWatch.valueMode = CRITICAL_VALUE_MODE_KEYS.includes(String(merged.missionAgeWatch.valueMode)) ? String(merged.missionAgeWatch.valueMode) : 'total';
+01668: merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+01668: merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+01668: merged.missionAgeWatch.distanceOrigin = /^(?:live|locked|quick:[a-z0-9_-]+|bookmark:\d+)$/iu.test(String(merged.missionAgeWatch.distanceOrigin || '')) ? String(merged.missionAgeWatch.distanceOrigin) : 'live';
+01669: const lockedOrigin = merged.missionAgeWatch.lockedOrigin;
+01670: merged.missionAgeWatch.lockedOrigin = lockedOrigin && Number.isFinite(Number(lockedOrigin.lat)) && Number.isFinite(Number(lockedOrigin.lng))
+02678: .mcms-mission-age-icon,
+02687: .mcms-mission-age-badge,
+02714: .mcms-mission-age-badge {
+02721: .mcms-mission-age-badge.mcms-age-aged {
+02727: .mcms-mission-age-badge.mcms-age-high {
+02733: .mcms-mission-age-badge.mcms-age-critical {
+04208: html[data-mcms-mobile-active="true"] .mcms-mission-age-badge,
+04914: html[data-mcms-ui-theme="cyberpunk"] .mcms-mission-age-badge,
+05631: html[data-mcms-ui-theme="fallout4"] .mcms-mission-age-badge,
+06334: html[data-mcms-ui-theme="umbrella"] .mcms-mission-age-badge,
+06797: html[data-mcms-ui-theme="umbrella"] .mcms-mission-age-badge,
+07424: html[data-mcms-ui-theme="factorio"] .mcms-mission-age-badge,
+07600: html[data-mcms-ui-theme] .mcms-mission-age-badge {
+07607: html[data-mcms-ui-theme] .mcms-mission-age-badge.mcms-age-aged {
+07613: html[data-mcms-ui-theme] .mcms-mission-age-badge.mcms-age-high {
+07619: html[data-mcms-ui-theme] .mcms-mission-age-badge.mcms-age-critical {
+13572: html[data-mcms-ui-theme="hyrule"] .mcms-mission-age-badge {
+15983: function formatMissionAge(createdAt, now = Date.now()) {
+15992: function clearMissionAgeLabels() {
+15993: if (missionAgeGroup) {
+15994: try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+15994: try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+15996: missionAgeLabels.clear();
+15997: missionAgeGroup = null;
+16000: function makeMissionAgeIcon(ageText, severity = missionAgeSeverity(0)) {
+16000: function makeMissionAgeIcon(ageText, severity = missionAgeSeverity(0)) {
+16004: className: 'mcms-mission-age-icon',
+16005: html: `<span class="mcms-mission-age-badge ${severityClass}" aria-label="${escapeHtml(`${ageText} · ${severityLabel}`)}">${escapeHtml(ageText)}</span>`,
+16011: function updateMissionAgeLabels() {
+16013: if (!state.missionAge || !state.visibility.myMissions) {
+16014: clearMissionAgeLabels();
+16023: clearMissionAgeLabels();
+16024: if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+16029: clearMissionAgeLabels();
+16030: if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+16036: if (!missionAgeGroup || missionAgeGroup._map !== map) {
+16036: if (!missionAgeGroup || missionAgeGroup._map !== map) {
+16037: clearMissionAgeLabels();
+16038: missionAgeGroup = pageWindow.L.layerGroup();
+16039: missionAgeGroup.__mcmsMissionAgeLayer = true;
+16039: missionAgeGroup.__mcmsMissionAgeLayer = true;
+16040: missionAgeGroup.addTo(map);
+16050: const existingLabel = missionAgeLabels.get(missionId);
+16068: if (existingLabel && (!criticalViewActive || Number(existingLabel.__mcmsMissionAgeSeverityRank) >= 1)) activeMissionIds.add(missionId);
+16074: const ageText = formatMissionAge(createdAt, now);
+16075: const severity = missionAgeSeverity(ageMs);
+16079: const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
+16079: const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
+16082: try { missionAgeGroup.removeLayer(label); } catch (err) {}
+16090: icon: makeMissionAgeIcon(ageText, severity)
+16092: label.__mcmsMissionAgeLabel = true;
+16093: label.__mcmsMissionAgeText = ageText;
+16094: label.__mcmsMissionAgeSeverityRank = severity.rank;
+16095: label.__mcmsMissionAgeCreatedAt = createdAt;
+16096: label.addTo(missionAgeGroup);
+16097: missionAgeLabels.set(missionId, label);
+16102: if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
+16102: if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
+16102: if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
+16103: label.__mcmsMissionAgeText = ageText;
+16104: label.__mcmsMissionAgeSeverityRank = severity.rank;
+16105: label.__mcmsMissionAgeCreatedAt = createdAt;
+16106: try { label.setIcon(makeMissionAgeIcon(ageText, severity)); } catch (err) {}
+16110: for (const [missionId, label] of missionAgeLabels.entries()) {
+16112: missionAgeLabels.delete(missionId);
+16113: try { missionAgeGroup.removeLayer(label); } catch (err) {}
+16115: if (!document.hidden) scheduleMissionAgeRefresh(state.economyMode ? Math.max(120000, MISSION_AGE_LABEL_REFRESH_MS) : MISSION_AGE_LABEL_REFRESH_MS);
+16117: clearMissionAgeLabels();
+16118: if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+16122: function scheduleMissionAgeRefresh(delay = 220) {
+16123: runtimeClearTimeout(missionAgeTimer);
+16124: missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
+16124: missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
+16127: function missionAgeSeverity(ageMs) {
+16146: function personalMissionAgeRecord(marker, missionId, now = Date.now()) {
+16151: return { createdAt, ageMs, severity: missionAgeSeverity(ageMs) };
+16166: if (state.missionAge) rowsAbove += 1;
+16209: const ageRecord = personalMissionAgeRecord(marker, missionId);
+16318: if (personal && state.missionAge) {
+16320: missionAgeLabels.get(missionId),
+16321: '.mcms-mission-age-badge',
+16324: source = 'mission-age';
+16418: const ageRecord = personalMissionAgeRecord(marker, missionId, now);
+18434: state.missionSpawn.enabled || state.allianceCredits || state.missionAge ||
+18445: layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
+18445: layer.__mcmsMissionAgeLabel || layer.__mcmsMissionAgeLayer ||
+18468: if (request.fullRefresh && state.missionAge) scheduleMissionAgeRefresh();
+18468: if (request.fullRefresh && state.missionAge) scheduleMissionAgeRefresh();
+18495: if (!state.missionAge) clearMissionAgeLabels();
+18495: if (!state.missionAge) clearMissionAgeLabels();
+20277: const missionAge = Number.isFinite(createdAt) && createdAt > 0 ? Math.max(0, now - createdAt) : null;
+20278: if (Number.isFinite(Number(minAgeMs)) && Number(minAgeMs) > 0 && (!Number.isFinite(missionAge) || missionAge < Number(minAgeMs))) return;
+20278: if (Number.isFinite(Number(minAgeMs)) && Number(minAgeMs) > 0 && (!Number.isFinite(missionAge) || missionAge < Number(minAgeMs))) return;
+20279: const severity = Number.isFinite(missionAge)
+20280: ? missionAgeSeverity(missionAge)
+20280: ? missionAgeSeverity(missionAge)
+20305: missionAge,
+20319: ageKnown: Number.isFinite(missionAge),
+20341: const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+20341: const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+20342: const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+20342: const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+20348: const selected = String(state.missionAgeWatch?.ageFilter || '8h');
+20350: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter: '8h' };
+20350: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter: '8h' };
+20359: const selected = String(state.missionAgeWatch?.sortMode || 'age');
+20361: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode: 'age' };
+20361: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode: 'age' };
+20366: const selected = String(state.missionAgeWatch?.ownershipFilter || 'personal');
+20371: const selected = String(state.missionAgeWatch?.categoryFilter || 'all');
+20376: const selected = String(state.missionAgeWatch?.primaryStatus || 'all');
+20381: const selected = String(state.missionAgeWatch?.valueMode || 'total');
+20386: const selected = String(state.missionAgeWatch?.distanceOrigin || 'live');
+20389: const locked = state.missionAgeWatch?.lockedOrigin;
+20400: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: 'live' };
+20400: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: 'live' };
+20406: const locked = state.missionAgeWatch?.lockedOrigin;
+20419: const locked = state.missionAgeWatch?.lockedOrigin;
+20449: state.missionAgeWatch = {
+20450: ...(state.missionAgeWatch || {}),
+20497: if (!Number.isFinite(entry?.missionAge)) return definition.minAgeMs === 0;
+20498: return entry.missionAge >= definition.minAgeMs;
+20515: if (dimension === 'onway') return !state.missionAgeWatch?.hasVehiclesOnWay || Math.max(0, Number(entry?.units?.onWay ?? entry?.units?.travelling) || 0) > 0;
+20516: if (dimension === 'myunits') return !state.missionAgeWatch?.onlyMyUnits || criticalEntryHasMyUnits(entry);
+20538: const aKnown = Number.isFinite(a.missionAge);
+20539: const bKnown = Number.isFinite(b.missionAge);
+20541: if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
+20541: if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
+20541: if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
+20541: if (aKnown && bKnown) primaryDifference = definition.sort === 'newest' ? a.missionAge - b.missionAge : b.missionAge - a.missionAge;
+20543: const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+20543: const aAge = Number.isFinite(a.missionAge) ? a.missionAge : Number.NEGATIVE_INFINITY;
+20544: const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+20544: const bAge = Number.isFinite(b.missionAge) ? b.missionAge : Number.NEGATIVE_INFINITY;
+20601: critical: criticalEntries.map(entry => [entry.missionId, entry.severity.rank, Math.floor(entry.missionAge / 60000), entry.units.total]),
+20626: <div class="mcms-ops-entry-main"><span class="mcms-ops-entry-title">${escapeHtml(entry.caption)}</span><span class="mcms-ops-entry-meta">${escapeHtml(entry.severity.label)} · ${escapeHtml(formatElapsedCompact(entry.missionAge))} old · ${entry.units.total} unit${entry.units.total === 1 ? '' : 's'}</span></div>
+20629: setInnerHtmlIfChanged(criticalPreview, html, `critical:${criticalEntries.map(entry => `${entry.missionId}:${Math.floor(entry.missionAge / 60000)}:${entry.units.total}`).join('|')}`);
+20923: return Boolean(state.missionAgeWatch?.expanded) && !mobileModeActive;
+20942: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !state.missionAgeWatch?.expanded };
+20942: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !state.missionAgeWatch?.expanded };
+20942: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), expanded: !state.missionAgeWatch?.expanded };
+21069: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: value };
+21069: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), distanceOrigin: value };
+21094: const next = !state.missionAgeWatch?.advancedFiltersOpen;
+21095: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
+21095: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), advancedFiltersOpen: next };
+21122: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter };
+21122: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ageFilter };
+21133: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode };
+21133: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), sortMode };
+21152: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ownershipFilter: ownership };
+21152: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ownershipFilter: ownership };
+21163: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), categoryFilter: category };
+21163: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), categoryFilter: category };
+21174: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), primaryStatus: selectedCriticalPrimaryStatus() === status ? 'all' : status };
+21174: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), primaryStatus: selectedCriticalPrimaryStatus() === status ? 'all' : status };
+21184: if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+21184: if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+21184: if (condition === 'onway') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), hasVehiclesOnWay: !state.missionAgeWatch?.hasVehiclesOnWay };
+21185: if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
+21185: if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
+21185: if (condition === 'my-units') state.missionAgeWatch = { ...(state.missionAgeWatch || {}), onlyMyUnits: !state.missionAgeWatch?.onlyMyUnits };
+21195: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), valueMode: mode };
+21195: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), valueMode: mode };
+21244: function missionAgeWatchHasNonDefaultState() {
+21245: const watch = state.missionAgeWatch || {};
+21258: const expanded = Boolean(state.missionAgeWatch?.expanded);
+21259: state.missionAgeWatch = {
+21260: ...(state.missionAgeWatch || {}),
+21284: const count = scoped.filter(entry => definition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= definition.minAgeMs).length;
+21284: const count = scoped.filter(entry => definition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= definition.minAgeMs).length;
+21311: const count = scoped.filter(entry => ageDefinition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= ageDefinition.minAgeMs).length;
+21311: const count = scoped.filter(entry => ageDefinition.minAgeMs === 0 ? true : Number.isFinite(entry.missionAge) && entry.missionAge >= ageDefinition.minAgeMs).length;
+21358: const onWay = Boolean(state.missionAgeWatch?.hasVehiclesOnWay);
+21359: const myUnits = Boolean(state.missionAgeWatch?.onlyMyUnits);
+21380: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ...definition };
+21380: state.missionAgeWatch = { ...(state.missionAgeWatch || {}), ...definition };
+21409: if (state.missionAgeWatch?.hasVehiclesOnWay) parts.push('Vehicles on way');
+21410: if (state.missionAgeWatch?.onlyMyUnits) parts.push('Only my units');
+21459: return `<span class="mcms-critical-filter-overview-copy"><small>ACTIVE FILTER</small><strong title="${escapeHtml(filterText)}">${escapeHtml(filterText)}</strong></span><span class="mcms-critical-filter-overview-count">${escapeHtml(showing)}</span>${missionAgeWatchHasNonDefaultState() ? '<button type="button" data-critical-clear-filters title="Reset all Mission Age Watch filters and sorting">Clear</button>' : ''}`;
+23386: const onWayActive = Boolean(state.missionAgeWatch?.hasVehiclesOnWay);
+23387: const myUnitsActive = Boolean(state.missionAgeWatch?.onlyMyUnits);
+23568: const ageText = Number.isFinite(entry.missionAge) ? formatElapsedCompact(entry.missionAge) : 'N/A';
+23568: const ageText = Number.isFinite(entry.missionAge) ? formatElapsedCompact(entry.missionAge) : 'N/A';
+23586: const baseSignature = renderedEntries.map(entry => `${entry.missionId}:${entry.ownership}:${entry.category}:${Math.floor((entry.missionAge || 0) / 60000)}:${entry.units.onScene}:${entry.units.onWay}:${entry.units.known}:${Number(entry.snapshot?.patientsCount) || 0}:${Number(entry.snapshot?.prisonersCount) || 0}:${criticalMissionValueForEntry(entry) ?? 'unknown'}:${entry.operationalState?.key}:${entry.operationalState?.detail}:${entry.area || ''}:${entry.postcode || ''}:${Number.isFinite(entry.distanceMi) ? Number(entry.distanceMi).toFixed(2) : ''}`).join('|');
+23587: const allSignature = allEntries.map(entry => `${entry.missionId}:${entry.ownership}:${entry.category}:${Math.floor((entry.missionAge || 0) / 60000)}:${entry.operationalState?.key}`).join('|');
+23588: const stateSignature = JSON.stringify(state.missionAgeWatch || {});
+23604: setCriticalAdvancedFiltersOpen(Boolean(state.missionAgeWatch?.advancedFiltersOpen), drawer);
+23625: scheduleMissionAgeRefresh(0);
+23981: const ageRecord = personalMissionAgeRecord(marker, missionId, now);
+24011: state.missionAge = criticalViewSnapshot.missionAge;
+24011: state.missionAge = criticalViewSnapshot.missionAge;
+24059: missionAge: state.missionAge,
+24059: missionAge: state.missionAge,
+24067: state.missionAge = true;
+24195: if (personal && state.missionAge) rowsAbove += 1;
+24392: const age = snapshot.createdAt ? formatMissionAge(snapshot.createdAt, now) : 'Unknown';
+24600: missionAge: state.missionAge,
+24600: missionAge: state.missionAge,
+24680: state.missionAge = Boolean(settings.missionAge);
+24680: state.missionAge = Boolean(settings.missionAge);
+29157: if (feature === 'missionAge') state.missionAge = !state.missionAge;
+29157: if (feature === 'missionAge') state.missionAge = !state.missionAge;
+29157: if (feature === 'missionAge') state.missionAge = !state.missionAge;
+29177: if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+29177: if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+29761: '6': 'missionAge',
+29906: ${makeFloatButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
+30074: ${makeToggleButton('missionAge', '6', 'Miss Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6')}
+30686: missionAge: state.missionAge,
+30686: missionAge: state.missionAge,
+30704: const missionAgeWatchButton = control.querySelector('[data-action="open-critical-drawer"]');
+30705: if (missionAgeWatchButton) {
+30707: missionAgeWatchButton.classList.toggle('mcms-on', open);
+30708: missionAgeWatchButton.setAttribute('aria-pressed', String(open));
+30709: missionAgeWatchButton.dataset.mcmsState = open ? 'on' : 'off';
+30782: missionAge: state.missionAge,
+30782: missionAge: state.missionAge,
+30918: const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+30918: const toolkitSelector = '.mcms-alliance-credit-icon, .mcms-alliance-credit-badge, .mcms-mission-age-icon, .mcms-mission-age-badge, .mcms-unit-commitment-icon, .mcms-unit-commitment-badge, .mcms-transport-watcher-icon, .mcms-transport-watcher-badge, .mcms-resource-gap-icon, .mcms-resource-gap-badge, .mcms-stuck-mission-icon, .mcms-stuck-mission-badge, .mcms-mission-spawn-label-icon, .mcms-mission-spawn-label';
+30935: if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
+30935: if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
+31198: if (state.missionAge) scheduleMissionAgeRefresh(340);
+31198: if (state.missionAge) scheduleMissionAgeRefresh(340);
+31574: if (state.missionAge) scheduleMissionAgeRefresh();
+31574: if (state.missionAge) scheduleMissionAgeRefresh();
+31800: clearMissionAgeLabels();
+
+SELECTED FUNCTIONS
+
+==============================================================================================================
+clearMissionAgeLabels lines 15991-15998
+
+    function clearMissionAgeLabels() {
+        if (missionAgeGroup) {
+        try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+        }
+        missionAgeLabels.clear();
+        missionAgeGroup = null;
+    }
+
+==============================================================================================================
+updateMissionAgeLabels lines 16010-16120
+
+    function updateMissionAgeLabels() {
+        if (state.economyMode && economyMapMoving) return;
+        if (!state.missionAge || !state.visibility.myMissions) {
+        clearMissionAgeLabels();
+        return;
+        }
+
+        scanInlineMissionMarkerData();
+        installMissionMarkerAddHook();
+
+        const map = findLeafletMapInstance(false);
+        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const floatPane = ensureMissionFloatPane(map);
+        if (!floatPane) {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
+
+        try {
+        if (!missionAgeGroup || missionAgeGroup._map !== map) {
+            clearMissionAgeLabels();
+            missionAgeGroup = pageWindow.L.layerGroup();
+            missionAgeGroup.__mcmsMissionAgeLayer = true;
+            missionAgeGroup.addTo(map);
+        }
+
+        const activeMissionIds = new Set();
+        const now = Date.now();
+
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null || !missionKnownPersonal(marker, missionId)) continue;
+
+            const existingLabel = missionAgeLabels.get(missionId);
+            let latLng;
+            try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+
+            try {
+                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!isOnMap) {
+                    if (existingLabel) activeMissionIds.add(missionId);
+                    continue;
+                }
+            } catch (err) {
+                if (existingLabel) activeMissionIds.add(missionId);
+                continue;
+            }
+
+            const createdAt = getMissionCreatedAt(marker, missionId);
+            if (createdAt === null) {
+                if (existingLabel && (!criticalViewActive || Number(existingLabel.__mcmsMissionAgeSeverityRank) >= 1)) activeMissionIds.add(missionId);
+                continue;
+            }
+            if (criticalViewActive && (now - createdAt) < CRITICAL_VIEW_MIN_AGE_MS) continue;
+
+            const ageMs = Math.max(0, now - createdAt);
+            const ageText = formatMissionAge(createdAt, now);
+            const severity = missionAgeSeverity(ageMs);
+            activeMissionIds.add(missionId);
+
+            let label = existingLabel;
+            const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
+            if (!label || !labelIsAttached) {
+                if (label) {
+                    try { missionAgeGroup.removeLayer(label); } catch (err) {}
+                }
+                label = pageWindow.L.marker(latLng, {
+                    interactive: false,
+                    keyboard: false,
+                    bubblingMouseEvents: false,
+                    pane: floatPane,
+                    zIndexOffset: 0,
+                    icon: makeMissionAgeIcon(ageText, severity)
+                });
+                label.__mcmsMissionAgeLabel = true;
+                label.__mcmsMissionAgeText = ageText;
+                label.__mcmsMissionAgeSeverityRank = severity.rank;
+                label.__mcmsMissionAgeCreatedAt = createdAt;
+                label.addTo(missionAgeGroup);
+                missionAgeLabels.set(missionId, label);
+                continue;
+            }
+
+            try { label.setLatLng(latLng); } catch (err) {}
+            if (label.__mcmsMissionAgeText !== ageText || label.__mcmsMissionAgeSeverityRank !== severity.rank || label.__mcmsMissionAgeCreatedAt !== createdAt) {
+                label.__mcmsMissionAgeText = ageText;
+                label.__mcmsMissionAgeSeverityRank = severity.rank;
+                label.__mcmsMissionAgeCreatedAt = createdAt;
+                try { label.setIcon(makeMissionAgeIcon(ageText, severity)); } catch (err) {}
+            }
+        }
+
+        for (const [missionId, label] of missionAgeLabels.entries()) {
+            if (activeMissionIds.has(missionId)) continue;
+            missionAgeLabels.delete(missionId);
+            try { missionAgeGroup.removeLayer(label); } catch (err) {}
+        }
+        if (!document.hidden) scheduleMissionAgeRefresh(state.economyMode ? Math.max(120000, MISSION_AGE_LABEL_REFRESH_MS) : MISSION_AGE_LABEL_REFRESH_MS);
+        } catch (err) {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        }
+    }
+
+==============================================================================================================
+scheduleMissionAgeRefresh lines 16121-16125
+
+    function scheduleMissionAgeRefresh(delay = 220) {
+        runtimeClearTimeout(missionAgeTimer);
+        missionAgeTimer = runtimeSetTimeout(updateMissionAgeLabels, state.economyMode ? Math.max(700, delay) : delay);
+    }
+
+==============================================================================================================
+missionAgeSeverity lines 16126-16133
+
+    function missionAgeSeverity(ageMs) {
+        const age = Math.max(0, Number(ageMs) || 0);
+        if (age >= 24 * 60 * 60 * 1000) return { rank: 3, label: '24H+ CRITICAL', className: 'mcms-age-critical' };
+        if (age >= 16 * 60 * 60 * 1000) return { rank: 2, label: '16H+ HIGH', className: 'mcms-age-high' };
+        if (age >= CRITICAL_VIEW_MIN_AGE_MS) return { rank: 1, label: '8H+ AGED', className: 'mcms-age-aged' };
+        return { rank: 0, label: 'RECENT', className: 'mcms-age-recent' };
+    }
+
+==============================================================================================================
+scheduleEnabledMapRefreshes lines 18480-18481
+
+    function scheduleEnabledMapRefreshes({ includeSnapshots = true, positionPanel = false, refreshOperational = true, mapOnly = false }
+
+==============================================================================================================
+refreshMissionSnapshots lines 19990-20053
+
+    function refreshMissionSnapshots() {
+        runtimeClearTimeout(missionSnapshotTimer);
+        missionSnapshotTimer = null;
+        const now = Date.now();
+        const current = new Map();
+        const previousSnapshots = liveMissionSnapshots;
+        const missionMarkers = getMissionMarkerIndex().markers;
+        for (const marker of missionMarkers) {
+        const snapshot = missionSnapshotFromMarker(marker, now);
+        if (!snapshot) continue;
+        updateMissionProgressState(snapshot, now);
+        current.set(snapshot.missionId, snapshot);
+        missionLifecycleLastSeen.set(snapshot.missionId, now);
+        const newlySeen = !knownMissionIds.has(snapshot.missionId);
+        knownMissionIds.add(snapshot.missionId);
+        if (newlySeen && missionSpawnArmed && state.missionSpawn.enabled) runtimeSetTimeout(() => animateMissionSpawn(snapshot.missionId), 60);
+        }
+
+        if (missionSnapshotReady) {
+        for (const [missionId, previous] of previousSnapshots.entries()) {
+            if (current.has(missionId)) continue;
+            if (now - Number(previous.lastSeen || now) > 15000) continue;
+            if (!recentCompletedMissions.some(item => item.missionId === missionId && now - item.removedAt < PAYOUT_MATCH_WINDOW_MS)) {
+                recentCompletedMissions.unshift({ ...previous, removedAt: now, matched: false });
+            }
+        }
+        }
+
+        liveMissionSnapshots = current;
+        missionSnapshotReady = missionSnapshotReady || current.size > 0;
+        if (document.getElementById(SCRIPT.criticalDrawerId)?.classList?.contains('mcms-open')) {
+        criticalDrawerLastDataSyncAt = Math.max(criticalDrawerLastDataSyncAt, now, missionProgressPageLastSuccessAt, vehicleApiLastFetch, vehicleStatusLastUpdate);
+        }
+
+        for (let index = recentCompletedMissions.length - 1; index >= 0; index -= 1) {
+        const item = recentCompletedMissions[index];
+        if (current.has(item.missionId) || now - item.removedAt > PAYOUT_MATCH_WINDOW_MS) recentCompletedMissions.splice(index, 1);
+        }
+        if (recentCompletedMissions.length > 30) recentCompletedMissions.length = 30;
+
+        let progressEntriesRemoved = false;
+        for (const [missionId, progress] of missionProgressState.entries()) {
+        if (current.has(missionId)) continue;
+        if (now - Number(progress.lastSeen || now) > MISSION_CACHE_RETENTION_MS) {
+            missionProgressState.delete(missionId);
+            progressEntriesRemoved = true;
+        }
+        }
+
+        for (const [missionId, lastSeen] of missionLifecycleLastSeen.entries()) {
+        if (current.has(missionId) || now - lastSeen <= MISSION_CACHE_RETENTION_MS) continue;
+        missionLifecycleLastSeen.delete(missionId);
+        deleteMissionOverlayRecord(missionId);
+        knownMissionIds.delete(missionId);
+        resourceGapLabels.delete(missionId);
+        stuckMissionLabels.delete(missionId);
+        }
+        if (progressEntriesRemoved) saveMissionProgressState();
+        if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(80);
+        if (state.transportWatcher) scheduleTransportWatcherRefresh(100);
+        refreshVisibleMissionInspector();
+        scheduleMajorIncidentFeedRender(0);
+    }
+
+==============================================================================================================
+missionAgeWatchHasNonDefaultState lines 21243-21255
+
+    function missionAgeWatchHasNonDefaultState() {
+        const watch = state.missionAgeWatch || {};
+        return selectedCriticalAgeFilter() !== '8h' ||
+        selectedCriticalSortMode() !== 'age' ||
+        selectedCriticalOwnershipFilter() !== 'personal' ||
+        selectedCriticalCategoryFilter() !== 'all' ||
+        selectedCriticalPrimaryStatus() !== 'all' ||
+        Boolean(watch.hasVehiclesOnWay) ||
+        Boolean(watch.onlyMyUnits) ||
+        selectedCriticalValueMode() !== 'total' ||
+        selectedCriticalDistanceOrigin() !== 'live';
+    }
+
+==============================================================================================================
+toggleFeature lines 29143-29211
+    function toggleFeature(feature) {
+        handleMapVisibilityToggle(feature);
+        handleMissionWindowToggle(feature);
+        handlePayoutAudioToggle(feature);
+        handleMissionMonitoringToggle(feature);
+        handleInterfaceShellToggle(feature);
+        if (feature === 'autoLoadAllVehicles') {
+            state.autoLoadAllVehicles = !state.autoLoadAllVehicles;
+            if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
+            else stopAutoLoadAllVehicles();
+        }
+        if (feature === 'allianceBuildingsMapBlocker') state.allianceBuildingsMap = state.allianceBuildingsMap === false;
+        if (feature === 'majorIncidentFeed') state.majorIncidentFeed.enabled = !state.majorIncidentFeed.enabled;
+        if (feature === 'allianceCredits') state.allianceCredits = !state.allianceCredits;
+        if (feature === 'missionAge') state.missionAge = !state.missionAge;
+        if (feature === 'unitCommitment') state.unitCommitment = !state.unitCommitment;
+        if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
+        if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
+        if (feature === 'criticalView') { toggleCriticalView(); return; }
+        if (feature === 'autoNight') {
+            state.autoNight.enabled = !state.autoNight.enabled;
+            state.autoNight.lastBucket = '';
+        }
+        if (state.cleanMode) closePanel();
+        if (!criticalViewActive) saveState();
+        applyRootAttributes();
+        updateUI();
+        applyMapVisibilityToggleEffects(feature);
+        reconcileFeatureRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
+        applyMissionWindowToggleEffects(feature);
+        applyPayoutAudioToggleEffects(feature);
+        applyMissionMonitoringToggleEffects(feature);
+        if (feature === 'autoLoadAllVehicles') showToast(state.autoLoadAllVehicles ? 'Auto-load all vehicles on' : 'Auto-load all vehicles off');
+        if (feature === 'allianceCredits') showToast(state.allianceCredits ? 'Alliance credits on' : 'Alliance credits off');
+        if (feature === 'missionAge') showToast(state.missionAge ? 'Personal mission age on' : 'Personal mission age off');
+        if (feature === 'unitCommitment') {
+            if (state.unitCommitment) {
+                showToast('Loading unit assignments…');
+                refreshPersonalVehicleData(true).then(ok => {
+                    scheduleUnitCommitmentRefresh(0);
+                    showToast(ok ? 'Unit Count on' : 'Unit Count on · live vehicle data unavailable');
+                });
+            } else showToast('Unit Count off');
+        }
+        if (feature === 'transportWatcher') showToast(state.transportWatcher ? 'Transport Watcher on' : 'Transport Watcher off');
+        if (feature === 'majorIncidentFeed') {
+            if (state.majorIncidentFeed.enabled) {
+                refreshMissionSnapshots();
+                scheduleMajorIncidentFeedRender(0);
+            } else removeMajorIncidentFeed();
+            showToast(state.majorIncidentFeed.enabled ? 'Major Incident Feed on' : 'Major Incident Feed off');
+        }
+        if (feature === 'allianceBuildingsMapBlocker') {
+            if (state.allianceBuildingsMap === false) {
+                installAllianceBuildingsEarlyStyle();
+                installAllianceBuildingsLeafletAssignmentGuard();
+                installAllianceBuildingsContextWatcherEarly();
+            } else {
+                clearAllianceBuildingsEarlyContext();
+            }
+            showToast(state.allianceBuildingsMap === false ? 'Alliance Map Blocker ON · reloading' : 'Alliance Map Blocker OFF · reloading');
+            if (isAllianceBuildingsContext()) runtimeSetTimeout(() => location.reload(), 180);
+        }
+        if (feature === 'resourceGap') {
+            if (state.resourceGap.enabled) refreshPersonalVehicleData(false).then(() => { scheduleResourceGapRefresh(0); refreshVisibleMissionInspector(); });
+            showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
+        }
+        if (feature === 'autoNight') runAutoNight(true);
+    }
+
+==============================================================================================================
+handleKeyboard lines 29734-29776
+
+    function handleKeyboard(event) {
+        if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
+        if (event.key === 'Escape' && closeCriticalViewControls()) { event.preventDefault(); return; }
+        if (event.key === 'Escape') {
+            const hadOpenUi = Boolean(
+                document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open') ||
+                document.getElementById(SCRIPT.criticalDrawerId)?.classList.contains('mcms-open') ||
+                document.getElementById(SCRIPT.vehicleStatusId)?.classList.contains('mcms-open')
+            );
+            if (state.cleanMode && state.shortcuts) toggleFeature('clean');
+            closePanel({ restoreFocus: hadOpenUi });
+            closeCriticalDrawer();
+            closeVehicleCodeStatus();
+            if (hadOpenUi) event.preventDefault();
+            return;
+        }
+        if (!state.shortcuts || isTypingTarget(event.target)) return;
+        const key = String(event.key || '').toLowerCase();
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'm') { event.preventDefault(); togglePanel(); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && /^[1-9]$/.test(event.key)) {
+            const visibilityShortcut = {
+                '1': 'myMissions',
+                '2': 'allianceMissions',
+                '3': 'vehicles',
+                '4': 'buildings',
+                '5': 'allianceCredits',
+                '6': 'missionAge',
+                '7': 'transportWatcher',
+                '8': 'unitCommitment',
+                '9': 'criticalView'
+            };
+            event.preventDefault();
+            toggleFeature(visibilityShortcut[event.key]);
+            return;
+        }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'v') { event.preventDefault(); toggleVehicleCodeStatus(); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'w') { event.preventDefault(); toggleCriticalDrawer(); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'c') { event.preventDefault(); toggleFeature('clean'); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'f') { event.preventDefault(); toggleFeature('markerFocus'); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'p') { event.preventDefault(); toggleFeature('missionPulse'); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'r') { event.preventDefault(); toggleFeature('roadPriority'); }
+    }
+
+==============================================================================================================
+mutationAddsLeafletMarkerIcon lines 30930-30940
+
+    function mutationAddsLeafletMarkerIcon(mutation) {
+        if (!mutation || mutation.type !== 'childList' || !mutation.addedNodes?.length) return false;
+        for (const node of mutation.addedNodes) {
+            if (!node || node.nodeType !== 1) continue;
+            if (node.matches?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon') || node.querySelector?.('.mcms-alliance-credit-icon, .mcms-mission-age-icon, .mcms-unit-commitment-icon, .mcms-transport-watcher-icon, .mcms-resource-gap-icon, .mcms-stuck-mission-icon, .mcms-mission-spawn-label-icon')) continue;
+            if (node.matches?.('.leaflet-marker-icon')) return true;
+            if (node.querySelector?.('.leaflet-marker-icon')) return true;
+        }
+        return false;
+    }
+
+==============================================================================================================
+mutationAffectsMissionData lines 30963-30966
+
+    function mutationAffectsMissionData(mutation) {
+        return mutationTouchesSelector(mutation, '.leaflet-marker-pane, .leaflet-marker-icon, [id^="mission_"], #missions, #mission_list, .missionSideBarEntry, .mission-side-bar-entry, [data-mission-id]');
+    }
+
+==============================================================================================================
+CONTEXT "case 'missionAge'"
+[missing]
+
+==============================================================================================================
+CONTEXT "case '6'"
+[missing]
+
+==============================================================================================================
+CONTEXT "key === '6'"
+[missing]
+
+==============================================================================================================
+CONTEXT "event.key === '6'"
+[missing]
+
+==============================================================================================================
+CONTEXT 'scheduleMissionAgeRefresh'
+
+        return panelTimestamp;
+        }
+
+        return null;
+    }
+
+    function formatMissionAge(createdAt, now = Date.now()) {
+        const ageMs = Math.max(0, now - createdAt);
+        const totalHours = Math.floor(ageMs / (60 * 60 * 1000));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+        if (days > 0) return `${days}D ${hours}H`;
+        return totalHours > 0 ? `${totalHours}H` : '<1H';
+    }
+
+    function clearMissionAgeLabels() {
+        if (missionAgeGroup) {
+        try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+        }
+        missionAgeLabels.clear();
+        missionAgeGroup = null;
+    }
+
+    function makeMissionAgeIcon(ageText, severity = missionAgeSeverity(0)) {
+        const severityClass = severity?.className || 'mcms-age-recent';
+        const severityLabel = severity?.label || 'RECENT';
+        return pageWindow.L.divIcon({
+        className: 'mcms-mission-age-icon',
+        html: `<span class="mcms-mission-age-badge ${severityClass}" aria-label="${escapeHtml(`${ageText} · ${severityLabel}`)}">${escapeHtml(ageText)}</span>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 18]
+        });
+    }
+
+    function updateMissionAgeLabels() {
+        if (state.economyMode && economyMapMoving) return;
+        if (!state.missionAge || !state.visibility.myMissions) {
+        clearMissionAgeLabels();
+        return;
+        }
+
+        scanInlineMissionMarkerData();
+        installMissionMarkerAddHook();
+
+        const map = findLeafletMapInstance(false);
+        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const floatPane = ensureMissionFloatPane(map);
+        if (!floatPane) {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
+
+        try {
+        if (!missionAgeGroup || missionAgeGroup._map !== map) {
+            clearMissionAgeLabels();
+            missionAgeGroup = pageWindow.L.layerGroup();
+            missionAgeGroup.__mcmsMissionAgeLayer = true;
+            missionAgeGroup.addTo(map);
+        }
+
+        const activeMissionIds = new Set();
+        const now = Date.now();
+
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null || !missionKnownPersonal(marker, missionId)) continue;
+
+            const existingLabel = missionAgeLabels.get(missionId);
+            let latLng;
+            try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+
+            try {
+                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!isOnMap) {
+                    if (existingLabel) activeMissionIds.add(missionId);
+                    continue;
+                }
+            } catch (err) {
+                if (existingLabel) activeMissionIds.add(missionId);
+                continue;
+            }
+
+            const createdAt = getMissionCreatedAt(marker, missionId);
+            if (createdAt === null) {
+                if (existingLabel && (!criticalViewActive || Number(existingLabel.__mcmsMissionAgeSeverityRank) >= 1)) activeMissionIds.add(missionId);
+                continue;
+            }
+            if (criticalViewActive && (now - createdAt) < CRITICAL_VIEW_MIN_AGE_MS) continue;
+
+            const ageMs = Math.max(0, now - createdAt);
+            const ageText = formatMissionAge(createdAt, now);
+            const severity = missionAgeSeverity(ageMs);
+            activeMissionIds.add(missionId);
+
+            let label = existingLabel;
+            const labelIsAttached = Boolean(label && typeof missionAgeGroup.hasLayer === 'function' && missionAgeGroup.hasLayer(label));
+            if (!label || !labelIsAttached) {
+                if (label) {
+                    try { missionAgeGroup.removeLayer(label); } catch (err) {}
+                }
+                label = pageWindow.L.marker(latLng, {
+                    interactive: false,
+                    keyboard: false,
+                    bubblingMouseEvents: false,
+                    pane: floatPane,
+                    zIndexOffset: 0,
+                    icon: makeMissionAgeIcon(ageText, severity)
+
+==============================================================================================================
+CONTEXT 'clearMissionAgeLabels'
+
+    function timestampFromMissionPanel(missionId) {
+        const panel = getMissionPanelElement(missionId);
+        if (!panel) return null;
+
+        const attributes = [
+        'created_at', 'created-at', 'data-created-at', 'data-created_at',
+        'mission-created-at', 'data-mission-created-at'
+        ];
+        const selectors = attributes.map(attribute => `[${attribute}]`).join(',');
+        const nodes = [panel, ...panel.querySelectorAll(selectors)];
+
+        for (const node of nodes) {
+        for (const attribute of attributes) {
+            const value = parseMissionTimestamp(node.getAttribute?.(attribute));
+            if (value !== null) return value;
+        }
+        }
+        return null;
+    }
+
+    function getMissionCreatedAt(marker, missionId) {
+        const cached = missionOverlayData.get(missionId);
+        if (cached && Number.isFinite(cached.createdAt)) return cached.createdAt;
+
+        const markerTimestamp = exactMissionTimestampFromObject(marker);
+        if (markerTimestamp !== null) {
+        setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: markerTimestamp });
+        return markerTimestamp;
+        }
+
+        const panelTimestamp = timestampFromMissionPanel(missionId);
+        if (panelTimestamp !== null) {
+        setMissionOverlayRecord(missionId, { ...(cached || {}), createdAt: panelTimestamp });
+        return panelTimestamp;
+        }
+
+        return null;
+    }
+
+    function formatMissionAge(createdAt, now = Date.now()) {
+        const ageMs = Math.max(0, now - createdAt);
+        const totalHours = Math.floor(ageMs / (60 * 60 * 1000));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+        if (days > 0) return `${days}D ${hours}H`;
+        return totalHours > 0 ? `${totalHours}H` : '<1H';
+    }
+
+    function clearMissionAgeLabels() {
+        if (missionAgeGroup) {
+        try { missionAgeGroup.clearLayers(); missionAgeGroup.remove(); } catch (err) {}
+        }
+        missionAgeLabels.clear();
+        missionAgeGroup = null;
+    }
+
+    function makeMissionAgeIcon(ageText, severity = missionAgeSeverity(0)) {
+        const severityClass = severity?.className || 'mcms-age-recent';
+        const severityLabel = severity?.label || 'RECENT';
+        return pageWindow.L.divIcon({
+        className: 'mcms-mission-age-icon',
+        html: `<span class="mcms-mission-age-badge ${severityClass}" aria-label="${escapeHtml(`${ageText} · ${severityLabel}`)}">${escapeHtml(ageText)}</span>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 18]
+        });
+    }
+
+    function updateMissionAgeLabels() {
+        if (state.economyMode && economyMapMoving) return;
+        if (!state.missionAge || !state.visibility.myMissions) {
+        clearMissionAgeLabels();
+        return;
+        }
+
+        scanInlineMissionMarkerData();
+        installMissionMarkerAddHook();
+
+        const map = findLeafletMapInstance(false);
+        if (!map || !pageWindow.L || typeof pageWindow.L.layerGroup !== 'function' || typeof pageWindow.L.marker !== 'function' || typeof pageWindow.L.divIcon !== 'function') {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const floatPane = ensureMissionFloatPane(map);
+        if (!floatPane) {
+        clearMissionAgeLabels();
+        if (!document.hidden) scheduleMissionAgeRefresh(MISSION_AGE_LABEL_RETRY_MS);
+        return;
+        }
+        const economyBounds = state.economyMode ? economyPaddedBounds(map, 0.08) : null;
+
+        try {
+        if (!missionAgeGroup || missionAgeGroup._map !== map) {
+            clearMissionAgeLabels();
+            missionAgeGroup = pageWindow.L.layerGroup();
+            missionAgeGroup.__mcmsMissionAgeLayer = true;
+            missionAgeGroup.addTo(map);
+        }
+
+        const activeMissionIds = new Set();
+        const now = Date.now();
+
+        for (const marker of getMissionMarkerIndex().markers) {
+            const missionId = normaliseMissionId(marker?.mission_id ?? marker?.missionId ?? marker?.options?.mission_id ?? marker?.options?.missionId);
+            if (missionId === null || !missionKnownPersonal(marker, missionId)) continue;
+
+            const existingLabel = missionAgeLabels.get(missionId);
+            let latLng;
+            try { latLng = marker.getLatLng?.(); } catch (err) { latLng = null; }
+            if (!latLng || (economyBounds && !economyBounds.contains?.(latLng))) continue;
+
+            try {
+                const isOnMap = typeof map.hasLayer === 'function' ? map.hasLayer(marker) : Boolean(marker._map);
+                if (!isOnMap) {
+                    if (existingLabel) activeMissionIds.add(missionId);
+                    continue;
+                }
+            } catch (err) {
+                if (existingLabel) activeMissionIds.add(missionId);
+
+==============================================================================================================
+CONTEXT 'missionAgeGroup'
+
+    let personalBuildingIdsCache = { revision: -1, userId: null, createdAt: 0, values: new Set() };
+    let missionIconMarkerCache = new WeakMap();
+    let panelPositionTimer = null;
+    let coverageRenderSignature = '';
+    let heatmapRenderSignature = '';
+    let heatmapSourceCache = { key: '', createdAt: 0, points: [] };
+    let majorIncidentFeedRenderSignature = '';
+    let majorIncidentFeedRenderTimer = null;
+    let majorIncidentFeedLayoutFrame = null;
+    let majorIncidentFeedLayoutTimer = null;
+    let majorIncidentFeedMotionTimer = null;
+    let majorIncidentFeedMotionRevision = 0;
+    let majorIncidentFeedResizeObserver = null;
+    let majorIncidentFeedObservedElement = null;
+    let missionInspectorLastPosition = '';
+    let missionInspectorTooltipCache = { marker: null, createdAt: 0, rect: null };
+    const missionLifecycleLastSeen = new Map();
+    let coverageGroup = null;
+    let mutationTimer = null;
+    let classifyTimer = null;
+    let markerStateSyncTimer = null;
+    let markerStateTrailingTimer = null;
+    let coverageTimer = null;
+    let fitTimer = null;
+    let dragState = null;
+    let suppressNextOutsideClick = false;
+    const hiddenPersonalBuildingLayers = new Set();
+    const personalBuildingLayerOpacity = new Map();
+    let enforcingPersonalBuildingVisibility = false;
+    const economyHiddenVehicleLayers = new Set();
+    const economyHiddenBuildingLayers = new Set();
+    const economyLeafletOptionSnapshots = new Map();
+    let economyLayerSyncTimer = null;
+    let economyLayerEnforcement = false;
+    let economyMapMoving = false;
+    let economyDeferredMapRefresh = false;
+    let economyDeferredDomMutation = false;
+    let economyCanvasRenderer = null;
+    let heatmapGroup = null;
+    let heatmapTimer = null;
+    let allianceCreditGroup = null;
+    let allianceCreditTimer = null;
+    let missionAgeGroup = null;
+    let missionAgeTimer = null;
+    let unitCommitmentGroup = null;
+    let unitCommitmentTimer = null;
+    let transportWatcherGroup = null;
+    let transportWatcherTimer = null;
+    let resourceGapGroup = null;
+    let resourceGapTimer = null;
+    let missionSnapshotTimer = null;
+    let bootStarted = false;
+    let bootStartedAt = 0;
+    let operationalStartupStarted = false;
+    let operationalStartupComplete = false;
+    let startupDataPassActive = false;
+    let mainMutationObserver = null;
+    let mainMutationObserverFallbackActive = false;
+    let settingsPanelActivated = false;
+    let opsRefreshTimer = null;
+    let payoutFlashTimer = null;
+    let toastFlashTimer = null;
+    let payoutFlashFallbackInterval = null;
+    let payoutFlashAnimations = [];
+    let payoutAmountAnimationFrame = null;
+    let payoutAudioContext = null;
+    let payoutMediaAudio = null;
+    let payoutMediaTemplate = '';
+    let payoutMediaGeneration = 0;
+    let payoutEventCounter = 0;
+    let creditsValueObserver = null;
+    let observedCreditsElement = null;
+    let lastObservedCredits = null;
+    let inlineMissionDataScanned = false;
+    let missionProgressPageFetchPromise = null;
+    let missionProgressPageLastFetch = 0;
+    let missionProgressPageLastSuccessAt = 0;
+    let missionSnapshotReady = false;
+    let criticalViewActive = false;
+    let criticalViewLoading = false;
+    let criticalDrawerRefreshing = false;
+    let criticalDrawerLastDataSyncAt = 0;
+    let criticalDrawerLastViewUpdatedAt = 0;
+    let criticalDrawerDockTimer = null;
+    let criticalDrawerRenderLimit = CRITICAL_RENDER_BATCH_SIZE;
+    let criticalDrawerVirtualScrollTimer = null;
+    const criticalMissionStableCache = new Map();
+    let criticalViewSnapshot = null;
+    let vehicleApiFetchPromise = null;
+    let vehicleApiLastFetch = 0;
+    let vehicleApiReady = false;
+    let vehicleApiLastError = 0;
+    let vehicleStatusLastUpdate = 0;
+    let missionCommitmentIndexDirty = true;
+    let operationalPanelsLastRender = 0;
+    let missionInspectorMarker = null;
+    let missionInspectorPointer = null;
+    let missionLockOnMarker = null;
+    let missionLockOnTravelOverlay = null;
+    let missionLockOnTargetIcon = null;
+    let missionLockOnTimer = null;
+    let missionLockOnMoveEndMap = null;
+    let missionLockOnMoveEndHandler = null;
+    let missionLockOnToken = 0;
+    let missionInspectorRefreshTimer = null;
+    let missionInspectorMoveFrame = null;
+    let missionProgressSaveTimer = null;
+    let stuckMissionGroup = null;
+    let stuckMissionTimer = null;
+    let missionSpawnArmed = false;
+    let missionSpawnPrimeTimer = null;
+    const missionOverlayData = new Map();
+    const missionOverlayVersions = new Map();
+    const missionSnapshotCache = new Map();
+    const missionPanelCache = new Map();
+    let liveMissionSnapshots = new Map();
+    const recentCompletedMissions = [];
+    const missionProgressState = loadMissionProgressState();
+    const knownMissionIds = new Set();

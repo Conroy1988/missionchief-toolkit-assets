@@ -22777,7 +22777,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             doc.querySelector('#vehicle_show_table_body_all'),
             doc.querySelector('#occupied'),
             ...operationalFeatureObservationRoots(doc)
-        ].filter(root => root?.isConnected !== false)));
+        ].filter(root => root && root.isConnected !== false)));
         if (!roots.length) return;
         const sourceFingerprint = requirementSource?.fingerprint || '';
         if (context.boundRequirementRoot === requirementSource?.anchor

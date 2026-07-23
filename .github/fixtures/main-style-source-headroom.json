@@ -15,7 +15,7 @@
   "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
   "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "1d07bd3dc896a880330aaa3f8db63e36190b60bdab18cbeae56a9fcad6237059",
+  "candidateSourceSha256": "ecd7d6c2f6ac96248afe17aee142ed58dcaf4fef41382b3543ae94b298ab0f3d",
   "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while Operational Requirements selects and observes the authoritative active mission requirement source.",
   "approvedNonStyleSourceLines": 1596,
   "approvedNonStyleChanges": [

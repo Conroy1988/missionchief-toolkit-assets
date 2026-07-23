@@ -56,5 +56,6 @@ const toolkit=new Node({id:'missing_text',visible:true,mission:active,toolkit:tr
 selected=sandbox.resolveSource(doc({native:[toolkit,populated],missionRoot:active}));if(selected.root!==populated)throw new Error('Toolkit-owned markup contaminated source discovery');
 const delayed=doc({native:[empty],missionRoot:active});selected=sandbox.resolveSource(delayed);if(selected.root!==empty||selected.raw||selected.groupedCount)throw new Error('empty placeholder was not retained as safe pending');delayed.native.push(populated);if(sandbox.resolveSource(delayed).root!==populated)throw new Error('later replacement source was not selected');
 if(!source.includes('context.boundRequirementSource === sourceFingerprint'))throw new Error('observer source-rebind contract is missing');
+if(!source.includes('filter(root => root && root.isConnected !== false)'))throw new Error('observer root filter admits null candidates');
 if(!source.includes("element.querySelector?.('b')?.textContent"))throw new Error('native requirement heading removal is missing');
 console.log('Issue #458 authoritative requirement-source runtime passed.');

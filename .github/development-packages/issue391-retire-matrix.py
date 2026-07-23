@@ -30,6 +30,7 @@ DIAGNOSTICS = (
     ROOT / ".github" / "diagnostics" / "issue391-matrix-retirement-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-matrix-full-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-matrix-hook-map.txt",
+    ROOT / ".github" / "diagnostics" / "issue391-retirement-preflight-failure.txt",
 )
 
 
@@ -108,7 +109,14 @@ shared_names = (
     "MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE",
     "MISSION_REQUIREMENTS_TRACTIVE_TYPES",
 )
-shared = [extract_declaration(source, name, start, end) for name in shared_names]
+shared = []
+for name in shared_names:
+    token = f"    const {name} ="
+    declaration_start = source.find(token)
+    if declaration_start < 0 or source.count(token) != 1:
+        raise RuntimeError(f"shared capability declaration count changed: {name}")
+    if start <= declaration_start < end:
+        shared.append(extract_declaration(source, name, start, end))
 replacement = (
     "    // Issue #378 retained UK operational capability catalogue.\n"
     + "".join(shared)

@@ -37,6 +37,7 @@ ISSUE378_OPERATIONAL_FEATURE_RUNTIME = ROOT / ".github" / "scripts" / "test_issu
 ISSUE447_MENU_BOOT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue447_menu_boot_fail_open.py"
 ISSUE450_CORE_BOOTSTRAP_CONTRACT = ROOT / ".github" / "scripts" / "test_issue450_core_launcher_bootstrap.py"
 ISSUE454_PREBOOT_STATE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue454_preboot_state_order.py"
+ISSUE456_REQUIREMENTS_TRUTH_RUNTIME = ROOT / ".github" / "scripts" / "test_issue456_requirements_truth_runtime.js"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -163,7 +164,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -300,6 +301,13 @@ def run_integrity_gate() -> None:
         )
         if issue454_preboot_state.returncode != 0:
             fail("Issue #454 preboot state-order contract failed")
+
+        issue456_requirements_truth = subprocess.run(
+            ["node", str(ISSUE456_REQUIREMENTS_TRUTH_RUNTIME)],
+            cwd=ROOT,
+        )
+        if issue456_requirements_truth.returncode != 0:
+            fail("Issue #456 requirements truth-state runtime failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

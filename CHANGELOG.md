@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [Unreleased]
 
+## [5.0.4] - 2026-07-23
+
+### Critical requirements truth-state recovery
+- Stopped empty, delayed or failed MissionChief requirement parsing from being presented as confirmed green coverage.
+- Added explicit waiting and unresolved states; green coverage now requires positively parsed requirement rows that are all covered.
+- Enforced one Operational Requirements panel per document, reusing the authoritative mounted surface and removing stale duplicates.
+- Added behavioural regression coverage for pending input, unparsed input, covered rows, open rows, unresolved text and repeated duplicate mounts.
+
+
 ## [5.0.3] - 2026-07-23
 
 ### Critical preboot recovery

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.3
+// @version      5.0.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.3',
+        version: '5.0.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22477,16 +22477,32 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         return result;
     }
 
+    function operationalRequirementsSourceState(requirementRoot, texts, progress) {
+        const raw = operationalRequirementNormaliseText(requirementRoot?.textContent || '');
+        const groupedEvidence = OPERATIONAL_REQUIREMENT_GROUPS.some(group =>
+            Boolean(operationalRequirementNormaliseText(texts?.[group]?.raw || ''))
+        );
+        const progressEvidence = Object.keys(progress || {}).length > 0;
+        return {
+            state: groupedEvidence || progressEvidence ? 'available' : raw ? 'unparsed' : 'pending',
+            raw,
+            evidenceCount: Number(groupedEvidence) + Object.keys(progress || {}).length
+        };
+    }
+
     function operationalRequirementsInput(context, requirementRoot) {
         const doc = context.doc;
+        const texts = operationalRequirementsTexts(requirementRoot);
+        const progress = operationalRequirementsProgress(requirementRoot);
         return {
-            texts: operationalRequirementsTexts(requirementRoot),
+            texts,
             catalog: operationalRequirementsRuntimeCatalog(),
             vehicleTypes: operationalRequirementsVehicleTypes(),
             driving: operationalRequirementsDrivingSnapshot(doc),
             selected: operationalRequirementsSelectedSnapshot(doc),
-            progress: operationalRequirementsProgress(requirementRoot),
-            missionAdditional: {}
+            progress,
+            missionAdditional: {},
+            source: operationalRequirementsSourceState(requirementRoot, texts, progress)
         };
     }
 
@@ -22529,6 +22545,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         style.textContent = `
             .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{margin:0 0 12px;padding:0;border:1px solid rgba(220,53,69,.72);border-radius:12px;background:linear-gradient(180deg,rgba(79,16,25,.97),rgba(39,9,15,.97));color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);overflow:hidden;position:relative;z-index:2}
             .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-covered="true"]{border-color:rgba(40,167,69,.78);background:linear-gradient(180deg,rgba(20,82,39,.97),rgba(9,42,21,.97))}
+            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="pending"],.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="unparsed"]{border-color:rgba(255,193,7,.78);background:linear-gradient(180deg,rgba(92,70,12,.97),rgba(48,36,6,.97))}
             .mcms-operational-suite-header{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.14)}
             .mcms-operational-suite-title{font-weight:800;letter-spacing:.02em;flex:1}.mcms-operational-suite-summary{font-size:12px;opacity:.84}
             .mcms-operational-suite-toggle{min-width:42px;min-height:36px;border:1px solid rgba(255,255,255,.24);border-radius:8px;background:rgba(255,255,255,.1);color:inherit;font-weight:800;touch-action:manipulation}
@@ -22541,13 +22558,16 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         (doc.head || doc.documentElement)?.appendChild(style);
     }
 
-    function operationalRequirementsPanelHtml(rows, model, settings, minified) {
+    function operationalRequirementsPanelHtml(rows, model, settings, minified, source = null) {
         const sorted = operationalRequirementsSortRows(rows, settings);
         const open = sorted.filter(row => !row.covered);
         const unresolved = OPERATIONAL_REQUIREMENT_GROUPS
             .map(group => model?.requirementTexts?.[group]?.remaining)
             .filter(Boolean);
-        const allCovered = open.length === 0 && unresolved.length === 0;
+        const sourceState = String(source?.state || 'pending');
+        const hasParsedRows = sorted.length > 0;
+        const unknown = !hasParsedRows && unresolved.length === 0;
+        const allCovered = sourceState === 'available' && hasParsedRows && open.length === 0 && unresolved.length === 0;
         const bodyRows = sorted.map(row => {
             const stillNeeded = Math.max(0, Number(row.remainingOnMission) - Number(row.selectedValue));
             return `<tr class="mcms-operational-suite-row" data-covered="${row.covered ? 'true' : 'false'}"><td data-label="Requirement">${operationalRequirementsEscapeHtml(row.requirement || row.key)}</td><td data-label="Required">${Math.max(0, Number(row.missing) || 0).toLocaleString('en-GB')}</td><td data-label="Responding">${Math.max(0, Number(row.driving) || 0).toLocaleString('en-GB')}</td><td data-label="Selected">${operationalRequirementsEscapeHtml(operationalRequirementsSelectedText(row, settings?.calcMaxStaff === true))}</td><td class="mcms-operational-suite-needed" data-label="Still needed">${stillNeeded.toLocaleString('en-GB')}</td></tr>`;
@@ -22555,32 +22575,51 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const unresolvedHtml = unresolved.length
             ? `<div class="mcms-operational-suite-unresolved"><strong>Unresolved MissionChief requirement</strong><br>${unresolved.map(operationalRequirementsEscapeHtml).join('<br>')}</div>`
             : '';
-        const emptyHtml = bodyRows || unresolvedHtml ? '' : '<div class="mcms-operational-suite-unresolved">No active missing requirements reported.</div>';
+        const unknownMessage = sourceState === 'pending'
+            ? 'Waiting for MissionChief requirement data.'
+            : 'MissionChief requirement data could not be interpreted safely.';
+        const emptyHtml = unknown
+            ? `<div class="mcms-operational-suite-unresolved"><strong>Requirement status not confirmed</strong><br>${unknownMessage}</div>`
+            : '';
+        const summary = allCovered
+            ? 'All displayed requirements covered'
+            : unknown
+                ? (sourceState === 'pending' ? 'Waiting for requirement data' : 'Requirement status unresolved')
+                : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`;
         return {
             allCovered,
-            html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${allCovered ? 'All displayed requirements covered' : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
+            state: allCovered ? 'covered' : unknown ? sourceState : 'open',
+            html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${summary}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
         };
     }
 
     function operationalRequirementsMount(context, requirementRoot) {
         const doc = context.doc;
         operationalRequirementsEnsureStyle(doc);
+        const selector = '[data-mcms-operational-suite="requirements"]';
+        const mounted = Array.from(doc.querySelectorAll?.(selector) || []).filter(candidate => candidate?.isConnected);
         let panel = context.panel;
+        if (!panel?.isConnected) panel = mounted[0] || null;
+        for (const duplicate of mounted) {
+            if (duplicate !== panel) duplicate.remove?.();
+        }
         if (!panel?.isConnected) {
             panel = doc.createElement('section');
             panel.className = OPERATIONAL_REQUIREMENTS_PANEL_CLASS;
             panel.setAttribute('data-mcms-operational-suite', 'requirements');
             panel.setAttribute('aria-live', 'polite');
-            requirementRoot.parentNode?.insertBefore(panel, requirementRoot);
-            context.panel = panel;
-            panel.addEventListener('click', event => {
-                const button = event.target?.closest?.('.mcms-operational-suite-toggle');
-                if (!button) return;
-                context.minified = !context.minified;
-                context.fingerprint = '';
-                operationalRequirementsScheduleContext(context, 0);
-            });
         }
+        if (requirementRoot.parentNode && (panel.parentNode !== requirementRoot.parentNode || panel.nextSibling !== requirementRoot)) {
+            requirementRoot.parentNode.insertBefore(panel, requirementRoot);
+        }
+        context.panel = panel;
+        panel.onclick = event => {
+            const button = event.target?.closest?.('.mcms-operational-suite-toggle');
+            if (!button) return;
+            context.minified = !context.minified;
+            context.fingerprint = '';
+            operationalRequirementsScheduleContext(context, 0);
+        };
         return panel;
     }
 
@@ -22599,10 +22638,12 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             return;
         }
         const settings = state.operationalWindow?.requirements || {};
-        const model = operationalRequirementCreateModel(operationalRequirementsInput(context, requirementRoot));
+        const input = operationalRequirementsInput(context, requirementRoot);
+        const model = operationalRequirementCreateModel(input);
         const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
         const fingerprint = JSON.stringify({
             model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
+            source: input.source,
             sort: settings.sort,
             sortDir: settings.sortDir,
             viewMode: settings.viewMode,
@@ -22610,8 +22651,9 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         });
         if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
         const panel = operationalRequirementsMount(context, requirementRoot);
-        const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true);
+        const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true, input.source);
         panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
+        panel.dataset.requirementState = rendered.state;
         panel.dataset.minified = context.minified === true ? 'true' : 'false';
         operationalReplaceContent(panel, rendered.html);
         context.fingerprint = fingerprint;

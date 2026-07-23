@@ -1,0 +1,11 @@
+ISSUE391_POST_RETIREMENT_SETTINGS_FAILURE_V1
+returncode=1
+
+=== STDOUT ===
+
+
+=== STDERR ===
+  File "/tmp/issue391-post-retirement-settings-diagnostic-k50hrp7t/repo/.github/development-packages/issue391-update-post-retirement-settings-contract.py", line 37
+    '''FUNCTION_NAMES = [
+       ^^^^^^^^^^^^^^
+SyntaxError: invalid syntax

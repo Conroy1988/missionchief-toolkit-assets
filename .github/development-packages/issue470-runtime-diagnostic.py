@@ -10,6 +10,8 @@ SOURCE = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
 OUTPUT = ROOT / '.github/diagnostics/issue470-runtime.txt'
 text = SOURCE.read_text(encoding='utf-8')
 lines = text.splitlines()
+version_match = re.search(r'^//\s*@version\s+([^\s]+)', text, re.M)
+version = version_match.group(1) if version_match else 'unknown'
 
 
 def line_no(offset: int) -> int:
@@ -114,7 +116,6 @@ for name, (_, _, body) in functions.items():
     if any(token.lower() in lowered or token.lower() in name.lower() for token in menu_tokens + req_tokens):
         selected_names.append(name)
 
-# Prefer high-value functions first, then include all matching functions.
 priority = [
     'createControl', 'ensureUi', 'updateUI', 'togglePanel', 'closePanel', 'createPanel',
     'applyMapVisibilityToggleEffects', 'boot', 'registerBootMaintenanceTasks',
@@ -130,7 +131,7 @@ for name in priority + sorted(selected_names):
 
 parts = [
     'ISSUE #470 RUNTIME DIAGNOSTIC',
-    f'version={re.search(r"^//\\s*@version\\s+([^\\s]+)", text, re.M).group(1)}',
+    f'version={version}',
     f'source_lines={len(lines)}',
     '',
     'FUNCTION INVENTORY',
@@ -140,7 +141,7 @@ parts = [
 ]
 
 for pattern in [
-    r'mcms-[^\s\"\'`]*(?:menu|command|control|float)[^\s\"\'`]*',
+    r'mcms-[^\s"\'`]*(?:menu|command|control|float)[^\s"\'`]*',
     r'settingsPanelActivated', r'aria-expanded', r'#missing_text', r'\[id=["\']missing_text',
     r'data-requirement-type', r'Waiting for MissionChief requirement data',
     r'operationalRequirements[A-Za-z0-9_$]*', r'operationalWindow[A-Za-z0-9_$]*',
@@ -166,7 +167,6 @@ for name in ordered:
         body,
     ])
 
-# Include broad contexts around all native requirement selectors even when they live in arrow functions.
 parts.extend(['', 'NATIVE REQUIREMENT SELECTOR CONTEXTS'])
 for needle in ['missing_text', 'data-requirement-type', 'requirement-type', 'mission_vehicle', 'vehicle_show_table', 'requirements']:
     parts.append(f'\nNEEDLE {needle}')

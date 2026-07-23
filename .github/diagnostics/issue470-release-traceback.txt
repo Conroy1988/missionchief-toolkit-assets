@@ -1,0 +1,60 @@
+package_exit=0
+
+=== PACKAGE STDOUT ===
+{
+  "version": "5.0.7",
+  "sha256": "1d3920a13270b4c84a24134dc9f020fd2e3178a55da06f3e8f268517f9e73632",
+  "sourceLines": 31728,
+  "lineDelta": 80,
+  "remoteRecovery": true,
+  "commandStateImmediate": true
+}
+
+=== PACKAGE STDERR ===
+
+validator_exit=1
+syntax_exit=0
+issue470_exit=1
+
+=== VALIDATOR STDOUT ===
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Code-integrity release baseline unavailable; current-state checks will still run.
+
+=== VALIDATOR STDERR ===
+MAIN STYLE HEADROOM CONTRACT ERROR: exact candidate stylesheet template differs from the reviewed fixture
+VALIDATION ERROR: main-style source-headroom contract failed
+
+=== SYNTAX STDOUT ===
+
+=== SYNTAX STDERR ===
+
+=== ISSUE470 STDOUT ===
+
+=== ISSUE470 STDERR ===
+evalmachine.<anonymous>:216
+globalThis.remoteCache=operationalRequirementsRemoteCache;
+                       ^
+
+ReferenceError: operationalRequirementsRemoteCache is not defined
+    at evalmachine.<anonymous>:216:24
+    at Script.runInContext (node:vm:149:12)
+    at Object.runInContext (node:vm:301:6)
+    at Object.<anonymous> (/tmp/issue470-release-trace-7on7bx15/repo/.github/scripts/test_issue470_menu_requirements_runtime.js:92:4)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+
+Node.js v22.23.1

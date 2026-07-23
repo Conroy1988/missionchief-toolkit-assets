@@ -33,24 +33,12 @@ shared_names = (
 '''
 if text.count(old_capture) != 1:
     raise RuntimeError("operational settings handler capture anchor drifted")
-text = text.replace(old_capture, new_capture)
+text = text.replace(old_capture, new_capture, 1)
 
-old_replacement = '''replacement = (
-    "    // Issue #378 retained UK operational capability catalogue.\n"
-    + "".join(shared)
-    + "    // Issue #391: legacy Mission Requirements Matrix retired; operationalWindow is authoritative.\n\n"
-)
-'''
-new_replacement = '''replacement = (
-    "    // Issue #378 retained UK operational capability catalogue.\n"
-    + "".join(shared)
-    + preserved_operational_settings_handler
-    + "    // Issue #391: legacy Mission Requirements Matrix retired; operationalWindow is authoritative.\n\n"
-)
-'''
-if text.count(old_replacement) != 1:
-    raise RuntimeError("operational settings handler replacement anchor drifted")
-text = text.replace(old_replacement, new_replacement)
+insertion_anchor = '    + "".join(shared)\n'
+if text.count(insertion_anchor) != 1:
+    raise RuntimeError(f"operational settings handler insertion anchor drifted: {text.count(insertion_anchor)}")
+text = text.replace(insertion_anchor, insertion_anchor + "    + preserved_operational_settings_handler\n", 1)
 
 old_count = '''for name in shared_names:
     if source.count(f"const {name} =") != 1:
@@ -66,7 +54,7 @@ if source.count("matrixRetired: true") < 1:
 '''
 if text.count(old_count) != 1:
     raise RuntimeError("operational settings handler count anchor drifted")
-text = text.replace(old_count, new_count)
+text = text.replace(old_count, new_count, 1)
 
 RETIRE.write_text(text, encoding="utf-8")
 py_compile.compile(str(RETIRE), doraise=True)
@@ -89,6 +77,8 @@ with tempfile.TemporaryDirectory(prefix="issue391-preserve-settings-handler-") a
         raise SystemExit("Operational settings handler preservation failed full retirement sandbox")
 
 for obsolete in (
+    ROOT / ".github" / "development-packages" / "issue391-preserve-handler-diagnostic.py",
+    ROOT / ".github" / "diagnostics" / "issue391-preserve-handler-failure.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-setting-router-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-settings-slice-map.txt",
     ROOT / ".github" / "diagnostics" / "issue391-operational-suite-tail-map.txt",

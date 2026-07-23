@@ -1,0 +1,72 @@
+Issue #464 latest comment diagnostic
+count=42
+
+====================================================================================================
+id=5061948871 created_at=2026-07-23T18:27:17Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5061948871
+<!-- development-package-apply:e8e7043b2f5899fbc4df4d6deee00199fe79b18d5714355a25967c8f4f2d41dd -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `b1fe8724b4652a0b1baffb0d89d5588ffa718363`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+====================================================================================================
+id=5061960475 created_at=2026-07-23T18:28:36Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5061960475
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-operational-runtime-diagnostic.py c79324340c31cbd71703fd17712f645dbab2f1d8
+
+====================================================================================================
+id=5061964353 created_at=2026-07-23T18:29:02Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5061964353
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-operational-runtime-diagnostic.py c79324340c31cbd71703fd17712f645dbab2f1d8
+
+====================================================================================================
+id=5061964505 created_at=2026-07-23T18:29:03Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5061964505
+<!-- development-package-preflight-passed:e1df6ed1b6dfa53282f07f4d8c892e0ec62b7d8a268f6c1daa657c07285e876a -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+====================================================================================================
+id=5061968752 created_at=2026-07-23T18:29:31Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5061968752
+<!-- development-package-apply:e1df6ed1b6dfa53282f07f4d8c892e0ec62b7d8a268f6c1daa657c07285e876a -->\nDevelopment package applied and validated automatically.\n\n- Result commit: `4a3229d0d5591eb5dfe60485b1c74240d4e87573`\n- Pull request updated: https://github.com/Conroy1988/missionchief-toolkit-assets/pull/465\n- Package payload removed from the branch\n- Canonical validation, JavaScript syntax and distribution parity passed before push
+
+====================================================================================================
+id=5062156579 created_at=2026-07-23T18:50:40Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062156579
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete.py 49788bddaeb3fd6905ab7032c6af90a8b6031d20
+
+====================================================================================================
+id=5062159166 created_at=2026-07-23T18:50:57Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062159166
+<!-- development-package-preflight-stopped:3f2fea17bc716fc3222c0e48bab10bcf3b86265053751b043308b576cdd522a0 -->\nDevelopment-package preflight stopped safely during **apply-development-package**. No branch was changed and no failed workflow notification is required. Diagnostics: https://github.com/Conroy1988/missionchief-toolkit-assets/actions/runs/30035469165
+
+====================================================================================================
+id=5062201361 created_at=2026-07-23T18:55:40Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062201361
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete.py 49788bddaeb3fd6905ab7032c6af90a8b6031d20
+
+====================================================================================================
+id=5062203652 created_at=2026-07-23T18:55:55Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062203652
+Development-package preflight skipped safely: This exact preflight command has already completed. No branch was changed.
+
+====================================================================================================
+id=5062220744 created_at=2026-07-23T18:57:42Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062220744
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-complete.py 49788bddaeb3fd6905ab7032c6af90a8b6031d20
+
+====================================================================================================
+id=5062223153 created_at=2026-07-23T18:57:57Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062223153
+Development-package apply skipped safely: This exact package has not passed preflight against the current main branch. No branch was changed.
+
+====================================================================================================
+id=5062234744 created_at=2026-07-23T18:59:07Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062234744
+/preflight-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-latest-comments-diagnostic.py 047f9b9961bc20e284620d07f882f1cb0ac45b03
+
+====================================================================================================
+id=5062238663 created_at=2026-07-23T18:59:31Z author=github-actions[bot]
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062238663
+<!-- development-package-preflight-passed:7b1c565e8e18adc9a0ef26596c1ff9ed81afd78afcd59b5110b47aab04650b9e -->\nDevelopment-package preflight passed. The package may now be applied with the matching /apply-development-package command. No branch was changed.
+
+====================================================================================================
+id=5062240902 created_at=2026-07-23T18:59:45Z author=Conroy1988
+url=https://github.com/Conroy1988/missionchief-toolkit-assets/issues/464#issuecomment-5062240902
+/apply-development-package fix/issue-464-launcher-and-operational-settings .github/development-packages/issue464-latest-comments-diagnostic.py 047f9b9961bc20e284620d07f882f1cb0ac45b03

@@ -1,0 +1,45 @@
+package_exit=0
+
+=== PACKAGE STDOUT ===
+{
+  "version": "5.0.7",
+  "sha256": "298f43ca6236a5258bd4a25051b281c47f8972ceb312c5e14d13d401861a5008",
+  "sourceLines": 31732,
+  "lineDelta": 84,
+  "remoteRecovery": true,
+  "commandStateImmediate": true
+}
+
+=== PACKAGE STDERR ===
+
+validator_exit=1
+syntax_exit=0
+issue470_exit=0
+
+=== VALIDATOR STDOUT ===
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed: 504 lines recovered (304 blank, 185 standalone comment, 15 closing-brace joins), 31653 source lines remain.
+Code-integrity release baseline unavailable; current-state checks will still run.
+
+=== VALIDATOR STDERR ===
+Issue #378 renderer marker missing: .alert-missing-vehicles[data-raw-html]
+VALIDATION ERROR: Issue #378 requirements renderer contract failed
+
+=== SYNTAX STDOUT ===
+
+=== SYNTAX STDERR ===
+
+=== ISSUE470 STDOUT ===
+Issue #470 menu-state and requirement-source runtime passed.
+
+=== ISSUE470 STDERR ===

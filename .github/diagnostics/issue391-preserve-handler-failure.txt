@@ -1,0 +1,10 @@
+ISSUE391_PRESERVE_HANDLER_FAILURE
+returncode=1
+
+=== STDOUT ===
+
+=== STDERR ===
+Traceback (most recent call last):
+  File "/tmp/issue391-preserve-handler-diagnostic-h7e5xnio/repo/.github/development-packages/issue391-preserve-operational-settings-handler.py", line 52, in <module>
+    raise RuntimeError("operational settings handler replacement anchor drifted")
+RuntimeError: operational settings handler replacement anchor drifted

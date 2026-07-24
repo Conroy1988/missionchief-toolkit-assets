@@ -1,0 +1,83 @@
+Issue #470 CI correction validation diagnostic
+package_exit=0
+
+=== PACKAGE STDOUT ===
+{
+  "version": "5.0.7",
+  "sha256": "97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da",
+  "sourceLines": 31760,
+  "manifestLines": 31761,
+  "helpCentreVersion": "v5.0.7"
+}
+
+=== PACKAGE STDERR ===
+
+validator_exit=1
+syntax_exit=0
+runtime_exit=1
+
+=== VALIDATOR STDOUT ===
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Issue #391 legacy Mission Requirements Matrix retirement contract passed.
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed: 504 lines recovered (304 blank, 185 standalone comment, 15 closing-brace joins), 31653 source lines remain.
+Issue #378 enhanced requirements renderer contract passed.
+Issue #378 complete operational feature-suite contract passed.
+Issue #378 operational feature runtime fixtures passed.
+Issue #447 menu boot fail-open contract passed under the Issue #450 bootstrap architecture.
+Issue #450 core launcher bootstrap contract passed.
+Issue #454 preboot state-order contract passed.
+Issue #456 requirements truth-state and dedupe runtime passed.
+Issue #458 authoritative requirement-source runtime passed.
+Issue #464 complete launcher, settings, runtime and Mission Age contract passed.
+Issue #464 operational runtime fixtures passed.
+Code-integrity release baseline unavailable; current-state checks will still run.
+
+=== VALIDATOR STDERR ===
+/tmp/issue470-ci-correction-2d4teqid/repo/.github/scripts/test_issue470_menu_requirements_runtime.js:23
+if ((source.match(/\[id=\"missing_text\"\]/gu) || []).length > 1) throw new Error('duplicate literal missing_text selectors returned');
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SyntaxError: Invalid regular expression: /\[id=\"missing_text\"\]/gu: Invalid escape
+    at wrapSafe (node:internal/modules/cjs/loader:1713:18)
+    at Module._compile (node:internal/modules/cjs/loader:1755:20)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1
+VALIDATION ERROR: Issue #470 menu/requirements runtime fixtures failed
+
+=== SYNTAX STDOUT ===
+
+=== SYNTAX STDERR ===
+
+=== RUNTIME STDOUT ===
+
+=== RUNTIME STDERR ===
+/tmp/issue470-ci-correction-2d4teqid/repo/.github/scripts/test_issue470_menu_requirements_runtime.js:23
+if ((source.match(/\[id=\"missing_text\"\]/gu) || []).length > 1) throw new Error('duplicate literal missing_text selectors returned');
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SyntaxError: Invalid regular expression: /\[id=\"missing_text\"\]/gu: Invalid escape
+    at wrapSafe (node:internal/modules/cjs/loader:1713:18)
+    at Module._compile (node:internal/modules/cjs/loader:1755:20)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1

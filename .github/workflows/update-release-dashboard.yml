@@ -1,66 +1,101 @@
-name: Update Release Dashboard
+name: Verify Release Dashboard Projection
 
 on:
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - "status/release-dashboard.json"
+      - "status/README.md"
+      - ".github/scripts/generate_release_dashboard.py"
+      - ".github/workflows/update-release-dashboard.yml"
   push:
     branches:
       - main
     paths:
       - "status/release-dashboard.json"
+      - "status/README.md"
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/workflows/update-release-dashboard.yml"
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: update-release-dashboard
+  group: verify-release-dashboard-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  update:
-    name: Generate Toolkit control panel
+  verify:
+    name: Verify release-dashboard projection
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Check out latest main
+      - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
 
       - name: Validate dashboard JSON
         run: python3 -m json.tool status/release-dashboard.json >/dev/null
 
-      - name: Generate human-readable dashboard
-        run: python3 .github/scripts/generate_release_dashboard.py
-
-      - name: Commit dashboard update
+      - name: Generate and compare read-only dashboard projection
+        id: projection
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/README.md
+          set -o pipefail
+          mkdir -p dashboard-projection
 
-          if git diff --cached --quiet; then
-            echo "Dashboard is already current."
-            exit 0
+          python3 .github/scripts/generate_release_dashboard.py \
+            --check \
+            --output dashboard-projection/status-README.md \
+            2>&1 | tee dashboard-projection/projection.log
+          generator_status=${PIPESTATUS[0]}
+
+          compare_status=0
+          if ! cmp --silent status/README.md dashboard-projection/status-README.md; then
+            diff -u status/README.md dashboard-projection/status-README.md \
+              > dashboard-projection/status-README.diff || true
+            cat dashboard-projection/status-README.diff
+            compare_status=1
+          else
+            printf '%s\n' "Committed status/README.md matches the deterministic projection." \
+              > dashboard-projection/status-README.diff
           fi
 
-          git commit -m "Refresh Toolkit release dashboard"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          if [[ "$generator_status" -ne 0 || "$compare_status" -ne 0 ]]; then
+            exit 1
+          fi
+
+      - name: Upload dashboard projection evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-release-dashboard-projection-${{ github.sha }}
+          path: dashboard-projection/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce dashboard projection result
+        if: steps.projection.outcome != 'success'
+        run: |
+          echo "Release dashboard JSON/Markdown projection is inconsistent. Review the retained evidence."
+          exit 1
 
       - name: Write workflow summary
         shell: bash
         run: |
           VERSION="$(jq -r '.currentVersion' status/release-dashboard.json)"
           {
-            echo "# MissionChief Toolkit dashboard"
+            echo "# MissionChief Toolkit dashboard projection"
             echo
             echo "- ✅ Dashboard JSON validated"
-            echo "- ✅ Human-readable control panel generated"
+            echo "- ✅ Ledger sanitation required no mutation"
+            echo "- ✅ Human-readable projection matches status/README.md"
+            echo "- ✅ Repository permission: contents read"
+            echo "- ✅ Public main changed: no"
             echo "- ✅ Current version: ${VERSION}"
           } >> "$GITHUB_STEP_SUMMARY"

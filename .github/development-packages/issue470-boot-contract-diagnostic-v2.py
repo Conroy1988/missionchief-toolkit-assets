@@ -1,31 +1,37 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 import runpy
-import subprocess
 import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SELF = Path(__file__).resolve()
 TARGET = ROOT / '.github/development-packages/issue470-boot-contract-alignment.py'
+TEST = ROOT / '.github/scripts/test_boot_lifecycle_contract.py'
+OUTPUT = ROOT / '.github/diagnostics/issue470-boot-contract-latest.txt'
 
+original_target = TARGET.read_text(encoding='utf-8')
+original_test = TEST.read_text(encoding='utf-8')
+status = 'success'
+detail = 'Boot contract alignment package completed without raising an exception.'
 try:
     runpy.run_path(str(TARGET), run_name='__main__')
 except BaseException as error:
+    status = 'failure'
     detail = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-    body = (
-        '### Issue #470 boot-contract diagnostic\n\n'
-        '```text\n' + detail[-12000:] + '\n```'
-    )
-    subprocess.run(
-        ['gh', 'issue', 'comment', '485', '--repo', os.environ.get('GITHUB_REPOSITORY', 'Conroy1988/missionchief-toolkit-assets'), '--body', body],
-        cwd=ROOT,
-        check=False,
-        text=True,
-    )
-    raise
+finally:
+    TEST.write_text(original_test, encoding='utf-8')
+    TARGET.parent.mkdir(parents=True, exist_ok=True)
+    TARGET.write_text(original_target, encoding='utf-8')
 
+OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+OUTPUT.write_text(
+    'Issue #470 boot-contract alignment diagnostic\n'
+    f'status={status}\n\n'
+    + detail[-20000:]
+    + '\n',
+    encoding='utf-8',
+)
 SELF.unlink(missing_ok=True)
-print('Boot contract alignment package completed successfully.')
+print(f'Boot contract diagnostic captured: {status}')

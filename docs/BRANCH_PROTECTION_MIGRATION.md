@@ -110,6 +110,7 @@ The final protection design must retain fast owner operation:
 - auto-merge should be enabled after the workflow and settings rehearsal;
 - distribution and release-state branches retain explicit administrator recovery access;
 - strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are all proven.
+- `Verify release-dashboard projection` is designated as a future required status check whenever the ledger, renderer or projection workflow changes.
 
 ## Remaining migration stages
 

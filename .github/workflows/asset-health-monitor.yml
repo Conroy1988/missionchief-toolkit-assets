@@ -147,12 +147,17 @@ jobs:
         run: |
           set -euo pipefail
           TITLE="[Asset Health] Toolkit public assets unavailable"
+          SEARCH_QUERY='"Toolkit public assets unavailable" in:title'
           FAILURES="$(jq -r '.summary.failures // 1' asset-health-report.json)"
           WARNINGS="$(jq -r '.summary.warnings // 0' asset-health-report.json)"
           FINGERPRINT="$(jq -r '.fingerprint // "unknown"' asset-health-report.json)"
           VERSION="$(jq -r '.latestRelease.version // "unknown"' asset-health-report.json)"
 
-          gh issue list --state all --limit 100 --json number,title,state,url > /tmp/asset-health-issues.json
+          gh issue list \
+            --state all \
+            --search "$SEARCH_QUERY" \
+            --limit 20 \
+            --json number,title,state,url > /tmp/asset-health-issues.json
           NUMBER="$(jq -r --arg title "$TITLE" '[.[] | select(.title == $title)] | sort_by(.number) | last | .number // empty' /tmp/asset-health-issues.json)"
           STATE="$(jq -r --arg title "$TITLE" '[.[] | select(.title == $title)] | sort_by(.number) | last | .state // empty' /tmp/asset-health-issues.json)"
 

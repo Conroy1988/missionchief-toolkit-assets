@@ -10,9 +10,7 @@
   ],
   "allowedWritePermissions": {
     ".github/workflows/apply-development-package.yml": [
-      "contents",
-      "issues",
-      "pull-requests"
+      "issues"
     ],
     ".github/workflows/asset-health-monitor.yml": [
       "issues"

@@ -84,7 +84,7 @@ HELP.write_text(help_text, encoding='utf-8')
 
 runtime_test = TEST.read_text(encoding='utf-8')
 anchor = "for (const token of required) if (!source.includes(token)) throw new Error(`Missing Issue #470 contract token: ${token}`);\n"
-addition = anchor + "if ((source.match(/\\[id=\\\"missing_text\\\"\\]/gu) || []).length > 1) throw new Error('duplicate literal missing_text selectors returned');\n"
+addition = anchor + "if (source.split('[id=\"missing_text\"]').length - 1 > 1) throw new Error('duplicate literal missing_text selectors returned');\n"
 if anchor not in runtime_test:
     raise SystemExit('Issue #470 runtime-test insertion anchor changed')
 if 'duplicate literal missing_text selectors returned' not in runtime_test:

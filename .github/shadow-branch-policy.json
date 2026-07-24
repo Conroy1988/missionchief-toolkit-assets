@@ -6,6 +6,23 @@
   "strictProtectionEnabled": false,
   "administratorRecoveryRequired": true,
   "cutoverIssue": 41,
+  "writerRehearsal": {
+    "enabled": true,
+    "manualDispatchOnly": true,
+    "authorizedActor": "Conroy1988",
+    "sourceBranch": "main",
+    "allowedTargets": [
+      "release-state",
+      "distribution"
+    ],
+    "planConfirmation": "PLAN SHADOW SYNC",
+    "applyConfirmation": "SYNC SHADOWS",
+    "credentialSecret": "DEVELOPMENT_PR_TOKEN",
+    "workflowPermission": "contents: read",
+    "allowIdempotentEmptyProbeCommit": true,
+    "liveConsumerCutoverAllowed": false,
+    "replacementIdentity": "narrowly scoped GitHub App"
+  },
   "branches": {
     "release-state": {
       "purpose": "Mirror verified dashboard, manifest, announcement and recovery state.",

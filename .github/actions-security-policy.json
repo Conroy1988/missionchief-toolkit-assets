@@ -40,9 +40,6 @@
     ".github/workflows/publish-update-manifest.yml": [
       "contents"
     ],
-    ".github/workflows/reconcile-release-announcement-state.yml": [
-      "contents"
-    ],
     ".github/workflows/release-recovery.yml": [
       "contents"
     ],

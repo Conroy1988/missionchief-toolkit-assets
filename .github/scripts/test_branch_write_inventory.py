@@ -92,11 +92,12 @@ def main() -> int:
         fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 8:
-        fail(f"Expected eight reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 7:
+        fail(f"Expected seven reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
     expected_artifacts = {
+        ".github/workflows/validate-userscript.yml",
         ".github/workflows/release-toolkit-dry-run.yml",
         ".github/workflows/repository-audit.yml",
     }
@@ -232,8 +233,8 @@ def main() -> int:
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "eight workflows that can commit directly to public `main`",
-        "Release dry runs and repository audits are now artifact-only",
+        "seven workflows that can commit directly to public `main`",
+        "Canonical validation, release dry runs and repository audits are now artifact-only",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

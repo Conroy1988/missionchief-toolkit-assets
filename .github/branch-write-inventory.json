@@ -1,17 +1,9 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "ed04231602b67730de3854a29c4ce09ee586aaa3",
+  "reviewedMainCommit": "a97c830be5cdaf786aabe8d66e1c140ef6da78f0",
   "strictProtectionEnabled": false,
   "directMainWriters": [
-    {
-      "workflow": ".github/workflows/validate-userscript.yml",
-      "purpose": "Commit the validated distribution candidate and generated release dashboard state after canonical validation on main.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": ["dist/", "status/release-dashboard.json", "status/README.md"],
-      "migrationTarget": "generated-state branch or release artifact"
-    },
     {
       "workflow": ".github/workflows/greasyfork-release-monitor.yml",
       "purpose": "Record and reconcile the Greasy Fork/Discord announcement version tracker.",
@@ -54,10 +46,11 @@
     },
     {
       "workflow": ".github/workflows/release-toolkit.yml",
-      "purpose": "Commit the stable Greasy Fork root mirror and final verified release dashboard state.",
+      "purpose": "Publish stable dist and Greasy Fork root mirrors, then record final verified release state.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "writes": [
+        "dist/",
         "MissionChief_Map_Command_Toolkit.user.js",
         "MissionChief_Map_Command_Toolkit.txt",
         "status/release-dashboard.json",
@@ -79,15 +72,22 @@
     {
       "workflow": ".github/workflows/auto-release-after-validation.yml",
       "invokes": ".github/workflows/release-toolkit.yml",
-      "purpose": "Automatically invoke the guarded production release after a validated main candidate."
+      "purpose": "Consume the exact successful validation artifact and automatically invoke the guarded production writer."
     },
     {
       "workflow": ".github/workflows/owner-release-command.yml",
       "invokes": ".github/workflows/release-toolkit.yml",
-      "purpose": "Owner-authorized manual release orchestration and result reporting."
+      "purpose": "Owner-authorized fresh validation, release orchestration and result reporting."
     }
   ],
   "artifactOnlyEvidenceWorkflows": [
+    {
+      "workflow": ".github/workflows/validate-userscript.yml",
+      "purpose": "Validate canonical source and retain the exact commit/ref distribution candidate without changing public main or release state.",
+      "permission": "contents: read",
+      "artifact": "missionchief-toolkit-validation-candidate-<commit>",
+      "evidence": ["validation-candidate.json", "dist userscript", "dist text", "checksums", "release manifest"]
+    },
     {
       "workflow": ".github/workflows/release-toolkit-dry-run.yml",
       "purpose": "Validate and package a candidate without changing public main or any publication channel.",
@@ -104,7 +104,6 @@
     }
   ],
   "directMainPushSources": [
-    ".github/workflows/validate-userscript.yml",
     ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/import-canonical-userscript.yml",
     ".github/workflows/publish-update-manifest.yml",
@@ -142,7 +141,6 @@
     ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
-    ".github/workflows/update-release-dashboard.yml",
-    ".github/workflows/validate-userscript.yml"
+    ".github/workflows/update-release-dashboard.yml"
   ]
 }

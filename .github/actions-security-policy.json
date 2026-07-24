@@ -58,9 +58,6 @@
     ],
     ".github/workflows/update-release-dashboard.yml": [
       "contents"
-    ],
-    ".github/workflows/validate-userscript.yml": [
-      "contents"
     ]
   },
   "forbiddenTriggers": [

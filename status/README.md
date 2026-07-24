@@ -21,14 +21,14 @@
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
 - **Validated SHA-256:** `97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da`
-- **Distribution candidate:** `dist/MissionChief_Map_Command_Toolkit.user.js`
+- **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit
 
 ## Repository health
 
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-24T13:13:57Z`
+- **Last release-state update:** `2026-07-24T13:13:57Z`
 
 ## Release channels
 
@@ -40,11 +40,13 @@
 ```text
 Canonical source
       ↓
-Validation and bundle build
+Read-only validation artifact
       ↓
-GitHub Release
+Release readiness and bundle rebuild
       ↓
-Greasy Fork webhook and verification
+Stable distribution publication
+      ↓
+GitHub Release and Greasy Fork verification
       ↓
 Private migration backup
       ↓
@@ -53,4 +55,4 @@ Discord release confirmation
 
 ---
 
-The JSON file remains the machine-readable source of truth. This page is regenerated automatically whenever release state changes.
+The JSON file remains the machine-readable verified-release ledger. Transient validation candidates are retained as immutable workflow artifacts and are never written into this dashboard.

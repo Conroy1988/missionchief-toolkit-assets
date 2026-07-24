@@ -11,11 +11,13 @@ on:
       - "help/index.html"
       - "documentation-drift-report.json"
       - "documentation-drift-report.md"
-      - "dist/release-manifest.json"
       - ".github/scripts/validate_userscript.py"
+      - ".github/scripts/verify_validation_candidate.py"
       - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/test_validation_candidate_pipeline.py"
       - ".github/scripts/test_version_status_contract.py"
+      - ".github/workflows/auto-release-after-validation.yml"
+      - ".github/workflows/owner-release-command.yml"
       - ".github/workflows/publish-update-manifest.yml"
       - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/validate-userscript.yml"
@@ -33,11 +35,13 @@ on:
       - "help/index.html"
       - "documentation-drift-report.json"
       - "documentation-drift-report.md"
-      - "dist/release-manifest.json"
       - ".github/scripts/validate_userscript.py"
+      - ".github/scripts/verify_validation_candidate.py"
       - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/test_validation_candidate_pipeline.py"
       - ".github/scripts/test_version_status_contract.py"
+      - ".github/workflows/auto-release-after-validation.yml"
+      - ".github/workflows/owner-release-command.yml"
       - ".github/workflows/publish-update-manifest.yml"
       - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/validate-userscript.yml"
@@ -46,7 +50,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: canonical-userscript-validation-${{ github.ref }}
@@ -54,20 +58,21 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate and build dry-run distribution
+    name: Validate and package immutable candidate evidence
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Check out repository
+      - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Validate dashboard reconciliation logic
-        run: python3 .github/scripts/reconcile_validation_dashboard.py --self-test
+      - name: Validate candidate-verifier self-tests
+        run: python3 .github/scripts/verify_validation_candidate.py --self-test
 
-      - name: Validate userscript and build dist
+      - name: Validate userscript and build candidate distribution
         id: validate
         shell: bash
         run: |
@@ -82,7 +87,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: missionchief-toolkit-validation-diagnostics
+          name: missionchief-toolkit-validation-diagnostics-${{ github.sha }}
           path: validation.log
           if-no-files-found: error
           retention-days: 14
@@ -102,11 +107,63 @@ jobs:
       - name: Verify distribution files are identical
         run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
-      - name: Upload dry-run distribution artifact
+      - name: Write immutable validation candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p validation-candidate
+          VERSION="$(jq -r '.version' dist/release-manifest.json)"
+          HASH="$(jq -r '.sha256' dist/release-manifest.json)"
+          SOURCE_HASH="$(sha256sum src/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
+          USER_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
+          TEXT_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.txt | awk '{print $1}')"
+          [[ "$HASH" == "$SOURCE_HASH" && "$HASH" == "$USER_HASH" && "$HASH" == "$TEXT_HASH" ]]
+
+          jq -n \
+            --arg workflow "Validate Canonical Userscript" \
+            --arg commit "$GITHUB_SHA" \
+            --arg ref "$GITHUB_REF" \
+            --arg event "$GITHUB_EVENT_NAME" \
+            --arg version "$VERSION" \
+            --arg sha256 "$HASH" \
+            --arg generatedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+            '{
+              schemaVersion: 1,
+              state: "validated",
+              workflow: $workflow,
+              sourceCommit: $commit,
+              sourceRef: $ref,
+              eventName: $event,
+              version: $version,
+              sha256: $sha256,
+              generatedAt: $generatedAt,
+              distribution: {
+                userScript: "dist/MissionChief_Map_Command_Toolkit.user.js",
+                text: "dist/MissionChief_Map_Command_Toolkit.txt",
+                checksums: "dist/SHA256SUMS.txt",
+                manifest: "dist/release-manifest.json"
+              },
+              storage: {
+                type: "workflow-artifact",
+                publicMainChanged: false,
+                releaseDashboardChanged: false
+              }
+            }' > validation-candidate/validation-candidate.json
+
+          python3 .github/scripts/verify_validation_candidate.py \
+            --evidence validation-candidate/validation-candidate.json \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist-dir dist \
+            --expected-commit "$GITHUB_SHA" \
+            --expected-ref "$GITHUB_REF" \
+            --expected-version "$VERSION"
+
+      - name: Upload immutable validation candidate
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: missionchief-toolkit-dry-run-distribution
+          name: missionchief-toolkit-validation-candidate-${{ github.sha }}
           path: |
+            validation-candidate/validation-candidate.json
             dist/MissionChief_Map_Command_Toolkit.user.js
             dist/MissionChief_Map_Command_Toolkit.txt
             dist/SHA256SUMS.txt
@@ -114,25 +171,20 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Update dashboard and commit validated dist
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+      - name: Write validation summary
         shell: bash
         run: |
-          set -euo pipefail
-
-          VERSION="$(jq -r '.version' dist/release-manifest.json)"
-          python3 .github/scripts/reconcile_validation_dashboard.py
-          python3 .github/scripts/generate_release_dashboard.py
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist status/release-dashboard.json status/README.md
-
-          if git diff --cached --quiet; then
-            echo "Validated distribution is already current."
-            exit 0
-          fi
-
-          git commit -m "Build validated Toolkit ${VERSION} distribution candidate"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          VERSION="$(jq -r '.version' validation-candidate/validation-candidate.json)"
+          HASH="$(jq -r '.sha256' validation-candidate/validation-candidate.json)"
+          {
+            echo "# Toolkit v${VERSION} canonical validation"
+            echo
+            echo "- ✅ Canonical source validated"
+            echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Distribution files are byte-identical"
+            echo "- ✅ Candidate SHA-256: \`${HASH}\`"
+            echo "- ✅ Exact source commit: \`${GITHUB_SHA}\`"
+            echo "- 📦 Candidate retained as an immutable workflow artifact"
+            echo "- ⛔ Public main changed: no"
+            echo "- ⛔ Release dashboard changed: no"
+          } >> "$GITHUB_STEP_SUMMARY"

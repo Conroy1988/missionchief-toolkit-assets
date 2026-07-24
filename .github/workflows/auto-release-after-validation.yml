@@ -19,47 +19,98 @@ concurrency:
 
 jobs:
   prepare:
-    name: Resolve validated unreleased candidate
+    name: Resolve exact validated unreleased candidate
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     outputs:
       release_needed: ${{ steps.candidate.outputs.release_needed }}
       version: ${{ steps.candidate.outputs.version }}
     steps:
-      - name: Check out reconciled main
+      - name: Check out exact validated commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify validated candidate is not already released
+      - name: Download and verify exact validation candidate
         id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATION_RUN_ID: ${{ github.event.workflow_run.id }}
+          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
         shell: bash
         run: |
           set -euo pipefail
-          VERSION="$(jq -r '.distributionCandidate.version // empty' status/release-dashboard.json)"
-          STATE="$(jq -r '.distributionCandidate.state // empty' status/release-dashboard.json)"
-          VALIDATION="$(jq -r '.status.validation // empty' status/release-dashboard.json)"
-          RELEASED="$(jq -r '.latestRelease.version // empty' status/release-dashboard.json)"
-          SOURCE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' src/MissionChief_Map_Command_Toolkit.user.js | head -n 1 | xargs)"
-
-          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]
-          [[ "$VERSION" == "$SOURCE_VERSION" ]]
-          [[ "$STATE" == "validated" ]]
-          [[ "$VALIDATION" == "passed" ]]
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if [[ "$RELEASED" == "$VERSION" ]]; then
+          git fetch origin main --prune
+          CURRENT_MAIN="$(git rev-parse origin/main)"
+          if [[ "$CURRENT_MAIN" != "$VALIDATED_SHA" ]]; then
             echo "release_needed=false" >> "$GITHUB_OUTPUT"
-            echo "Toolkit v${VERSION} is already the verified release."
+            echo "version=" >> "$GITHUB_OUTPUT"
+            echo "Validated commit ${VALIDATED_SHA} is stale; current main is ${CURRENT_MAIN}. Automatic release suppressed."
+            exit 0
+          fi
+
+          ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${VALIDATED_SHA}"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
+          ARTIFACT_ID="$(jq -r --arg name "$ARTIFACT_NAME" \
+            '.artifacts | map(select(.name == $name and .expired == false)) | sort_by(.created_at) | last | .id // empty' \
+            /tmp/validation-artifacts.json)"
+          [[ -n "$ARTIFACT_ID" ]] || {
+            echo "::error::Exact validation candidate artifact was not found for run ${VALIDATION_RUN_ID}."
+            exit 1
+          }
+
+          rm -rf /tmp/validation-candidate
+          mkdir -p /tmp/validation-candidate
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/validation-candidate.zip
+          unzip -q /tmp/validation-candidate.zip -d /tmp/validation-candidate
+
+          EVIDENCE="/tmp/validation-candidate/validation-candidate/validation-candidate.json"
+          CANDIDATE_DIST="/tmp/validation-candidate/dist"
+          python3 .github/scripts/verify_validation_candidate.py \
+            --evidence "$EVIDENCE" \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist-dir "$CANDIDATE_DIST" \
+            --expected-commit "$VALIDATED_SHA" \
+            --expected-ref refs/heads/main \
+            > /tmp/verified-validation-candidate.json
+
+          VERSION="$(jq -r '.version' /tmp/verified-validation-candidate.json)"
+          SOURCE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' src/MissionChief_Map_Command_Toolkit.user.js | head -n 1 | xargs)"
+          [[ "$VERSION" == "$SOURCE_VERSION" ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release_needed=false" >> "$GITHUB_OUTPUT"
+            echo "Toolkit v${VERSION} is already published."
           else
             echo "release_needed=true" >> "$GITHUB_OUTPUT"
-            echo "Toolkit v${VERSION} is validated and will release automatically."
+            echo "Toolkit v${VERSION} is validated from exact commit ${VALIDATED_SHA} and will release automatically."
           fi
+
+      - name: Write candidate resolution summary
+        env:
+          RELEASE_NEEDED: ${{ steps.candidate.outputs.release_needed }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
+          VALIDATION_RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          {
+            echo "# Automatic release candidate resolution"
+            echo
+            echo "- Validation run: \`${VALIDATION_RUN_ID}\`"
+            echo "- Validated commit: \`${VALIDATED_SHA}\`"
+            echo "- Version: \`${VERSION:-stale}\`"
+            echo "- Release required: \`${RELEASE_NEEDED}\`"
+            echo "- Candidate authority: exact immutable validation artifact"
+            echo "- Dashboard candidate state used: no"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   readiness:
     name: Run mandatory release readiness

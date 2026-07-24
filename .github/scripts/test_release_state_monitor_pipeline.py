@@ -129,7 +129,6 @@ def main() -> int:
             "--force",
             "force-with-lease",
             "git reset --hard origin/main",
-            '"README.md"',
         ],
         "Release-state writer helper",
     )

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contracts for atomic release announcement state and read-only verification."""
+"""Contracts for authoritative announcement state and read-only verification."""
 
 from __future__ import annotations
 
@@ -31,48 +31,85 @@ def main() -> int:
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
     tracker = TRACKER.read_text(encoding="utf-8").strip()
 
-    require(release, [
-        "Post verified release to Discord",
-        "Record successful release, manifest and announcement state",
-        "printf '%s\\n' \"$RELEASE_VERSION\" > .github/greasyfork-version.txt",
-        "python3 .github/scripts/build_stable_update_manifest.py",
-        "status/update-manifest.json",
-        "Dashboard, stable update manifest and announcement tracker updated atomically",
-    ], "Production release workflow")
+    require(
+        release,
+        [
+            "Post verified release to Discord",
+            "Prepare governed release-state worktree",
+            "Prepare authoritative production state projection",
+            "release_recovery_state.py prepare-production",
+            "Publish backward-compatible main state copy",
+            "status/release-dashboard.json",
+            "status/README.md",
+            "status/update-manifest.json",
+            ".github/greasyfork-version.txt",
+            "Record Toolkit ${RELEASE_VERSION} compatibility state",
+            "Publish authoritative release-state ledger",
+            "Record Toolkit ${RELEASE_VERSION} verified release state",
+            "Verify authoritative and compatibility state parity",
+            "Authoritative release-state ledger committed",
+            "Backward-compatible main state copied",
+        ],
+        "Production release workflow",
+    )
     discord_index = release.index("      - name: Post verified release to Discord")
-    state_index = release.index("      - name: Record successful release, manifest and announcement state")
-    pages_index = release.index("      - name: Publish GitHub Pages")
-    if not discord_index < state_index < pages_index:
-        raise AssertionError("Announcement state must be recorded after Discord and before Pages publication")
+    prepare_index = release.index("      - name: Prepare governed release-state worktree")
+    projection_index = release.index("      - name: Prepare authoritative production state projection")
+    compatibility_index = release.index("      - name: Publish backward-compatible main state copy")
+    authority_index = release.index("      - name: Publish authoritative release-state ledger")
+    parity_index = release.index("      - name: Verify authoritative and compatibility state parity")
+    if not (
+        discord_index
+        < prepare_index
+        < projection_index
+        < compatibility_index
+        < authority_index
+        < parity_index
+    ):
+        raise AssertionError(
+            "Verified Discord publication must precede one state projection, the compatibility copy, "
+            "the authoritative release-state commit and the parity gate"
+        )
 
-    require(verify, [
-        "name: Verify Release Announcement State",
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Verify dashboard and announcement tracker",
-        "announcementTrackerChanged: false",
-        "Upload immutable announcement-state evidence",
-        "missionchief-release-announcement-state-${{ github.sha }}",
-        "No automatic mutation was attempted.",
-    ], "Announcement-state verification workflow")
-    forbid(verify, [
-        "contents: write",
-        "git commit",
-        "git push",
-        "git pull --rebase",
-        "github-actions[bot]",
-        "git reset --hard",
-    ], "Announcement-state verification workflow")
+    require(
+        verify,
+        [
+            "name: Verify Release Announcement State",
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Verify dashboard and announcement tracker",
+            "announcementTrackerChanged: false",
+            "Upload immutable announcement-state evidence",
+            "missionchief-release-announcement-state-${{ github.sha }}",
+            "No automatic mutation was attempted.",
+        ],
+        "Announcement-state verification workflow",
+    )
+    forbid(
+        verify,
+        [
+            "contents: write",
+            "git commit",
+            "git push",
+            "git pull --rebase",
+            "github-actions[bot]",
+            "git reset --hard",
+        ],
+        "Announcement-state verification workflow",
+    )
 
     latest = dashboard.get("latestRelease") or {}
     if str(latest.get("version") or "") != tracker:
-        raise AssertionError("Committed announcement tracker does not match latest verified release")
+        raise AssertionError("Committed compatibility announcement tracker does not match latest verified release")
     if latest.get("greasyForkVerified") is not True:
         raise AssertionError("Latest verified release is not marked Greasy Fork verified")
     if latest.get("discordPosted") is not True:
         raise AssertionError("Latest verified release is not marked Discord posted")
 
-    print("Release announcement state passed: atomic release commit and read-only verification.")
+    print(
+        "Release announcement state passed: release-state authority, byte-identical compatibility copy "
+        "and read-only verification."
+    )
     return 0
 
 

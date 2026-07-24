@@ -1,0 +1,11 @@
+Issue #470 clean-package preflight diagnostic
+exit=1
+
+=== STDOUT ===
+
+=== STDERR ===
+Traceback (most recent call last):
+  File "/tmp/issue470-clean-preflight-o8e2szgf/repo/.github/development-packages/issue470-clean-fix.py", line 14, in <module>
+    code = zlib.decompress(base64.b64decode(encoded)).decode('utf-8')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+zlib.error: Error -3 while decompressing data: incorrect data check

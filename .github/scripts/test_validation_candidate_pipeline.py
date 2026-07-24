@@ -37,6 +37,7 @@ def main() -> int:
     release = RELEASE.read_text(encoding="utf-8")
     sync = SYNC.read_text(encoding="utf-8")
     generator = DASHBOARD_GENERATOR.read_text(encoding="utf-8")
+    reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
 
     require(validation, [
@@ -98,11 +99,25 @@ def main() -> int:
         "Record successful release in dashboard",
     ], "Production release workflow")
 
-    if "distributionCandidate" in dashboard:
-        raise AssertionError("Persistent release dashboard still contains transient distributionCandidate state")
+    if "distributionCandidate" in dashboard or "releaseDryRun" in dashboard:
+        raise AssertionError("Persistent release dashboard still contains transient validation state")
+    require(generator, [
+        'sanitized.pop("distributionCandidate", None)',
+        'sanitized.pop("releaseDryRun", None)',
+        '"storage": "workflow-artifact"',
+    ], "Dashboard stable-ledger sanitizer")
     forbid(generator, ["data.get(\"distributionCandidate\"", "candidate.get("], "Dashboard generator")
-    if RETIRED_RECONCILER.exists():
-        raise AssertionError("Retired validation-dashboard reconciler still exists")
+    require(reconciler, [
+        "Retired compatibility stub",
+        "is retired; use the exact canonical-validation artifact instead",
+    ], "Retired validation-dashboard reconciler")
+    forbid(reconciler, [
+        "json.loads",
+        "write_text",
+        "def reconcile",
+        "status[",
+        "distributionCandidate",
+    ], "Retired validation-dashboard reconciler")
 
     result = subprocess.run(["python3", str(VERIFIER), "--self-test"], cwd=ROOT)
     if result.returncode != 0:

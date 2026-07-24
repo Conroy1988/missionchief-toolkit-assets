@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "0b43be27b5857206adb55de85777425be9160816",
+  "reviewedMainCommit": "4da0da71c8579ed6efc8ac8143f5c0354f2c0f39",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -159,6 +159,23 @@
       "workflow": ".github/workflows/prepare-release-rollback.yml",
       "target": "new recovery branch and owner-created pull request",
       "credential": "DEVELOPMENT_PR_TOKEN"
+    }
+  ],
+  "shadowBranchWriters": [
+    {
+      "workflow": ".github/workflows/sync-shadow-branches.yml",
+      "script": ".github/scripts/sync_shadow_branches.py",
+      "source": "main",
+      "targets": [
+        "release-state",
+        "distribution"
+      ],
+      "credential": "DEVELOPMENT_PR_TOKEN",
+      "workflowPermission": "contents: read",
+      "dispatch": "manual owner-confirmed rehearsal",
+      "mainMutationAllowed": false,
+      "liveConsumerCutoverAllowed": false,
+      "replacementIdentity": "narrowly scoped GitHub App"
     }
   ],
   "contentsWriteAuthority": [

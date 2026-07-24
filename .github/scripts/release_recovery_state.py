@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Apply controlled Toolkit recovery-state transitions on ``release-state``.
+"""Build and apply governed Toolkit state on ``release-state``.
 
 The GitHub Release, Greasy Fork, private backup and Discord side effects remain
-owned by the workflow. This module owns only the governed operational ledger:
+owned by their workflows. This module owns only the operational ledger:
 dashboard JSON, rendered Markdown, stable update manifest and announcement
-tracker. Every commit is delegated to ``release_state_branch.py``.
+tracker. Recovery transitions commit through ``release_state_branch.py``;
+production can prepare one deterministic projection before publishing identical
+bytes to the compatibility and authoritative branches.
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ DASHBOARD_REL = Path("status/release-dashboard.json")
 README_REL = Path("status/README.md")
 MANIFEST_REL = Path("status/update-manifest.json")
 TRACKER_REL = Path(".github/greasyfork-version.txt")
+STATE_PATHS = [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL]
 SETTINGS = ROOT / ".github" / "release-settings.json"
 GENERATOR = ROOT / ".github" / "scripts" / "generate_release_dashboard.py"
 MANIFEST_BUILDER = ROOT / ".github" / "scripts" / "build_stable_update_manifest.py"
@@ -33,7 +36,7 @@ FULL_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
 
 class RecoveryStateError(RuntimeError):
-    """Fail-closed recovery-state transition error."""
+    """Fail-closed governed-state transition error."""
 
 
 def run(*args: str, cwd: Path = ROOT) -> None:
@@ -53,10 +56,41 @@ def now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def validate_timestamp(value: str) -> str:
+    if not value or not value.endswith("Z"):
+        raise RecoveryStateError("UTC completion timestamp must end with Z")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise RecoveryStateError("UTC completion timestamp is invalid") from error
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        raise RecoveryStateError("Completion timestamp must be UTC")
+    return parsed.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def validate_version(version: str) -> str:
     if not SEMVER.fullmatch(version):
         raise RecoveryStateError(f"Invalid stable version: {version!r}")
     return version
+
+
+def validate_release_inputs(
+    version: str,
+    sha256: str,
+    release_url: str,
+    backup_commit: str,
+) -> tuple[str, str, str, str]:
+    version = validate_version(version)
+    if not FULL_HASH.fullmatch(sha256):
+        raise RecoveryStateError("Release SHA-256 is invalid")
+    if not FULL_COMMIT.fullmatch(backup_commit):
+        raise RecoveryStateError("Private backup commit is invalid")
+    expected_url = (
+        f"https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v{version}"
+    )
+    if release_url != expected_url:
+        raise RecoveryStateError("GitHub Release URL is not canonical")
+    return version, sha256, release_url, backup_commit
 
 
 def paths(state_root: Path) -> dict[str, Path]:
@@ -135,6 +169,83 @@ def commit_state(state_root: Path, message: str, changed_paths: list[Path]) -> N
     run(*arguments)
 
 
+def build_complete_state(
+    state_root: Path,
+    *,
+    version: str,
+    sha256: str,
+    release_url: str,
+    backup_commit: str,
+    completed_at: str,
+) -> None:
+    version, sha256, release_url, backup_commit = validate_release_inputs(
+        version, sha256, release_url, backup_commit
+    )
+    completed_at = validate_timestamp(completed_at)
+    state = paths(state_root)
+    dashboard = read_json(state["dashboard"])
+    dashboard["currentVersion"] = version
+    dashboard.setdefault("status", {}).update(
+        {
+            "validation": "passed",
+            "githubRelease": "published",
+            "greasyForkSync": "verified",
+            "backup": "private-repository-verified",
+            "discordRelease": "posted",
+            "assetAudit": "passed",
+            "releaseReadiness": "passed",
+        }
+    )
+    dashboard["releaseReadiness"] = {
+        "version": version,
+        "state": "passed",
+        "requiredSecrets": True,
+        "privateRepositoryReadWrite": True,
+        "greasyForkMetadataVerified": True,
+        "publicReleaseCreated": False,
+        "completedAt": completed_at,
+    }
+    dashboard["latestRelease"] = {
+        "version": version,
+        "sha256": sha256,
+        "githubRelease": release_url,
+        "greasyForkVerified": True,
+        "privateBackupCommit": backup_commit,
+        "discordPosted": True,
+        "completedAt": completed_at,
+    }
+    dashboard["lastUpdated"] = completed_at
+    recovery = dashboard.get("recovery") or {}
+    recovery.pop("discordAnnouncement", None)
+    if not recovery:
+        dashboard.pop("recovery", None)
+    write_json(state["dashboard"], dashboard)
+    state["tracker"].write_text(version + "\n", encoding="utf-8")
+    render_dashboard(state_root)
+    build_manifest(state_root)
+
+
+def prepare_production(
+    state_root: Path,
+    version: str,
+    sha256: str,
+    release_url: str,
+    backup_commit: str,
+    completed_at: str,
+) -> None:
+    build_complete_state(
+        state_root,
+        version=version,
+        sha256=sha256,
+        release_url=release_url,
+        backup_commit=backup_commit,
+        completed_at=completed_at,
+    )
+    write_output("version", version)
+    write_output("completed_at", validate_timestamp(completed_at))
+    print(f"Prepared authoritative Toolkit v{version} production state")
+
+
 def seed_from_main(state_root: Path, version: str, allow_missing: bool = False) -> None:
     version = validate_version(version)
     state = paths(state_root)
@@ -154,7 +265,7 @@ def seed_from_main(state_root: Path, version: str, allow_missing: bool = False) 
             f"Neither release-state nor main records the requested latest release v{version}"
         )
 
-    for relative in [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL]:
+    for relative in STATE_PATHS:
         source_path = ROOT / relative
         target_path = state_root / relative
         if not source_path.is_file():
@@ -165,7 +276,7 @@ def seed_from_main(state_root: Path, version: str, allow_missing: bool = False) 
     commit_state(
         state_root,
         f"Seed Toolkit {version} recovery state from main",
-        [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL],
+        STATE_PATHS,
     )
 
 
@@ -277,7 +388,7 @@ def finalize_discord(state_root: Path, version: str, expected_nonce: str) -> Non
     commit_state(
         state_root,
         f"Record Toolkit {version} Discord recovery",
-        [DASHBOARD_REL, README_REL, MANIFEST_REL, TRACKER_REL],
+        STATE_PATHS,
     )
 
 
@@ -289,15 +400,9 @@ def rebuild_dashboard(
     backup_commit: str,
     discord_state: str,
 ) -> None:
-    version = validate_version(version)
-    if not FULL_HASH.fullmatch(sha256):
-        raise RecoveryStateError("Release SHA-256 is invalid")
-    if not FULL_COMMIT.fullmatch(backup_commit):
-        raise RecoveryStateError("Private backup commit is invalid")
-    if release_url != (
-        f"https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v{version}"
-    ):
-        raise RecoveryStateError("GitHub Release URL is not canonical")
+    version, sha256, release_url, backup_commit = validate_release_inputs(
+        version, sha256, release_url, backup_commit
+    )
     if discord_state not in {"preserve", "posted", "not-posted"}:
         raise RecoveryStateError("Unsupported Discord rebuild state")
 
@@ -313,50 +418,56 @@ def rebuild_dashboard(
         discord_posted = discord_state == "posted"
 
     completed = now()
-    dashboard["currentVersion"] = version
-    status = dashboard.setdefault("status", {})
-    status.update(
-        {
-            "validation": "passed",
-            "githubRelease": "published",
-            "greasyForkSync": "verified",
-            "backup": "private-repository-verified",
-            "discordRelease": "posted" if discord_posted else "not-posted",
-            "assetAudit": "passed",
-            "releaseReadiness": "passed",
-        }
-    )
-    dashboard["releaseReadiness"] = {
-        "version": version,
-        "state": "passed",
-        "requiredSecrets": True,
-        "privateRepositoryReadWrite": True,
-        "greasyForkMetadataVerified": True,
-        "publicReleaseCreated": False,
-        "completedAt": completed,
-    }
-    dashboard["latestRelease"] = {
-        "version": version,
-        "sha256": sha256,
-        "githubRelease": release_url,
-        "greasyForkVerified": True,
-        "privateBackupCommit": backup_commit,
-        "discordPosted": discord_posted,
-        "completedAt": completed,
-    }
-    dashboard["lastUpdated"] = completed
-    recovery = dashboard.get("recovery") or {}
-    recovery.pop("discordAnnouncement", None)
-    if not recovery:
-        dashboard.pop("recovery", None)
-    write_json(state["dashboard"], dashboard)
-    render_dashboard(state_root)
-
-    changed = [DASHBOARD_REL, README_REL]
     if discord_posted:
-        state["tracker"].write_text(version + "\n", encoding="utf-8")
-        build_manifest(state_root)
-        changed.extend([MANIFEST_REL, TRACKER_REL])
+        build_complete_state(
+            state_root,
+            version=version,
+            sha256=sha256,
+            release_url=release_url,
+            backup_commit=backup_commit,
+            completed_at=completed,
+        )
+        changed = STATE_PATHS
+    else:
+        dashboard["currentVersion"] = version
+        dashboard.setdefault("status", {}).update(
+            {
+                "validation": "passed",
+                "githubRelease": "published",
+                "greasyForkSync": "verified",
+                "backup": "private-repository-verified",
+                "discordRelease": "not-posted",
+                "assetAudit": "passed",
+                "releaseReadiness": "passed",
+            }
+        )
+        dashboard["releaseReadiness"] = {
+            "version": version,
+            "state": "passed",
+            "requiredSecrets": True,
+            "privateRepositoryReadWrite": True,
+            "greasyForkMetadataVerified": True,
+            "publicReleaseCreated": False,
+            "completedAt": completed,
+        }
+        dashboard["latestRelease"] = {
+            "version": version,
+            "sha256": sha256,
+            "githubRelease": release_url,
+            "greasyForkVerified": True,
+            "privateBackupCommit": backup_commit,
+            "discordPosted": False,
+            "completedAt": completed,
+        }
+        dashboard["lastUpdated"] = completed
+        recovery = dashboard.get("recovery") or {}
+        recovery.pop("discordAnnouncement", None)
+        if not recovery:
+            dashboard.pop("recovery", None)
+        write_json(state["dashboard"], dashboard)
+        render_dashboard(state_root)
+        changed = [DASHBOARD_REL, README_REL]
+
     commit_state(
         state_root,
         f"Rebuild Toolkit {version} release dashboard",
@@ -366,14 +477,22 @@ def rebuild_dashboard(
 
 def self_test() -> None:
     validate_version("5.0.7")
+    validate_timestamp("2026-07-24T19:00:00Z")
     try:
         validate_version("latest")
     except RecoveryStateError:
         pass
     else:
         raise AssertionError("Invalid recovery version was accepted")
+    try:
+        validate_timestamp("24 July 2026")
+    except RecoveryStateError:
+        pass
+    else:
+        raise AssertionError("Invalid completion timestamp was accepted")
     assert DASHBOARD_REL.as_posix() == "status/release-dashboard.json"
     assert TRACKER_REL.as_posix() == ".github/greasyfork-version.txt"
+    assert len(STATE_PATHS) == 4
     print("Release recovery state self-tests passed.")
 
 
@@ -381,6 +500,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     subcommands = parser.add_subparsers(dest="command")
+
+    production = subcommands.add_parser("prepare-production")
+    production.add_argument("--state-root", type=Path, required=True)
+    production.add_argument("--version", required=True)
+    production.add_argument("--sha256", required=True)
+    production.add_argument("--release-url", required=True)
+    production.add_argument("--backup-commit", required=True)
+    production.add_argument("--completed-at", required=True)
 
     seed = subcommands.add_parser("seed")
     seed.add_argument("--state-root", type=Path, required=True)
@@ -421,7 +548,16 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
-    if args.command == "seed":
+    if args.command == "prepare-production":
+        prepare_production(
+            args.state_root,
+            args.version,
+            args.sha256,
+            args.release_url,
+            args.backup_commit,
+            args.completed_at,
+        )
+    elif args.command == "seed":
         seed_from_main(args.state_root, args.version, args.allow_missing)
     elif args.command == "record-greasyfork":
         record_greasyfork(args.state_root, args.version)
@@ -441,7 +577,7 @@ def main() -> int:
             args.discord_state,
         )
     else:
-        raise RecoveryStateError("A recovery-state command or --self-test is required")
+        raise RecoveryStateError("A governed-state command or --self-test is required")
     return 0
 
 
@@ -449,5 +585,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except RecoveryStateError as error:
-        print(f"release recovery state refused: {error}", file=os.sys.stderr)
+        print(f"governed release state refused: {error}", file=os.sys.stderr)
         raise SystemExit(1)

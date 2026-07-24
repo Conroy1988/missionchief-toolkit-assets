@@ -11,6 +11,7 @@ on:
       - ".github/workflows/pages-production-monitor.yml"
       - ".github/workflows/validate-development-package-workflow.yml"
       - ".github/scripts/*.sh"
+      - ".github/scripts/audit_repository.py"
       - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"

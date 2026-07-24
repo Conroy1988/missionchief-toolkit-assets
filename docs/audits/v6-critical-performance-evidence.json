@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "issue": 510,
+  "release": "6.0.0",
+  "baseline": {
+    "version": "5.0.7",
+    "sha256": "97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da",
+    "bytes": 2060765,
+    "lines": 31761,
+    "functionDeclarations": 979,
+    "mutationObservers": 9,
+    "recurringTasks": 8,
+    "runtimeSetTimeoutCallsites": 97,
+    "runtimeRafCallsites": 12,
+    "eventListenerCallsites": 38,
+    "querySelectorAllCallsites": 73,
+    "operationalOwnedFullDocumentQueries": 1,
+    "operationalDecorationFullDocumentQueries": 1
+  },
+  "candidate": {
+    "sha256": "f6ac6bb5892590a172b58f0cc05b7743a84b381d840937f7bb351062f0bdbdb3",
+    "bytes": 1726506,
+    "lines": 25146,
+    "functionDeclarations": 886,
+    "mutationObservers": 9,
+    "recurringTasks": 6,
+    "runtimeSetTimeoutCallsites": 85,
+    "runtimeRafCallsites": 11,
+    "eventListenerCallsites": 34,
+    "querySelectorAllCallsites": 63,
+    "operationalOwnedFullDocumentQueries": 0,
+    "operationalDecorationFullDocumentQueries": 0
+  },
+  "rootCause": [
+    "Operational Window character-data observation was applied to broad structural roots.",
+    "Operational Window reconciliation used repeated document-wide cleanup selectors.",
+    "One global mission mutation scheduled the Operational Window suite twice.",
+    "Operational settings changes rebuilt the complete Toolkit panel."
+  ],
+  "browserEvidenceState": "required-before-production-release",
+  "lssmReference": {
+    "repository": "LSS-Manager/LSSM-V.4",
+    "branch": "dev",
+    "commit": "88e41646e59a7d620624f90f1d9a0a62320c2775"
+  }
+}

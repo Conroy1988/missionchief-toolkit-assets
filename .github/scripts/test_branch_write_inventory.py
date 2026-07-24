@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the public-main write inventory used by Issue #41."""
+"""Enforce the protected-branch write inventory used by Issue #41."""
 
 from __future__ import annotations
 
@@ -21,9 +21,12 @@ def fail(message: str) -> None:
 
 
 def load_json(path: Path) -> dict:
-    if not path.exists():
+    if not path.is_file():
         fail(f"Required inventory input is missing: {path.relative_to(ROOT)}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        fail(f"Required inventory input is not a JSON object: {path.relative_to(ROOT)}")
+    return value
 
 
 def relative(path: Path) -> str:
@@ -43,26 +46,33 @@ def executable_automation_files() -> list[Path]:
 
 def contains_main_ref_mutation(text: str) -> bool:
     return bool(
-        re.search(r"\bgit\s+push\b[^\n]*(?:HEAD:main|(?:origin|upstream)\s+main(?:\s|$))", text)
+        re.search(r"\bgit\s+push\b[^\n]*(?:HEAD:main|HEAD:refs/heads/main|(?:origin|upstream)\s+main(?:\s|$))", text)
         or re.search(r"\bgit\s+update-ref\s+refs/heads/main\b", text)
         or re.search(r"(?:gh\s+api|curl)[\s\S]{0,240}(?:git/refs/heads/main|refs/heads/main)", text)
     )
+
+
+def require(text: str, markers: list[str], label: str) -> None:
+    for marker in markers:
+        if marker not in text:
+            fail(f"{label} is missing required marker: {marker}")
+
+
+def forbid(text: str, markers: list[str], label: str) -> None:
+    for marker in markers:
+        if marker in text:
+            fail(f"{label} contains forbidden marker: {marker}")
 
 
 def document_mentions(document: str, repository_path: str) -> bool:
     return repository_path in document or Path(repository_path).name in document
 
 
-def require_markers(text: str, markers: list[str], label: str) -> None:
-    for marker in markers:
-        if marker not in text:
-            fail(f"{label} is missing required marker: {marker}")
-
-
-def forbid_markers(text: str, markers: list[str], label: str) -> None:
-    for marker in markers:
-        if marker in text:
-            fail(f"{label} contains forbidden mutation marker: {marker}")
+def workflow_set(entries: list[dict]) -> set[str]:
+    result = {str(entry.get("workflow") or "") for entry in entries}
+    if "" in result:
+        fail("Every classified workflow requires a repository-relative path")
+    return result
 
 
 def main() -> int:
@@ -78,24 +88,24 @@ def main() -> int:
     direct_entries = inventory.get("directMainWriters") or []
     orchestrator_entries = inventory.get("indirectMainWriteOrchestrators") or []
     artifact_entries = inventory.get("artifactOnlyEvidenceWorkflows") or []
+    state_entries = inventory.get("releaseStateBranchWriters") or []
     external_entries = inventory.get("externalRepositoryMainPushSources") or []
     review_entries = inventory.get("reviewBranchWriters") or []
+    shadow_entries = inventory.get("shadowBranchWriters") or []
 
-    direct_workflows = {str(entry.get("workflow") or "") for entry in direct_entries}
-    orchestrator_workflows = {str(entry.get("workflow") or "") for entry in orchestrator_entries}
-    artifact_workflows = {str(entry.get("workflow") or "") for entry in artifact_entries}
-    classified_contents = direct_workflows | orchestrator_workflows
+    direct = workflow_set(direct_entries)
+    orchestrators = workflow_set(orchestrator_entries)
+    artifacts = workflow_set(artifact_entries)
+    state_writers = workflow_set(state_entries)
 
-    if "" in direct_workflows | orchestrator_workflows | artifact_workflows:
-        fail("Every classified workflow requires a repository-relative path")
-    if direct_workflows & orchestrator_workflows:
-        fail("A workflow cannot be both a direct main writer and an orchestrator")
-    if artifact_workflows & classified_contents:
-        fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 3:
-        fail(f"Expected three reviewed direct public-main writers, found {len(direct_workflows)}")
-    if len(orchestrator_workflows) != 2:
-        fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
+    expected_direct = {
+        ".github/workflows/release-recovery.yml",
+        ".github/workflows/release-toolkit.yml",
+    }
+    expected_orchestrators = {
+        ".github/workflows/auto-release-after-validation.yml",
+        ".github/workflows/owner-release-command.yml",
+    }
     expected_artifacts = {
         ".github/workflows/validate-userscript.yml",
         ".github/workflows/release-toolkit-dry-run.yml",
@@ -105,8 +115,22 @@ def main() -> int:
         ".github/workflows/reconcile-release-announcement-state.yml",
         ".github/workflows/publish-update-manifest.yml",
     }
-    if artifact_workflows != expected_artifacts:
-        fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
+    expected_state_writers = {".github/workflows/greasyfork-release-monitor.yml"}
+
+    if direct != expected_direct:
+        fail(f"Unexpected direct public-main writers: {sorted(direct)}")
+    if orchestrators != expected_orchestrators:
+        fail(f"Unexpected release orchestrators: {sorted(orchestrators)}")
+    if artifacts != expected_artifacts:
+        fail(f"Unexpected artifact-only workflow inventory: {sorted(artifacts)}")
+    if state_writers != expected_state_writers:
+        fail(f"Unexpected release-state writer inventory: {sorted(state_writers)}")
+
+    classified_groups = [direct, orchestrators, artifacts, state_writers]
+    for index, left in enumerate(classified_groups):
+        for right in classified_groups[index + 1 :]:
+            if left & right:
+                fail(f"Workflow classifications overlap: {sorted(left & right)}")
 
     policy_contents = {
         path
@@ -114,6 +138,7 @@ def main() -> int:
         if "contents" in (permissions or [])
     }
     inventory_contents = set(inventory.get("contentsWriteAuthority") or [])
+    classified_contents = direct | orchestrators | state_writers
     if policy_contents != inventory_contents:
         fail(
             "Contents-write authority differs between policy and inventory: "
@@ -122,7 +147,7 @@ def main() -> int:
         )
     if classified_contents != inventory_contents:
         fail(
-            "Every contents-write workflow must be classified: "
+            "Every contents-write workflow must have an explicit branch class: "
             f"unclassified={sorted(inventory_contents - classified_contents)}, "
             f"unexpected={sorted(classified_contents - inventory_contents)}"
         )
@@ -139,7 +164,8 @@ def main() -> int:
             f"inventory-only={sorted(inventory_contents - declared_contents_write)}"
         )
 
-    for workflow in sorted(classified_contents | artifact_workflows):
+    all_classified = direct | orchestrators | artifacts | state_writers
+    for workflow in sorted(all_classified):
         path = ROOT / workflow
         if not path.is_file():
             fail(f"Classified workflow is missing: {workflow}")
@@ -160,11 +186,10 @@ def main() -> int:
             f"unclassified={sorted(discovered_main_sources - expected_all_sources)}, "
             f"missing={sorted(expected_all_sources - discovered_main_sources)}"
         )
-    missing_direct_pushes = direct_workflows - expected_public_sources
-    if missing_direct_pushes:
-        fail(f"Direct writers missing from directMainPushSources: {sorted(missing_direct_pushes)}")
-    if (orchestrator_workflows | artifact_workflows) & discovered_main_sources:
-        fail("Orchestrator and artifact-only workflows must not mutate public main")
+    if direct - expected_public_sources:
+        fail(f"Direct writers missing from directMainPushSources: {sorted(direct - expected_public_sources)}")
+    if (orchestrators | artifacts | state_writers) & discovered_main_sources:
+        fail("Non-main workflow classes must not mutate public main")
 
     for entry in orchestrator_entries:
         workflow = str(entry["workflow"])
@@ -173,130 +198,122 @@ def main() -> int:
         if invoked.replace(".github/workflows/", "./.github/workflows/") not in text:
             fail(f"Orchestrator {workflow} no longer invokes {invoked}")
 
-    dry_run = (ROOT / ".github/workflows/release-toolkit-dry-run.yml").read_text(encoding="utf-8")
-    require_markers(dry_run, [
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Write immutable dry-run evidence",
-        "publicMainChanged: false",
-        "Upload reviewable release bundle and evidence",
-    ], "Artifact-only dry-run workflow")
-    forbid_markers(dry_run, [
-        "contents: write", "status/release-dashboard.json", "git commit", "git push",
-        "git pull --rebase", "github-actions[bot]",
-    ], "Artifact-only dry-run workflow")
+    artifact_markers = {
+        ".github/workflows/validate-userscript.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Write immutable validation candidate evidence",
+        ],
+        ".github/workflows/release-toolkit-dry-run.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload reviewable release bundle and evidence",
+        ],
+        ".github/workflows/repository-audit.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload immutable audit reports",
+        ],
+        ".github/workflows/update-release-dashboard.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload dashboard projection evidence",
+        ],
+        ".github/workflows/import-canonical-userscript.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload immutable parity evidence",
+        ],
+        ".github/workflows/reconcile-release-announcement-state.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload immutable announcement-state evidence",
+        ],
+        ".github/workflows/publish-update-manifest.yml": [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Upload immutable update-manifest evidence",
+        ],
+    }
+    for workflow, markers in artifact_markers.items():
+        text = (ROOT / workflow).read_text(encoding="utf-8")
+        require(text, markers, workflow)
+        forbid(
+            text,
+            ["contents: write", "git push origin HEAD:main", "git push origin HEAD:refs/heads/main"],
+            workflow,
+        )
 
-    repository_workflow = (ROOT / ".github/workflows/repository-audit.yml").read_text(encoding="utf-8")
-    repository_script = (ROOT / ".github/scripts/audit_repository.py").read_text(encoding="utf-8")
-    require_markers(repository_workflow, [
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "REPOSITORY_AUDIT_OUTPUT_DIR: repository-audit-output",
-        "Upload immutable audit reports",
-        "storage.publicMainChanged == false",
-        "storage.releaseDashboardChanged == false",
-    ], "Artifact-only repository-audit workflow")
-    forbid_markers(repository_workflow, [
-        "contents: write", "status/release-dashboard.json", "git commit", "git push",
-        "git pull --rebase", "github-actions[bot]",
-    ], "Artifact-only repository-audit workflow")
-    require_markers(repository_script, [
-        '"type": "workflow-artifact"',
-        '"publicMainChanged": False',
-        '"releaseDashboardChanged": False',
-        "REPOSITORY_AUDIT_OUTPUT_DIR",
-    ], "Repository-audit script")
-    forbid_markers(repository_script, [
-        'ROOT / "status" / "release-dashboard.json"',
-        'dashboard["currentVersion"]',
-        'dashboard["status"]',
-        'dashboard["lastUpdated"]',
-    ], "Repository-audit script")
+    if len(state_entries) != 1:
+        fail(f"Expected one release-state writer, found {len(state_entries)}")
+    state_entry = state_entries[0]
+    expected_state = {
+        "workflow": ".github/workflows/greasyfork-release-monitor.yml",
+        "helper": ".github/scripts/release_state_branch.py",
+        "sourceAuthority": "main release dashboard",
+        "target": "release-state",
+        "writes": [".github/greasyfork-version.txt"],
+        "credential": "github.token",
+        "actor": "github-actions[bot]",
+        "mainMutationAllowed": False,
+        "forcePushAllowed": False,
+        "liveConsumerCutoverAllowed": False,
+        "migrationState": "transitional fallback-tracker authority",
+    }
+    if state_entry != expected_state:
+        fail("Release-state fallback-monitor inventory changed")
 
-    dashboard_workflow = (ROOT / ".github/workflows/update-release-dashboard.yml").read_text(encoding="utf-8")
-    dashboard_generator = (ROOT / ".github/scripts/generate_release_dashboard.py").read_text(encoding="utf-8")
-    require_markers(dashboard_workflow, [
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Generate and compare read-only dashboard projection",
-        "--check",
-        "--output dashboard-projection/status-README.md",
-        "cmp --silent status/README.md dashboard-projection/status-README.md",
-        "Upload dashboard projection evidence",
-        "Public main changed: no",
-    ], "Artifact-only dashboard-projection workflow")
-    forbid_markers(dashboard_workflow, [
-        "contents: write", "git commit", "git push", "git pull --rebase", "github-actions[bot]",
-    ], "Artifact-only dashboard-projection workflow")
-    require_markers(dashboard_generator, [
-        'parser.add_argument("--output"',
-        '"--check"',
-        "if args.check:",
-        "Dashboard ledger sanitation would change the committed JSON",
-        "def render_dashboard(data: dict) -> str:",
-    ], "Dashboard generator projection mode")
-
-    parity_workflow = (ROOT / ".github/workflows/import-canonical-userscript.yml").read_text(encoding="utf-8")
-    parity_auditor = (ROOT / ".github/scripts/audit_greasyfork_canonical_parity.py").read_text(encoding="utf-8")
-    require_markers(parity_workflow, [
-        "name: Verify Greasy Fork Canonical Parity",
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Audit GitHub canonical authority",
-        "Upload immutable parity evidence",
-        "missionchief-greasyfork-canonical-parity-${{ github.sha }}",
-        "Automatic importing is retired; owner review is required.",
-    ], "Artifact-only Greasy Fork parity workflow")
-    forbid_markers(parity_workflow, [
-        "contents: write", "git commit", "git push", "git pull --rebase",
-        "github-actions[bot]", "DEVELOPMENT_PR_TOKEN", "gh pr create",
-    ], "Artifact-only Greasy Fork parity workflow")
-    require_markers(parity_auditor, [
-        '"authority": "GitHub canonical source"',
-        '"automaticImportEnabled": False',
-        '"publicMainChanged": False',
-        '"canonicalSourceChanged": False',
-        '"sourceBaselineChanged": False',
-        '"liveAheadRequiresOwnerReview": True',
-    ], "Greasy Fork parity auditor")
-
-    announcement_workflow = (ROOT / ".github/workflows/reconcile-release-announcement-state.yml").read_text(encoding="utf-8")
-    require_markers(announcement_workflow, [
-        "name: Verify Release Announcement State",
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Verify dashboard and announcement tracker",
-        "announcementTrackerChanged: false",
-        "Upload immutable announcement-state evidence",
-        "missionchief-release-announcement-state-${{ github.sha }}",
-        "No automatic mutation was attempted.",
-    ], "Artifact-only announcement-state workflow")
-    forbid_markers(announcement_workflow, [
-        "contents: write", "git commit", "git push", "git pull --rebase",
-        "github-actions[bot]", "git reset --hard",
-    ], "Artifact-only announcement-state workflow")
-
-    manifest_workflow = (ROOT / ".github/workflows/publish-update-manifest.yml").read_text(encoding="utf-8")
-    manifest_builder = (ROOT / ".github/scripts/build_stable_update_manifest.py").read_text(encoding="utf-8")
-    require_markers(manifest_workflow, [
-        "name: Verify Toolkit Update Manifest",
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Verify committed manifest against release ledger",
-        "--check",
-        "Upload immutable update-manifest evidence",
-        "missionchief-update-manifest-verification-${{ github.sha }}",
-        "No repository mutation was attempted.",
-    ], "Artifact-only update-manifest workflow")
-    forbid_markers(manifest_workflow, [
-        "contents: write", "git commit", "git push", "git pull --rebase", "github-actions[bot]",
-    ], "Artifact-only update-manifest workflow")
-    require_markers(manifest_builder, [
-        "def build_manifest(dashboard: dict, settings: dict)",
-        '"publicMainChanged": False',
-        '"releaseDashboardChanged": False',
-        "Stable update manifest self-tests passed.",
-    ], "Stable update-manifest builder")
+    monitor = (ROOT / state_entry["workflow"]).read_text(encoding="utf-8")
+    helper = (ROOT / state_entry["helper"]).read_text(encoding="utf-8")
+    require(
+        monitor,
+        [
+            "Check out latest main authority",
+            "persist-credentials: false",
+            "Prepare governed release-state worktree",
+            "release_state_branch.py prepare",
+            "RELEASE_STATE_ROOT/.github/greasyfork-version.txt",
+            "DASHBOARD_FILE=\"status/release-dashboard.json\"",
+            "Reconcile release-state tracker from verified main dashboard",
+            "Record announced version on release-state",
+            "release_state_branch.py commit",
+            "GH_TOKEN: ${{ github.token }}",
+        ],
+        "Greasy Fork fallback monitor",
+    )
+    forbid(
+        monitor,
+        [
+            "git push origin HEAD:main",
+            "git push origin HEAD:refs/heads/main",
+            "git reset --hard origin/main",
+            "STATE_FILE=\".github/greasyfork-version.txt\"",
+        ],
+        "Greasy Fork fallback monitor",
+    )
+    require(
+        helper,
+        [
+            'TARGET_BRANCH = "release-state"',
+            'PUSH_REF = f"HEAD:refs/heads/{TARGET_BRANCH}"',
+            "release-state branch role is immutable",
+            "release-state moved after preparation",
+            "http.https://github.com/.extraheader",
+            "Release-state branch writer self-tests passed.",
+        ],
+        "Release-state branch helper",
+    )
+    forbid(
+        helper,
+        [
+            'TARGET_BRANCH = "main"',
+            "HEAD:refs/heads/main",
+            "--force",
+            "force-with-lease",
+            "git reset --hard origin/main",
+        ],
+        "Release-state branch helper",
+    )
 
     for entry in external_entries:
         path = ROOT / str(entry["path"])
@@ -316,23 +333,33 @@ def main() -> int:
         if str(entry.get("credential") or "") not in workflow.read_text(encoding="utf-8"):
             fail(f"Review-branch writer no longer uses reviewed credential: {relative(workflow)}")
 
+    if len(shadow_entries) != 1:
+        fail(f"Expected one shadow synchronization writer, found {len(shadow_entries)}")
+    shadow_workflow = ROOT / str(shadow_entries[0].get("workflow") or "")
+    if not shadow_workflow.is_file():
+        fail("Shadow synchronization workflow is missing")
+    if relative(shadow_workflow) in discovered_main_sources:
+        fail("Shadow synchronization workflow must not mutate public main")
+
     for path in sorted(expected_public_sources | expected_external_sources):
         if not document_mentions(document, path):
             fail(f"Human inventory omits executable write source: {path}")
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "three workflows that can commit directly to public `main`",
-        "Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity, announcement-state verification and stable update-manifest verification are now artifact-only",
+        "two workflows that can commit directly to public `main`",
+        "seven workflows use read-only repository access",
+        "fallback announcement tracker is now written only to `release-state`",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")
 
     print(
         "Branch-write inventory passed: "
-        f"{len(direct_workflows)} direct main writers, "
-        f"{len(orchestrator_workflows)} orchestrators, "
-        f"{len(artifact_workflows)} artifact-only workflows, "
+        f"{len(direct)} direct main writers, "
+        f"{len(state_writers)} release-state writer, "
+        f"{len(orchestrators)} orchestrators, "
+        f"{len(artifacts)} artifact-only workflows, "
         f"{len(review_entries)} review-branch writers and "
         f"{len(external_entries)} external-repository writer."
     )

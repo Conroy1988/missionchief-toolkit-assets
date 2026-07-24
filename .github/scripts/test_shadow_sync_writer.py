@@ -51,9 +51,18 @@ def main() -> int:
         "liveConsumerCutoverAllowed": False,
         "replacementIdentity": "narrowly scoped GitHub App",
     }
-    for key, expected in expected_writer.items():
-        if writer.get(key) != expected:
-            raise AssertionError(f"writerRehearsal {key}={writer.get(key)!r}, expected {expected!r}")
+    if writer != expected_writer:
+        raise AssertionError("writerRehearsal policy changed")
+
+    release_state = (policy.get("branches") or {}).get("release-state") or {}
+    if release_state.get("mirroredPaths") != [
+        "status/release-dashboard.json",
+        "status/README.md",
+        "status/update-manifest.json",
+    ]:
+        raise AssertionError("release-state mirror allowlist changed")
+    if release_state.get("operationalPaths") != [".github/greasyfork-version.txt"]:
+        raise AssertionError("release-state operational allowlist changed")
 
     entries = inventory.get("shadowBranchWriters") or []
     if len(entries) != 1:
@@ -119,15 +128,24 @@ def main() -> int:
     require(
         script,
         [
-            '"release-state"',
-            '"distribution"',
+            "Synchronize only reviewed mirror files",
+            "preserves operational branch",
             'value == "main"',
             'branch == "main"',
             'f"HEAD:refs/heads/{branch}"',
+            'mirrored = branch_policy.get("mirroredPaths")',
+            'operational = branch_policy.get("operationalPaths")',
+            'operational != [".github/greasyfork-version.txt"]',
+            'mirrored_paths, operational_paths = validate_path_classes',
+            'for path in mirrored_paths:',
+            'for path in operational_paths:',
+            '"mode": "operational-preserved"',
+            '"preservedOperationalPaths": operational_paths',
+            "operational path was modified during mirror sync",
             '"DEVELOPMENT_PR_TOKEN is required for apply mode"',
             '"owner-token-rehearsal"',
             '"publicMainChanged": False',
-            '"liveConsumersChanged": False',
+            '"externalConsumersChanged": False',
             '"workflowContentsWrite": False',
             '"narrowly scoped GitHub App"',
             "Shadow synchronization self-tests passed.",
@@ -141,6 +159,10 @@ def main() -> int:
             "git update-ref refs/heads/main",
             "git push origin HEAD:main",
             '"liveConsumerCutoverAllowed": True',
+            'paths = list(branch_policy["governedPaths"])',
+            "shutil.copyfile(ROOT / path, worktree / path)",
+            "push --force",
+            "force-with-lease",
         ],
         "Shadow sync script",
     )
@@ -151,7 +173,8 @@ def main() -> int:
         "DEVELOPMENT_PR_TOKEN",
         "release-state",
         "distribution",
-        "cannot update public `main`",
+        "public `main` rejected as a target",
+        "`.github/greasyfork-version.txt` only",
     ]:
         if marker not in document:
             raise AssertionError(f"Human inventory is missing shadow writer marker: {marker}")
@@ -160,7 +183,10 @@ def main() -> int:
     if result.returncode != 0:
         raise AssertionError("Shadow synchronization self-tests failed")
 
-    print("Shadow sync writer passed: manual owner confirmation, fixed targets, read-only workflow permission and no main mutation.")
+    print(
+        "Shadow sync writer passed: manual owner confirmation, fixed targets, "
+        "mirror-only copies, preserved operational paths and no main mutation."
+    )
     return 0
 
 

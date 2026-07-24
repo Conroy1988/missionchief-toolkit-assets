@@ -49,9 +49,6 @@
     ".github/workflows/release-recovery.yml": [
       "contents"
     ],
-    ".github/workflows/release-toolkit-dry-run.yml": [
-      "contents"
-    ],
     ".github/workflows/release-toolkit.yml": [
       "actions",
       "contents"

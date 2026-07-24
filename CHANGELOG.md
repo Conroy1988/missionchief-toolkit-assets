@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [5.0.7] - 2026-07-24
+
+### Critical mission-window recovery
+
+- Prevented child mission frames and mission-window maps from mounting or stealing the main Toolkit command launcher.
+- Committed the command-bar open or collapsed choice before any UI reconciliation and applied the state directly to the command controls, eliminating mission-open reopen races on Desktop, Tablet/iPad and iOS.
+- Broadened native and LSSM requirement-source discovery while retaining visible-equivalent LSSM suppression.
+- Added bounded same-origin mission-page recovery when the live MissionChief requirement placeholder is empty, with mission-scoped caching, error backoff and automatic source rebinding.
+- Preserved amber unknown states and continued to require positive parsed evidence before showing green coverage.
+
 ## [5.0.6] - 2026-07-23
 
 ### Fixed

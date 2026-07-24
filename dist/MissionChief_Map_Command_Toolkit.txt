@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      5.0.6
+// @version      5.0.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '5.0.6',
+        version: '5.0.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -22174,6 +22174,111 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         } catch (error) {}
         return true;
     }
+    const OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS = 60000;
+    const OPERATIONAL_REQUIREMENTS_REMOTE_ERROR_BACKOFF_MS = 5000;
+    const operationalRequirementsRemoteCache = new Map();
+
+    function operationalRequirementsMissionKey(doc) {
+        const missionContainers = Array.from(doc?.querySelectorAll?.('#mission-form,[data-mission-window][data-mission-id],.mission-window[data-mission-id],.mission_window[data-mission-id]') || []);
+        const missionContainer = missionContainers.find(operationalRequirementsCandidateVisible) || missionContainers[0] || null;
+        const values = [
+            missionContainer?.getAttribute?.('data-mission-id'),
+            missionContainer?.querySelector?.('input[name="mission_id"]')?.value,
+            missionContainer?.querySelector?.('input[name="mission_id"]')?.getAttribute?.('value'),
+            missionContainer?.getAttribute?.('action'),
+            missionContainer?.querySelector?.('form[action*="/missions/"]')?.getAttribute?.('action'),
+            doc?.querySelector?.('#mission-form[action*="/missions/"],form[action*="/missions/"]')?.getAttribute?.('action'),
+            doc?.querySelector?.('#mission-form input[name="mission_id"],input[name="mission_id"]')?.value,
+            doc?.querySelector?.('#mission-form input[name="mission_id"],input[name="mission_id"]')?.getAttribute?.('value'),
+            doc?.defaultView?.location?.pathname,
+            doc?.defaultView?.location?.href,
+            doc?.URL,
+            doc?.baseURI
+        ];
+        for (const value of values) {
+            const text = String(value || '').trim();
+            if (/^\d+$/u.test(text)) return text;
+            const match = text.match(/\/missions\/(\d+)(?:\/|[?#]|$)/u);
+            if (match) return match[1];
+        }
+        return '';
+    }
+
+    function operationalRequirementsRemoteAnchor(doc, nativeRoots = []) {
+        const connected = nativeRoots.find(root => root?.isConnected !== false && root?.parentNode && operationalRequirementsCandidateVisible(root))
+            || nativeRoots.find(root => root?.isConnected !== false && root?.parentNode);
+        if (connected) return connected;
+        const mission = operationalRequirementsMissionContainer(null, doc);
+        return mission?.querySelector?.('#mission_general_info,.mission_general_info,#vehicle_show_table,.available-vehicles')
+            || mission?.firstElementChild
+            || mission
+            || null;
+    }
+
+    function operationalRequirementsEnsureRemoteSource(doc, missionKey) {
+        const key = String(missionKey || '');
+        if (!key || runtime.destroyed) return null;
+        const now = Date.now();
+        const current = operationalRequirementsRemoteCache.get(key);
+        if (current?.state === 'pending') return current;
+        if (current?.state === 'ready' && now - Number(current.updatedAt || 0) < OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS) return current;
+        if (current?.state === 'error' && now - Number(current.updatedAt || 0) < OPERATIONAL_REQUIREMENTS_REMOTE_ERROR_BACKOFF_MS) return current;
+        const entry = { state: 'pending', missionKey: key, root: current?.root || null, fingerprint: current?.fingerprint || '', updatedAt: now };
+        operationalRequirementsRemoteCache.set(key, entry);
+        void (async () => {
+            let recovered = null;
+            try {
+                const fetched = await fetchSameOriginDocument(`/missions/${encodeURIComponent(key)}`);
+                const fetchedDoc = fetched?.doc || fetched;
+                const source = operationalRequirementsResolveSource(fetchedDoc, { includeRemote: false });
+                if (source && (source.groupedCount > 0 || source.raw)) recovered = source;
+            } catch (error) {}
+            if (operationalRequirementsRemoteCache.get(key) !== entry) return;
+            if (!recovered) {
+                operationalRequirementsRemoteCache.set(key, { state: 'error', missionKey: key, root: null, fingerprint: '', updatedAt: Date.now() });
+            } else {
+                operationalRequirementsRemoteCache.set(key, {
+                    state: 'ready',
+                    missionKey: key,
+                    root: recovered.root,
+                    fingerprint: `remote:${key}:${recovered.fingerprint}`,
+                    updatedAt: Date.now()
+                });
+            }
+            scheduleOperationalSuiteScan(0);
+        })().catch(() => {
+            if (operationalRequirementsRemoteCache.get(key) === entry) {
+                operationalRequirementsRemoteCache.set(key, { state: 'error', missionKey: key, root: null, fingerprint: '', updatedAt: Date.now() });
+                scheduleOperationalSuiteScan(0);
+            }
+        });
+        return entry;
+    }
+
+    function operationalRequirementsRemoteCandidate(doc, nativeRoots, index) {
+        const missionKey = operationalRequirementsMissionKey(doc);
+        if (!missionKey) return null;
+        const cached = operationalRequirementsRemoteCache.get(missionKey);
+        if (cached?.state === 'ready' && cached.root) {
+            if (Date.now() - Number(cached.updatedAt || 0) >= OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS) {
+                operationalRequirementsEnsureRemoteSource(doc, missionKey);
+            }
+            const anchor = operationalRequirementsRemoteAnchor(doc, nativeRoots);
+            if (!anchor) return null;
+            const record = operationalRequirementsCandidateRecord(cached.root, anchor, 'remote', index, {
+                missionKey,
+                missionContainer: operationalRequirementsMissionContainer(anchor, doc)
+            });
+            if (!record) return null;
+            record.score += 1400;
+            record.fingerprint = cached.fingerprint || `remote:${missionKey}:${record.fingerprint}`;
+            record.remote = true;
+            return record;
+        }
+        operationalRequirementsEnsureRemoteSource(doc, missionKey);
+        return null;
+    }
+
 
     function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
         return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
@@ -22189,57 +22294,77 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!fragment?.querySelector?.('[data-requirement-type]')) return null;
         return fragment;
     }
-
-    function operationalRequirementsCandidateRecord(root, anchor, kind, index) {
+    function operationalRequirementsCandidateRecord(root, anchor, kind, index, options = {}) {
         if (!root || !anchor || root.closest?.('[data-mcms-operational-suite="requirements"]')) return null;
         const grouped = Array.from(root.querySelectorAll?.('[data-requirement-type]') || []);
         const raw = operationalRequirementNormaliseText(root.textContent || '');
-        const missionContainer = operationalRequirementsMissionContainer(anchor);
+        const missionContainer = options.missionContainer || operationalRequirementsMissionContainer(anchor);
         const missionVisible = operationalRequirementsCandidateVisible(missionContainer);
         const visible = operationalRequirementsCandidateVisible(anchor);
         const score = grouped.length * 300 + (raw ? 100 : 0) + (missionVisible ? 400 : 0)
-            + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0) + (kind === 'lssm-raw' ? 10 : 0);
-        return { root, anchor, kind, index, groupedCount: grouped.length, raw, visible, missionContainer, score,
-            fingerprint: `${kind}:${index}:${grouped.length}:${raw}` };
+            + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0)
+            + (kind === 'lssm-raw' ? 10 : 0) + (kind === 'remote' ? 400 : 0);
+        return {
+            root, anchor, kind, index, groupedCount: grouped.length, raw, visible, missionContainer, score,
+            missionKey: options.missionKey || operationalRequirementsMissionKey(anchor.ownerDocument),
+            fingerprint: `${kind}:${index}:${grouped.length}:${raw}`
+        };
     }
-
-    function operationalRequirementsSourceCandidates(doc) {
+    function operationalRequirementsSourceCandidates(doc, options = {}) {
         if (!doc?.querySelectorAll) return [];
         const candidates = [];
         const seenRoots = new Set();
         const nativeRoots = Array.from(doc.querySelectorAll('[id="missing_text"]') || []);
-        const add = (root, anchor = root, kind = 'native') => {
+        for (const selector of ['[data-mission-requirements]', '[data-missing-requirements]', '[data-missing-vehicles]', '.mission-requirements', '.mission_requirements', '.missing-vehicles', '.missing_vehicles']) {
+            for (const root of Array.from(doc.querySelectorAll(selector) || [])) {
+                if (!nativeRoots.includes(root)) nativeRoots.push(root);
+            }
+        }
+        const add = (root, anchor = root, kind = 'native', extra = {}) => {
             if (!root || !anchor || seenRoots.has(root)) return;
-            const record = operationalRequirementsCandidateRecord(root, anchor, kind, candidates.length);
+            const record = operationalRequirementsCandidateRecord(root, anchor, kind, candidates.length, extra);
             if (!record) return;
             seenRoots.add(root);
             candidates.push(record);
         };
         nativeRoots.forEach(root => add(root, root, 'native'));
         for (const group of Array.from(doc.querySelectorAll('[data-requirement-type]') || [])) {
-            const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles') || group.parentElement;
+            const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles, [data-mission-requirements], [data-missing-requirements], [data-missing-vehicles], .mission-requirements, .mission_requirements, .missing-vehicles, .missing_vehicles') || group.parentElement;
             add(root, root, 'grouped');
         }
-        for (const carrier of Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || [])) {
+        const lssmCarriers = Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || []);
+        const rawCarriers = Array.from(new Set([
+            ...lssmCarriers,
+            ...Array.from(doc.querySelectorAll('[data-raw-html]') || [])
+        ]));
+        for (const carrier of rawCarriers) {
             if (carrier.closest?.('[data-mcms-operational-suite="requirements"]')) continue;
             const rawHtml = String(carrier.getAttribute?.('data-raw-html') || '').trim();
-            if (!rawHtml) continue;
-            if (operationalRequirementsCandidateVisible(carrier)) {
-                candidates.push({ root: carrier, anchor: carrier, kind: 'lssm-live', index: candidates.length,
+            if (!rawHtml || !/data-requirement-type\s*=/iu.test(rawHtml)) continue;
+            const equivalentLssm = lssmCarriers.includes(carrier) || carrier.matches?.('.alert-missing-vehicles') === true;
+            if (equivalentLssm && operationalRequirementsCandidateVisible(carrier)) {
+                candidates.push({
+                    root: carrier, anchor: carrier, kind: 'lssm-live', index: candidates.length,
                     groupedCount: 0, raw: rawHtml, visible: true,
                     missionContainer: operationalRequirementsMissionContainer(carrier), score: Number.POSITIVE_INFINITY,
-                    fingerprint: `lssm-live:${rawHtml}`, suppressesToolkit: true });
+                    missionKey: operationalRequirementsMissionKey(doc),
+                    fingerprint: `lssm-live:${rawHtml}`, suppressesToolkit: true
+                });
                 continue;
             }
             const root = operationalRequirementsRawHtmlRoot(doc, carrier);
-            const preferredAnchor = nativeRoots.find(node => node?.isConnected && node?.parentNode) || carrier;
-            add(root, preferredAnchor, 'lssm-raw');
+            const preferredAnchor = operationalRequirementsRemoteAnchor(doc, nativeRoots) || carrier;
+            add(root, preferredAnchor, equivalentLssm ? 'lssm-raw' : 'raw-html');
+        }
+        const localStructuredEvidence = candidates.some(candidate => candidate.suppressesToolkit === true || candidate.groupedCount > 0 || ['lssm-raw', 'raw-html'].includes(candidate.kind));
+        if (options.includeRemote !== false && !localStructuredEvidence) {
+            const remote = operationalRequirementsRemoteCandidate(doc, nativeRoots, candidates.length);
+            if (remote) candidates.push(remote);
         }
         return candidates;
     }
-
-    function operationalRequirementsResolveSource(doc) {
-        const candidates = operationalRequirementsSourceCandidates(doc);
+    function operationalRequirementsResolveSource(doc, options = {}) {
+        const candidates = operationalRequirementsSourceCandidates(doc, options);
         const activeLssm = candidates.find(candidate => candidate.suppressesToolkit === true);
         if (activeLssm) return { ...activeLssm, suppressed: true, candidates };
         const evidenced = candidates.filter(candidate => candidate.groupedCount > 0 || candidate.raw);
@@ -22598,13 +22723,20 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         };
         return panel;
     }
-
     function operationalRequirementsRenderContext(context) {
         if (!context?.doc || runtime.destroyed) return;
         if (!operationalRequirementsActive()) {
             context.panel?.remove?.();
             context.panel = null;
             return;
+        }
+        const missionKey = operationalRequirementsMissionKey(context.doc);
+        if (context.requirementMissionKey !== missionKey) {
+            context.requirementMissionKey = missionKey;
+            context.fingerprint = '';
+            context.boundRequirementRoot = null;
+            context.boundRequirementSource = '';
+            context.boundRequirementMissionKey = '';
         }
         const requirementSource = operationalRequirementsResolveSource(context.doc);
         const requirementRoot = requirementSource?.root;
@@ -22619,13 +22751,14 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const model = operationalRequirementCreateModel(input);
         const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
         const fingerprint = JSON.stringify({
+            mission: missionKey,
             model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
-            source: input.source,
+            sourceState: input.source,
             sort: settings.sort,
             sortDir: settings.sortDir,
             viewMode: settings.viewMode,
             minified: context.minified === true,
-            source: requirementSource.fingerprint
+            sourceFingerprint: requirementSource.fingerprint
         });
         if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
         const panel = operationalRequirementsMount(context, requirementSource.anchor || requirementRoot);
@@ -22633,6 +22766,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
         panel.dataset.requirementState = rendered.state;
         panel.dataset.minified = context.minified === true ? 'true' : 'false';
+        panel.dataset.missionKey = missionKey;
         operationalReplaceContent(panel, rendered.html);
         context.fingerprint = fingerprint;
     }
@@ -22646,10 +22780,10 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             operationalFeatureRenderContext(context);
         }, Math.max(0, Number(delay) || 0));
     }
-
     function operationalRequirementsBindContext(context) {
         const doc = context?.doc;
         if (!doc?.querySelector || !operationalRequirementsActive()) return;
+        const missionKey = operationalRequirementsMissionKey(doc);
         const requirementSource = operationalRequirementsResolveSource(doc);
         const requirementRoot = requirementSource?.root || null;
         const candidateAnchors = requirementSource?.candidates?.map(candidate => candidate.anchor) || [];
@@ -22667,11 +22801,13 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const sourceFingerprint = requirementSource?.fingerprint || '';
         if (context.boundRequirementRoot === requirementSource?.anchor
             && context.boundRequirementSource === sourceFingerprint
+            && context.boundRequirementMissionKey === missionKey
             && context.observer
             && context.observedRootCount === roots.length) return;
         try { context.observer?.disconnect?.(); } catch (error) {}
         context.boundRequirementRoot = requirementSource?.anchor || null;
         context.boundRequirementSource = sourceFingerprint;
+        context.boundRequirementMissionKey = missionKey;
         context.observedRootCount = roots.length;
         const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;
         context.observer = new OperationalMutationObserver(() => operationalRequirementsScheduleContext(context, 25));
@@ -22681,7 +22817,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
                 subtree: true,
                 characterData: true,
                 attributes: true,
-                attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value']
+                attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value', 'data-raw-html', 'data-mission-id']
             });
         }
         if (!context.changeHandler) {
@@ -22780,7 +22916,55 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         {p:'callWindow.alarmIcons',l:'Alarm icons',d:'Show Font Awesome icon names on Alarm controls for selected vehicle types.',r:'enabled,callWindow.enabled',v:{icon:'',type:'fas',vehicleTypes:[]},f:[{k:'icon',l:'Icon name',t:'string'},{k:'type',l:'Icon type',t:'select',o:[['fas','Solid'],['far','Regular'],['fab','Brand']]},{k:'vehicleTypes',l:'Vehicle type IDs',t:'multiselect'}]},
         {p:'callWindow.arrCategoryColors',l:'ARR category colours',d:'Assign background and text colours to named ARR categories.',r:'enabled,callWindow.enabled',v:{categoryName:'',bgColor:'#505050',color:'#ffffff'},f:[{k:'categoryName',l:'Category name',t:'string'},{k:'bgColor',l:'Background',t:'color'},{k:'color',l:'Text',t:'color'}]}
     ]);
-    function toolkitControlHost(mapEl, doc = document) { return mapEl || doc?.body || doc?.documentElement || null; }
+    function toolkitTopLevelDocument(doc = document) {
+        try {
+            const view = doc?.defaultView;
+            return !view || view.top === view;
+        } catch (error) {
+            return true;
+        }
+    }
+    function toolkitPrimaryMapElement(mapEl, doc = document) {
+        const missionSelector = '#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]';
+        const candidates = [
+            doc?.querySelector?.('#map'),
+            mapEl,
+            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"],.leaflet-container') || [])
+        ];
+        for (const candidate of candidates) {
+            if (!candidate || candidate.ownerDocument !== doc || candidate.isConnected === false) continue;
+            if (candidate.closest?.(missionSelector)) continue;
+            return candidate;
+        }
+        return null;
+    }
+    function toolkitControlHost(mapEl, doc = document) {
+        if (!toolkitTopLevelDocument(doc)) return null;
+        return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;
+    }
+    function toolkitApplyCommandBarState(control = null) {
+        control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
+        if (!control) return false;
+        const open = state.commandBarOpen !== false;
+        control.setAttribute('data-mcms-command-bar-open', String(open));
+        for (const selector of ['.mcms-floating-filter', '.mcms-screen-pins']) {
+            const element = control.querySelector?.(selector);
+            if (!element) continue;
+            if (open) element.style.removeProperty('display');
+            else element.style.setProperty('display', 'none', 'important');
+        }
+        const button = control.querySelector?.('.mcms-dock-toggle-btn');
+        if (button) {
+            const label = open ? 'Collapse command bar' : 'Expand command bar';
+            button.classList.toggle('mcms-open', open);
+            button.setAttribute('aria-expanded', String(open));
+            button.setAttribute('aria-label', label);
+            button.title = label;
+            const icon = button.querySelector?.('.mcms-dock-toggle-icon');
+            if (icon) icon.textContent = open ? '▴' : '▾';
+        }
+        return open;
+    }
     function operationalWindowDependenciesMet(requires, forbids, getter = operationalFeatureValue, suiteEnabled = state.operationalWindow?.enabled !== false) { if (!suiteEnabled) return false; const required = String(requires || '').split(',').filter(Boolean); const blocked = String(forbids || '').split(',').filter(Boolean); return required.every(path => getter(path) === true) && !blocked.some(path => getter(path) === true); }
     function operationalWindowSettingId(path, suffix = '') { return `mcms-op-${String(path).replace(/[^a-z0-9]+/giu, '-')}${suffix}`; }
     function operationalWindowSettingAttrs(def) { const req = def.r ? ` data-operational-requires="${operationalEscape(def.r)}"` : ''; const forbid = def.f ? ` data-operational-forbids="${operationalEscape(def.f)}"` : ''; return `${req}${forbid}`; }
@@ -23064,6 +23248,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
             runtimeClearTimeout(operationalSuiteScanTimer);
             operationalSuiteScanTimer = null;
             clearOperationalSuiteContexts();
+            operationalRequirementsRemoteCache.clear();
             if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
         });
         if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
@@ -28772,108 +28957,27 @@ Create the private backup now?`);
         saveState();
         updateUI();
     }
-
     function toggleCommandBar() {
-        if (commandBarAnimating) return;
         const control = document.getElementById(SCRIPT.controlId);
         const opening = state.commandBarOpen === false;
-        const animatedItems = control
-            ? Array.from(control.querySelectorAll('.mcms-float-btn, .mcms-screen-pin-btn'))
-            : [];
-        const reduceMotion = Boolean(state.economyMode || pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
-        const duration = reduceMotion ? 0 : (mobileModeActive ? 145 : 175);
-        const stagger = reduceMotion ? 0 : (mobileModeActive ? 5 : 7);
-        const maxDelay = Math.min(Math.max(0, animatedItems.length - 1) * stagger, 70);
-        const clearAnimationStyles = () => {
-            for (const item of animatedItems) {
-                item.style.removeProperty('opacity');
-                item.style.removeProperty('transform');
-                item.style.removeProperty('transition');
-                item.style.removeProperty('transition-delay');
-                item.style.removeProperty('will-change');
-            }
-        };
-        if (commandBarAnimationTimer !== null) {
-            runtimeClearTimeout(commandBarAnimationTimer);
-            commandBarAnimationTimer = null;
+        runtimeClearTimeout(commandBarAnimationTimer);
+        commandBarAnimationTimer = null;
+        commandBarAnimating = false;
+        for (const item of Array.from(control?.querySelectorAll?.('.mcms-float-btn, .mcms-screen-pin-btn') || [])) {
+            item.style.removeProperty('opacity');
+            item.style.removeProperty('transform');
+            item.style.removeProperty('transition');
+            item.style.removeProperty('transition-delay');
+            item.style.removeProperty('will-change');
+            delete item.dataset.mcmsCollapseDelay;
         }
-        if (opening) {
-            state.commandBarOpen = true;
-            saveState();
-            updateUI();
-            fitControlToMap();
-            if (duration > 0 && animatedItems.length) {
-                commandBarAnimating = true;
-                const targetStyles = animatedItems.map(item => {
-                    const computed = pageWindow.getComputedStyle(item);
-                    return {
-                        opacity: computed.opacity || '1',
-                        transform: computed.transform === 'none' ? 'none' : computed.transform
-                    };
-                });
-                animatedItems.forEach(item => {
-                    item.style.setProperty('transition', 'none', 'important');
-                    item.style.setProperty('transition-delay', '0ms', 'important');
-                    item.style.setProperty('opacity', '0', 'important');
-                    item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
-                    item.style.setProperty('will-change', 'opacity, transform', 'important');
-                });
-                void control.offsetWidth;
-                runtimeRequestAnimationFrame(() => {
-                    animatedItems.forEach((item, index) => {
-                        item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.2,.78,.22,1), transform ${duration}ms cubic-bezier(.2,.78,.22,1)`, 'important');
-                        item.style.setProperty('transition-delay', `${Math.min(index * stagger, 70)}ms`, 'important');
-                        item.style.setProperty('opacity', targetStyles[index].opacity, 'important');
-                        item.style.setProperty('transform', targetStyles[index].transform, 'important');
-                    });
-                });
-                commandBarAnimationTimer = runtimeSetTimeout(() => {
-                    commandBarAnimationTimer = null;
-                    clearAnimationStyles();
-                    commandBarAnimating = false;
-                }, duration + maxDelay + 35);
-            }
-            showToast('Command bar expanded');
-            return;
-        }
-        if (duration <= 0 || !animatedItems.length) {
-            state.commandBarOpen = false;
-            saveState();
-            updateUI();
-            fitControlToMap();
-            showToast('Command bar collapsed');
-            return;
-        }
-        commandBarAnimating = true;
-        animatedItems.forEach((item, index) => {
-            const computed = pageWindow.getComputedStyle(item);
-            item.style.setProperty('transition', 'none', 'important');
-            item.style.setProperty('transition-delay', '0ms', 'important');
-            item.style.setProperty('opacity', computed.opacity || '1', 'important');
-            item.style.setProperty('transform', computed.transform === 'none' ? 'none' : computed.transform, 'important');
-            item.style.setProperty('will-change', 'opacity, transform', 'important');
-            item.dataset.mcmsCollapseDelay = String(Math.min(index * stagger, 70));
-        });
-        void control.offsetWidth;
-        runtimeRequestAnimationFrame(() => {
-            for (const item of animatedItems) {
-                item.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.4,0,.2,1), transform ${duration}ms cubic-bezier(.4,0,.2,1)`, 'important');
-                item.style.setProperty('transition-delay', `${item.dataset.mcmsCollapseDelay || 0}ms`, 'important');
-                item.style.setProperty('opacity', '0', 'important');
-                item.style.setProperty('transform', 'translateX(-10px) scale(.94)', 'important');
-                delete item.dataset.mcmsCollapseDelay;
-            }
-        });
-        commandBarAnimationTimer = runtimeSetTimeout(() => {
-            commandBarAnimationTimer = null;
-            state.commandBarOpen = false;
-            saveState();
-            updateUI();
-            fitControlToMap();
-            clearAnimationStyles();
-            commandBarAnimating = false;
-        }, duration + maxDelay + 25);
-        showToast('Command bar collapsed');
+        state.commandBarOpen = opening;
+        saveState();
+        applyRootAttributes();
+        toolkitApplyCommandBarState(control);
+        updateUI();
+        fitControlToMap();
+        showToast(opening ? 'Command bar expanded' : 'Command bar collapsed');
     }
 
     function handleMapVisibilityToggle(feature) {
@@ -29667,12 +29771,14 @@ Create the private backup now?`);
     }
 
     function createControl(mapEl) {
-        const host = toolkitControlHost(mapEl, document);
+        const primaryMap = toolkitPrimaryMapElement(mapEl, document);
+        const host = toolkitControlHost(primaryMap, document);
         if (!host) return null;
         const existing = document.getElementById(SCRIPT.controlId);
         if (existing) {
             if (existing.parentElement !== host) host.appendChild(existing);
-            existing.classList.toggle('mcms-control-fallback', !mapEl);
+            existing.classList.toggle('mcms-control-fallback', !primaryMap);
+            toolkitApplyCommandBarState(existing);
             return existing;
         }
         const control = document.createElement('div');
@@ -29746,8 +29852,9 @@ Create the private backup now?`);
             if (actionButton) handleAction(actionButton);
         });
         control.addEventListener('contextmenu', event => { event.preventDefault(); openPanel(); });
+        toolkitApplyCommandBarState(control);
         host.appendChild(control);
-        control.classList.toggle('mcms-control-fallback', !mapEl);
+        control.classList.toggle('mcms-control-fallback', !primaryMap);
         renderScreenPins();
         updateUI();
         return control;
@@ -30471,6 +30578,7 @@ Create the private backup now?`);
             for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
             control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
             control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+            toolkitApplyCommandBarState(control);
             const controlToggleValues = {
                 allianceMissions: state.visibility.allianceMissions,
                 myMissions: state.visibility.myMissions,
@@ -30664,7 +30772,9 @@ Create the private backup now?`);
     }
     function ensureUi() {
         operationalWindowEnsureSettingsStyle(document);
-        const mapEl = getLargestLeafletMap();
+        if (!toolkitTopLevelDocument(document)) return true;
+        const discoveredMap = getLargestLeafletMap();
+        const mapEl = toolkitPrimaryMapElement(discoveredMap, document);
         const control = createControl(mapEl);
         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
         if (control) ensureVersionStatusButton();
@@ -30676,6 +30786,7 @@ Create the private backup now?`);
             const payoutOverlay = document.getElementById(SCRIPT.payoutFlashId);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
         }
+        toolkitApplyCommandBarState(control);
         return Boolean(control || document.getElementById(SCRIPT.controlId));
     }
 

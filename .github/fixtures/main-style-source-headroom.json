@@ -2,7 +2,7 @@
   "schemaVersion": 5,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
-  "candidateVersion": "5.0.6",
+  "candidateVersion": "5.0.7",
   "originalSourceLines": 32157,
   "candidateSourceLines": 31653,
   "recoveredSourceLines": 504,
@@ -15,9 +15,9 @@
   "canonicalCssSha256": "8aab260ba882c34b0cb60f5f829b2cbdb5c15bb0fb6f167028ee95cc366cc45b",
   "candidateTemplateSha256": "f804a7cc616182f3099f56e04d5f0b162c4f34a7d2a890b633bb223745835ad3",
   "originalSourceSha256": "281f1635a8aacced565d7211956ba7d9a4a87e7c6de99f2fd18ade2acedc5832",
-  "candidateSourceSha256": "795bacf43d82be8d8c6e66e43bf6a564bcaae979bf571b3d90765f048d159a67",
+  "candidateSourceSha256": "2a918166bdbe71586ac6d96218f6e62d68d6204e107561a074f0b267d816b30f",
   "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while Operational Requirements selects and observes the authoritative active mission requirement source.",
-  "approvedNonStyleSourceLines": 1393,
+  "approvedNonStyleSourceLines": 1504,
   "approvedNonStyleChanges": [
     {
       "issue": 378,
@@ -64,9 +64,14 @@
       "phase": "complete-launcher-settings-operational-runtime-and-mission-age-recovery",
       "lines": -203,
       "netPhysicalDelta": true
+    },
+    {
+      "issue": 470,
+      "phase": "frame-safe-command-state-and-mission-scoped-requirement-recovery",
+      "lines": 111
     }
   ],
-  "expectedSourceLines": 31648,
+  "expectedSourceLines": 31759,
   "retiredNonStyleSourceLines": 1398,
   "retiredNonStyleChanges": [
     {

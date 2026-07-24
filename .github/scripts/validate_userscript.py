@@ -41,6 +41,7 @@ ISSUE456_REQUIREMENTS_TRUTH_RUNTIME = ROOT / ".github" / "scripts" / "test_issue
 ISSUE458_REQUIREMENTS_SOURCE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue458_requirements_source_runtime.js"
 ISSUE464_LAUNCHER_SETTINGS_CONTRACT = ROOT / ".github" / "scripts" / "test_issue464_launcher_settings_contract.py"
 ISSUE464_OPERATIONAL_RUNTIME = ROOT / ".github" / "scripts" / "test_issue464_operational_runtime.js"
+ISSUE470_MENU_REQUIREMENTS_RUNTIME = ROOT / ".github" / "scripts" / "test_issue470_menu_requirements_runtime.js"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -167,7 +168,7 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME, ISSUE458_REQUIREMENTS_SOURCE_RUNTIME, ISSUE464_LAUNCHER_SETTINGS_CONTRACT, ISSUE464_OPERATIONAL_RUNTIME]
+    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME, ISSUE458_REQUIREMENTS_SOURCE_RUNTIME, ISSUE464_LAUNCHER_SETTINGS_CONTRACT, ISSUE464_OPERATIONAL_RUNTIME, ISSUE470_MENU_REQUIREMENTS_RUNTIME]
     missing = [path.relative_to(ROOT) for path in required if not path.exists()]
     if missing:
         fail(
@@ -329,6 +330,12 @@ def run_integrity_gate() -> None:
         )
         if issue464_operational_runtime.returncode != 0:
             fail("Issue #464 operational runtime fixtures failed")
+
+        issue470_menu_requirements = subprocess.run(
+            ["node", str(ISSUE470_MENU_REQUIREMENTS_RUNTIME)], cwd=ROOT,
+        )
+        if issue470_menu_requirements.returncode != 0:
+            fail("Issue #470 menu/requirements runtime fixtures failed")
 
         report = json.loads(integrity_json.read_text(encoding="utf-8"))
         metrics = report.get("metrics", {})

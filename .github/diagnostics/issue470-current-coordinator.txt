@@ -1,0 +1,51 @@
+    function runBootIntegration(label, callback) {
+        try {
+            return callback();
+        } catch (error) {
+            console.warn(`[${SCRIPT.name}] ${label} failed without blocking the Toolkit launcher.`, error);
+            return null;
+        }
+    }
+
+    function startBootAttemptCoordinator(bootPerformanceStartedAt) {
+        let attempts = 0;
+        let complete = false;
+        const scheduleAttempt = delay => {
+            if (complete || runtime.destroyed) return;
+            runtimeSetTimeout(runBootAttempt, delay);
+        };
+        const runBootAttempt = () => {
+            if (complete || runtime.destroyed) return;
+            attempts += 1;
+            const ready = Boolean(runBootIntegration('core UI mount', ensureUi));
+            const mapReady = Boolean(runBootIntegration('map discovery', getLargestLeafletMap));
+            runBootIntegration('mission marker hook', installMissionMarkerAddHook);
+            runBootIntegration('radio message hook', installRadioMessageHook);
+            runBootIntegration('credits update hook', installCreditsUpdateHook);
+            runBootIntegration('credits observer', observeCreditValue);
+            if (ready && (mapReady || attempts >= 12)) {
+                complete = true;
+                runBootIntegration('startup metric', () => recordStartupMetric('coreUiReadyMs', bootPerformanceStartedAt, { bootAttempts: attempts }));
+                runBootIntegration('marker state sync', () => {
+                    scheduleMarkerStateSync(0, false);
+                });
+                runBootIntegration('deferred operational startup', () => {
+                    scheduleDeferredOperationalStartup();
+                });
+                runBootIntegration('operational suite scan', () => {
+                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
+                });
+                runBootIntegration('version status check', () => {
+                    scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
+                });
+                runBootIntegration('main observer connection', () => {
+                    runtimeSetTimeout(() => runtimeRunWhenIdle(connectMainMutationObserver, STARTUP_OBSERVER_DELAY_MS), STARTUP_OBSERVER_DELAY_MS);
+                });
+                return;
+            }
+            if (attempts >= 90) return;
+            const delay = attempts < 12 ? 350 : attempts < 30 ? 700 : 1400;
+            scheduleAttempt(delay);
+        };
+        runBootAttempt();
+    }

@@ -18,6 +18,7 @@
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
 [![Installs](https://img.shields.io/greasyfork/dt/586018?label=INSTALLS&color=0f766e)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
 [![Stars](https://img.shields.io/github/stars/Conroy1988/missionchief-toolkit-assets?style=flat&color=ca8a04)](https://github.com/Conroy1988/missionchief-toolkit-assets/stargazers)
+[![Viewed](https://komarev.com/ghpvc/?username=Conroy1988-missionchief-toolkit-assets&label=VIEWED&color=7b6cf6&style=flat)](https://github.com/Conroy1988/missionchief-toolkit-assets)
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 

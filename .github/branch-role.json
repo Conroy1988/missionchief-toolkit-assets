@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "branch": "distribution",
+  "mode": "shadow-rehearsal",
+  "authority": "main remains authoritative until Issue #41 cutover",
+  "purpose": "Mirror stable Toolkit distribution paths without changing Greasy Fork or public install consumers.",
+  "allowedMutablePaths": [
+    "dist/MissionChief_Map_Command_Toolkit.user.js",
+    "dist/MissionChief_Map_Command_Toolkit.txt",
+    "dist/SHA256SUMS.txt",
+    "dist/release-manifest.json",
+    "MissionChief_Map_Command_Toolkit.user.js",
+    "MissionChief_Map_Command_Toolkit.txt",
+    ".github/branch-role.json"
+  ],
+  "liveConsumersEnabled": false,
+  "strictProtectionEnabled": false,
+  "administratorRecoveryRequired": true,
+  "cutoverIssue": 41
+}

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Synchronize governed files to Issue #41 shadow branches.
+"""Synchronize only reviewed mirror files to Issue #41 operational branches.
 
 The synchronizer is deliberately non-live. It accepts only the reviewed
-`release-state` and `distribution` branches, preserves `main` as authority,
-requires an exact source SHA and confirmation phrase, and never updates `main`.
+``release-state`` and ``distribution`` branches, preserves operational branch
+state, requires an exact source SHA and confirmation phrase, and never updates
+public ``main``.
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 class SyncError(RuntimeError):
-    """A fail-closed synchronization error."""
+    """Fail-closed synchronization error."""
 
 
 def git(*args: str, cwd: Path = ROOT, check: bool = True) -> str:
@@ -43,10 +44,43 @@ def git(*args: str, cwd: Path = ROOT, check: bool = True) -> str:
 
 
 def load_policy(path: Path = POLICY_PATH) -> dict:
-    value = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SyncError("Shadow branch policy is missing or invalid") from error
     if not isinstance(value, dict):
         raise SyncError("Shadow branch policy must be a JSON object")
     return value
+
+
+def validate_path_classes(branch: str, branch_policy: dict) -> tuple[list[str], list[str]]:
+    governed = branch_policy.get("governedPaths")
+    mirrored = branch_policy.get("mirroredPaths")
+    operational = branch_policy.get("operationalPaths")
+    if not all(isinstance(value, list) for value in [governed, mirrored, operational]):
+        raise SyncError(f"{branch} governed, mirrored and operational paths must be lists")
+    if not governed or any(not isinstance(path, str) or not path for path in governed):
+        raise SyncError(f"{branch} governedPaths is invalid")
+    if any(not isinstance(path, str) or not path for path in [*mirrored, *operational]):
+        raise SyncError(f"{branch} path classes contain invalid entries")
+    if len(governed) != len(set(governed)):
+        raise SyncError(f"{branch} governedPaths contains duplicates")
+    if set(mirrored) & set(operational):
+        raise SyncError(f"{branch} mirroredPaths and operationalPaths overlap")
+    if set(governed) != set(mirrored) | set(operational):
+        raise SyncError(f"{branch} path classes do not partition governedPaths")
+    if ROLE_PATH in governed:
+        raise SyncError(f"{branch} role file must not be synchronized from main")
+    if branch == "release-state":
+        if operational != [".github/greasyfork-version.txt"]:
+            raise SyncError("release-state operational path must remain the fallback tracker only")
+        if branch_policy.get("operationalWriter") != ".github/workflows/greasyfork-release-monitor.yml":
+            raise SyncError("release-state operational writer changed")
+    if branch == "distribution" and operational:
+        raise SyncError("distribution cannot have operational paths before cutover")
+    if branch_policy.get("externalConsumersEnabled") is not False:
+        raise SyncError(f"{branch} external consumers must remain disabled")
+    return list(mirrored), list(operational)
 
 
 def validate_policy(policy: dict) -> dict:
@@ -89,15 +123,11 @@ def validate_policy(policy: dict) -> dict:
 
     branches = policy.get("branches")
     if not isinstance(branches, dict) or set(branches) != set(allowed_targets):
-        raise SyncError("Shadow branch definitions differ from the writer allowlist")
+        raise SyncError("Operational branch definitions differ from the writer allowlist")
     for branch, branch_policy in branches.items():
         if branch == "main" or not isinstance(branch_policy, dict):
-            raise SyncError("Invalid shadow branch policy")
-        paths = branch_policy.get("governedPaths")
-        if not isinstance(paths, list) or not paths or any(not isinstance(path, str) for path in paths):
-            raise SyncError(f"{branch} governedPaths is invalid")
-        if ROLE_PATH in paths:
-            raise SyncError(f"{branch} role file must not be synchronized from main")
+            raise SyncError("Invalid operational branch policy")
+        validate_path_classes(branch, branch_policy)
     return writer
 
 
@@ -106,7 +136,7 @@ def selected_targets(value: str, writer: dict) -> list[str]:
     if value == "both":
         return allowed
     if value not in allowed or value == "main":
-        raise SyncError(f"Target {value!r} is not an approved shadow branch")
+        raise SyncError(f"Target {value!r} is not an approved operational branch")
     return [value]
 
 
@@ -132,19 +162,33 @@ def validate_request(
         raise SyncError(f"Confirmation must be exactly {required_confirmation!r}")
     if mode != "apply" and write_probe:
         raise SyncError("A write probe is valid only in apply mode")
-    targets = selected_targets(target, writer)
-    return writer, targets
+    return writer, selected_targets(target, writer)
 
 
 def read_branch_json(branch: str, path: str) -> dict:
     raw = git("show", f"refs/remotes/origin/{branch}:{path}")
-    value = json.loads(raw)
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise SyncError(f"Invalid JSON object at {branch}:{path}") from error
     if not isinstance(value, dict):
         raise SyncError(f"Expected JSON object at {branch}:{path}")
     return value
 
 
-def validate_role(branch: str, role: dict, policy: dict) -> None:
+def read_branch_bytes(branch: str, path: str) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"refs/remotes/origin/{branch}:{path}"],
+        cwd=ROOT,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise SyncError(f"{branch} is missing governed path {path}")
+    return result.stdout
+
+
+def validate_role(branch: str, role: dict, branch_policy: dict) -> None:
     expected = {
         "schemaVersion": 1,
         "branch": branch,
@@ -157,27 +201,26 @@ def validate_role(branch: str, role: dict, policy: dict) -> None:
     for key, expected_value in expected.items():
         if role.get(key) != expected_value:
             raise SyncError(f"{branch} role {key}={role.get(key)!r}, expected {expected_value!r}")
-    allowed = role.get("allowedMutablePaths")
-    expected_allowed = [*policy["governedPaths"], ROLE_PATH]
-    if allowed != expected_allowed:
+    expected_allowed = [*branch_policy["governedPaths"], ROLE_PATH]
+    if role.get("allowedMutablePaths") != expected_allowed:
         raise SyncError(f"{branch} role allowedMutablePaths differs from the reviewed allowlist")
     if "main remains authoritative" not in str(role.get("authority") or ""):
         raise SyncError(f"{branch} role no longer preserves main authority")
 
 
-def file_hash(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+def file_hash_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
 
 
 def changed_paths(worktree: Path) -> list[str]:
-    changed = set(
+    changed = {
         line.strip()
-        for line in git("-C", str(worktree), "diff", "--name-only").splitlines()
+        for line in git("diff", "--name-only", cwd=worktree).splitlines()
         if line.strip()
-    )
+    }
     changed.update(
         line.strip()
-        for line in git("-C", str(worktree), "ls-files", "--others", "--exclude-standard").splitlines()
+        for line in git("ls-files", "--others", "--exclude-standard", cwd=worktree).splitlines()
         if line.strip()
     )
     return sorted(changed)
@@ -194,12 +237,13 @@ def authenticated_url(repository: str, token: str) -> str:
 def push_branch(*, worktree: Path, branch: str, repository: str, token: str) -> None:
     url = authenticated_url(repository, token)
     result = subprocess.run(
-        ["git", "-C", str(worktree), "push", url, f"HEAD:refs/heads/{branch}"],
+        ["git", "push", url, f"HEAD:refs/heads/{branch}"],
+        cwd=worktree,
         text=True,
         capture_output=True,
     )
     if result.returncode != 0:
-        raise SyncError(f"Owner-authenticated push to {branch} failed")
+        raise SyncError(f"Owner-authenticated non-force push to {branch} failed")
 
 
 def sync_branch(
@@ -213,37 +257,51 @@ def sync_branch(
     token: str,
 ) -> dict:
     if branch == "main" or branch not in {"release-state", "distribution"}:
-        raise SyncError("Refusing non-shadow target")
+        raise SyncError("Refusing non-operational target")
 
+    mirrored_paths, operational_paths = validate_path_classes(branch, branch_policy)
     remote_ref = f"refs/remotes/origin/{branch}"
     before_sha = git("rev-parse", remote_ref).strip()
     role = read_branch_json(branch, ROLE_PATH)
     validate_role(branch, role, branch_policy)
-    paths = list(branch_policy["governedPaths"])
+
     fingerprint = hashlib.sha256(
-        (source_sha + "\0" + branch + "\0" + "\0".join(paths)).encode("utf-8")
+        (
+            source_sha
+            + "\0"
+            + branch
+            + "\0mirrored\0"
+            + "\0".join(mirrored_paths)
+            + "\0operational\0"
+            + "\0".join(operational_paths)
+        ).encode("utf-8")
     ).hexdigest()[:16]
     marker = f"[shadow-sync:{fingerprint}]"
 
     files: list[dict[str, object]] = []
-    for path in paths:
+    for path in mirrored_paths:
         source = ROOT / path
         if not source.is_file() or source.is_symlink():
-            raise SyncError(f"Source governed path is missing or unsafe: {path}")
-        try:
-            branch_bytes = subprocess.run(
-                ["git", "show", f"{remote_ref}:{path}"],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-            ).stdout
-        except subprocess.CalledProcessError as exc:
-            raise SyncError(f"{branch} is missing governed path {path}") from exc
+            raise SyncError(f"Source mirrored path is missing or unsafe: {path}")
+        source_bytes = source.read_bytes()
+        branch_bytes = read_branch_bytes(branch, path)
         files.append(
             {
                 "path": path,
-                "equalBefore": source.read_bytes() == branch_bytes,
-                "sourceSha256": file_hash(source),
+                "mode": "mirror",
+                "equalBefore": source_bytes == branch_bytes,
+                "sourceSha256": file_hash_bytes(source_bytes),
+                "branchSha256": file_hash_bytes(branch_bytes),
+            }
+        )
+    for path in operational_paths:
+        branch_bytes = read_branch_bytes(branch, path)
+        files.append(
+            {
+                "path": path,
+                "mode": "operational-preserved",
+                "equalBefore": None,
+                "branchSha256": file_hash_bytes(branch_bytes),
             }
         )
 
@@ -251,55 +309,70 @@ def sync_branch(
         worktree = Path(temporary) / "worktree"
         git("worktree", "add", "--detach", str(worktree), remote_ref)
         try:
-            for path in paths:
+            role_before = (worktree / ROLE_PATH).read_bytes()
+            operational_before = {
+                path: (worktree / path).read_bytes() for path in operational_paths
+            }
+            for path in mirrored_paths:
                 source = ROOT / path
                 destination = worktree / path
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, destination)
 
             changed = changed_paths(worktree)
-            unexpected = sorted(set(changed) - set(paths))
+            unexpected = sorted(set(changed) - set(mirrored_paths))
             if unexpected:
-                raise SyncError(f"{branch} synchronization changed non-governed paths: {unexpected}")
-            if ROLE_PATH in changed:
-                raise SyncError(f"{branch} role declaration must remain immutable during sync")
+                raise SyncError(
+                    f"{branch} synchronization changed non-mirrored paths: {unexpected}"
+                )
+            if (worktree / ROLE_PATH).read_bytes() != role_before:
+                raise SyncError(f"{branch} role declaration changed during sync")
+            for path, before in operational_before.items():
+                if (worktree / path).read_bytes() != before:
+                    raise SyncError(f"{branch} operational path was modified during mirror sync: {path}")
 
-            latest_message = git("-C", str(worktree), "log", "-1", "--format=%B")
+            latest_message = git("log", "-1", "--format=%B", cwd=worktree)
             probe_already_recorded = marker in latest_message
-            should_commit = bool(changed) or (mode == "apply" and write_probe and not probe_already_recorded)
+            should_commit = bool(changed) or (
+                mode == "apply" and write_probe and not probe_already_recorded
+            )
             pushed = False
             empty_probe = False
             after_sha = before_sha
 
             if mode == "apply" and should_commit:
-                git("-C", str(worktree), "config", "user.name", "Conroy1988 shadow rehearsal")
+                git("config", "user.name", "Conroy1988 shadow rehearsal", cwd=worktree)
                 git(
-                    "-C",
-                    str(worktree),
                     "config",
                     "user.email",
                     "27301455+Conroy1988@users.noreply.github.com",
+                    cwd=worktree,
                 )
                 if changed:
-                    git("-C", str(worktree), "add", "--", *paths)
+                    git("add", "--", *mirrored_paths, cwd=worktree)
+                    staged = {
+                        path
+                        for path in git("diff", "--cached", "--name-only", cwd=worktree).splitlines()
+                        if path
+                    }
+                    if not staged or not staged <= set(mirrored_paths):
+                        raise SyncError(f"Invalid staged mirror paths: {sorted(staged)}")
                     git(
-                        "-C",
-                        str(worktree),
                         "commit",
                         "-m",
-                        f"Rehearse {branch} shadow sync from {source_sha[:12]} {marker}",
+                        f"Rehearse {branch} mirror sync from {source_sha[:12]} {marker}",
+                        cwd=worktree,
                     )
                 else:
                     empty_probe = True
                     git(
-                        "-C",
-                        str(worktree),
                         "commit",
                         "--allow-empty",
                         "-m",
                         f"Rehearse {branch} shadow writer access from {source_sha[:12]} {marker}",
+                        cwd=worktree,
                     )
-                after_sha = git("-C", str(worktree), "rev-parse", "HEAD").strip()
+                after_sha = git("rev-parse", "HEAD", cwd=worktree).strip()
                 push_branch(
                     worktree=worktree,
                     branch=branch,
@@ -312,6 +385,8 @@ def sync_branch(
                 "branch": branch,
                 "beforeCommit": before_sha,
                 "afterCommit": after_sha,
+                "mirroredPaths": mirrored_paths,
+                "preservedOperationalPaths": operational_paths,
                 "changedPaths": changed,
                 "contentChanged": bool(changed),
                 "emptyProbeCommit": empty_probe,
@@ -334,7 +409,7 @@ def render_markdown(report: dict) -> str:
         f"- Target selection: `{report['targetSelection']}`",
         f"- Generated: `{report['generatedAt']}`",
         "- Public `main` changed: **no**",
-        "- Live consumers changed: **no**",
+        "- External consumers changed: **no**",
         "- Workflow token has contents write: **no**",
         "",
     ]
@@ -346,15 +421,17 @@ def render_markdown(report: dict) -> str:
                 f"- Before: `{branch['beforeCommit']}`",
                 f"- After: `{branch['afterCommit']}`",
                 f"- Pushed: **{'yes' if branch['pushed'] else 'no'}**",
-                f"- Content changed: **{'yes' if branch['contentChanged'] else 'no'}**",
+                f"- Mirror content changed: **{'yes' if branch['contentChanged'] else 'no'}**",
                 f"- Empty write probe: **{'yes' if branch['emptyProbeCommit'] else 'no'}**",
                 "",
             ]
         )
         for path in branch["changedPaths"]:
-            lines.append(f"- Updated governed path: `{path}`")
+            lines.append(f"- Updated mirrored path: `{path}`")
+        for path in branch["preservedOperationalPaths"]:
+            lines.append(f"- Preserved operational path: `{path}`")
         if not branch["changedPaths"]:
-            lines.append("- Governed content already matched `main`.")
+            lines.append("- Mirrored content already matched `main`.")
         lines.append("")
     return "\n".join(lines)
 
@@ -383,8 +460,22 @@ def self_test() -> None:
             "replacementIdentity": "narrowly scoped GitHub App",
         },
         "branches": {
-            "release-state": {"governedPaths": ["status/release-dashboard.json"]},
-            "distribution": {"governedPaths": ["dist/release-manifest.json"]},
+            "release-state": {
+                "governedPaths": [
+                    "status/release-dashboard.json",
+                    ".github/greasyfork-version.txt",
+                ],
+                "mirroredPaths": ["status/release-dashboard.json"],
+                "operationalPaths": [".github/greasyfork-version.txt"],
+                "operationalWriter": ".github/workflows/greasyfork-release-monitor.yml",
+                "externalConsumersEnabled": False,
+            },
+            "distribution": {
+                "governedPaths": ["dist/release-manifest.json"],
+                "mirroredPaths": ["dist/release-manifest.json"],
+                "operationalPaths": [],
+                "externalConsumersEnabled": False,
+            },
         },
     }
     writer, targets = validate_request(
@@ -398,12 +489,28 @@ def self_test() -> None:
     )
     assert writer["sourceBranch"] == "main"
     assert targets == ["release-state", "distribution"]
+    mirrored, operational = validate_path_classes(
+        "release-state", policy["branches"]["release-state"]
+    )
+    assert mirrored == ["status/release-dashboard.json"]
+    assert operational == [".github/greasyfork-version.txt"]
+
     try:
         selected_targets("main", writer)
     except SyncError:
         pass
     else:
         raise AssertionError("main target was not rejected")
+
+    broken = json.loads(json.dumps(policy["branches"]["release-state"]))
+    broken["mirroredPaths"].append(".github/greasyfork-version.txt")
+    try:
+        validate_path_classes("release-state", broken)
+    except SyncError:
+        pass
+    else:
+        raise AssertionError("operational path overlap was accepted")
+
     try:
         validate_request(
             policy=policy,
@@ -478,19 +585,22 @@ def main() -> int:
         for branch in targets
     ]
     report = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "state": "synchronized" if args.mode == "apply" else "planned",
         "acceptable": True,
         "mode": args.mode,
         "targetSelection": args.target,
         "sourceBranch": "main",
         "sourceCommit": args.source_sha,
-        "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generatedAt": datetime.now(timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+        .replace("+00:00", "Z"),
         "authorizedActor": args.actor,
         "credentialMode": "owner-token-rehearsal" if args.mode == "apply" else "read-only-plan",
         "replacementIdentity": "narrowly scoped GitHub App",
         "publicMainChanged": False,
-        "liveConsumersChanged": False,
+        "externalConsumersChanged": False,
         "workflowContentsWrite": False,
         "branches": results,
     }

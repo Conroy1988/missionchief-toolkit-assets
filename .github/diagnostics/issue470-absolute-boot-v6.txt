@@ -1,0 +1,55 @@
+Issue #470 absolute boot fixture diagnostic v6
+status=failure
+
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-absolute-diagnostic-v6.py", line 29, in <module>
+    runpy.run_path(str(TARGET), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-absolute-final-boot-fixture.py", line 36, in <module>
+    runpy.run_path(str(COMPLETE), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-complete-boot-fixture.py", line 44, in <module>
+    runpy.run_path(str(FINAL), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-final-boot-fixture.py", line 25, in <module>
+    runpy.run_path(str(ALIGNMENT), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-boot-contract-alignment.py", line 189, in <module>
+    raise SystemExit(
+SystemExit: Boot lifecycle contract still failed after binding the real boot integration helper.
+<anonymous_script>:8
+        }, Math.min(1200, STARTUP_IDLE_TIMEOUT_MS));
+                ^
+
+TypeError: Cannot read properties of undefined (reading 'min')
+    at scheduleBoot (eval at compileInSandbox (/tmp/mcms-boot-lifecycle-hoz8xyqi/boot-lifecycle-contract.js:309:12), <anonymous>:8:17)
+    at testScheduleAndDocumentStart (/tmp/mcms-boot-lifecycle-hoz8xyqi/boot-lifecycle-contract.js:612:5)
+    at Object.<anonymous> (/tmp/mcms-boot-lifecycle-hoz8xyqi/boot-lifecycle-contract.js:645:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 672, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 667, in main
+    subprocess.run(["node", str(harness_path)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/mcms-boot-lifecycle-hoz8xyqi/boot-lifecycle-contract.js']' returned non-zero exit status 1.
+
+

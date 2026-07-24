@@ -16,6 +16,7 @@ on:
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/sync_shadow_branches.py"
       - ".github/scripts/verify_shadow_branch_parity.py"
       - ".github/scripts/verify_validation_candidate.py"
       - ".github/actions-security-policy.json"
@@ -28,6 +29,7 @@ on:
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
       - ".github/scripts/test_shadow_branch_parity.py"
+      - ".github/scripts/test_shadow_sync_writer.py"
       - ".github/scripts/test_validation_candidate_pipeline.py"
       - "docs/BRANCH_PROTECTION_MIGRATION.md"
       - "docs/BRANCH_WRITE_INVENTORY.md"
@@ -66,6 +68,7 @@ jobs:
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
             python3 .github/scripts/test_shadow_branch_parity.py
+            python3 .github/scripts/test_shadow_sync_writer.py
           } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 
       - name: Upload policy diagnostics

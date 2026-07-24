@@ -92,14 +92,15 @@ def main() -> int:
         fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 7:
-        fail(f"Expected seven reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 6:
+        fail(f"Expected six reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
     expected_artifacts = {
         ".github/workflows/validate-userscript.yml",
         ".github/workflows/release-toolkit-dry-run.yml",
         ".github/workflows/repository-audit.yml",
+        ".github/workflows/update-release-dashboard.yml",
     }
     if artifact_workflows != expected_artifacts:
         fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
@@ -209,6 +210,29 @@ def main() -> int:
         'dashboard["lastUpdated"]',
     ], "Repository-audit script")
 
+    dashboard_workflow = (ROOT / ".github/workflows/update-release-dashboard.yml").read_text(encoding="utf-8")
+    dashboard_generator = (ROOT / ".github/scripts/generate_release_dashboard.py").read_text(encoding="utf-8")
+    require_markers(dashboard_workflow, [
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "Generate and compare read-only dashboard projection",
+        "--check",
+        "--output dashboard-projection/status-README.md",
+        "cmp --silent status/README.md dashboard-projection/status-README.md",
+        "Upload dashboard projection evidence",
+        "Public main changed: no",
+    ], "Artifact-only dashboard-projection workflow")
+    forbid_markers(dashboard_workflow, [
+        "contents: write", "git commit", "git push", "git pull --rebase", "github-actions[bot]",
+    ], "Artifact-only dashboard-projection workflow")
+    require_markers(dashboard_generator, [
+        'parser.add_argument("--output"',
+        '"--check"',
+        "if args.check:",
+        "Dashboard ledger sanitation would change the committed JSON",
+        "def render_dashboard(data: dict) -> str:",
+    ], "Dashboard generator projection mode")
+
     for entry in external_entries:
         path = ROOT / str(entry["path"])
         repository = str(entry["repository"])
@@ -233,8 +257,8 @@ def main() -> int:
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "seven workflows that can commit directly to public `main`",
-        "Canonical validation, release dry runs and repository audits are now artifact-only",
+        "six workflows that can commit directly to public `main`",
+        "Canonical validation, release dry runs, repository audits and dashboard projection are now artifact-only",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

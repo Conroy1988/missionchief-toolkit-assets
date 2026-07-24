@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import re
 import zlib
 from pathlib import Path
 
@@ -51,12 +50,11 @@ code_sha = hashlib.sha256(code.encode('utf-8')).hexdigest()
 if code_sha != 'e8ba3088536ad44254fbcf36aafa6c88af4220f10fb0762e14361455cc82ff7d':
     raise SystemExit(f'Issue #470 decoded package checksum mismatch: {code_sha}')
 
-fixture_pattern = re.compile(
-    r"(pageWindow:\{location:\{origin:'https://www\.missionchief\.co\.uk',href:'https://www\.missionchief\.co\.uk/'\},DOMParser:function\(\)\{\}\})\};(\n\s+operationalRequirementNormaliseText)",
-)
-code, fixture_repairs = fixture_pattern.subn(r'\1,\2', code, count=1)
-if fixture_repairs != 1:
-    raise SystemExit(f'Issue #470 runtime-fixture repair anchor count changed: {fixture_repairs}')
+bad_fixture = "    }}};\n  };\n  attach(value,[...native,...carriers,...groups,missionRoot]);"
+good_fixture = "    }}}\n  };\n  attach(value,[...native,...carriers,...groups,missionRoot]);"
+if code.count(bad_fixture) != 1:
+    raise SystemExit(f'Issue #470 runtime-fixture syntax anchor count changed: {code.count(bad_fixture)}')
+code = code.replace(bad_fixture, good_fixture, 1)
 
 for pattern in ('issue470-clean.payload.*', 'issue470-clean-v2.payload.*', 'issue470-clean-v3.payload.*'):
     for path in PACKAGE_DIR.glob(pattern):

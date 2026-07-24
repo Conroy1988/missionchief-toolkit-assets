@@ -1,14 +1,16 @@
 # Protected-branch write inventory
 
 **Reviewed:** 24 July 2026  
-**Reviewed `main`:** `bfd3a786a17a2cf01a0aa0d3d6f9a3f235ab1f2c`  
+**Reviewed `main`:** `93c23b844108a6f56ebd2c10ef5a71eff6fe1eed`  
 **Issue:** #41 — Migrate release state for strict main-branch protection
 
 ## Current conclusion
 
 Strict pull-request-only protection is **not yet safe to enable**.
 
-The repository has ten workflows that can commit directly to public `main`. Two additional release workflows do not push themselves, but invoke the reusable production workflow that does. The direct writes are deliberate and guarded, but they mix canonical source, generated distribution, release state, announcement state, audit output and human-readable dashboards in one protected branch.
+The repository now has nine workflows that can commit directly to public `main`. Two additional release workflows do not push themselves, but invoke the reusable production workflow that does. The direct writes are deliberate and guarded, but they still mix canonical source, generated distribution, release state, announcement state, audit output and human-readable dashboards in one protected branch.
+
+Release dry runs are now artifact-only. They validate and package the requested candidate with read-only repository permission, retain JSON and Markdown evidence for 30 days, and cannot mutate public `main` or any publication channel.
 
 This document is an inventory, not an authorization to add more bypasses. `.github/branch-write-inventory.json` is the machine-readable authority and `.github/scripts/test_branch_write_inventory.py` prevents unclassified write paths from being introduced.
 
@@ -22,14 +24,21 @@ This document is an inventory, not an authorization to add more bypasses. `.gith
 | `publish-update-manifest.yml` | release-dispatched manual run | `status/update-manifest.json` | `github.token` / `github-actions[bot]` | Publish from a release-state branch or immutable release asset. |
 | `reconcile-release-announcement-state.yml` | successful release completion or manual run | `.github/greasyfork-version.txt` | `github.token` / `github-actions[bot]` | Move announcement state to a release-state branch. |
 | `release-recovery.yml` | explicitly confirmed manual recovery | dashboard JSON/Markdown and announcement tracker | `github.token` / `github-actions[bot]` | Keep release-object repair in the API; move mutable state to the release-state branch. |
-| `release-toolkit-dry-run.yml` | manual run | dry-run dashboard state | `github.token` / `github-actions[bot]` | Make dry runs artifact-only. |
 | `release-toolkit.yml` | reusable release call or manual run | stable root userscript mirrors and final release dashboard | `github.token` / `github-actions[bot]` | Move mirrors to a distribution branch and state to a release-state branch under a scoped GitHub App. |
 | `repository-audit.yml` | relevant `main` push or manual run | repository audit reports and dashboard state | `github.token` / `github-actions[bot]` | Retain reports as artifacts and publish only summary state outside protected `main`. |
 | `update-release-dashboard.yml` | dashboard change or manual run | generated `status/README.md` | `github.token` / `github-actions[bot]` | Generate at Pages/deployment time or from the release-state branch. |
 
+## Artifact-only evidence workflows
+
+| Workflow | Permission | Retained evidence | Branch effect |
+|---|---|---|---|
+| `release-toolkit-dry-run.yml` | `contents: read` | complete release bundle plus `release-dry-run-v<version>.json` and `.md` | No branch, release, Greasy Fork, private backup or Discord change. |
+
+The former dry-run dashboard commit was removed because it wrote transient test state into the production ledger and the last retained value was stale at v4.10.4 while production was v5.0.7.
+
 ### Production release write sequence
 
-The production release currently performs multiple branch mutations:
+The production release still performs multiple branch mutations:
 
 1. `validate-userscript.yml` commits the validated distribution candidate.
 2. `release-toolkit.yml` calls `sync_greasyfork_root_mirror.sh`, which commits stable root mirrors.
@@ -52,8 +61,6 @@ These workflows hold or request `contents: write` authority but contain no direc
 Their own jobs should ultimately use read-only contents access; write authority should exist only on the called release job and its scoped GitHub App identity.
 
 ## Explicit non-public-main writers
-
-These write paths are intentionally excluded from the public-`main` count and are machine-classified so they cannot be confused with bypasses:
 
 | Automation | Target | Credential | Protection posture |
 |---|---|---|---|
@@ -86,7 +93,7 @@ The state branch must be reconstructed deterministically from immutable release 
 
 ### Immutable evidence
 
-Release bundles, checksums, changelog extracts and recovery handovers should remain GitHub Release assets and workflow artifacts. Dry-run output should be artifact-only.
+Release bundles, checksums, changelog extracts, recovery handovers and dry-run evidence remain GitHub Release assets and workflow artifacts. Dry-run output is artifact-only.
 
 ### Automation identity
 
@@ -95,19 +102,16 @@ The final writer should be a narrowly scoped GitHub App with explicit repository
 ## Migration order
 
 1. ✅ Inventory every public-`main` writer and enforce the inventory in CI.
-2. Separate generated candidate, dashboard, manifest, tracker and audit state from canonical source.
-3. Move stable Greasy Fork mirrors to a dedicated distribution branch.
-4. Introduce a narrowly scoped GitHub App for distribution and release-state writes.
-5. Rehearse normal release and every recovery operation without public-`main` mutation.
-6. Configure required pull requests, required checks, current-branch enforcement and conversation resolution.
-7. Enable strict protection only after all rehearsals pass.
+2. ✅ Convert release dry runs to read-only, artifact-only evidence.
+3. Separate generated candidate, dashboard, manifest, tracker and audit state from canonical source.
+4. Move stable Greasy Fork mirrors to a dedicated distribution branch.
+5. Introduce a narrowly scoped GitHub App for distribution and release-state writes.
+6. Rehearse normal release and every recovery operation without public-`main` mutation.
+7. Configure required pull requests, required checks, current-branch enforcement and conversation resolution.
+8. Enable strict protection only after all rehearsals pass.
 
-## Stage-one exit criteria
+## Current migration evidence
 
-Stage one is complete when:
-
-- every workflow with `contents: write` authority is classified;
-- every executable public-`main` push source is listed;
-- private-repository and review-branch writers are explicitly separated;
-- CI fails when a new writer, write-capable workflow or hidden main-ref mutation appears;
-- strict branch protection remains disabled pending later migration stages.
+- Stage 1 inventory enforcement: PR #498, merge commit `93c23b844108a6f56ebd2c10ef5a71eff6fe1eed`.
+- First writer removal: `release-toolkit-dry-run.yml`, migrated from dashboard commit to immutable artifact evidence.
+- Strict branch protection remains disabled pending the remaining state/distribution migration and rehearsals.

@@ -20,20 +20,35 @@ The migration is tracked by Issue #41. The reviewed writer inventory is maintain
 
 ## Stage 1 — write-path inventory ✅
 
-The 24 July 2026 audit against `main` commit `bfd3a786a17a2cf01a0aa0d3d6f9a3f235ab1f2c` identified:
+The 24 July 2026 audit identified:
 
-- **10 direct public-`main` writing workflows**;
+- **10 direct public-`main` writing workflows** at the Stage 1 baseline;
 - **2 indirect release orchestrators** that invoke the reusable production writer;
 - **2 owner-token review-branch writers** that cannot update public `main` directly;
 - **1 separate private-repository `main` writer** used only for recovery backups.
 
-Every workflow with declared `contents: write` authority is classified. CI now scans executable automation for direct `main` pushes and ref updates and fails when an unclassified writer appears.
+Every workflow with declared `contents: write` authority is classified. CI scans executable automation for direct `main` pushes and ref updates and fails when an unclassified writer appears.
 
-No branch-protection setting is changed by Stage 1.
+## Stage 2 — generated-state separation in progress
 
-## Why strict PR-only enforcement remains deferred
+### Release dry runs ✅
 
-The protected branch currently mixes several distinct data classes:
+`release-toolkit-dry-run.yml` is the first direct writer removed from public `main`.
+
+The workflow now:
+
+- has `contents: read` only;
+- checks out `main` without persisted write credentials;
+- validates the canonical userscript, syntax, distribution parity and release bundle;
+- writes deterministic JSON and Markdown evidence inside `release-bundle/`;
+- uploads the complete evidence artifact for 30 days;
+- records explicitly that GitHub Release, Greasy Fork, private backup, Discord and public `main` were not changed.
+
+The former dashboard mutation was removed. Direct public-`main` writers are therefore reduced from **10 to 9**.
+
+### Remaining generated state
+
+The protected branch still mixes:
 
 1. canonical userscript source and reviewed repository policy;
 2. generated distribution files;
@@ -43,7 +58,7 @@ The protected branch currently mixes several distinct data classes:
 6. repository audit output;
 7. generated human-readable dashboard files.
 
-Blocking all direct automation pushes before these responsibilities are separated would stop normal releases, recovery operations or external update reconciliation. Granting an unrestricted personal token a bypass would merely replace one architectural risk with another.
+Blocking all remaining automation pushes before these responsibilities are separated would stop normal releases, recovery operations or external update reconciliation. Granting an unrestricted personal token a bypass would merely replace one architectural risk with another.
 
 ## Target architecture
 
@@ -74,7 +89,10 @@ Validated release bundles, checksums, changelog extracts, migration handovers an
 ## Remaining migration stages
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
-2. Separate immutable canonical source from generated operational state.
+2. 🟡 Separate immutable canonical source from generated operational state.
+   - [x] Convert release dry runs to artifact-only evidence.
+   - [ ] Move validated distribution-candidate output away from public `main`.
+   - [ ] Move repository audit output away from public `main`.
 3. Move dashboard, announcement, manifest and audit state to a dedicated release-state branch or immutable assets.
 4. Move stable Greasy Fork mirrors to a dedicated distribution branch.
 5. Introduce a narrowly scoped GitHub App identity for distribution and state writes.

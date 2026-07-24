@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "bfd3a786a17a2cf01a0aa0d3d6f9a3f235ab1f2c",
+  "reviewedMainCommit": "93c23b844108a6f56ebd2c10ef5a71eff6fe1eed",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -70,16 +70,6 @@
       "migrationTarget": "release-state branch; release-object repair remains API-based"
     },
     {
-      "workflow": ".github/workflows/release-toolkit-dry-run.yml",
-      "purpose": "Record a reviewable release dry-run result in the production dashboard.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        "status/release-dashboard.json"
-      ],
-      "migrationTarget": "artifact-only dry run; no protected-branch mutation"
-    },
-    {
       "workflow": ".github/workflows/release-toolkit.yml",
       "purpose": "Commit the stable Greasy Fork root mirror and final verified release dashboard state.",
       "credential": "github.token",
@@ -130,6 +120,18 @@
       "purpose": "Owner-authorized manual release orchestration and result reporting."
     }
   ],
+  "artifactOnlyEvidenceWorkflows": [
+    {
+      "workflow": ".github/workflows/release-toolkit-dry-run.yml",
+      "purpose": "Validate and package a candidate without changing public main or any publication channel.",
+      "permission": "contents: read",
+      "artifact": "missionchief-toolkit-v<version>-release-dry-run",
+      "evidence": [
+        "release-dry-run-v<version>.json",
+        "release-dry-run-v<version>.md"
+      ]
+    }
+  ],
   "directMainPushSources": [
     ".github/workflows/validate-userscript.yml",
     ".github/workflows/greasyfork-release-monitor.yml",
@@ -137,7 +139,6 @@
     ".github/workflows/publish-update-manifest.yml",
     ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
-    ".github/workflows/release-toolkit-dry-run.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/workflows/repository-audit.yml",
     ".github/workflows/update-release-dashboard.yml",
@@ -170,7 +171,6 @@
     ".github/workflows/publish-update-manifest.yml",
     ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
-    ".github/workflows/release-toolkit-dry-run.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/workflows/repository-audit.yml",
     ".github/workflows/update-release-dashboard.yml",

@@ -42,7 +42,7 @@ def workflow_files() -> list[Path]:
 def executable_automation_files() -> list[Path]:
     files = workflow_files()
     files.extend(sorted(SCRIPT_DIR.glob("*.sh")))
-    files.extend(sorted(SCRIPT_DIR.glob("*.py")))
+    files.extend(sorted(path for path in SCRIPT_DIR.glob("*.py") if not path.name.startswith("test_")))
     return [path for path in files if path.resolve() != SELF]
 
 

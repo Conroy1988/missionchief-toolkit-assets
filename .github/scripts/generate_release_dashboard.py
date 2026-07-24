@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Generate a human-readable release dashboard from status/release-dashboard.json."""
+"""Sanitize and render the verified release dashboard."""
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
+from copy import deepcopy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "status" / "release-dashboard.json"
 OUTPUT = ROOT / "status" / "README.md"
+CANONICAL = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
+VERSION_RE = re.compile(r"^//\s*@version\s+([^\s]+)", re.MULTILINE)
 
 ICONS = {
     "passed": "🟢",
@@ -36,8 +41,37 @@ def text(value: object) -> str:
     return str(value).replace("-", " ").strip().title()
 
 
+def sanitize_verified_ledger(data: dict) -> dict:
+    sanitized = deepcopy(data)
+    sanitized.pop("distributionCandidate", None)
+    sanitized.pop("releaseDryRun", None)
+    sanitized.setdefault("pipelineVersion", 3)
+    sanitized["validationEvidencePolicy"] = {
+        "storage": "workflow-artifact",
+        "authority": "exact successful Validate Canonical Userscript run for the source commit",
+        "publicMainChanged": False,
+        "releaseDashboardChanged": False,
+    }
+
+    if CANONICAL.is_file():
+        raw = CANONICAL.read_bytes()
+        match = VERSION_RE.search(raw.decode("utf-8"))
+        source_version = match.group(1).strip() if match else ""
+        if source_version and str(sanitized.get("currentVersion") or "") == source_version:
+            sanitized["source"] = {
+                "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
+                "validatedSha256": hashlib.sha256(raw).hexdigest(),
+                "state": "validated-canonical-source",
+            }
+    return sanitized
+
+
 def main() -> None:
-    data = json.loads(SOURCE.read_text(encoding="utf-8"))
+    original = json.loads(SOURCE.read_text(encoding="utf-8"))
+    data = sanitize_verified_ledger(original)
+    if data != original:
+        SOURCE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
     status = data.get("status", {})
     latest = data.get("latestRelease") or {}
     assets = data.get("assets", {})

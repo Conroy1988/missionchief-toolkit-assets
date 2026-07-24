@@ -12,9 +12,7 @@ import argparse
 import base64
 import json
 import os
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -71,8 +69,11 @@ def validate_role(role: dict) -> set[str]:
             raise ReleaseStateError(
                 f"release-state role {key}={role.get(key)!r}, expected {value!r}"
             )
+
     allowed = role.get("allowedMutablePaths")
-    if not isinstance(allowed, list) or not all(isinstance(path, str) and path for path in allowed):
+    if not isinstance(allowed, list) or not all(
+        isinstance(path, str) and path for path in allowed
+    ):
         raise ReleaseStateError("release-state allowedMutablePaths is invalid")
     allowed_paths = set(allowed)
     required = {
@@ -92,8 +93,7 @@ def validate_role(role: dict) -> set[str]:
 def validate_worktree(worktree: Path) -> set[str]:
     if not worktree.is_dir():
         raise ReleaseStateError(f"release-state worktree is missing: {worktree}")
-    role = load_role(worktree)
-    return validate_role(role)
+    return validate_role(load_role(worktree))
 
 
 def write_output(name: str, value: str) -> None:
@@ -114,7 +114,6 @@ def prepare(worktree: Path) -> None:
 
     git(
         "fetch",
-        "--force",
         "--no-tags",
         "origin",
         f"+refs/heads/{TARGET_BRANCH}:{REMOTE_REF}",
@@ -157,7 +156,9 @@ def status_paths(worktree: Path) -> set[str]:
 
 
 def authorization_header(token: str) -> str:
-    encoded = base64.b64encode(f"x-access-token:{token}".encode("utf-8")).decode("ascii")
+    encoded = base64.b64encode(
+        f"x-access-token:{token}".encode("utf-8")
+    ).decode("ascii")
     return f"AUTHORIZATION: basic {encoded}"
 
 
@@ -203,7 +204,6 @@ def commit(worktree: Path, message: str, requested_paths: list[str]) -> None:
 
     git(
         "fetch",
-        "--force",
         "--no-tags",
         "origin",
         f"+refs/heads/{TARGET_BRANCH}:{REMOTE_REF}",

@@ -21,5 +21,26 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          show-progress: false
+
       - name: Run development-package workflow policy
-        run: python3 .github/scripts/test_development_package_workflow.py
+        id: policy
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 .github/scripts/test_development_package_workflow.py 2>&1 | tee "$RUNNER_TEMP/development-package-policy.log"
+
+      - name: Upload policy diagnostics
+        if: steps.policy.outcome != 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: development-package-policy-diagnostic
+          path: ${{ runner.temp }}/development-package-policy.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Enforce policy result
+        if: steps.policy.outcome != 'success'
+        run: exit 1

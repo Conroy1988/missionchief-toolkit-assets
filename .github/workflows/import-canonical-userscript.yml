@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/workflows/import-canonical-userscript.yml"
       - ".github/scripts/audit_greasyfork_canonical_parity.py"
       - ".github/actions-security-policy.json"
@@ -17,6 +18,7 @@ on:
     branches:
       - main
     paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/workflows/import-canonical-userscript.yml"
       - ".github/scripts/audit_greasyfork_canonical_parity.py"
       - "status/source-baseline.json"

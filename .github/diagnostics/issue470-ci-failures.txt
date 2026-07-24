@@ -1,0 +1,802 @@
+Issue #470 CI failure diagnostic
+source_lines=31648
+
+=== SOURCE LINES 22290-22355 ===
+22290:             const value = node?.getAttribute?.(name);
+22291:             if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
+22292:         }
+22293:         return '';
+22294:     }
+22295: 
+22296:     function operationalRequirementsNumberFrom(value, fallback = 0) {
+22297:         const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/gu, ''), 10);
+22298:         return Number.isFinite(parsed) ? parsed : fallback;
+22299:     }
+22300: 
+22301:     function operationalRequirementsVehicleType(node) {
+22302:         const row = node?.closest?.('tr') || node;
+22303:         return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+22304:             'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+22305:         ]) || operationalRequirementsAttribute(row, [
+22306:             'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
+22307:         ]), -1);
+22308:     }
+22309: 
+22310:     function operationalRequirementsVehicleId(node) {
+22311:         const row = node?.closest?.('tr') || node;
+22312:         return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
+22313:             'value', 'vehicle_id', 'data-vehicle-id'
+22314:         ]) || operationalRequirementsAttribute(row, ['vehicle_id', 'data-vehicle-id']), -1);
+22315:     }
+22316: 
+22317:     function operationalRequirementsEquipment(node) {
+22318:         const row = node?.closest?.('tr') || node;
+22319:         const raw = operationalRequirementsAttribute(node, ['data-equipment-types', 'data-equipment-type', 'equipment_types'])
+22320:             || operationalRequirementsAttribute(row, ['data-equipment-types', 'data-equipment-type', 'equipment_types']);
+22321:         if (!raw) return [];
+22322:         try {
+22323:             const parsed = JSON.parse(raw);
+22324:             if (Array.isArray(parsed)) return parsed.map(value => String(value)).filter(Boolean);
+22325:         } catch (error) {}
+22326:         return raw.split(/[|,;\s]+/gu).map(value => value.trim()).filter(Boolean);
+22327:     }
+22328: 
+22329:     function operationalRequirementsStaffRange(typeId, node = null) {
+22330:         const row = node?.closest?.('tr') || node;
+22331:         const explicitMin = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+22332:             'data-staff-min', 'data-personnel-min', 'data-crew-min'
+22333:         ]), -1);
+22334:         const explicitMax = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
+22335:             'data-staff-max', 'data-personnel-max', 'data-crew-max', 'data-max-personnel-override'
+22336:         ]), -1);
+22337:         if (explicitMin >= 0 || explicitMax >= 0) {
+22338:             const min = Math.max(0, explicitMin >= 0 ? explicitMin : explicitMax);
+22339:             return { min, max: Math.max(min, explicitMax >= 0 ? explicitMax : min) };
+22340:         }
+22341:         const fallback = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[String(typeId)]
+22342:             || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[typeId];
+22343:         if (!Array.isArray(fallback) || fallback.length < 2) return { min: 0, max: 0 };
+22344:         return { min: Math.max(0, Number(fallback[0]) || 0), max: Math.max(0, Number(fallback[1]) || 0) };
+22345:     }
+22346: 
+22347:     function operationalRequirementsResolveVehicleType(doc, vehicleId) {
+22348:         if (!doc?.querySelector || !Number.isFinite(Number(vehicleId)) || Number(vehicleId) < 0) return -1;
+22349:         const selector = `.vehicle_checkbox[value="${Number(vehicleId)}"], [data-vehicle-id="${Number(vehicleId)}"], [vehicle_id="${Number(vehicleId)}"]`;
+22350:         return operationalRequirementsVehicleType(doc.querySelector(selector));
+22351:     }
+22352: 
+22353:     function operationalRequirementsSelectedSnapshot(doc) {
+22354:         const selector = '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked';
+22355:         return Array.from(doc?.querySelectorAll?.(selector) || []).map(node => {
+
+=== missing_text selector occurrences ===
+14685:         const missingTextKeys = ['missing_text', 'missingText', 'missing_text_short', 'missingTextShort'];
+14687:         const missingText = item.missing_text ?? item.missingText ?? item.missing_text_short ?? item.missingTextShort ?? '';
+19827:         : marker?.missing_text || marker?.missingText || marker?.options?.missing_text || marker?.options?.missingText || '';
+22201:             + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0) + (kind === 'lssm-raw' ? 10 : 0);
+22210:         const nativeRoots = Array.from(doc.querySelectorAll('[id="missing_text"]') || []);
+22220:             const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles') || group.parentElement;
+22872:     function operationalCallWindowApply(context) { const settings=state.operationalWindow?.callWindow||{},doc=context.doc,path=String(doc.defaultView?.location?.pathname||''),feature=operationalFeatureState(context);operationalFeatureRemove(context,'call-');operationalResetNativeDecorations(doc);if(!settings.enabled||!/^\/missions\/\d+\/?$/u.test(path)||operationalQuery(doc,'[data-module="extendedCallWindow"]')){for(const[row,previous]of feature.arrHandlers){try{row.onclick=previous||null;}catch(error){}}feature.arrHandlers.clear();return;}operationalFeatureStyle(doc);const anchor=operationalQuery(doc,'#missing_text,#mission_general_info,.mission_general_info,h1');if(!anchor)return;const bar=operationalFeatureBar(doc,anchor,'call-toolbar'),patients=operationalPatientNodes(doc),vehicles=operationalVehicleRows(doc),selectedRows=operationalSelectedVehicleRows(vehicles),selectedSnapshot=operationalRequirementsSelectedSnapshot(doc),arr=operationalArrRows(doc),missionTitle=String(operationalQuery(doc,'h1,.mission_title,[data-mission-title]')?.textContent||'').trim();
+
+=== SEARCH help-centre ===
+--- .github/scripts/check_documentation_drift.py:205 ---
+00203:     document_contracts = [
+00204:         ("README", readme, public_docs.get("readmeRequiredTokens", []), []),
+00205:         ("Help Centre", help_centre, public_docs.get("helpRequiredTokens", []), public_docs.get("helpForbiddenTokens", [])),
+00206:         ("Greasy Fork description", greasy_fork, public_docs.get("greasyForkRequiredTokens", []), public_docs.get("greasyForkForbiddenTokens", [])),
+00207:     ]
+--- .github/scripts/check_documentation_drift.py:217 ---
+00215:                 failures.append(f"{document_name} still contains forbidden stale claim: {token}")
+00216:     if f"v{version}".lower() not in help_centre.lower():
+00217:         failures.append(f"Help Centre does not identify the current Toolkit version v{version}")
+00218:     for theme in contract.get("themes", []):
+00219:         if str(theme).lower() not in help_centre.lower():
+--- .github/scripts/check_documentation_drift.py:220 ---
+00218:     for theme in contract.get("themes", []):
+00219:         if str(theme).lower() not in help_centre.lower():
+00220:             failures.append(f"Help Centre omits supported interface system: {theme}")
+00221: 
+00222:     media_roadmap = site.get("mediaRoadmap", [])
+--- MissionChief_Map_Command_Toolkit.txt:29277 ---
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+--- MissionChief_Map_Command_Toolkit.txt:29292 ---
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+--- MissionChief_Map_Command_Toolkit.txt:29295 ---
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+29295:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29296:                     }
+29297:                 };
+--- MissionChief_Map_Command_Toolkit.txt:29304 ---
+29302:                         onload: response => finish(null, response),
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+--- MissionChief_Map_Command_Toolkit.txt:29305 ---
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+--- MissionChief_Map_Command_Toolkit.txt:29309 ---
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+29308:                 } catch (err) {
+29309:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29310:                 }
+29311:                 return;
+--- MissionChief_Map_Command_Toolkit.txt:29315 ---
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+29317:                 })
+--- MissionChief_Map_Command_Toolkit.txt:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- MissionChief_Map_Command_Toolkit.txt:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- MissionChief_Map_Command_Toolkit.txt:29416 ---
+29414:         overlay.setAttribute('role', 'dialog');
+29415:         overlay.setAttribute('aria-modal', 'true');
+29416:         overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);
+29417:         overlay.setAttribute('aria-hidden', 'true');
+29418:         overlay.innerHTML = `
+--- MissionChief_Map_Command_Toolkit.txt:29423 ---
+29421:                     <div class="mcms-help-brand">
+29422:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+29423:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+29424:                     </div>
+29425:                     <div class="mcms-help-actions">
+--- MissionChief_Map_Command_Toolkit.txt:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- MissionChief_Map_Command_Toolkit.txt:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- MissionChief_Map_Command_Toolkit.txt:29437 ---
+29435:                     <div class="mcms-help-fallback">
+29436:                         <div class="mcms-help-error-card">
+29437:                             <strong>Help Centre unavailable</strong>
+29438:                             <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>
+29439:                             <div class="mcms-help-error-actions"><button type="button" data-help-action="reload">Retry</button><button type="button" data-help-action="source">Open GitHub source</button></div>
+--- MissionChief_Map_Command_Toolkit.txt:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- MissionChief_Map_Command_Toolkit.txt:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- MissionChief_Map_Command_Toolkit.user.js:29277 ---
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+--- MissionChief_Map_Command_Toolkit.user.js:29292 ---
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+--- MissionChief_Map_Command_Toolkit.user.js:29295 ---
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+29295:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29296:                     }
+29297:                 };
+--- MissionChief_Map_Command_Toolkit.user.js:29304 ---
+29302:                         onload: response => finish(null, response),
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+--- MissionChief_Map_Command_Toolkit.user.js:29305 ---
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+--- MissionChief_Map_Command_Toolkit.user.js:29309 ---
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+29308:                 } catch (err) {
+29309:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29310:                 }
+29311:                 return;
+--- MissionChief_Map_Command_Toolkit.user.js:29315 ---
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+29317:                 })
+--- MissionChief_Map_Command_Toolkit.user.js:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- MissionChief_Map_Command_Toolkit.user.js:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- MissionChief_Map_Command_Toolkit.user.js:29416 ---
+29414:         overlay.setAttribute('role', 'dialog');
+29415:         overlay.setAttribute('aria-modal', 'true');
+29416:         overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);
+29417:         overlay.setAttribute('aria-hidden', 'true');
+29418:         overlay.innerHTML = `
+--- MissionChief_Map_Command_Toolkit.user.js:29423 ---
+29421:                     <div class="mcms-help-brand">
+29422:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+29423:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+29424:                     </div>
+29425:                     <div class="mcms-help-actions">
+--- MissionChief_Map_Command_Toolkit.user.js:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- MissionChief_Map_Command_Toolkit.user.js:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- MissionChief_Map_Command_Toolkit.user.js:29437 ---
+29435:                     <div class="mcms-help-fallback">
+29436:                         <div class="mcms-help-error-card">
+29437:                             <strong>Help Centre unavailable</strong>
+29438:                             <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>
+29439:                             <div class="mcms-help-error-actions"><button type="button" data-help-action="reload">Retry</button><button type="button" data-help-action="source">Open GitHub source</button></div>
+--- MissionChief_Map_Command_Toolkit.user.js:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- MissionChief_Map_Command_Toolkit.user.js:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.txt:29277 ---
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+--- dist/MissionChief_Map_Command_Toolkit.txt:29292 ---
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+--- dist/MissionChief_Map_Command_Toolkit.txt:29295 ---
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+29295:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29296:                     }
+29297:                 };
+--- dist/MissionChief_Map_Command_Toolkit.txt:29304 ---
+29302:                         onload: response => finish(null, response),
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+--- dist/MissionChief_Map_Command_Toolkit.txt:29305 ---
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+--- dist/MissionChief_Map_Command_Toolkit.txt:29309 ---
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+29308:                 } catch (err) {
+29309:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29310:                 }
+29311:                 return;
+--- dist/MissionChief_Map_Command_Toolkit.txt:29315 ---
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+29317:                 })
+--- dist/MissionChief_Map_Command_Toolkit.txt:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- dist/MissionChief_Map_Command_Toolkit.txt:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- dist/MissionChief_Map_Command_Toolkit.txt:29416 ---
+29414:         overlay.setAttribute('role', 'dialog');
+29415:         overlay.setAttribute('aria-modal', 'true');
+29416:         overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);
+29417:         overlay.setAttribute('aria-hidden', 'true');
+29418:         overlay.innerHTML = `
+--- dist/MissionChief_Map_Command_Toolkit.txt:29423 ---
+29421:                     <div class="mcms-help-brand">
+29422:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+29423:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+29424:                     </div>
+29425:                     <div class="mcms-help-actions">
+--- dist/MissionChief_Map_Command_Toolkit.txt:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.txt:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.txt:29437 ---
+29435:                     <div class="mcms-help-fallback">
+29436:                         <div class="mcms-help-error-card">
+29437:                             <strong>Help Centre unavailable</strong>
+29438:                             <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>
+29439:                             <div class="mcms-help-error-actions"><button type="button" data-help-action="reload">Retry</button><button type="button" data-help-action="source">Open GitHub source</button></div>
+--- dist/MissionChief_Map_Command_Toolkit.txt:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.txt:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29277 ---
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29292 ---
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29295 ---
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+29295:                         reject(err instanceof Error ? err : new Error('The Help Centre could not be loaded.'));
+29296:                     }
+29297:                 };
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29304 ---
+29302:                         onload: response => finish(null, response),
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29305 ---
+29303:                         onerror: () => finish(new Error('GitHub could not be reached.')),
+29304:                         ontimeout: () => finish(new Error('The Help Centre request timed out.')),
+29305:                         onabort: () => finish(new Error('The Help Centre request was cancelled.'))
+29306:                     });
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29309 ---
+29307:                     if (!settled && request?.abort) runtime.requests.add(request);
+29308:                 } catch (err) {
+29309:                     finish(err instanceof Error ? err : new Error('The Help Centre request could not be created.'));
+29310:                 }
+29311:                 return;
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29315 ---
+29313:             runtimeFetch(url, { cache: force ? 'reload' : 'default', credentials: 'omit' })
+29314:                 .then(response => {
+29315:                     if (!response.ok) throw new Error(`Help Centre returned HTTP ${response.status}.`);
+29316:                     return response.text();
+29317:                 })
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29328 ---
+29326:         source = source
+29327:             .replace(/Guide for Toolkit v\d+\.\d+\.\d+/u, `Guide for Toolkit v${HELP_CENTER.guideVersion}`)
+29328:             .replace(/Help Centre for v\d+\.\d+\.\d+/u, `Help Centre for v${HELP_CENTER.guideVersion}`)
+29329:             .replace(
+29330:                 '<div class="card"><h3>Umbrella</h3><p>Sterile biohazard command styling with classified containment panels.</p></div>',
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29416 ---
+29414:         overlay.setAttribute('role', 'dialog');
+29415:         overlay.setAttribute('aria-modal', 'true');
+29416:         overlay.setAttribute('aria-label', `${SCRIPT.name} Help Centre`);
+29417:         overlay.setAttribute('aria-hidden', 'true');
+29418:         overlay.innerHTML = `
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29423 ---
+29421:                     <div class="mcms-help-brand">
+29422:                         <span class="mcms-help-brand-icon" aria-hidden="true">?</span>
+29423:                         <span class="mcms-help-brand-copy"><strong>Toolkit Help Centre</strong><small>Searchable guide · hosted on the public Toolkit assets repository</small></span>
+29424:                     </div>
+29425:                     <div class="mcms-help-actions">
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29428 ---
+29426:                         <button class="mcms-help-action" type="button" data-help-action="reload" title="Reload the latest guide" aria-label="Reload the latest guide">↻</button>
+29427:                         <button class="mcms-help-action mcms-help-source" type="button" data-help-action="source" title="Open the guide source on GitHub" aria-label="Open the guide source on GitHub">↗</button>
+29428:                         <button class="mcms-help-action mcms-help-close" type="button" data-help-action="close" title="Close Help Centre" aria-label="Close Help Centre">×</button>
+29429:                     </div>
+29430:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29437 ---
+29435:                     <div class="mcms-help-fallback">
+29436:                         <div class="mcms-help-error-card">
+29437:                             <strong>Help Centre unavailable</strong>
+29438:                             <p data-help-error>The public guide could not be loaded. The main Toolkit remains fully operational.</p>
+29439:                             <div class="mcms-help-error-actions"><button type="button" data-help-action="reload">Retry</button><button type="button" data-help-action="source">Open GitHub source</button></div>
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- dist/MissionChief_Map_Command_Toolkit.user.js:29800 ---
+29798:                     </div>
+29799:                     <button class="mcms-reset-panel" type="button" data-action="panel-reset" title="Reset menu position">↺</button>
+29800:                     <button class="mcms-help-button" type="button" data-action="open-help-center" title="Open searchable Help Centre" aria-label="Open searchable Help Centre">?</button>
+29801:                     <button class="mcms-close" type="button" title="Close">×</button>
+29802:                 </div>
+--- docs/SITE.md:22 ---
+00020: | `CHANGELOG.md` | Release history |
+00021: | `README.md` | Primary GitHub landing page and installation summary |
+00022: | `help/index.html` | Searchable Help Centre loaded by the userscript |
+00023: | `docs/greasyfork-description.md` | Greasy Fork-synchronised Additional Info page |
+00024: | `.github/scripts/build_pages_site.py` | Deterministic static-site generator and link validator |
+--- docs/SITE.md:47 ---
+00045: 5. Verifies internal links and base-path handling.
+00046: 6. Enforces output file-count and size limits.
+00047: 7. Cross-checks the README, Help Centre, Pages catalogue and Greasy Fork description for current version, theme, feature and privacy claims.
+00048: 8. Retains a complete preview artifact for 14 days.
+00049: 
+--- docs/SITE.md:56 ---
+00054: Edit the structured catalogue rather than generated HTML. The build script escapes user-facing source values and fails when required sections, release data, pages or internal targets are missing.
+00055: 
+00056: Feature documentation should describe current public behaviour. The README, Help Centre, Pages catalogue and Greasy Fork description form one public documentation contract and must be updated together when shared claims change. Experimental ideas belong in issues or Discussions rather than the published catalogue.
+00057: 
+00058: ## Theme safety
+--- help/README.md:1 ---
+00001: # MissionChief Map Command Toolkit Help Centre
+00002: 
+00003: Public user documentation for the MissionChief Map Command Toolkit.
+--- help/README.md:7 ---
+00005: - Main guide: `help/index.html`
+00006: - Search is client-side and self-contained.
+00007: - The userscript fetches the guide from `raw.githubusercontent.com` and renders it inside a sandboxed browser-style Help Centre.
+00008: - No MissionChief account data is sent to this repository.
+00009: - Major Toolkit releases must update the guide when user-facing behaviour changes.
+--- help/index.html:8 ---
+00006: <meta name="color-scheme" content="dark">
+00007: <meta name="description" content="Complete searchable guide for the MissionChief Map Command Toolkit.">
+00008: <title>MissionChief Map Command Toolkit — Help Centre</title>
+00009: <style>
+00010: :root{--bg:#071018;--panel:#0d1c27;--panel2:#102633;--text:#edf7fc;--muted:#98afbc;--line:#285064;--blue:#57c9f7;--gold:#ffd56f;--green:#62dd94;--amber:#ffb24d;--red:#ff6670;--radius:15px;--shadow:0 18px 48px rgba(0,0,0,.34)}*{box-sizing:border-box}html{scroll-behavior:smooth;background:var(--bg)}body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% -5%,rgba(87,201,247,.13),transparent 34rem),radial-gradient(circle at 100% 5%,rgba(255,213,111,.08),transparent 28rem),linear-gradient(180deg,#071018,#09151e 45%,#071018);color:var(--text);font:14px/1.55 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}a{color:#90ddff}button,input{font:inherit;color:inherit}.top{position:sticky;top:0;z-index:30;border-bottom:1px solid rgba(95,180,219,.24);background:rgba(5,13,20,.94);backdrop-filter:blur(16px)}.topin{max-width:1500px;margin:auto;min-height:72px;padding:10px 18px;display:grid;grid-template-columns:minmax(250px,1fr) minmax(280px,560px) auto;gap:15px;align-items:center}.brand{display:flex;align-items:center;gap:11px;min-width:0}.mark{width:44px;height:44px;display:grid;place-items:center;border:1px solid #4194b9;border-radius:13px;background:linear-gradient(145deg,#16384b,#081721);color:#c6efff;font-size:22px;font-weight:1000;box-shadow:0 0 0 3px rgba(87,201,247,.06)}.brand strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.brand small{display:block;margin-top:2px;color:var(--muted);font-size:11px}.version{padding:6px 10px;border:1px solid rgba(255,213,111,.42);border-radius:999px;background:rgba(103,73,9,.22);color:#ffe39a;font-size:11px;font-weight:850;white-space:nowrap}.search{position:relative}.search svg{position:absolute;left:14px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:#7db7d2;pointer-events:none}#q{width:100%;height:46px;padding:0 76px 0 42px;border:1px solid #2d596f;border-radius:13px;outline:0;background:#0a1821;color:#fff}#q:focus{border-color:#66d3ff;box-shadow:0 0 0 3px rgba(87,201,247,.13)}.clear{display:none;position:absolute;right:10px;top:9px;width:28px;height:28px;border:0;border-radius:8px;background:#1a3948;cursor:pointer}.clear.on{display:block}.layout{max-width:1500px;margin:auto;padding:18px;display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;align-items:start}.side{position:sticky;top:90px;max-height:calc(100vh - 108px);overflow:auto;padding:12px;border:1px solid rgba(89,158,190,.25);border-radius:var(--radius);background:rgba(10,25,35,.97);box-shadow:var(--shadow);scrollbar-width:thin}.sidehead{display:flex;justify-content:space-between;gap:8px;padding:4px 6px 10px;color:#a9c9d9;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase}.count{color:var(--gold);letter-spacing:0}.nav{display:grid;gap:4px}.nav a{padding:9px 10px;border:1px solid transparent;border-radius:9px;color:#bdd0da;font-size:12px;font-weight:730;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nav a:hover,.nav a.active{border-color:#3e7896;background:#102b39;color:#fff;box-shadow:inset 3px 0 var(--blue)}main{min-width:0;display:grid;gap:17px}.hero{position:relative;overflow:hidden;padding:34px;border:1px solid rgba(92,173,210,.29);border-radius:22px;background:linear-gradient(145deg,rgba(17,44,59,.95),rgba(8,20,29,.97));box-shadow:var(--shadow)}.hero:after{content:"";position:absolute;right:-90px;top:-135px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(87,201,247,.2),transparent 68%);pointer-events:none}.eyebrow{margin:0 0 8px;color:#83dafd;font-size:11px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase}h1{margin:0;max-width:900px;font-size:clamp(32px,5vw,60px);line-height:1.02;letter-spacing:-1.5px}.hero p{max-width:980px;margin:16px 0 0;color:#bad0db;font-size:15px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:21px}.actions a{display:inline-flex;align-items:center;min-height:39px;padding:0 13px;border:1px solid #3d7893;border-radius:10px;background:#0e2b3a;color:#e9f9ff;font-size:12px;font-weight:850;text-decoration:none}.actions a:first-child{border-color:#69d5ff;background:#1b7fa9}.notice{display:grid;grid-template-columns:28px minmax(0,1fr);gap:11px;padding:14px 16px;border:1px solid rgba(255,213,111,.34);border-radius:13px;background:rgba(105,74,8,.16)}.notice i{width:27px;height:27px;display:grid;place-items:center;border-radius:8px;background:rgba(255,213,111,.17);color:#ffe5a0;font-style:normal;font-weight:950}.notice strong{display:block;color:#ffe5a1;font-size:12px}.notice p{margin:3px 0 0;color:#cbbf9f;font-size:11.5px}.section{scroll-margin-top:91px;padding:24px;border:1px solid rgba(84,148,177,.23);border-radius:var(--radius);background:linear-gradient(155deg,rgba(14,32,43,.95),rgba(8,20,29,.95));box-shadow:0 10px 30px rgba(0,0,0,.18)}.section[hidden]{display:none}.section.match{border-color:rgba(87,201,247,.58);box-shadow:0 0 0 1px rgba(87,201,247,.12),0 10px 30px rgba(0,0,0,.18)}.head{display:flex;gap:13px;align-items:flex-start;margin-bottom:15px}.num{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border:1px solid #3c7e9c;border-radius:12px;background:#0b2938;color:#8be0ff;font-size:12px;font-weight:950}h2{margin:0;font-size:24px;line-height:1.12}.summary{margin:5px 0 0;color:var(--muted);font-size:12.5px}h3{margin:21px 0 8px;color:#ddf4ff;font-size:16px}h4{margin:0 0 6px;color:#d3effb;font-size:13px}p{margin:8px 0}ul,ol{margin:9px 0;padding-left:22px}li+li{margin-top:5px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.card{min-width:0;padding:15px;border:1px solid rgba(92,158,188,.21);border-radius:13px;background:rgba(15,37,49,.72)}.card p:last-child{margin-bottom:0}.tags{display:flex;flex-wrap:wrap;gap:6px}.tag{display:inline-flex;align-items:center;min-height:25px;padding:0 8px;border:1px solid #315d72;border-radius:999px;background:#0b2431;color:#c2e9f9;font-size:10px;font-weight:800}kbd{display:inline-flex;min-width:25px;min-height:24px;padding:0 7px;align-items:center;justify-content:center;border:1px solid #486979;border-bottom-width:2px;border-radius:6px;background:#172b37;color:#fff;font-size:10px;font-weight:850;box-shadow:0 2px #050c11}code{padding:2px 5px;border:1px solid #285064;border-radius:5px;background:#081a23;color:#bcecff;font:12px Consolas,monospace}.table{overflow:auto;border:1px solid rgba(90,151,180,.23);border-radius:12px}table{width:100%;min-width:650px;border-collapse:collapse;background:rgba(7,19,27,.48)}th,td{padding:10px 12px;border-bottom:1px solid rgba(74,124,148,.19);text-align:left;vertical-align:top;font-size:11.5px}th{background:#102733;color:#c1ebfb;font-size:10px;letter-spacing:.5px;text-transform:uppercase}tr:last-child td{border-bottom:0}.steps{counter-reset:s;display:grid;gap:9px;padding:0;list-style:none}.steps li{position:relative;min-height:42px;padding:10px 12px 10px 50px;border:1px solid rgba(83,143,171,.21);border-radius:11px;background:rgba(13,33,44,.66)}.steps li:before{counter-increment:s;content:counter(s);position:absolute;left:11px;top:9px;width:28px;height:28px;display:grid;place-items:center;border:1px solid #4185a4;border-radius:9px;background:#0b2836;color:#8ce1ff;font-size:11px;font-weight:950}.call{margin:12px 0;padding:13px 15px;border-left:4px solid var(--blue);border-radius:0 10px 10px 0;background:rgba(31,109,145,.15);color:#d1ebf6}.call.warn{border-left-color:var(--amber);background:rgba(153,91,12,.14);color:#efd5aa}.call.danger{border-left-color:var(--red);background:rgba(153,31,44,.14);color:#f0b8bd}.empty{display:none;padding:38px 20px;border:1px dashed #38647a;border-radius:var(--radius);background:rgba(11,28,38,.64);text-align:center}.empty.on{display:block}.empty strong{display:block;font-size:18px}.empty p{color:var(--muted)}.menubtn{display:none;width:42px;height:42px;border:1px solid #315e72;border-radius:10px;background:#102936;cursor:pointer}footer{max-width:1500px;margin:auto;padding:0 18px 28px;color:#7f99a7;font-size:11px;text-align:center}@media(max-width:1050px){.topin{grid-template-columns:minmax(220px,1fr) minmax(260px,520px)}.version{display:none}.layout{grid-template-columns:230px minmax(0,1fr)}.grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:780px){.topin{grid-template-columns:42px minmax(0,1fr);gap:9px}.brand{display:none}.menubtn{display:grid;place-items:center}.layout{display:block;padding:12px}.side{position:fixed;left:10px;right:10px;top:78px;z-index:40;max-height:calc(100vh - 90px);transform:translateY(-12px);opacity:0;pointer-events:none;transition:.18s ease;background:#0b1b25;box-shadow:0 24px 70px rgba(0,0,0,.72)}.side.open{transform:none;opacity:1;pointer-events:auto}main{gap:12px}.hero{padding:25px 20px}.section{padding:18px}.grid,.grid.three{grid-template-columns:1fr}.num{width:32px;height:32px;flex-basis:32px}h2{font-size:21px}}@media(max-width:480px){.topin{padding:8px}#q{height:42px;padding-right:42px}.hero-actions{display:grid}.section{padding:16px 14px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+--- help/index.html:14 ---
+00012: </head>
+00013: <body>
+00014: <header class="top"><div class="topin"><button class="menubtn" id="menubtn" type="button" aria-label="Open guide contents" aria-expanded="false">☰</button><div class="brand"><span class="mark">?</span><span><strong>MissionChief Map Command Toolkit</strong><small>Searchable Help Centre</small></span></div><div class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m20.6 19.2-4.3-4.3a7.3 7.3 0 1 0-1.4 1.4l4.3 4.3 1.4-1.4ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg><input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search features, controls, shortcuts or problems…" aria-label="Search this guide"><button class="clear" id="clear" type="button" aria-label="Clear search">×</button></div><span class="version">Guide for Toolkit v4.20.37</span></div></header>
+00015: <div class="layout"><aside class="side" id="side"><div class="sidehead"><span>Guide contents</span><span class="count" id="count">All sections</span></div><nav class="nav" id="nav"></nav></aside><main>
+00016: <section class="hero"><p class="eyebrow">Operational map control · complete user guide</p><h1>Run the Toolkit with confidence.</h1><p>This guide covers the complete MissionChief Map Command Toolkit: the command panel, seven interface systems, operational map skins, overlays, Mission Age Watch, Mission Value, the live Mission Requirements matrix, resource and transport tools, payout presentation, Discord reporting, locations, profiles, Economy Mode, Tablet Mode and iOS Mobile Mode.</p><div class="actions"><a href="#quick-start">Start here</a><a href="#mission-age-watch">Mission Age Watch</a><a href="#shortcuts">Shortcuts</a><a href="#troubleshooting">Troubleshooting</a></div></section>
+--- help/index.html:29 ---
+00027: <section class="section" id="discord" data-title="Discord Financial Intelligence" data-keywords="webhook finance report today yesterday 24 hours 7 30 session since last custom chart comparison privacy"><div class="head"><span class="num">10</span><div><h2>Discord Financial Intelligence</h2><p class="summary">Generate and post structured financial reports through your webhook.</p></div></div><p>Periods include Today, Yesterday, Last 24 Hours, Last 7 Days, Last 30 Days, Session, Since Last Report and Custom. Choose the top-category count, comparison and chart state before Generate &amp; Post.</p><div class="call danger">A Toolkit settings export can contain the saved Discord webhook. Store exported JSON privately and never post it to a public issue or repository.</div></section>
+00028: <section class="section" id="places" data-title="Places Bookmarks and Profiles" data-keywords="Edinburgh Fife Glasgow Dundee Stirling quick place bookmark pin map profile save load distance origin"><div class="head"><span class="num">11</span><div><h2>Places, Bookmarks and Profiles</h2><p class="summary">Save repeated map positions and complete operational layouts.</p></div></div><div class="grid"><div class="card"><h4>Quick Places</h4><p>Built-in jumps for Edinburgh, Fife, Glasgow, Dundee and Stirling. Any can be pinned.</p></div><div class="card"><h4>Bookmarks</h4><p>Five custom slots store map centre, zoom and name. Bookmarks can also be pinned.</p></div><div class="card"><h4>Map Profiles</h4><p>Five profiles save location, zoom, map skin, visibility and operational overlays.</p></div><div class="card"><h4>Distance Origins</h4><p>Quick Places and bookmarks can act as Mission Age Watch origins without moving the map.</p></div></div></section>
+00029: <section class="section" id="layouts" data-title="Desktop Tablet and iOS Mobile Modes" data-keywords="desktop tablet ipad touch iphone ios safari tampermonkey mobile auto forced responsive"><div class="head"><span class="num">12</span><div><h2>Desktop, Tablet and iOS Mobile Modes</h2><p class="summary">One feature set with three layout strategies.</p></div></div><div class="table"><table><thead><tr><th>Layout</th><th>Behaviour</th></tr></thead><tbody><tr><td>Desktop</td><td>Draggable floating panel and compact mouse-oriented controls.</td></tr><tr><td>Tablet Mode</td><td>Fixed responsive panel, larger touch targets, vertical scrolling and map-aware dock sizing.</td></tr><tr><td>iOS Mobile Mode</td><td>Bottom-oriented panel, horizontal tab strip, safe-area handling and mobile dock.</td></tr></tbody></table></div><p>Each mode supports Auto, On and Off. Forcing one touch mode on forces the other off.</p><div class="call warn">After a major layout update, test the panel, dock, Help Centre, Mission Age Watch and payout overlay on the physical device rather than relying only on desktop emulation.</div></section>
+00030: <section class="section" id="shortcuts" data-title="Keyboard Shortcuts" data-keywords="M W V C F P R escape 1 2 3 4 5 6 7 8 9 keyboard keys"><div class="head"><span class="num">13</span><div><h2>Keyboard Shortcuts</h2><p class="summary">Fast controls ignored while typing in an input, textarea or select.</p></div></div><div class="table"><table><thead><tr><th>Key</th><th>Action</th></tr></thead><tbody><tr><td>M</td><td>Open or close the command panel.</td></tr><tr><td>W</td><td>Open or close Mission Age Watch.</td></tr><tr><td>V</td><td>Open or close Vehicle Code Status.</td></tr><tr><td>1–9</td><td>Toggle the nine displayed visibility and operational controls.</td></tr><tr><td>C</td><td>Clean Mode.</td></tr><tr><td>F</td><td>Focus Mode.</td></tr><tr><td>P</td><td>Mission Pulse.</td></tr><tr><td>R</td><td>Roads+.</td></tr><tr><td>Esc</td><td>Close Help first, then close Toolkit panels or exit Clean Mode.</td></tr></tbody></table></div></section>
+00031: <section class="section" id="backup" data-title="Settings Backup and Recovery" data-keywords="export import reset json legacy configuration profiles bookmarks webhook"><div class="head"><span class="num">14</span><div><h2>Settings Backup and Recovery</h2><p class="summary">Move a complete Toolkit setup between browsers or devices.</p></div></div><ul><li><strong>Export All</strong> creates a timestamped JSON containing preferences, layouts, profiles, bookmarks and the saved webhook.</li><li><strong>Import All</strong> accepts current and supported legacy Toolkit backups.</li><li><strong>Reset</strong> returns persistent configuration to defaults; it does not uninstall the userscript.</li></ul><div class="call danger">Because exports may contain the Discord webhook, treat them as private credentials.</div></section>
+--- help/index.html:35 ---
+00033: <section class="section" id="troubleshooting" data-title="Troubleshooting" data-keywords="not working missing no data syncing unknown lag audio guide github retry reset reload"><div class="head"><span class="num">16</span><div><h2>Troubleshooting</h2><p class="summary">Practical checks before assuming a feature is broken.</p></div></div><div class="grid"><div class="card"><h4>Guide will not load</h4><p>Use Reload in the Help toolbar. Confirm <code>raw.githubusercontent.com</code> is not blocked. The Toolkit shows an offline fallback rather than a blank view.</p></div><div class="card"><h4>Mission data says syncing</h4><p>Wait for the first personal vehicle or progress request. Syncing is neutral and does not mean zero units.</p></div><div class="card"><h4>Map control is missing</h4><p>Reload MissionChief and confirm only the current Toolkit userscript is enabled for the domain.</p></div><div class="card"><h4>Panel is off-screen</h4><p>Use panel reset on desktop. On touch layouts, switch the mode Off and back to Auto after a major viewport change.</p></div><div class="card"><h4>Payout sound is silent</h4><p>Enable sound and volume, then interact with the page once so the browser can unlock audio.</p></div><div class="card"><h4>Alliance page is slow</h4><p>Enable Map Blocker in Settings and reload. ON means the heavy alliance map is blocked.</p></div></div><h3>Useful diagnostic details</h3><ol class="steps"><li>Installed Toolkit version.</li><li>Desktop, Tablet or iOS Mobile layout.</li><li>Active interface theme and map skin.</li><li>Relevant filter and overlay settings.</li><li>A screenshot showing the complete affected panel.</li></ol></section>
+00034: <section class="section" id="faq" data-title="Frequently Asked Questions" data-keywords="privacy public github offline update data themes"><div class="head"><span class="num">17</span><div><h2>Frequently Asked Questions</h2><p class="summary">Common operational and privacy questions.</p></div></div><h3>Does Help send MissionChief data to GitHub?</h3><p>No. It downloads a static HTML document and does not need account data.</p><h3>Why is the guide public?</h3><p>It contains user documentation only. Public hosting lets all users load the same guide without exposing the private migration repository.</p><h3>Can the guide update without reinstalling?</h3><p>Yes. Documentation can be updated independently. Changes to the Help viewer or Toolkit controls still require a userscript release.</p><h3>Does the Toolkit stop working if GitHub is unavailable?</h3><p>No. Only the external guide may be unavailable; the main Toolkit continues working.</p><h3>Do themes change operational meaning?</h3><p>No. Protected semantic colours retain their meaning across all seven interface systems.</p></section>
+00035: <section class="section" id="help" data-title="Using the Help Centre" data-keywords="question mark search browser reload source close slash clear navigation"><div class="head"><span class="num">18</span><div><h2>Using the Help Centre</h2><p class="summary">Search and navigate the guide without leaving the map.</p></div></div><ul><li>Click <strong>?</strong> in the command-panel header.</li><li>Search by feature, control, shortcut, symptom or phrase.</li><li>Press <kbd>/</kbd> to focus search and <kbd>Esc</kbd> to clear the search field.</li><li>Use the contents panel to jump between sections.</li><li>Use the Help toolbar to reload the guide, open the GitHub source or close the viewer.</li></ul></section>
+00036: </main></div><footer>MissionChief Map Command Toolkit · Help Centre for v4.20.28 · Updated 22 July 2026 · Conroy1988</footer>
+00037: <script>
+--- help/index.html:35 ---
+00033: <section class="section" id="troubleshooting" data-title="Troubleshooting" data-keywords="not working missing no data syncing unknown lag audio guide github retry reset reload"><div class="head"><span class="num">16</span><div><h2>Troubleshooting</h2><p class="summary">Practical checks before assuming a feature is broken.</p></div></div><div class="grid"><div class="card"><h4>Guide will not load</h4><p>Use Reload in the Help toolbar. Confirm <code>raw.githubusercontent.com</code> is not blocked. The Toolkit shows an offline fallback rather than a blank view.</p></div><div class="card"><h4>Mission data says syncing</h4><p>Wait for the first personal vehicle or progress request. Syncing is neutral and does not mean zero units.</p></div><div class="card"><h4>Map control is missing</h4><p>Reload MissionChief and confirm only the current Toolkit userscript is enabled for the domain.</p></div><div class="card"><h4>Panel is off-screen</h4><p>Use panel reset on desktop. On touch layouts, switch the mode Off and back to Auto after a major viewport change.</p></div><div class="card"><h4>Payout sound is silent</h4><p>Enable sound and volume, then interact with the page once so the browser can unlock audio.</p></div><div class="card"><h4>Alliance page is slow</h4><p>Enable Map Blocker in Settings and reload. ON means the heavy alliance map is blocked.</p></div></div><h3>Useful diagnostic details</h3><ol class="steps"><li>Installed Toolkit version.</li><li>Desktop, Tablet or iOS Mobile layout.</li><li>Active interface theme and map skin.</li><li>Relevant filter and overlay settings.</li><li>A screenshot showing the complete affected panel.</li></ol></section>
+00034: <section class="section" id="faq" data-title="Frequently Asked Questions" data-keywords="privacy public github offline update data themes"><div class="head"><span class="num">17</span><div><h2>Frequently Asked Questions</h2><p class="summary">Common operational and privacy questions.</p></div></div><h3>Does Help send MissionChief data to GitHub?</h3><p>No. It downloads a static HTML document and does not need account data.</p><h3>Why is the guide public?</h3><p>It contains user documentation only. Public hosting lets all users load the same guide without exposing the private migration repository.</p><h3>Can the guide update without reinstalling?</h3><p>Yes. Documentation can be updated independently. Changes to the Help viewer or Toolkit controls still require a userscript release.</p><h3>Does the Toolkit stop working if GitHub is unavailable?</h3><p>No. Only the external guide may be unavailable; the main Toolkit continues working.</p><h3>Do themes change operational meaning?</h3><p>No. Protected semantic colours retain their meaning across all seven interface systems.</p></section>
+00035: <section class="section" id="help" data-title="Using the Help Centre" data-keywords="question mark search browser reload source close slash clear navigation"><div class="head"><span class="num">18</span><div><h2>Using the Help Centre</h2><p class="summary">Search and navigate the guide without leaving the map.</p></div></div><ul><li>Click <strong>?</strong> in the command-panel header.</li><li>Search by feature, control, shortcut, symptom or phrase.</li><li>Press <kbd>/</kbd> to focus search and <kbd>Esc</kbd> to clear the search field.</li><li>Use the contents panel to jump between sections.</li><li>Use the Help toolbar to reload the guide, open the GitHub source or close the viewer.</li></ul></section>
+00036: </main></div><footer>MissionChief Map Command Toolkit · Help Centre for v4.20.28 · Updated 22 July 2026 · Conroy1988</footer>
+00037: <script>
+--- help/index.html:36 ---
+00034: <section class="section" id="faq" data-title="Frequently Asked Questions" data-keywords="privacy public github offline update data themes"><div class="head"><span class="num">17</span><div><h2>Frequently Asked Questions</h2><p class="summary">Common operational and privacy questions.</p></div></div><h3>Does Help send MissionChief data to GitHub?</h3><p>No. It downloads a static HTML document and does not need account data.</p><h3>Why is the guide public?</h3><p>It contains user documentation only. Public hosting lets all users load the same guide without exposing the private migration repository.</p><h3>Can the guide update without reinstalling?</h3><p>Yes. Documentation can be updated independently. Changes to the Help viewer or Toolkit controls still require a userscript release.</p><h3>Does the Toolkit stop working if GitHub is unavailable?</h3><p>No. Only the external guide may be unavailable; the main Toolkit continues working.</p><h3>Do themes change operational meaning?</h3><p>No. Protected semantic colours retain their meaning across all seven interface systems.</p></section>
+00035: <section class="section" id="help" data-title="Using the Help Centre" data-keywords="question mark search browser reload source close slash clear navigation"><div class="head"><span class="num">18</span><div><h2>Using the Help Centre</h2><p class="summary">Search and navigate the guide without leaving the map.</p></div></div><ul><li>Click <strong>?</strong> in the command-panel header.</li><li>Search by feature, control, shortcut, symptom or phrase.</li><li>Press <kbd>/</kbd> to focus search and <kbd>Esc</kbd> to clear the search field.</li><li>Use the contents panel to jump between sections.</li><li>Use the Help toolbar to reload the guide, open the GitHub source or close the viewer.</li></ul></section>
+00036: </main></div><footer>MissionChief Map Command Toolkit · Help Centre for v4.20.28 · Updated 22 July 2026 · Conroy1988</footer>
+00037: <script>
+00038: (()=>{'use strict';const q=document.getElementById('q'),clear=document.getElementById('clear'),sections=[...document.querySelectorAll('.section')],nav=document.getElementById('nav'),count=document.getElementById('count'),empty=document.getElementById('empty'),side=document.getElementById('side'),menu=document.getElementById('menubtn');const norm=v=>String(v||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();const data=sections.map(s=>({s,title:s.dataset.title||s.querySelector('h2')?.textContent||s.id,text:norm(`${s.dataset.title||''} ${s.dataset.keywords||''} ${s.textContent||''}`)}));nav.innerHTML=data.map(x=>`<a href="#${x.s.id}" data-for="${x.s.id}">${x.title}</a>`).join('');const links=[...nav.querySelectorAll('a')];const closeMenu=()=>{side.classList.remove('open');menu.setAttribute('aria-expanded','false')};menu.addEventListener('click',()=>{const open=!side.classList.contains('open');side.classList.toggle('open',open);menu.setAttribute('aria-expanded',String(open))});nav.addEventListener('click',closeMenu);const jump=h=>{if(!h.startsWith('#'))return false;let id='';try{id=decodeURIComponent(h.slice(1))}catch(_){id=h.slice(1)}const t=id?document.getElementById(id):document.documentElement;if(t)t.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});return true};document.addEventListener('click',e=>{const a=e.target instanceof Element?e.target.closest('a[href]'):null;if(!a)return;const h=a.getAttribute('href')||'';if(h.startsWith('#')){e.preventDefault();jump(h)}});const run=()=>{const raw=q.value.trim(),terms=norm(raw).split(' ').filter(Boolean);let visible=0;data.forEach(x=>{const yes=!terms.length||terms.every(t=>x.text.includes(t));x.s.hidden=!yes;x.s.classList.toggle('match',!!terms.length&&yes);const a=nav.querySelector(`[data-for="${x.s.id}"]`);if(a)a.hidden=!yes;if(yes)visible++});clear.classList.toggle('on',!!raw);empty.classList.toggle('on',visible===0);count.textContent=terms.length?`${visible} match${visible===1?'':'es'}`:'All sections'};q.addEventListener('input',run);clear.addEventListener('click',()=>{q.value='';run();q.focus()});document.addEventListener('keydown',e=>{if(e.key==='/'&&document.activeElement!==q){e.preventDefault();q.focus();q.select()}if(e.key==='Escape'&&document.activeElement===q&&q.value){q.value='';run()}});const io=new IntersectionObserver(entries=>{const v=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];if(v)links.forEach(a=>a.classList.toggle('active',a.dataset.for===v.target.id))},{rootMargin:'-20% 0px -68% 0px',threshold:[0,.15,.35,.6]});sections.forEach(s=>io.observe(s));document.addEventListener('click',e=>{if(innerWidth<=780&&side.classList.contains('open')&&!side.contains(e.target)&&!menu.contains(e.target))closeMenu()});run()})();
+--- src/MissionChief_Map_Command_Toolkit.user.js:29277 ---
+29275:                 const documentText = String(text || '').trim();
+29276:                 if (!/<!doctype html|<html[\s>]/iu.test(documentText) || !documentText.includes('MissionChief Map Command Toolkit')) {
+29277:                     throw new Error('The Help Centre returned an invalid document.');
+29278:                 }
+29279:                 helpGuideDocumentCache = documentText;
+--- src/MissionChief_Map_Command_Toolkit.user.js:29292 ---
+29290:                     try {
+29291:                         if (error) throw error;
+29292:                         if (!response || Number(response.status) < 200 || Number(response.status) >= 300) throw new Error(`Help Centre returned HTTP ${response?.status || 'error'}.`);
+29293:                         resolve(validate(response.responseText));
+29294:                     } catch (err) {
+[search result limit reached]
+matches=80
+
+=== SEARCH version-5.0.6 ===
+--- .github/development-packages/issue470-ci-diagnostic.py:31 ---
+00029: patterns = [
+00030:     ('help-centre', re.compile(r'help\s+centre', re.I)),
+00031:     ('version-5.0.6', re.compile(r'\b(?:v)?5\.0\.6\b', re.I)),
+00032:     ('contract-lane', re.compile(r'Contract and syntax lane', re.I)),
+00033:     ('documentation-drift', re.compile(r'documentation drift', re.I)),
+--- .github/diagnostics/issue470-decoded-package.py.txt:143 ---
+00141: 
+00142: text = SOURCE.read_text(encoding='utf-8')
+00143: if text.count('// @version      5.0.6') != 1 or text.count("version: '5.0.6'") != 1:
+00144:     raise SystemExit('Issue #470 clean package requires the verified Toolkit v5.0.6 source')
+00145: text = text.replace('// @version      5.0.6', '// @version      5.0.7', 1)
+--- .github/diagnostics/issue470-decoded-package.py.txt:143 ---
+00141: 
+00142: text = SOURCE.read_text(encoding='utf-8')
+00143: if text.count('// @version      5.0.6') != 1 or text.count("version: '5.0.6'") != 1:
+00144:     raise SystemExit('Issue #470 clean package requires the verified Toolkit v5.0.6 source')
+00145: text = text.replace('// @version      5.0.6', '// @version      5.0.7', 1)
+--- .github/diagnostics/issue470-decoded-package.py.txt:144 ---
+00142: text = SOURCE.read_text(encoding='utf-8')
+00143: if text.count('// @version      5.0.6') != 1 or text.count("version: '5.0.6'") != 1:
+00144:     raise SystemExit('Issue #470 clean package requires the verified Toolkit v5.0.6 source')
+00145: text = text.replace('// @version      5.0.6', '// @version      5.0.7', 1)
+00146: text = text.replace("version: '5.0.6'", "version: '5.0.7'", 1)
+--- .github/diagnostics/issue470-decoded-package.py.txt:145 ---
+00143: if text.count('// @version      5.0.6') != 1 or text.count("version: '5.0.6'") != 1:
+00144:     raise SystemExit('Issue #470 clean package requires the verified Toolkit v5.0.6 source')
+00145: text = text.replace('// @version      5.0.6', '// @version      5.0.7', 1)
+00146: text = text.replace("version: '5.0.6'", "version: '5.0.7'", 1)
+00147: 
+--- .github/diagnostics/issue470-decoded-package.py.txt:146 ---
+00144:     raise SystemExit('Issue #470 clean package requires the verified Toolkit v5.0.6 source')
+00145: text = text.replace('// @version      5.0.6', '// @version      5.0.7', 1)
+00146: text = text.replace("version: '5.0.6'", "version: '5.0.7'", 1)
+00147: 
+00148: old_host = "    function toolkitControlHost(mapEl, doc = document) { return mapEl || doc?.body || doc?.documentElement || null; }"
+--- .github/diagnostics/issue470-decoded-package.py.txt:763 ---
+00761:     raise SystemExit('Issue #464 ensureUi contract anchor changed')
+00762: issue464 = issue464.replace(old_ensure, new_ensure, 1)
+00763: old_version = "assert meta==runtime=='5.0.6'"
+00764: new_version = "assert meta==runtime\nassert tuple(int(part) for part in meta.split('.')[:3]) >= (5,0,6)"
+00765: if issue464.count(old_version) != 1:
+--- .github/fixtures/main-style-source-headroom.json:5 ---
+00003:   "subsystem": "installMainStyles",
+00004:   "originalVersion": "4.20.20",
+00005:   "candidateVersion": "5.0.6",
+00006:   "originalSourceLines": 32157,
+00007:   "candidateSourceLines": 31653,
+--- .github/greasyfork-version.txt:1 ---
+00001: 5.0.6
+--- .github/scripts/test_issue464_launcher_settings_contract.py:49 ---
+00047: assert '.addEventListener(' not in feature_block and 'new MutationObserver(' not in feature_block and 'setInterval(' not in feature_block
+00048: meta=re.search(r'^//\s*@version\s+([^\s]+)',text,re.M).group(1);runtime=re.search(r"version:\s*'([^']+)'",text).group(1)
+00049: assert meta==runtime=='5.0.6'
+00050: assert len(text.splitlines())<=32000
+00051: print('Issue #464 complete launcher, settings, runtime and Mission Age contract passed.')
+--- CHANGELOG.md:7 ---
+00005: The format is based on Keep a Changelog, and releases use semantic version numbers.
+00006: 
+00007: ## [5.0.6] - 2026-07-23
+00008: 
+00009: ### Fixed
+--- MissionChief_Map_Command_Toolkit.txt:4 ---
+00002: // @name         MissionChief Map Command Toolkit
+00003: // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
+00004: // @version      5.0.6
+00005: // @description  MissionChief operational map command centre.
+00006: // @author       Conroy1988
+--- MissionChief_Map_Command_Toolkit.txt:456 ---
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '5.0.6',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+--- MissionChief_Map_Command_Toolkit.user.js:4 ---
+00002: // @name         MissionChief Map Command Toolkit
+00003: // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
+00004: // @version      5.0.6
+00005: // @description  MissionChief operational map command centre.
+00006: // @author       Conroy1988
+--- MissionChief_Map_Command_Toolkit.user.js:456 ---
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '5.0.6',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+--- dist/MissionChief_Map_Command_Toolkit.txt:4 ---
+00002: // @name         MissionChief Map Command Toolkit
+00003: // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
+00004: // @version      5.0.6
+00005: // @description  MissionChief operational map command centre.
+00006: // @author       Conroy1988
+--- dist/MissionChief_Map_Command_Toolkit.txt:456 ---
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '5.0.6',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+--- dist/MissionChief_Map_Command_Toolkit.user.js:4 ---
+00002: // @name         MissionChief Map Command Toolkit
+00003: // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
+00004: // @version      5.0.6
+00005: // @description  MissionChief operational map command centre.
+00006: // @author       Conroy1988
+--- dist/MissionChief_Map_Command_Toolkit.user.js:456 ---
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '5.0.6',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+--- dist/release-manifest.json:3 ---
+00001: {
+00002:   "project": "MissionChief Map Command Toolkit",
+00003:   "version": "5.0.6",
+00004:   "source": "src/MissionChief_Map_Command_Toolkit.user.js",
+00005:   "distributionFiles": [
+--- dist/release-manifest.json:14 ---
+00012:   "metadata": {
+00013:     "name": "MissionChief Map Command Toolkit",
+00014:     "runtimeVersion": "5.0.6",
+00015:     "author": "Conroy1988",
+00016:     "license": "MIT",
+--- src/MissionChief_Map_Command_Toolkit.user.js:4 ---
+00002: // @name         MissionChief Map Command Toolkit
+00003: // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
+00004: // @version      5.0.6
+00005: // @description  MissionChief operational map command centre.
+00006: // @author       Conroy1988
+--- src/MissionChief_Map_Command_Toolkit.user.js:456 ---
+00454:     const SCRIPT = {
+00455:         name: 'MissionChief Map Command Toolkit',
+00456:         version: '5.0.6',
+00457:         author: 'Conroy1988',
+00458:         controlId: 'mc-map-command-toolkit-control',
+--- status/README.md:5 ---
+00003: > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
+00004: 
+00005: ## Current version: `5.0.6`
+00006: 
+00007: | System | Health | State |
+--- status/README.md:20 ---
+00018: ## Release state
+00019: 
+00020: - **Latest recorded version:** `5.0.6`
+00021: - **State:** Verified public release
+00022: - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
+--- status/release-dashboard.json:4 ---
+00002:   "project": "MissionChief Map Command Toolkit",
+00003:   "pipelineVersion": 2,
+00004:   "currentVersion": "5.0.6",
+00005:   "sourceOfTruth": "GitHub",
+00006:   "distribution": "Greasy Fork",
+--- status/release-dashboard.json:35 ---
+00033:   "distributionCandidate": {
+00034:     "path": "dist/MissionChief_Map_Command_Toolkit.user.js",
+00035:     "version": "5.0.6",
+00036:     "state": "validated"
+00037:   },
+--- status/release-dashboard.json:48 ---
+00046:   },
+00047:   "releaseReadiness": {
+00048:     "version": "5.0.6",
+00049:     "state": "passed",
+00050:     "requiredSecrets": true,
+--- status/release-dashboard.json:57 ---
+00055:   },
+00056:   "latestRelease": {
+00057:     "version": "5.0.6",
+00058:     "sha256": "795bacf43d82be8d8c6e66e43bf6a564bcaae979bf571b3d90765f048d159a67",
+00059:     "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v5.0.6",
+--- status/release-dashboard.json:59 ---
+00057:     "version": "5.0.6",
+00058:     "sha256": "795bacf43d82be8d8c6e66e43bf6a564bcaae979bf571b3d90765f048d159a67",
+00059:     "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v5.0.6",
+00060:     "greasyForkVerified": true,
+00061:     "privateBackupCommit": "60499818534f385b8d0ec394e43cb817a008f112",
+--- status/update-manifest.json:4 ---
+00002:   "schemaVersion": 1,
+00003:   "channel": "stable",
+00004:   "version": "5.0.6",
+00005:   "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v5.0.6",
+00006:   "updateUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
+--- status/update-manifest.json:5 ---
+00003:   "channel": "stable",
+00004:   "version": "5.0.6",
+00005:   "releaseNotesUrl": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v5.0.6",
+00006:   "updateUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
+00007:   "publishedAt": "2026-07-23T21:14:34Z",
+matches=32
+
+=== SEARCH contract-lane ===
+--- .github/development-packages/issue470-ci-diagnostic.py:32 ---
+00030:     ('help-centre', re.compile(r'help\s+centre', re.I)),
+00031:     ('version-5.0.6', re.compile(r'\b(?:v)?5\.0\.6\b', re.I)),
+00032:     ('contract-lane', re.compile(r'Contract and syntax lane', re.I)),
+00033:     ('documentation-drift', re.compile(r'documentation drift', re.I)),
+00034: ]
+--- .github/workflows/full-userscript-audit.yml:49 ---
+00047: jobs:
+00048:   contracts:
+00049:     name: Contract and syntax lane
+00050:     runs-on: ubuntu-latest
+00051:     timeout-minutes: 10
+matches=2
+
+=== SEARCH documentation-drift ===
+--- .github/development-packages/issue470-ci-diagnostic.py:33 ---
+00031:     ('version-5.0.6', re.compile(r'\b(?:v)?5\.0\.6\b', re.I)),
+00032:     ('contract-lane', re.compile(r'Contract and syntax lane', re.I)),
+00033:     ('documentation-drift', re.compile(r'documentation drift', re.I)),
+00034: ]
+00035: for label, pattern in patterns:
+--- .github/scripts/check_documentation_drift.py:244 ---
+00242:     icon = "✅" if report["status"] == "passed" else "❌"
+00243:     lines = [
+00244:         "# Documentation Drift Audit",
+00245:         "",
+00246:         f"{icon} **Status:** {report['status'].upper()}",
+--- .github/workflows/documentation-drift-check.yml:1 ---
+00001: name: Documentation Drift Check
+00002: 
+00003: run-name: Documentation drift · ${{ github.event_name }}
+--- .github/workflows/documentation-drift-check.yml:3 ---
+00001: name: Documentation Drift Check
+00002: 
+00003: run-name: Documentation drift · ${{ github.event_name }}
+00004: 
+00005: on:
+--- docs/FULL_PROJECT_AUDIT.md:236 ---
+00234: - performance budget and targeted runtime invariants: passed;
+00235: - asset health: passed;
+00236: - documentation drift and Pages build: passed;
+00237: - release readiness: passed;
+00238: - production release v4.13.1: passed.
+--- documentation-drift-report.md:1 ---
+00001: # Documentation Drift Audit
+00002: 
+00003: ✅ **Status:** PASSED
+matches=6

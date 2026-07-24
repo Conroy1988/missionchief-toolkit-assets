@@ -41,7 +41,7 @@ The former committed dry-run record was stale at v4.10.4 while production was v5
 The production release still performs multiple branch mutations:
 
 1. `validate-userscript.yml` commits the validated distribution candidate.
-2. `release-toolkit.yml` commits stable root mirrors.
+2. `release-toolkit.yml` calls `.github/scripts/sync_greasyfork_root_mirror.sh`, which commits stable root mirrors to public `main`.
 3. `release-toolkit.yml` publishes GitHub Release, verifies Greasy Fork, backs up privately and posts Discord.
 4. `release-toolkit.yml` commits the verified release dashboard.
 5. `publish-update-manifest.yml` commits the stable update manifest.

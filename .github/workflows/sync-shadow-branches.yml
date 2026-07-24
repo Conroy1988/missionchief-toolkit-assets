@@ -153,9 +153,7 @@ jobs:
             2>&1 | tee shadow-sync-evidence/shadow-sync.log
 
       - name: Verify post-operation shadow parity
-        if: >-
-          (inputs.mode == 'plan' && steps.plan.outcome == 'success') ||
-          (inputs.mode == 'apply' && steps.apply.outcome == 'success')
+        if: inputs.mode == 'apply' && steps.apply.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail

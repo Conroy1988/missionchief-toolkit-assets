@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "fc2fcb206df00d28a1b4752409d9352728585c9e",
+  "reviewedMainCommit": "0b43be27b5857206adb55de85777425be9160816",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
       "workflow": ".github/workflows/greasyfork-release-monitor.yml",
-      "purpose": "Record and reconcile the Greasy Fork/Discord announcement version tracker.",
+      "purpose": "Record fallback Greasy Fork/Discord announcement state when primary release completion is absent.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "writes": [
@@ -25,16 +25,6 @@
       "migrationTarget": "release-state branch or immutable release asset"
     },
     {
-      "workflow": ".github/workflows/reconcile-release-announcement-state.yml",
-      "purpose": "Synchronize the fallback announcement tracker after a verified release.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        ".github/greasyfork-version.txt"
-      ],
-      "migrationTarget": "release-state branch"
-    },
-    {
       "workflow": ".github/workflows/release-recovery.yml",
       "purpose": "Record controlled Greasy Fork, private-backup, Discord and dashboard recovery state.",
       "credential": "github.token",
@@ -48,7 +38,7 @@
     },
     {
       "workflow": ".github/workflows/release-toolkit.yml",
-      "purpose": "Publish stable dist and Greasy Fork root mirrors, then record final verified release state.",
+      "purpose": "Publish stable distribution, record verified release state and update the announcement tracker atomically.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "writes": [
@@ -56,7 +46,8 @@
         "MissionChief_Map_Command_Toolkit.user.js",
         "MissionChief_Map_Command_Toolkit.txt",
         "status/release-dashboard.json",
-        "status/README.md"
+        "status/README.md",
+        ".github/greasyfork-version.txt"
       ],
       "helperScripts": [
         ".github/scripts/sync_greasyfork_root_mirror.sh"
@@ -132,12 +123,21 @@
         "live userscript",
         "parity.log"
       ]
+    },
+    {
+      "workflow": ".github/workflows/reconcile-release-announcement-state.yml",
+      "purpose": "Verify dashboard and announcement tracker consistency without changing repository state.",
+      "permission": "contents: read",
+      "artifact": "missionchief-release-announcement-state-<commit>",
+      "evidence": [
+        "release-announcement-state.json",
+        "release-announcement-state.md"
+      ]
     }
   ],
   "directMainPushSources": [
     ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/publish-update-manifest.yml",
-    ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/scripts/sync_greasyfork_root_mirror.sh"
@@ -166,7 +166,6 @@
     ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/owner-release-command.yml",
     ".github/workflows/publish-update-manifest.yml",
-    ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml"
   ]

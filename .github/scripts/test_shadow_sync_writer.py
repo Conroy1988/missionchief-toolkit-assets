@@ -174,7 +174,7 @@ def main() -> int:
         "release-state",
         "distribution",
         "public `main` rejected as a target",
-        "manual synchronizer copies only `mirroredPaths`",
+        "`.github/greasyfork-version.txt` only",
     ]:
         if marker not in document:
             raise AssertionError(f"Human inventory is missing shadow writer marker: {marker}")

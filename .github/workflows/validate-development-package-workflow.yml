@@ -1,10 +1,15 @@
-name: Development Package Workflow Policy
+name: Development and Automation Workflow Policy
 
 on:
   pull_request:
     paths:
       - .github/workflows/apply-development-package.yml
+      - .github/workflows/asset-health-monitor.yml
+      - .github/workflows/prepare-release-rollback.yml
+      - .github/workflows/pages-production-monitor.yml
       - .github/workflows/validate-development-package-workflow.yml
+      - .github/scripts/reconcile_pages_incident.sh
+      - .github/scripts/test_automation_record_hygiene.py
       - .github/scripts/test_development_package_workflow.py
       - .github/actions-security-policy.json
       - docs/DEVELOPMENT_PACKAGE_WORKFLOW.md
@@ -24,20 +29,23 @@ jobs:
         with:
           show-progress: false
 
-      - name: Run development-package workflow policy
+      - name: Run workflow policy contracts
         id: policy
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
-          python3 .github/scripts/test_development_package_workflow.py 2>&1 | tee "$RUNNER_TEMP/development-package-policy.log"
+          {
+            python3 .github/scripts/test_development_package_workflow.py
+            python3 .github/scripts/test_automation_record_hygiene.py
+          } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 
       - name: Upload policy diagnostics
         if: steps.policy.outcome != 'success'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: development-package-policy-diagnostic
-          path: ${{ runner.temp }}/development-package-policy.log
+          name: workflow-policy-diagnostic
+          path: ${{ runner.temp }}/workflow-policy.log
           if-no-files-found: error
           retention-days: 7
 

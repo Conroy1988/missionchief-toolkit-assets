@@ -1,0 +1,203 @@
+name: Rehearse Shadow Branch Synchronization
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Plan only or apply the reviewed shadow synchronization"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+      target:
+        description: "Reviewed shadow target"
+        required: true
+        type: choice
+        options:
+          - both
+          - release-state
+          - distribution
+      source_sha:
+        description: "Exact current main commit to synchronize"
+        required: true
+        type: string
+      write_probe:
+        description: "For apply mode, record one idempotent empty commit when content already matches"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      confirmation:
+        description: "PLAN SHADOW SYNC for plan mode or SYNC SHADOWS for apply mode"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-shadow-branch-synchronization
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    name: Plan or apply constrained shadow synchronization
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.actor == 'Conroy1988' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out exact main authority
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Validate dispatch and exact source state
+        env:
+          MODE: ${{ inputs.mode }}
+          TARGET: ${{ inputs.target }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          WRITE_PROBE: ${{ inputs.write_probe }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::source_sha must be a full lowercase commit SHA."; exit 1; }
+          [[ "$TARGET" == "both" || "$TARGET" == "release-state" || "$TARGET" == "distribution" ]] || { echo "::error::Unapproved shadow target."; exit 1; }
+          [[ "$TARGET" != "main" ]] || { echo "::error::main can never be a shadow synchronization target."; exit 1; }
+          if [[ "$MODE" == "plan" ]]; then
+            [[ "$CONFIRMATION" == "PLAN SHADOW SYNC" ]] || { echo "::error::Type PLAN SHADOW SYNC exactly."; exit 1; }
+            [[ "$WRITE_PROBE" == "false" ]] || { echo "::error::A write probe is valid only in apply mode."; exit 1; }
+          elif [[ "$MODE" == "apply" ]]; then
+            [[ "$CONFIRMATION" == "SYNC SHADOWS" ]] || { echo "::error::Type SYNC SHADOWS exactly."; exit 1; }
+          else
+            echo "::error::Mode must be plan or apply."
+            exit 1
+          fi
+
+          git fetch --no-tags origin \
+            +refs/heads/main:refs/remotes/origin/main \
+            +refs/heads/release-state:refs/remotes/origin/release-state \
+            +refs/heads/distribution:refs/remotes/origin/distribution
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]] || { echo "::error::Checkout does not match the authorized source SHA."; exit 1; }
+          [[ "$(git rev-parse origin/main)" == "$SOURCE_SHA" ]] || { echo "::error::main moved; authorize the new exact SHA."; exit 1; }
+
+      - name: Validate shadow synchronizer self-tests
+        run: python3 .github/scripts/sync_shadow_branches.py --self-test
+
+      - name: Require owner-authenticated rehearsal token
+        if: inputs.mode == 'apply'
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || { echo "::error::DEVELOPMENT_PR_TOKEN is required for the temporary owner-authenticated rehearsal."; exit 1; }
+
+      - name: Plan governed shadow changes
+        id: plan
+        if: inputs.mode == 'plan'
+        continue-on-error: true
+        env:
+          TARGET: ${{ inputs.target }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p shadow-sync-evidence
+          python3 .github/scripts/sync_shadow_branches.py \
+            --mode plan \
+            --target "$TARGET" \
+            --source-sha "$SOURCE_SHA" \
+            --confirmation "$CONFIRMATION" \
+            --actor "$GITHUB_ACTOR" \
+            --json-output shadow-sync-evidence/shadow-sync.json \
+            --markdown-output shadow-sync-evidence/shadow-sync.md \
+            2>&1 | tee shadow-sync-evidence/shadow-sync.log
+
+      - name: Apply owner-authorized shadow changes
+        id: apply
+        if: inputs.mode == 'apply'
+        continue-on-error: true
+        env:
+          TARGET: ${{ inputs.target }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          WRITE_PROBE: ${{ inputs.write_probe }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          SHADOW_SYNC_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p shadow-sync-evidence
+          probe_args=()
+          [[ "$WRITE_PROBE" == "true" ]] && probe_args+=(--write-probe)
+          python3 .github/scripts/sync_shadow_branches.py \
+            --mode apply \
+            --target "$TARGET" \
+            --source-sha "$SOURCE_SHA" \
+            --confirmation "$CONFIRMATION" \
+            --actor "$GITHUB_ACTOR" \
+            "${probe_args[@]}" \
+            --json-output shadow-sync-evidence/shadow-sync.json \
+            --markdown-output shadow-sync-evidence/shadow-sync.md \
+            2>&1 | tee shadow-sync-evidence/shadow-sync.log
+
+      - name: Verify post-operation shadow parity
+        if: inputs.mode == 'apply' && steps.apply.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --force --no-tags origin \
+            +refs/heads/release-state:refs/remotes/origin/release-state \
+            +refs/heads/distribution:refs/remotes/origin/distribution
+          python3 .github/scripts/verify_shadow_branch_parity.py \
+            --json-output shadow-sync-evidence/post-sync-parity.json \
+            --markdown-output shadow-sync-evidence/post-sync-parity.md \
+            2>&1 | tee shadow-sync-evidence/post-sync-parity.log
+
+      - name: Upload immutable shadow synchronization evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-shadow-sync-${{ inputs.mode }}-${{ inputs.target }}-${{ inputs.source_sha }}
+          path: shadow-sync-evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish rehearsal summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f shadow-sync-evidence/shadow-sync.md ]]; then
+            cat shadow-sync-evidence/shadow-sync.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "# Shadow synchronization rehearsal" >> "$GITHUB_STEP_SUMMARY"
+            echo >> "$GITHUB_STEP_SUMMARY"
+            echo "The request was refused before synchronization evidence could be generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce requested operation result
+        if: always()
+        env:
+          MODE: ${{ inputs.mode }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          APPLY_OUTCOME: ${{ steps.apply.outcome }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$MODE" == "plan" && "$PLAN_OUTCOME" != "success" ]]; then
+            exit 1
+          fi
+          if [[ "$MODE" == "apply" && "$APPLY_OUTCOME" != "success" ]]; then
+            exit 1
+          fi

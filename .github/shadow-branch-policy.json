@@ -25,7 +25,7 @@
   },
   "branches": {
     "release-state": {
-      "purpose": "Mirror verified dashboard and manifest state while operating the transitional fallback announcement tracker.",
+      "purpose": "Operate the recovery dashboard, rendered status, stable manifest and announcement tracker without public-main commits.",
       "rolePath": ".github/branch-role.json",
       "governedPaths": [
         "status/release-dashboard.json",
@@ -33,15 +33,17 @@
         "status/update-manifest.json",
         ".github/greasyfork-version.txt"
       ],
-      "mirroredPaths": [
+      "mirroredPaths": [],
+      "operationalPaths": [
         "status/release-dashboard.json",
         "status/README.md",
-        "status/update-manifest.json"
-      ],
-      "operationalPaths": [
+        "status/update-manifest.json",
         ".github/greasyfork-version.txt"
       ],
-      "operationalWriter": ".github/workflows/greasyfork-release-monitor.yml",
+      "operationalWriters": [
+        ".github/workflows/greasyfork-release-monitor.yml",
+        ".github/workflows/release-recovery.yml"
+      ],
       "externalConsumersEnabled": false
     },
     "distribution": {
@@ -64,6 +66,7 @@
         "MissionChief_Map_Command_Toolkit.txt"
       ],
       "operationalPaths": [],
+      "operationalWriters": [],
       "externalConsumersEnabled": false
     }
   }

@@ -1,6 +1,6 @@
 # Branch Protection Migration Plan
 
-Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, the stable update manifest, consolidated release state, fallback monitoring and recovery still mutate public `main`.
+Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, consolidated release state, fallback monitoring and recovery still mutate public `main`.
 
 The migration is tracked by Issue #41. Authority is maintained in:
 
@@ -11,6 +11,7 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `.github/scripts/test_validation_candidate_pipeline.py`;
 - `.github/scripts/test_greasyfork_parity_pipeline.py`;
 - `.github/scripts/test_release_announcement_state_pipeline.py`;
+- `.github/scripts/test_update_manifest_pipeline.py`;
 - `.github/scripts/test_shadow_branch_parity.py`;
 - `.github/scripts/test_shadow_sync_writer.py`.
 
@@ -23,10 +24,11 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production, recovery and shadow-synchronization confirmation phrases;
 - exact commit/ref/hash validation evidence;
-- deterministic dashboard, Greasy Fork and announcement-state verification;
-- atomic primary release dashboard and announcement state;
+- deterministic dashboard, Greasy Fork, announcement-state and update-manifest verification;
+- atomic primary release dashboard, stable manifest and announcement state;
 - isolated non-live `release-state` and `distribution` branches;
-- a manual-only, fixed-target shadow writer with read-only workflow permission.
+- a manual-only, fixed-target shadow writer with read-only workflow permission;
+- verified administrator repair access to both operational branches.
 
 ## Completed migration stages
 
@@ -36,93 +38,72 @@ The 24 July 2026 baseline identified 10 direct public-main writers. Every `conte
 
 ### Artifact-only validation and evidence ✅
 
-Six workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
+Seven workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
 
 - canonical userscript validation;
 - release dry runs;
 - repository/dependency audits;
 - release dashboard projection;
 - Greasy Fork canonical parity;
-- release announcement-state verification.
+- release announcement-state verification;
+- stable update-manifest verification.
 
 ### GitHub source authority ✅
 
 Automatic source importing is retired. GitHub is authoritative. Live Greasy Fork parity accepts canonical-ahead during publication and fails on live-ahead or equal-version content drift.
 
-### Atomic primary announcement state ✅
+### Atomic release dashboard, manifest and announcement state ✅
 
-Normal production releases no longer require a follow-up announcement reconciliation commit.
+Normal production releases no longer require follow-up announcement or manifest commits.
 
 After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
+- `status/update-manifest.json`;
 - `.github/greasyfork-version.txt`.
 
-The stable update manifest remains a separate guarded writer. It is dispatched and awaited in parallel with GitHub Pages.
+The manifest is built by `.github/scripts/build_stable_update_manifest.py` from the verified dashboard and reviewed release settings. The former publisher is now a read-only projection verifier with 30-day retained evidence.
 
-Direct public-main writers remain reduced from **10 to 4**.
+The existing v5.0.7 runtime URL remains unchanged:
 
-### Shadow branch topology and read-only parity ✅
+`raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json`
 
-PR #506 established:
+This is a compatibility stage. A later versioned Toolkit release will move the runtime consumer to the final `release-state` endpoint, after which the `main` compatibility manifest can be frozen and removed from future mutable state.
+
+Direct public-main writers are reduced from **10 to 3**.
+
+### Shadow branch topology and access rehearsal ✅
+
+PRs #506–#507 established:
 
 - `release-state` for verified dashboard, manifest and announcement state;
-- `distribution` for stable `dist/` and root userscript paths.
+- `distribution` for stable `dist/` and root userscript paths;
+- read-only branch-role and governed-file parity verification;
+- a manual exact-SHA-bound synchronizer restricted to the two shadow refs.
 
 Both branches remain in `shadow-rehearsal` mode. `main` remains authoritative, live consumers are disabled, strict protection is disabled and administrator recovery remains mandatory.
 
-`Verify Shadow Branch Parity` has read-only contents permission. It validates role declarations and governed-file parity, retains evidence for 30 days and performs no branch mutation.
+The connected administrator identity completed:
 
-## Constrained shadow writer rehearsal 🟡
+- an exact-current-`main` read-only plan;
+- 10/10 governed-file parity;
+- same-tree fast-forward write probes on both branches;
+- post-write role and content verification;
+- no force push, history rewrite, public-main mutation or live-consumer change.
 
-The next stage introduces `.github/workflows/sync-shadow-branches.yml` and `.github/scripts/sync_shadow_branches.py` without changing live authority.
-
-### Dispatch and authorization
-
-- manual `workflow_dispatch` only;
-- repository fixed to `Conroy1988/missionchief-toolkit-assets`;
-- actor fixed to `Conroy1988`;
-- dispatch ref must be `main`;
-- checkout and `origin/main` must both equal an explicitly supplied 40-character source SHA;
-- plan mode requires `PLAN SHADOW SYNC`;
-- apply mode requires `SYNC SHADOWS`.
-
-### Target and file boundaries
-
-- allowed targets are exactly `release-state` and `distribution`;
-- `main` is rejected as a target in both workflow and script;
-- target branch roles must remain `shadow-rehearsal` and preserve main authority;
-- only branch-specific governed paths may change;
-- `.github/branch-role.json` cannot be copied or modified;
-- pushes are fast-forward commits to the two reviewed shadow refs only;
-- public `main` and live consumers remain unchanged.
-
-### Credential boundary
-
-The workflow itself retains `contents: read`. Plan mode uses no write credential. Apply mode temporarily receives the existing owner-authenticated `DEVELOPMENT_PR_TOKEN` solely for the reviewed shadow push.
-
-This is a rehearsal identity, not the final architecture. It must be replaced by a narrowly scoped GitHub App restricted to the two operational branches before consumer cutover or strict protection.
-
-### Rehearsal evidence
-
-- plan/apply JSON, Markdown and logs retained for 30 days;
-- post-operation read-only parity verification;
-- optional idempotent empty probe commits to prove branch access when governed content already matches;
-- no duplicate probe commit for the same source/target fingerprint;
-- permanent static and executable contracts reject target expansion, workflow write permission, live cutover and `main` mutation.
+The workflow-dispatch token path remains temporary and must be replaced by a narrowly scoped GitHub App before live cutover.
 
 ## Remaining generated state
 
 Public `main` still contains:
 
 1. stable `dist/` and root Greasy Fork mirrors;
-2. verified dashboard and announcement state;
-3. stable update-manifest state;
-4. fallback monitor state;
-5. guarded recovery state.
+2. verified dashboard, stable manifest and announcement state;
+3. fallback monitor state;
+4. guarded recovery state.
 
-These responsibilities must move before strict protection is safe.
+The update manifest no longer has a standalone writer, but the compatibility file remains part of the atomic production commit until the versioned consumer migration.
 
 ## Target architecture
 
@@ -136,11 +117,11 @@ Stable `dist/` and root userscript mirrors required by Greasy Fork, written by a
 
 ### Release-state branch
 
-Mutable dashboard, manifest, announcement, fallback-monitor and recovery state. It is operational evidence, never product source.
+Mutable dashboard, manifest, announcement, fallback-monitor and recovery state. It is operational state, never product source.
 
 ### Immutable evidence
 
-Validation candidates, parity audits, synchronization plans, announcement checks, dashboard projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, parity audits, synchronization plans, announcement checks, dashboard and manifest projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
 
 ## Access and speed requirements
 
@@ -159,32 +140,33 @@ The final protection design must retain fast owner operation:
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
 2. ✅ Separate validation, audit and verification evidence from public `main`.
-3. ✅ Make dashboard and announcement state atomic; retire the reconciliation writer.
-4. ⬜ Fold stable update-manifest publication into the consolidated release-state commit.
+3. ✅ Make dashboard and announcement state atomic; retire reconciliation writing.
+4. ✅ Fold stable update-manifest publication into the same atomic release-state commit.
 5. ✅ Create and verify non-live `release-state` and `distribution` branches — PR #506.
-6. 🟡 Introduce the constrained owner-token shadow writer and rehearse plan/apply synchronization.
+6. ✅ Introduce the constrained shadow writer and rehearse plan/write access — PR #507 and Issue #41 evidence.
 7. Replace the rehearsal credential with a narrowly scoped GitHub App.
-8. Move consolidated release state and recovery state to `release-state`.
-9. Move stable `dist/` and Greasy Fork mirrors to `distribution`.
-10. Remove unnecessary `contents: write` from orchestration-only workflows.
-11. Rehearse without public-main mutation:
-   - normal Release Readiness;
-   - full production publication;
-   - Greasy Fork-only retry;
-   - private-backup-only retry;
-   - Discord-only retry;
-   - dashboard reconstruction;
-   - stable release-asset repair;
-   - emergency rollback-candidate preparation.
-12. Rehearse owner/admin access:
-   - create and update an owner branch;
-   - open and update a pull request;
-   - auto-merge after green checks;
-   - use PR-only administrator bypass where required;
-   - repair distribution and release-state branches;
-   - disable or amend the ruleset.
-13. Require pull requests, approved checks, current branches and resolved conversations.
-14. Block routine direct human pushes and enable strict protection only after complete rehearsal.
+8. Publish a versioned Toolkit migration that reads the manifest from `release-state` with a reviewed compatibility fallback.
+9. Move consolidated release, fallback-monitor and recovery state to `release-state`.
+10. Move stable `dist/` and Greasy Fork mirrors to `distribution`.
+11. Remove unnecessary `contents: write` from orchestration-only workflows.
+12. Rehearse without public-main mutation:
+    - normal Release Readiness;
+    - full production publication;
+    - Greasy Fork-only retry;
+    - private-backup-only retry;
+    - Discord-only retry;
+    - dashboard reconstruction;
+    - stable release-asset repair;
+    - emergency rollback-candidate preparation.
+13. Rehearse owner/admin access:
+    - create and update an owner branch;
+    - open and update a pull request;
+    - auto-merge after green checks;
+    - use PR-only administrator bypass where required;
+    - repair distribution and release-state branches;
+    - disable or amend the ruleset.
+14. Require pull requests, approved checks, current branches and resolved conversations.
+15. Block routine direct human pushes and enable strict protection only after complete rehearsal.
 
 ## Exit criteria
 

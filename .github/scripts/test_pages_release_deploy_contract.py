@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 PAGES_WORKFLOW = ROOT / ".github" / "workflows" / "github-pages.yml"
 RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release-toolkit.yml"
@@ -29,22 +28,21 @@ def main() -> int:
     ]
     missing = [fragment for fragment in required if fragment not in pages]
     assert not missing, f"Pages production deployment contract fragments missing: {missing}"
-    assert "  release:\n" not in pages, "Release publication must not trigger a duplicate Pages deployment"
-    assert "group: toolkit-pages-${{" not in pages, (
-        "Legacy event-specific production concurrency group still permits release/push deployment races"
-    )
+    assert "  release:\n" not in pages
+    assert "group: toolkit-pages-${{" not in pages
 
     resolve_index = pages.index("Resolve verified production source")
     build_index = pages.index("Build deployment site")
     deploy_index = pages.index("Deploy GitHub Pages")
-    assert resolve_index < build_index < deploy_index, (
-        "Verified production source must be resolved before building and deploying Pages"
-    )
+    assert resolve_index < build_index < deploy_index
 
     release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     release_required = [
         "permissions:\n  contents: write\n  actions: write",
-        "Record successful release, manifest and announcement state",
+        "Prepare authoritative production state projection",
+        "Publish backward-compatible main state copy",
+        "Publish authoritative release-state ledger",
+        "Verify authoritative and compatibility state parity",
         "Publish GitHub Pages",
         "gh workflow run github-pages.yml --ref main",
         "gh run list --workflow github-pages.yml --event workflow_dispatch --branch main",
@@ -62,18 +60,26 @@ def main() -> int:
         "gh workflow run publish-update-manifest.yml",
         "steps.channels.outputs.pages_run_id",
     ]:
-        assert retired not in release, f"Retired parallel-channel marker returned: {retired}"
+        assert retired not in release, f"Retired publication marker returned: {retired}"
 
-    state_index = release.index("Record successful release, manifest and announcement state")
+    projection_index = release.index("Prepare authoritative production state projection")
+    compatibility_index = release.index("Publish backward-compatible main state copy")
+    authority_index = release.index("Publish authoritative release-state ledger")
+    parity_index = release.index("Verify authoritative and compatibility state parity")
     pages_dispatch_index = release.index("Publish GitHub Pages")
     summary_index = release.index("Write release summary")
-    assert state_index < pages_dispatch_index < summary_index, (
-        "The release must record verified atomic state, await Pages, then write its final summary"
-    )
+    assert (
+        projection_index
+        < compatibility_index
+        < authority_index
+        < parity_index
+        < pages_dispatch_index
+        < summary_index
+    ), "Pages must run only after both state publications and their byte-parity gate"
 
     print(
-        "Pages deployment contract passed: production events share one concurrency group, "
-        "build from verified current main state, and every Toolkit release explicitly awaits Pages."
+        "Pages deployment contract passed: production state is projected once, published to "
+        "release-state and the compatibility branch, verified byte-identical, then deployed."
     )
     return 0
 

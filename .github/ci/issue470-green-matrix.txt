@@ -1,1 +1,0 @@
-Issue #470 v5.0.7 final pull request validation trigger.

@@ -22314,7 +22314,8 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         if (!doc?.querySelectorAll) return [];
         const candidates = [];
         const seenRoots = new Set();
-        const nativeRoots = Array.from(doc.querySelectorAll('[id="missing_text"]') || []);
+        const missingTextSelector = `[id=${JSON.stringify('missing_text')}]`;
+        const nativeRoots = Array.from(doc.querySelectorAll(missingTextSelector) || []);
         for (const selector of ['[data-mission-requirements]', '[data-missing-requirements]', '[data-missing-vehicles]', '.mission-requirements', '.mission_requirements', '.missing-vehicles', '.missing_vehicles']) {
             for (const root of Array.from(doc.querySelectorAll(selector) || [])) {
                 if (!nativeRoots.includes(root)) nativeRoots.push(root);
@@ -22329,7 +22330,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         };
         nativeRoots.forEach(root => add(root, root, 'native'));
         for (const group of Array.from(doc.querySelectorAll('[data-requirement-type]') || [])) {
-            const root = group.closest?.('[id="missing_text"], .alert-missing-vehicles, [data-mission-requirements], [data-missing-requirements], [data-missing-vehicles], .mission-requirements, .mission_requirements, .missing-vehicles, .missing_vehicles') || group.parentElement;
+            const root = group.closest?.(`${missingTextSelector}, .alert-missing-vehicles, [data-mission-requirements], [data-missing-requirements], [data-missing-vehicles], .mission-requirements, .mission_requirements, .missing-vehicles, .missing_vehicles`) || group.parentElement;
             add(root, root, 'grouped');
         }
         const lssmCarriers = Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || []);

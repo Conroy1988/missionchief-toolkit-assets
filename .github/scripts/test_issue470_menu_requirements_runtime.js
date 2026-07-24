@@ -20,6 +20,7 @@ const required = [
   'panel.dataset.missionKey = missionKey'
 ];
 for (const token of required) if (!source.includes(token)) throw new Error(`Missing Issue #470 contract token: ${token}`);
+if (source.split('[id="missing_text"]').length - 1 > 1) throw new Error('duplicate literal missing_text selectors returned');
 const toggleStart = source.indexOf('    function toggleCommandBar()');
 const toggleEnd = source.indexOf('    function handleMapVisibilityToggle(', toggleStart);
 const toggle = source.slice(toggleStart, toggleEnd);

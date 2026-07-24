@@ -17,13 +17,14 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - immutable Action pins and permission auditing;
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production and recovery confirmation phrases;
-- exact commit/ref/hash validation evidence for automatic releases.
+- exact commit/ref/hash validation evidence for automatic releases;
+- deterministic dashboard JSON/Markdown projection checks.
 
 ## Stage 1 — write-path inventory ✅
 
 The 24 July 2026 baseline identified 10 direct public-main writers, two release orchestrators, two owner-token review-branch writers and one private-repository backup writer. Every `contents: write` workflow and executable main-ref mutation is classified and fail-closed in CI.
 
-## Stage 2 — generated-state separation in progress
+## Stage 2 — validation and generated-evidence separation ✅
 
 ### Release dry runs ✅
 
@@ -37,7 +38,7 @@ Repository audits are read-only and artifact-only. They retain commit-scoped JSO
 
 Canonical validation no longer commits `dist/` or transient dashboard candidate fields.
 
-The workflow now:
+The workflow:
 
 - has `contents: read` only;
 - checks out without persisted credentials;
@@ -46,27 +47,39 @@ The workflow now:
 - uploads `missionchief-toolkit-validation-candidate-<commit>` for 14 days;
 - proves that public `main` and the release dashboard were not changed.
 
-Automatic release downloads the artifact from the exact triggering workflow run, verifies all hashes and paths, rejects a stale commit when `main` has advanced, and checks the GitHub Release tag directly. It no longer trusts persistent dashboard candidate fields.
+Automatic release downloads the artifact from the exact triggering workflow run, verifies all hashes and paths, rejects a stale commit when `main` has advanced, and checks the GitHub Release tag directly. The owner release command performs a fresh validation of current `main`.
 
-The owner release command performs a fresh validation of current `main`, verifies the requested version and hash, and refuses an existing GitHub Release before readiness begins.
+Stable public `dist/` paths remain current because `release-toolkit.yml` publishes `dist/` and the two root Greasy Fork mirrors together after readiness passes and production release begins.
 
-Stable public `dist/` paths remain current because `release-toolkit.yml` publishes `dist/` and the two root Greasy Fork mirrors together after readiness passes and production release begins. Candidate output is therefore artifact-only; public distribution output is release-only.
+### Dashboard projection ✅
 
-The persistent release ledger no longer contains `distributionCandidate` or stale `releaseDryRun` records. Dashboard generation sanitizes those legacy fields and refreshes the canonical source hash only when the verified dashboard version matches source.
+The standalone dashboard refresher no longer commits `status/README.md`.
 
-Direct public-main writers are reduced from **10 to 7**.
+Production release and recovery already generate `status/README.md` in the same commit as `status/release-dashboard.json`. The former follow-up writer duplicated that work and created an unnecessary additional commit.
 
-### Remaining generated state
+`update-release-dashboard.yml` now:
+
+- has `contents: read` only;
+- checks out the exact event state with persisted credentials disabled;
+- validates the JSON ledger;
+- renders the dashboard to `dashboard-projection/status-README.md` using `--check`;
+- fails when ledger sanitation would change committed JSON;
+- compares the generated Markdown byte-for-byte with `status/README.md`;
+- uploads the projection, diff and log for 30 days;
+- never commits, pushes or changes release state.
+
+Direct public-main writers are reduced from **10 to 6**.
+
+## Remaining generated state
 
 The protected branch still mixes:
 
 1. canonical userscript source and policy;
 2. stable distribution and root Greasy Fork mirrors;
 3. release dashboard and announcement state;
-4. stable update-manifest state;
-5. generated human-readable dashboard files.
+4. stable update-manifest state.
 
-The remaining writers cannot be disabled until their data is moved and every release/recovery path is rehearsed.
+The remaining writers cannot be disabled until those data classes are moved and every release/recovery path is rehearsed.
 
 ## Target architecture
 
@@ -84,15 +97,24 @@ Mutable dashboard, announcement, manifest and recovery state. It is operational 
 
 ### Immutable evidence
 
-Validation candidates, release bundles, checksums, audits, dry runs, changelog extracts and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, dashboard projections, release bundles, checksums, audits, dry runs, changelog extracts and handovers remain GitHub Release assets or Actions artifacts.
+
+## Access and speed requirements
+
+The final protection design must retain fast owner operation:
+
+- `Conroy1988` remains repository administrator and recovery authority;
+- normal changes use owner-created branches and fast parallel CI;
+- no mandatory external reviewer is introduced;
+- admin bypass, where configured, is limited to pull-request operation rather than routine direct pushes;
+- auto-merge should be enabled after the workflow and settings rehearsal;
+- distribution and release-state branches retain explicit administrator recovery access;
+- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are all proven.
 
 ## Remaining migration stages
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
-2. ✅ Separate validation/dry-run/audit evidence from public `main`.
-   - [x] Convert release dry runs to artifact-only evidence.
-   - [x] Convert repository audits to artifact-only evidence.
-   - [x] Convert canonical validation candidates to artifact-only evidence.
+2. ✅ Separate validation, dry-run, audit and dashboard-projection evidence from public `main`.
 3. Move dashboard, announcement and manifest state to a release-state branch or immutable assets.
 4. Move stable `dist/` and Greasy Fork mirrors to a distribution branch.
 5. Introduce a narrowly scoped GitHub App identity.
@@ -106,9 +128,16 @@ Validation candidates, release bundles, checksums, audits, dry runs, changelog e
    - dashboard reconstruction;
    - stable release-asset repair;
    - emergency rollback-candidate preparation.
-8. Require pull requests, approved checks, current branches and resolved conversations.
-9. Block direct human pushes and enable strict protection only after complete rehearsal.
+8. Rehearse owner/admin access:
+   - create and update an owner branch;
+   - open and update a pull request;
+   - auto-merge after green checks;
+   - use PR-only administrator bypass where required;
+   - repair distribution and release-state branches;
+   - disable or amend the ruleset.
+9. Require pull requests, approved checks, current branches and resolved conversations.
+10. Block direct human pushes and enable strict protection only after complete rehearsal.
 
 ## Exit criteria
 
-Strict protection is ready only when no workflow requires a public-main commit, every bypass actor is a scoped GitHub App, generated state is reconstructable, and every release/recovery path has passed non-production rehearsal.
+Strict protection is ready only when no workflow requires a public-main commit, every bypass actor is a scoped GitHub App or explicit administrator recovery actor, generated state is reconstructable, owner update speed is preserved, and every release/recovery/access path has passed non-production rehearsal.

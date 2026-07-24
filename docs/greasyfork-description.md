@@ -1,28 +1,48 @@
 # MissionChief Map Command Toolkit
 
-A configurable command-centre enhancement for MissionChief, combining advanced map controls, mission intelligence, operational alerts, financial reporting and visual customisation in one userscript.
+A configurable command-centre enhancement for MissionChief, combining operational mission windows, live requirements intelligence, advanced map controls, fleet identity, guarded transport, financial reconciliation and visual customisation in one userscript.
 
 **Greasy Fork is the official installation and automatic-update channel. GitHub is the canonical development source and documentation home.**
 
 ## Main features
 
-- Advanced map controls and visibility tools
-- Mission Age Watch, Mission Value, live Mission Requirements, Critical View and Mission Inspector
+- Operational Window Suite with Enhanced Operational Requirements, Extended Call Window, Extended Mission List and opt-in Enhanced Transport Requests
+- Mission Age Watch, Mission Value, Critical View and Mission Inspector
+- Authoritative selected, en-route, on-scene and still-needed demand with amber waiting/unresolved truth states
 - Patient and prisoner transport alerts plus a manual, guarded Patient Transport Sweep for eligible alliance-member ambulances
-- Resource-gap and vehicle intelligence
-- Smart bookmarks, Map Jump and saved profiles
-- Coverage rings and Coverage Heat Map
-- Financial analysis and optional Discord reporting
-- Cinematic payout presentations and interface themes
-- Responsive Desktop, Tablet and iOS operating modes
-- Performance-aware startup, monitoring and cleanup
+- Resource Gap, Vehicle Code Status and custom specialist vehicle identity
+- Smart bookmarks, Map Jump, coverage rings and Coverage Heat Map
+- Financial reconciliation and optional Discord reporting
+- Cinematic payout presentations and seven complete interface systems
+- Responsive Desktop, Tablet/iPad and iOS Mobile/Safari operating modes
+- Performance-aware startup, bounded monitoring and deterministic cleanup
+
+## Operational Window Suite
+
+### Enhanced Operational Requirements
+
+Reconciles MissionChief requirement evidence across vehicles, equipment, personnel, capacity, selected units, en-route units, on-scene units and remaining demand. Green coverage requires positive parsed evidence; unavailable or unsupported evidence remains amber rather than being guessed.
+
+### Extended Call Window
+
+Adds patient and vehicle summaries, selected-unit and ARR counters, search, highlighting, generation and alarm context, mission keywords and map controls without creating a competing mission-window lifecycle.
+
+### Extended Mission List
+
+Adds sorting, starring, collapsing, patient and prisoner indicators, credit and remaining-time badges, and native sharing controls while retaining deterministic state through live refreshes.
+
+### Enhanced Transport Requests
+
+Provides opt-in transport assistance through exact-route validation, visible/enabled candidate filtering, ambiguity rejection and per-route duplicate protection. Automatic transport opening remains disabled by default.
+
+The Toolkit detects compatible native and LSSM requirement sources and suppresses matching Toolkit output when a genuinely visible equivalent LSSM panel is active.
 
 ## Installation and updates
 
 1. Install a userscript manager such as Tampermonkey.
 2. Select **Install this script** above.
 3. Open or refresh MissionChief.
-4. Click the Toolkit control or press `M`.
+4. Click the Toolkit control.
 
 Only enable one copy of the Toolkit at a time.
 
@@ -48,17 +68,13 @@ Please include the Toolkit version, browser, userscript manager and reproduction
 
 ## Compatibility
 
-The Toolkit supports the MissionChief sites listed above and is primarily developed for MissionChief UK.
-
-It includes responsive Desktop, Tablet and iOS modes. Browser behaviour may vary, so compatibility problems should be reported through GitHub.
+The Toolkit is primarily developed for MissionChief UK and supports Desktop, Tablet/iPad and iOS Mobile/Safari layouts. Browser or MissionChief interface changes can temporarily affect individual features and should be reported through GitHub.
 
 ## Important information
 
-This Toolkit is unofficial and is not affiliated with MissionChief, SHPlay GmbH or Discord.
+This Toolkit is unofficial and is not affiliated with MissionChief, SHPlay GmbH, LSSM or Discord.
 
-MissionChief may change its interface without notice. Such changes can temporarily affect Toolkit features.
-
-Any user-initiated automation, including Transport Sweep, should be used responsibly and in accordance with your alliance rules.
+Any user-initiated automation, including transport tools, should be used responsibly and in accordance with alliance rules.
 
 ## Licence
 

@@ -15,12 +15,12 @@ concurrency:
 
 jobs:
   authorize:
-    name: Authorize and validate owner release command
+    name: Authorize and freshly validate owner release command
     if: >-
       github.event.issue.pull_request == null &&
       startsWith(github.event.comment.body, '/release-toolkit ')
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.command.outputs.version }}
 
@@ -44,25 +44,34 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Check out current main
+      - name: Check out current main without write credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify requested version is a validated candidate
+      - name: Freshly validate requested main candidate
         env:
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.command.outputs.version }}
         shell: bash
         run: |
           set -euo pipefail
           SOURCE="src/MissionChief_Map_Command_Toolkit.user.js"
           grep -Eq "^//[[:space:]]*@version[[:space:]]+${VERSION//./\.}[[:space:]]*$" "$SOURCE"
-          test "$(jq -r '.currentVersion' status/release-dashboard.json)" = "$VERSION"
-          test "$(jq -r '.status.validation' status/release-dashboard.json)" = "passed"
-          test "$(jq -r '.distributionCandidate.version' status/release-dashboard.json)" = "$VERSION"
-          test "$(jq -r '.distributionCandidate.state' status/release-dashboard.json)" = "validated"
+          if gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::GitHub Release v${VERSION} already exists."
+            exit 1
+          fi
+
+          python3 .github/scripts/validate_userscript.py
+          node --check "$SOURCE"
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test "$(jq -r '.version' dist/release-manifest.json)" = "$VERSION"
+          HASH="$(jq -r '.sha256' dist/release-manifest.json)"
+          test "$(sha256sum "$SOURCE" | awk '{print $1}')" = "$HASH"
+          echo "Owner-authorized candidate v${VERSION} freshly validated from current main at $(git rev-parse HEAD)."
 
       - name: Record guarded release start
         env:
@@ -71,7 +80,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         shell: bash
         run: |
-          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Toolkit v${VERSION} passed owner authorization and candidate validation. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: \`${GITHUB_RUN_ID}\`."
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Toolkit v${VERSION} passed owner authorization and a fresh canonical validation of current main. The native reusable release-readiness workflow is starting; production cannot begin unless it succeeds. Owner-command run: \`${GITHUB_RUN_ID}\`."
 
   readiness:
     name: Run mandatory release readiness

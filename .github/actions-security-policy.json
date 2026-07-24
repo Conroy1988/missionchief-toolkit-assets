@@ -29,9 +29,6 @@
     ".github/workflows/greasyfork-release-monitor.yml": [
       "contents"
     ],
-    ".github/workflows/import-canonical-userscript.yml": [
-      "contents"
-    ],
     ".github/workflows/owner-release-command.yml": [
       "actions",
       "contents",

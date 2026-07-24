@@ -1,44 +1,58 @@
-name: Import Canonical Userscript Baseline
+name: Verify Greasy Fork Canonical Parity
 
 on:
+  schedule:
+    - cron: "17 5 * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/workflows/import-canonical-userscript.yml"
+      - ".github/scripts/audit_greasyfork_canonical_parity.py"
+      - ".github/actions-security-policy.json"
+      - ".github/branch-write-inventory.json"
+      - "docs/BRANCH_PROTECTION_MIGRATION.md"
+      - "docs/BRANCH_WRITE_INVENTORY.md"
+      - "status/source-baseline.json"
   push:
     branches:
       - main
     paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
       - ".github/workflows/import-canonical-userscript.yml"
+      - ".github/scripts/audit_greasyfork_canonical_parity.py"
+      - "status/source-baseline.json"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: import-canonical-userscript
-  cancel-in-progress: false
+  group: greasyfork-canonical-parity-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  import:
-    name: Import live Greasy Fork script as GitHub baseline
+  audit:
+    name: Verify GitHub authority against live Greasy Fork
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Check out latest main
+      - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
 
-      - name: Download and validate live userscript
-        id: source
+      - name: Validate parity-auditor self-tests
+        run: python3 .github/scripts/audit_greasyfork_canonical_parity.py --self-test
+
+      - name: Download live Greasy Fork distribution
         shell: bash
         run: |
           set -euo pipefail
-
+          mkdir -p greasyfork-parity/live
           URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
-          TARGET="src/MissionChief_Map_Command_Toolkit.user.js"
-          BASELINE="status/source-baseline.json"
-          TEMP="$(mktemp)"
-
           curl \
             --fail \
             --silent \
@@ -50,83 +64,49 @@ jobs:
             --retry-delay 5 \
             --header "Cache-Control: no-cache" \
             "${URL}?cache_bust=$(date +%s%N)" \
-            --output "$TEMP"
+            --output greasyfork-parity/live/MissionChief_Map_Command_Toolkit.user.js
 
-          grep -q '^// ==UserScript==$' "$TEMP"
-          grep -q '^// ==/UserScript==$' "$TEMP"
-
-          VERSION="$(
-            sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' "$TEMP" |
-              head -n 1 |
-              xargs
-          )"
-
-          NAME="$(
-            sed -nE 's|^//[[:space:]]*@name[[:space:]]+(.+)$|\1|p' "$TEMP" |
-              head -n 1 |
-              xargs
-          )"
-
-          if [[ -z "$VERSION" || ! "$VERSION" =~ ^[0-9A-Za-z][0-9A-Za-z._+-]*$ ]]; then
-            echo "::error::The downloaded userscript has no valid @version value."
-            exit 1
-          fi
-
-          if [[ "$NAME" != *"MissionChief Map Command Toolkit"* ]]; then
-            echo "::error::The downloaded userscript name was unexpected: $NAME"
-            exit 1
-          fi
-
-          mkdir -p "$(dirname "$TARGET")" "$(dirname "$BASELINE")"
-          cp "$TEMP" "$TARGET"
-
-          SHA256="$(sha256sum "$TARGET" | awk '{print $1}')"
-          BYTES="$(wc -c < "$TARGET" | tr -d ' ')"
-          LINES="$(wc -l < "$TARGET" | tr -d ' ')"
-          IMPORTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          jq -n \
-            --arg project "MissionChief Map Command Toolkit" \
-            --arg source "$URL" \
-            --arg version "$VERSION" \
-            --arg sha256 "$SHA256" \
-            --arg importedAt "$IMPORTED_AT" \
-            --arg commit "$GITHUB_SHA" \
-            --argjson bytes "$BYTES" \
-            --argjson lines "$LINES" \
-            '{
-              project: $project,
-              source: "Greasy Fork live distribution",
-              sourceUrl: $source,
-              importedVersion: $version,
-              sha256: $sha256,
-              bytes: $bytes,
-              lines: $lines,
-              importedAt: $importedAt,
-              workflowCommit: $commit,
-              canonicalStatus: "baseline-imported-not-yet-distribution-source"
-            }' > "$BASELINE"
-
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
-          echo "Imported live userscript version $VERSION"
-          echo "SHA-256: $SHA256"
-
-      - name: Commit canonical baseline
+      - name: Audit GitHub canonical authority
+        id: parity
+        continue-on-error: true
         env:
-          VERSION: ${{ steps.source.outputs.version }}
+          SOURCE_COMMIT: ${{ github.sha }}
         shell: bash
         run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/MissionChief_Map_Command_Toolkit.user.js status/source-baseline.json
+          set -o pipefail
+          python3 .github/scripts/audit_greasyfork_canonical_parity.py \
+            --live greasyfork-parity/live/MissionChief_Map_Command_Toolkit.user.js \
+            --source-url "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js" \
+            --source-commit "$SOURCE_COMMIT" \
+            --json-output greasyfork-parity/greasyfork-canonical-parity.json \
+            --markdown-output greasyfork-parity/greasyfork-canonical-parity.md \
+            2>&1 | tee greasyfork-parity/parity.log
 
-          if git diff --cached --quiet; then
-            echo "Canonical baseline already matches Greasy Fork version $VERSION."
-            exit 0
+      - name: Upload immutable parity evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-greasyfork-canonical-parity-${{ github.sha }}
+          path: greasyfork-parity/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish parity summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f greasyfork-parity/greasyfork-canonical-parity.md ]]; then
+            cat greasyfork-parity/greasyfork-canonical-parity.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "# Greasy Fork canonical parity audit"
+              echo
+              echo "- ❌ Parity evidence was not generated."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          git commit -m "Import canonical userscript baseline v${VERSION}"
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - name: Enforce parity result
+        if: steps.parity.outcome != 'success'
+        run: |
+          echo "Greasy Fork is ahead of GitHub or equal-version content differs. Automatic importing is retired; owner review is required."
+          exit 1

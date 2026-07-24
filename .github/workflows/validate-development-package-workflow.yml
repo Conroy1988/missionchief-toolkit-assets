@@ -11,6 +11,7 @@ on:
       - ".github/workflows/pages-production-monitor.yml"
       - ".github/workflows/validate-development-package-workflow.yml"
       - ".github/scripts/*.sh"
+      - ".github/scripts/audit_greasyfork_canonical_parity.py"
       - ".github/scripts/audit_repository.py"
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/scripts/reconcile_pages_incident.sh"
@@ -21,12 +22,14 @@ on:
       - ".github/scripts/test_automation_record_hygiene.py"
       - ".github/scripts/test_branch_write_inventory.py"
       - ".github/scripts/test_development_package_workflow.py"
+      - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_validation_candidate_pipeline.py"
       - "docs/BRANCH_PROTECTION_MIGRATION.md"
       - "docs/BRANCH_WRITE_INVENTORY.md"
       - "docs/DEVELOPMENT_PACKAGE_WORKFLOW.md"
       - "status/release-dashboard.json"
       - "status/README.md"
+      - "status/source-baseline.json"
   workflow_dispatch:
 
 permissions:
@@ -54,6 +57,7 @@ jobs:
             python3 .github/scripts/test_automation_record_hygiene.py
             python3 .github/scripts/test_branch_write_inventory.py
             python3 .github/scripts/test_validation_candidate_pipeline.py
+            python3 .github/scripts/test_greasyfork_parity_pipeline.py
           } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 
       - name: Upload policy diagnostics

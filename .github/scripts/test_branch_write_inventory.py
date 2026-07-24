@@ -92,8 +92,8 @@ def main() -> int:
         fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 6:
-        fail(f"Expected six reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 5:
+        fail(f"Expected five reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
     expected_artifacts = {
@@ -101,6 +101,7 @@ def main() -> int:
         ".github/workflows/release-toolkit-dry-run.yml",
         ".github/workflows/repository-audit.yml",
         ".github/workflows/update-release-dashboard.yml",
+        ".github/workflows/import-canonical-userscript.yml",
     }
     if artifact_workflows != expected_artifacts:
         fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
@@ -233,6 +234,30 @@ def main() -> int:
         "def render_dashboard(data: dict) -> str:",
     ], "Dashboard generator projection mode")
 
+    parity_workflow = (ROOT / ".github/workflows/import-canonical-userscript.yml").read_text(encoding="utf-8")
+    parity_auditor = (ROOT / ".github/scripts/audit_greasyfork_canonical_parity.py").read_text(encoding="utf-8")
+    require_markers(parity_workflow, [
+        "name: Verify Greasy Fork Canonical Parity",
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "Audit GitHub canonical authority",
+        "Upload immutable parity evidence",
+        "missionchief-greasyfork-canonical-parity-${{ github.sha }}",
+        "Automatic importing is retired; owner review is required.",
+    ], "Artifact-only Greasy Fork parity workflow")
+    forbid_markers(parity_workflow, [
+        "contents: write", "git commit", "git push", "git pull --rebase",
+        "github-actions[bot]", "DEVELOPMENT_PR_TOKEN", "gh pr create",
+    ], "Artifact-only Greasy Fork parity workflow")
+    require_markers(parity_auditor, [
+        '"authority": "GitHub canonical source"',
+        '"automaticImportEnabled": False',
+        '"publicMainChanged": False',
+        '"canonicalSourceChanged": False',
+        '"sourceBaselineChanged": False',
+        '"liveAheadRequiresOwnerReview": True',
+    ], "Greasy Fork parity auditor")
+
     for entry in external_entries:
         path = ROOT / str(entry["path"])
         repository = str(entry["repository"])
@@ -257,8 +282,8 @@ def main() -> int:
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "six workflows that can commit directly to public `main`",
-        "Canonical validation, release dry runs, repository audits and dashboard projection are now artifact-only",
+        "five workflows that can commit directly to public `main`",
+        "Canonical validation, release dry runs, repository audits, dashboard projection and Greasy Fork parity are now artifact-only",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

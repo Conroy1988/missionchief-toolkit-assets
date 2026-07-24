@@ -1,5 +1,7 @@
 {
+  "schemaVersion": 2,
   "project": "MissionChief Map Command Toolkit",
+  "recordType": "historical-bootstrap-baseline",
   "source": "Greasy Fork live distribution",
   "sourceUrl": "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
   "importedVersion": "4.11.2",
@@ -8,5 +10,8 @@
   "lines": 27905,
   "importedAt": "2026-07-15T03:38:58Z",
   "workflowCommit": "abc55273f66467a249183d66860723ec7730226d",
-  "canonicalStatus": "baseline-imported-not-yet-distribution-source"
+  "canonicalStatus": "historical-bootstrap-record-github-authoritative",
+  "automaticImportEnabled": false,
+  "currentAuthority": "src/MissionChief_Map_Command_Toolkit.user.js",
+  "note": "This immutable record documents the original Greasy Fork bootstrap. Current parity is verified by read-only workflow artifacts; this file is never refreshed from the live distribution."
 }

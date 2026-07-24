@@ -53,9 +53,6 @@
       "actions",
       "contents"
     ],
-    ".github/workflows/repository-audit.yml": [
-      "contents"
-    ],
     ".github/workflows/sync-repository-labels.yml": [
       "issues"
     ],

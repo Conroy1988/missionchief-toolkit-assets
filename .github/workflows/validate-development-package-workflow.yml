@@ -16,15 +16,18 @@ on:
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/verify_shadow_branch_parity.py"
       - ".github/scripts/verify_validation_candidate.py"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
       - ".github/greasyfork-version.txt"
+      - ".github/shadow-branch-policy.json"
       - ".github/scripts/test_automation_record_hygiene.py"
       - ".github/scripts/test_branch_write_inventory.py"
       - ".github/scripts/test_development_package_workflow.py"
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
+      - ".github/scripts/test_shadow_branch_parity.py"
       - ".github/scripts/test_validation_candidate_pipeline.py"
       - "docs/BRANCH_PROTECTION_MIGRATION.md"
       - "docs/BRANCH_WRITE_INVENTORY.md"
@@ -32,6 +35,7 @@ on:
       - "status/release-dashboard.json"
       - "status/README.md"
       - "status/source-baseline.json"
+      - "status/update-manifest.json"
   workflow_dispatch:
 
 permissions:
@@ -61,6 +65,7 @@ jobs:
             python3 .github/scripts/test_validation_candidate_pipeline.py
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
+            python3 .github/scripts/test_shadow_branch_parity.py
           } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 
       - name: Upload policy diagnostics

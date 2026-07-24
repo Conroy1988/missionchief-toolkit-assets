@@ -1,27 +1,28 @@
 # Protected-branch write inventory
 
 **Reviewed:** 24 July 2026  
-**Reviewed `main`:** `0b43be27b5857206adb55de85777425be9160816`  
 **Issue:** #41 — Migrate release state for strict main-branch protection
 
 ## Current conclusion
 
 Strict pull-request-only protection is **not yet safe to enable**.
 
-The repository now has four workflows that can commit directly to public `main`. Two release orchestrators invoke the reusable production writer but contain no direct public-main push. The remaining writes are limited to fallback monitoring, stable update-manifest publication, release recovery and guarded production publication.
+The repository has four workflows that can commit directly to public `main`. Two release orchestrators invoke the reusable production writer but contain no direct public-main push. The remaining writes are limited to fallback monitoring, stable update-manifest publication, release recovery and guarded production publication.
 
-Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only. All six use read-only contents permission and retain deterministic evidence without mutating public `main`.
+Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
 
-`.github/branch-write-inventory.json` is the machine-readable authority. Permanent contracts fail closed when a writer, permission, authority or release-state boundary changes.
+A separate read-only rehearsal workflow verifies the new `release-state` and `distribution` shadow branches. It does not add write authority and does not change live consumers.
+
+`.github/branch-write-inventory.json` is the machine-readable write authority. `.github/shadow-branch-policy.json` governs the isolated shadow rehearsal. Permanent contracts fail closed when a writer, permission, authority, branch role or release-state boundary changes.
 
 ## Direct public `main` writers
 
 | Workflow | Current mutation | Required migration |
 |---|---|---|
-| `greasyfork-release-monitor.yml` | fallback `.github/greasyfork-version.txt` state | Move fallback announcement state to a release-state branch. |
-| `publish-update-manifest.yml` | `status/update-manifest.json` | Publish from a release-state branch or immutable release asset. |
-| `release-recovery.yml` | dashboard JSON/Markdown and announcement tracker | Move mutable recovery state to the release-state branch. |
-| `release-toolkit.yml` | stable distribution, verified dashboard and announcement tracker | Move distribution and state to dedicated branches under a scoped GitHub App. |
+| `greasyfork-release-monitor.yml` | fallback `.github/greasyfork-version.txt` state | Move fallback monitoring to the release-state branch. |
+| `publish-update-manifest.yml` | `status/update-manifest.json` | Fold publication into consolidated release state, then move it to the release-state branch. |
+| `release-recovery.yml` | dashboard JSON/Markdown and announcement recovery state | Move mutable recovery state to the release-state branch. |
+| `release-toolkit.yml` | stable distribution plus atomic dashboard and announcement state | Move distribution and state to dedicated branches under a scoped GitHub App. |
 
 The executable public-main push helper `.github/scripts/sync_greasyfork_root_mirror.sh` is owned by `release-toolkit.yml`.
 
@@ -34,30 +35,50 @@ The executable public-main push helper `.github/scripts/sync_greasyfork_root_mir
 | `repository-audit.yml` | `contents: read` | repository audit JSON/Markdown | No branch or dashboard change. |
 | `update-release-dashboard.yml` | `contents: read` | rendered dashboard, diff and log | No branch change. |
 | `import-canonical-userscript.yml` | `contents: read` | live Greasy Fork parity evidence | No source, baseline, branch or PR change. |
-| `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency JSON/Markdown | No dashboard or tracker change. |
+| `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency evidence | No dashboard or tracker change. |
 
-## Atomic announcement state
+## Shadow branch rehearsal
 
-Primary release no longer requires a follow-up reconciliation commit.
+Two non-live rehearsal branches now exist:
 
-After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` now writes the following together in one commit:
+| Branch | Governed paths | Current authority | Live consumers |
+|---|---|---|---|
+| `release-state` | dashboard JSON/Markdown, stable update manifest, announcement tracker | `main` | Disabled |
+| `distribution` | stable `dist/` files and root userscript mirrors | `main` | Disabled |
+
+Each branch contains `.github/branch-role.json` declaring:
+
+- `mode: shadow-rehearsal`;
+- `liveConsumersEnabled: false`;
+- `strictProtectionEnabled: false`;
+- administrator recovery is mandatory;
+- Issue #41 controls cutover;
+- only the reviewed operational paths may become mutable.
+
+`.github/workflows/verify-shadow-branch-parity.yml`:
+
+- has `contents: read` only;
+- fetches both branch refs without persisted credentials;
+- validates the branch-role declarations;
+- compares only governed paths with the current checkout;
+- retains JSON/Markdown/log evidence for 30 days;
+- never commits, pushes, updates a ref or changes a live URL.
+
+This stage proves branch creation, role isolation and baseline parity before any automation identity or consumer cutover is introduced.
+
+## Current release state
+
+After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` writes the following together in one commit:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
 - `.github/greasyfork-version.txt`.
 
-This guarantees that the verified release ledger and announcement tracker cannot diverge during normal publication. `reconcile-release-announcement-state.yml` now only verifies that:
+The stable update manifest remains a separate guarded writer. `release-toolkit.yml` dispatches `publish-update-manifest.yml` and GitHub Pages in parallel, then waits for both runs to succeed.
 
-- the dashboard has a latest release version;
-- Greasy Fork is verified;
-- Discord is recorded as posted;
-- the tracker exactly matches the dashboard version.
+The public manifest URL remains unchanged:
 
-It retains 30-day evidence and fails without attempting a repair. Recovery workflows retain their existing guarded ability to reconstruct state until the release-state branch migration is complete.
-
-## Greasy Fork authority boundary
-
-The former automatic importer is retired. GitHub is canonical. The read-only parity audit accepts an expected `canonical-ahead` state and fails on live-ahead or equal-version content drift. `status/source-baseline.json` is an immutable historical v4.11.2 bootstrap record.
+`raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json`
 
 ## Production release sequence
 
@@ -68,10 +89,9 @@ The former automatic importer is retired. GitHub is canonical. The read-only par
 5. GitHub Release is published and Greasy Fork is verified.
 6. The release is backed up privately and announced to Discord.
 7. Dashboard JSON, rendered Markdown and announcement tracker are committed atomically.
-8. Stable update manifest and Pages are dispatched in parallel.
-9. Dashboard projection, Greasy Fork parity and announcement-state workflows verify only.
-
-The owner command freshly validates current `main` and starts the same readiness and production workflows.
+8. Stable update-manifest publication and GitHub Pages are dispatched in parallel and awaited.
+9. Dashboard, Greasy Fork and announcement workflows verify only.
+10. Shadow parity remains an independent read-only rehearsal until cutover.
 
 ## Indirect release orchestrators
 
@@ -94,7 +114,7 @@ Their write authority remains only because the reusable production job still wri
 
 - **Public `main`:** reviewed source, workflows, tests, policy and documentation.
 - **Distribution branch:** stable `dist/` and root mirrors, written by a scoped release App.
-- **Release-state branch:** dashboard, manifest, announcement and recovery state.
+- **Release-state branch:** dashboard, manifest, announcement, fallback-monitor and recovery state.
 - **Immutable evidence:** validation, parity, projections, bundles, audits and handovers.
 
 ## Migration order
@@ -104,14 +124,17 @@ Their write authority remains only because the reusable production job still wri
 3. ✅ Convert dashboard refresh to read-only projection.
 4. ✅ Retire automatic Greasy Fork importing.
 5. ✅ Make primary announcement state atomic and reconciliation read-only.
-6. Move dashboard, manifest, fallback monitor and recovery state to a release-state branch.
-7. Move stable distribution to a dedicated branch.
-8. Introduce a scoped GitHub App.
-9. Rehearse release, recovery and administrator access.
-10. Enable strict protection only after all rehearsals pass.
+6. ⬜ Fold stable update-manifest publication into the consolidated release-state commit.
+7. 🟡 Create shadow `release-state` and `distribution` branches and verify read-only parity.
+8. Add a narrowly scoped branch writer and rehearse shadow synchronization.
+9. Cut consolidated release state over to `release-state`.
+10. Cut stable distribution over to `distribution`.
+11. Rehearse release, recovery and administrator access.
+12. Enable strict protection only after all rehearsals pass.
 
 ## Current migration evidence
 
-- PRs #498–#503 completed the inventory and first five writer removals.
-- Current change removes the separate announcement reconciliation writer.
-- Direct public-main writers reduced from **10 to 4**.
+- PRs #498–#504 reduced direct public-main writers from **10 to 4**.
+- PR #505 was closed without merging; update-manifest publication remains a direct `main` writer.
+- Current change establishes isolated shadow branches and read-only parity evidence.
+- No live URL, source authority or protection setting has changed.

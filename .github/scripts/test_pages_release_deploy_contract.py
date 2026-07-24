@@ -44,25 +44,31 @@ def main() -> int:
     release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     release_required = [
         "permissions:\n  contents: write\n  actions: write",
-        "Record successful release in dashboard",
-        "Publish update channels in parallel",
+        "Record successful release, manifest and announcement state",
+        "Publish GitHub Pages",
         "gh workflow run github-pages.yml --ref main",
-        "gh run list --workflow \"$workflow\" --event workflow_dispatch --branch main",
+        "gh run list --workflow github-pages.yml --event workflow_dispatch --branch main",
         "The dispatched GitHub Pages run was not found",
         'gh run watch "$PAGES_RUN_ID" --exit-status',
-        "steps.channels.outputs.pages_run_id",
+        "steps.pages.outputs.pages_run_id",
     ]
     release_missing = [fragment for fragment in release_required if fragment not in release]
     assert not release_missing, (
         "Production release-to-Pages dispatch contract fragments missing: "
         f"{release_missing}"
     )
+    for retired in [
+        "Publish update channels in parallel",
+        "gh workflow run publish-update-manifest.yml",
+        "steps.channels.outputs.pages_run_id",
+    ]:
+        assert retired not in release, f"Retired parallel-channel marker returned: {retired}"
 
-    dashboard_index = release.index("Record successful release in dashboard")
-    pages_dispatch_index = release.index("Publish update channels in parallel")
+    state_index = release.index("Record successful release, manifest and announcement state")
+    pages_dispatch_index = release.index("Publish GitHub Pages")
     summary_index = release.index("Write release summary")
-    assert dashboard_index < pages_dispatch_index < summary_index, (
-        "The release must record verified state, await the Pages deployment, then write its final summary"
+    assert state_index < pages_dispatch_index < summary_index, (
+        "The release must record verified atomic state, await Pages, then write its final summary"
     )
 
     print(

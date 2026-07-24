@@ -6,11 +6,10 @@ on:
       version:
         description: "Validated Toolkit version to prepare"
         required: true
-        default: "4.10.4"
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: toolkit-release-dry-run
@@ -23,11 +22,12 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Check out latest main
+      - name: Check out latest main without write credentials
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: main
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Validate canonical source and rebuild distribution
         run: python3 .github/scripts/validate_userscript.py
@@ -54,15 +54,7 @@ jobs:
           cmp --silent "$USER_FILE" "$TXT_FILE"
           test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
 
-      - name: Upload reviewable release bundle
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-v${{ inputs.version }}-release-dry-run
-          path: release-bundle/
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Update release dashboard
+      - name: Write immutable dry-run evidence
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         shell: bash
@@ -70,57 +62,64 @@ jobs:
           set -euo pipefail
           NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
+          REPORT="release-bundle/release-dry-run-v${RELEASE_VERSION}.json"
+          SUMMARY="release-bundle/release-dry-run-v${RELEASE_VERSION}.md"
 
-          jq \
+          jq -n \
+            --arg project "MissionChief Map Command Toolkit" \
             --arg version "$RELEASE_VERSION" \
-            --arg hash "$HASH" \
-            --arg now "$NOW" \
-            '.currentVersion = $version
-             | .status.validation = "passed"
-             | .status.githubRelease = "dry-run-ready"
-             | .status.greasyForkSync = "legacy-monitor"
-             | .status.backup = "dry-run-bundle-prepared"
-             | .status.discordRelease = "configured-not-sent-in-dry-run"
-             | .releaseDryRun = {
-                 version: $version,
-                 sha256: $hash,
-                 state: "passed",
-                 githubReleaseCreated: false,
-                 greasyForkChanged: false,
-                 discordPosted: false,
-                 completedAt: $now
-               }
-             | .lastUpdated = $now' \
-            status/release-dashboard.json > status/release-dashboard.tmp
+            --arg sha256 "$HASH" \
+            --arg sourceCommit "$GITHUB_SHA" \
+            --arg completedAt "$NOW" \
+            '{
+              schemaVersion: 1,
+              project: $project,
+              version: $version,
+              sha256: $sha256,
+              sourceCommit: $sourceCommit,
+              state: "passed",
+              githubReleaseCreated: false,
+              greasyForkChanged: false,
+              privateBackupChanged: false,
+              discordPosted: false,
+              publicMainChanged: false,
+              completedAt: $completedAt
+            }' > "$REPORT"
 
-          mv status/release-dashboard.tmp status/release-dashboard.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/release-dashboard.json
+          {
+            echo "# Toolkit v${RELEASE_VERSION} release dry run"
+            echo
+            echo "- State: **passed**"
+            echo "- Source commit: \`${GITHUB_SHA}\`"
+            echo "- SHA-256: \`${HASH}\`"
+            echo "- GitHub Release created: **no**"
+            echo "- Greasy Fork changed: **no**"
+            echo "- Private backup changed: **no**"
+            echo "- Discord posted: **no**"
+            echo "- Public main changed: **no**"
+            echo "- Completed: \`${NOW}\`"
+          } > "$SUMMARY"
 
-          if git diff --cached --quiet; then
-            echo "Release dashboard already records this dry run."
-            exit 0
-          fi
+          jq -e \
+            '.state == "passed" and
+             .githubReleaseCreated == false and
+             .greasyForkChanged == false and
+             .privateBackupChanged == false and
+             .discordPosted == false and
+             .publicMainChanged == false' \
+            "$REPORT" >/dev/null
 
-          git commit -m "Record Toolkit ${RELEASE_VERSION} release dry run"
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - name: Upload reviewable release bundle and evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-v${{ inputs.version }}-release-dry-run
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Write workflow summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         shell: bash
         run: |
-          {
-            echo "# Toolkit v${RELEASE_VERSION} release dry run"
-            echo
-            echo "- ✅ Canonical source validated"
-            echo "- ✅ JavaScript syntax checked"
-            echo "- ✅ Version and changelog matched"
-            echo "- ✅ Immutable backup bundle prepared"
-            echo "- ✅ SHA-256 integrity verified"
-            echo "- ⏸️ GitHub Release not published"
-            echo "- ⏸️ Greasy Fork not changed"
-            echo "- ⏸️ Discord release announcement not sent"
-          } >> "$GITHUB_STEP_SUMMARY"
+          cat "release-bundle/release-dry-run-v${RELEASE_VERSION}.md" >> "$GITHUB_STEP_SUMMARY"

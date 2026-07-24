@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the public-main write inventory used by Issue #41.
-
-The contract is intentionally static and fail-closed. It classifies every workflow
-with contents write authority, every executable public-main push source, explicit
-review-branch writers, artifact-only evidence workflows, and the separate private
-recovery repository writer.
-"""
+"""Enforce the public-main write inventory used by Issue #41."""
 
 from __future__ import annotations
 
@@ -48,20 +42,27 @@ def executable_automation_files() -> list[Path]:
 
 
 def contains_main_ref_mutation(text: str) -> bool:
-    push = re.search(
-        r"\bgit\s+push\b[^\n]*(?:HEAD:main|(?:origin|upstream)\s+main(?:\s|$))",
-        text,
+    return bool(
+        re.search(r"\bgit\s+push\b[^\n]*(?:HEAD:main|(?:origin|upstream)\s+main(?:\s|$))", text)
+        or re.search(r"\bgit\s+update-ref\s+refs/heads/main\b", text)
+        or re.search(r"(?:gh\s+api|curl)[\s\S]{0,240}(?:git/refs/heads/main|refs/heads/main)", text)
     )
-    update_ref = re.search(r"\bgit\s+update-ref\s+refs/heads/main\b", text)
-    api_ref = re.search(
-        r"(?:gh\s+api|curl)[\s\S]{0,240}(?:git/refs/heads/main|refs/heads/main)",
-        text,
-    )
-    return bool(push or update_ref or api_ref)
 
 
 def document_mentions(document: str, repository_path: str) -> bool:
     return repository_path in document or Path(repository_path).name in document
+
+
+def require_markers(text: str, markers: list[str], label: str) -> None:
+    for marker in markers:
+        if marker not in text:
+            fail(f"{label} is missing required marker: {marker}")
+
+
+def forbid_markers(text: str, markers: list[str], label: str) -> None:
+    for marker in markers:
+        if marker in text:
+            fail(f"{label} contains forbidden mutation marker: {marker}")
 
 
 def main() -> int:
@@ -70,9 +71,9 @@ def main() -> int:
     document = DOCUMENT_PATH.read_text(encoding="utf-8")
 
     if inventory.get("schemaVersion") != 1:
-        fail("Branch-write inventory schemaVersion must remain 1 until a reviewed migration updates the contract")
+        fail("Branch-write inventory schemaVersion must remain 1")
     if inventory.get("strictProtectionEnabled") is not False:
-        fail("Strict branch protection must remain disabled during the migration stages")
+        fail("Strict branch protection must remain disabled during migration")
 
     direct_entries = inventory.get("directMainWriters") or []
     orchestrator_entries = inventory.get("indirectMainWriteOrchestrators") or []
@@ -88,14 +89,18 @@ def main() -> int:
     if "" in direct_workflows | orchestrator_workflows | artifact_workflows:
         fail("Every classified workflow requires a repository-relative path")
     if direct_workflows & orchestrator_workflows:
-        fail("A workflow cannot be both a direct main writer and an indirect orchestrator")
+        fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 9:
-        fail(f"Expected nine reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 8:
+        fail(f"Expected eight reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
-    if artifact_workflows != {".github/workflows/release-toolkit-dry-run.yml"}:
+    expected_artifacts = {
+        ".github/workflows/release-toolkit-dry-run.yml",
+        ".github/workflows/repository-audit.yml",
+    }
+    if artifact_workflows != expected_artifacts:
         fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
 
     policy_contents = {
@@ -106,22 +111,22 @@ def main() -> int:
     inventory_contents = set(inventory.get("contentsWriteAuthority") or [])
     if policy_contents != inventory_contents:
         fail(
-            "Contents-write authority differs between actions-security-policy.json and "
-            f"branch-write-inventory.json: policy-only={sorted(policy_contents - inventory_contents)}, "
+            "Contents-write authority differs between policy and inventory: "
+            f"policy-only={sorted(policy_contents - inventory_contents)}, "
             f"inventory-only={sorted(inventory_contents - policy_contents)}"
         )
     if classified_contents != inventory_contents:
         fail(
-            "Every contents-write workflow must be classified as a direct writer or orchestrator: "
+            "Every contents-write workflow must be classified: "
             f"unclassified={sorted(inventory_contents - classified_contents)}, "
             f"unexpected={sorted(classified_contents - inventory_contents)}"
         )
 
-    declared_contents_write: set[str] = set()
-    for workflow in workflow_files():
-        text = workflow.read_text(encoding="utf-8")
-        if re.search(r"(?m)^\s*contents:\s*write\s*$", text):
-            declared_contents_write.add(relative(workflow))
+    declared_contents_write = {
+        relative(workflow)
+        for workflow in workflow_files()
+        if re.search(r"(?m)^\s*contents:\s*write\s*$", workflow.read_text(encoding="utf-8"))
+    }
     if declared_contents_write != inventory_contents:
         fail(
             "Workflow declarations and approved contents-write authority differ: "
@@ -134,7 +139,7 @@ def main() -> int:
         if not path.is_file():
             fail(f"Classified workflow is missing: {workflow}")
         if not document_mentions(document, workflow):
-            fail(f"Human branch-write inventory does not mention classified workflow: {workflow}")
+            fail(f"Human inventory does not mention classified workflow: {workflow}")
 
     discovered_main_sources = {
         relative(path)
@@ -144,92 +149,100 @@ def main() -> int:
     expected_public_sources = set(inventory.get("directMainPushSources") or [])
     expected_external_sources = {str(entry.get("path") or "") for entry in external_entries}
     expected_all_sources = expected_public_sources | expected_external_sources
-
     if discovered_main_sources != expected_all_sources:
         fail(
-            "Executable main-ref mutation sources differ from the reviewed inventory: "
+            "Executable main-ref mutation sources differ from inventory: "
             f"unclassified={sorted(discovered_main_sources - expected_all_sources)}, "
             f"missing={sorted(expected_all_sources - discovered_main_sources)}"
         )
-
     missing_direct_pushes = direct_workflows - expected_public_sources
     if missing_direct_pushes:
-        fail(f"Direct writer workflows missing from directMainPushSources: {sorted(missing_direct_pushes)}")
-    if orchestrator_workflows & discovered_main_sources:
-        fail("Release orchestrators must not contain their own public-main push or ref-update command")
-    if artifact_workflows & discovered_main_sources:
-        fail("Artifact-only workflows must not contain public-main push or ref-update commands")
+        fail(f"Direct writers missing from directMainPushSources: {sorted(missing_direct_pushes)}")
+    if (orchestrator_workflows | artifact_workflows) & discovered_main_sources:
+        fail("Orchestrator and artifact-only workflows must not mutate public main")
 
     for entry in orchestrator_entries:
         workflow = str(entry["workflow"])
         invoked = str(entry["invokes"])
         text = (ROOT / workflow).read_text(encoding="utf-8")
         if invoked.replace(".github/workflows/", "./.github/workflows/") not in text:
-            fail(f"Orchestrator {workflow} no longer invokes its reviewed reusable workflow {invoked}")
+            fail(f"Orchestrator {workflow} no longer invokes {invoked}")
 
-    dry_run_path = ROOT / ".github/workflows/release-toolkit-dry-run.yml"
-    dry_run = dry_run_path.read_text(encoding="utf-8")
-    required_dry_run_markers = [
+    dry_run = (ROOT / ".github/workflows/release-toolkit-dry-run.yml").read_text(encoding="utf-8")
+    require_markers(dry_run, [
         "permissions:\n  contents: read",
         "persist-credentials: false",
         "Write immutable dry-run evidence",
-        "release-dry-run-v${RELEASE_VERSION}.json",
-        "release-dry-run-v${RELEASE_VERSION}.md",
         "publicMainChanged: false",
         "Upload reviewable release bundle and evidence",
-    ]
-    for marker in required_dry_run_markers:
-        if marker not in dry_run:
-            fail(f"Artifact-only dry-run workflow is missing required marker: {marker}")
-    for forbidden in [
-        "contents: write",
-        "status/release-dashboard.json",
-        "git commit",
-        "git push",
-        "git pull --rebase",
-        "github-actions[bot]",
-    ]:
-        if forbidden in dry_run:
-            fail(f"Artifact-only dry-run workflow contains forbidden branch mutation marker: {forbidden}")
+    ], "Artifact-only dry-run workflow")
+    forbid_markers(dry_run, [
+        "contents: write", "status/release-dashboard.json", "git commit", "git push",
+        "git pull --rebase", "github-actions[bot]",
+    ], "Artifact-only dry-run workflow")
+
+    repository_workflow = (ROOT / ".github/workflows/repository-audit.yml").read_text(encoding="utf-8")
+    repository_script = (ROOT / ".github/scripts/audit_repository.py").read_text(encoding="utf-8")
+    require_markers(repository_workflow, [
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "REPOSITORY_AUDIT_OUTPUT_DIR: repository-audit-output",
+        "Upload immutable audit reports",
+        "storage.publicMainChanged == false",
+        "storage.releaseDashboardChanged == false",
+    ], "Artifact-only repository-audit workflow")
+    forbid_markers(repository_workflow, [
+        "contents: write", "status/release-dashboard.json", "git commit", "git push",
+        "git pull --rebase", "github-actions[bot]",
+    ], "Artifact-only repository-audit workflow")
+    require_markers(repository_script, [
+        '"type": "workflow-artifact"',
+        '"publicMainChanged": False',
+        '"releaseDashboardChanged": False',
+        "REPOSITORY_AUDIT_OUTPUT_DIR",
+    ], "Repository-audit script")
+    forbid_markers(repository_script, [
+        'ROOT / "status" / "release-dashboard.json"',
+        'dashboard["currentVersion"]',
+        'dashboard["status"]',
+        'dashboard["lastUpdated"]',
+    ], "Repository-audit script")
 
     for entry in external_entries:
         path = ROOT / str(entry["path"])
         repository = str(entry["repository"])
         if not path.is_file():
-            fail(f"External-repository writer is missing: {relative(path)}")
+            fail(f"External writer is missing: {relative(path)}")
         text = path.read_text(encoding="utf-8")
-        if repository not in text:
-            fail(f"External writer {relative(path)} no longer pins the reviewed repository {repository}")
-        if relative(path) not in discovered_main_sources:
-            fail(f"External writer no longer contains the reviewed main push: {relative(path)}")
+        if repository not in text or relative(path) not in discovered_main_sources:
+            fail(f"External writer contract changed: {relative(path)}")
 
     for entry in review_entries:
         workflow = ROOT / str(entry["workflow"])
         if not workflow.is_file():
             fail(f"Review-branch writer is missing: {relative(workflow)}")
         if relative(workflow) in discovered_main_sources:
-            fail(f"Review-branch writer contains a prohibited public-main mutation: {relative(workflow)}")
+            fail(f"Review-branch writer contains prohibited public-main mutation: {relative(workflow)}")
         if str(entry.get("credential") or "") not in workflow.read_text(encoding="utf-8"):
-            fail(f"Review-branch writer no longer uses its reviewed owner credential: {relative(workflow)}")
+            fail(f"Review-branch writer no longer uses reviewed credential: {relative(workflow)}")
 
     for path in sorted(expected_public_sources | expected_external_sources):
         if not document_mentions(document, path):
             fail(f"Human inventory omits executable write source: {path}")
 
-    required_document_claims = [
+    for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "nine workflows that can commit directly to public `main`",
-        "Release dry runs are now artifact-only",
-    ]
-    for claim in required_document_claims:
+        "eight workflows that can commit directly to public `main`",
+        "Release dry runs and repository audits are now artifact-only",
+    ]:
         if claim not in document:
-            fail(f"Human inventory is missing required migration claim: {claim}")
+            fail(f"Human inventory is missing migration claim: {claim}")
 
     print(
         "Branch-write inventory passed: "
         f"{len(direct_workflows)} direct main writers, "
         f"{len(orchestrator_workflows)} orchestrators, "
-        f"{len(artifact_workflows)} artifact-only workflow, "
+        f"{len(artifact_workflows)} artifact-only workflows, "
         f"{len(review_entries)} review-branch writers and "
         f"{len(external_entries)} external-repository writer."
     )

@@ -21,6 +21,7 @@ FUNCTION_NAMES = [
     "runtimeUntrackObserver",
     "runtimeOnCleanup",
     "runtimeRunWhenIdle",
+    "runBootIntegration",
     "startBootAttemptCoordinator",
     "registerBootMaintenanceTasks",
     "boot",
@@ -108,6 +109,7 @@ def main() -> int:
         "__RUNTIME_UNTRACK_OBSERVER__": functions["runtimeUntrackObserver"],
         "__RUNTIME_ON_CLEANUP__": functions["runtimeOnCleanup"],
         "__RUNTIME_RUN_WHEN_IDLE__": functions["runtimeRunWhenIdle"],
+        "__BOOT_INTEGRATION__": functions["runBootIntegration"],
         "__BOOT__": functions["boot"],
         "__SCHEDULE_BOOT__": functions["scheduleBoot"],
         "__BOOTSTRAP_TAIL__": bootstrap_tail,
@@ -417,6 +419,15 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         assert.ok(timer, `Missing ${name} timer`);
         timer.run();
     };
+    target.hasNamedTimer = name => Array.from(timers.values()).some(entry => entry.name === name);
+    target.runNamedTimers = (name, limit) => {
+        let runs = 0;
+        while (runs < limit && target.hasNamedTimer(name)) {
+            target.runNamedTimer(name);
+            runs += 1;
+        }
+        return runs;
+    };
 
     const listenerRecords = [];
     target.runtimeListen = (eventTarget, type, listener, options) => {
@@ -477,6 +488,7 @@ function createBootEnvironment({ mapReadyAfter = 0, ensureReady = true, building
         },
         set(object, property, value) { Reflect.set(object, property, value); return true; }
     });
+    target.runBootIntegration = compileInSandbox(__BOOT_INTEGRATION_SOURCE__, sandbox);
     target.startBootAttemptCoordinator = compileInSandbox(__BOOT_COORDINATOR_SOURCE__, sandbox);
     target.registerBootMaintenanceTasks = compileInSandbox(__BOOT_TASK_REGISTRATION_SOURCE__, sandbox);
     target.boot = compileInSandbox(__BOOT_SOURCE__, sandbox);
@@ -488,13 +500,18 @@ function callCount(env, name) { return env.calls.filter(call => call.name === na
 function testBootAttemptCoordinatorDirectly() {
     const direct = createBootEnvironment({ mapReadyAfter: 2 });
     direct.startBootAttemptCoordinator(100);
-    for (let attempt = 0; attempt < 3; attempt += 1) direct.runNamedTimer("runBootAttempt");
+    assert.equal(
+        direct.runNamedTimers("runBootAttempt", 3),
+        2,
+        "the immediate first attempt plus two retries should complete when the map appears"
+    );
+    assert.equal(direct.getEnsureCalls(), 3);
     assert.equal(direct.getMapCalls(), 3);
     assert.deepEqual(direct.bootTimerDelays, [
-        fixtures.boot.initialDelayMs,
         fixtures.boot.earlyRetryDelayMs,
         fixtures.boot.earlyRetryDelayMs
     ]);
+    assert.equal(direct.hasNamedTimer("runBootAttempt"), false);
     assert.equal(callCount(direct, "scheduleDeferredOperationalStartup"), 1);
     const metric = direct.calls.find(call => call.name === "recordStartupMetric");
     assert.equal(metric.args[2].bootAttempts, 3);
@@ -521,19 +538,31 @@ function testBootLifecycle() {
 
     const delayed = createBootEnvironment({ mapReadyAfter: 3 });
     delayed.boot();
-    for (let attempt = 0; attempt < 4; attempt += 1) delayed.runNamedTimer("runBootAttempt");
+    assert.equal(
+        delayed.runNamedTimers("runBootAttempt", 4),
+        3,
+        "delayed map readiness should stop the retry chain after the fourth total attempt"
+    );
+    assert.equal(delayed.getEnsureCalls(), 4);
     assert.equal(delayed.getMapCalls(), 4);
-    assert.deepEqual(delayed.bootTimerDelays, [fixtures.boot.initialDelayMs, fixtures.boot.earlyRetryDelayMs, fixtures.boot.earlyRetryDelayMs, fixtures.boot.earlyRetryDelayMs]);
+    assert.deepEqual(delayed.bootTimerDelays, [fixtures.boot.earlyRetryDelayMs, fixtures.boot.earlyRetryDelayMs, fixtures.boot.earlyRetryDelayMs]);
+    assert.equal(delayed.hasNamedTimer("runBootAttempt"), false);
     assert.equal(callCount(delayed, "scheduleDeferredOperationalStartup"), 1);
     const metric = delayed.calls.find(call => call.name === "recordStartupMetric");
     assert.equal(metric.args[2].bootAttempts, 4);
 
     const fallback = createBootEnvironment({ mapReadyAfter: Number.POSITIVE_INFINITY });
     fallback.boot();
-    for (let attempt = 0; attempt < fixtures.boot.mapFallbackAttempt; attempt += 1) fallback.runNamedTimer("runBootAttempt");
+    assert.equal(
+        fallback.runNamedTimers("runBootAttempt", fixtures.boot.mapFallbackAttempt),
+        fixtures.boot.mapFallbackAttempt - 1,
+        "bounded map fallback includes the immediate first attempt and must leave no redundant retry"
+    );
+    assert.equal(fallback.getEnsureCalls(), fixtures.boot.mapFallbackAttempt);
     assert.equal(fallback.getMapCalls(), fixtures.boot.mapFallbackAttempt);
     assert.equal(callCount(fallback, "scheduleDeferredOperationalStartup"), 1, "UI must continue after bounded map fallback");
-    assert.equal(fallback.bootTimerDelays.length, fixtures.boot.mapFallbackAttempt);
+    assert.equal(fallback.bootTimerDelays.length, fixtures.boot.mapFallbackAttempt - 1);
+    assert.equal(fallback.hasNamedTimer("runBootAttempt"), false);
 
     const destroyed = createBootEnvironment({ mapReadyAfter: Number.POSITIVE_INFINITY, ensureReady: false });
     destroyed.boot();
@@ -546,15 +575,16 @@ function testBootLifecycle() {
 
     const visibility = createBootEnvironment();
     visibility.boot();
+    const ensureCallsAfterBoot = visibility.getEnsureCalls();
     const listener = visibility.listenerRecords.find(item => item.target === visibility.document && item.type === "visibilitychange").listener;
     visibility.document.hidden = true;
     listener();
     assert.equal(callCount(visibility, "runtimeWakeTaskScheduler"), 0);
-    assert.equal(visibility.getEnsureCalls(), 0);
+    assert.equal(visibility.getEnsureCalls(), ensureCallsAfterBoot, "hidden-tab handling must not add a readiness check");
     visibility.document.hidden = false;
     listener();
     assert.equal(callCount(visibility, "runtimeWakeTaskScheduler"), 1);
-    assert.equal(visibility.getEnsureCalls(), 1);
+    assert.equal(visibility.getEnsureCalls(), ensureCallsAfterBoot + 1, "visible-tab resume must perform exactly one readiness check");
 
     const cleanup = createBootEnvironment({ buildingVisibility: false });
     cleanup.boot();
@@ -571,12 +601,19 @@ function testBootLifecycle() {
 
 function testScheduleAndDocumentStart() {
     const calls = [];
+    const scheduleTimers = [];
     const target = {
+        Math,
         runtime: { destroyed: false },
         bootStarted: false,
         STARTUP_IDLE_TIMEOUT_MS: fixtures.startupIdleTimeoutMs,
         boot() {},
-        runtimeRunWhenIdle(callback, timeout) { calls.push({ callback, timeout }); }
+        runBootIntegration(_label, callback) { return callback(); },
+        runtimeRunWhenIdle(callback, timeout) { calls.push({ callback, timeout }); },
+        runtimeSetTimeout(callback, delay) {
+            scheduleTimers.push({ callback, delay });
+            return scheduleTimers.length;
+        }
     };
     const sandbox = new Proxy(target, {
         has() { return true; },
@@ -588,12 +625,15 @@ function testScheduleAndDocumentStart() {
     assert.equal(calls.length, 1);
     assert.equal(calls[0].callback, target.boot);
     assert.equal(calls[0].timeout, fixtures.startupIdleTimeoutMs);
+    assert.equal(scheduleTimers.length, 1, "scheduleBoot must install one bounded fallback timer");
+    assert.equal(scheduleTimers[0].delay, Math.min(1200, fixtures.startupIdleTimeoutMs));
     target.bootStarted = true;
     scheduleBoot();
     target.bootStarted = false;
     target.runtime.destroyed = true;
     scheduleBoot();
-    assert.equal(calls.length, 1, "destroyed or already-started runtime must not reschedule boot");
+    assert.equal(calls.length, 1, "destroyed or already-started runtime must not reschedule idle boot");
+    assert.equal(scheduleTimers.length, 1, "destroyed or already-started runtime must not add a fallback timer");
 
     const runBootstrap = Function("document", "runtimeListen", "scheduleBoot", __BOOTSTRAP_SOURCE_STRING__);
     let scheduled = 0;
@@ -618,8 +658,9 @@ testBootAttemptCoordinatorDirectly();
 testBootMaintenanceTaskRegistrationDirectly();
 testBootLifecycle();
 testScheduleAndDocumentStart();
-console.log("Boot lifecycle contract passed: extracted boot coordinator and maintenance-task registration, runtime ownership, document-start, delayed map, hidden-tab resume, retry cancellation and teardown.");
+console.log("Boot lifecycle contract passed: extracted boot integration, immediate coordinator attempt, bounded map fallback, maintenance-task registration, runtime ownership, document-start, hidden-tab resume, retry cancellation and teardown.");
 '''
+    replacements["__BOOT_INTEGRATION_SOURCE__"] = json.dumps(functions["runBootIntegration"])
     replacements["__BOOT_COORDINATOR_SOURCE__"] = json.dumps(functions["startBootAttemptCoordinator"])
     replacements["__BOOT_TASK_REGISTRATION_SOURCE__"] = json.dumps(functions["registerBootMaintenanceTasks"])
     replacements["__BOOT_SOURCE__"] = json.dumps(functions["boot"])

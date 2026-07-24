@@ -20,9 +20,6 @@ ICONS = {
     "validated": "🟢",
     "validated-canonical-source": "🟢",
     "private-repository-verified": "🟢",
-    "dry-run-ready": "🟡",
-    "dry-run-built": "🟡",
-    "legacy-monitor": "🟡",
     "pending-release": "🟡",
     "not-configured": "⚪",
     "not-published": "⚪",
@@ -43,15 +40,13 @@ def main() -> None:
     data = json.loads(SOURCE.read_text(encoding="utf-8"))
     status = data.get("status", {})
     latest = data.get("latestRelease") or {}
-    dry_run = data.get("releaseDryRun") or {}
     assets = data.get("assets", {})
     source = data.get("source", {})
-    candidate = data.get("distributionCandidate", {})
 
     version = data.get("currentVersion", "Unknown")
-    latest_version = latest.get("version") or dry_run.get("version") or version
-    latest_state = "Verified public release" if latest else "Validated dry run"
-    validated_hash = source.get("validatedSha256") or latest.get("sha256") or dry_run.get("sha256") or "Not yet recorded"
+    latest_version = latest.get("version") or version
+    latest_state = "Verified public release" if latest else "No verified public release recorded"
+    validated_hash = source.get("validatedSha256") or latest.get("sha256") or "Not yet recorded"
 
     rows = [
         ("Canonical source", source.get("state", "unknown")),
@@ -87,14 +82,14 @@ def main() -> None:
         f"- **State:** {latest_state}",
         f"- **Canonical path:** `{source.get('canonicalPath', 'src/MissionChief_Map_Command_Toolkit.user.js')}`",
         f"- **Validated SHA-256:** `{validated_hash}`",
-        f"- **Distribution candidate:** `{candidate.get('path', 'dist/MissionChief_Map_Command_Toolkit.user.js')}`",
+        "- **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit",
         "",
         "## Repository health",
         "",
         f"- **Discovered media files:** {assets.get('discoveredFiles', 'Unknown')}",
         f"- **Referenced hosted paths:** {assets.get('referencedPaths', 'Unknown')}",
         f"- **Missing referenced paths:** {assets.get('missingReferencedPaths', 'Unknown')}",
-        f"- **Last dashboard update:** `{data.get('lastUpdated', 'Unknown')}`",
+        f"- **Last release-state update:** `{data.get('lastUpdated', 'Unknown')}`",
         "",
         "## Release channels",
         "",
@@ -106,11 +101,13 @@ def main() -> None:
         "```text",
         "Canonical source",
         "      ↓",
-        "Validation and bundle build",
+        "Read-only validation artifact",
         "      ↓",
-        "GitHub Release",
+        "Release readiness and bundle rebuild",
         "      ↓",
-        "Greasy Fork webhook and verification",
+        "Stable distribution publication",
+        "      ↓",
+        "GitHub Release and Greasy Fork verification",
         "      ↓",
         "Private migration backup",
         "      ↓",
@@ -119,7 +116,7 @@ def main() -> None:
         "",
         "---",
         "",
-        "The JSON file remains the machine-readable source of truth. This page is regenerated automatically whenever release state changes.",
+        "The JSON file remains the machine-readable verified-release ledger. Transient validation candidates are retained as immutable workflow artifacts and are never written into this dashboard.",
     ])
 
     OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -9,7 +9,7 @@ Strict pull-request-only protection is **not yet safe to enable**.
 
 The repository now has one workflow that can commit directly to public `main`: `release-toolkit.yml`. It still publishes the stable distribution and writes a temporary compatibility copy of release state required by existing v5.0.7 installations.
 
-Two workflows write governed operational state to `release-state`:
+At this stage, two workflows write governed operational state to `release-state`:
 
 - `greasyfork-release-monitor.yml` — fallback announcement tracker;
 - `release-recovery.yml` — recovery dashboard, rendered status, stable manifest and announcement tracker.

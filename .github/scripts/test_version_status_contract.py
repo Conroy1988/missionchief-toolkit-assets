@@ -11,6 +11,7 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 RUNTIME = ROOT / ".github" / "scripts" / "test_version_status_runtime.js"
 WORKFLOW = ROOT / ".github" / "workflows" / "publish-update-manifest.yml"
 RELEASE_WORKFLOW = ROOT / ".github" / "workflows" / "release-toolkit.yml"
+BUILDER = ROOT / ".github" / "scripts" / "build_stable_update_manifest.py"
 MANIFEST = ROOT / "status" / "update-manifest.json"
 DASHBOARD = ROOT / "status" / "release-dashboard.json"
 
@@ -25,6 +26,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
     release_workflow = RELEASE_WORKFLOW.read_text(encoding="utf-8")
+    builder = BUILDER.read_text(encoding="utf-8")
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
     start = source.index("    // Issue #153: stable live Toolkit version-status control.")
@@ -88,35 +90,48 @@ def main() -> int:
     assert manifest["updateUrl"].startswith("https://update.greasyfork.org/scripts/586018/")
 
     for marker in [
+        "name: Verify Toolkit Update Manifest",
         "workflow_dispatch:",
-        "Build manifest from verified release ledger",
-        "status/update-manifest.json",
-        "'githubRelease': 'published'",
-        "'greasyForkSync': 'verified'",
-        "'backup': 'private-repository-verified'",
-        "'discordRelease': 'posted'",
-        "git push origin HEAD:main",
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "Validate stable manifest builder self-tests",
+        "Verify committed manifest against release ledger",
+        "--check",
+        "missionchief-update-manifest-verification-${{ github.sha }}",
     ]:
         assert marker in workflow, f"verified manifest workflow marker missing: {marker}"
-    assert "workflow_run:" not in workflow, "manifest publication must not duplicate the explicit release dispatch"
-    dispatch_index = workflow.index("workflow_dispatch:")
-    build_index = workflow.index("Build manifest from verified release ledger")
-    push_index = workflow.index("git push origin HEAD:main")
-    assert dispatch_index < build_index < push_index, "manifest dispatch must precede verified publication"
+    for forbidden in ["contents: write", "git push", "git commit", "git pull --rebase"]:
+        assert forbidden not in workflow, f"read-only manifest verifier contains mutation marker: {forbidden}"
 
     for marker in [
-        "- name: Publish update channels in parallel",
-        "gh workflow run publish-update-manifest.yml --ref main",
-        "gh workflow run github-pages.yml --ref main",
-        'gh run list --workflow "$workflow" --event workflow_dispatch --branch main',
-        'gh run watch "$MANIFEST_RUN_ID" --exit-status',
-        'gh run watch "$PAGES_RUN_ID" --exit-status',
-        "MANIFEST_RUN_ID: ${{ steps.channels.outputs.manifest_run_id }}",
+        "def build_manifest(dashboard: dict, settings: dict)",
+        "Stable update manifest self-tests passed.",
+        '"publicMainChanged": False',
     ]:
-        assert marker in release_workflow, f"release workflow parallel publication marker missing: {marker}"
-    dashboard_index = release_workflow.index("- name: Record successful release and announcement state")
-    publish_index = release_workflow.index("- name: Publish update channels in parallel")
-    assert dashboard_index < publish_index, "parallel update channels must start after atomic release-state reconciliation"
+        assert marker in builder, f"stable manifest builder marker missing: {marker}"
+
+    for marker in [
+        "- name: Record successful release, manifest and announcement state",
+        "python3 .github/scripts/build_stable_update_manifest.py",
+        "status/update-manifest.json",
+        "- name: Publish GitHub Pages",
+        "gh workflow run github-pages.yml --ref main",
+        'gh run watch "$PAGES_RUN_ID" --exit-status',
+        "PAGES_RUN_ID: ${{ steps.pages.outputs.pages_run_id }}",
+    ]:
+        assert marker in release_workflow, f"release workflow atomic manifest marker missing: {marker}"
+    for forbidden in [
+        "gh workflow run publish-update-manifest.yml",
+        "MANIFEST_RUN_ID",
+        "manifest_run_id",
+    ]:
+        assert forbidden not in release_workflow, f"retired manifest dispatch marker returned: {forbidden}"
+
+    dashboard_index = release_workflow.index("- name: Record successful release, manifest and announcement state")
+    build_index = release_workflow.index("python3 .github/scripts/build_stable_update_manifest.py", dashboard_index)
+    push_index = release_workflow.index("git push origin HEAD:main", build_index)
+    pages_index = release_workflow.index("- name: Publish GitHub Pages", push_index)
+    assert dashboard_index < build_index < push_index < pages_index
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)
     assert result.returncode == 0, "version status runtime fixtures failed"

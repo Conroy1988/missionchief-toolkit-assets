@@ -19,10 +19,12 @@ on:
       - ".github/scripts/verify_validation_candidate.py"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
+      - ".github/greasyfork-version.txt"
       - ".github/scripts/test_automation_record_hygiene.py"
       - ".github/scripts/test_branch_write_inventory.py"
       - ".github/scripts/test_development_package_workflow.py"
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
+      - ".github/scripts/test_release_announcement_state_pipeline.py"
       - ".github/scripts/test_validation_candidate_pipeline.py"
       - "docs/BRANCH_PROTECTION_MIGRATION.md"
       - "docs/BRANCH_WRITE_INVENTORY.md"
@@ -58,6 +60,7 @@ jobs:
             python3 .github/scripts/test_branch_write_inventory.py
             python3 .github/scripts/test_validation_candidate_pipeline.py
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
+            python3 .github/scripts/test_release_announcement_state_pipeline.py
           } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 
       - name: Upload policy diagnostics

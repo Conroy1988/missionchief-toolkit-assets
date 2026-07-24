@@ -160,7 +160,6 @@ def main() -> int:
 
     for marker in [
         "sync-shadow-branches.yml",
-        "sync_shadow_branches.py",
         "DEVELOPMENT_PR_TOKEN",
         "release-state",
         "distribution",

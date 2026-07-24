@@ -28,15 +28,25 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Reconcile v6 repository surfaces
+      - name: Apply deterministic repository patch
+        run: python3 .github/v6-reconcile/patch_v6_repository.py
+
+      - name: Validate updated settings fixture
+        run: python3 .github/scripts/test_settings_ui_contract.py
+
+      - name: Validate updated boot lifecycle fixture
+        run: python3 .github/scripts/test_boot_lifecycle_contract.py
+
+      - name: Validate v6 candidate documentation
+        run: python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
+
+      - name: Build and validate v6 candidate distribution
+        run: python3 .github/scripts/validate_userscript.py
+
+      - name: Verify candidate syntax and parity
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/v6-reconcile/patch_v6_repository.py
-          python3 .github/scripts/test_settings_ui_contract.py
-          python3 .github/scripts/test_boot_lifecycle_contract.py
-          python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
-          python3 .github/scripts/validate_userscript.py
           node --check src/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt

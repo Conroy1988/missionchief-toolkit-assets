@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last dashboard update:** `2026-07-24T09:51:06Z`
+- **Last dashboard update:** `2026-07-24T13:13:57Z`
 
 ## Release channels
 

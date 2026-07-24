@@ -1,0 +1,43 @@
+Issue #470 boot contract alignment diagnostic
+package_exit=1
+
+=== PACKAGE STDOUT ===
+
+=== PACKAGE STDERR ===
+Boot lifecycle contract still failed after Issue #470 alignment.
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: map readiness should stop retries after the third total attempt
+
+0 !== 2
+
+    at testBootAttemptCoordinatorDirectly (/tmp/mcms-boot-lifecycle-vtnd58cw/boot-lifecycle-contract.js:496:12)
+    at Object.<anonymous> (/tmp/mcms-boot-lifecycle-vtnd58cw/boot-lifecycle-contract.js:625:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 2,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/tmp/issue470-boot-contract-1ihwi66y/repo/.github/scripts/test_boot_lifecycle_contract.py", line 652, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/tmp/issue470-boot-contract-1ihwi66y/repo/.github/scripts/test_boot_lifecycle_contract.py", line 647, in main
+    subprocess.run(["node", str(harness_path)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/mcms-boot-lifecycle-vtnd58cw/boot-lifecycle-contract.js']' returned non-zero exit status 1.
+

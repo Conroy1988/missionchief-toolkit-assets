@@ -304,6 +304,7 @@
   ],
   "extractedToggleEffectRoutes": [
     "buildings",
+    "missionAge",
     "vehicles"
   ],
   "extractedToggleStatePaths": {

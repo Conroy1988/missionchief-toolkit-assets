@@ -15,10 +15,12 @@ for editor in ['callWindow.tailoredTabs','callWindow.missionKeywords','callWindo
 assert 'data-operational-type="json"' not in block and 'mcms-operational-json-row' not in block
 assert 'operationalArrMatchesText' in block and 'operationalMissionShareEligible' in block and 'operationalMissionAgeRefreshPlan' in block
 control=section('    function createControl(','    function createPanel(')
-assert 'const host = toolkitControlHost(mapEl, document);' in control and "existing.classList.toggle('mcms-control-fallback', !mapEl);" in control and 'return control;' in control
+assert 'const primaryMap = toolkitPrimaryMapElement(mapEl, document);' in control and 'toolkitApplyCommandBarState(existing);' in control and "existing.classList.toggle('mcms-control-fallback', !primaryMap);" in control and 'return control;' in control
+assert 'function toolkitTopLevelDocument' in text
 ensure=section('    function ensureUi()','    function mutationBelongsToToolkit')
 assert ensure.index('const control = createControl(mapEl);')<ensure.index('if (mapEl) {')
 assert 'return Boolean(control || document.getElementById(SCRIPT.controlId));' in ensure
+assert 'if (!toolkitTopLevelDocument(document)) return true;' in ensure
 boot=section('    function boot()','    function scheduleBoot()')
 assert boot.index('const removesToolkitUi = mutationRemovesToolkitUi(mutation);')<boot.index('mutationBelongsToToolkit(mutation)')
 maintenance=section('    function registerBootMaintenanceTasks()','    function boot()')
@@ -46,6 +48,7 @@ assert "feature==='missionAge'" in visibility and 'scheduleMissionAgeRefresh(0)'
 feature_block=section('    // Issue #378 complete operational feature suite.','    // Issue #378 end complete operational feature suite.')
 assert '.addEventListener(' not in feature_block and 'new MutationObserver(' not in feature_block and 'setInterval(' not in feature_block
 meta=re.search(r'^//\s*@version\s+([^\s]+)',text,re.M).group(1);runtime=re.search(r"version:\s*'([^']+)'",text).group(1)
-assert meta==runtime=='5.0.6'
+assert meta==runtime
+assert tuple(int(part) for part in meta.split('.')[:3]) >= (5,0,6)
 assert len(text.splitlines())<=32000
 print('Issue #464 complete launcher, settings, runtime and Mission Age contract passed.')

@@ -254,6 +254,8 @@ let activeDeviceLayout = "desktop";
 let operationalStartupComplete = true;
 let missionSpawnArmed = false;
 let missionSpawnPrimeTimer = null;
+let missionAgeTimer = null;
+let inlineMissionDataScanned = false;
 let payoutMediaAudio = null;
 let applyLoadedConfiguration = () => record("applyLoadedConfiguration");
 const knownMissionIds = new Set();
@@ -296,6 +298,11 @@ function reconcileFeatureRefreshes(value) {{ record("reconcileFeatureRefreshes",
 function synchroniseVehicleMarkerClasses() {{ record("synchroniseVehicleMarkerClasses"); }}
 function synchronisePersonalBuildingVisibility() {{ record("synchronisePersonalBuildingVisibility"); }}
 function scheduleEconomyLayerSync(value) {{ record("scheduleEconomyLayerSync", value); }}
+function scanInlineMissionMarkerData(value) {{ record("scanInlineMissionMarkerData", value); }}
+function invalidateMarkerRegistryCaches(value) {{ record("invalidateMarkerRegistryCaches", value); }}
+function scheduleMarkerStateSync(...args) {{ record("scheduleMarkerStateSync", ...args); }}
+function scheduleMissionAgeRefresh(value) {{ record("scheduleMissionAgeRefresh", value); }}
+function clearMissionAgeLabels() {{ record("clearMissionAgeLabels"); }}
 function showToast(value) {{ record("showToast", value); }}
 function refreshPersonalVehicleData(value) {{ record("refreshPersonalVehicleData", value); return Promise.resolve(true); }}
 function scheduleUnitCommitmentRefresh(value) {{ record("scheduleUnitCommitmentRefresh", value); }}
@@ -376,6 +383,8 @@ function resetEnvironment() {{
     activeDeviceLayout = "desktop";
     missionSpawnArmed = false;
     missionSpawnPrimeTimer = null;
+    missionAgeTimer = null;
+    inlineMissionDataScanned = false;
     knownMissionIds.clear();
     payoutMediaAudio = null;
     applyLoadedConfiguration = () => record("applyLoadedConfiguration");
@@ -569,6 +578,30 @@ function testExtractedMapVisibilityToggleContracts() {{
     assert.equal(wasCalled("synchroniseVehicleMarkerClasses"), false);
     assert.equal(wasCalled("synchronisePersonalBuildingVisibility"), true);
     assert.deepEqual(callFor("scheduleEconomyLayerSync").args, [0]);
+
+    resetEnvironment();
+    missionAgeTimer = 91;
+    state.missionAge = false;
+    applyMapVisibilityToggleEffects("missionAge");
+    assert.deepEqual(callFor("runtimeClearTimeout").args, [91]);
+    assert.equal(missionAgeTimer, null);
+    assert.equal(wasCalled("clearMissionAgeLabels"), true);
+    assert.equal(wasCalled("scanInlineMissionMarkerData"), false);
+
+    resetEnvironment();
+    missionAgeTimer = 92;
+    state.missionAge = true;
+    inlineMissionDataScanned = true;
+    applyMapVisibilityToggleEffects("missionAge");
+    assert.deepEqual(callFor("runtimeClearTimeout").args, [92]);
+    assert.equal(missionAgeTimer, null);
+    assert.equal(inlineMissionDataScanned, false);
+    assert.deepEqual(callFor("scanInlineMissionMarkerData").args, [true]);
+    assert.deepEqual(callFor("invalidateMarkerRegistryCaches").args, ["mission"]);
+    assert.deepEqual(callFor("scheduleMarkerStateSync").args, [0, true]);
+    assert.deepEqual(callFor("scheduleMissionAgeRefresh").args, [0]);
+    assert.deepEqual(callFor("runtimeSetTimeout").args, [1000]);
+    assert.equal(wasCalled("clearMissionAgeLabels"), false);
 
     resetEnvironment();
     state.economyMode = true;

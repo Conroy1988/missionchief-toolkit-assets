@@ -1,0 +1,31 @@
+Issue #470 final clean-package diagnostic
+parts=19
+encoded_sha256=7d3b40179cac66978313bce94d84c3fb6502860c9ec53941c8355d361e5402e7
+decoded_sha256=e8ba3088536ad44254fbcf36aafa6c88af4220f10fb0762e14361455cc82ff7d
+decoded_lines=849
+page_window_index=36438
+
+=== PAGE WINDOW EXCERPT ===
+royed:false},
+  fetchSameOriginDocument:async path=>{fetchCount+=1;if(String(path)!=='/missions/42')throw new Error('wrong mission URL');return{doc:fetchedDoc,url:'https://www.missionchief.co.uk/missions/42'};},
+  scheduleOperationalSuiteScan(){},
+  pageWindow:{location:{origin:'https://www.missionchief.co.uk',href:'https://www.missionchief.co.uk/'}},
+  operationalRequirementNormaliseText:value=>String(value||'').replace(/\s+/gu,' ').trim(),
+  URL,encodeURIComponent,Date,Map,Set,Array,Object,String,Number,RegExp,Promise,setTimeout,globalThis:null
+};
+sandbox.globalThis=sandbox;
+vm.createContext(sandbox);
+vm.runInContext(`${source.slice(resolverStart,resolverEnd)}
+globalThis.resolveSource=operationalRequirementsResolveSource;
+globalThis.remoteCache=operationalRequirementsRemoteCache;
+globalThis.missionKey=operationalRequirementsMissionKey;`,sandbox);
+(async()=>{
+  const doc42=makeDoc();
+  
+
+wrapper_exit=1
+
+=== WRAPPER STDOUT ===
+
+=== WRAPPER STDERR ===
+Issue #470 runtime-fixture repair anchor count changed: 0

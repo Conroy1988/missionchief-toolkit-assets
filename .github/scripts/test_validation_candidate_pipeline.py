@@ -40,91 +40,136 @@ def main() -> int:
     reconciler = RETIRED_RECONCILER.read_text(encoding="utf-8")
     dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
 
-    require(validation, [
-        "permissions:\n  contents: read",
-        "persist-credentials: false",
-        "Write immutable validation candidate evidence",
-        "missionchief-toolkit-validation-candidate-${{ github.sha }}",
-        "publicMainChanged: false",
-        "releaseDashboardChanged: false",
-        "verify_validation_candidate.py --self-test",
-    ], "Canonical validation workflow")
-    forbid(validation, [
-        "contents: write",
-        "reconcile_validation_dashboard.py",
-        "status/release-dashboard.json",
-        "git commit",
-        "git push",
-        "git pull --rebase",
-        "github-actions[bot]",
-    ], "Canonical validation workflow")
+    require(
+        validation,
+        [
+            "permissions:\n  contents: read",
+            "persist-credentials: false",
+            "Write immutable validation candidate evidence",
+            "missionchief-toolkit-validation-candidate-${{ github.sha }}",
+            "publicMainChanged: false",
+            "releaseDashboardChanged: false",
+            "verify_validation_candidate.py --self-test",
+        ],
+        "Canonical validation workflow",
+    )
+    forbid(
+        validation,
+        [
+            "contents: write",
+            "reconcile_validation_dashboard.py",
+            "status/release-dashboard.json",
+            "git commit",
+            "git push",
+            "git pull --rebase",
+            "github-actions[bot]",
+        ],
+        "Canonical validation workflow",
+    )
 
-    require(automatic, [
-        "github.event.workflow_run.event == 'push'",
-        "github.event.workflow_run.head_sha",
-        "github.event.workflow_run.id",
-        "missionchief-toolkit-validation-candidate-${VALIDATED_SHA}",
-        "actions/runs/${VALIDATION_RUN_ID}/artifacts",
-        "verify_validation_candidate.py",
-        "CURRENT_MAIN=\"$(git rev-parse origin/main)\"",
-        "gh release view \"v${VERSION}\"",
-        "Dashboard candidate state used: no",
-    ], "Automatic release workflow")
-    forbid(automatic, [
-        ".distributionCandidate",
-        ".status.validation",
-        "status/release-dashboard.json",
-    ], "Automatic release workflow")
+    require(
+        automatic,
+        [
+            "github.event.workflow_run.event == 'push'",
+            "github.event.workflow_run.head_sha",
+            "github.event.workflow_run.id",
+            "missionchief-toolkit-validation-candidate-${VALIDATED_SHA}",
+            "actions/runs/${VALIDATION_RUN_ID}/artifacts",
+            "verify_validation_candidate.py",
+            'CURRENT_MAIN="$(git rev-parse origin/main)"',
+            'gh release view "v${VERSION}"',
+            "Dashboard candidate state used: no",
+        ],
+        "Automatic release workflow",
+    )
+    forbid(
+        automatic,
+        [".distributionCandidate", ".status.validation", "status/release-dashboard.json"],
+        "Automatic release workflow",
+    )
 
-    require(owner, [
-        "Freshly validate requested main candidate",
-        "python3 .github/scripts/validate_userscript.py",
-        "persist-credentials: false",
-        "gh release view \"v${VERSION}\"",
-        "dist/release-manifest.json",
-    ], "Owner release workflow")
-    forbid(owner, [
-        ".distributionCandidate",
-        "status/release-dashboard.json",
-        "Verify requested version is a validated candidate",
-    ], "Owner release workflow")
+    require(
+        owner,
+        [
+            "Freshly validate requested main candidate",
+            "python3 .github/scripts/validate_userscript.py",
+            "persist-credentials: false",
+            'gh release view "v${VERSION}"',
+            "dist/release-manifest.json",
+        ],
+        "Owner release workflow",
+    )
+    forbid(
+        owner,
+        [
+            ".distributionCandidate",
+            "status/release-dashboard.json",
+            "Verify requested version is a validated candidate",
+        ],
+        "Owner release workflow",
+    )
 
-    require(sync, [
-        "git add dist \"$ROOT_USER\" \"$ROOT_TXT\"",
-        "Publish Toolkit ${VERSION} stable distribution source",
-        "Stable distribution publication commit",
-    ], "Stable distribution publication helper")
-    require(release, [
-        "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
-        "Record successful release, manifest and announcement state",
-        "python3 .github/scripts/build_stable_update_manifest.py",
-    ], "Production release workflow")
+    require(
+        sync,
+        [
+            'git add dist "$ROOT_USER" "$ROOT_TXT"',
+            "Publish Toolkit ${VERSION} stable distribution source",
+            "Stable distribution publication commit",
+        ],
+        "Stable distribution publication helper",
+    )
+    require(
+        release,
+        [
+            "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
+            "Prepare governed release-state worktree",
+            "Prepare authoritative production state projection",
+            "Publish backward-compatible main state copy",
+            "Publish authoritative release-state ledger",
+            "Verify authoritative and compatibility state parity",
+        ],
+        "Production release workflow",
+    )
+    projection_index = release.index("Prepare authoritative production state projection")
+    compatibility_index = release.index("Publish backward-compatible main state copy")
+    authority_index = release.index("Publish authoritative release-state ledger")
+    parity_index = release.index("Verify authoritative and compatibility state parity")
+    assert projection_index < compatibility_index < authority_index < parity_index
 
     if "distributionCandidate" in dashboard or "releaseDryRun" in dashboard:
         raise AssertionError("Persistent release dashboard still contains transient validation state")
-    require(generator, [
-        'sanitized.pop("distributionCandidate", None)',
-        'sanitized.pop("releaseDryRun", None)',
-        '"storage": "workflow-artifact"',
-    ], "Dashboard stable-ledger sanitizer")
-    forbid(generator, ["data.get(\"distributionCandidate\"", "candidate.get("], "Dashboard generator")
-    require(reconciler, [
-        "Retired compatibility stub",
-        "is retired; use the exact canonical-validation artifact instead",
-    ], "Retired validation-dashboard reconciler")
-    forbid(reconciler, [
-        "json.loads",
-        "write_text",
-        "def reconcile",
-        "status[",
-        "distributionCandidate",
-    ], "Retired validation-dashboard reconciler")
+    require(
+        generator,
+        [
+            'sanitized.pop("distributionCandidate", None)',
+            'sanitized.pop("releaseDryRun", None)',
+            '"storage": "workflow-artifact"',
+        ],
+        "Dashboard stable-ledger sanitizer",
+    )
+    forbid(generator, ['data.get("distributionCandidate"', "candidate.get("], "Dashboard generator")
+    require(
+        reconciler,
+        [
+            "Retired compatibility stub",
+            "is retired; use the exact canonical-validation artifact instead",
+        ],
+        "Retired validation-dashboard reconciler",
+    )
+    forbid(
+        reconciler,
+        ["json.loads", "write_text", "def reconcile", "status[", "distributionCandidate"],
+        "Retired validation-dashboard reconciler",
+    )
 
     result = subprocess.run(["python3", str(VERIFIER), "--self-test"], cwd=ROOT)
     if result.returncode != 0:
         raise AssertionError("Validation candidate verifier self-tests failed")
 
-    print("Validation candidate pipeline passed: artifact authority, exact-run consumption and stable-only dist publication.")
+    print(
+        "Validation candidate pipeline passed: immutable candidate authority, exact-run consumption, "
+        "stable-only distribution publication and governed release-state projection."
+    )
     return 0
 
 

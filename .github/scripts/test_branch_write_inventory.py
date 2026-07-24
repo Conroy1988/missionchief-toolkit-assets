@@ -92,8 +92,8 @@ def main() -> int:
         fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 5:
-        fail(f"Expected five reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 4:
+        fail(f"Expected four reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
     expected_artifacts = {
@@ -102,6 +102,7 @@ def main() -> int:
         ".github/workflows/repository-audit.yml",
         ".github/workflows/update-release-dashboard.yml",
         ".github/workflows/import-canonical-userscript.yml",
+        ".github/workflows/reconcile-release-announcement-state.yml",
     }
     if artifact_workflows != expected_artifacts:
         fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
@@ -258,6 +259,22 @@ def main() -> int:
         '"liveAheadRequiresOwnerReview": True',
     ], "Greasy Fork parity auditor")
 
+    announcement_workflow = (ROOT / ".github/workflows/reconcile-release-announcement-state.yml").read_text(encoding="utf-8")
+    require_markers(announcement_workflow, [
+        "name: Verify Release Announcement State",
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "Verify dashboard and announcement tracker",
+        "announcementTrackerChanged: false",
+        "Upload immutable announcement-state evidence",
+        "missionchief-release-announcement-state-${{ github.sha }}",
+        "No automatic mutation was attempted.",
+    ], "Artifact-only announcement-state workflow")
+    forbid_markers(announcement_workflow, [
+        "contents: write", "git commit", "git push", "git pull --rebase",
+        "github-actions[bot]", "git reset --hard",
+    ], "Artifact-only announcement-state workflow")
+
     for entry in external_entries:
         path = ROOT / str(entry["path"])
         repository = str(entry["repository"])
@@ -282,8 +299,8 @@ def main() -> int:
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "five workflows that can commit directly to public `main`",
-        "Canonical validation, release dry runs, repository audits, dashboard projection and Greasy Fork parity are now artifact-only",
+        "four workflows that can commit directly to public `main`",
+        "Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

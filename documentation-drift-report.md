@@ -2,13 +2,12 @@
 
 ✅ **Status:** PASSED
 
-- Toolkit version: **4.15.0**
-- Version state: **source-transition**
-- Features: **21**
+- Toolkit version: **5.0.7**
+- Version state: **current-production**
+- Features: **24**
 - Themes: **7**
 - Modes: **3**
 - Shortcuts: **7**
-- Public documentation surfaces checked: **3**
+- Public documentation surfaces checked: **4**
 
-## Warnings
-- Validated guarded source transition 4.15.0 is ahead of dashboard version 4.14.10.
+README, version-neutral hero artwork, GitHub Pages site data and the bundled Help Centre agree with the canonical release manifest and current Operational Window Suite architecture.

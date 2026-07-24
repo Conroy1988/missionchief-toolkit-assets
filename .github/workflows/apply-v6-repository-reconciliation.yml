@@ -77,6 +77,7 @@ jobs:
             .github/documentation-contract.json \
             .github/fixtures/settings-ui-contract.json \
             .github/fixtures/boot-lifecycle-contract.json \
+            .github/scripts/test_settings_ui_contract.py \
             dist/MissionChief_Map_Command_Toolkit.user.js \
             dist/MissionChief_Map_Command_Toolkit.txt \
             dist/SHA256SUMS.txt dist/release-manifest.json

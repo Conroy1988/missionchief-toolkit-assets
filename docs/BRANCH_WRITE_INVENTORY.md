@@ -9,7 +9,7 @@ Strict pull-request-only protection is **not yet safe to enable**.
 
 The repository has four workflows that can commit directly to public `main`. Two release orchestrators invoke the reusable production writer but contain no direct public-main push. The remaining writes are limited to fallback monitoring, stable update-manifest publication, release recovery and guarded production publication.
 
-Six workflows provide read-only immutable evidence: canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification.
+Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
 
 A separate read-only rehearsal workflow verifies the new `release-state` and `distribution` shadow branches. It does not add write authority and does not change live consumers.
 

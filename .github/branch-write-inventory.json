@@ -1,21 +1,9 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "66881414ba8fc542c8fed44fd501296d74b56b8e",
+  "reviewedMainCommit": "e51a44431c1769dcdab292f1d5f3b570b4c1f867",
   "strictProtectionEnabled": false,
   "directMainWriters": [
-    {
-      "workflow": ".github/workflows/release-recovery.yml",
-      "purpose": "Record controlled Greasy Fork, private-backup, Discord and dashboard recovery state.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        "status/release-dashboard.json",
-        "status/README.md",
-        ".github/greasyfork-version.txt"
-      ],
-      "migrationTarget": "release-state branch; release-object repair remains API-based"
-    },
     {
       "workflow": ".github/workflows/release-toolkit.yml",
       "purpose": "Publish stable distribution and record verified dashboard, update-manifest and announcement state atomically.",
@@ -129,7 +117,6 @@
     }
   ],
   "directMainPushSources": [
-    ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/scripts/sync_greasyfork_root_mirror.sh"
   ],
@@ -148,6 +135,25 @@
       "forcePushAllowed": false,
       "liveConsumerCutoverAllowed": false,
       "migrationState": "transitional fallback-tracker authority"
+    },
+    {
+      "workflow": ".github/workflows/release-recovery.yml",
+      "helper": ".github/scripts/release_recovery_state.py",
+      "branchHelper": ".github/scripts/release_state_branch.py",
+      "sourceAuthority": "verified GitHub Release bundle plus governed recovery inputs",
+      "target": "release-state",
+      "writes": [
+        "status/release-dashboard.json",
+        "status/README.md",
+        "status/update-manifest.json",
+        ".github/greasyfork-version.txt"
+      ],
+      "credential": "github.token",
+      "actor": "github-actions[bot]",
+      "mainMutationAllowed": false,
+      "forcePushAllowed": false,
+      "liveConsumerCutoverAllowed": false,
+      "migrationState": "operational recovery ledger authority"
     }
   ],
   "externalRepositoryMainPushSources": [

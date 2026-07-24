@@ -30,9 +30,8 @@ def main() -> int:
     script = SCRIPT.read_text(encoding="utf-8")
     workflow = WORKFLOW.read_text(encoding="utf-8")
 
-    if policy.get("schemaVersion") != 1:
-        raise AssertionError("Shadow branch policy schemaVersion must remain 1")
     for key, expected in {
+        "schemaVersion": 1,
         "mode": "shadow-rehearsal",
         "mainAuthorityPreserved": True,
         "liveConsumersEnabled": False,
@@ -41,30 +40,30 @@ def main() -> int:
         "cutoverIssue": 41,
     }.items():
         if policy.get(key) != expected:
-            raise AssertionError(f"Shadow branch policy {key}={policy.get(key)!r}, expected {expected!r}")
+            raise AssertionError(f"Operational policy {key}={policy.get(key)!r}, expected {expected!r}")
 
     branches = policy.get("branches") or {}
     if set(branches) != {"release-state", "distribution"}:
         raise AssertionError(f"Unexpected operational branches: {sorted(branches)}")
 
-    release_state = branches["release-state"]
-    if release_state.get("governedPaths") != [
+    state_paths = [
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
         ".github/greasyfork-version.txt",
-    ]:
+    ]
+    release_state = branches["release-state"]
+    if release_state.get("governedPaths") != state_paths:
         raise AssertionError("release-state governed paths changed")
-    if release_state.get("mirroredPaths") != [
-        "status/release-dashboard.json",
-        "status/README.md",
-        "status/update-manifest.json",
+    if release_state.get("mirroredPaths") != []:
+        raise AssertionError("release-state must have no mirror paths")
+    if release_state.get("operationalPaths") != state_paths:
+        raise AssertionError("release-state operational ledger changed")
+    if release_state.get("operationalWriters") != [
+        ".github/workflows/greasyfork-release-monitor.yml",
+        ".github/workflows/release-recovery.yml",
     ]:
-        raise AssertionError("release-state mirrored paths changed")
-    if release_state.get("operationalPaths") != [".github/greasyfork-version.txt"]:
-        raise AssertionError("release-state operational paths changed")
-    if release_state.get("operationalWriter") != ".github/workflows/greasyfork-release-monitor.yml":
-        raise AssertionError("release-state operational writer changed")
+        raise AssertionError("release-state operational writers changed")
     if release_state.get("externalConsumersEnabled") is not False:
         raise AssertionError("release-state external consumers must remain disabled")
 
@@ -81,8 +80,8 @@ def main() -> int:
         raise AssertionError("distribution governed paths changed")
     if distribution.get("mirroredPaths") != expected_distribution:
         raise AssertionError("distribution mirrored paths changed")
-    if distribution.get("operationalPaths") != []:
-        raise AssertionError("distribution cannot have operational paths before cutover")
+    if distribution.get("operationalPaths") != [] or distribution.get("operationalWriters") != []:
+        raise AssertionError("distribution cannot have operational authority before cutover")
     if distribution.get("externalConsumersEnabled") is not False:
         raise AssertionError("distribution external consumers must remain disabled")
 
@@ -90,19 +89,20 @@ def main() -> int:
         script,
         [
             "Mirrored paths must remain byte-identical",
-            "operational paths may differ",
+            "Operational",
             'POLICY_PATH = ROOT / ".github" / "shadow-branch-policy.json"',
-            '"release-state"',
-            '"distribution"',
-            '"mode": "shadow-rehearsal"',
-            '"liveConsumersEnabled": False',
-            '"strictProtectionEnabled": False',
-            '"administratorRecoveryRequired": True',
-            '"cutoverIssue": 41',
-            'operational != [".github/greasyfork-version.txt"]',
+            'writers = policy.get("operationalWriters")',
+            "release-state must keep all recovery-ledger paths operational",
+            "release-state operational writers changed",
             "validate_operational_content",
-            'SEMVER.fullmatch(value)',
-            '"schemaVersion": 2',
+            'path == "status/release-dashboard.json"',
+            'path == "status/README.md"',
+            'path == "status/update-manifest.json"',
+            'path == ".github/greasyfork-version.txt"',
+            "cross_validate_release_state",
+            "stable manifest is ahead of the recovery dashboard",
+            "announcement tracker is ahead of the recovery dashboard",
+            '"schemaVersion": 3',
             '"publicMainChanged": False',
             '"externalConsumersChanged": False',
             "Shadow branch parity self-tests passed.",
@@ -111,14 +111,7 @@ def main() -> int:
     )
     forbid(
         script,
-        [
-            "git push",
-            "git commit",
-            "git update-ref",
-            "gh api",
-            "DEVELOPMENT_PR_TOKEN",
-            "contents: write",
-        ],
+        ["git push", "git commit", "git update-ref", "gh api", "contents: write"],
         "Operational branch verifier",
     )
 
@@ -139,13 +132,7 @@ def main() -> int:
     )
     forbid(
         workflow,
-        [
-            "contents: write",
-            "git push",
-            "git commit",
-            "github-actions[bot]",
-            "DEVELOPMENT_PR_TOKEN",
-        ],
+        ["contents: write", "git push", "git commit", "github-actions[bot]", "DEVELOPMENT_PR_TOKEN"],
         "Operational branch verification workflow",
     )
 
@@ -154,8 +141,8 @@ def main() -> int:
         raise AssertionError("Operational branch verifier self-tests failed")
 
     print(
-        "Operational branch governance passed: mirrored paths remain equal, "
-        "the fallback tracker has a reviewed schema, and no external cutover is enabled."
+        "Operational branch governance passed: complete release-state ledger schemas, "
+        "cross-file version ordering, distribution mirrors and no external cutover."
     )
     return 0
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contracts for the transitional Greasy Fork fallback tracker on release-state."""
+"""Contracts for the Greasy Fork fallback tracker on release-state."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "greasyfork-release-monitor.yml"
 HELPER = ROOT / ".github" / "scripts" / "release_state_branch.py"
 INVENTORY = ROOT / ".github" / "branch-write-inventory.json"
-POLICY = ROOT / ".github" / "actions-security-policy.json"
+SECURITY = ROOT / ".github" / "actions-security-policy.json"
 ROLE_POLICY = ROOT / ".github" / "shadow-branch-policy.json"
 DOCUMENT = ROOT / "docs" / "BRANCH_WRITE_INVENTORY.md"
 
@@ -32,14 +32,14 @@ def main() -> int:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     helper = HELPER.read_text(encoding="utf-8")
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
-    policy = json.loads(POLICY.read_text(encoding="utf-8"))
+    security = json.loads(SECURITY.read_text(encoding="utf-8"))
     role_policy = json.loads(ROLE_POLICY.read_text(encoding="utf-8"))
     document = DOCUMENT.read_text(encoding="utf-8")
 
-    entries = inventory.get("releaseStateBranchWriters") or []
-    if len(entries) != 1:
-        raise AssertionError(f"Expected one release-state branch writer, found {len(entries)}")
-    entry = entries[0]
+    entries = {
+        entry["workflow"]: entry
+        for entry in (inventory.get("releaseStateBranchWriters") or [])
+    }
     expected = {
         "workflow": ".github/workflows/greasyfork-release-monitor.yml",
         "helper": ".github/scripts/release_state_branch.py",
@@ -53,17 +53,25 @@ def main() -> int:
         "liveConsumerCutoverAllowed": False,
         "migrationState": "transitional fallback-tracker authority",
     }
-    if entry != expected:
+    if entries.get(expected["workflow"]) != expected:
         raise AssertionError("Fallback-monitor release-state inventory changed")
+    if set(entries) != {
+        ".github/workflows/greasyfork-release-monitor.yml",
+        ".github/workflows/release-recovery.yml",
+    }:
+        raise AssertionError("Release-state writer set changed")
 
-    permissions = policy.get("allowedWritePermissions") or {}
-    if permissions.get(entry["workflow"]) != ["contents"]:
+    permissions = security.get("allowedWritePermissions") or {}
+    if permissions.get(expected["workflow"]) != ["contents"]:
         raise AssertionError("Fallback monitor contents-write permission changed")
 
     release_state = (role_policy.get("branches") or {}).get("release-state") or {}
     governed = set(release_state.get("governedPaths") or [])
-    if ".github/greasyfork-version.txt" not in governed:
-        raise AssertionError("Release-state policy no longer governs the fallback tracker")
+    operational = set(release_state.get("operationalPaths") or [])
+    if ".github/greasyfork-version.txt" not in governed or governed != operational:
+        raise AssertionError("Release-state policy no longer governs the fallback tracker operationally")
+    if expected["workflow"] not in (release_state.get("operationalWriters") or []):
+        raise AssertionError("Fallback monitor is no longer an approved release-state writer")
 
     require(
         workflow,
@@ -134,10 +142,11 @@ def main() -> int:
     )
 
     for marker in [
-        "fallback announcement tracker is now written only to `release-state`",
+        "fallback announcement tracker",
         "release_state_branch.py",
         "greasyfork-release-monitor.yml",
-        "two workflows that can commit directly to public `main`",
+        "one workflow that can commit directly to public `main`",
+        "two workflows write governed operational state to `release-state`",
     ]:
         if marker not in document:
             raise AssertionError(f"Human inventory is missing monitor migration marker: {marker}")
@@ -147,8 +156,8 @@ def main() -> int:
         raise AssertionError("Release-state branch helper self-tests failed")
 
     print(
-        "Fallback monitor release-state contract passed: main dashboard authority, "
-        "single governed tracker path, no main mutation and normal non-force branch push."
+        "Fallback monitor release-state contract passed: main compatibility dashboard authority, "
+        "tracker-only monitor write, no main mutation and shared recovery-ledger branch control."
     )
     return 0
 

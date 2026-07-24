@@ -6,9 +6,16 @@ on:
       - ".github/scripts/download_verified_release_bundle.sh"
       - ".github/scripts/backup_release_to_private_repo.sh"
       - ".github/scripts/prepare_rollback_candidate.py"
+      - ".github/scripts/release_recovery_state.py"
+      - ".github/scripts/release_state_branch.py"
+      - ".github/scripts/test_release_recovery_state_pipeline.py"
+      - ".github/branch-write-inventory.json"
+      - ".github/shadow-branch-policy.json"
       - ".github/workflows/release-recovery.yml"
       - ".github/workflows/prepare-release-rollback.yml"
       - ".github/workflows/release-recovery-validation.yml"
+      - "docs/BRANCH_PROTECTION_MIGRATION.md"
+      - "docs/BRANCH_WRITE_INVENTORY.md"
       - "docs/RELEASE_RECOVERY.md"
   workflow_dispatch:
 
@@ -28,35 +35,35 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
 
-      - name: Validate shell syntax
+      - name: Validate script syntax
         run: |
           bash -n .github/scripts/download_verified_release_bundle.sh
           bash -n .github/scripts/backup_release_to_private_repo.sh
+          python3 -m py_compile .github/scripts/prepare_rollback_candidate.py
+          python3 -m py_compile .github/scripts/release_state_branch.py
+          python3 -m py_compile .github/scripts/release_recovery_state.py
+          python3 -m py_compile .github/scripts/test_release_recovery_state_pipeline.py
 
-      - name: Run rollback generator self-tests
-        run: python3 .github/scripts/prepare_rollback_candidate.py --self-test
+      - name: Run recovery helper self-tests
+        run: |
+          python3 .github/scripts/prepare_rollback_candidate.py --self-test
+          python3 .github/scripts/release_state_branch.py --self-test
+          python3 .github/scripts/release_recovery_state.py --self-test
 
-      - name: Parse direct recovery workflow YAML
+      - name: Run release-state recovery contract
+        run: python3 .github/scripts/test_release_recovery_state_pipeline.py
+
+      - name: Parse recovery workflow YAML
         shell: ruby {0}
         run: |
           require "yaml"
           YAML.parse_file(".github/workflows/release-recovery.yml")
-          puts "Parsed direct recovery workflow"
-
-      - name: Parse rollback workflow YAML
-        shell: ruby {0}
-        run: |
-          require "yaml"
           YAML.parse_file(".github/workflows/prepare-release-rollback.yml")
-          puts "Parsed rollback workflow"
-
-      - name: Parse validator workflow YAML
-        shell: ruby {0}
-        run: |
-          require "yaml"
           YAML.parse_file(".github/workflows/release-recovery-validation.yml")
-          puts "Parsed recovery validator workflow"
+          puts "Parsed recovery workflows"
 
       - name: Validate documented confirmation phrases
         shell: bash
@@ -82,9 +89,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          MAIN_BRANCH='main'
+          PROHIBITED_PUSH="git push origin HEAD:${MAIN_BRANCH}"
+          PROHIBITED_PULL="git pull --rebase origin ${MAIN_BRANCH}"
           grep -Fq 'group: toolkit-production-release' .github/workflows/release-recovery.yml
-          grep -Fq 'Discord retry is marked pending' .github/workflows/release-recovery.yml
+          grep -Fq 'Check out latest main authority' .github/workflows/release-recovery.yml
+          grep -Fq 'persist-credentials: false' .github/workflows/release-recovery.yml
+          grep -Fq 'Prepare governed release-state worktree' .github/workflows/release-recovery.yml
+          grep -Fq 'Claim Discord retry on release-state without posting' .github/workflows/release-recovery.yml
           grep -Fq 'latest GitHub Release' .github/workflows/release-recovery.yml
+          grep -Fq 'Public main changed: no' .github/workflows/release-recovery.yml
+          ! grep -Fq "$PROHIBITED_PUSH" .github/workflows/release-recovery.yml
+          ! grep -Fq "$PROHIBITED_PULL" .github/workflows/release-recovery.yml
           grep -Fq 'This PR does **not** publish a GitHub Release.' .github/workflows/prepare-release-rollback.yml
           grep -Fq 'ALLOW_EXISTING_IDENTICAL' .github/scripts/backup_release_to_private_repo.sh
-          echo "Recovery safety invariants are present."
+          echo "Release-state recovery safety invariants are present."

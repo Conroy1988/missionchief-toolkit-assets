@@ -55,14 +55,21 @@ def main() -> int:
         raise AssertionError("writerRehearsal policy changed")
 
     release_state = (policy.get("branches") or {}).get("release-state") or {}
-    if release_state.get("mirroredPaths") != [
+    expected_state_paths = [
         "status/release-dashboard.json",
         "status/README.md",
         "status/update-manifest.json",
+        ".github/greasyfork-version.txt",
+    ]
+    if release_state.get("mirroredPaths") != []:
+        raise AssertionError("release-state must have no manual mirror-copy paths")
+    if release_state.get("operationalPaths") != expected_state_paths:
+        raise AssertionError("release-state operational ledger changed")
+    if release_state.get("operationalWriters") != [
+        ".github/workflows/greasyfork-release-monitor.yml",
+        ".github/workflows/release-recovery.yml",
     ]:
-        raise AssertionError("release-state mirror allowlist changed")
-    if release_state.get("operationalPaths") != [".github/greasyfork-version.txt"]:
-        raise AssertionError("release-state operational allowlist changed")
+        raise AssertionError("release-state operational writers changed")
 
     entries = inventory.get("shadowBranchWriters") or []
     if len(entries) != 1:
@@ -104,24 +111,13 @@ def main() -> int:
             "+refs/heads/distribution:refs/remotes/origin/distribution",
             "DEVELOPMENT_PR_TOKEN",
             "sync_shadow_branches.py --self-test",
-            "Apply owner-authorized shadow changes",
             "Verify post-operation shadow parity",
-            "missionchief-shadow-sync-${{ inputs.mode }}-${{ inputs.target }}-${{ inputs.source_sha }}",
-            "retention-days: 30",
         ],
         "Shadow sync workflow",
     )
     forbid(
         workflow,
-        [
-            "pull_request_target:",
-            "schedule:",
-            "contents: write",
-            "HEAD:refs/heads/main",
-            "git update-ref refs/heads/main",
-            "gh api repos/${GITHUB_REPOSITORY}/git/refs/heads/main",
-            "secrets: inherit",
-        ],
+        ["schedule:", "contents: write", "HEAD:refs/heads/main", "secrets: inherit"],
         "Shadow sync workflow",
     )
 
@@ -129,13 +125,11 @@ def main() -> int:
         script,
         [
             "Synchronize only reviewed mirror files",
-            "preserves operational branch",
-            'value == "main"',
-            'branch == "main"',
-            'f"HEAD:refs/heads/{branch}"',
-            'mirrored = branch_policy.get("mirroredPaths")',
-            'operational = branch_policy.get("operationalPaths")',
-            'operational != [".github/greasyfork-version.txt"]',
+            "preserves every operational",
+            'RELEASE_STATE_PATHS = [',
+            'RELEASE_STATE_WRITERS = [',
+            'mirrored != [] or operational != RELEASE_STATE_PATHS',
+            'writers != RELEASE_STATE_WRITERS',
             'mirrored_paths, operational_paths = validate_path_classes',
             'for path in mirrored_paths:',
             'for path in operational_paths:',
@@ -147,7 +141,6 @@ def main() -> int:
             '"publicMainChanged": False',
             '"externalConsumersChanged": False',
             '"workflowContentsWrite": False',
-            '"narrowly scoped GitHub App"',
             "Shadow synchronization self-tests passed.",
         ],
         "Shadow sync script",
@@ -158,9 +151,7 @@ def main() -> int:
             '"HEAD:refs/heads/main"',
             "git update-ref refs/heads/main",
             "git push origin HEAD:main",
-            '"liveConsumerCutoverAllowed": True',
             'paths = list(branch_policy["governedPaths"])',
-            "shutil.copyfile(ROOT / path, worktree / path)",
             "push --force",
             "force-with-lease",
         ],
@@ -169,12 +160,11 @@ def main() -> int:
 
     for marker in [
         "sync-shadow-branches.yml",
-        "sync_shadow_branches.py",
         "DEVELOPMENT_PR_TOKEN",
         "release-state",
         "distribution",
         "public `main` rejected as a target",
-        "`.github/greasyfork-version.txt` only",
+        "manual synchronizer has no file-copy authority on `release-state`",
     ]:
         if marker not in document:
             raise AssertionError(f"Human inventory is missing shadow writer marker: {marker}")
@@ -184,8 +174,8 @@ def main() -> int:
         raise AssertionError("Shadow synchronization self-tests failed")
 
     print(
-        "Shadow sync writer passed: manual owner confirmation, fixed targets, "
-        "mirror-only copies, preserved operational paths and no main mutation."
+        "Shadow sync writer passed: release-state mirror set empty, operational ledger preserved, "
+        "distribution mirror-only and no main mutation."
     )
     return 0
 

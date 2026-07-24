@@ -6,6 +6,7 @@ on:
       - .github/workflows/apply-development-package.yml
       - .github/workflows/validate-development-package-workflow.yml
       - .github/scripts/test_development_package_workflow.py
+      - .github/actions-security-policy.json
       - docs/DEVELOPMENT_PACKAGE_WORKFLOW.md
   workflow_dispatch:
 

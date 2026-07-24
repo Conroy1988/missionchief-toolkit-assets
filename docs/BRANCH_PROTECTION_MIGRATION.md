@@ -1,6 +1,6 @@
 # Branch Protection Migration Plan
 
-Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, release state, update manifests, monitoring and recovery still mutate public `main`.
+Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, release state, the update manifest, fallback monitoring and recovery still mutate public `main`.
 
 The migration is tracked by Issue #41. Authority is maintained in:
 
@@ -8,7 +8,8 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `.github/branch-write-inventory.json`;
 - `.github/scripts/test_branch_write_inventory.py`;
 - `.github/scripts/test_validation_candidate_pipeline.py`;
-- `.github/scripts/test_greasyfork_parity_pipeline.py`.
+- `.github/scripts/test_greasyfork_parity_pipeline.py`;
+- `.github/scripts/test_release_announcement_state_pipeline.py`.
 
 ## Current safe controls
 
@@ -18,69 +19,55 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - immutable Action pins and permission auditing;
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production and recovery confirmation phrases;
-- exact commit/ref/hash validation evidence for automatic releases;
-- deterministic dashboard JSON/Markdown projection checks;
-- GitHub-authoritative Greasy Fork parity evidence with no automatic import path.
+- exact commit/ref/hash validation evidence;
+- deterministic dashboard projection and Greasy Fork parity evidence;
+- atomic primary release dashboard and announcement-tracker state.
 
-## Stage 1 — write-path inventory ✅
+## Completed migration stages
 
-The 24 July 2026 baseline identified 10 direct public-main writers, two release orchestrators, two owner-token review-branch writers and one private-repository backup writer. Every `contents: write` workflow and executable main-ref mutation is classified and fail-closed in CI.
+### Write-path inventory ✅
 
-## Stage 2 — validation and generated-evidence separation ✅
+The 24 July 2026 baseline identified 10 direct public-main writers. Every `contents: write` workflow and executable main-ref mutation is now classified and fail-closed in CI.
 
-### Release dry runs ✅
+### Artifact-only validation and evidence ✅
 
-Release dry runs are read-only and artifact-only. They validate and package a candidate, retain deterministic JSON/Markdown evidence for 30 days and explicitly prove that no release or branch channel changed.
+The following workflows now have read-only repository access and retain immutable evidence instead of committing generated state:
 
-### Repository and dependency audits ✅
+- canonical userscript validation;
+- release dry runs;
+- repository/dependency audits;
+- release dashboard projection;
+- Greasy Fork canonical parity;
+- release announcement-state verification.
 
-Repository audits are read-only and artifact-only. They retain commit-scoped JSON/Markdown evidence for 90 days and never rewrite production release state.
+### Greasy Fork authority ✅
 
-### Canonical validation candidates ✅
+Automatic source importing is retired. GitHub is authoritative. Live Greasy Fork parity is checked on source changes and daily; canonical-ahead is accepted during publication, while live-ahead or equal-version content drift fails for owner review.
 
-Canonical validation no longer commits `dist/` or transient dashboard candidate fields.
+### Atomic primary announcement state ✅
 
-The workflow has read-only contents permission, checks out without persisted credentials, validates exact source/ref/version/hash evidence, and uploads `missionchief-toolkit-validation-candidate-<commit>`. Automatic release consumes the exact successful-run artifact and rejects stale commits. The owner release command performs a fresh validation of current `main`.
+Normal production releases no longer require a follow-up reconciliation commit.
 
-Stable public `dist/` paths remain current because `release-toolkit.yml` publishes `dist/` and the two root Greasy Fork mirrors together after readiness passes and production release begins.
+After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
 
-### Dashboard projection ✅
+- `status/release-dashboard.json`;
+- `status/README.md`;
+- `.github/greasyfork-version.txt`.
 
-The standalone dashboard refresher no longer commits `status/README.md`.
+`reconcile-release-announcement-state.yml` is now read-only. It verifies the dashboard/tracker invariant and retains evidence without attempting a repair.
 
-Production release and recovery generate `status/README.md` in the same commit as `status/release-dashboard.json`. `update-release-dashboard.yml` now validates the JSON, renders to a temporary path with `--check`, compares Markdown byte-for-byte, retains evidence for 30 days and never writes.
-
-### Greasy Fork canonical parity ✅
-
-The legacy source importer is retired. GitHub remains authoritative.
-
-`import-canonical-userscript.yml` now:
-
-- has `contents: read` only;
-- runs daily, manually and when its policy changes;
-- checks out without persisted credentials;
-- downloads the live Greasy Fork userscript without copying it into canonical source;
-- validates metadata, semantic version, bytes, lines and SHA-256;
-- reports `in-sync`, `canonical-ahead`, `live-ahead` or `equal-version-content-mismatch`;
-- accepts `canonical-ahead` as an expected pre-publication state;
-- fails closed when Greasy Fork is ahead or equal-version content differs;
-- retains the live distribution, JSON/Markdown report and log for 30 days;
-- never changes source, `status/source-baseline.json`, a branch or a pull request.
-
-`status/source-baseline.json` is an immutable historical v4.11.2 bootstrap record and explicitly identifies `src/MissionChief_Map_Command_Toolkit.user.js` as current authority.
-
-Direct public-main writers are reduced from **10 to 5**.
+Direct public-main writers are reduced from **10 to 4**.
 
 ## Remaining generated state
 
-The protected branch still mixes:
+Public `main` still contains:
 
-1. canonical userscript source and policy;
-2. stable distribution and root Greasy Fork mirrors;
-3. release dashboard and announcement state;
-4. stable update-manifest state.
+1. stable `dist/` and root Greasy Fork mirrors;
+2. verified release dashboard and recovery state;
+3. stable update-manifest state;
+4. fallback announcement-monitor state.
 
-The remaining writers cannot be disabled until those data classes are moved and every release/recovery path is rehearsed.
+These responsibilities must move before strict protection is safe.
 
 ## Target architecture
 
@@ -90,15 +77,15 @@ Reviewed source, workflows, tests, policy, documentation and stable configuratio
 
 ### Distribution branch
 
-Stable `dist/` and root userscript mirrors required by Greasy Fork, written only by a narrowly scoped release GitHub App.
+Stable `dist/` and root userscript mirrors required by Greasy Fork, written by a narrowly scoped release GitHub App.
 
 ### Release-state branch
 
-Mutable dashboard, announcement, manifest and recovery state. It is operational evidence, never a competing source for product code.
+Mutable dashboard, announcement, manifest, fallback-monitor and recovery state. It is operational evidence, never product source.
 
 ### Immutable evidence
 
-Validation candidates, parity audits, dashboard projections, release bundles, checksums, audits, dry runs, changelog extracts and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, parity audits, announcement checks, dashboard projections, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
 
 ## Access and speed requirements
 
@@ -107,22 +94,22 @@ The final protection design must retain fast owner operation:
 - `Conroy1988` remains repository administrator and recovery authority;
 - normal changes use owner-created branches and fast parallel CI;
 - no mandatory external reviewer is introduced;
-- admin bypass, where configured, is limited to pull-request operation rather than routine direct pushes;
-- auto-merge should be enabled after the workflow and settings rehearsal;
-- distribution and release-state branches retain explicit administrator recovery access;
-- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are all proven;
-- `Verify release-dashboard projection` is designated as a required status check when the ledger, renderer or projection workflow changes;
-- `Verify Greasy Fork Canonical Parity` is designated as a required status check when parity policy or the retired-importer workflow changes.
+- administrator bypass is PR-only rather than routine direct push;
+- auto-merge is enabled after rehearsal;
+- distribution and release-state branches retain administrator recovery access;
+- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are proven;
+- dashboard projection, Greasy Fork parity and announcement-state verification become required checks only for their relevant paths.
 
 ## Remaining migration stages
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
-2. ✅ Separate validation, dry-run, audit, dashboard-projection and Greasy Fork parity evidence from public `main`.
-3. Move dashboard, announcement and manifest state to a release-state branch or immutable assets.
-4. Move stable `dist/` and Greasy Fork mirrors to a distribution branch.
-5. Introduce a narrowly scoped GitHub App identity.
-6. Remove unnecessary `contents: write` from orchestration-only workflows.
-7. Rehearse without public-main mutation:
+2. ✅ Separate validation, audit and verification evidence from public `main`.
+3. ✅ Make primary dashboard and announcement state atomic; retire the reconciliation writer.
+4. Move dashboard, manifest, fallback-monitor and recovery state to a release-state branch.
+5. Move stable `dist/` and Greasy Fork mirrors to a distribution branch.
+6. Introduce a narrowly scoped GitHub App identity.
+7. Remove unnecessary `contents: write` from orchestration-only workflows.
+8. Rehearse without public-main mutation:
    - normal Release Readiness;
    - full production publication;
    - Greasy Fork-only retry;
@@ -131,15 +118,15 @@ The final protection design must retain fast owner operation:
    - dashboard reconstruction;
    - stable release-asset repair;
    - emergency rollback-candidate preparation.
-8. Rehearse owner/admin access:
+9. Rehearse owner/admin access:
    - create and update an owner branch;
    - open and update a pull request;
    - auto-merge after green checks;
    - use PR-only administrator bypass where required;
    - repair distribution and release-state branches;
    - disable or amend the ruleset.
-9. Require pull requests, approved checks, current branches and resolved conversations.
-10. Block routine direct human pushes and enable strict protection only after complete rehearsal.
+10. Require pull requests, approved checks, current branches and resolved conversations.
+11. Block routine direct human pushes and enable strict protection only after complete rehearsal.
 
 ## Exit criteria
 

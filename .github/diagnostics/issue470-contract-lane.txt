@@ -1,0 +1,50 @@
+Issue #470 deterministic contract-lane diagnostic
+exit=1
+
+=== STDOUT ===
+[preflight] Verify JavaScript syntax
+[preflight] Verify distribution parity
+[preflight] Run test_financial_ledger_contract.py
+Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.
+[preflight] Run test_financial_overview_contract.py
+Financial overview contract fixtures passed.
+[preflight] Run test_financial_discord_image_layout_contract.py
+Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.
+[preflight] Run test_mission_marker_ingestion_contract.py
+Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.
+[preflight] Run test_boot_lifecycle_contract.py
+
+=== STDERR ===
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: Missing runBootAttempt timer
+    at target.runNamedTimer (/tmp/mcms-boot-lifecycle-q5xg_0fm/boot-lifecycle-contract.js:413:16)
+    at testBootAttemptCoordinatorDirectly (/tmp/mcms-boot-lifecycle-q5xg_0fm/boot-lifecycle-contract.js:487:61)
+    at Object.<anonymous> (/tmp/mcms-boot-lifecycle-q5xg_0fm/boot-lifecycle-contract.js:613:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 640, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 635, in main
+    subprocess.run(["node", str(harness_path)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/mcms-boot-lifecycle-q5xg_0fm/boot-lifecycle-contract.js']' returned non-zero exit status 1.

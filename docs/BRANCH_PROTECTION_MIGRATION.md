@@ -7,7 +7,8 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `docs/BRANCH_WRITE_INVENTORY.md`;
 - `.github/branch-write-inventory.json`;
 - `.github/scripts/test_branch_write_inventory.py`;
-- `.github/scripts/test_validation_candidate_pipeline.py`.
+- `.github/scripts/test_validation_candidate_pipeline.py`;
+- `.github/scripts/test_greasyfork_parity_pipeline.py`.
 
 ## Current safe controls
 
@@ -18,7 +19,8 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production and recovery confirmation phrases;
 - exact commit/ref/hash validation evidence for automatic releases;
-- deterministic dashboard JSON/Markdown projection checks.
+- deterministic dashboard JSON/Markdown projection checks;
+- GitHub-authoritative Greasy Fork parity evidence with no automatic import path.
 
 ## Stage 1 — write-path inventory ✅
 
@@ -38,16 +40,7 @@ Repository audits are read-only and artifact-only. They retain commit-scoped JSO
 
 Canonical validation no longer commits `dist/` or transient dashboard candidate fields.
 
-The workflow:
-
-- has `contents: read` only;
-- checks out without persisted credentials;
-- validates canonical source, documentation, JavaScript syntax and distribution parity;
-- writes exact commit/ref/version/SHA-256 evidence;
-- uploads `missionchief-toolkit-validation-candidate-<commit>` for 14 days;
-- proves that public `main` and the release dashboard were not changed.
-
-Automatic release downloads the artifact from the exact triggering workflow run, verifies all hashes and paths, rejects a stale commit when `main` has advanced, and checks the GitHub Release tag directly. The owner release command performs a fresh validation of current `main`.
+The workflow has read-only contents permission, checks out without persisted credentials, validates exact source/ref/version/hash evidence, and uploads `missionchief-toolkit-validation-candidate-<commit>`. Automatic release consumes the exact successful-run artifact and rejects stale commits. The owner release command performs a fresh validation of current `main`.
 
 Stable public `dist/` paths remain current because `release-toolkit.yml` publishes `dist/` and the two root Greasy Fork mirrors together after readiness passes and production release begins.
 
@@ -55,20 +48,28 @@ Stable public `dist/` paths remain current because `release-toolkit.yml` publish
 
 The standalone dashboard refresher no longer commits `status/README.md`.
 
-Production release and recovery already generate `status/README.md` in the same commit as `status/release-dashboard.json`. The former follow-up writer duplicated that work and created an unnecessary additional commit.
+Production release and recovery generate `status/README.md` in the same commit as `status/release-dashboard.json`. `update-release-dashboard.yml` now validates the JSON, renders to a temporary path with `--check`, compares Markdown byte-for-byte, retains evidence for 30 days and never writes.
 
-`update-release-dashboard.yml` now:
+### Greasy Fork canonical parity ✅
+
+The legacy source importer is retired. GitHub remains authoritative.
+
+`import-canonical-userscript.yml` now:
 
 - has `contents: read` only;
-- checks out the exact event state with persisted credentials disabled;
-- validates the JSON ledger;
-- renders the dashboard to `dashboard-projection/status-README.md` using `--check`;
-- fails when ledger sanitation would change committed JSON;
-- compares the generated Markdown byte-for-byte with `status/README.md`;
-- uploads the projection, diff and log for 30 days;
-- never commits, pushes or changes release state.
+- runs daily, manually and when its policy changes;
+- checks out without persisted credentials;
+- downloads the live Greasy Fork userscript without copying it into canonical source;
+- validates metadata, semantic version, bytes, lines and SHA-256;
+- reports `in-sync`, `canonical-ahead`, `live-ahead` or `equal-version-content-mismatch`;
+- accepts `canonical-ahead` as an expected pre-publication state;
+- fails closed when Greasy Fork is ahead or equal-version content differs;
+- retains the live distribution, JSON/Markdown report and log for 30 days;
+- never changes source, `status/source-baseline.json`, a branch or a pull request.
 
-Direct public-main writers are reduced from **10 to 6**.
+`status/source-baseline.json` is an immutable historical v4.11.2 bootstrap record and explicitly identifies `src/MissionChief_Map_Command_Toolkit.user.js` as current authority.
+
+Direct public-main writers are reduced from **10 to 5**.
 
 ## Remaining generated state
 
@@ -97,7 +98,7 @@ Mutable dashboard, announcement, manifest and recovery state. It is operational 
 
 ### Immutable evidence
 
-Validation candidates, dashboard projections, release bundles, checksums, audits, dry runs, changelog extracts and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, parity audits, dashboard projections, release bundles, checksums, audits, dry runs, changelog extracts and handovers remain GitHub Release assets or Actions artifacts.
 
 ## Access and speed requirements
 
@@ -109,13 +110,14 @@ The final protection design must retain fast owner operation:
 - admin bypass, where configured, is limited to pull-request operation rather than routine direct pushes;
 - auto-merge should be enabled after the workflow and settings rehearsal;
 - distribution and release-state branches retain explicit administrator recovery access;
-- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are all proven.
-- `Verify release-dashboard projection` is designated as a future required status check whenever the ledger, renderer or projection workflow changes.
+- strict enforcement is not enabled until branch creation, PR update, merge, release, recovery and ruleset rollback access are all proven;
+- `Verify release-dashboard projection` is designated as a required status check when the ledger, renderer or projection workflow changes;
+- `Verify Greasy Fork Canonical Parity` is designated as a required status check when parity policy or the retired-importer workflow changes.
 
 ## Remaining migration stages
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
-2. ✅ Separate validation, dry-run, audit and dashboard-projection evidence from public `main`.
+2. ✅ Separate validation, dry-run, audit, dashboard-projection and Greasy Fork parity evidence from public `main`.
 3. Move dashboard, announcement and manifest state to a release-state branch or immutable assets.
 4. Move stable `dist/` and Greasy Fork mirrors to a distribution branch.
 5. Introduce a narrowly scoped GitHub App identity.
@@ -137,7 +139,7 @@ The final protection design must retain fast owner operation:
    - repair distribution and release-state branches;
    - disable or amend the ruleset.
 9. Require pull requests, approved checks, current branches and resolved conversations.
-10. Block direct human pushes and enable strict protection only after complete rehearsal.
+10. Block routine direct human pushes and enable strict protection only after complete rehearsal.
 
 ## Exit criteria
 

@@ -158,6 +158,15 @@ That URL remains valid until a later versioned Toolkit release migrates the runt
 9. Dashboard, Greasy Fork, announcement and update-manifest workflows verify only.
 10. Fallback and recovery operations write their governed ledger to `release-state` only.
 
+## Indirect release orchestrators
+
+| Workflow | Delegated writer | Role |
+|---|---|---|
+| `auto-release-after-validation.yml` | `release-toolkit.yml` | Consumes exact successful validation evidence and invokes the guarded production writer. |
+| `owner-release-command.yml` | `release-toolkit.yml` | Performs owner authorization, fresh validation and guarded release invocation. |
+
+Neither orchestrator contains a direct public-main push. Their `contents: write` authority remains transitional because the reusable production workflow still writes public compatibility state and stable distribution.
+
 ## Other non-public-main writers
 
 | Automation | Target | Credential | Protection posture |

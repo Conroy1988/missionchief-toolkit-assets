@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -21,34 +21,13 @@
     "iOS Mobile"
   ],
   "shortcuts": [
-    {
-      "key": "1",
-      "action": "Toggle My Missions"
-    },
-    {
-      "key": "2",
-      "action": "Toggle Alliance Missions"
-    },
-    {
-      "key": "3",
-      "action": "Toggle Vehicles"
-    },
-    {
-      "key": "4",
-      "action": "Toggle My Buildings"
-    },
-    {
-      "key": "5",
-      "action": "Toggle Alliance Credits"
-    },
-    {
-      "key": "6",
-      "action": "Toggle Mission Age"
-    },
-    {
-      "key": "V",
-      "action": "Open or close Vehicle Code Status"
-    }
+    { "key": "1", "action": "Toggle My Missions" },
+    { "key": "2", "action": "Toggle Alliance Missions" },
+    { "key": "3", "action": "Toggle Vehicles" },
+    { "key": "4", "action": "Toggle My Buildings" },
+    { "key": "5", "action": "Toggle Alliance Credits" },
+    { "key": "6", "action": "Toggle Mission Age" },
+    { "key": "V", "action": "Open or close Vehicle Code Status" }
   ],
   "requiredSourceTokens": [
     "Mission Age Watch",
@@ -79,7 +58,10 @@
   "requiredFeatureNames": [
     "Mission Age Watch",
     "Mission Value",
-    "Mission Requirements",
+    "Enhanced Operational Requirements",
+    "Extended Call Window",
+    "Extended Mission List",
+    "Enhanced Transport Requests",
     "Patient Transport Sweep",
     "Resource Gap",
     "Auto-load all vehicles",
@@ -94,34 +76,54 @@
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
+      "Operational Window Suite",
+      "Enhanced Operational Requirements",
+      "Extended Call Window",
+      "Extended Mission List",
+      "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Mission Value",
-      "Mission Requirements",
       "Resource Gap",
       "Economy Mode",
       "saved Discord webhook",
-      "seven interface systems"
+      "seven complete interface systems"
+    ],
+    "readmeForbiddenTokens": [
+      "Mission Requirements Matrix",
+      "Current verified release: `v4.20.33`"
     ],
     "helpRequiredTokens": [
-      "Mission Requirements",
+      "Operational Window Suite",
+      "Enhanced Operational Requirements",
+      "Extended Call Window",
+      "Extended Mission List",
+      "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Hyrule Command",
       "LSSM",
       "saved Discord webhook",
-      "seven interface systems"
+      "seven interfaces"
     ],
     "helpForbiddenTokens": [
+      "Mission Requirements Matrix",
+      "live Mission Requirements matrix",
       "v4.2.1",
       "six interface themes",
       "all six themes"
     ],
     "greasyForkRequiredTokens": [
+      "Operational Window Suite",
+      "Enhanced Operational Requirements",
+      "Extended Call Window",
+      "Extended Mission List",
+      "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Mission Value",
-      "Mission Requirements",
       "saved Discord webhook"
     ],
     "greasyForkForbiddenTokens": [
+      "Mission Requirements Matrix",
+      "live Mission Requirements",
       "Exported Toolkit settings do not include the Discord webhook"
     ]
   }

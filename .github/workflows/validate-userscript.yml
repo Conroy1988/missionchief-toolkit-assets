@@ -5,7 +5,15 @@ on:
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - "CHANGELOG.md"
+      - "README.md"
+      - "docs/site-data.json"
+      - "docs/media/readme-hero.svg"
+      - "help/index.html"
+      - "documentation-drift-report.json"
+      - "documentation-drift-report.md"
+      - "dist/release-manifest.json"
       - ".github/scripts/validate_userscript.py"
+      - ".github/scripts/test_documentation_consistency.py"
       - ".github/scripts/reconcile_validation_dashboard.py"
       - ".github/scripts/test_version_status_contract.py"
       - ".github/workflows/publish-update-manifest.yml"
@@ -19,7 +27,15 @@ on:
     paths:
       - "src/MissionChief_Map_Command_Toolkit.user.js"
       - "CHANGELOG.md"
+      - "README.md"
+      - "docs/site-data.json"
+      - "docs/media/readme-hero.svg"
+      - "help/index.html"
+      - "documentation-drift-report.json"
+      - "documentation-drift-report.md"
+      - "dist/release-manifest.json"
       - ".github/scripts/validate_userscript.py"
+      - ".github/scripts/test_documentation_consistency.py"
       - ".github/scripts/reconcile_validation_dashboard.py"
       - ".github/scripts/test_version_status_contract.py"
       - ".github/workflows/publish-update-manifest.yml"
@@ -76,6 +92,9 @@ jobs:
         run: |
           echo "Userscript validation failed. See the diagnostics artifact."
           exit 1
+
+      - name: Validate documentation consistency
+        run: python3 .github/scripts/test_documentation_consistency.py
 
       - name: Check JavaScript syntax
         run: node --check src/MissionChief_Map_Command_Toolkit.user.js

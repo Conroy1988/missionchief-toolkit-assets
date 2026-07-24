@@ -40,11 +40,6 @@
     ".github/workflows/pages-production-monitor.yml": [
       "issues"
     ],
-    ".github/workflows/prepare-release-rollback.yml": [
-      "contents",
-      "issues",
-      "pull-requests"
-    ],
     ".github/workflows/publish-update-manifest.yml": [
       "contents"
     ],

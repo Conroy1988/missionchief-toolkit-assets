@@ -11,7 +11,7 @@ The repository has four workflows that can commit directly to public `main`. Two
 
 Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
 
-A separate read-only rehearsal workflow verifies the new `release-state` and `distribution` shadow branches. It does not add write authority and does not change live consumers.
+The `release-state` and `distribution` branches are non-live shadows. Read-only parity verification is complete. A separate manually dispatched rehearsal writer is now being introduced with fixed targets and an owner-authenticated credential, but it cannot update public `main` or enable live consumers.
 
 `.github/branch-write-inventory.json` is the machine-readable write authority. `.github/shadow-branch-policy.json` governs the isolated shadow rehearsal. Permanent contracts fail closed when a writer, permission, authority, branch role or release-state boundary changes.
 
@@ -37,9 +37,7 @@ The executable public-main push helper `.github/scripts/sync_greasyfork_root_mir
 | `import-canonical-userscript.yml` | `contents: read` | live Greasy Fork parity evidence | No source, baseline, branch or PR change. |
 | `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency evidence | No dashboard or tracker change. |
 
-## Shadow branch rehearsal
-
-Two non-live rehearsal branches now exist:
+## Shadow branch topology
 
 | Branch | Governed paths | Current authority | Live consumers |
 |---|---|---|---|
@@ -53,18 +51,37 @@ Each branch contains `.github/branch-role.json` declaring:
 - `strictProtectionEnabled: false`;
 - administrator recovery is mandatory;
 - Issue #41 controls cutover;
-- only the reviewed operational paths may become mutable.
+- only reviewed operational paths may become mutable.
 
-`.github/workflows/verify-shadow-branch-parity.yml`:
+`.github/workflows/verify-shadow-branch-parity.yml` remains read-only. It validates branch roles and governed-file parity, retains evidence for 30 days, and never commits, pushes, updates a ref or changes a live URL.
 
-- has `contents: read` only;
-- fetches both branch refs without persisted credentials;
-- validates the branch-role declarations;
-- compares only governed paths with the current checkout;
-- retains JSON/Markdown/log evidence for 30 days;
-- never commits, pushes, updates a ref or changes a live URL.
+## Constrained shadow synchronization writer
 
-This stage proves branch creation, role isolation and baseline parity before any automation identity or consumer cutover is introduced.
+`.github/workflows/sync-shadow-branches.yml` and `.github/scripts/sync_shadow_branches.py` provide the next non-live rehearsal stage.
+
+The writer contract is:
+
+- manual `workflow_dispatch` only;
+- authorized actor fixed to `Conroy1988`;
+- exact source branch fixed to `main`;
+- exact source commit SHA required and revalidated against `origin/main`;
+- target restricted to `release-state`, `distribution` or both;
+- plan confirmation must be `PLAN SHADOW SYNC`;
+- apply confirmation must be `SYNC SHADOWS`;
+- workflow permission remains `contents: read`;
+- apply mode temporarily uses `DEVELOPMENT_PR_TOKEN` as the existing owner-authenticated credential;
+- the credential is required only for the apply step;
+- changed files must be a subset of each branch's governed paths;
+- `.github/branch-role.json` remains immutable;
+- pushes are fast-forward commits to `HEAD:refs/heads/release-state` or `HEAD:refs/heads/distribution` only;
+- `main` is rejected as a target inside both the workflow and the script;
+- an optional idempotent empty probe commit can prove write access when governed content already matches;
+- every plan/apply operation retains JSON/Markdown/log evidence for 30 days;
+- post-operation read-only parity verification must pass;
+- live consumer cutover remains forbidden;
+- the temporary owner credential must be replaced by a narrowly scoped GitHub App before final cutover.
+
+This workflow is recorded under `shadowBranchWriters`, not `directMainWriters`. It cannot update public `main` and receives no workflow-level write permission.
 
 ## Current release state
 
@@ -91,7 +108,7 @@ The public manifest URL remains unchanged:
 7. Dashboard JSON, rendered Markdown and announcement tracker are committed atomically.
 8. Stable update-manifest publication and GitHub Pages are dispatched in parallel and awaited.
 9. Dashboard, Greasy Fork and announcement workflows verify only.
-10. Shadow parity remains an independent read-only rehearsal until cutover.
+10. Shadow synchronization remains a separate non-live rehearsal until cutover.
 
 ## Indirect release orchestrators
 
@@ -108,6 +125,7 @@ Their write authority remains only because the reusable production job still wri
 |---|---|---|---|
 | `apply-development-package.yml` | Existing owner PR branch | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
 | `prepare-release-rollback.yml` | Recovery branch and PR | `DEVELOPMENT_PR_TOKEN` | Review branch only. |
+| `sync-shadow-branches.yml` | `release-state` and `distribution` only | `DEVELOPMENT_PR_TOKEN` | Manual rehearsal; no `main` or consumer cutover. |
 | `backup_release_to_private_repo.sh` | private recovery repository `main` | `MIGRATION_REPO_TOKEN` | Separate repository. |
 
 ## Target architecture
@@ -115,7 +133,7 @@ Their write authority remains only because the reusable production job still wri
 - **Public `main`:** reviewed source, workflows, tests, policy and documentation.
 - **Distribution branch:** stable `dist/` and root mirrors, written by a scoped release App.
 - **Release-state branch:** dashboard, manifest, announcement, fallback-monitor and recovery state.
-- **Immutable evidence:** validation, parity, projections, bundles, audits and handovers.
+- **Immutable evidence:** validation, parity, synchronization plans, bundles, audits and handovers.
 
 ## Migration order
 
@@ -125,16 +143,18 @@ Their write authority remains only because the reusable production job still wri
 4. ✅ Retire automatic Greasy Fork importing.
 5. ✅ Make primary announcement state atomic and reconciliation read-only.
 6. ⬜ Fold stable update-manifest publication into the consolidated release-state commit.
-7. 🟡 Create shadow `release-state` and `distribution` branches and verify read-only parity.
-8. Add a narrowly scoped branch writer and rehearse shadow synchronization.
-9. Cut consolidated release state over to `release-state`.
-10. Cut stable distribution over to `distribution`.
-11. Rehearse release, recovery and administrator access.
-12. Enable strict protection only after all rehearsals pass.
+7. ✅ Create shadow `release-state` and `distribution` branches and verify read-only parity — PR #506.
+8. 🟡 Add the constrained shadow writer and rehearse plan/apply synchronization.
+9. Replace the rehearsal owner token with a narrowly scoped GitHub App.
+10. Cut consolidated release state over to `release-state`.
+11. Cut stable distribution over to `distribution`.
+12. Rehearse release, recovery and administrator access.
+13. Enable strict protection only after all rehearsals pass.
 
 ## Current migration evidence
 
 - PRs #498–#504 reduced direct public-main writers from **10 to 4**.
 - PR #505 was closed without merging; update-manifest publication remains a direct `main` writer.
-- Current change establishes isolated shadow branches and read-only parity evidence.
+- PR #506 established and verified non-live shadow branches.
+- Current change introduces a separately classified, owner-confirmed shadow writer without changing live authority.
 - No live URL, source authority or protection setting has changed.

@@ -1,6 +1,6 @@
 # Branch Protection Migration Plan
 
-Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, consolidated release state, fallback monitoring and recovery still mutate public `main`.
+Strict pull-request-only protection is **not yet enabled**. Controlled automation commits remain because stable distribution publication, the stable update manifest, consolidated release state, fallback monitoring and recovery still mutate public `main`.
 
 The migration is tracked by Issue #41. Authority is maintained in:
 
@@ -11,7 +11,6 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - `.github/scripts/test_validation_candidate_pipeline.py`;
 - `.github/scripts/test_greasyfork_parity_pipeline.py`;
 - `.github/scripts/test_release_announcement_state_pipeline.py`;
-- `.github/scripts/test_update_manifest_pipeline.py`;
 - `.github/scripts/test_shadow_branch_parity.py`.
 
 ## Current safe controls
@@ -23,8 +22,8 @@ The migration is tracked by Issue #41. Authority is maintained in:
 - owner-authenticated review branches for packages and rollback preparation;
 - explicit production and recovery confirmation phrases;
 - exact commit/ref/hash validation evidence;
-- deterministic dashboard, Greasy Fork, announcement and update-manifest verification;
-- atomic primary release dashboard, manifest and announcement state;
+- deterministic dashboard, Greasy Fork and announcement-state verification;
+- atomic primary release dashboard and announcement state;
 - isolated non-live `release-state` and `distribution` rehearsal branches.
 
 ## Completed migration stages
@@ -35,34 +34,32 @@ The 24 July 2026 baseline identified 10 direct public-main writers. Every `conte
 
 ### Artifact-only validation and evidence ✅
 
-Seven workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
+Six workflows verify with read-only repository access and retained immutable evidence instead of committing generated state:
 
 - canonical userscript validation;
 - release dry runs;
 - repository/dependency audits;
 - release dashboard projection;
 - Greasy Fork canonical parity;
-- release announcement-state verification;
-- stable update-manifest verification.
+- release announcement-state verification.
 
 ### GitHub source authority ✅
 
 Automatic source importing is retired. GitHub is authoritative. Live Greasy Fork parity accepts canonical-ahead during publication and fails on live-ahead or equal-version content drift.
 
-### Atomic primary release state ✅
+### Atomic primary announcement state ✅
 
-Normal production releases no longer require follow-up announcement or update-manifest commits.
+Normal production releases no longer require a follow-up announcement reconciliation commit.
 
 After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` commits these together:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
-- `status/update-manifest.json`;
 - `.github/greasyfork-version.txt`.
 
-The release workflow dispatches and awaits GitHub Pages only. This removes two follow-up bot commits, one workflow dispatch and one waited Actions run from the historical release path.
+The stable update manifest remains a separate guarded writer. It is dispatched and awaited in parallel with GitHub Pages.
 
-Direct public-main writers are reduced from **10 to 3**.
+Direct public-main writers are reduced from **10 to 4**.
 
 ## Shadow branch rehearsal 🟡
 
@@ -89,9 +86,10 @@ This stage proves branch availability and current parity before introducing a sc
 Public `main` still contains:
 
 1. stable `dist/` and root Greasy Fork mirrors;
-2. consolidated verified release state;
-3. fallback monitor state;
-4. guarded recovery state.
+2. verified dashboard and announcement state;
+3. stable update-manifest state;
+4. fallback monitor state;
+5. guarded recovery state.
 
 These responsibilities must move before strict protection is safe.
 
@@ -111,7 +109,7 @@ Mutable dashboard, manifest, announcement, fallback-monitor and recovery state. 
 
 ### Immutable evidence
 
-Validation candidates, parity audits, announcement checks, manifest checks, dashboard projections, shadow parity reports, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
+Validation candidates, parity audits, announcement checks, dashboard projections, shadow parity reports, release bundles, checksums, audits, dry runs and handovers remain GitHub Release assets or Actions artifacts.
 
 ## Access and speed requirements
 
@@ -130,13 +128,14 @@ The final protection design must retain fast owner operation:
 
 1. ✅ Inventory every workflow and script capable of updating public `main`.
 2. ✅ Separate validation, audit and verification evidence from public `main`.
-3. ✅ Make dashboard, manifest and announcement state atomic; retire follow-up writers.
-4. 🟡 Create and verify non-live `release-state` and `distribution` shadow branches.
-5. Introduce a narrowly scoped branch writer identity and rehearse synchronization.
-6. Move consolidated release state and recovery state to `release-state`.
-7. Move stable `dist/` and Greasy Fork mirrors to `distribution`.
-8. Remove unnecessary `contents: write` from orchestration-only workflows.
-9. Rehearse without public-main mutation:
+3. ✅ Make dashboard and announcement state atomic; retire the reconciliation writer.
+4. ⬜ Fold stable update-manifest publication into the consolidated release-state commit.
+5. 🟡 Create and verify non-live `release-state` and `distribution` shadow branches.
+6. Introduce a narrowly scoped branch writer identity and rehearse synchronization.
+7. Move consolidated release state and recovery state to `release-state`.
+8. Move stable `dist/` and Greasy Fork mirrors to `distribution`.
+9. Remove unnecessary `contents: write` from orchestration-only workflows.
+10. Rehearse without public-main mutation:
    - normal Release Readiness;
    - full production publication;
    - Greasy Fork-only retry;
@@ -145,15 +144,15 @@ The final protection design must retain fast owner operation:
    - dashboard reconstruction;
    - stable release-asset repair;
    - emergency rollback-candidate preparation.
-10. Rehearse owner/admin access:
+11. Rehearse owner/admin access:
    - create and update an owner branch;
    - open and update a pull request;
    - auto-merge after green checks;
    - use PR-only administrator bypass where required;
    - repair distribution and release-state branches;
    - disable or amend the ruleset.
-11. Require pull requests, approved checks, current branches and resolved conversations.
-12. Block routine direct human pushes and enable strict protection only after complete rehearsal.
+12. Require pull requests, approved checks, current branches and resolved conversations.
+13. Block routine direct human pushes and enable strict protection only after complete rehearsal.
 
 ## Exit criteria
 

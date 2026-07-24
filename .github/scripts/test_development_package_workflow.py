@@ -69,14 +69,21 @@ def main() -> int:
     require(source, "cancel-in-progress: true")
     forbid(source, "group: development-package-${{ github.event.issue.number }}")
 
-    # Apply must be owner-authenticated; github.token may not publish product commits.
+    # Apply must be owner-authenticated. The read-only token may service preflight,
+    # but the explicit owner-token gate must execute before any apply checkout/push.
     require(source, "Require owner push token")
     require(source, "secrets.DEVELOPMENT_PR_TOKEN")
     require(source, "DEVELOPMENT_PR_TOKEN is required for owner-authenticated PR updates.")
+    require(source, "token: ${{ needs.command.outputs.mode == 'apply' && secrets.DEVELOPMENT_PR_TOKEN || github.token }}")
     require(source, "git config user.name \"Conroy1988\"")
     require(source, "27301455+Conroy1988@users.noreply.github.com")
-    forbid(source, "secrets.DEVELOPMENT_PR_TOKEN || github.token")
     forbid(source, "git config user.name \"github-actions[bot]\"")
+
+    token_gate = source.index("      - name: Require owner push token")
+    checkout = source.index("      - name: Check out exact authorized commit")
+    push = source.index("          git push --force-with-lease")
+    if not token_gate < checkout < push:
+        raise AssertionError("Owner-token gate must precede apply checkout and branch publication")
 
     # Fingerprints, exact-head leases and validation remain mandatory.
     for marker in (

@@ -1,0 +1,80 @@
+name: Verify Shadow Branch Parity
+
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-shadow-branch-parity.yml"
+      - ".github/scripts/verify_shadow_branch_parity.py"
+      - ".github/branch-write-inventory.json"
+      - "docs/BRANCH_PROTECTION_MIGRATION.md"
+      - "docs/BRANCH_WRITE_INVENTORY.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shadow-branch-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify release-state and distribution shadows
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
+
+      - name: Fetch shadow branch refs read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            +refs/heads/release-state:refs/remotes/origin/release-state \
+            +refs/heads/distribution:refs/remotes/origin/distribution
+
+      - name: Validate shadow-parity self-tests
+        run: python3 .github/scripts/verify_shadow_branch_parity.py --self-test
+
+      - name: Verify governed paths and branch roles
+        id: parity
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p shadow-branch-evidence
+          python3 .github/scripts/verify_shadow_branch_parity.py \
+            --json-output shadow-branch-evidence/shadow-branch-parity.json \
+            --markdown-output shadow-branch-evidence/shadow-branch-parity.md \
+            2>&1 | tee shadow-branch-evidence/parity.log
+
+      - name: Upload immutable shadow-branch evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-shadow-branch-parity-${{ github.sha }}
+          path: shadow-branch-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish shadow-branch summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f shadow-branch-evidence/shadow-branch-parity.md ]]; then
+            cat shadow-branch-evidence/shadow-branch-parity.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce shadow-branch parity
+        if: steps.parity.outcome != 'success'
+        run: |
+          echo "Shadow branch role or governed-file parity failed. No branch mutation was attempted."
+          exit 1

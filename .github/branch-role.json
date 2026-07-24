@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "branch": "release-state",
+  "mode": "shadow-rehearsal",
+  "authority": "main remains authoritative until Issue #41 cutover",
+  "purpose": "Mirror verified release, manifest, announcement and recovery state without changing live consumers.",
+  "allowedMutablePaths": [
+    "status/release-dashboard.json",
+    "status/README.md",
+    "status/update-manifest.json",
+    ".github/greasyfork-version.txt",
+    ".github/branch-role.json"
+  ],
+  "liveConsumersEnabled": false,
+  "strictProtectionEnabled": false,
+  "administratorRecoveryRequired": true,
+  "cutoverIssue": 41
+}

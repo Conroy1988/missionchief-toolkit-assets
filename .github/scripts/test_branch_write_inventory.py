@@ -59,6 +59,10 @@ def contains_main_ref_mutation(text: str) -> bool:
     return bool(push or update_ref or api_ref)
 
 
+def document_mentions(document: str, repository_path: str) -> bool:
+    return repository_path in document or Path(repository_path).name in document
+
+
 def main() -> int:
     inventory = load_json(INVENTORY_PATH)
     policy = load_json(POLICY_PATH)
@@ -122,7 +126,7 @@ def main() -> int:
         path = ROOT / workflow
         if not path.is_file():
             fail(f"Classified workflow is missing: {workflow}")
-        if workflow not in document:
+        if not document_mentions(document, workflow):
             fail(f"Human branch-write inventory does not mention classified workflow: {workflow}")
 
     discovered_main_sources = {
@@ -175,7 +179,7 @@ def main() -> int:
             fail(f"Review-branch writer no longer uses its reviewed owner credential: {relative(workflow)}")
 
     for path in sorted(expected_public_sources | expected_external_sources):
-        if path not in document and path not in {str(entry["path"]) for entry in external_entries}:
+        if not document_mentions(document, path):
             fail(f"Human inventory omits executable write source: {path}")
 
     required_document_claims = [

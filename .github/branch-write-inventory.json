@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "4da0da71c8579ed6efc8ac8143f5c0354f2c0f39",
+  "reviewedMainCommit": "092c20afcd05eb0f159c4e7e2da8bd2a0bb52c59",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -13,16 +13,6 @@
         ".github/greasyfork-version.txt"
       ],
       "migrationTarget": "release-state branch"
-    },
-    {
-      "workflow": ".github/workflows/publish-update-manifest.yml",
-      "purpose": "Publish the stable update manifest after all release channels are verified.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        "status/update-manifest.json"
-      ],
-      "migrationTarget": "release-state branch or immutable release asset"
     },
     {
       "workflow": ".github/workflows/release-recovery.yml",
@@ -38,7 +28,7 @@
     },
     {
       "workflow": ".github/workflows/release-toolkit.yml",
-      "purpose": "Publish stable distribution, record verified release state and update the announcement tracker atomically.",
+      "purpose": "Publish stable distribution and record verified dashboard, update-manifest and announcement state atomically.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "writes": [
@@ -47,10 +37,12 @@
         "MissionChief_Map_Command_Toolkit.txt",
         "status/release-dashboard.json",
         "status/README.md",
+        "status/update-manifest.json",
         ".github/greasyfork-version.txt"
       ],
       "helperScripts": [
-        ".github/scripts/sync_greasyfork_root_mirror.sh"
+        ".github/scripts/sync_greasyfork_root_mirror.sh",
+        ".github/scripts/build_stable_update_manifest.py"
       ],
       "migrationTarget": "dedicated distribution branch plus release-state branch, written by a scoped GitHub App"
     }
@@ -133,11 +125,21 @@
         "release-announcement-state.json",
         "release-announcement-state.md"
       ]
+    },
+    {
+      "workflow": ".github/workflows/publish-update-manifest.yml",
+      "purpose": "Verify the committed stable update manifest against the verified release ledger without changing repository state.",
+      "permission": "contents: read",
+      "artifact": "missionchief-update-manifest-verification-<commit>",
+      "evidence": [
+        "update-manifest-verification.json",
+        "update-manifest-verification.md",
+        "update-manifest-verification.log"
+      ]
     }
   ],
   "directMainPushSources": [
     ".github/workflows/greasyfork-release-monitor.yml",
-    ".github/workflows/publish-update-manifest.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/scripts/sync_greasyfork_root_mirror.sh"
@@ -182,7 +184,6 @@
     ".github/workflows/auto-release-after-validation.yml",
     ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/owner-release-command.yml",
-    ".github/workflows/publish-update-manifest.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml"
   ]

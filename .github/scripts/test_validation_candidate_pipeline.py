@@ -13,7 +13,7 @@ OWNER = ROOT / ".github/workflows/owner-release-command.yml"
 RELEASE = ROOT / ".github/workflows/release-toolkit.yml"
 SYNC = ROOT / ".github/scripts/sync_greasyfork_root_mirror.sh"
 VERIFIER = ROOT / ".github/scripts/verify_validation_candidate.py"
-DASHBOARD = ROOT / "status/release-dashboard.json"
+DASHBOARD = ROOT / "status" / "release-dashboard.json"
 DASHBOARD_GENERATOR = ROOT / ".github/scripts/generate_release_dashboard.py"
 RETIRED_RECONCILER = ROOT / ".github/scripts/reconcile_validation_dashboard.py"
 
@@ -96,7 +96,7 @@ def main() -> int:
     ], "Stable distribution publication helper")
     require(release, [
         "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
-        "Record successful release and announcement state",
+        "Record successful release, manifest and announcement state",
     ], "Production release workflow")
 
     if "distributionCandidate" in dashboard or "releaseDryRun" in dashboard:

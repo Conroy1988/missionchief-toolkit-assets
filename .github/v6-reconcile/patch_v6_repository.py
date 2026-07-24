@@ -152,9 +152,29 @@ def reconcile_settings_fixture() -> None:
                 and not str(item).startswith("heatmap-")
             ]
         elif isinstance(values, dict):
-            for retired in ["autoNight", "criticalView", "heatmap", "missionInspector"]:
+            for retired in ["autoNight", "criticalView", "heatmap", "missionInspector", "missionAgeWatch"]:
                 values.pop(retired, None)
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def reconcile_settings_test() -> None:
+    path = ROOT / ".github/scripts/test_settings_ui_contract.py"
+    text = path.read_text(encoding="utf-8")
+    text = text.replace('function scheduleHeatmapRefresh() {{ record("scheduleHeatmapRefresh"); }}\n', '')
+    text = text.replace('    criticalViewActive = false;\n', '')
+    text = text.replace(
+        '    assert.equal(migrated.heatmap.radiusMi, 10);\n    assert.equal(migrated.heatmap.opacity, 0.55);\n',
+        '    assert.equal(Object.hasOwn(migrated, "heatmap"), false);\n'
+        '    assert.equal(Object.hasOwn(migrated, "autoNight"), false);\n'
+        '    assert.equal(Object.hasOwn(migrated, "missionInspector"), false);\n'
+        '    assert.equal(Object.hasOwn(migrated, "criticalView"), false);\n'
+        '    assert.equal(Object.hasOwn(migrated, "missionAgeWatch"), false);\n'
+    )
+    text = text.replace(
+        '    resetEnvironment();\n    applyMissionWindowToggleEffects("missionInspector");\n    assert.equal(callFor("showToast").args[0], "Mission Inspector on");\n',
+        ''
+    )
+    path.write_text(text, encoding="utf-8")
 
 
 def reconcile_boot_fixture() -> None:
@@ -184,6 +204,7 @@ def main() -> int:
     reconcile_site_data()
     reconcile_documentation_contract()
     reconcile_settings_fixture()
+    reconcile_settings_test()
     reconcile_boot_fixture()
     reconcile_hero()
     print("v6 repository reconciliation complete")

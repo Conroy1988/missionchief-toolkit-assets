@@ -7,6 +7,12 @@ on:
     paths:
       - ".github/v6-transform/**"
       - ".github/workflows/apply-v6-critical-transform.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/v6-transform/**"
+      - ".github/workflows/apply-v6-critical-transform.yml"
 
 permissions:
   contents: write
@@ -17,7 +23,10 @@ concurrency:
 
 jobs:
   transform:
-    if: github.actor == 'Conroy1988' && github.ref == 'refs/heads/feat/issue-510-v6-performance-overhaul'
+    if: >-
+      github.actor == 'Conroy1988' &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/feat/issue-510-v6-performance-overhaul') ||
+       (github.event_name == 'pull_request' && github.head_ref == 'feat/issue-510-v6-performance-overhaul'))
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:

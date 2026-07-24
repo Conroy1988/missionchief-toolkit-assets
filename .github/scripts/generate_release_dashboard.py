@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import re
@@ -10,8 +11,8 @@ from copy import deepcopy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "status" / "release-dashboard.json"
-OUTPUT = ROOT / "status" / "README.md"
+DEFAULT_SOURCE = ROOT / "status" / "release-dashboard.json"
+DEFAULT_OUTPUT = ROOT / "status" / "README.md"
 CANONICAL = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 VERSION_RE = re.compile(r"^//\s*@version\s+([^\s]+)", re.MULTILINE)
 
@@ -66,12 +67,7 @@ def sanitize_verified_ledger(data: dict) -> dict:
     return sanitized
 
 
-def main() -> None:
-    original = json.loads(SOURCE.read_text(encoding="utf-8"))
-    data = sanitize_verified_ledger(original)
-    if data != original:
-        SOURCE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-
+def render_dashboard(data: dict) -> str:
     status = data.get("status", {})
     latest = data.get("latestRelease") or {}
     assets = data.get("assets", {})
@@ -152,10 +148,41 @@ def main() -> None:
         "",
         "The JSON file remains the machine-readable verified-release ledger. Transient validation candidates are retained as immutable workflow artifacts and are never written into this dashboard.",
     ])
+    return "\n".join(lines) + "\n"
 
-    OUTPUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Generated {OUTPUT.relative_to(ROOT)}")
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Render without mutating the JSON ledger and fail if sanitation would change it.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    original = json.loads(args.source.read_text(encoding="utf-8"))
+    data = sanitize_verified_ledger(original)
+
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(render_dashboard(data), encoding="utf-8")
+
+    if args.check:
+        if data != original:
+            print("Dashboard ledger sanitation would change the committed JSON; refusing projection-only validation.")
+            return 1
+        print(f"Verified dashboard projection at {args.output}")
+        return 0
+
+    if data != original:
+        args.source.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    print(f"Generated {args.output.relative_to(ROOT) if args.output.is_relative_to(ROOT) else args.output}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

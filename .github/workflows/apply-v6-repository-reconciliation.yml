@@ -32,7 +32,19 @@ jobs:
         run: python3 .github/v6-reconcile/patch_v6_repository.py
 
       - name: Validate updated settings fixture
-        run: python3 .github/scripts/test_settings_ui_contract.py
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 .github/scripts/test_settings_ui_contract.py 2>&1 | tee /tmp/v6-settings-contract.log
+
+      - name: Upload settings-contract diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v6-settings-contract-diagnostic-${{ github.sha }}
+          path: /tmp/v6-settings-contract.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Validate updated boot lifecycle fixture
         run: python3 .github/scripts/test_boot_lifecycle_contract.py

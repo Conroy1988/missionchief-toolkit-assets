@@ -5,7 +5,13 @@ on:
     paths:
       - ".github/workflows/*.yml"
       - ".github/workflows/*.yaml"
+      - ".github/workflows/apply-development-package.yml"
+      - ".github/workflows/asset-health-monitor.yml"
+      - ".github/workflows/prepare-release-rollback.yml"
+      - ".github/workflows/pages-production-monitor.yml"
+      - ".github/workflows/validate-development-package-workflow.yml"
       - ".github/scripts/*.sh"
+      - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/actions-security-policy.json"
       - ".github/branch-write-inventory.json"
       - ".github/scripts/test_automation_record_hygiene.py"

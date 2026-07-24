@@ -90,7 +90,7 @@ def main() -> int:
         script,
         [
             "Mirrored paths must remain byte-identical",
-            "Transitional operational paths may differ",
+            "operational paths may differ",
             'POLICY_PATH = ROOT / ".github" / "shadow-branch-policy.json"',
             '"release-state"',
             '"distribution"',

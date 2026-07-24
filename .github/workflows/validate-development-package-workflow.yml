@@ -17,6 +17,7 @@ on:
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/scripts/reconcile_validation_dashboard.py"
+      - ".github/scripts/release_recovery_state.py"
       - ".github/scripts/release_state_branch.py"
       - ".github/scripts/sync_shadow_branches.py"
       - ".github/scripts/verify_shadow_branch_parity.py"
@@ -30,6 +31,7 @@ on:
       - ".github/scripts/test_development_package_workflow.py"
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
+      - ".github/scripts/test_release_recovery_state_pipeline.py"
       - ".github/scripts/test_release_state_monitor_pipeline.py"
       - ".github/scripts/test_shadow_branch_parity.py"
       - ".github/scripts/test_shadow_sync_writer.py"
@@ -73,6 +75,7 @@ jobs:
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
             python3 .github/scripts/test_release_state_monitor_pipeline.py
+            python3 .github/scripts/test_release_recovery_state_pipeline.py
             python3 .github/scripts/test_shadow_branch_parity.py
             python3 .github/scripts/test_shadow_sync_writer.py
             python3 .github/scripts/test_update_manifest_pipeline.py

@@ -33,16 +33,17 @@ def main() -> int:
 
     require(release, [
         "Post verified release to Discord",
-        "Record successful release and announcement state",
+        "Record successful release, manifest and announcement state",
         "printf '%s\\n' \"$RELEASE_VERSION\" > .github/greasyfork-version.txt",
-        "git add status/release-dashboard.json status/README.md .github/greasyfork-version.txt",
-        "Release dashboard and announcement tracker updated atomically",
+        "python3 .github/scripts/build_stable_update_manifest.py",
+        "status/update-manifest.json",
+        "Dashboard, stable update manifest and announcement tracker updated atomically",
     ], "Production release workflow")
     discord_index = release.index("      - name: Post verified release to Discord")
-    state_index = release.index("      - name: Record successful release and announcement state")
-    publish_index = release.index("      - name: Publish update channels in parallel")
-    if not discord_index < state_index < publish_index:
-        raise AssertionError("Announcement state must be recorded after Discord and before update-channel publication")
+    state_index = release.index("      - name: Record successful release, manifest and announcement state")
+    pages_index = release.index("      - name: Publish GitHub Pages")
+    if not discord_index < state_index < pages_index:
+        raise AssertionError("Announcement state must be recorded after Discord and before Pages publication")
 
     require(verify, [
         "name: Verify Release Announcement State",

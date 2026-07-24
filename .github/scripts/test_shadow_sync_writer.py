@@ -129,7 +129,7 @@ def main() -> int:
         script,
         [
             "Synchronize only reviewed mirror files",
-            "preserves operational branch state",
+            "preserves operational branch",
             'value == "main"',
             'branch == "main"',
             'f"HEAD:refs/heads/{branch}"',

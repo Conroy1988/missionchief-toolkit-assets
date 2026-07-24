@@ -1,19 +1,9 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "092c20afcd05eb0f159c4e7e2da8bd2a0bb52c59",
+  "reviewedMainCommit": "66881414ba8fc542c8fed44fd501296d74b56b8e",
   "strictProtectionEnabled": false,
   "directMainWriters": [
-    {
-      "workflow": ".github/workflows/greasyfork-release-monitor.yml",
-      "purpose": "Record fallback Greasy Fork/Discord announcement state when primary release completion is absent.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": [
-        ".github/greasyfork-version.txt"
-      ],
-      "migrationTarget": "release-state branch"
-    },
     {
       "workflow": ".github/workflows/release-recovery.yml",
       "purpose": "Record controlled Greasy Fork, private-backup, Discord and dashboard recovery state.",
@@ -139,10 +129,26 @@
     }
   ],
   "directMainPushSources": [
-    ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
     ".github/scripts/sync_greasyfork_root_mirror.sh"
+  ],
+  "releaseStateBranchWriters": [
+    {
+      "workflow": ".github/workflows/greasyfork-release-monitor.yml",
+      "helper": ".github/scripts/release_state_branch.py",
+      "sourceAuthority": "main release dashboard",
+      "target": "release-state",
+      "writes": [
+        ".github/greasyfork-version.txt"
+      ],
+      "credential": "github.token",
+      "actor": "github-actions[bot]",
+      "mainMutationAllowed": false,
+      "forcePushAllowed": false,
+      "liveConsumerCutoverAllowed": false,
+      "migrationState": "transitional fallback-tracker authority"
+    }
   ],
   "externalRepositoryMainPushSources": [
     {

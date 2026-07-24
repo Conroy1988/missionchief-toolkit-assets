@@ -1,4 +1,4 @@
-Issue #470 aggregate contract preflight diagnostic
+Issue #470 contract preflight after Settings UI repair
 exit=1
 
 === STDOUT ===
@@ -15,16 +15,11 @@ Mission marker ingestion contract passed: candidate resolution, direct normaliza
 [preflight] Run test_boot_lifecycle_contract.py
 Boot lifecycle contract passed: extracted boot integration, immediate coordinator attempt, bounded map fallback, maintenance-task registration, runtime ownership, document-start, hidden-tab resume, retry cancellation and teardown.
 [preflight] Run test_settings_ui_contract.py
+ReferenceError: missionAgeTimer is not defined
+    at applyMapVisibilityToggleEffects (/tmp/missionchief-settings-ui-contract-dz2t2h7q/settings-ui-contract.cjs:768:319)
+    at toggleFeature (/tmp/missionchief-settings-ui-contract-dz2t2h7q/settings-ui-contract.cjs:837:9)
+    at testToggleContracts (/tmp/missionchief-settings-ui-contract-dz2t2h7q/settings-ui-contract.cjs:1490:9)
+    at async /tmp/missionchief-settings-ui-contract-dz2t2h7q/settings-ui-contract.cjs:1794:5
 
 === STDERR ===
-Traceback (most recent call last):
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 1053, in <module>
-    raise SystemExit(main())
-                     ^^^^^^
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 1032, in main
-    assert_static_routes(source, fixtures)
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_settings_ui_contract.py", line 130, in assert_static_routes
-    assert extracted_toggle_effect_routes == sorted(fixtures["extractedToggleEffectRoutes"]), "Extracted map/visibility effect routing changed"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError: Extracted map/visibility effect routing changed
 

@@ -1,126 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="640" viewBox="0 0 1600 640" role="img" aria-labelledby="title desc">
-  <title id="title">MissionChief Map Command Toolkit Operational Window Suite</title>
-  <desc id="desc">A version-neutral operational command dashboard presenting live requirements, mission-window intelligence, mission-list control, guarded transport, fleet identity, map command and responsive device support.</desc>
+  <title id="title">MissionChief Map Command Toolkit v5.0.7 Operational Window Suite</title>
+  <desc id="desc">A governed MissionChief operations platform presenting the Operational Window Suite, mission intelligence, fleet and map command, responsive interfaces, GitHub-authoritative delivery and private recovery.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#030812"/>
-      <stop offset="0.52" stop-color="#081a2b"/>
-      <stop offset="1" stop-color="#160b17"/>
-    </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#43dcff"/>
-      <stop offset="0.5" stop-color="#7de8ff"/>
-      <stop offset="0.52" stop-color="#ff7b87"/>
-      <stop offset="1" stop-color="#d63345"/>
-    </linearGradient>
-    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#143e55" stop-opacity="0.86"/>
-      <stop offset="1" stop-color="#07131f" stop-opacity="0.96"/>
-    </linearGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0.025"/>
-    </linearGradient>
-    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
-      <path d="M42 0H0V42" fill="none" stroke="#b9eaff" stroke-opacity="0.045"/>
-    </pattern>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#030812"/><stop offset="0.52" stop-color="#081a2b"/><stop offset="1" stop-color="#160b17"/></linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#43dcff"/><stop offset="0.49" stop-color="#7de8ff"/><stop offset="0.51" stop-color="#ff7b87"/><stop offset="1" stop-color="#d63345"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#143e55" stop-opacity="0.86"/><stop offset="1" stop-color="#07131f" stop-opacity="0.96"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/><stop offset="1" stop-color="#ffffff" stop-opacity="0.025"/></linearGradient>
+    <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse"><path d="M42 0H0V42" fill="none" stroke="#b9eaff" stroke-opacity="0.045"/></pattern>
     <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="24" flood-color="#000000" flood-opacity="0.42"/></filter>
   </defs>
-
-  <rect width="1600" height="640" rx="32" fill="url(#bg)"/>
-  <rect width="1600" height="640" rx="32" fill="url(#grid)"/>
-  <rect x="1.5" y="1.5" width="1597" height="637" rx="30.5" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3"/>
-
+  <rect width="1600" height="640" rx="32" fill="url(#bg)"/><rect width="1600" height="640" rx="32" fill="url(#grid)"/><rect x="1.5" y="1.5" width="1597" height="637" rx="30.5" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <g transform="translate(70 54)">
-      <rect width="382" height="38" rx="19" fill="#0c273d" stroke="#43caff" stroke-opacity="0.55"/>
-      <circle cx="20" cy="19" r="6" fill="#52d5ff"/>
-      <text x="42" y="25" fill="#c4edff" font-size="14" font-weight="800" letter-spacing="2">MISSIONCHIEF · OPERATIONS COMMAND</text>
-    </g>
-
+    <g transform="translate(70 50)"><rect width="252" height="38" rx="19" fill="#0c273d" stroke="#43caff" stroke-opacity="0.55"/><circle cx="20" cy="19" r="6" fill="#52d5ff"/><text x="42" y="25" fill="#c4edff" font-size="14" font-weight="800" letter-spacing="2">VERIFIED v5.0.7</text></g>
+    <g transform="translate(338 50)"><rect width="328" height="38" rx="19" fill="#28151d" stroke="#ef5d69" stroke-opacity="0.52"/><circle cx="20" cy="19" r="6" fill="#ff7b87"/><text x="42" y="25" fill="#ffe1e5" font-size="13" font-weight="800" letter-spacing="1.6">GITHUB-AUTHORITATIVE DELIVERY</text></g>
     <text x="70" y="176" fill="#ffffff" font-size="66" font-weight="900" letter-spacing="1.4">MAP COMMAND TOOLKIT</text>
     <text x="74" y="226" fill="#85d9ff" font-size="25" font-weight="750" letter-spacing="4.8">OPERATIONAL WINDOW SUITE</text>
-    <text x="74" y="276" fill="#d9e8f2" font-size="20">Live requirements · Mission intelligence · Fleet identity · Geographic command</text>
-
+    <text x="74" y="276" fill="#d9e8f2" font-size="20">Live evidence · Mission intelligence · Fleet identity · Geographic command</text>
     <g transform="translate(74 307)" font-size="13" font-weight="800" letter-spacing="1">
-      <rect width="188" height="42" rx="9" fill="#0d2b42" stroke="#45cbff" stroke-opacity="0.52"/>
-      <text x="25" y="27" fill="#d9f5ff">VERIFIED DELIVERY</text>
-      <rect x="204" width="154" height="42" rx="9" fill="#12233a" stroke="#8bdfff" stroke-opacity="0.40"/>
-      <text x="234" y="27" fill="#d9f5ff">7 INTERFACES</text>
-      <rect x="374" width="214" height="42" rx="9" fill="#29151d" stroke="#ef5d69" stroke-opacity="0.52"/>
-      <text x="402" y="27" fill="#ffe1e5">DESKTOP · TABLET · iOS</text>
+      <rect width="180" height="42" rx="9" fill="#0d2b42" stroke="#45cbff" stroke-opacity="0.52"/><text x="25" y="27" fill="#d9f5ff">4 WINDOW FAMILIES</text>
+      <rect x="196" width="154" height="42" rx="9" fill="#12233a" stroke="#8bdfff" stroke-opacity="0.40"/><text x="226" y="27" fill="#d9f5ff">7 INTERFACES</text>
+      <rect x="366" width="214" height="42" rx="9" fill="#29151d" stroke="#ef5d69" stroke-opacity="0.52"/><text x="394" y="27" fill="#ffe1e5">DESKTOP · TABLET · iOS</text>
     </g>
-
     <g transform="translate(72 388)" filter="url(#shadow)">
-      <rect width="804" height="164" rx="22" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.12"/>
-      <text x="28" y="34" fill="#8aa4b8" font-size="11" font-weight="850" letter-spacing="2.1">COMMAND LAYERS</text>
-      <g transform="translate(28 55)">
-        <rect width="174" height="78" rx="16" fill="url(#panel)" stroke="#43d5ff" stroke-opacity="0.36"/>
-        <text x="18" y="27" fill="#7ee6ff" font-size="11" font-weight="850">REQUIREMENTS</text>
-        <text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Truth-state demand</text>
-        <text x="18" y="69" fill="#8ca6b8" font-size="10">selected · en-route · scene</text>
-      </g>
-      <g transform="translate(218 55)">
-        <rect width="174" height="78" rx="16" fill="#102b26" stroke="#58e9ad" stroke-opacity="0.34"/>
-        <text x="18" y="27" fill="#79f4bd" font-size="11" font-weight="850">CALL WINDOW</text>
-        <text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Search + counters</text>
-        <text x="18" y="69" fill="#8ea99c" font-size="10">patients · ARR · vehicles</text>
-      </g>
-      <g transform="translate(408 55)">
-        <rect width="174" height="78" rx="16" fill="#2b2311" stroke="#efc75c" stroke-opacity="0.34"/>
-        <text x="18" y="27" fill="#ffe08b" font-size="11" font-weight="850">MISSION LIST</text>
-        <text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Sort + prioritise</text>
-        <text x="18" y="69" fill="#b8a779" font-size="10">star · collapse · badges</text>
-      </g>
-      <g transform="translate(598 55)">
-        <rect width="174" height="78" rx="16" fill="#24172f" stroke="#cc91ff" stroke-opacity="0.34"/>
-        <text x="18" y="27" fill="#e1b7ff" font-size="11" font-weight="850">TRANSPORT</text>
-        <text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Guarded actions</text>
-        <text x="18" y="69" fill="#a28caf" font-size="10">opt-in · exact · idempotent</text>
-      </g>
+      <rect width="804" height="164" rx="22" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.12"/><text x="28" y="34" fill="#8aa4b8" font-size="11" font-weight="850" letter-spacing="2.1">COORDINATED OPERATIONAL WINDOW</text>
+      <g transform="translate(28 55)"><rect width="174" height="78" rx="16" fill="url(#panel)" stroke="#43d5ff" stroke-opacity="0.36"/><text x="18" y="27" fill="#7ee6ff" font-size="11" font-weight="850">REQUIREMENTS</text><text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Evidence states</text><text x="18" y="69" fill="#8ca6b8" font-size="10">covered · open · waiting</text></g>
+      <g transform="translate(218 55)"><rect width="174" height="78" rx="16" fill="#102b26" stroke="#58e9ad" stroke-opacity="0.34"/><text x="18" y="27" fill="#79f4bd" font-size="11" font-weight="850">CALL WINDOW</text><text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Search + counters</text><text x="18" y="69" fill="#8ea99c" font-size="10">patients · ARR · vehicles</text></g>
+      <g transform="translate(408 55)"><rect width="174" height="78" rx="16" fill="#2b2311" stroke="#efc75c" stroke-opacity="0.34"/><text x="18" y="27" fill="#ffe08b" font-size="11" font-weight="850">MISSION LIST</text><text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Sort + prioritise</text><text x="18" y="69" fill="#b8a779" font-size="10">star · collapse · badges</text></g>
+      <g transform="translate(598 55)"><rect width="174" height="78" rx="16" fill="#24172f" stroke="#cc91ff" stroke-opacity="0.34"/><text x="18" y="27" fill="#e1b7ff" font-size="11" font-weight="850">TRANSPORT</text><text x="18" y="53" fill="#ffffff" font-size="16" font-weight="850">Guarded actions</text><text x="18" y="69" fill="#a28caf" font-size="10">exact · bounded · opt-in</text></g>
     </g>
-
     <g transform="translate(930 48)" filter="url(#shadow)">
-      <rect width="598" height="504" rx="28" fill="#061321" fill-opacity="0.90" stroke="#6fd2ff" stroke-opacity="0.25"/>
-      <rect x="22" y="22" width="554" height="460" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.075"/>
-      <text x="42" y="58" fill="#91a9bc" font-size="11" font-weight="850" letter-spacing="2.3">LIVE TOOLKIT CONTROL SURFACE</text>
-      <text x="42" y="94" fill="#ffffff" font-size="28" font-weight="900">Operational state, reconciled</text>
-      <text x="42" y="121" fill="#91a9bc" font-size="13">One lifecycle · typed settings · deterministic teardown</text>
-
-      <g transform="translate(42 150)">
-        <rect width="514" height="104" rx="17" fill="url(#panel)" stroke="#4bcfff" stroke-opacity="0.34"/>
-        <circle cx="28" cy="28" r="7" fill="#58d9ff"/>
-        <text x="49" y="33" fill="#ccefff" font-size="12" font-weight="850" letter-spacing="1.5">AUTHORITATIVE REQUIREMENT EVIDENCE</text>
-        <text x="22" y="62" fill="#ffffff" font-size="15" font-weight="800">Covered only after positive parsed evidence</text>
-        <text x="22" y="84" fill="#88a9bc" font-size="11">Amber waiting · amber unresolved · native/LSSM source rebinding</text>
-      </g>
-
-      <g transform="translate(42 276)">
-        <rect width="248" height="87" rx="17" fill="#101d2e" stroke="#75cfff" stroke-opacity="0.27"/>
-        <text x="18" y="27" fill="#8ddcff" font-size="11" font-weight="850">MISSION COMMAND</text>
-        <text x="18" y="51" fill="#ffffff" font-size="15" font-weight="800">Age + Critical + Inspector</text>
-        <text x="18" y="70" fill="#859cad" font-size="10">live triage and navigation</text>
-      </g>
-      <g transform="translate(308 276)">
-        <rect width="248" height="87" rx="17" fill="#28141b" stroke="#ef6572" stroke-opacity="0.30"/>
-        <text x="18" y="27" fill="#ff9ca5" font-size="11" font-weight="850">MAP + FINANCE</text>
-        <text x="18" y="51" fill="#ffffff" font-size="15" font-weight="800">Coverage + Reconciliation</text>
-        <text x="18" y="70" fill="#ad8e95" font-size="10">geography · income · variance</text>
-      </g>
-
-      <g transform="translate(42 384)">
-        <rect width="514" height="67" rx="17" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.11"/>
-        <text x="20" y="27" fill="#8da5b7" font-size="10" font-weight="850" letter-spacing="1.5">VERIFIED DELIVERY CHAIN</text>
-        <text x="20" y="49" fill="#ffffff" font-size="14" font-weight="800">Canonical source → CI → release → Greasy Fork → recovery</text>
-      </g>
+      <rect width="598" height="504" rx="28" fill="#061321" fill-opacity="0.90" stroke="#6fd2ff" stroke-opacity="0.25"/><rect x="22" y="22" width="554" height="460" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.075"/>
+      <text x="42" y="58" fill="#91a9bc" font-size="11" font-weight="850" letter-spacing="2.3">LIVE GOVERNED PLATFORM</text><text x="42" y="94" fill="#ffffff" font-size="28" font-weight="900">Operational state, reconciled</text><text x="42" y="121" fill="#91a9bc" font-size="13">One lifecycle · typed settings · deterministic teardown</text>
+      <g transform="translate(42 150)"><rect width="514" height="104" rx="17" fill="url(#panel)" stroke="#4bcfff" stroke-opacity="0.34"/><circle cx="28" cy="28" r="7" fill="#58d9ff"/><text x="49" y="33" fill="#ccefff" font-size="12" font-weight="850" letter-spacing="1.5">AUTHORITATIVE MISSION EVIDENCE</text><text x="22" y="62" fill="#ffffff" font-size="15" font-weight="800">Native and compatible LSSM sources, scored</text><text x="22" y="84" fill="#88a9bc" font-size="11">rebind · suppress duplicate UI · fail closed on uncertainty</text></g>
+      <g transform="translate(42 276)"><rect width="248" height="87" rx="17" fill="#101d2e" stroke="#75cfff" stroke-opacity="0.27"/><text x="18" y="27" fill="#8ddcff" font-size="11" font-weight="850">MISSION COMMAND</text><text x="18" y="51" fill="#ffffff" font-size="15" font-weight="800">Age + Critical + Inspector</text><text x="18" y="70" fill="#859cad" font-size="10">live triage and navigation</text></g>
+      <g transform="translate(308 276)"><rect width="248" height="87" rx="17" fill="#28141b" stroke="#ef6572" stroke-opacity="0.30"/><text x="18" y="27" fill="#ff9ca5" font-size="11" font-weight="850">MAP + FINANCE</text><text x="18" y="51" fill="#ffffff" font-size="15" font-weight="800">Coverage + Reconciliation</text><text x="18" y="70" fill="#ad8e95" font-size="10">geography · income · variance</text></g>
+      <g transform="translate(42 384)"><rect width="514" height="67" rx="17" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.11"/><text x="20" y="27" fill="#8da5b7" font-size="10" font-weight="850" letter-spacing="1.5">CONTROLLED DELIVERY AND RECOVERY</text><text x="20" y="49" fill="#ffffff" font-size="13" font-weight="800">GitHub source → guarded CI → release → parity → private vault</text></g>
     </g>
-
-    <g transform="translate(72 582)">
-      <rect width="1456" height="34" rx="17" fill="#07121d" stroke="#ffffff" stroke-opacity="0.10"/>
-      <text x="728" y="22" text-anchor="middle" fill="#d9e7f0" font-size="11" font-weight="850" letter-spacing="1.55">SEE THE MISSION · READ THE FLEET · COMMAND THE MAP · RECONCILE THE OPERATION</text>
-    </g>
+    <g transform="translate(72 582)"><rect width="1456" height="34" rx="17" fill="#07121d" stroke="#ffffff" stroke-opacity="0.10"/><text x="728" y="22" text-anchor="middle" fill="#d9e7f0" font-size="11" font-weight="850" letter-spacing="1.55">SEE THE MISSION · READ THE EVIDENCE · COMMAND THE MAP · RECOVER THE RELEASE</text></g>
   </g>
-
-  <rect y="630" width="800" height="10" fill="#2cbcf1"/>
-  <rect x="800" y="630" width="800" height="10" fill="#d63345"/>
+  <rect y="630" width="800" height="10" fill="#2cbcf1"/><rect x="800" y="630" width="800" height="10" fill="#d63345"/>
 </svg>

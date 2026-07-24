@@ -13,7 +13,6 @@ on:
       - ".github/scripts/*.sh"
       - ".github/scripts/audit_greasyfork_canonical_parity.py"
       - ".github/scripts/audit_repository.py"
-      - ".github/scripts/build_stable_update_manifest.py"
       - ".github/scripts/generate_release_dashboard.py"
       - ".github/scripts/reconcile_pages_incident.sh"
       - ".github/scripts/reconcile_validation_dashboard.py"
@@ -29,7 +28,6 @@ on:
       - ".github/scripts/test_greasyfork_parity_pipeline.py"
       - ".github/scripts/test_release_announcement_state_pipeline.py"
       - ".github/scripts/test_shadow_branch_parity.py"
-      - ".github/scripts/test_update_manifest_pipeline.py"
       - ".github/scripts/test_validation_candidate_pipeline.py"
       - "docs/BRANCH_PROTECTION_MIGRATION.md"
       - "docs/BRANCH_WRITE_INVENTORY.md"
@@ -67,7 +65,6 @@ jobs:
             python3 .github/scripts/test_validation_candidate_pipeline.py
             python3 .github/scripts/test_greasyfork_parity_pipeline.py
             python3 .github/scripts/test_release_announcement_state_pipeline.py
-            python3 .github/scripts/test_update_manifest_pipeline.py
             python3 .github/scripts/test_shadow_branch_parity.py
           } 2>&1 | tee "$RUNNER_TEMP/workflow-policy.log"
 

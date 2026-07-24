@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Non-destructive repository and userscript dependency audit."""
+"""Non-destructive repository and userscript dependency audit.
+
+Audit output is immutable workflow evidence. The script never mutates the production
+release dashboard or any committed repository state.
+"""
 
 from __future__ import annotations
 
@@ -11,12 +15,13 @@ import sys
 import urllib.error
 import urllib.request
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_MD = ROOT / "status" / "repository-audit.md"
-REPORT_JSON = ROOT / "status" / "repository-audit.json"
-DASHBOARD = ROOT / "status" / "release-dashboard.json"
+OUTPUT_DIR = ROOT / os.environ.get("REPOSITORY_AUDIT_OUTPUT_DIR", "repository-audit-output")
+REPORT_MD = OUTPUT_DIR / "repository-audit.md"
+REPORT_JSON = OUTPUT_DIR / "repository-audit.json"
 GREASYFORK_SCRIPT = (
     "https://update.greasyfork.org/scripts/586018/"
     "MissionChief%20Map%20Command%20Toolkit.user.js"
@@ -57,7 +62,7 @@ def read_text(path: Path) -> str:
 def download_userscript() -> tuple[str, str | None]:
     request = urllib.request.Request(
         GREASYFORK_SCRIPT,
-        headers={"User-Agent": "MissionChief-Toolkit-Repository-Audit/2"},
+        headers={"User-Agent": "MissionChief-Toolkit-Repository-Audit/3"},
     )
     try:
         with urllib.request.urlopen(request, timeout=45) as response:
@@ -77,7 +82,7 @@ def raw_url_to_repo_path(url: str) -> str | None:
 
 
 def main() -> int:
-    files = [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts]
+    files = [p for p in ROOT.rglob("*") if p.is_file() and ".git" not in p.parts and OUTPUT_DIR not in p.parents]
     suffix_counts = Counter((p.suffix.lower() or "[none]") for p in files)
     media_files = sorted(rel(p) for p in files if p.suffix.lower() in MEDIA_SUFFIXES)
     workflows = sorted(rel(p) for p in (ROOT / ".github" / "workflows").glob("*.y*ml"))
@@ -128,9 +133,18 @@ def main() -> int:
         duplicate_hashes.setdefault(sha256(path), []).append(rel(path))
     duplicate_groups = [paths for paths in duplicate_hashes.values() if len(paths) > 1]
 
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     audit = {
+        "schemaVersion": 2,
+        "state": "passed" if not missing_paths else "attention-required",
         "repository": "Conroy1988/missionchief-toolkit-assets",
         "commit": os.environ.get("GITHUB_SHA", "local"),
+        "generatedAt": generated_at,
+        "storage": {
+            "type": "workflow-artifact",
+            "publicMainChanged": False,
+            "releaseDashboardChanged": False,
+        },
         "greasyFork": {
             "scriptFetched": bool(userscript),
             "fetchError": fetch_error,
@@ -148,6 +162,7 @@ def main() -> int:
             "rawUrls": all_raw_urls,
             "referencedPaths": sorted(set(referenced_paths)),
             "missingPaths": sorted(set(missing_paths)),
+            "externalReferences": external_refs,
         },
         "automation": {
             "workflows": workflows,
@@ -166,7 +181,16 @@ def main() -> int:
     lines = [
         "# Repository and dependency audit",
         "",
-        "> Generated automatically. This audit does not rename, move or delete files.",
+        "> Generated as immutable GitHub Actions evidence. This audit does not rename, move or delete files and does not modify public `main` or the release dashboard.",
+        "",
+        "## Evidence",
+        "",
+        f"- Source commit: `{audit['commit']}`",
+        f"- Generated: `{generated_at}`",
+        f"- State: **{audit['state']}**",
+        "- Storage: **workflow artifact**",
+        "- Public `main` changed: **no**",
+        "- Release dashboard changed: **no**",
         "",
         "## Summary",
         "",
@@ -179,18 +203,9 @@ def main() -> int:
         f"- Possible one-shot workflows: **{len(one_shot_workflows)}**",
         f"- Duplicate media groups: **{len(duplicate_groups)}**",
         "",
-        "## Current userscript source",
+        "## Referenced public repository paths",
         "",
     ]
-    if userscript:
-        lines.extend([
-            f"Greasy Fork was read successfully at version **{userscript_version or 'unknown'}**.",
-            "No canonical `.user.js` file is assumed until a source file is deliberately imported and validated.",
-        ])
-    else:
-        lines.append(f"Greasy Fork could not be read during this run: `{fetch_error}`")
-
-    lines.extend(["", "## Referenced public repository paths", ""])
     if referenced_paths:
         for path in sorted(set(referenced_paths)):
             marker = "❌ missing" if path in missing_paths else "✅ present"
@@ -204,40 +219,23 @@ def main() -> int:
         lines.append(f"- `{workflow}`{suffix}")
 
     lines.extend(["", "## Referenced GitHub Actions secrets", ""])
-    for secret in sorted(workflow_secrets):
-        lines.append(f"- `{secret}`")
+    if workflow_secrets:
+        for secret in sorted(workflow_secrets):
+            lines.append(f"- `{secret}`")
+    else:
+        lines.append("- No workflow secret references were discovered.")
 
     lines.extend(["", "## Safety findings", ""])
     if missing_paths:
-        lines.append("- Some public paths referenced by the current script are missing. They must be resolved before GitHub becomes the canonical distribution source.")
+        lines.append("- Some public paths referenced by the current script are missing and require review.")
     else:
         lines.append("- Every discovered raw repository path referenced by the current script exists in the repository.")
     lines.append("- Existing public media paths remain protected and should not be reorganised in place.")
-    lines.append("- New source, distribution and backup directories should be added alongside existing assets.")
+    lines.append("- The production release dashboard remains authoritative and was not modified by this audit.")
 
-    lines.extend(["", "## Next controlled steps", ""])
-    lines.extend([
-        "1. Review the generated dependency list.",
-        "2. Import the current Greasy Fork userscript into a new canonical `src/` path without changing public distribution.",
-        "3. Add validation and compare the imported source against the live Greasy Fork copy.",
-        "4. Introduce `dist/` only after byte-level validation succeeds.",
-        "5. Replace the legacy polling release path only after a complete end-to-end dry run.",
-    ])
-
-    REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
     REPORT_JSON.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
-
-    if DASHBOARD.exists():
-        dashboard = json.loads(DASHBOARD.read_text(encoding="utf-8"))
-        dashboard["currentVersion"] = userscript_version or dashboard.get("currentVersion")
-        dashboard["status"]["validation"] = "repository-audit-complete"
-        dashboard["status"]["assetAudit"] = "passed" if not missing_paths else "attention-required"
-        dashboard["assets"]["discoveredFiles"] = len(media_files)
-        dashboard["assets"]["referencedPaths"] = len(set(referenced_paths))
-        dashboard["assets"]["missingReferencedPaths"] = len(set(missing_paths))
-        dashboard["lastUpdated"] = "2026-07-14"
-        DASHBOARD.write_text(json.dumps(dashboard, indent=2) + "\n", encoding="utf-8")
 
     print(json.dumps(audit, indent=2))
     return 1 if missing_paths else 0

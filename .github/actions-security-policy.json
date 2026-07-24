@@ -37,9 +37,6 @@
     ".github/workflows/pages-production-monitor.yml": [
       "issues"
     ],
-    ".github/workflows/publish-update-manifest.yml": [
-      "contents"
-    ],
     ".github/workflows/release-recovery.yml": [
       "contents"
     ],

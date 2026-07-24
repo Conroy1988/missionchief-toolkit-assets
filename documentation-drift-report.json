@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "4.15.0",
-  "versionState": "source-transition",
+  "userscriptVersion": "5.0.7",
+  "versionState": "current-production",
   "documentedThemes": [
     "Map Command",
     "Cyberpunk",
@@ -18,39 +18,16 @@
     "iOS Mobile"
   ],
   "documentedShortcuts": [
-    {
-      "key": "1",
-      "action": "Toggle My Missions"
-    },
-    {
-      "key": "2",
-      "action": "Toggle Alliance Missions"
-    },
-    {
-      "key": "3",
-      "action": "Toggle Vehicles"
-    },
-    {
-      "key": "4",
-      "action": "Toggle My Buildings"
-    },
-    {
-      "key": "5",
-      "action": "Toggle Alliance Credits"
-    },
-    {
-      "key": "6",
-      "action": "Toggle Mission Age"
-    },
-    {
-      "key": "V",
-      "action": "Open or close Vehicle Code Status"
-    }
+    { "key": "1", "action": "Toggle My Missions" },
+    { "key": "2", "action": "Toggle Alliance Missions" },
+    { "key": "3", "action": "Toggle Vehicles" },
+    { "key": "4", "action": "Toggle My Buildings" },
+    { "key": "5", "action": "Toggle Alliance Credits" },
+    { "key": "6", "action": "Toggle Mission Age" },
+    { "key": "V", "action": "Open or close Vehicle Code Status" }
   ],
-  "featureCount": 21,
-  "publicDocumentCount": 3,
+  "featureCount": 24,
+  "publicDocumentCount": 4,
   "failures": [],
-  "warnings": [
-    "Validated guarded source transition 4.15.0 is ahead of dashboard version 4.14.10."
-  ]
+  "warnings": []
 }

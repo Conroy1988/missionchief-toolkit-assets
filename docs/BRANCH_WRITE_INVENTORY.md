@@ -7,11 +7,11 @@
 
 Strict pull-request-only protection is **not yet safe to enable**.
 
-The repository has four workflows that can commit directly to public `main`. Two release orchestrators invoke the reusable production writer but contain no direct public-main push. The remaining writes are limited to fallback monitoring, stable update-manifest publication, release recovery and guarded production publication.
+The repository has three workflows that can commit directly to public `main`. Two release orchestrators invoke the reusable production writer but contain no direct public-main push. The remaining writes are limited to fallback monitoring, release recovery and guarded production publication.
 
-Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only. These six workflows use read-only repository access and retain immutable evidence instead of committing generated state.
+Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity, announcement-state verification and stable update-manifest verification are now artifact-only. These seven workflows use read-only repository access and retain immutable evidence instead of committing generated state.
 
-The `release-state` and `distribution` branches are non-live shadows. Read-only parity verification is complete. A separate manually dispatched rehearsal writer is now being introduced with fixed targets and an owner-authenticated credential, but it cannot update public `main` or enable live consumers.
+The `release-state` and `distribution` branches are non-live shadows. Read-only parity, an exact-SHA plan and same-tree write-access probes are complete. The constrained writer cannot update public `main` or enable live consumers.
 
 `.github/branch-write-inventory.json` is the machine-readable write authority. `.github/shadow-branch-policy.json` governs the isolated shadow rehearsal. Permanent contracts fail closed when a writer, permission, authority, branch role or release-state boundary changes.
 
@@ -20,11 +20,10 @@ The `release-state` and `distribution` branches are non-live shadows. Read-only 
 | Workflow | Current mutation | Required migration |
 |---|---|---|
 | `greasyfork-release-monitor.yml` | fallback `.github/greasyfork-version.txt` state | Move fallback monitoring to the release-state branch. |
-| `publish-update-manifest.yml` | `status/update-manifest.json` | Fold publication into consolidated release state, then move it to the release-state branch. |
 | `release-recovery.yml` | dashboard JSON/Markdown and announcement recovery state | Move mutable recovery state to the release-state branch. |
-| `release-toolkit.yml` | stable distribution plus atomic dashboard and announcement state | Move distribution and state to dedicated branches under a scoped GitHub App. |
+| `release-toolkit.yml` | stable distribution plus atomic dashboard, update-manifest and announcement state | Move distribution and state to dedicated branches under a scoped GitHub App. |
 
-The executable public-main push helper `.github/scripts/sync_greasyfork_root_mirror.sh` is owned by `release-toolkit.yml`.
+The executable public-main push helper `.github/scripts/sync_greasyfork_root_mirror.sh` is owned by `release-toolkit.yml`. The deterministic helper `.github/scripts/build_stable_update_manifest.py` writes only the manifest projection inside that existing guarded release commit.
 
 ## Artifact-only evidence workflows
 
@@ -36,6 +35,7 @@ The executable public-main push helper `.github/scripts/sync_greasyfork_root_mir
 | `update-release-dashboard.yml` | `contents: read` | rendered dashboard, diff and log | No branch change. |
 | `import-canonical-userscript.yml` | `contents: read` | live Greasy Fork parity evidence | No source, baseline, branch or PR change. |
 | `reconcile-release-announcement-state.yml` | `contents: read` | dashboard/tracker consistency evidence | No dashboard or tracker change. |
+| `publish-update-manifest.yml` | `contents: read` | manifest projection JSON/Markdown/log | No manifest, dashboard or branch change. |
 
 ## Shadow branch topology
 
@@ -57,7 +57,7 @@ Each branch contains `.github/branch-role.json` declaring:
 
 ## Constrained shadow synchronization writer
 
-`.github/workflows/sync-shadow-branches.yml` and `.github/scripts/sync_shadow_branches.py` provide the next non-live rehearsal stage.
+`.github/workflows/sync-shadow-branches.yml` and `.github/scripts/sync_shadow_branches.py` provide the non-live rehearsal writer.
 
 The writer contract is:
 
@@ -70,32 +70,33 @@ The writer contract is:
 - apply confirmation must be `SYNC SHADOWS`;
 - workflow permission remains `contents: read`;
 - apply mode temporarily uses `DEVELOPMENT_PR_TOKEN` as the existing owner-authenticated credential;
-- the credential is required only for the apply step;
 - changed files must be a subset of each branch's governed paths;
 - `.github/branch-role.json` remains immutable;
-- pushes are fast-forward commits to `HEAD:refs/heads/release-state` or `HEAD:refs/heads/distribution` only;
-- `main` is rejected as a target inside both the workflow and the script;
-- an optional idempotent empty probe commit can prove write access when governed content already matches;
-- every plan/apply operation retains JSON/Markdown/log evidence for 30 days;
-- post-operation read-only parity verification must pass;
+- pushes are fast-forward commits to the two reviewed shadow refs only;
+- `main` is rejected as a target inside both the workflow and script;
+- an idempotent empty probe can prove write access when governed content already matches;
+- every plan/apply operation retains evidence;
 - live consumer cutover remains forbidden;
 - the temporary owner credential must be replaced by a narrowly scoped GitHub App before final cutover.
 
-This workflow is recorded under `shadowBranchWriters`, not `directMainWriters`. It cannot update public `main` and receives no workflow-level write permission.
+The connected administrator identity has completed the read-only plan and same-tree branch probes. No force push, history rewrite, public-main change or live-consumer change occurred.
 
 ## Current release state
 
-After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` writes the following together in one commit:
+After Greasy Fork verification, private backup and Discord publication, `release-toolkit.yml` now writes the following together in one commit:
 
 - `status/release-dashboard.json`;
 - `status/README.md`;
+- `status/update-manifest.json`;
 - `.github/greasyfork-version.txt`.
 
-The stable update manifest remains a separate guarded writer. `release-toolkit.yml` dispatches `publish-update-manifest.yml` and GitHub Pages in parallel, then waits for both runs to succeed.
+The stable manifest is generated by `.github/scripts/build_stable_update_manifest.py` from the verified dashboard and reviewed release settings. `publish-update-manifest.yml` independently verifies the committed projection with read-only access.
 
-The public manifest URL remains unchanged:
+The current v5.0.7 runtime consumer remains unchanged:
 
 `raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json`
+
+This compatibility URL remains on `main` until a versioned Toolkit release moves the runtime consumer to the final `release-state` endpoint. Existing installations are therefore not stranded during migration.
 
 ## Production release sequence
 
@@ -105,10 +106,10 @@ The public manifest URL remains unchanged:
 4. Production publishes stable distribution and root mirrors.
 5. GitHub Release is published and Greasy Fork is verified.
 6. The release is backed up privately and announced to Discord.
-7. Dashboard JSON, rendered Markdown and announcement tracker are committed atomically.
-8. Stable update-manifest publication and GitHub Pages are dispatched in parallel and awaited.
-9. Dashboard, Greasy Fork and announcement workflows verify only.
-10. Shadow synchronization remains a separate non-live rehearsal until cutover.
+7. Dashboard JSON, rendered Markdown, stable update manifest and announcement tracker are committed atomically.
+8. GitHub Pages is dispatched and awaited.
+9. Dashboard, Greasy Fork, announcement and update-manifest workflows verify only.
+10. Shadow parity remains independent until the versioned consumer cutover.
 
 ## Indirect release orchestrators
 
@@ -142,11 +143,11 @@ Their write authority remains only because the reusable production job still wri
 3. ✅ Convert dashboard refresh to read-only projection.
 4. ✅ Retire automatic Greasy Fork importing.
 5. ✅ Make primary announcement state atomic and reconciliation read-only.
-6. ⬜ Fold stable update-manifest publication into the consolidated release-state commit.
+6. ✅ Fold stable update-manifest publication into the consolidated release-state commit.
 7. ✅ Create shadow `release-state` and `distribution` branches and verify read-only parity — PR #506.
-8. 🟡 Add the constrained shadow writer and rehearse plan/apply synchronization.
+8. ✅ Add the constrained shadow writer and rehearse plan/apply access — PR #507 and Issue #41 evidence.
 9. Replace the rehearsal owner token with a narrowly scoped GitHub App.
-10. Cut consolidated release state over to `release-state`.
+10. Move the versioned manifest consumer and consolidated release state to `release-state`.
 11. Cut stable distribution over to `distribution`.
 12. Rehearse release, recovery and administrator access.
 13. Enable strict protection only after all rehearsals pass.
@@ -154,7 +155,7 @@ Their write authority remains only because the reusable production job still wri
 ## Current migration evidence
 
 - PRs #498–#504 reduced direct public-main writers from **10 to 4**.
-- PR #505 was closed without merging; update-manifest publication remains a direct `main` writer.
-- PR #506 established and verified non-live shadow branches.
-- Current change introduces a separately classified, owner-confirmed shadow writer without changing live authority.
-- No live URL, source authority or protection setting has changed.
+- The current atomic update-manifest change reduces direct public-main writers from **4 to 3**.
+- PRs #506–#507 established isolated operational branches, read-only parity and constrained administrator rehearsal access.
+- Existing v5.0.7 installations retain their exact manifest URL.
+- No userscript, production version, release object, live URL or protection setting is changed by this migration step.

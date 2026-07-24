@@ -200,7 +200,7 @@ jobs:
             --request POST --header "Content-Type: application/json" \
             --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
 
-      - name: Record successful release and announcement state
+      - name: Record successful release, manifest and announcement state
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
@@ -226,60 +226,44 @@ jobs:
           mv status/release-dashboard.tmp status/release-dashboard.json
           printf '%s\n' "$RELEASE_VERSION" > .github/greasyfork-version.txt
           python3 .github/scripts/generate_release_dashboard.py
+          python3 .github/scripts/build_stable_update_manifest.py
+          test "$(jq -r '.version' status/update-manifest.json)" = "$RELEASE_VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/release-dashboard.json status/README.md .github/greasyfork-version.txt
-          git commit -m "Record Toolkit ${RELEASE_VERSION} verified release"
+          git add \
+            status/release-dashboard.json \
+            status/README.md \
+            status/update-manifest.json \
+            .github/greasyfork-version.txt
+          git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"
           git pull --rebase origin main
           git push origin HEAD:main
 
-      - name: Publish update channels in parallel
-        id: channels
+      - name: Publish GitHub Pages
+        id: pages
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ inputs.version }}
         shell: bash
         run: |
           set -euo pipefail
           STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          gh workflow run publish-update-manifest.yml --ref main
           gh workflow run github-pages.yml --ref main
 
-          find_run() {
-            local workflow="$1"
-            local run_id=""
-            for attempt in $(seq 1 60); do
-              run_id="$(gh run list --workflow "$workflow" --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
-              [[ -n "$run_id" ]] && { printf '%s' "$run_id"; return 0; }
-              sleep 2
-            done
-            return 1
-          }
-
-          MANIFEST_RUN_ID="$(find_run publish-update-manifest.yml)" || { echo "::error::The dispatched update-manifest run was not found."; exit 1; }
-          PAGES_RUN_ID="$(find_run github-pages.yml)" || { echo "::error::The dispatched GitHub Pages run was not found."; exit 1; }
-
-          echo "manifest_run_id=$MANIFEST_RUN_ID" >> "$GITHUB_OUTPUT"
+          PAGES_RUN_ID=""
+          for attempt in $(seq 1 60); do
+            PAGES_RUN_ID="$(gh run list --workflow github-pages.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
+            [[ -n "$PAGES_RUN_ID" ]] && break
+            sleep 2
+          done
+          [[ -n "$PAGES_RUN_ID" ]] || { echo "::error::The dispatched GitHub Pages run was not found."; exit 1; }
           echo "pages_run_id=$PAGES_RUN_ID" >> "$GITHUB_OUTPUT"
-          echo "Waiting in parallel for update manifest ${MANIFEST_RUN_ID} and Pages ${PAGES_RUN_ID}."
-
-          set +e
-          gh run watch "$MANIFEST_RUN_ID" --exit-status & manifest_pid=$!
-          gh run watch "$PAGES_RUN_ID" --exit-status & pages_pid=$!
-          wait "$manifest_pid"; manifest_status=$?
-          wait "$pages_pid"; pages_status=$?
-          set -e
-
-          [[ "$manifest_status" -eq 0 ]] || { echo "::error::Update-manifest publication failed."; exit 1; }
-          [[ "$pages_status" -eq 0 ]] || { echo "::error::GitHub Pages deployment failed."; exit 1; }
+          gh run watch "$PAGES_RUN_ID" --exit-status
 
       - name: Write release summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
-          MANIFEST_RUN_ID: ${{ steps.channels.outputs.manifest_run_id }}
-          PAGES_RUN_ID: ${{ steps.channels.outputs.pages_run_id }}
+          PAGES_RUN_ID: ${{ steps.pages.outputs.pages_run_id }}
         shell: bash
         run: |
           {
@@ -294,7 +278,6 @@ jobs:
             echo "- ✅ Greasy Fork version verified"
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
-            echo "- ✅ Release dashboard and announcement tracker updated atomically"
-            echo "- ✅ Stable update manifest published: ${MANIFEST_RUN_ID}"
+            echo "- ✅ Dashboard, stable update manifest and announcement tracker updated atomically"
             echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"
           } >> "$GITHUB_STEP_SUMMARY"

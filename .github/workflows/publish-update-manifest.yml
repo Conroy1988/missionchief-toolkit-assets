@@ -1,115 +1,76 @@
-name: Publish Toolkit Update Manifest
+name: Verify Toolkit Update Manifest
 
 on:
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/publish-update-manifest.yml"
+      - ".github/workflows/release-toolkit.yml"
+      - ".github/scripts/build_stable_update_manifest.py"
+      - ".github/scripts/test_update_manifest_pipeline.py"
+      - ".github/scripts/test_version_status_contract.py"
+      - ".github/release-settings.json"
+      - "status/release-dashboard.json"
+      - "status/update-manifest.json"
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: toolkit-update-manifest
-  cancel-in-progress: false
+  group: toolkit-update-manifest-verification-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  publish:
+  verify:
+    name: Verify committed stable manifest projection
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
 
     steps:
-      - name: Check out reconciled main
+      - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
-          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
 
-      - name: Build manifest from verified release ledger
+      - name: Validate stable manifest builder self-tests
+        run: python3 .github/scripts/build_stable_update_manifest.py --self-test
+
+      - name: Verify committed manifest against release ledger
+        id: verify
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from __future__ import annotations
+          set -o pipefail
+          mkdir -p update-manifest-evidence
+          python3 .github/scripts/build_stable_update_manifest.py \
+            --check \
+            --evidence-json update-manifest-evidence/update-manifest-verification.json \
+            --evidence-markdown update-manifest-evidence/update-manifest-verification.md \
+            2>&1 | tee update-manifest-evidence/update-manifest-verification.log
 
-          import json
-          import re
-          from pathlib import Path
-          from urllib.parse import urlparse
+      - name: Upload immutable update-manifest evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-update-manifest-verification-${{ github.sha }}
+          path: update-manifest-evidence/
+          if-no-files-found: error
+          retention-days: 30
 
-          dashboard_path = Path('status/release-dashboard.json')
-          settings_path = Path('.github/release-settings.json')
-          manifest_path = Path('status/update-manifest.json')
-
-          dashboard = json.loads(dashboard_path.read_text(encoding='utf-8'))
-          settings = json.loads(settings_path.read_text(encoding='utf-8'))
-          latest = dashboard.get('latestRelease') or {}
-          status = dashboard.get('status') or {}
-
-          required_status = {
-              'validation': 'passed',
-              'githubRelease': 'published',
-              'greasyForkSync': 'verified',
-              'backup': 'private-repository-verified',
-              'discordRelease': 'posted',
-              'assetAudit': 'passed',
-              'releaseReadiness': 'passed',
-          }
-          for key, expected in required_status.items():
-              actual = status.get(key)
-              if actual != expected:
-                  raise SystemExit(f'Refusing manifest publication: {key}={actual!r}, expected {expected!r}.')
-
-          version = str(latest.get('version') or '').strip()
-          if not re.fullmatch(r'\d+\.\d+\.\d+', version):
-              raise SystemExit(f'Refusing manifest publication: invalid stable version {version!r}.')
-          if str(dashboard.get('currentVersion') or '') != version:
-              raise SystemExit('Refusing manifest publication: dashboard currentVersion is not the verified latest release.')
-          if latest.get('greasyForkVerified') is not True:
-              raise SystemExit('Refusing manifest publication: Greasy Fork is not verified.')
-          if latest.get('discordPosted') is not True:
-              raise SystemExit('Refusing manifest publication: Discord release is not recorded.')
-          if not str(latest.get('privateBackupCommit') or '').strip():
-              raise SystemExit('Refusing manifest publication: private backup commit is absent.')
-
-          release_url = str(latest.get('githubRelease') or '').strip()
-          release_parts = urlparse(release_url)
-          expected_path = f'/Conroy1988/missionchief-toolkit-assets/releases/tag/v{version}'
-          if release_parts.scheme != 'https' or release_parts.netloc != 'github.com' or release_parts.path != expected_path:
-              raise SystemExit('Refusing manifest publication: GitHub release URL is not canonical.')
-
-          update_url = str((settings.get('greasyFork') or {}).get('installUrl') or '').strip()
-          update_parts = urlparse(update_url)
-          if update_parts.scheme != 'https' or update_parts.netloc != 'update.greasyfork.org' or not update_parts.path.startswith('/scripts/586018/'):
-              raise SystemExit('Refusing manifest publication: Greasy Fork update URL is not canonical.')
-
-          published_at = str(latest.get('completedAt') or '').strip()
-          if not published_at:
-              raise SystemExit('Refusing manifest publication: verified completion time is absent.')
-
-          manifest = {
-              'schemaVersion': 1,
-              'channel': 'stable',
-              'version': version,
-              'releaseNotesUrl': release_url,
-              'updateUrl': update_url,
-              'publishedAt': published_at,
-              'sha256': str(latest.get('sha256') or '').strip(),
-          }
-          manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-          print(f'Prepared stable update manifest for Toolkit v{version}')
-          PY
-
-      - name: Commit verified stable manifest
+      - name: Publish update-manifest summary
+        if: always()
         shell: bash
         run: |
-          set -euo pipefail
-          if git diff --quiet -- status/update-manifest.json; then
-            echo "Stable update manifest already matches the verified release."
-            exit 0
+          if [[ -f update-manifest-evidence/update-manifest-verification.md ]]; then
+            cat update-manifest-evidence/update-manifest-verification.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          VERSION="$(jq -r '.version' status/update-manifest.json)"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/update-manifest.json
-          git commit -m "Publish Toolkit ${VERSION} update manifest"
-          git pull --rebase origin main
-          git push origin HEAD:main
+      - name: Enforce update-manifest verification
+        if: steps.verify.outcome != 'success'
+        run: |
+          echo "The committed stable update manifest differs from the verified release ledger. No repository mutation was attempted."
+          exit 1

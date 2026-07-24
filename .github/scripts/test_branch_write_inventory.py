@@ -92,8 +92,8 @@ def main() -> int:
         fail("A workflow cannot be both a direct main writer and an orchestrator")
     if artifact_workflows & classified_contents:
         fail("Artifact-only workflows cannot retain contents-write classification")
-    if len(direct_workflows) != 4:
-        fail(f"Expected four reviewed direct public-main writers, found {len(direct_workflows)}")
+    if len(direct_workflows) != 3:
+        fail(f"Expected three reviewed direct public-main writers, found {len(direct_workflows)}")
     if len(orchestrator_workflows) != 2:
         fail(f"Expected two reviewed release orchestrators, found {len(orchestrator_workflows)}")
     expected_artifacts = {
@@ -103,6 +103,7 @@ def main() -> int:
         ".github/workflows/update-release-dashboard.yml",
         ".github/workflows/import-canonical-userscript.yml",
         ".github/workflows/reconcile-release-announcement-state.yml",
+        ".github/workflows/publish-update-manifest.yml",
     }
     if artifact_workflows != expected_artifacts:
         fail(f"Unexpected artifact-only workflow inventory: {sorted(artifact_workflows)}")
@@ -275,6 +276,28 @@ def main() -> int:
         "github-actions[bot]", "git reset --hard",
     ], "Artifact-only announcement-state workflow")
 
+    manifest_workflow = (ROOT / ".github/workflows/publish-update-manifest.yml").read_text(encoding="utf-8")
+    manifest_builder = (ROOT / ".github/scripts/build_stable_update_manifest.py").read_text(encoding="utf-8")
+    require_markers(manifest_workflow, [
+        "name: Verify Toolkit Update Manifest",
+        "permissions:\n  contents: read",
+        "persist-credentials: false",
+        "Verify committed manifest against release ledger",
+        "--check",
+        "Upload immutable update-manifest evidence",
+        "missionchief-update-manifest-verification-${{ github.sha }}",
+        "No repository mutation was attempted.",
+    ], "Artifact-only update-manifest workflow")
+    forbid_markers(manifest_workflow, [
+        "contents: write", "git commit", "git push", "git pull --rebase", "github-actions[bot]",
+    ], "Artifact-only update-manifest workflow")
+    require_markers(manifest_builder, [
+        "def build_manifest(dashboard: dict, settings: dict)",
+        '"publicMainChanged": False',
+        '"releaseDashboardChanged": False',
+        "Stable update manifest self-tests passed.",
+    ], "Stable update-manifest builder")
+
     for entry in external_entries:
         path = ROOT / str(entry["path"])
         repository = str(entry["repository"])
@@ -299,8 +322,8 @@ def main() -> int:
 
     for claim in [
         "Strict pull-request-only protection is **not yet safe to enable**",
-        "four workflows that can commit directly to public `main`",
-        "Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity and announcement-state verification are now artifact-only",
+        "three workflows that can commit directly to public `main`",
+        "Canonical validation, release dry runs, repository audits, dashboard projection, Greasy Fork parity, announcement-state verification and stable update-manifest verification are now artifact-only",
     ]:
         if claim not in document:
             fail(f"Human inventory is missing migration claim: {claim}")

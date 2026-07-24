@@ -1,0 +1,49 @@
+Issue #470 boot-contract alignment diagnostic
+status=failure
+
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-boot-contract-diagnostic-v2.py", line 19, in <module>
+    runpy.run_path(str(TARGET), run_name='__main__')
+  File "<frozen runpy>", line 286, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue470-boot-contract-alignment.py", line 166, in <module>
+    raise SystemExit(
+SystemExit: Boot lifecycle contract still failed after map-independent coordinator alignment.
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: core UI readiness must be evaluated immediately
+
+0 !== 1
+
+    at testBootAttemptCoordinatorDirectly (/tmp/mcms-boot-lifecycle-wgd0vouq/boot-lifecycle-contract.js:496:12)
+    at Object.<anonymous> (/tmp/mcms-boot-lifecycle-wgd0vouq/boot-lifecycle-contract.js:642:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.1
+Traceback (most recent call last):
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 669, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_boot_lifecycle_contract.py", line 664, in main
+    subprocess.run(["node", str(harness_path)], cwd=ROOT, check=True)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['node', '/tmp/mcms-boot-lifecycle-wgd0vouq/boot-lifecycle-contract.js']' returned non-zero exit status 1.
+
+

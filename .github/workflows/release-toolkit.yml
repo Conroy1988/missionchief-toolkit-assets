@@ -200,7 +200,7 @@ jobs:
             --request POST --header "Content-Type: application/json" \
             --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
 
-      - name: Record successful release in dashboard
+      - name: Record successful release and announcement state
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
@@ -224,10 +224,11 @@ jobs:
              .lastUpdated=$now' \
             status/release-dashboard.json > status/release-dashboard.tmp
           mv status/release-dashboard.tmp status/release-dashboard.json
+          printf '%s\n' "$RELEASE_VERSION" > .github/greasyfork-version.txt
           python3 .github/scripts/generate_release_dashboard.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add status/release-dashboard.json status/README.md
+          git add status/release-dashboard.json status/README.md .github/greasyfork-version.txt
           git commit -m "Record Toolkit ${RELEASE_VERSION} verified release"
           git pull --rebase origin main
           git push origin HEAD:main
@@ -293,7 +294,7 @@ jobs:
             echo "- ✅ Greasy Fork version verified"
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
-            echo "- ✅ Release dashboard and generated control panel updated"
+            echo "- ✅ Release dashboard and announcement tracker updated atomically"
             echo "- ✅ Stable update manifest published: ${MANIFEST_RUN_ID}"
             echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"
           } >> "$GITHUB_STEP_SUMMARY"

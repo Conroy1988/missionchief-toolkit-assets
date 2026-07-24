@@ -96,7 +96,7 @@ def main() -> int:
     ], "Stable distribution publication helper")
     require(release, [
         "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
-        "Record successful release in dashboard",
+        "Record successful release and announcement state",
     ], "Production release workflow")
 
     if "distributionCandidate" in dashboard or "releaseDryRun" in dashboard:

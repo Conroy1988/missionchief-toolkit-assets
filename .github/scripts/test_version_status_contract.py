@@ -114,9 +114,9 @@ def main() -> int:
         "MANIFEST_RUN_ID: ${{ steps.channels.outputs.manifest_run_id }}",
     ]:
         assert marker in release_workflow, f"release workflow parallel publication marker missing: {marker}"
-    dashboard_index = release_workflow.index("- name: Record successful release in dashboard")
+    dashboard_index = release_workflow.index("- name: Record successful release and announcement state")
     publish_index = release_workflow.index("- name: Publish update channels in parallel")
-    assert dashboard_index < publish_index, "parallel update channels must start after dashboard reconciliation"
+    assert dashboard_index < publish_index, "parallel update channels must start after atomic release-state reconciliation"
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)
     assert result.returncode == 0, "version status runtime fixtures failed"

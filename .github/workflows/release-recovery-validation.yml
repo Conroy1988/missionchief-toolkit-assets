@@ -89,6 +89,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          MAIN_BRANCH='main'
+          PROHIBITED_PUSH="git push origin HEAD:${MAIN_BRANCH}"
+          PROHIBITED_PULL="git pull --rebase origin ${MAIN_BRANCH}"
           grep -Fq 'group: toolkit-production-release' .github/workflows/release-recovery.yml
           grep -Fq 'Check out latest main authority' .github/workflows/release-recovery.yml
           grep -Fq 'persist-credentials: false' .github/workflows/release-recovery.yml
@@ -96,8 +99,8 @@ jobs:
           grep -Fq 'Claim Discord retry on release-state without posting' .github/workflows/release-recovery.yml
           grep -Fq 'latest GitHub Release' .github/workflows/release-recovery.yml
           grep -Fq 'Public main changed: no' .github/workflows/release-recovery.yml
-          ! grep -Fq 'git push origin HEAD:main' .github/workflows/release-recovery.yml
-          ! grep -Fq 'git pull --rebase origin main' .github/workflows/release-recovery.yml
+          ! grep -Fq "$PROHIBITED_PUSH" .github/workflows/release-recovery.yml
+          ! grep -Fq "$PROHIBITED_PULL" .github/workflows/release-recovery.yml
           grep -Fq 'This PR does **not** publish a GitHub Release.' .github/workflows/prepare-release-rollback.yml
           grep -Fq 'ALLOW_EXISTING_IDENTICAL' .github/scripts/backup_release_to_private_repo.sh
           echo "Release-state recovery safety invariants are present."

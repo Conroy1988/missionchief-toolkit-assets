@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "a97c830be5cdaf786aabe8d66e1c140ef6da78f0",
+  "reviewedMainCommit": "fab00e46be8c1e6d2e193af66407fb04ed0c309a",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -9,7 +9,9 @@
       "purpose": "Record and reconcile the Greasy Fork/Discord announcement version tracker.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
-      "writes": [".github/greasyfork-version.txt"],
+      "writes": [
+        ".github/greasyfork-version.txt"
+      ],
       "migrationTarget": "release-state branch"
     },
     {
@@ -17,7 +19,10 @@
       "purpose": "Import the live Greasy Fork userscript and source baseline directly into the canonical repository.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
-      "writes": ["src/MissionChief_Map_Command_Toolkit.user.js", "status/source-baseline.json"],
+      "writes": [
+        "src/MissionChief_Map_Command_Toolkit.user.js",
+        "status/source-baseline.json"
+      ],
       "migrationTarget": "owner-created pull request only; retire when GitHub remains authoritative"
     },
     {
@@ -25,7 +30,9 @@
       "purpose": "Publish the stable update manifest after all release channels are verified.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
-      "writes": ["status/update-manifest.json"],
+      "writes": [
+        "status/update-manifest.json"
+      ],
       "migrationTarget": "release-state branch or immutable release asset"
     },
     {
@@ -33,7 +40,9 @@
       "purpose": "Synchronize the fallback announcement tracker after a verified release.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
-      "writes": [".github/greasyfork-version.txt"],
+      "writes": [
+        ".github/greasyfork-version.txt"
+      ],
       "migrationTarget": "release-state branch"
     },
     {
@@ -41,7 +50,11 @@
       "purpose": "Record controlled Greasy Fork, private-backup, Discord and dashboard recovery state.",
       "credential": "github.token",
       "actor": "github-actions[bot]",
-      "writes": ["status/release-dashboard.json", "status/README.md", ".github/greasyfork-version.txt"],
+      "writes": [
+        "status/release-dashboard.json",
+        "status/README.md",
+        ".github/greasyfork-version.txt"
+      ],
       "migrationTarget": "release-state branch; release-object repair remains API-based"
     },
     {
@@ -56,16 +69,10 @@
         "status/release-dashboard.json",
         "status/README.md"
       ],
-      "helperScripts": [".github/scripts/sync_greasyfork_root_mirror.sh"],
+      "helperScripts": [
+        ".github/scripts/sync_greasyfork_root_mirror.sh"
+      ],
       "migrationTarget": "dedicated distribution branch plus release-state branch, written by a scoped GitHub App"
-    },
-    {
-      "workflow": ".github/workflows/update-release-dashboard.yml",
-      "purpose": "Regenerate the human-readable dashboard from machine release state.",
-      "credential": "github.token",
-      "actor": "github-actions[bot]",
-      "writes": ["status/README.md"],
-      "migrationTarget": "generated Pages artifact or release-state branch"
     }
   ],
   "indirectMainWriteOrchestrators": [
@@ -86,21 +93,44 @@
       "purpose": "Validate canonical source and retain the exact commit/ref distribution candidate without changing public main or release state.",
       "permission": "contents: read",
       "artifact": "missionchief-toolkit-validation-candidate-<commit>",
-      "evidence": ["validation-candidate.json", "dist userscript", "dist text", "checksums", "release manifest"]
+      "evidence": [
+        "validation-candidate.json",
+        "dist userscript",
+        "dist text",
+        "checksums",
+        "release manifest"
+      ]
     },
     {
       "workflow": ".github/workflows/release-toolkit-dry-run.yml",
       "purpose": "Validate and package a candidate without changing public main or any publication channel.",
       "permission": "contents: read",
       "artifact": "missionchief-toolkit-v<version>-release-dry-run",
-      "evidence": ["release-dry-run-v<version>.json", "release-dry-run-v<version>.md"]
+      "evidence": [
+        "release-dry-run-v<version>.json",
+        "release-dry-run-v<version>.md"
+      ]
     },
     {
       "workflow": ".github/workflows/repository-audit.yml",
       "purpose": "Audit repository dependencies and live Greasy Fork references without changing public main or the release dashboard.",
       "permission": "contents: read",
       "artifact": "missionchief-repository-audit-<commit>",
-      "evidence": ["repository-audit.json", "repository-audit.md"]
+      "evidence": [
+        "repository-audit.json",
+        "repository-audit.md"
+      ]
+    },
+    {
+      "workflow": ".github/workflows/update-release-dashboard.yml",
+      "purpose": "Verify the committed release-dashboard JSON and Markdown projection without changing public main.",
+      "permission": "contents: read",
+      "artifact": "missionchief-release-dashboard-projection-<commit>",
+      "evidence": [
+        "status-README.md",
+        "status-README.diff",
+        "projection.log"
+      ]
     }
   ],
   "directMainPushSources": [
@@ -110,7 +140,6 @@
     ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
     ".github/workflows/release-toolkit.yml",
-    ".github/workflows/update-release-dashboard.yml",
     ".github/scripts/sync_greasyfork_root_mirror.sh"
   ],
   "externalRepositoryMainPushSources": [
@@ -140,7 +169,6 @@
     ".github/workflows/publish-update-manifest.yml",
     ".github/workflows/reconcile-release-announcement-state.yml",
     ".github/workflows/release-recovery.yml",
-    ".github/workflows/release-toolkit.yml",
-    ".github/workflows/update-release-dashboard.yml"
+    ".github/workflows/release-toolkit.yml"
   ]
 }

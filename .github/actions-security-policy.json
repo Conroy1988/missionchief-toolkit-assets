@@ -55,9 +55,6 @@
     ],
     ".github/workflows/sync-repository-labels.yml": [
       "issues"
-    ],
-    ".github/workflows/update-release-dashboard.yml": [
-      "contents"
     ]
   },
   "forbiddenTriggers": [

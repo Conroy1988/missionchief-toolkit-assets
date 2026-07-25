@@ -1,110 +1,186 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-<title id="title">MissionChief Toolkit Release and Recovery Control</title>
-<desc id="desc">Verified delivery chain from canonical source through validation, distribution and private recovery.</desc>
-
+<title id="title">MissionChief Toolkit release and recovery operations centre</title>
+<desc id="desc">A realistic UK emergency operations control room showing the governed path from canonical source through validation, release channels, verification and recoverable backup.</desc>
 <defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#02060a"/>
-    <stop offset=".42" stop-color="#07141e"/>
-    <stop offset="1" stop-color="#12080b"/>
-  </linearGradient>
-  <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#36434d"/>
-    <stop offset=".12" stop-color="#141c22"/>
-    <stop offset=".52" stop-color="#080d11"/>
-    <stop offset=".88" stop-color="#1b252c"/>
-    <stop offset="1" stop-color="#05080a"/>
-  </linearGradient>
-  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#0a537d"/>
-    <stop offset=".45" stop-color="#0b2b41"/>
-    <stop offset="1" stop-color="#07131c"/>
-  </linearGradient>
-  <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#225b2a"/>
-    <stop offset=".45" stop-color="#15351c"/>
-    <stop offset="1" stop-color="#08130b"/>
-  </linearGradient>
-  <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#6c4d0b"/>
-    <stop offset=".45" stop-color="#3a2a0e"/>
-    <stop offset="1" stop-color="#151006"/>
-  </linearGradient>
-  <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#6d161e"/>
-    <stop offset=".45" stop-color="#391218"/>
-    <stop offset="1" stop-color="#16080b"/>
-  </linearGradient>
-  <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#fff2a8"/>
-    <stop offset=".28" stop-color="#f6c84f"/>
-    <stop offset=".7" stop-color="#b87512"/>
-    <stop offset="1" stop-color="#f4bc2d"/>
-  </linearGradient>
-  <linearGradient id="whiteText" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#ffffff"/>
-    <stop offset=".55" stop-color="#e7e1d4"/>
-    <stop offset="1" stop-color="#a9a49a"/>
-  </linearGradient>
-  <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
-    <path d="M42 0H0V42" fill="none" stroke="#66d1ff" stroke-opacity=".055"/>
-  </pattern>
-  <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-    <rect width="4" height="1.2" fill="#fff" opacity=".025"/>
-  </pattern>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-    <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000" flood-opacity=".7"/>
-  </filter>
-  <filter id="grit" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="2" seed="9" result="noise"/>
-    <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
-    <feComponentTransfer in="mono" result="soft"><feFuncA type="table" tableValues="0 0 .08"/></feComponentTransfer>
-    <feBlend in="SourceGraphic" in2="soft" mode="screen"/>
-  </filter>
+  <linearGradient id="room" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#07121c"/><stop offset=".55" stop-color="#02070b"/><stop offset="1" stop-color="#090307"/></linearGradient>
+  <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1b2b34"/><stop offset=".38" stop-color="#0b141a"/><stop offset="1" stop-color="#030609"/></linearGradient>
+  <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#43515a"/><stop offset=".12" stop-color="#11191e"/><stop offset=".65" stop-color="#05080a"/><stop offset="1" stop-color="#202d34"/></linearGradient>
+  <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#092233"/><stop offset=".55" stop-color="#03111b"/><stop offset="1" stop-color="#02070a"/></linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#71838c"/><stop offset=".12" stop-color="#1a252b"/><stop offset=".7" stop-color="#070a0c"/><stop offset="1" stop-color="#28343a"/></linearGradient>
+  <linearGradient id="bluePanel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0d5c86"/><stop offset=".5" stop-color="#07304a"/><stop offset="1" stop-color="#03101a"/></linearGradient>
+  <linearGradient id="greenPanel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#185f32"/><stop offset=".5" stop-color="#0b321c"/><stop offset="1" stop-color="#031109"/></linearGradient>
+  <linearGradient id="amberPanel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#75520d"/><stop offset=".5" stop-color="#3d2a08"/><stop offset="1" stop-color="#160e02"/></linearGradient>
+  <linearGradient id="redPanel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#74212a"/><stop offset=".5" stop-color="#3b1017"/><stop offset="1" stop-color="#140408"/></linearGradient>
+  <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M34 0H0V34" fill="none" stroke="#5ed2ff" stroke-opacity=".055"/></pattern>
+  <pattern id="scan" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="1" fill="#fff" opacity=".018"/></pattern>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%"><feDropShadow dx="0" dy="18" stdDeviation="15" flood-color="#000" flood-opacity=".88"/></filter>
+  <filter id="glow" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="9" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+  <clipPath id="clip"><rect x="18" y="18" width="1564" height="864" rx="28"/></clipPath>
 </defs>
+<g clip-path="url(#clip)">
+  <rect width="1600" height="900" fill="url(#room)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+  <rect width="1600" height="900" fill="url(#scan)"/>
 
-<rect width="1600" height="900" rx="28" fill="url(#bg)"/><rect width="1600" height="900" rx="28" fill="url(#grid)"/><rect width="1600" height="900" rx="28" fill="url(#scan)"/>
-<path d="M20 10H1580l10 10v860l-10 10H20L10 880V20z" fill="none" stroke="url(#steel)" stroke-width="18"/>
-<rect x="24" y="24" width="1552" height="852" rx="18" fill="none" stroke="#62727c" stroke-opacity=".45" stroke-width="2"/>
-<g filter="url(#shadow)"><path d="M30 28h1540v62H30z" fill="url(#steel)" stroke="#50616b" stroke-width="2"/>
-<g transform="translate(42 38)"><rect width="64" height="42" rx="5" fill="#0a1116" stroke="#4f6470"/><path d="M0 0 64 42M64 0 0 42" stroke="#fff" stroke-width="11"/><path d="M0 0 64 42M64 0 0 42" stroke="#c92632" stroke-width="4"/><path d="M32 0v42M0 21h64" stroke="#fff" stroke-width="12"/><path d="M32 0v42M0 21h64" stroke="#c92632" stroke-width="6"/></g>
-<text x="120" y="64" fill="#5ed2ff" font-family="Courier New,monospace" font-size="12" font-weight="900" letter-spacing="1.7">UK EMERGENCY COMMAND NETWORK</text>
-<g transform="translate(390 38)"><rect width="190" height="42" rx="6" fill="#07131f" stroke="#168ddd"/><circle cx="23" cy="21" r="10" fill="#179ee8"/><text x="46" y="27" fill="#e9f8ff" font-size="15" font-weight="900" letter-spacing="2">VERIFIED v7.1.4</text></g>
-<g transform="translate(590 38)"><rect width="220" height="42" rx="6" fill="#270a0c" stroke="#d3342f"/><circle cx="23" cy="21" r="10" fill="#e9443b"/><text x="46" y="27" fill="#ffd9d2" font-size="12" font-weight="900" letter-spacing="1.25">GITHUB-AUTHORITATIVE</text></g>
-<g transform="translate(825 38)"><rect width="210" height="42" rx="6" fill="#0c280d" stroke="#4ac654"/><circle cx="23" cy="21" r="10" fill="#4fc857"/><text x="46" y="27" fill="#dcffdf" font-size="12" font-weight="900" letter-spacing="1.25">GREASY FORK VERIFIED</text></g>
-<g transform="translate(1045 38)"><rect width="220" height="42" rx="6" fill="#2b1d05" stroke="#d99a16"/><circle cx="23" cy="21" r="10" fill="#e0aa2e"/><text x="46" y="27" fill="#ffe6a5" font-size="12" font-weight="900" letter-spacing="1.25">PRIVATE BACKUP READY</text></g>
-<text x="1514" y="59" text-anchor="end" fill="#88949b" font-size="12" letter-spacing="2">CHANNEL STATUS</text><text x="1514" y="78" text-anchor="end" fill="#48dc71" font-size="14" font-weight="900" letter-spacing="2">STABLE</text><circle cx="1538" cy="70" r="6" fill="#49e080"/>
+  <!-- Control room walls -->
+  <path d="M0 0h1600v572H0z" fill="url(#wall)"/>
+  <path d="M0 572h1600v328H0z" fill="#030506"/>
+  <path d="M0 575h1600" stroke="#647680" stroke-opacity=".35" stroke-width="4"/>
+  <g opacity=".45">
+    <path d="M0 0 260 0 520 572H330z" fill="#163246"/>
+    <path d="M1600 0h-260l-260 572h190z" fill="#2a1118"/>
+  </g>
+
+  <!-- Header identity -->
+  <g transform="translate(38 30)" filter="url(#shadow)">
+    <path d="M0 0h1524l18 18v98l-18 18H0l-18-18V18z" fill="#050b10" fill-opacity=".94" stroke="#5e727c" stroke-width="2"/>
+    <g transform="translate(18 18)">
+      <rect width="82" height="50" rx="4" fill="#081017" stroke="#667882"/>
+      <path d="M0 0 82 50M82 0 0 50" stroke="#fff" stroke-width="13"/><path d="M0 0 82 50M82 0 0 50" stroke="#c71f31" stroke-width="5"/>
+      <path d="M41 0v50M0 25h82" stroke="#fff" stroke-width="15"/><path d="M41 0v50M0 25h82" stroke="#c71f31" stroke-width="7"/>
+    </g>
+    <text x="122" y="47" fill="#68d7ff" font-family="Arial,sans-serif" font-size="15" font-weight="900" letter-spacing="4">MISSIONCHIEF TOOLKIT // GOVERNED DELIVERY OPERATIONS</text>
+    <text x="122" y="94" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-size="43" font-weight="900" letter-spacing="1">RELEASE &amp; RECOVERY CONTROL</text>
+    <g transform="translate(1190 22)" font-family="Arial,sans-serif">
+      <text x="0" y="15" fill="#7f919b" font-size="11" font-weight="800" letter-spacing="2">CHAIN HEALTH</text>
+      <circle cx="20" cy="54" r="8" fill="#34d878" filter="url(#glow)"/>
+      <text x="42" y="61" fill="#dffff0" font-size="19" font-weight="900" letter-spacing="2">VERIFIED</text>
+      <text x="0" y="96" fill="#8496a0" font-size="11" letter-spacing="1.4">SOURCE · RELEASE · RECOVERY</text>
+    </g>
+  </g>
+
+  <!-- Wall screens -->
+  <g transform="translate(62 188)" filter="url(#shadow)">
+    <!-- left screen -->
+    <g>
+      <rect width="430" height="250" rx="8" fill="#010407" stroke="#5f717a" stroke-width="5"/>
+      <rect x="12" y="12" width="406" height="226" rx="4" fill="url(#screen)" stroke="#14394d"/>
+      <text x="28" y="38" fill="#5bd3ff" font-family="Arial,sans-serif" font-size="12" font-weight="900" letter-spacing="2.4">CANONICAL SOURCE // MAIN</text>
+      <path d="M28 52h372" stroke="#1d749c"/>
+      <g font-family="Courier New,monospace" font-size="12">
+        <text x="28" y="82" fill="#58d5ff">src/</text>
+        <text x="68" y="82" fill="#e7f5fb">MissionChief_Map_Command_Toolkit.user.js</text>
+        <text x="28" y="112" fill="#8a9aa2">syntax</text><text x="130" y="112" fill="#49df78">PASS</text>
+        <text x="28" y="139" fill="#8a9aa2">metadata</text><text x="130" y="139" fill="#49df78">PASS</text>
+        <text x="28" y="166" fill="#8a9aa2">runtime contracts</text><text x="170" y="166" fill="#49df78">PASS</text>
+        <text x="28" y="193" fill="#8a9aa2">hosted media</text><text x="160" y="193" fill="#49df78">PASS</text>
+      </g>
+      <path d="M288 87h95M288 110h70M288 133h83M288 156h55M288 179h102" stroke="#24b9ee" stroke-width="4" stroke-linecap="round" opacity=".72"/>
+      <circle cx="388" cy="203" r="13" fill="#103c20" stroke="#43d56f"/><path d="m381 203 5 5 10-13" fill="none" stroke="#59e786" stroke-width="4"/>
+    </g>
+
+    <!-- centre screen -->
+    <g transform="translate(465)">
+      <rect width="560" height="250" rx="8" fill="#010407" stroke="#5f717a" stroke-width="5"/>
+      <rect x="12" y="12" width="536" height="226" rx="4" fill="url(#screen)" stroke="#14394d"/>
+      <text x="28" y="38" fill="#5bd3ff" font-family="Arial,sans-serif" font-size="12" font-weight="900" letter-spacing="2.4">UK RELEASE TOPOLOGY // VERIFIED DELIVERY CHAIN</text>
+      <path d="M28 52h504" stroke="#1d749c"/>
+      <!-- UK map -->
+      <g transform="translate(356 58) scale(.34)">
+        <path d="M196 0l-30 24-14 46-37 26-8 46-35 35 5 41-22 38 12 35-18 43 12 54 39 13 22 43 45-5 31 34 45-6 26-38 43-9 18-46 42-28-8-52 24-43-8-45-34-26-7-38-37-20 10-39-27-32-37 11-27-37z" fill="#0c2d3b" stroke="#51caff" stroke-width="7"/>
+        <g fill="#ff4652" filter="url(#glow)"><circle cx="165" cy="110" r="14"/><circle cx="196" cy="252" r="16"/><circle cx="224" cy="375" r="15"/></g>
+      </g>
+      <g font-family="Arial,sans-serif" font-weight="900">
+        <g transform="translate(28 78)"><rect width="112" height="58" rx="7" fill="url(#bluePanel)" stroke="#2ab9ff"/><text x="56" y="25" text-anchor="middle" fill="#fff" font-size="12">SOURCE</text><text x="56" y="43" text-anchor="middle" fill="#87e2ff" font-size="10">CANONICAL</text></g>
+        <path d="M146 107h34m-11-10 11 10-11 10" fill="none" stroke="#53cbff" stroke-width="4"/>
+        <g transform="translate(186 78)"><rect width="112" height="58" rx="7" fill="url(#greenPanel)" stroke="#45d169"/><text x="56" y="25" text-anchor="middle" fill="#fff" font-size="12">VALIDATE</text><text x="56" y="43" text-anchor="middle" fill="#8bf0a7" font-size="10">CONTRACTS</text></g>
+        <path d="M304 107h34m-11-10 11 10-11 10" fill="none" stroke="#53cbff" stroke-width="4"/>
+        <g transform="translate(28 155)"><rect width="112" height="58" rx="7" fill="url(#amberPanel)" stroke="#edb53e"/><text x="56" y="25" text-anchor="middle" fill="#fff" font-size="12">RELEASE</text><text x="56" y="43" text-anchor="middle" fill="#ffe09b" font-size="10">IMMUTABLE</text></g>
+        <path d="M146 184h34m-11-10 11 10-11 10" fill="none" stroke="#53cbff" stroke-width="4"/>
+        <g transform="translate(186 155)"><rect width="112" height="58" rx="7" fill="url(#redPanel)" stroke="#ef5962"/><text x="56" y="25" text-anchor="middle" fill="#fff" font-size="12">VERIFY</text><text x="56" y="43" text-anchor="middle" fill="#ffadb4" font-size="10">PARITY</text></g>
+      </g>
+    </g>
+
+    <!-- right screen -->
+    <g transform="translate(1060)">
+      <rect width="430" height="250" rx="8" fill="#010407" stroke="#5f717a" stroke-width="5"/>
+      <rect x="12" y="12" width="406" height="226" rx="4" fill="url(#screen)" stroke="#14394d"/>
+      <text x="28" y="38" fill="#5bd3ff" font-family="Arial,sans-serif" font-size="12" font-weight="900" letter-spacing="2.4">CHANNEL PARITY // PUBLIC DELIVERY</text>
+      <path d="M28 52h372" stroke="#1d749c"/>
+      <g font-family="Arial,sans-serif" font-size="14" font-weight="900">
+        <circle cx="44" cy="88" r="7" fill="#39d876"/><text x="64" y="94" fill="#e7fff0">GITHUB RELEASE</text><text x="367" y="94" text-anchor="end" fill="#6fe595">VERIFIED</text>
+        <circle cx="44" cy="126" r="7" fill="#39d876"/><text x="64" y="132" fill="#e7fff0">GREASY FORK</text><text x="367" y="132" text-anchor="end" fill="#6fe595">VERIFIED</text>
+        <circle cx="44" cy="164" r="7" fill="#39d876"/><text x="64" y="170" fill="#e7fff0">PRIVATE RECOVERY</text><text x="367" y="170" text-anchor="end" fill="#6fe595">READY</text>
+        <circle cx="44" cy="202" r="7" fill="#39d876"/><text x="64" y="208" fill="#e7fff0">DISCORD SIGNAL</text><text x="367" y="208" text-anchor="end" fill="#6fe595">POSTED</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Consoles -->
+  <g transform="translate(78 493)" filter="url(#shadow)">
+    <path d="M0 0h1444l28 25-64 309H64L-28 25z" fill="url(#desk)" stroke="#687b85" stroke-width="4"/>
+    <path d="M36 36h1372l-44 224H86z" fill="#030609" stroke="#25343b" stroke-width="3"/>
+    <path d="M86 260h1278l20 44H64z" fill="#10181d" stroke="#53656e"/>
+
+    <!-- pipeline modules -->
+    <g transform="translate(76 60)" font-family="Arial,sans-serif" filter="url(#shadow)">
+      <g>
+        <rect width="230" height="156" rx="10" fill="url(#bluePanel)" stroke="#2ab8ff" stroke-width="2"/>
+        <circle cx="40" cy="40" r="22" fill="#07273c" stroke="#4ecaff"/><path d="M40 19v42M19 40h42" stroke="#5cd4ff" stroke-width="4"/>
+        <text x="78" y="36" fill="#fff" font-size="19" font-weight="900">CANONICAL</text><text x="78" y="59" fill="#7bdcff" font-size="14" font-weight="900">SOURCE</text>
+        <text x="24" y="101" fill="#ccefff" font-size="12">Exact userscript on main</text><text x="24" y="126" fill="#ccefff" font-size="12">No external source authority</text>
+      </g>
+      <path d="M240 78h38m-12-12 12 12-12 12" fill="none" stroke="#53caff" stroke-width="5"/>
+      <g transform="translate(288)">
+        <rect width="230" height="156" rx="10" fill="url(#greenPanel)" stroke="#49d36e" stroke-width="2"/>
+        <path d="M40 17 62 25v19c0 18-10 29-22 38-12-9-22-20-22-38V25z" fill="#123d20" stroke="#65e087" stroke-width="3"/><path d="m31 44 7 7 14-18" fill="none" stroke="#7af19b" stroke-width="5"/>
+        <text x="78" y="36" fill="#fff" font-size="19" font-weight="900">VALIDATION</text><text x="78" y="59" fill="#8bf0a7" font-size="14" font-weight="900">EXACT HEAD</text>
+        <text x="24" y="101" fill="#d7ffe2" font-size="12">Syntax · metadata · runtime</text><text x="24" y="126" fill="#d7ffe2" font-size="12">Docs · assets · release rules</text>
+      </g>
+      <path d="M528 78h38m-12-12 12 12-12 12" fill="none" stroke="#53caff" stroke-width="5"/>
+      <g transform="translate(576)">
+        <rect width="230" height="156" rx="10" fill="url(#amberPanel)" stroke="#e8af37" stroke-width="2"/>
+        <circle cx="40" cy="40" r="22" fill="#4b3407" stroke="#f1bf4b"/><path d="M40 21v38M21 40h38" stroke="#ffd46a" stroke-width="4"/>
+        <text x="78" y="36" fill="#fff" font-size="19" font-weight="900">RELEASE</text><text x="78" y="59" fill="#ffe19d" font-size="14" font-weight="900">IMMUTABLE</text>
+        <text x="24" y="101" fill="#fff0c8" font-size="12">Tag · asset · SHA-256</text><text x="24" y="126" fill="#fff0c8" font-size="12">Stable distribution publication</text>
+      </g>
+      <path d="M816 78h38m-12-12 12 12-12 12" fill="none" stroke="#53caff" stroke-width="5"/>
+      <g transform="translate(864)">
+        <rect width="230" height="156" rx="10" fill="url(#redPanel)" stroke="#ef5962" stroke-width="2"/>
+        <circle cx="40" cy="40" r="22" fill="#4a1016" stroke="#ff6972"/><path d="M40 18a22 22 0 1 1-16 7M19 20h20v20" fill="none" stroke="#ff7b83" stroke-width="4"/>
+        <text x="78" y="36" fill="#fff" font-size="19" font-weight="900">RECOVERY</text><text x="78" y="59" fill="#ffadb4" font-size="14" font-weight="900">CHECKSUM-BACKED</text>
+        <text x="24" y="101" fill="#ffe2e4" font-size="12">Private migration backup</text><text x="24" y="126" fill="#ffe2e4" font-size="12">Deterministic rollback identity</text>
+      </g>
+      <path d="M1104 78h38m-12-12 12 12-12 12" fill="none" stroke="#53caff" stroke-width="5"/>
+      <g transform="translate(1152)">
+        <rect width="230" height="156" rx="10" fill="#122536" stroke="#6f8c9c" stroke-width="2"/>
+        <circle cx="40" cy="40" r="22" fill="#092032" stroke="#59cfff"/><circle cx="40" cy="40" r="8" fill="#3bdc7a" filter="url(#glow)"/>
+        <text x="78" y="36" fill="#fff" font-size="19" font-weight="900">CONFIRM</text><text x="78" y="59" fill="#8de4ff" font-size="14" font-weight="900">CHANNEL PARITY</text>
+        <text x="24" y="101" fill="#dff7ff" font-size="12">GitHub · Greasy Fork · Discord</text><text x="24" y="126" fill="#dff7ff" font-size="12">Release complete only at parity</text>
+      </g>
+    </g>
+
+    <!-- operator lights -->
+    <g transform="translate(92 278)">
+      <g fill="#31d776" filter="url(#glow)"><circle cx="0" cy="0" r="5"/><circle cx="30" cy="0" r="5"/><circle cx="60" cy="0" r="5"/><circle cx="90" cy="0" r="5"/></g>
+      <g fill="#27b7ff"><circle cx="120" cy="0" r="5"/><circle cx="150" cy="0" r="5"/></g>
+      <g fill="#ffbf3d"><circle cx="180" cy="0" r="5"/></g>
+    </g>
+    <text x="1360" y="286" text-anchor="end" fill="#8fa0a8" font-family="Courier New,monospace" font-size="12" letter-spacing="2">GITHUB AUTHORITATIVE</text>
+  </g>
+
+  <!-- floor reflections -->
+  <g opacity=".26" filter="url(#soft)">
+    <path d="M155 798h210l-70 102H92z" fill="#169bd4"/>
+    <path d="M560 798h210l35 102H516z" fill="#28a955"/>
+    <path d="M958 798h210l110 102H916z" fill="#d39422"/>
+    <path d="M1280 798h185l95 102h-331z" fill="#b32836"/>
+  </g>
+
+  <!-- footer rail -->
+  <g transform="translate(44 836)" filter="url(#shadow)">
+    <path d="M0 0h1512l16 16-16 40H0l-16-40z" fill="#04090d" stroke="#536771"/>
+    <g font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="1.4">
+      <circle cx="28" cy="28" r="6" fill="#28d272"/><text x="44" y="33" fill="#fff">EXACT-HEAD VALIDATION</text>
+      <circle cx="342" cy="28" r="6" fill="#27b7ff"/><text x="358" y="33" fill="#fff">IMMUTABLE RELEASE ASSETS</text>
+      <circle cx="723" cy="28" r="6" fill="#ffbd3b"/><text x="739" y="33" fill="#fff">PUBLIC CHANNEL PARITY</text>
+      <circle cx="1059" cy="28" r="6" fill="#ff4d59"/><text x="1075" y="33" fill="#fff">PRIVATE RECOVERY IDENTITY</text>
+    </g>
+  </g>
+
+  <rect width="1600" height="900" fill="none" stroke="#748a95" stroke-width="3"/>
+  <rect x="12" y="12" width="1576" height="876" rx="30" fill="none" stroke="url(#steel)" stroke-width="20"/>
+  <rect x="24" y="24" width="1552" height="852" rx="22" fill="none" stroke="#6d818b" stroke-opacity=".55" stroke-width="2"/>
 </g>
-<g filter="url(#grit)"><text x="64" y="224" fill="url(#whiteText)" font-family="Impact,Arial Black,sans-serif" font-size="82" letter-spacing="1.2">RELEASE &amp; RECOVERY CONTROL</text></g>
-<text x="80" y="286" fill="url(#goldText)" font-family="Impact,Arial Black,sans-serif" font-size="43" letter-spacing="9">VERIFIED DELIVERY CHAIN</text>
-<path d="M70 306h990" stroke="#20b9ff" stroke-width="4"/>
-<g transform="translate(850 -58) scale(.5)" opacity=".58"><path d="M1098 136 l-29 13 -10 32 -27 12 -10 33 -34 13 -2 30 -23 24 7 29 -25 28 10 29 -18 24 4 36 24 9 12 33 31 -3 22 26 38 -4 19 -25 32 -5 14 -31 31 -18 -6 -36 20 -29 -4 -36 -26 -18 -4 -26 -27 -17 8 -25 -19 -26 -27 8 -18 -22 z" fill="#06121a" stroke="#27b7ff" stroke-width="5"/><g fill="#ff3e35"><circle cx="1046" cy="238" r="8"/><circle cx="1096" cy="350" r="9"/><circle cx="1134" cy="426" r="8"/></g><g fill="#ffba2e"><circle cx="1062" cy="315" r="8"/><circle cx="1122" cy="382" r="7"/></g><g fill="#29b7ff"><circle cx="1018" cy="270" r="7"/><circle cx="1148" cy="400" r="7"/></g></g>
-<g transform="translate(42 340)" filter="url(#shadow)" font-family="Arial Narrow,Arial,sans-serif">
-  <g><rect width="250" height="300" rx="12" fill="url(#blue)" stroke="#2db9ff" stroke-width="2"/><circle cx="42" cy="44" r="24" fill="#08233a" stroke="#32baff"/><circle cx="42" cy="44" r="10" fill="none" stroke="#45c5ff" stroke-width="3"/><path d="M42 17v15M42 56v15M15 44h15M54 44h15" stroke="#45c5ff" stroke-width="3"/><text x="82" y="43" fill="#4bc7ff" font-family="Impact,Arial Black,sans-serif" font-size="24">CANONICAL SOURCE</text><text x="22" y="92" fill="#fff" font-size="13">src/MissionChief_Map_</text><text x="22" y="115" fill="#fff" font-size="13">Command_Toolkit.user.js</text><rect x="22" y="146" width="206" height="112" rx="8" fill="#071018" stroke="#1d6f9c"/><path d="M37 169h115M37 188h142M37 207h89M37 226h126" stroke="#1fb4f0" stroke-width="5"/><text x="169" y="236" fill="#66d5ff" font-family="Impact,sans-serif" font-size="37">.JS</text></g>
-  <path d="M262 150h38m-12-14 14 14-14 14" fill="none" stroke="#20baff" stroke-width="6"/>
-  <g transform="translate(310)"><rect width="250" height="300" rx="12" fill="url(#green)" stroke="#50bc55" stroke-width="2"/><path d="M42 18 66 27v19c0 19-11 30-24 39-13-9-24-20-24-39V27z" fill="#173d1e" stroke="#5ed067" stroke-width="2"/><path d="m32 45 8 8 15-19" fill="none" stroke="#77e07f" stroke-width="5"/><text x="82" y="43" fill="#62d063" font-family="Impact,Arial Black,sans-serif" font-size="27">VALIDATION</text><g fill="#fff" font-size="16"><circle cx="30" cy="100" r="5" fill="#4bd05a"/><text x="48" y="106">syntax</text><circle cx="30" cy="135" r="5" fill="#4bd05a"/><text x="48" y="141">docs</text><circle cx="30" cy="170" r="5" fill="#4bd05a"/><text x="48" y="176">assets</text><circle cx="30" cy="205" r="5" fill="#4bd05a"/><text x="48" y="211">status</text></g><circle cx="182" cy="236" r="38" fill="#0b1f0e" stroke="#51d060" stroke-width="3"/><path d="m160 237 15 15 30-40" fill="none" stroke="#56d866" stroke-width="7"/></g>
-  <path d="M572 150h38m-12-14 14 14-14 14" fill="none" stroke="#20baff" stroke-width="6"/>
-  <g transform="translate(620)"><rect width="250" height="300" rx="12" fill="url(#amber)" stroke="#dca522" stroke-width="2"/><circle cx="42" cy="44" r="24" fill="#4b3506" stroke="#e4af2c"/><path d="M42 24v40M25 41h34" stroke="#ffd458" stroke-width="4"/><text x="82" y="34" fill="#f0bb34" font-family="Impact,Arial Black,sans-serif" font-size="22">RELEASE</text><text x="82" y="58" fill="#f0bb34" font-family="Impact,Arial Black,sans-serif" font-size="22">CHANNELS</text><g fill="#fff" font-size="15"><text x="28" y="112">● GitHub Release</text><text x="28" y="154">● Greasy Fork</text><text x="28" y="196">● Discord</text></g><path d="M35 245h180" stroke="#8c6818"/><path d="m44 264 22-15 22 8 22-20 22 12 22-9 22 17 22-13" fill="none" stroke="#dca522" stroke-width="3"/></g>
-  <path d="M882 150h38m-12-14 14 14-14 14" fill="none" stroke="#20baff" stroke-width="6"/>
-  <g transform="translate(930)"><rect width="250" height="300" rx="12" fill="url(#red)" stroke="#dc3b40" stroke-width="2"/><circle cx="42" cy="44" r="24" fill="#481112" stroke="#ef4a40"/><path d="M42 20a24 24 0 1 1-17 7M20 22h20v20" fill="none" stroke="#ff6255" stroke-width="4"/><text x="82" y="43" fill="#ef514c" font-family="Impact,Arial Black,sans-serif" font-size="27">RECOVERY</text><g fill="#fff" font-size="15"><text x="28" y="105">● SHA-256</text><text x="28" y="140">● backup commit</text><text x="28" y="175">● release-state</text><text x="28" y="210">● distribution</text></g><ellipse cx="182" cy="244" rx="40" ry="15" fill="#54151a" stroke="#e34747"/><path d="M142 244v30c0 8 80 8 80 0v-30M142 259c0 8 80 8 80 0" fill="none" stroke="#e34747" stroke-width="3"/></g>
-  <path d="M1192 150h38m-12-14 14 14-14 14" fill="none" stroke="#20baff" stroke-width="6"/>
-  <g transform="translate(1240)"><rect width="250" height="300" rx="12" fill="url(#blue)" stroke="#2db9ff" stroke-width="2"/><rect x="20" y="22" width="47" height="30" rx="3" fill="none" stroke="#3ec5ff" stroke-width="3"/><path d="M16 59h56" stroke="#3ec5ff" stroke-width="3"/><text x="82" y="34" fill="#4bc7ff" font-family="Impact,Arial Black,sans-serif" font-size="22">DEVICE</text><text x="82" y="58" fill="#4bc7ff" font-family="Impact,Arial Black,sans-serif" font-size="22">COVERAGE</text><g fill="#fff" font-size="16"><text x="30" y="112">● desktop</text><text x="30" y="150">● tablet</text><text x="30" y="188">● iOS</text></g><rect x="28" y="218" width="100" height="58" rx="5" fill="none" stroke="#38bdf5" stroke-width="3"/><rect x="146" y="230" width="42" height="46" rx="4" fill="none" stroke="#38bdf5" stroke-width="3"/><rect x="204" y="244" width="22" height="32" rx="4" fill="none" stroke="#38bdf5" stroke-width="3"/></g>
-</g>
-<g transform="translate(40 660)" filter="url(#shadow)" font-family="Arial Narrow,Arial,sans-serif">
-<rect width="1510" height="110" rx="12" fill="#071017" stroke="#384851" stroke-width="2"/>
-<text x="22" y="25" fill="#5ccfff" font-family="Courier New,monospace" font-size="11" font-weight="900" letter-spacing="2">DELIVERY PIPELINE</text>
-<g transform="translate(20 42)" font-size="20" font-weight="900">
-<rect width="185" height="50" rx="7" fill="#071c2d" stroke="#178dde"/><text x="92" y="33" text-anchor="middle" fill="#42bfff">main</text>
-<text x="210" y="34" fill="#24baff" font-size="34">→</text>
-<rect x="250" width="205" height="50" rx="7" fill="#102514" stroke="#4ac654"/><text x="352" y="33" text-anchor="middle" fill="#57d15f">validation</text>
-<text x="470" y="34" fill="#24baff" font-size="34">→</text>
-<rect x="510" width="220" height="50" rx="7" fill="#2a1e06" stroke="#d99a16"/><text x="620" y="33" text-anchor="middle" fill="#eab83c">release-state</text>
-<text x="745" y="34" fill="#24baff" font-size="34">→</text>
-<rect x="785" width="205" height="50" rx="7" fill="#071c2d" stroke="#178dde"/><text x="887" y="33" text-anchor="middle" fill="#42bfff">distribution</text>
-<text x="1005" y="34" fill="#24baff" font-size="34">→</text>
-<rect x="1045" width="175" height="50" rx="7" fill="#2c0d10" stroke="#d93a3f"/><text x="1132" y="33" text-anchor="middle" fill="#ed5555">backup</text>
-<text x="1235" y="34" fill="#24baff" font-size="34">→</text>
-<rect x="1275" width="195" height="50" rx="7" fill="#071c2d" stroke="#178dde"/><text x="1372" y="33" text-anchor="middle" fill="#42bfff">announce</text>
-</g></g>
-<g transform="translate(24 792)"><path d="M0 0h1552l14 14v72l-14 14H0L-14 86V14z" fill="url(#steel)" stroke="#586872" stroke-width="2"/><circle cx="54" cy="50" r="31" fill="#18110e" stroke="#c6a14d" stroke-width="2"/><path d="m54 19 8 22 23 1-18 15 6 23-19-12-19 12 6-23-18-15 23-1z" fill="#d1a841"/><text x="780" y="60" text-anchor="middle" fill="#d2dde2" font-family="Arial Narrow,Arial,sans-serif" font-size="19" font-weight="900" letter-spacing="5">GOVERNED SOURCE  •  VERIFIED RELEASE  •  RECOVERABLE DELIVERY</text></g>
 </svg>

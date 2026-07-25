@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit cinematic UK emergency command console" width="100%">
+<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit realistic UK multi-agency emergency response scene" width="100%">
 
 # MissionChief Map Command Toolkit
 
-### **A cinematic emergency-command network for the MissionChief map**
+### **A realistic UK emergency-command network for the MissionChief map**
 
 **Incident command · Mission intelligence · Fleet identity · Native transport · Geographic control · Financial reconciliation**
 
@@ -13,7 +13,7 @@
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-7_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
-## **Current verified release: `v7.1.5` · Development candidate: `v7.1.6`**
+## **Current verified release: `v7.1.6`**
 ### **Native Discharge patient confirmation handling**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
@@ -24,7 +24,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v714) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#seven-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v716) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#seven-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
 
@@ -51,7 +51,7 @@ MissionChief distributes operational information across the map, opened incident
 
 <div align="center">
 
-<img src="docs/media/readme-command-board.svg" alt="MissionChief Toolkit cinematic emergency systems board" width="100%">
+<img src="docs/media/readme-command-board.svg" alt="MissionChief Toolkit realistic United Kingdom multi-agency operational picture" width="100%">
 
 </div>
 
@@ -64,31 +64,30 @@ MissionChief distributes operational information across the map, opened incident
 | Control channel | State | Evidence |
 |---|:---:|---|
 | **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v7.1.4` published |
+| **Production release** | 🟢 | GitHub Release `v7.1.6` published |
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned recovery commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
-| **Hosted media** | 🟢 | v7.1.4 release snapshot: 37 discovered · 33 referenced · 0 missing |
+| **Hosted media** | 🟢 | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
 | **Responsive command** | 🟢 | Desktop · Tablet/iPad · iPhone/iPad Safari |
 
 The [Release Control Panel](status/README.md) is machine-backed from the current release ledger rather than manually asserted.
 
 ---
 
-# Current release signal — v7.1.4
+# Current release signal — v7.1.6
 
-> **CHANNEL UPDATE // PATIENT TRANSPORT SWEEP MISSION PROGRESS**
+> **CHANNEL UPDATE // NATIVE DISCHARGE PATIENT CONFIRMATION**
 
-Version 7.1.4 synchronises one canonical mission-position state across the persistent HUD, Toolkit panel and final summary.
+Version 7.1.6 handles MissionChief's intermittent **Discharge patient** confirmation only while a Patient Transport Sweep-owned discharge action is armed.
 
-- Active sweeps begin at `1 / total`.
-- The numerator advances once at each mission queue boundary, never for individual patients or vehicle candidates.
-- Skipped missions and recoverable mission-level errors finalise exactly once before the queue continues.
-- Cancellation preserves the last accurate mission position.
-- Normal completion visibly reaches `total / total` before the HUD is dismissed.
-- Static and runtime contracts cover repeated rendering, multiple patient releases, skips, mission errors, cancellation and completion.
+- The exact **Yes, discharge!** action is selected immediately and during the existing bounded release-evidence wait.
+- **Abort** and **discharge and disable confirmation** remain untouched, preserving the user's MissionChief confirmation preference.
+- Unrelated dialogs, manual discharges, inactive sweeps and mismatched release identities are ignored.
+- Idempotent confirmation ownership prevents repeated scans from double-clicking the dialog.
+- Static and executable regressions cover immediate, delayed, absent, unrelated and repeated confirmation scans.
 
-The release fixes presentation drift without weakening the existing native vehicle-window, ownership, confirmation or discharge safeguards.
+The release advances native transport handling without weakening ownership checks, user preferences, mission progress, skipped-patient accounting or verified release evidence.
 
 ---
 
@@ -261,7 +260,7 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 <div align="center">
 
-<img src="docs/media/readme-release-control.svg" alt="MissionChief Toolkit cinematic release and recovery control board" width="100%">
+<img src="docs/media/readme-release-control.svg" alt="MissionChief Toolkit realistic UK release and recovery operations centre" width="100%">
 
 </div>
 
@@ -269,15 +268,15 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 | Field | Verified value |
 |---|---|
-| **Version** | `7.1.4` |
-| **Release focus** | Patient Transport Sweep mission-progress synchronization |
+| **Version** | `7.1.6` |
+| **Release focus** | Native Discharge patient confirmation handling |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `3385c059be08141659e88ae3280b8302a5bbc0d33b8af75312ec97b25a434cbe` |
-| **GitHub Release** | [`v7.1.4`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v7.1.4) |
+| **Validated SHA-256** | `6358f5b25b6b278fac409a78d2b7b1c0bfd88bb808810dbf484dcd86f1f99386` |
+| **GitHub Release** | [`v7.1.6`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v7.1.6) |
 | **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `3dca3b0136989226012f23a349b026603d82929d` |
+| **Private backup** | `e4b2617762ca4a09c569966861660cab55712f32` |
 | **Discord release delivery** | Posted |
-| **Hosted media audit** | v7.1.4 release snapshot: 37 discovered · 33 referenced · 0 missing |
+| **Hosted media audit** | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
 
 ## Governed release topology
 

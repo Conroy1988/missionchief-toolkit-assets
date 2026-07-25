@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.0.0
+// @version      7.0.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.0.0',
+        version: '7.0.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -20549,6 +20549,57 @@ Create the private backup now?`);
         saveState();
         updateUI();
     }
+    // Issue #515: restore the generic Toolkit launcher shell removed during v7 retirement.
+    function toolkitTopLevelDocument(doc = document) {
+        try {
+            const view = doc?.defaultView;
+            return !view || view.top === view;
+        } catch (error) {
+            return true;
+        }
+    }
+    function toolkitPrimaryMapElement(mapEl, doc = document) {
+        const missionSelector = '#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]';
+        const candidates = [
+            doc?.querySelector?.('#map'),
+            mapEl,
+            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"],.leaflet-container') || [])
+        ];
+        for (const candidate of candidates) {
+            if (!candidate || candidate.ownerDocument !== doc || candidate.isConnected === false) continue;
+            if (candidate.closest?.(missionSelector)) continue;
+            return candidate;
+        }
+        return null;
+    }
+    function toolkitControlHost(mapEl, doc = document) {
+        if (!toolkitTopLevelDocument(doc)) return null;
+        return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;
+    }
+    function toolkitApplyCommandBarState(control = null) {
+        control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
+        if (!control) return false;
+        const open = state.commandBarOpen !== false;
+        control.setAttribute('data-mcms-command-bar-open', String(open));
+        for (const selector of ['.mcms-floating-filter', '.mcms-screen-pins']) {
+            const element = control.querySelector?.(selector);
+            if (!element) continue;
+            if (open) element.style.removeProperty('display');
+            else element.style.setProperty('display', 'none', 'important');
+        }
+        const button = control.querySelector?.('.mcms-dock-toggle-btn');
+        if (button) {
+            const label = open ? 'Collapse command bar' : 'Expand command bar';
+            button.classList.toggle('mcms-open', open);
+            button.setAttribute('aria-expanded', String(open));
+            button.setAttribute('aria-label', label);
+            button.title = label;
+            const icon = button.querySelector?.('.mcms-dock-toggle-icon');
+            if (icon) icon.textContent = open ? '▴' : '▾';
+        }
+        return open;
+    }
+
     function toggleCommandBar() {
         const control = document.getElementById(SCRIPT.controlId);
         const opening = state.commandBarOpen === false;

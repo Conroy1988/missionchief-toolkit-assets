@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/v6-reconcile/**"
+      - ".github/scripts/test_issue391_matrix_retirement.py"
       - ".github/workflows/apply-v6-repository-reconciliation.yml"
 
 permissions:

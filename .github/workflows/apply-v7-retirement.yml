@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/v7-retirement/apply_v7_retirement.py"
+      - ".github/scripts/test_mission_value_contract.py"
       - ".github/workflows/apply-v7-retirement.yml"
 
 permissions:

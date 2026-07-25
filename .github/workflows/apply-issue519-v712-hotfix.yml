@@ -28,7 +28,20 @@ jobs:
           persist-credentials: false
 
       - name: Apply dedicated rotation and control containment repair
-        run: python3 .github/issue519/apply_v712_hotfix.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/issue519/apply_v712_hotfix.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/test_issue517_incident_command_wire.py')
+          text = path.read_text(encoding='utf-8')
+          old = "    assert 'majorIncidentFeedScheduleAdvance(feed, 650);' in pause\n"
+          new = "    assert 'majorIncidentFeedScheduleAdvance(feed, 650, true);' in pause\n"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one stale resume assertion, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
 
       - name: Validate complete v7.1.2 candidate
         shell: bash

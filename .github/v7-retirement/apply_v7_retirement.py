@@ -71,7 +71,7 @@ def mask_js(text):
 
 def remove_function(name):
     global s
-    ms=list(re.finditer(rf'\bfunction\s+{re.escape(name)}\s*\(',s))
+    ms=list(re.finditer(rf'\b(?:async\s+)?function\s+{re.escape(name)}\s*\(',s))
     if len(ms)!=1: raise SystemExit(f'{name}: declarations {len(ms)}')
     a=ms[0].start(); op=s.find('{',ms[0].end())
     if op<0: raise SystemExit(f'{name}: opening missing')

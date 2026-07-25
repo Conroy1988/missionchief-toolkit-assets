@@ -23,7 +23,7 @@ TARGET_RULES = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--eslint", type=Path, required=True)
+    parser.add_argument("--eslint", "--eslint-json", dest="eslint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 

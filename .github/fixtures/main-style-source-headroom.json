@@ -81,11 +81,11 @@
     }
   ],
   "v7Candidate": {
-    "issue": 512,
-    "version": "7.0.0",
-    "sourceBytes": 1533076,
-    "sourceLines": 23183,
-    "sourceSha256": "cc9b8a002763013a2c610f0f163ec8f8080aeba4c5831261ca045316feeee8fd",
+    "issue": 515,
+    "version": "7.0.1",
+    "sourceBytes": 1535484,
+    "sourceLines": 23234,
+    "sourceSha256": "c20f38801bcaa80a4b98ac7c74b02e75d2a183138ff8c17e267c15acc6d31623",
     "templateBytes": 636507,
     "templateLines": 7247,
     "templateSha256": "23b6189091ef8da8c2bde69bf5839a031820644af41dd62b6dd25e4adc47d969",

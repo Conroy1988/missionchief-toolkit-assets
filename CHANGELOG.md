@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.0.1] - 2026-07-25
+
+### Emergency launcher restoration
+
+- Restored the four generic Toolkit launcher-shell helpers accidentally removed during the v7 retirement.
+- Restored primary-map ownership, safe document fallback mounting and command-bar open/collapsed reconciliation.
+- Prevented child frames and mission-window maps from stealing the Toolkit launcher.
+- Added permanent static and executable runtime contracts for launcher declarations, fallback mounting and menu ownership.
+- No retired integration runtime, settings, observers or selectors were restored.
+
 ## [7.0.0] - 2026-07-25
 
 ### The One We Knew Before

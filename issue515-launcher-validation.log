@@ -1,0 +1,51 @@
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 39 endpoints, 31 local media files, 0 failures, 0 warnings
+Audio alias contract: 9 canonical, 0 aliases, 0 failures
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed for v7.
+v7 retirement contract passed.
+Mission Age map timers retained under v7.
+Native Patient Transport Sweep contract passed.
+Core menu boot remains fail-open after v7 retirement.
+Core launcher bootstrap contract passed after v7 retirement.
+v7 preboot hydration contract passed.
+v7 launcher, boot and Mission Age contract passed.
+Code integrity passed: 171 selectors.
+{
+  "version": "7.0.1",
+  "sha256": "c20f38801bcaa80a4b98ac7c74b02e75d2a183138ff8c17e267c15acc6d31623",
+  "bytes": 1535484,
+  "lines": 23235,
+  "baselineHashMatch": null,
+  "metadataWarnings": [],
+  "codeIntegrity": "passed",
+  "staticAssetIntegrity": "passed"
+}
+Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.
+Financial overview contract fixtures passed.
+Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.
+Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.
+Boot lifecycle contract passed: extracted boot integration, immediate coordinator attempt, bounded map fallback, maintenance-task registration, runtime ownership, document-start, hidden-tab resume, retry cancellation and teardown.
+Settings/UI contract passed for v7.
+Root attribute write-suppression runtime fixtures passed
+Root attribute write-suppression contract passed
+iOS/Safari usability contract passed
+Main-style source-headroom contract passed for v7.
+Desktop operational-workspace contract passed: 6 bounds and 4 saved-position cases.
+Section-navigation contract passed: 8 sections, 8 canonical controls and 5 narrow-label cases.
+Mission Value formatting, route, responsive presentation and native host ownership contracts passed.
+Mission Value toolbar contract passed: 10 responsive presentations, canonical spacer hosting and cross-document deduplication.
+Issue #515 launcher restoration static contract passed.
+v7 retirement contract passed.
+Mission Age map timers retained under v7.
+Native Patient Transport Sweep contract passed.
+Transport Sweep runtime confirmation contract passed
+Issue #515 launcher runtime contract passed.
+[preflight] Complete
+Documentation consistency passed for v7.

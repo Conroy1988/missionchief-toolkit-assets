@@ -7,8 +7,10 @@ SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 TOKEN = "ls" + "sm"
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8"); lower = source.lower()
-    assert re.search(r"(?m)^// @version\s+7\.0\.0$", source)
-    assert "version: '7.0.0'" in source
+    metadata = re.search(r"(?m)^// @version\s+([0-9]+)\.([0-9]+)\.([0-9]+)$", source)
+    runtime = re.search(r"version:\s*'([^']+)'", source)
+    assert metadata and runtime and metadata.group(0).split()[-1] == runtime.group(1)
+    assert tuple(map(int, metadata.groups())) >= (7, 0, 0)
     assert TOKEN not in lower
     forbidden = ["Operational Window Suite", "Enhanced Operational Requirements", "Extended Call Window", "Extended Call List", "Enhanced Transport Requests", "operationalSuite", "operationalFeature", "operationalRequirements", "OPERATIONAL_SETTINGS_SCHEMA", "data-operational-settings-root", "installOperationalSuiteShell", "handleOperationalWindowSettingChange"]
     present = [item for item in forbidden if item in source]; assert not present, present

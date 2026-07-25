@@ -4,7 +4,7 @@
 
 Implemented and fixture-validated for the v4.15.1 release candidate.
 
-This document records the MissionChief browser interfaces consumed by the clean-room implementation. It is deliberately independent of LSSM implementation code.
+This document records the MissionChief browser interfaces consumed by the clean-room implementation. It is deliberately independent of external extension implementation code.
 
 ## Source of truth
 
@@ -116,15 +116,15 @@ Forbidden layout techniques:
 - fixed or absolute positioning for the normal panel;
 - negative margins used to overlap native content;
 - hard-coded vertical offsets tied to another extension;
-- moving or restyling an LSSM-owned panel.
+- moving or restyling an external extension-owned panel.
 
 The panel root uses a collision-resistant Toolkit ID and is unique per active mission document.
 
-## LSSM coexistence
+## external extension coexistence
 
-The Toolkit works with LSSM absent, present with its equivalent feature disabled, and present with its equivalent feature active.
+The Toolkit works with external extension absent, present with its equivalent feature disabled, and present with its equivalent feature active.
 
-When an active LSSM enhanced-missing-vehicles panel is detected, the Toolkit does not render a competing second requirements panel. Detection uses explicit observable ownership markers and structure, without dependence on LSSM globals or stores. MissionChief and LSSM can both use the generic `.alert-missing-vehicles` presentation class, so that shared class alone is never treated as LSSM ownership; the active LSSM component must expose a marker such as `data-raw-html`.
+When an active external extension enhanced-missing-vehicles panel is detected, the Toolkit does not render a competing second requirements panel. Detection uses explicit observable ownership markers and structure, without dependence on external extension globals or stores. MissionChief and external extension can both use the generic `.alert-missing-vehicles` presentation class, so that shared class alone is never treated as external extension ownership; the active external extension component must expose a marker such as `data-raw-html`.
 
 ## Lifecycle invariants
 
@@ -153,20 +153,20 @@ When an active LSSM enhanced-missing-vehicles panel is detected, the Toolkit doe
 14. Unknown requirement text.
 15. Mission-window replacement.
 16. Repeated scans without duplicate observers, records or panels.
-17. LSSM absent.
-18. LSSM present with the equivalent feature disabled.
-19. LSSM present with the equivalent feature active.
-20. Both Toolkit/LSSM load orders.
+17. external extension absent.
+18. external extension present with the equivalent feature disabled.
+19. external extension present with the equivalent feature active.
+20. Both Toolkit/external extension load orders.
 21. Desktop table and Tablet/iOS responsive-card contracts.
 22. Feature disable and runtime-owned teardown.
-23. MissionChief native missing alert using the shared presentation class without LSSM ownership metadata.
+23. MissionChief native missing alert using the shared presentation class without external extension ownership metadata.
 
 ## Validation status
 
 The v4.15.1 candidate must pass:
 
 - executable parser, calculator and lifecycle fixtures;
-- MissionChief-native versus LSSM ownership fixtures;
+- MissionChief-native versus external extension ownership fixtures;
 - JavaScript syntax validation;
 - canonical userscript validation;
 - code-integrity audit;

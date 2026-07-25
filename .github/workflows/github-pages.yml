@@ -65,27 +65,56 @@ jobs:
             --base-path /missionchief-toolkit-assets/ \
             | tee pages-build-report.json
 
-      - name: Enforce static-site limits
-        shell: bash
+      - name: Enforce deterministic static-site limits
         run: |
-          set -euo pipefail
-          FILE_COUNT="$(find _site -type f | wc -l | xargs)"
-          TOTAL_BYTES="$(du -sb _site | awk '{print $1}')"
-          test "$FILE_COUNT" -ge 10
-          test "$FILE_COUNT" -le 250
-          test "$TOTAL_BYTES" -le 25000000
-          test -s _site/index.html
-          test -s _site/docs/index.html
-          test -s _site/themes/index.html
-          echo "Pages output: ${FILE_COUNT} files, ${TOTAL_BYTES} bytes."
+          python3 - <<'PY'
+          from pathlib import Path
 
-      - name: Upload validated site preview
+          root = Path('_site')
+          files = [path for path in root.rglob('*') if path.is_file()]
+          total_bytes = sum(path.stat().st_size for path in files)
+          required = [
+              'index.html',
+              'features/index.html',
+              'themes/index.html',
+              'docs/index.html',
+              'changelog/index.html',
+              'status/index.html',
+              '404.html',
+              'assets/site.css',
+              'assets/site.js',
+              'data/status.json',
+          ]
+          missing = [name for name in required if not (root / name).is_file()]
+          empty = [name for name in required if (root / name).is_file() and (root / name).stat().st_size == 0]
+          diagnostic = [
+              f'file_count={len(files)}',
+              f'total_bytes={total_bytes}',
+              'missing=' + ','.join(missing),
+              'empty=' + ','.join(empty),
+              *[f'{path.relative_to(root)}={path.stat().st_size}' for path in sorted(files)],
+          ]
+          Path('pages-limits-diagnostic.txt').write_text('\n'.join(diagnostic) + '\n', encoding='utf-8')
+          if missing:
+              raise SystemExit('Missing Pages outputs: ' + ', '.join(missing))
+          if empty:
+              raise SystemExit('Empty Pages outputs: ' + ', '.join(empty))
+          if not 10 <= len(files) <= 250:
+              raise SystemExit(f'Pages file-count limit failed: {len(files)}')
+          if total_bytes > 25_000_000:
+              raise SystemExit(f'Pages byte limit failed: {total_bytes}')
+          print(f'Pages output: {len(files)} files, {total_bytes} bytes.')
+          PY
+
+      - name: Upload Pages preview and diagnostics
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: missionchief-toolkit-pages-preview
           path: |
             _site/
             pages-build-report.json
+            pages-limits-diagnostic.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -168,4 +197,4 @@ jobs:
 
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

@@ -13,6 +13,7 @@ import full_userscript_audit as audit
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github" / "fixtures" / "mission-value-toolbar-contract.json"
+RETIRED_EXTENSION_TOKEN = "ls" + "sm"
 
 
 def extract_function(source: str, name: str) -> str:
@@ -57,7 +58,6 @@ def main() -> int:
         "row.dataset.mcmsHost = useToolbar ? 'toolbar' : 'fallback'",
         "if (!activeRows.has(row)) row.remove()",
         "#navbar-alarm-spacer",
-        "[id^=\"lssmv4-shareAlliancePost_alarm\"]",
         "transportSweepVisibleWindowRoots()",
         "transportSweepDocumentContexts()",
         "data-mcms-mission-value",
@@ -66,6 +66,7 @@ def main() -> int:
     ]
     missing = [fragment for fragment in required if fragment not in source]
     assert not missing, f"Mission Value contract fragments missing: {missing}"
+    assert RETIRED_EXTENSION_TOKEN not in source.lower(), "Mission Value still contains a retired extension host"
     assert "criticalMissionValueDetails" not in source
     assert "function missionValueRightControlOffset" not in source
     assert "function positionMissionValueRow" not in source
@@ -136,7 +137,7 @@ for (const scenario of candidateScenarios) {
     `candidate ownership mismatch for ${scenario.name}`
   );
 }
-console.log("Mission Value formatting, route, responsive presentation and host ownership contracts passed.");
+console.log("Mission Value formatting, route, responsive presentation and native host ownership contracts passed.");
 '''
     with tempfile.TemporaryDirectory(prefix="mcms-mission-value-") as temp:
         path = Path(temp) / "contract.js"

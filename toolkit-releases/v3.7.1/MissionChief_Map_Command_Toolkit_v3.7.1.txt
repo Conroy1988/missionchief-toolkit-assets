@@ -8418,7 +8418,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const names = [
             'map', 'missionMap', 'mission_map', 'missionChiefMap', 'missionchiefMap',
             'leafletMap', 'leaflet_map', 'mainMap', 'gameMap', 'mapInstance',
-            'osmMap', 'osm_map', 'lssmMap'
+            'osmMap', 'osm_map', 'external extensionMap'
         ];
 
         const addCandidate = value => {

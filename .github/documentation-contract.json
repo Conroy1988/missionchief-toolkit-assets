@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -54,6 +54,7 @@
     "Mission Age",
     "Transport Watcher",
     "Vehicle Code Status",
+    "Custom Vehicle Badges",
     "Smart Bookmark Labels",
     "Alliance Credits",
     "Tablet Mode",
@@ -67,7 +68,6 @@
     "Auto-load all vehicles",
     "Patient Transport Sweep",
     "Mission Value",
-    "Mission Requirements",
     "Resource Gap",
     "Economy Mode"
   ],
@@ -78,10 +78,6 @@
   "requiredFeatureNames": [
     "Mission Age map timers",
     "Mission Value",
-    "Enhanced Operational Requirements",
-    "Extended Call Window",
-    "Extended Call List",
-    "Enhanced Transport Requests",
     "Patient Transport Sweep",
     "Resource Gap",
     "Auto-load all vehicles",
@@ -95,11 +91,7 @@
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
-      "Operational Window Suite",
-      "Enhanced Operational Requirements",
-      "Extended Call Window",
-      "Extended Call List",
-      "Enhanced Transport Requests",
+      "The One We Knew Before",
       "Patient Transport Sweep",
       "Mission Value",
       "Resource Gap",
@@ -108,8 +100,12 @@
       "seven complete interface systems"
     ],
     "readmeForbiddenTokens": [
+      "Operational Window Suite",
+      "Enhanced Operational Requirements",
+      "Extended Call Window",
+      "Extended Call List",
+      "Enhanced Transport Requests",
       "Mission Requirements Matrix",
-      "Current verified release: `v4.20.33`",
       "Mission Age Watch",
       "Critical View",
       "Mission Inspector",
@@ -117,23 +113,21 @@
       "Automatic day / night"
     ],
     "helpRequiredTokens": [
+      "The One We Knew Before",
+      "Patient Transport Sweep",
+      "Mission Value",
+      "Resource Gap",
+      "Economy Mode",
+      "saved Discord webhook",
+      "seven complete interface systems"
+    ],
+    "helpForbiddenTokens": [
       "Operational Window Suite",
       "Enhanced Operational Requirements",
       "Extended Call Window",
       "Extended Call List",
       "Enhanced Transport Requests",
-      "Patient Transport Sweep",
-      "Hyrule Command",
-      "LSSM",
-      "saved Discord webhook",
-      "seven interfaces"
-    ],
-    "helpForbiddenTokens": [
       "Mission Requirements Matrix",
-      "live Mission Requirements matrix",
-      "v4.2.1",
-      "six interface themes",
-      "all six themes",
       "Mission Age Watch",
       "Critical View",
       "Mission Inspector",
@@ -141,19 +135,21 @@
       "Automatic day / night"
     ],
     "greasyForkRequiredTokens": [
+      "The One We Knew Before",
+      "Patient Transport Sweep",
+      "Mission Value",
+      "Resource Gap",
+      "Economy Mode",
+      "saved Discord webhook",
+      "seven complete interface systems"
+    ],
+    "greasyForkForbiddenTokens": [
       "Operational Window Suite",
       "Enhanced Operational Requirements",
       "Extended Call Window",
       "Extended Call List",
       "Enhanced Transport Requests",
-      "Patient Transport Sweep",
-      "Mission Value",
-      "saved Discord webhook"
-    ],
-    "greasyForkForbiddenTokens": [
       "Mission Requirements Matrix",
-      "live Mission Requirements",
-      "Exported Toolkit settings do not include the Discord webhook",
       "Mission Age Watch",
       "Critical View",
       "Mission Inspector",

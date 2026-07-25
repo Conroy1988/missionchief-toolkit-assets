@@ -12,8 +12,8 @@
       "pair": true,
       "sources": [
         "missionchief.missionInfo",
-        "lssm.missionHelper",
-        "lssm.vehicleCaption"
+        "external extension.missionHelper",
+        "external extension.vehicleCaption"
       ],
       "types": [
         67,
@@ -2510,7 +2510,7 @@
     "water_rescue",
     "water_tankers"
   ],
-  "pinnedLssmCommit": "4f731e1d6d009cbf2129530fb31d10177b21a52a",
+  "pinnedexternal extensionCommit": "4f731e1d6d009cbf2129530fb31d10177b21a52a",
   "reviewedUnsupportedMissionHelperTokens": [
     "mountain_cave_rescue"
   ],

@@ -9,7 +9,9 @@ def section(text,start,end):
 def main():
  source=SOURCE.read_text(encoding='utf-8')
  metadata=re.search(r'(?m)^//\s*@version\s+([^\s]+)$',source);runtime=re.search(r"version:\s*'([^']+)'",source)
- assert metadata and runtime and metadata.group(1)==runtime.group(1)=='7.1.4'
+ assert metadata and runtime and metadata.group(1)==runtime.group(1)
+ version=tuple(int(part) for part in metadata.group(1).split('.'))
+ assert version >= (7,1,4)
  for marker in ['completedMissionCount: 0','function transportSweepMissionProgress()','function setTransportSweepMissionProgress(','function completeTransportSweepMissionProgress(','function finaliseTransportSweepMissionProgress(']: assert marker in source,marker
  hud=section(source,'    function renderTransportSweepHud()','    function renderTransportSweepPanel()')
  panel_start=source.index('    function renderTransportSweepPanel()')

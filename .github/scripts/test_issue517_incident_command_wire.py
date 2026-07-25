@@ -33,9 +33,11 @@ def main():
  assert 'width:38px!important' in source and 'flex-basis:38px!important' in source
  assert 'display:flex!important;align-items:center!important;justify-content:flex-start!important;line-height:1!important' in source
  assert source.count('align-self:center!important') >= 5
- assert source.count('transform:translateY(-2px)!important') == 2
+ assert 'transform:translateY(-2px)!important' not in source
+ assert source.count('padding-bottom:14px!important') == 2
+ assert source.count('padding-top:0!important') >= 2
+ assert source.count('box-sizing:border-box!important') >= 4
  assert '.mcms-incident-level' in source and '.mcms-incident-meta' in source
- assert 'height:100%!important;line-height:1!important;margin-block:0!important;transform:none!important' not in source
  for theme in ['cyberpunk','fallout4','umbrella','factorio','bond007','hyrule']: assert f'html[data-mcms-ui-theme="{theme}"] #${{SCRIPT.majorIncidentFeedId}}' in source
  assert 'width:78vw!important' in source and 'width:86vw!important' in source
  token='ls'+'sm';assert token not in source.lower()

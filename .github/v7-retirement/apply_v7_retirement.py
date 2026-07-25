@@ -446,7 +446,7 @@ HELP = r'''<!doctype html>
 <div class="card"><h3>Smart Bookmark Labels</h3><p>Creates compact places, pins, labels and touch previews.</p></div>
 <div class="card"><h3>Economy Mode</h3><p>Suppresses non-essential effects and expensive refresh work.</p></div>
 </div></section>
-<section><h2>Seven interfaces</h2><p>Map Command, Cyberpunk, Fallout 4, Umbrella, Factorio, 007 Intelligence and Hyrule Command share the same retained native feature set.</p></section>
+<section><h2>Seven complete interface systems</h2><p>Map Command, Cyberpunk, Fallout 4, Umbrella, Factorio, 007 Intelligence and Hyrule Command share the same retained native feature set.</p></section>
 <section><h2>Device support</h2><p>Desktop, Tablet/iPad and iOS Mobile Mode remain supported with safe-area handling, 44px touch targets, orientation recovery and responsive panels.</p></section>
 <section><h2>Privacy</h2><p>Most settings stay in the browser. Financial reporting uses only the saved Discord webhook supplied by the user; exported settings containing it should be treated as private.</p></section></main>
 <footer>MissionChief Map Command Toolkit · v7.0.0 candidate · The One We Knew Before</footer></body></html>'''

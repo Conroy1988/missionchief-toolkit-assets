@@ -30,6 +30,21 @@ jobs:
       - name: Apply idempotent skipped-patient accounting
         run: python3 .github/issue527/apply_fix.py
 
+      - name: Make Issue 523 contract patch-release safe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/test_issue523_transport_sweep_progress.py')
+          text = path.read_text(encoding='utf-8')
+          old = " assert metadata and runtime and metadata.group(1)==runtime.group(1)=='7.1.4'\n"
+          new = " assert metadata and runtime and metadata.group(1)==runtime.group(1)\n version=tuple(int(part) for part in metadata.group(1).split('.'))\n assert version >= (7,1,4)\n"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one exact v7.1.4 assertion, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Validate complete v7.1.5 candidate
         shell: bash
         run: |

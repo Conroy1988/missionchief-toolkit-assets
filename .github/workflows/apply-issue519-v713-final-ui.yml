@@ -27,6 +27,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Remove nonexistent standalone priority-badge edit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/issue519/apply_v713_final_ui.py')
+          text = path.read_text(encoding='utf-8')
+          block = '''    source = append_css_properties(
+              source,
+              '#${SCRIPT.majorIncidentFeedId} .mcms-incident-level',
+              'align-self:center!important;line-height:1!important;margin-block:0!important;transform:none!important;',
+              "priority badge alignment",
+          )
+          '''
+          if text.count(block) != 1:
+              raise SystemExit(f'Expected one standalone priority-badge edit, found {text.count(block)}')
+          path.write_text(text.replace(block, '', 1), encoding='utf-8')
+          PY
+
       - name: Apply dropdown-only and vertical-centre cleanup
         id: apply
         shell: bash

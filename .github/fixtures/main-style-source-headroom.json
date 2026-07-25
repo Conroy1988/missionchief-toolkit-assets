@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -19,65 +19,41 @@
   "invariant": "The reviewed compact stylesheet retains 504 recovered source lines while Operational Requirements selects and observes the authoritative active mission requirement source.",
   "approvedNonStyleSourceLines": 1505,
   "approvedNonStyleChanges": [
-    {
-      "issue": 378,
-      "phase": "operational-suite-shell",
-      "lines": 317
-    },
-    {
-      "issue": 378,
-      "phase": "enhanced-requirements-engine-core",
-      "lines": 331
-    },
-    {
-      "issue": 378,
-      "phase": "enhanced-requirements-renderer",
-      "lines": 412
-    },
-    {
-      "issue": 378,
-      "phase": "operational-feature-suite",
-      "lines": 356
-    },
-    {
-      "issue": 447,
-      "phase": "menu-boot-fail-open-hotfix",
-      "lines": 9
-    },
-    {
-      "issue": 450,
-      "phase": "core-launcher-bootstrap-recovery",
-      "lines": 26
-    },
-    {
-      "issue": 456,
-      "phase": "requirements-truth-state-and-panel-dedupe",
-      "lines": 42
-    },
-    {
-      "issue": 458,
-      "phase": "authoritative-requirement-source-discovery",
-      "lines": 103
-    },
-    {
-      "issue": 464,
-      "phase": "complete-launcher-settings-operational-runtime-and-mission-age-recovery",
-      "lines": -203,
-      "netPhysicalDelta": true
-    },
-    {
-      "issue": 470,
-      "phase": "frame-safe-command-state-and-mission-scoped-requirement-recovery",
-      "lines": 112
-    }
+    { "issue": 378, "phase": "operational-suite-shell", "lines": 317 },
+    { "issue": 378, "phase": "enhanced-requirements-engine-core", "lines": 331 },
+    { "issue": 378, "phase": "enhanced-requirements-renderer", "lines": 412 },
+    { "issue": 378, "phase": "operational-feature-suite", "lines": 356 },
+    { "issue": 447, "phase": "menu-boot-fail-open-hotfix", "lines": 9 },
+    { "issue": 450, "phase": "core-launcher-bootstrap-recovery", "lines": 26 },
+    { "issue": 456, "phase": "requirements-truth-state-and-panel-dedupe", "lines": 42 },
+    { "issue": 458, "phase": "authoritative-requirement-source-discovery", "lines": 103 },
+    { "issue": 464, "phase": "complete-launcher-settings-operational-runtime-and-mission-age-recovery", "lines": -203, "netPhysicalDelta": true },
+    { "issue": 470, "phase": "frame-safe-command-state-and-mission-scoped-requirement-recovery", "lines": 112 }
   ],
   "expectedSourceLines": 31760,
   "retiredNonStyleSourceLines": 1398,
   "retiredNonStyleChanges": [
-    {
-      "issue": 391,
-      "phase": "legacy-mission-requirements-matrix",
-      "lines": 1398
-    }
-  ]
+    { "issue": 391, "phase": "legacy-mission-requirements-matrix", "lines": 1398 }
+  ],
+  "v6Candidate": {
+    "issue": 510,
+    "version": "6.0.0",
+    "sourceBytes": 1726527,
+    "sourceLines": 25146,
+    "sourceSha256": "b0cd653d52705fe0af3d1777c0436c6ba4cb296bb2fcfd89473a588a44c509d3",
+    "templateBytes": 635944,
+    "templateLines": 7247,
+    "templateSha256": "c63dff7364657b8516835093e4cd5dd36c77d3abe193ef50e9151621704242dd",
+    "canonicalCssSha256": "1d4ab1331d5499d374c4a55269080e095b413397e8ae20f7b448f9cb471f7e3a",
+    "maxSourceBytes": 1800000,
+    "minTemplateBytes": 600000,
+    "retiredSystems": [
+      "automatic-day-night",
+      "heatmap",
+      "mission-inspector",
+      "mission-age-workflow",
+      "age-watch"
+    ],
+    "invariant": "v6 retains the reviewed remaining stylesheet exactly while removing only CSS owned by retired systems and keeping zero blank/comment padding inside installMainStyles."
+  }
 }

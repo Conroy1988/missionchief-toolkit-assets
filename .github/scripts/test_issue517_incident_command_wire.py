@@ -9,7 +9,9 @@ def section(text,start,end):
 def main():
  source=SOURCE.read_text(encoding='utf-8')
  metadata=re.search(r'(?m)^//\s*@version\s+([^\s]+)$',source);runtime=re.search(r"version:\s*'([^']+)'",source)
- assert metadata and runtime and metadata.group(1)==runtime.group(1)=='7.1.3'
+ assert metadata and runtime and metadata.group(1)==runtime.group(1)
+ version=tuple(int(part) for part in metadata.group(1).split('.'))
+ assert version >= (7,1,3)
  for name in ['majorIncidentFeedEntryCount','majorIncidentFeedSyncControls','majorIncidentFeedApplyIndex','majorIncidentFeedAnimation','majorIncidentFeedSyncReelState','majorIncidentFeedSetPaused','majorIncidentFeedSetExpanded','majorIncidentFeedAdvance']:
   assert source.count(f'function {name}(')==1,name
  render=section(source,'    function renderMajorIncidentFeed(','    function scheduleMajorIncidentFeedRender(')

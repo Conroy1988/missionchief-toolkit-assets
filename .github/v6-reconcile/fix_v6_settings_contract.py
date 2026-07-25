@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove final retired-feature expectations from the shared settings contract."""
+"""Remove retired-feature expectations from the shared settings contract."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +14,22 @@ def main() -> int:
         '    toggleFeature("criticalView");\n'
         '    assert.equal(wasCalled("toggleCriticalView"), true);\n'
         '    assert.equal(localStorage.getItem(SCRIPT.storageState), null);\n',
+        ''
+    )
+    text = text.replace(
+        '    handleSettingChange({{ dataset: {{ setting: "heatmap-source" }}, value: "invalid" }});\n'
+        '    assert.equal(state.heatmap.source, "stations");\n'
+        '    handleSettingChange({{ dataset: {{ setting: "heatmap-service" }}, value: "police" }});\n'
+        '    assert.equal(state.heatmap.service, "police");\n'
+        '    handleSettingChange({{ dataset: {{ setting: "heatmap-opacity" }}, value: "0.42" }});\n'
+        '    assert.equal(state.heatmap.opacity, 0.42);\n\n',
+        ''
+    )
+    text = text.replace(
+        '    handleSettingChange({{ dataset: {{ setting: "auto-night-start" }}, value: "20:30" }});\n'
+        '    assert.equal(state.autoNight.nightStart, "20:30");\n'
+        '    handleSettingChange({{ dataset: {{ setting: "auto-night-theme" }}, value: "nightshift" }});\n'
+        '    assert.equal(state.autoNight.nightTheme, "nightshift");\n\n',
         ''
     )
     PATH.write_text(text, encoding="utf-8")

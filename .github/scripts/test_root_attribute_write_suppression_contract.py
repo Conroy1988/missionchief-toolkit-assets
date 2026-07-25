@@ -9,7 +9,7 @@ from pathlib import Path
 import full_userscript_audit as audit
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
+SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 
 
 def extract_function(source: str, masked: str, name: str) -> str:
@@ -31,7 +31,8 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 22
+    assert apply_root.count("setAttributeIfChanged(root,") == 21
+    assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
     assert apply_root.index("activeDeviceLayout = resolveDeviceLayout()") < apply_root.index("setAttributeIfChanged(root, 'data-mcms-device-layout'")
@@ -49,7 +50,6 @@ const document = {{ documentElement: root }};
 let activeDeviceLayout = "desktop";
 let tabletModeActive = false;
 let mobileModeActive = false;
-let criticalViewActive = false;
 let nextLayout = "desktop";
 let orientation = "landscape";
 const calculations = {{ layout: 0, tablet: 0, mobile: 0, viewport: 0 }};
@@ -74,10 +74,10 @@ const expected = {{
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
     "data-mcms-show-alliance-missions": "true", "data-mcms-show-my-missions": "false",
-    "data-mcms-show-vehicles": "true", "data-mcms-show-buildings": "false", "data-mcms-critical-view": "false"
+    "data-mcms-show-vehicles": "true", "data-mcms-show-buildings": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 22, "first call writes every missing attribute");
+assert.equal(root.calls.length, 21, "first call writes every missing attribute");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();

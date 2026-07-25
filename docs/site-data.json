@@ -43,7 +43,7 @@
       "features": [
         {
           "name": "Mission Age map timers",
-          "summary": "Displays compact age timer badges above missions on the map without running the retired Age Watch workflow.",
+          "summary": "Displays compact age timer badges above personal missions on the map.",
           "details": [
             "Map timer badges",
             "Shortcut 6",
@@ -115,7 +115,7 @@
           "details": [
             "Patient and prisoner markers",
             "Live counts",
-            "Operational overlay integration"
+            "Map marker overlay"
           ],
           "visual": "transport",
           "tags": [
@@ -126,18 +126,18 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Manually releases eligible alliance ambulances sequentially while excluding the signed-in player's own vehicles.",
+          "summary": "Manually releases verified eligible alliance ambulances through MissionChief's native vehicle window while excluding the signed-in player's own vehicles.",
           "details": [
-            "Prefers external extension release controls",
+            "MissionChief native Discharge patient control",
             "One verified vehicle at a time",
             "Ambiguous ownership is skipped",
-            "Bounded MissionChief fallback"
+            "Bounded retries and confirmation evidence"
           ],
           "visual": "transport-sweep",
           "tags": [
             "transport",
             "alliance",
-            "external extension"
+            "native"
           ]
         },
         {
@@ -494,8 +494,20 @@
   "documentation": [
     {
       "title": "v7 native Toolkit boundary",
-      "summary": "What The One We Knew Before removed, what remains, and how existing settings migrate safely.",
-      "path": "docs/"
+      "sections": [
+        {
+          "heading": "The One We Knew Before",
+          "body": "Version 7 removes the copied requirements, call-window, call-list and enhanced transport-request engines completely. Their settings, stored state, observers, scheduling and DOM rewriting no longer initialise."
+        },
+        {
+          "heading": "What remains",
+          "body": "Mission Age map timers, Mission Value, native Patient Transport Sweep, Transport Watcher, Resource Gap, vehicle identity, map utilities, financial intelligence, themes and responsive layouts remain supported."
+        },
+        {
+          "heading": "Settings migration",
+          "body": "Existing retained settings load normally. Obsolete mission-window settings are discarded during state normalisation without requiring a full reset."
+        }
+      ]
     },
     {
       "title": "Installation",
@@ -519,20 +531,16 @@
         },
         {
           "heading": "Map-first behaviour",
-          "body": "The Toolkit adds summaries, overlays and shortcuts around MissionChief rather than replacing its native workflows."
+          "body": "The Toolkit adds summaries, overlays and shortcuts around MissionChief rather than replacing its native mission windows or mission list."
         }
       ]
     },
     {
-      "title": "Mission systems",
+      "title": "Mission and transport systems",
       "sections": [
         {
-          "heading": "Mission Age Watch",
-          "body": "Filter and sort personal and alliance missions by age, ownership, category, operational state and distance origin, then zoom or open a mission directly."
-        },
-        {
-          "heading": "Critical View and Mission Inspector",
-          "body": "Critical View concentrates urgent work; Mission Inspector provides deeper on-demand context."
+          "heading": "Mission Age map timers",
+          "body": "Compact timer badges appear above personal missions and can be toggled with shortcut 6."
         },
         {
           "heading": "Mission Value",
@@ -540,11 +548,11 @@
         },
         {
           "heading": "Transport Watcher",
-          "body": "Transport Watcher identifies patient or prisoner transport-required missions."
+          "body": "Transport Watcher identifies patient or prisoner transport-required missions without replacing MissionChief controls."
         },
         {
           "heading": "Patient Transport Sweep",
-          "body": "The manual bounded alliance workflow excludes the signed-in player's vehicles and processes one verified eligible ambulance at a time."
+          "body": "The manual bounded alliance workflow excludes the signed-in player's vehicles and uses MissionChief's native vehicle-window discharge control for one verified eligible ambulance at a time."
         }
       ]
     },
@@ -556,8 +564,8 @@
           "body": "Compares mission demand with personal vehicle context inside a configurable radius."
         },
         {
-          "heading": "Coverage tools",
-          "body": "Coverage Heat Map and rings provide geographic context; high-cost overlays should be enabled only when useful."
+          "heading": "Coverage rings",
+          "body": "Coverage rings provide geographic range context without installing a document-wide heat overlay."
         },
         {
           "heading": "Smart Bookmark Labels",
@@ -589,7 +597,7 @@
       "steps": [
         "Confirm the installed version is current",
         "Allow idle bootstrap to complete",
-        "Disable unneeded high-cost overlays",
+        "Enable Economy Mode on lower-power devices",
         "Compare with the Toolkit disabled and capture startup metrics"
       ]
     },
@@ -603,12 +611,12 @@
       ]
     },
     {
-      "problem": "Requirements remain amber",
+      "problem": "A native mission or vehicle control is unavailable",
       "steps": [
-        "Allow the mission window to finish loading",
-        "Check whether MissionChief exposes requirement evidence",
-        "Check for an equivalent visible external extension panel",
-        "Report the exact mission and unresolved wording rather than assuming coverage"
+        "Allow the MissionChief window to finish loading",
+        "Confirm the control is visible without the Toolkit",
+        "Reload the active mission or vehicle window once",
+        "Report the exact route and missing native control"
       ]
     },
     {
@@ -641,17 +649,17 @@
   "mediaRoadmap": [
     "Before-and-after map comparison",
     "All seven interface systems",
-    "Enhanced Operational Requirements truth states",
-    "Extended Call Window workflow",
-    "Extended Mission List workflow",
-    "Enhanced Transport Requests safeguards",
-    "Mission Age Watch workflow",
+    "Mission Age map timer badges",
     "Mission Value inside a native mission window",
-    "Patient Transport Sweep workflow",
-    "Coverage Heat Map",
+    "Patient Transport Sweep native discharge workflow",
+    "Transport Watcher",
+    "Resource Gap",
+    "Vehicle Code Status",
+    "Custom Vehicle Badges",
+    "Coverage rings",
     "Smart Bookmark Labels",
+    "Financial intelligence",
     "Payout presentations",
-    "Tablet and iOS Mobile Mode",
-    "Critical View and Mission Inspector"
+    "Tablet and iOS Mobile Mode"
   ]
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.0
+// @version      7.1.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.0',
+        version: '7.1.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -9005,8 +9005,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-name{min-width:80px;max-width:52%;color:var(--mcms-wire-text)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{color:var(--mcms-wire-muted)!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode{color:var(--mcms-wire-accent)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-state{flex:0 0 auto;max-width:180px}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls{position:relative;z-index:7;flex:0 0 auto;align-self:stretch;display:flex;align-items:center;gap:3px;padding:0 5px;border-left:1px solid var(--mcms-wire-border);background:rgba(0,0,0,.12)}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{appearance:none;display:grid;place-items:center;width:27px;height:27px;min-width:27px;padding:0;border:1px solid var(--mcms-wire-border);border-radius:5px;background:rgba(255,255,255,.055);color:var(--mcms-wire-text);font:900 13px/1 Arial,sans-serif;cursor:pointer}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls{position:relative!important;top:auto!important;bottom:auto!important;z-index:7;flex:0 0 auto;align-self:center!important;display:flex;align-items:center!important;justify-content:center;height:100%!important;min-height:0;box-sizing:border-box!important;margin:0!important;gap:3px;padding:0 5px;border-left:1px solid var(--mcms-wire-border);background:rgba(0,0,0,.12);transform:none!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{appearance:none;-webkit-appearance:none;position:relative!important;top:auto!important;bottom:auto!important;float:none!important;align-self:center!important;box-sizing:border-box!important;display:grid;place-items:center;width:27px;height:27px;min-width:27px;min-height:27px;margin:0!important;padding:0;border:1px solid var(--mcms-wire-border);border-radius:5px;background:rgba(255,255,255,.055);color:var(--mcms-wire-text);font:900 13px/1 Arial,sans-serif;cursor:pointer;transform:none!important;vertical-align:middle}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:hover,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:focus-visible,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls [aria-pressed="true"]{background:var(--mcms-wire-accent);color:#09131a;outline:1px solid var(--mcms-wire-accent)}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel{position:absolute;z-index:12;top:calc(100% + 5px);right:0;width:min(860px,calc(100vw - 18px));max-height:min(58vh,520px);overflow:hidden;border:1px solid var(--mcms-wire-border);border-radius:9px;background:linear-gradient(180deg,var(--mcms-wire-bg2),var(--mcms-wire-bg));box-shadow:0 15px 38px rgba(0,0,0,.52);color:var(--mcms-wire-text)}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel[hidden]{display:none!important}
@@ -9021,7 +9021,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d8bd72;--mcms-wire-border:#b99a4f;--mcms-wire-bg:#07080a;--mcms-wire-bg2:#1b1d20;--mcms-wire-label:#d8bd72;--mcms-wire-text:#f5efe2;--mcms-wire-muted:#b7babd}
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#59e3df;--mcms-wire-border:#d5b85a;--mcms-wire-bg:#07171c;--mcms-wire-bg2:#123039;--mcms-wire-label:#1b574f;--mcms-wire-text:#f4f0d8;--mcms-wire-muted:#b7d8ce}
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label,html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{color:#111!important}
-        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:32px;height:32px;min-width:32px}}
+        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:32px;height:32px;min-width:32px;min-height:32px}}
         @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
 `);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
@@ -14294,7 +14294,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             majorIncidentFeedMotionTimer = null;
             majorIncidentFeedMotionRevision += 1;
         } else {
-            majorIncidentFeedScheduleAdvance(feed, 900);
+            majorIncidentFeedInteractionPauseUntil = 0;
+            feed?.classList?.remove('mcms-feed-interacting');
+            runtimeClearTimeout(majorIncidentFeedMotionTimer);
+            majorIncidentFeedMotionTimer = null;
+            majorIncidentFeedMotionRevision += 1;
+            majorIncidentFeedScheduleAdvance(feed, 650);
         }
     }
 
@@ -14531,26 +14536,39 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 majorIncidentFeedSetExpanded(feed, false);
                 focusMissionById(item.dataset.mcmsMajorMissionId, false);
             });
-            feed.addEventListener('pointerenter', () => {
+            feed.addEventListener('pointerover', event => {
+                const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
+                if (!zone || zone.contains(event.relatedTarget)) return;
                 feed.classList.add('mcms-feed-interacting');
                 runtimeClearTimeout(majorIncidentFeedMotionTimer);
                 majorIncidentFeedMotionTimer = null;
                 majorIncidentFeedMotionRevision += 1;
             });
-            feed.addEventListener('pointerleave', () => {
+            feed.addEventListener('pointerout', event => {
+                const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
+                if (!zone || zone.contains(event.relatedTarget)) return;
+                const nextZone = event.relatedTarget?.closest?.('.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
+                if (nextZone && feed.contains(nextZone)) return;
                 feed.classList.remove('mcms-feed-interacting');
                 majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
                 majorIncidentFeedScheduleAdvance(feed, 1500);
             });
-            feed.addEventListener('focusin', () => feed.classList.add('mcms-feed-interacting'));
+            feed.addEventListener('focusin', event => {
+                if (closestEventTarget(event, '[data-mcms-incident-action]')) return;
+                if (closestEventTarget(event, '[data-mcms-major-mission-id],.mcms-incident-feed-panel')) {
+                    feed.classList.add('mcms-feed-interacting');
+                }
+            });
             feed.addEventListener('focusout', () => runtimeSetTimeout(() => {
-                if (!feed.contains(document.activeElement)) {
+                const active = document.activeElement;
+                if (!feed.contains(active) || active?.closest?.('[data-mcms-incident-action]')) {
                     feed.classList.remove('mcms-feed-interacting');
                     majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
                     majorIncidentFeedScheduleAdvance(feed, 1500);
                 }
             }, 0));
-            feed.addEventListener('pointerdown', () => {
+            feed.addEventListener('pointerdown', event => {
+                if (closestEventTarget(event, '[data-mcms-incident-action]')) return;
                 majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
             }, { passive: true });
             document.body.appendChild(feed);

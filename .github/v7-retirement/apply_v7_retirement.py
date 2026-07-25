@@ -511,6 +511,7 @@ def main() -> int:
     tracked=[]
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
+        if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
         if TOKEN in path.as_posix().lower(): tracked.append(path.as_posix())
         try: text=path.read_text(encoding="utf-8")
         except (UnicodeDecodeError,OSError): continue
@@ -704,11 +705,12 @@ jobs:
       - run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt'''
 write(".github/workflows/v7-native-toolkit-boundary.yml",V7_WORKFLOW)
 
-for obsolete in [".github/scripts/test_issue378_requirements_renderer.py",".github/scripts/test_issue378_operational_feature_suite.py",".github/scripts/test_issue378_operational_feature_runtime.js",".github/scripts/test_issue391_matrix_retirement.py",".github/scripts/test_issue456_requirements_truth_runtime.js",".github/scripts/test_issue458_requirements_source_runtime.js",".github/scripts/test_issue464_operational_runtime.js",".github/scripts/test_issue470_menu_requirements_runtime.js",".github/scripts/test_transport_sweep_lssm_contract.py",".github/fixtures/transport-sweep-lssm-contract.json",".github/scripts/test_v6_operational_runtime_budget.py",".github/scripts/test_v6_operational_settings_contract.py",".github/scripts/test_v6_feature_retirement.py",".github/scripts/test_v6_mission_age_retention.py",".github/workflows/v6-critical-performance.yml",".github/fixtures/v6-performance-budget.json","docs/audits/v6-critical-performance-baseline.md","docs/audits/v6-critical-performance-evidence.json",".github/scripts/diagnose_issue512_lssm_coexistence.py",".github/workflows/issue512-lssm-coexistence-diagnostic.yml",".github/v7-retirement/apply_v7_retirement.py",".github/workflows/apply-v7-retirement.yml"]: delete(obsolete)
+for obsolete in [".github/scripts/test_issue378_requirements_renderer.py",".github/scripts/test_issue378_operational_feature_suite.py",".github/scripts/test_issue378_operational_feature_runtime.js",".github/scripts/test_issue391_matrix_retirement.py",".github/scripts/test_issue456_requirements_truth_runtime.js",".github/scripts/test_issue458_requirements_source_runtime.js",".github/scripts/test_issue464_operational_runtime.js",".github/scripts/test_issue470_menu_requirements_runtime.js",".github/scripts/test_transport_sweep_lssm_contract.py",".github/fixtures/transport-sweep-lssm-contract.json",".github/scripts/test_v6_operational_runtime_budget.py",".github/scripts/test_v6_operational_settings_contract.py",".github/scripts/test_v6_feature_retirement.py",".github/scripts/test_v6_mission_age_retention.py",".github/workflows/v6-critical-performance.yml",".github/fixtures/v6-performance-budget.json","docs/audits/v6-critical-performance-baseline.md","docs/audits/v6-critical-performance-evidence.json",".github/scripts/diagnose_issue512_lssm_coexistence.py",".github/workflows/issue512-lssm-coexistence-diagnostic.yml",".github/issue512/apply_main_toolbar_fix.py",".github/workflows/apply-issue512-main-toolbar-fix.yml",".github/v7-retirement/apply_v7_retirement.py",".github/workflows/apply-v7-retirement.yml"]: delete(obsolete)
 
 doc_extensions={".md",".html",".svg",".json",".txt",".css"};code_extensions={".py",".js",".sh",".yml",".yaml",".toml",".ini"}
 for path in ROOT.rglob("*"):
     if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
+    if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
     try: text=path.read_text(encoding="utf-8")
     except (UnicodeDecodeError,OSError): continue
     if extension_token not in text.lower(): continue

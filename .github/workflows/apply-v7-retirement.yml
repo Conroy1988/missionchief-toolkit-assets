@@ -30,7 +30,13 @@ jobs:
           persist-credentials: false
 
       - name: Apply complete v7 retirement and validate candidate
-        run: python3 .github/v7-retirement/apply_v7_retirement.py
+        shell: bash
+        run: |
+          set +e
+          python3 .github/v7-retirement/apply_v7_retirement.py > v7-retirement.log 2>&1
+          status=$?
+          tail -n 220 v7-retirement.log
+          exit "$status"
 
       - name: Commit exact v7 candidate
         env:

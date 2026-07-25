@@ -10,7 +10,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 - Removed the browser reduced-motion preference from the automatic card scheduling blockade.
 - Continued discrete incident progression at the normal cadence while respecting manual Pause, hidden-tab, Economy Mode, expanded-queue and interaction gates.
-- Disabled the sliding track transition under reduced motion so cards change instantly without motion animation.
+- Restored a smooth 0.85-second horizontal news-banner slide so the outgoing incident exits left while the next incident enters from the right.
 - Changed the executable runtime contract to run with `prefers-reduced-motion: reduce` enabled and prove Play plus continued automatic progression.
 - Kept previous/next navigation, queue expansion, theme styling and responsive control containment unchanged.
 

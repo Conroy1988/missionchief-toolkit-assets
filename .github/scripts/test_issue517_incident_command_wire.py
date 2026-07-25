@@ -36,7 +36,8 @@ def main() -> int:
     assert 'reducedMotion' not in schedule
     assert "state.economyMode || majorIncidentFeedManualPaused" in schedule
     assert '@media (prefers-reduced-motion:reduce)' in source
-    assert '.mcms-incident-feed-track{transition:none!important}' in source
+    assert source.count('transition:transform .85s cubic-bezier(.22,.75,.18,1)!important') == 2
+    assert 'mcms-incident-feed-track{transition:none!important}' not in source
     assert 'state.economyMode' in motion
     assert 'majorIncidentFeedInteractionPauseUntil = 0;' in pause
     assert source.count('let majorIncidentFeedAdvanceTimer = null;') == 1

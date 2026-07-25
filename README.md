@@ -78,7 +78,7 @@ This is subtraction with intent. The release protects the systems that are uniqu
 |---|---|
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |
-| **Major Incident Feed** | Surfaces high-value incidents with click-to-zoom navigation |
+| **Incident Command Wire** | Presents one priority incident at a time with manual controls, an expanded queue and click-to-zoom navigation |
 | **Unit Commitment** | Presents committed response context without replacing native dispatch controls |
 | **Transport Watcher** | Identifies patient and prisoner transport demand |
 

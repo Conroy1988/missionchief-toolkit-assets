@@ -4,6 +4,18 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.0] - 2026-07-25
+
+### Incident Command Wire
+
+- Replaced the duplicated continuous Major Incident Feed marquee with one bounded, complete incident card at a time.
+- Added previous, pause/resume, next and expand/collapse controls that remain usable when automatic motion is unavailable.
+- Added a priority-ordered expanded incident queue with direct mission navigation and no duplicated mission entries.
+- Paused rotation during hover, keyboard focus, touch interaction and expanded-queue use.
+- Added deliberate Map Command, Cyberpunk, Fallout 4, Umbrella, Factorio, 007 Intelligence and Hyrule Command styling.
+- Added compact Tablet/iPad and iOS presentation plus static reduced-motion and Economy Mode behaviour.
+- Added permanent static and executable runtime contracts for indexing, controls, accessibility, themes and manual fallback.
+
 ## [7.0.1] - 2026-07-25
 
 ### Emergency launcher restoration

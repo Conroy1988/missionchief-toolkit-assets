@@ -52,6 +52,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+      - name: Apply boot fixture cleanup
+        run: python3 .github/v6-reconcile/fix_v6_boot_contract.py
+
       - name: Validate updated boot lifecycle fixture
         shell: bash
         run: |

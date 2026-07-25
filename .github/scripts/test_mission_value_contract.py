@@ -37,7 +37,8 @@ def main() -> int:
         "makeToggleButton('missionValue', '£', 'Mission Value'",
         "if (feature === 'missionValue') state.missionValue = !state.missionValue",
         "missionValue: state.missionValue",
-        "criticalMissionValueDetails({ missionId, marker, snapshot })",
+        "function missionWindowValueDetails(entry)",
+        "const details = missionWindowValueDetails(candidate)",
         "installMissionValueWindows()",
         "ensureMissionValueDocumentStyle(doc)",
         "clearMissionValueDocumentStyles()",
@@ -64,6 +65,7 @@ def main() -> int:
     ]
     missing = [fragment for fragment in required if fragment not in source]
     assert not missing, f"Mission Value contract fragments missing: {missing}"
+    assert "criticalMissionValueDetails" not in source
     assert "function missionValueRightControlOffset" not in source
     assert "function positionMissionValueRow" not in source
     assert "missionValueRowsAcrossDocuments" not in source
@@ -89,14 +91,14 @@ def main() -> int:
     ])
     cases = json.dumps(fixture["presentations"], ensure_ascii=False)
     candidate_cases = json.dumps(fixture["candidateScenarios"], ensure_ascii=False)
-    harness = r""""use strict";
+    harness = r'''"use strict";
 const assert = require("node:assert/strict");
 global.location = { hostname: "missionchief.co.uk", href: "https://missionchief.co.uk/" };
 function normaliseMissionId(value) {
   const number = Number(value);
   return Number.isInteger(number) && number > 0 ? number : null;
 }
-""" + functions + f"""\nconst presentationCases = {cases};\nconst candidateScenarios = {candidate_cases};\n""" + r"""
+''' + functions + f"""\nconst presentationCases = {cases};\nconst candidateScenarios = {candidate_cases};\n""" + r'''
 assert.equal(formatMissionWindowValue(12345, "missionchief.co.uk"), "£12,345");
 assert.equal(formatMissionWindowValue(12345, "www.missionchief.com"), "$12,345");
 assert.equal(formatMissionWindowValue(12345, "leitstellenspiel.de"), "€12.345");
@@ -134,7 +136,7 @@ for (const scenario of candidateScenarios) {
   );
 }
 console.log("Mission Value formatting, route, responsive presentation and host ownership contracts passed.");
-"""
+'''
     with tempfile.TemporaryDirectory(prefix="mcms-mission-value-") as temp:
         path = Path(temp) / "contract.js"
         path.write_text(harness, encoding="utf-8")

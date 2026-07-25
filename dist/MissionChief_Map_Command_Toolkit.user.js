@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.2
+// @version      7.1.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.2',
+        version: '7.1.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -9001,6 +9001,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-count{flex:0 0 auto;min-width:34px;padding:3px 5px;border:1px solid currentColor;border-radius:999px;font-size:7px;line-height:1;text-align:center}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-viewport{height:100%!important;min-width:0;overflow:hidden!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{display:flex!important;align-items:stretch!important;width:100%!important;min-width:100%!important;height:100%!important;animation:none!important;will-change:transform;transition:transform .46s cubic-bezier(.22,.75,.18,1)!important}
+        @media (prefers-reduced-motion:reduce){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{transition:none!important}}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{flex:0 0 100%!important;width:100%!important;min-width:100%!important;height:100%!important;padding:0 12px!important;gap:9px!important;overflow:hidden!important;border:0!important;border-left:3px solid var(--mcms-wire-accent)!important;background:linear-gradient(90deg,rgba(104,207,255,.08),transparent 30%)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy,#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{min-width:0;display:flex;align-items:center;gap:7px;overflow:hidden}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy{flex:1 1 auto}.mcms-incident-feed-meta{color:var(--mcms-wire-muted)}
@@ -14272,8 +14273,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function majorIncidentFeedScheduleAdvance(feed, delay = MAJOR_INCIDENT_FEED_ROTATION_MS, restart = false) {
         const count = majorIncidentFeedEntryCount(feed);
-        const reducedMotion = Boolean(pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
-        if (!feed?.isConnected || count <= 1 || state.economyMode || reducedMotion || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) {
+        if (!feed?.isConnected || count <= 1 || state.economyMode || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) {
             majorIncidentFeedCancelAdvance();
             return false;
         }

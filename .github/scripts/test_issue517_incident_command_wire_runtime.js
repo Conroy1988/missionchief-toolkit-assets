@@ -49,7 +49,7 @@ let timers = [], cleared = [];
 const sandbox = {
     console, Date, Math, Number, Boolean, String,
     document:{ hidden:false },
-    pageWindow:{ matchMedia:()=>({matches:false}) },
+    pageWindow:{ matchMedia:()=>({matches:true}) },
     state:{ economyMode:false },
     MAJOR_INCIDENT_FEED_ROTATION_MS:6500,
     MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS:9000,
@@ -115,4 +115,5 @@ feed.dataset.mcmsEntryCount = '1';
 api.majorIncidentFeedSyncControls(feed);
 assert.equal(controls.previous.disabled, true);
 assert.equal(controls.next.disabled, true);
-console.log('Issue #517 Incident Command Wire runtime contract passed.');
+assert.equal(sandbox.pageWindow.matchMedia('(prefers-reduced-motion: reduce)').matches, true);
+console.log('Issue #517 Incident Command Wire runtime contract passed with reduced motion enabled.');

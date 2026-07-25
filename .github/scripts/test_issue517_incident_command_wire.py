@@ -10,7 +10,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding='utf-8')
     metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == '7.1.2'
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == '7.1.3'
     for name in ['majorIncidentFeedEntryCount','majorIncidentFeedInteractionActive','majorIncidentFeedSyncControls','majorIncidentFeedApplyIndex','majorIncidentFeedCancelAdvance','majorIncidentFeedScheduleAdvance','majorIncidentFeedSetPaused','majorIncidentFeedSetExpanded','majorIncidentFeedAdvance']:
         assert source.count(f'function {name}(') == 1, name
     render = section(source, '    function renderMajorIncidentFeed(', '    function scheduleMajorIncidentFeedRender(')
@@ -32,7 +32,11 @@ def main() -> int:
     assert "feed.addEventListener('pointerout'" in ensure
     assert "if (closestEventTarget(event, '[data-mcms-incident-action]')) return;" in ensure
     assert "feed.addEventListener('focusin'" in ensure
-    assert 'pageWindow.matchMedia' in source and 'prefers-reduced-motion: reduce' in source
+    assert 'prefers-reduced-motion:reduce' in source
+    assert 'reducedMotion' not in schedule
+    assert "state.economyMode || majorIncidentFeedManualPaused" in schedule
+    assert '@media (prefers-reduced-motion:reduce)' in source
+    assert '.mcms-incident-feed-track{transition:none!important}' in source
     assert 'state.economyMode' in motion
     assert 'majorIncidentFeedInteractionPauseUntil = 0;' in pause
     assert source.count('let majorIncidentFeedAdvanceTimer = null;') == 1

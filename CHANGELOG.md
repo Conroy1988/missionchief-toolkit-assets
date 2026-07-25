@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.3] - 2026-07-25
+
+### Incident Command Wire reduced-motion autoplay recovery
+
+- Removed the browser reduced-motion preference from the automatic card scheduling blockade.
+- Continued discrete incident progression at the normal cadence while respecting manual Pause, hidden-tab, Economy Mode, expanded-queue and interaction gates.
+- Disabled the sliding track transition under reduced motion so cards change instantly without motion animation.
+- Changed the executable runtime contract to run with `prefers-reduced-motion: reduce` enabled and prove Play plus continued automatic progression.
+- Kept previous/next navigation, queue expansion, theme styling and responsive control containment unchanged.
+
 ## [7.1.2] - 2026-07-25
 
 ### Incident Command Wire live rotation recovery

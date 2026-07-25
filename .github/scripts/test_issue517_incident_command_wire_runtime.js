@@ -26,7 +26,7 @@ function extractFunction(name) {
     }
     throw new Error(`Could not extract ${name}`);
 }
-const functions = ['majorIncidentFeedEntryCount','majorIncidentFeedInteractionActive','majorIncidentFeedSyncControls','majorIncidentFeedApplyIndex','majorIncidentFeedScheduleAdvance','majorIncidentFeedSetPaused','majorIncidentFeedSetExpanded','majorIncidentFeedAdvance'];
+const functions = ['majorIncidentFeedEntryCount','majorIncidentFeedInteractionActive','majorIncidentFeedSyncControls','majorIncidentFeedApplyIndex','majorIncidentFeedCancelAdvance','majorIncidentFeedScheduleAdvance','majorIncidentFeedSetPaused','majorIncidentFeedSetExpanded','majorIncidentFeedAdvance'];
 function classList() { return { values:new Set(), toggle(name,on){ if(on)this.values.add(name); else this.values.delete(name); }, contains(name){ return this.values.has(name); }, add(name){this.values.add(name);}, remove(name){this.values.delete(name);} }; }
 function button(action) { return { action, disabled:false, attrs:{}, textContent:'', title:'', setAttribute(name,value){this.attrs[name]=String(value);} }; }
 const items = Array.from({length:3}, (_,index)=>({ index, attrs:{}, tabIndex:0, setAttribute(name,value){this.attrs[name]=String(value);} }));
@@ -55,6 +55,8 @@ const sandbox = {
     MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS:9000,
     majorIncidentFeedMotionTimer:null,
     majorIncidentFeedMotionRevision:0,
+    majorIncidentFeedAdvanceTimer:null,
+    majorIncidentFeedAdvanceRevision:0,
     majorIncidentFeedCurrentIndex:0,
     majorIncidentFeedManualPaused:false,
     majorIncidentFeedInteractionPauseUntil:0,
@@ -63,7 +65,7 @@ const sandbox = {
     runtimeSetTimeout:(callback,delay)=>{ timers.push({callback,delay}); return timers.length; }
 };
 vm.createContext(sandbox);
-vm.runInContext(`${functions.map(extractFunction).join('\n\n')}\nthis.api={${functions.join(',')},state:()=>({index:majorIncidentFeedCurrentIndex,paused:majorIncidentFeedManualPaused,expanded:majorIncidentFeedExpanded,pauseUntil:majorIncidentFeedInteractionPauseUntil})};`, sandbox);
+vm.runInContext(`${functions.map(extractFunction).join('\n\n')}\nthis.api={${functions.join(',')},state:()=>({index:majorIncidentFeedCurrentIndex,paused:majorIncidentFeedManualPaused,expanded:majorIncidentFeedExpanded,pauseUntil:majorIncidentFeedInteractionPauseUntil,motionTimer:majorIncidentFeedMotionTimer,advanceTimer:majorIncidentFeedAdvanceTimer}),setMotionTimer:value=>{majorIncidentFeedMotionTimer=value;}};`, sandbox);
 const api = sandbox.api;
 assert.equal(api.majorIncidentFeedEntryCount(feed), 3);
 assert.equal(api.majorIncidentFeedApplyIndex(feed, 1), true);
@@ -86,10 +88,23 @@ assert.equal(api.state().pauseUntil, 0);
 assert.equal(feed.classList.contains('mcms-feed-interacting'), false);
 const resumeTimer = timers.at(-1);
 assert.equal(resumeTimer.delay, 650);
+const resumeTimerId = api.state().advanceTimer;
+const timerCountBeforeReconcile = timers.length;
+api.setMotionTimer(777);
+assert.equal(api.majorIncidentFeedScheduleAdvance(feed, 6500, false), true);
+assert.equal(timers.length, timerCountBeforeReconcile);
+assert.equal(api.state().advanceTimer, resumeTimerId);
+assert.equal(api.state().motionTimer, 777);
 const resumeIndex = api.state().index;
 resumeTimer.callback();
 assert.equal(api.state().index, (resumeIndex + 1) % 3);
 assert.equal(timers.at(-1).delay, 6500);
+const cadenceTimerId = api.state().advanceTimer;
+api.setMotionTimer(888);
+api.majorIncidentFeedSetPaused(feed, true);
+assert.ok(cleared.includes(cadenceTimerId));
+assert.equal(api.state().advanceTimer, null);
+assert.equal(api.state().motionTimer, 888);
 api.majorIncidentFeedSetExpanded(feed, true);
 assert.equal(api.state().expanded, true);
 assert.equal(panel.hidden, false);

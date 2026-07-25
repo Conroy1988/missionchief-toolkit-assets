@@ -4,6 +4,17 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.2] - 2026-07-25
+
+### Incident Command Wire live rotation recovery
+
+- Separated resize/render reconciliation from automatic incident progression with independently owned timers and revision counters.
+- Prevented normal renders and ResizeObserver callbacks from repeatedly cancelling the pending 6.5-second card advance.
+- Preserved an existing advance deadline during unchanged reconciliation while allowing explicit Play, manual navigation and queue transitions to restart it deliberately.
+- Kept Pause, hidden-tab, reduced-motion, Economy Mode and expanded-queue suppression fail-closed on the dedicated advance timer.
+- Hard-bounded all four action controls with important min/max dimensions and contained the rail inside the wire across all themes and responsive modes.
+- Added a runtime regression that simulates reconciliation while autoplay is pending and proves the automatic deadline survives.
+
 ## [7.1.1] - 2026-07-25
 
 ### Incident Command Wire play and alignment hotfix

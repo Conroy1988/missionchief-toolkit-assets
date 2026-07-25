@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.1
+// @version      7.1.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.1',
+        version: '7.1.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1117,6 +1117,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let majorIncidentFeedLayoutTimer = null;
     let majorIncidentFeedMotionTimer = null;
     let majorIncidentFeedMotionRevision = 0;
+    let majorIncidentFeedAdvanceTimer = null;
+    let majorIncidentFeedAdvanceRevision = 0;
     let majorIncidentFeedCurrentIndex = 0;
     let majorIncidentFeedManualPaused = false;
     let majorIncidentFeedInteractionPauseUntil = 0;
@@ -9005,8 +9007,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-name{min-width:80px;max-width:52%;color:var(--mcms-wire-text)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{color:var(--mcms-wire-muted)!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode{color:var(--mcms-wire-accent)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-state{flex:0 0 auto;max-width:180px}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls{position:relative!important;top:auto!important;bottom:auto!important;z-index:7;flex:0 0 auto;align-self:center!important;display:flex;align-items:center!important;justify-content:center;height:100%!important;min-height:0;box-sizing:border-box!important;margin:0!important;gap:3px;padding:0 5px;border-left:1px solid var(--mcms-wire-border);background:rgba(0,0,0,.12);transform:none!important}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{appearance:none;-webkit-appearance:none;position:relative!important;top:auto!important;bottom:auto!important;float:none!important;align-self:center!important;box-sizing:border-box!important;display:grid;place-items:center;width:27px;height:27px;min-width:27px;min-height:27px;margin:0!important;padding:0;border:1px solid var(--mcms-wire-border);border-radius:5px;background:rgba(255,255,255,.055);color:var(--mcms-wire-text);font:900 13px/1 Arial,sans-serif;cursor:pointer;transform:none!important;vertical-align:middle}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls{position:relative!important;inset:auto!important;z-index:7;flex:0 0 auto;align-self:center!important;display:flex!important;align-items:center!important;justify-content:center!important;height:calc(100% - 4px)!important;min-height:0!important;max-height:36px!important;box-sizing:border-box!important;margin:0!important;gap:3px;padding:0 5px!important;border-left:1px solid var(--mcms-wire-border);background:rgba(0,0,0,.12);overflow:hidden!important;transform:none!important;contain:layout paint}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{appearance:none!important;-webkit-appearance:none!important;position:relative!important;inset:auto!important;float:none!important;align-self:center!important;box-sizing:border-box!important;display:grid!important;place-items:center!important;width:26px!important;height:26px!important;min-width:26px!important;min-height:26px!important;max-width:26px!important;max-height:26px!important;margin:0!important;padding:0!important;border:1px solid var(--mcms-wire-border)!important;border-radius:5px!important;background:rgba(255,255,255,.055);color:var(--mcms-wire-text);font:900 13px/1 Arial,sans-serif!important;cursor:pointer;overflow:hidden!important;transform:none!important;vertical-align:middle!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:hover,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:focus-visible,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls [aria-pressed="true"]{background:var(--mcms-wire-accent);color:#09131a;outline:1px solid var(--mcms-wire-accent)}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel{position:absolute;z-index:12;top:calc(100% + 5px);right:0;width:min(860px,calc(100vw - 18px));max-height:min(58vh,520px);overflow:hidden;border:1px solid var(--mcms-wire-border);border-radius:9px;background:linear-gradient(180deg,var(--mcms-wire-bg2),var(--mcms-wire-bg));box-shadow:0 15px 38px rgba(0,0,0,.52);color:var(--mcms-wire-text)}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel[hidden]{display:none!important}
@@ -9021,7 +9023,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d8bd72;--mcms-wire-border:#b99a4f;--mcms-wire-bg:#07080a;--mcms-wire-bg2:#1b1d20;--mcms-wire-label:#d8bd72;--mcms-wire-text:#f5efe2;--mcms-wire-muted:#b7babd}
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#59e3df;--mcms-wire-border:#d5b85a;--mcms-wire-bg:#07171c;--mcms-wire-bg2:#123039;--mcms-wire-label:#1b574f;--mcms-wire-text:#f4f0d8;--mcms-wire-muted:#b7d8ce}
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label,html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{color:#111!important}
-        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:32px;height:32px;min-width:32px;min-height:32px}}
+        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important}}
         @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
 `);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
@@ -14262,25 +14264,34 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return true;
     }
 
-    function majorIncidentFeedScheduleAdvance(feed, delay = MAJOR_INCIDENT_FEED_ROTATION_MS) {
-        runtimeClearTimeout(majorIncidentFeedMotionTimer);
-        majorIncidentFeedMotionTimer = null;
+    function majorIncidentFeedCancelAdvance() {
+        runtimeClearTimeout(majorIncidentFeedAdvanceTimer);
+        majorIncidentFeedAdvanceTimer = null;
+        majorIncidentFeedAdvanceRevision += 1;
+    }
+
+    function majorIncidentFeedScheduleAdvance(feed, delay = MAJOR_INCIDENT_FEED_ROTATION_MS, restart = false) {
         const count = majorIncidentFeedEntryCount(feed);
         const reducedMotion = Boolean(pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
-        if (!feed?.isConnected || count <= 1 || state.economyMode || reducedMotion || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) return false;
+        if (!feed?.isConnected || count <= 1 || state.economyMode || reducedMotion || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) {
+            majorIncidentFeedCancelAdvance();
+            return false;
+        }
+        if (majorIncidentFeedAdvanceTimer !== null && !restart) return true;
+        majorIncidentFeedCancelAdvance();
         const now = Date.now();
         const interactionDelay = Math.max(0, majorIncidentFeedInteractionPauseUntil - now);
         const wait = Math.max(500, Number(delay) || MAJOR_INCIDENT_FEED_ROTATION_MS, interactionDelay + 350);
-        const revision = ++majorIncidentFeedMotionRevision;
-        majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
-            majorIncidentFeedMotionTimer = null;
-            if (revision !== majorIncidentFeedMotionRevision || !feed.isConnected) return;
+        const revision = ++majorIncidentFeedAdvanceRevision;
+        majorIncidentFeedAdvanceTimer = runtimeSetTimeout(() => {
+            majorIncidentFeedAdvanceTimer = null;
+            if (revision !== majorIncidentFeedAdvanceRevision || !feed.isConnected) return;
             if (majorIncidentFeedInteractionActive(feed)) {
-                majorIncidentFeedScheduleAdvance(feed, 850);
+                majorIncidentFeedScheduleAdvance(feed, 850, true);
                 return;
             }
             majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + 1);
-            majorIncidentFeedScheduleAdvance(feed, MAJOR_INCIDENT_FEED_ROTATION_MS);
+            majorIncidentFeedScheduleAdvance(feed, MAJOR_INCIDENT_FEED_ROTATION_MS, true);
         }, wait);
         return true;
     }
@@ -14290,16 +14301,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         feed?.classList?.toggle('mcms-feed-paused', majorIncidentFeedManualPaused);
         majorIncidentFeedSyncControls(feed);
         if (majorIncidentFeedManualPaused) {
-            runtimeClearTimeout(majorIncidentFeedMotionTimer);
-            majorIncidentFeedMotionTimer = null;
-            majorIncidentFeedMotionRevision += 1;
+            majorIncidentFeedCancelAdvance();
         } else {
             majorIncidentFeedInteractionPauseUntil = 0;
             feed?.classList?.remove('mcms-feed-interacting');
-            runtimeClearTimeout(majorIncidentFeedMotionTimer);
-            majorIncidentFeedMotionTimer = null;
-            majorIncidentFeedMotionRevision += 1;
-            majorIncidentFeedScheduleAdvance(feed, 650);
+            majorIncidentFeedScheduleAdvance(feed, 650, true);
         }
     }
 
@@ -14310,12 +14316,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (panel) panel.hidden = !majorIncidentFeedExpanded;
         majorIncidentFeedSyncControls(feed);
         if (majorIncidentFeedExpanded) {
-            runtimeClearTimeout(majorIncidentFeedMotionTimer);
-            majorIncidentFeedMotionTimer = null;
-            majorIncidentFeedMotionRevision += 1;
+            majorIncidentFeedCancelAdvance();
         } else {
             majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-            majorIncidentFeedScheduleAdvance(feed, 1500);
+            majorIncidentFeedScheduleAdvance(feed, 1500, true);
         }
     }
 
@@ -14323,7 +14327,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (majorIncidentFeedEntryCount(feed) <= 1) return false;
         if (manual) majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
         const changed = majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + Number(delta || 0));
-        majorIncidentFeedScheduleAdvance(feed, manual ? MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS : MAJOR_INCIDENT_FEED_ROTATION_MS);
+        majorIncidentFeedScheduleAdvance(feed, manual ? MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS : MAJOR_INCIDENT_FEED_ROTATION_MS, true);
         return changed;
     }
 
@@ -14333,6 +14337,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(majorIncidentFeedMotionTimer);
         majorIncidentFeedMotionTimer = null;
         majorIncidentFeedMotionRevision += 1;
+        majorIncidentFeedCancelAdvance();
         majorIncidentFeedCurrentIndex = 0;
         majorIncidentFeedManualPaused = false;
         majorIncidentFeedInteractionPauseUntil = 0;
@@ -14402,7 +14407,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         feed.classList.toggle('mcms-feed-static', count <= 1 || state.economyMode);
         if (forceRestart) majorIncidentFeedCurrentIndex = Math.min(majorIncidentFeedCurrentIndex, Math.max(0, count - 1));
         majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
-        majorIncidentFeedScheduleAdvance(feed, forceRestart ? 1200 : MAJOR_INCIDENT_FEED_ROTATION_MS);
+        majorIncidentFeedScheduleAdvance(feed, forceRestart ? 1200 : MAJOR_INCIDENT_FEED_ROTATION_MS, forceRestart);
         return true;
     }
 
@@ -14540,9 +14545,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
                 if (!zone || zone.contains(event.relatedTarget)) return;
                 feed.classList.add('mcms-feed-interacting');
-                runtimeClearTimeout(majorIncidentFeedMotionTimer);
-                majorIncidentFeedMotionTimer = null;
-                majorIncidentFeedMotionRevision += 1;
+                majorIncidentFeedCancelAdvance();
             });
             feed.addEventListener('pointerout', event => {
                 const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
@@ -14551,7 +14554,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (nextZone && feed.contains(nextZone)) return;
                 feed.classList.remove('mcms-feed-interacting');
                 majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-                majorIncidentFeedScheduleAdvance(feed, 1500);
+                majorIncidentFeedScheduleAdvance(feed, 1500, true);
             });
             feed.addEventListener('focusin', event => {
                 if (closestEventTarget(event, '[data-mcms-incident-action]')) return;
@@ -14564,7 +14567,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 if (!feed.contains(active) || active?.closest?.('[data-mcms-incident-action]')) {
                     feed.classList.remove('mcms-feed-interacting');
                     majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-                    majorIncidentFeedScheduleAdvance(feed, 1500);
+                    majorIncidentFeedScheduleAdvance(feed, 1500, true);
                 }
             }, 0));
             feed.addEventListener('pointerdown', event => {

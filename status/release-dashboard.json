@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
   "pipelineVersion": 3,
-  "currentVersion": "7.1.0",
+  "currentVersion": "7.1.1",
   "sourceOfTruth": "GitHub",
   "distribution": "Greasy Fork",
   "status": {
@@ -24,10 +24,10 @@
     "referencedPaths": 33,
     "missingReferencedPaths": 0
   },
-  "lastUpdated": "2026-07-25T15:58:09Z",
+  "lastUpdated": "2026-07-25T16:18:18Z",
   "source": {
     "canonicalPath": "src/MissionChief_Map_Command_Toolkit.user.js",
-    "validatedSha256": "dcf200b1427cfd382398248408e582a19a3686b199a6543823cd5c2a9c2d82a2",
+    "validatedSha256": "d02e064a0fa3a6bed48c4f08e226fa8d6e37c1411ea407d325150ea30bd7acc5",
     "state": "validated-canonical-source"
   },
   "validationEvidencePolicy": {
@@ -37,21 +37,21 @@
     "releaseDashboardChanged": false
   },
   "releaseReadiness": {
-    "version": "7.1.0",
+    "version": "7.1.1",
     "state": "passed",
     "requiredSecrets": true,
     "privateRepositoryReadWrite": true,
     "greasyForkMetadataVerified": true,
     "publicReleaseCreated": false,
-    "completedAt": "2026-07-25T15:58:09Z"
+    "completedAt": "2026-07-25T16:18:18Z"
   },
   "latestRelease": {
-    "version": "7.1.0",
-    "sha256": "dcf200b1427cfd382398248408e582a19a3686b199a6543823cd5c2a9c2d82a2",
-    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v7.1.0",
+    "version": "7.1.1",
+    "sha256": "d02e064a0fa3a6bed48c4f08e226fa8d6e37c1411ea407d325150ea30bd7acc5",
+    "githubRelease": "https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v7.1.1",
     "greasyForkVerified": true,
-    "privateBackupCommit": "967c5022bf4649a174a93694826c6946ec6695ee",
+    "privateBackupCommit": "010081886bc67ac0eda691a92e5a2580aafd2d91",
     "discordPosted": true,
-    "completedAt": "2026-07-25T15:58:09Z"
+    "completedAt": "2026-07-25T16:18:18Z"
   }
 }

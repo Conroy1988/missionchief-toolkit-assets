@@ -640,7 +640,10 @@ if __name__=='__main__': raise SystemExit(main())'''
 write(".github/scripts/test_documentation_consistency.py", DOC_TEST)
 
 validate_path=ROOT/".github/scripts/validate_userscript.py";validate=validate_path.read_text(encoding="utf-8");constant_start=validate.index("ISSUE391_MATRIX_RETIREMENT_CONTRACT");constant_end=validate.index("\n\nREQUIRED_KEYS",constant_start)
-constants='''V7_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_v7_retirement.py"
+constants='''VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
+FINANCIAL_OVERVIEW_CONTRACT = ROOT / ".github" / "scripts" / "test_financial_overview_contract.py"
+MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_source_headroom.py"
+V7_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_v7_retirement.py"
 MISSION_AGE_RETENTION_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_age_retention.py"
 NATIVE_TRANSPORT_SWEEP_CONTRACT = ROOT / ".github" / "scripts" / "test_transport_sweep_native_contract.py"
 ISSUE447_MENU_BOOT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue447_menu_boot_fail_open.py"

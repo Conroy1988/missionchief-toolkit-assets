@@ -73,7 +73,7 @@ def main() -> int:
     static = STATIC.read_text(encoding="utf-8")
     static = replace_once(
         static,
-        "    assert '@media (prefers-reduced-motion:reduce){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{transition:none!important}}' in source\n",
+        "    assert '.mcms-incident-feed-track{transition:none!important}' in source\n",
         "    assert source.count('transition:transform .85s cubic-bezier(.22,.75,.18,1)!important') == 2\n"
         "    assert 'mcms-incident-feed-track{transition:none!important}' not in source\n",
         "news-slide static assertion",

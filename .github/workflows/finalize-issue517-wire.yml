@@ -1,0 +1,72 @@
+name: Finalize Issue 517 Incident Command Wire
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/issue517/finalize_wire.py"
+      - ".github/workflows/finalize-issue517-wire.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-issue-517-finalizer
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'feature/issue-517-incident-command-wire'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact candidate branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: feature/issue-517-incident-command-wire
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Apply compact wire reconciliation
+        run: python3 .github/issue517/finalize_wire.py
+
+      - name: Validate canonical candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          bash .github/scripts/run_userscript_preflight.sh --contracts
+          python3 .github/scripts/test_documentation_consistency.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+
+      - name: Enforce exact performance budget against main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/performance-base.user.js
+          python3 .github/scripts/test_performance_budget.py
+          python3 .github/scripts/check_performance_budget.py \
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js \
+            --base /tmp/performance-base.user.js \
+            --policy .github/performance-budget.json \
+            --json-output issue517-final-performance.json \
+            --markdown-output issue517-final-performance.md
+          cat issue517-final-performance.md
+
+      - name: Commit exact final candidate
+        env:
+          DEVELOPMENT_PR_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEVELOPMENT_PR_TOKEN"
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No finalizer changes produced."; exit 1; }
+          git commit -m "Finalize v7.1.0 Incident Command Wire budgets"
+          BASIC_AUTH="$(printf 'x-access-token:%s' "$DEVELOPMENT_PR_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" \
+            push origin HEAD:refs/heads/feature/issue-517-incident-command-wire

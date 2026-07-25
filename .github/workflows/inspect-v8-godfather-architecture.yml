@@ -26,10 +26,26 @@ jobs:
       - name: Extract theme and payout architecture
         run: python3 .github/v8-godfather/inspect_architecture.py
 
-      - name: Upload architecture report
+      - name: Stage exact development inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p v8-inputs/.github/scripts v8-inputs/.github/fixtures v8-inputs/docs v8-inputs/help v8-inputs/status v8-inputs/themes
+          cp src/MissionChief_Map_Command_Toolkit.user.js v8-inputs/source.user.js
+          cp CHANGELOG.md README.md v8-inputs/
+          cp help/index.html help/manifest.json v8-inputs/help/
+          cp docs/site-data.json v8-inputs/docs/
+          cp status/theme-asset-inventory.json status/media-asset-audit.json v8-inputs/status/
+          cp .github/scripts/validate_userscript.py .github/scripts/test_asset_health.py .github/scripts/test_main_style_source_headroom.py .github/scripts/run_userscript_preflight.sh v8-inputs/.github/scripts/
+          cp .github/fixtures/main-style-source-headroom.json v8-inputs/.github/fixtures/
+          cp -R themes/* v8-inputs/themes/
+
+      - name: Upload architecture report and exact inputs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: v8-godfather-architecture-${{ github.sha }}
-          path: v8-godfather-architecture.txt
+          name: v8-godfather-inputs-${{ github.sha }}
+          path: |
+            v8-godfather-architecture.txt
+            v8-inputs
           if-no-files-found: error
           retention-days: 14

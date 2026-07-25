@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github" / "fixtures" / "main-style-source-headroom.json"
 README = ROOT / "README.md"
+PREBOOT = ROOT / ".github" / "scripts" / "test_issue454_preboot_state_order.py"
 SELF = ROOT / ".github" / "issue515" / "patch_candidate_ledgers.py"
 
 
@@ -50,11 +51,21 @@ def main() -> int:
     FIXTURE.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
 
     readme = README.read_text(encoding="utf-8")
-    old = "Current verified release: `v6.0.0` · Development candidate: `v7.0.0` — The One We Knew Before"
-    new = "Current verified release: `v7.0.0` · Development candidate: `v7.0.1` — Emergency launcher restoration"
-    if old not in readme:
-        raise SystemExit("README release-state marker is not the expected v7 baseline")
-    README.write_text(readme.replace(old, new, 1), encoding="utf-8")
+    marker = re.compile(
+        r"Current verified release: `v[^`]+` · Development candidate: `v[^`]+`[^*\n]*"
+    )
+    replacement = "Current verified release: `v7.0.0` · Development candidate: `v7.0.1` — Emergency launcher restoration"
+    readme, count = marker.subn(replacement, readme, count=1)
+    if count != 1:
+        raise SystemExit(f"Expected one README release-state marker, found {count}")
+    README.write_text(readme, encoding="utf-8")
+
+    preboot = PREBOOT.read_text(encoding="utf-8")
+    old = "assert meta==runtime=='7.0.0'"
+    new = "assert meta==runtime\nassert tuple(int(part) for part in meta.split('.')[:3]) >= (7,0,0)"
+    if preboot.count(old) != 1:
+        raise SystemExit("v7 preboot version assertion is not the expected baseline")
+    PREBOOT.write_text(preboot.replace(old, new, 1), encoding="utf-8")
 
     SELF.unlink(missing_ok=True)
     try:

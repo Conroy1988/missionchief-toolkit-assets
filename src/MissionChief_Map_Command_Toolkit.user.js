@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      6.0.0
+// @version      7.0.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '6.0.0',
+        version: '7.0.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1090,7 +1090,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         '.fancybox-overlay', '#fancybox-wrap'
     ];
 
-    const OPERATIONAL_SUITE_SETTINGS_VERSION = 2;
     let state = loadState();
     let cachedMap = null;
     let cachedMapElement = null;
@@ -1274,15 +1273,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const missionValueObservedFrames = new WeakSet();
     const missionValueHostObservers = new Map();
     const missionValueRetryState = new WeakMap();
-    let missionRequirementsScanTimer = null;
-    let missionRequirementsFeatureInstalled = false;
-    const missionRequirementsObservedDocuments = new WeakSet();
-    const missionRequirementsObservedFrames = new WeakSet();
-    const missionRequirementsRecords = new Map();
-    let operationalSuiteScanTimer = null;
-    let operationalSuiteInstalled = false;
-    let operationalSuiteRevision = 0;
-    const operationalSuiteContexts = new Map();
     let customVehicleBadgeScanTimer = null;
     let customVehicleBadgeRefreshPromise = null;
     let customVehicleBadgeFeatureInstalled = false;
@@ -1296,209 +1286,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let helpGuideLoadedAt = 0;
     let helpGuideLoadPromise = null;
     let helpCenterReturnFocus = null;
-
-    const OPERATIONAL_SUITE_LSSM_BASELINE = Object.freeze({
-        repository: 'LSSM-V.4',
-        branch: 'dev',
-        commit: '88e41646e59a7d620624f90f1d9a0a62320c2775'
-    });
-
-    function defaultOperationalWindowState(legacyRequirementsEnabled = true) {
-        return {
-            schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            enabled: true,
-            phase: 'operational-suite',
-            requirements: {
-                enabled: legacyRequirementsEnabled !== false,
-                calcMaxStaff: false,
-                hoverTip: true,
-                viewMode: 'table',
-                overlay: false,
-                minified: false,
-                pushRight: false,
-                sort: 'requirement',
-                sortDir: 'asc',
-                drag: { active: false, top: 60, left: null, offset: { x: 0, y: 0 } }
-            },
-            callWindow: {
-                enabled: false,
-                generationDate: true,
-                yellowBorderHours: 0,
-                redBorder: false,
-                patientSummary: true,
-                collapsiblePatients: false,
-                collapsiblePatientsMinPatients: 7,
-                arrCounter: false,
-                arrCounterAsBadge: false,
-                arrClickHighlight: false,
-                arrClickHighlightColor: '#008000',
-                arrClickHighlightWidth: 2,
-                arrCounterResetSelection: false,
-                arrMatchHighlight: false,
-                arrMatchHighlightAllWords: false,
-                arrTime: false,
-                arrSpecs: false,
-                alarmTime: false,
-                stickyHeader: false,
-                loadMoreVehiclesInHeader: false,
-                hideVehicleList: false,
-                centerMap: false,
-                stagingAreaSelectedCounter: true,
-                vehicleTypeInList: false,
-                remainingPatientTime: true,
-                vehicleCounter: false,
-                vehicleCounterColor: 'info',
-                vehicleListPermanentSearch: false,
-                playerCounter: false,
-                playerCounterColor: 'danger',
-                selectedVehicleCounter: false,
-                selectedVehicleCounterVehicleTypes: [],
-                arrSearch: false,
-                arrSearchDissolveCategories: false,
-                arrSearchCompactResults: false,
-                arrSearchSelectOnEnter: false,
-                arrSearchClearOnEnter: false,
-                arrSearchAutoFocus: false,
-                arrSearchDropdown: false,
-                arrSearchCloseDropdownOnSelect: false,
-                moreReleasePatientButtons: false,
-                tailoredTabs: [],
-                missionKeywords: [],
-                alarmIcons: [],
-                arrCategoryColors: []
-            },
-            missionList: {
-                enabled: false,
-                remainingTime: false,
-                remainingTimeGreenOnly: true,
-                remainingPatientTime: false,
-                remainingPumpingTime: false,
-                starrableMissions: false,
-                starredMissions: [],
-                averageCredits: true,
-                collapsibleMissions: false,
-                collapsibleMissionsAllButton: true,
-                collapsedMissions: [],
-                allMissionsCollapsed: false,
-                shareMissions: false,
-                shareMissionTypes: ['', 'sicherheitswache'],
-                shareMissionsMinCredits: 0,
-                shareMissionsButtonColor: 'success',
-                sortMissions: false,
-                sortMissionsType: '',
-                sortMissionsDirection: '',
-                sortMissionsButtonColor: 'default',
-                sortMissionsInMissionWindow: true,
-                sortMissionsInMissionWindowChecked: false,
-                sortMissionsOrder: {},
-                currentPatients: false,
-                hideZeroCurrentPatients: true,
-                currentPatientsInTooltips: false,
-                currentPrisoners: false,
-                hideZeroCurrentPrisoners: true,
-                currentPrisonersInTooltips: false,
-                fixedEventInfo: false,
-                eventMissions: []
-            },
-            transport: {
-                enabled: false,
-                autoClickSuccessButtons: true,
-                autoOpenTransportRequest: false
-            },
-            migration: {
-                legacyRequirementsEnabled: legacyRequirementsEnabled !== false,
-                matrixPreferenceCaptured: true,
-                matrixRetired: true
-            }
-        };
-    }
-
-    function operationalSuiteBoolean(value, fallback = false) {
-        return value === undefined || value === null ? Boolean(fallback) : Boolean(value);
-    }
-
-    function operationalSuiteArray(value, fallback = []) {
-        return Array.isArray(value) ? value.slice() : fallback.slice();
-    }
-
-    function normaliseOperationalWindowState(value, legacyRequirementsEnabled = true) {
-        const base = defaultOperationalWindowState(legacyRequirementsEnabled);
-        const parsed = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-        const requirements = parsed.requirements && typeof parsed.requirements === 'object' ? parsed.requirements : {};
-        const callWindow = parsed.callWindow && typeof parsed.callWindow === 'object' ? parsed.callWindow : {};
-        const missionList = parsed.missionList && typeof parsed.missionList === 'object' ? parsed.missionList : {};
-        const transport = parsed.transport && typeof parsed.transport === 'object' ? parsed.transport : {};
-        const migration = parsed.migration && typeof parsed.migration === 'object' ? parsed.migration : {};
-        const merged = {
-            ...base,
-            ...parsed,
-            schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'operational-suite',
-            requirements: { ...base.requirements, ...requirements },
-            callWindow: { ...base.callWindow, ...callWindow },
-            missionList: { ...base.missionList, ...missionList },
-            transport: { ...base.transport, ...transport },
-            migration: { ...base.migration, ...migration }
-        };
-        merged.enabled = parsed.phase === 'shell' ? true : operationalSuiteBoolean(parsed.enabled, parsed.phase === undefined);
-        merged.requirements.enabled = operationalSuiteBoolean(requirements.enabled, legacyRequirementsEnabled !== false);
-        merged.requirements.calcMaxStaff = operationalSuiteBoolean(requirements.calcMaxStaff, false);
-        merged.requirements.hoverTip = operationalSuiteBoolean(requirements.hoverTip, true);
-        merged.requirements.viewMode = ['table', 'text'].includes(String(requirements.viewMode)) ? String(requirements.viewMode) : 'table';
-        merged.requirements.overlay = operationalSuiteBoolean(requirements.overlay, false);
-        merged.requirements.minified = operationalSuiteBoolean(requirements.minified, false);
-        merged.requirements.pushRight = operationalSuiteBoolean(requirements.pushRight, false);
-        merged.requirements.sort = ['requirement', 'missing', 'driving', 'total', 'selected'].includes(String(requirements.sort)) ? String(requirements.sort) : 'requirement';
-        merged.requirements.sortDir = String(requirements.sortDir) === 'desc' ? 'desc' : 'asc';
-        merged.requirements.drag = {
-            ...base.requirements.drag,
-            ...(requirements.drag && typeof requirements.drag === 'object' ? requirements.drag : {}),
-            offset: {
-                ...base.requirements.drag.offset,
-                ...(requirements.drag?.offset && typeof requirements.drag.offset === 'object' ? requirements.drag.offset : {})
-            }
-        };
-        const callWindowBooleanKeys = [
-            'enabled', 'generationDate', 'redBorder', 'patientSummary', 'collapsiblePatients',
-            'arrCounter', 'arrCounterAsBadge', 'arrClickHighlight', 'arrCounterResetSelection',
-            'arrMatchHighlight', 'arrMatchHighlightAllWords', 'arrTime', 'arrSpecs', 'alarmTime',
-            'stickyHeader', 'loadMoreVehiclesInHeader', 'hideVehicleList', 'centerMap',
-            'stagingAreaSelectedCounter', 'vehicleTypeInList', 'remainingPatientTime',
-            'vehicleCounter', 'vehicleListPermanentSearch', 'playerCounter', 'selectedVehicleCounter',
-            'arrSearch', 'arrSearchDissolveCategories', 'arrSearchCompactResults',
-            'arrSearchSelectOnEnter', 'arrSearchClearOnEnter', 'arrSearchAutoFocus',
-            'arrSearchDropdown', 'arrSearchCloseDropdownOnSelect', 'moreReleasePatientButtons'
-        ];
-        for (const key of callWindowBooleanKeys) merged.callWindow[key] = operationalSuiteBoolean(callWindow[key], base.callWindow[key]);
-        merged.callWindow.yellowBorderHours = Math.max(0, Math.min(48, Number(callWindow.yellowBorderHours ?? base.callWindow.yellowBorderHours) || 0));
-        merged.callWindow.collapsiblePatientsMinPatients = Math.max(0, Math.round(Number(callWindow.collapsiblePatientsMinPatients ?? base.callWindow.collapsiblePatientsMinPatients) || 7));
-        merged.callWindow.arrClickHighlightColor = /^#[0-9a-f]{6}$/iu.test(String(callWindow.arrClickHighlightColor || '')) ? String(callWindow.arrClickHighlightColor) : '#008000';
-        merged.callWindow.arrClickHighlightWidth = Math.max(1, Math.min(12, Number(callWindow.arrClickHighlightWidth ?? 2) || 2));
-        merged.callWindow.vehicleCounterColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(callWindow.vehicleCounterColor)) ? String(callWindow.vehicleCounterColor) : 'info';
-        merged.callWindow.playerCounterColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(callWindow.playerCounterColor)) ? String(callWindow.playerCounterColor) : 'danger';
-        for (const key of ['selectedVehicleCounterVehicleTypes', 'tailoredTabs', 'missionKeywords', 'alarmIcons', 'arrCategoryColors']) merged.callWindow[key] = operationalSuiteArray(callWindow[key], base.callWindow[key]);
-        const missionListBooleanKeys = [
-            'enabled', 'remainingTime', 'remainingTimeGreenOnly', 'remainingPatientTime',
-            'remainingPumpingTime', 'starrableMissions', 'averageCredits', 'collapsibleMissions',
-            'collapsibleMissionsAllButton', 'allMissionsCollapsed', 'shareMissions', 'sortMissions',
-            'sortMissionsInMissionWindow', 'sortMissionsInMissionWindowChecked', 'currentPatients',
-            'hideZeroCurrentPatients', 'currentPatientsInTooltips', 'currentPrisoners',
-            'hideZeroCurrentPrisoners', 'currentPrisonersInTooltips', 'fixedEventInfo'
-        ];
-        for (const key of missionListBooleanKeys) merged.missionList[key] = operationalSuiteBoolean(missionList[key], base.missionList[key]);
-        for (const key of ['starredMissions', 'collapsedMissions', 'shareMissionTypes', 'eventMissions']) merged.missionList[key] = operationalSuiteArray(missionList[key], base.missionList[key]);
-        merged.missionList.shareMissionsMinCredits = Math.max(0, Number(missionList.shareMissionsMinCredits ?? 0) || 0);
-        merged.missionList.shareMissionsButtonColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(missionList.shareMissionsButtonColor)) ? String(missionList.shareMissionsButtonColor) : 'success';
-        merged.missionList.sortMissionsButtonColor = ['success', 'warning', 'danger', 'primary', 'info', 'default'].includes(String(missionList.sortMissionsButtonColor)) ? String(missionList.sortMissionsButtonColor) : 'default';
-        merged.missionList.sortMissionsOrder = missionList.sortMissionsOrder && typeof missionList.sortMissionsOrder === 'object' && !Array.isArray(missionList.sortMissionsOrder) ? { ...missionList.sortMissionsOrder } : {};
-        merged.transport.enabled = operationalSuiteBoolean(transport.enabled, false);
-        merged.transport.autoClickSuccessButtons = operationalSuiteBoolean(transport.autoClickSuccessButtons, true);
-        merged.transport.autoOpenTransportRequest = operationalSuiteBoolean(transport.autoOpenTransportRequest, false);
-        merged.migration.legacyRequirementsEnabled = operationalSuiteBoolean(migration.legacyRequirementsEnabled, legacyRequirementsEnabled !== false);
-        merged.migration.matrixPreferenceCaptured = operationalSuiteBoolean(migration.matrixPreferenceCaptured, true);
-        merged.migration.matrixRetired = operationalSuiteBoolean(migration.matrixRetired, false);
-        return merged;
-    }
 
     function defaultState() {
         return {
@@ -1521,7 +1308,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         majorIncidentFeed: { enabled: true, minimumCredits: 25000 },
         missionLockAudio: true,
         missionValue: true,
-        operationalWindow: defaultOperationalWindowState(true),
         customVehicleBadges: true,
         allianceCredits: false,
         allianceCreditMinimum: 0,
@@ -1561,7 +1347,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
         financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
-        operationalWindow: normaliseOperationalWindowState(parsed.operationalWindow, parsed.missionRequirements !== false),
         profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
         bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
         };
@@ -1592,10 +1377,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         delete merged.missionInspector;
         merged.missionLockAudio = merged.missionLockAudio !== false;
         merged.missionValue = merged.missionValue !== false;
-        const legacyRequirementsEnabled = parsed?.missionRequirements !== false;
-        merged.operationalWindow = normaliseOperationalWindowState(merged.operationalWindow, legacyRequirementsEnabled);
-        delete merged['missionRequirements'];
-        merged.operationalWindow.migration.matrixRetired = true;
+        delete merged.operationalWindow;
+        delete merged.missionRequirements;
         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
         merged.transportWatcher = merged.transportWatcher !== false;
@@ -10794,8 +10577,16 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const checkbox = row.matches?.('.vehicle_checkbox')
             ? row
             : row.querySelector?.('.vehicle_checkbox, input[vehicle_id], input[data-vehicle-id], input[data-vehicle_id]');
-        const resolved = missionRequirementsVehicleId(checkbox || row);
-        if (Number.isFinite(Number(resolved)) && Number(resolved) >= 0) return String(Number(resolved));
+        const candidate = checkbox || row;
+        const vehicleRow = candidate?.closest?.('tr') || candidate;
+        const raw = candidate?.getAttribute?.('value')
+            || candidate?.getAttribute?.('vehicle_id')
+            || candidate?.getAttribute?.('data-vehicle-id')
+            || vehicleRow?.getAttribute?.('vehicle_id')
+            || vehicleRow?.getAttribute?.('data-vehicle-id')
+            || '';
+        const resolved = Number.parseInt(String(raw).replace(/[^0-9-]/gu, ''), 10);
+        if (Number.isFinite(resolved) && resolved >= 0) return String(resolved);
         const link = row.matches?.('a[href*="/vehicles/"]') ? row : row.querySelector?.('a[href*="/vehicles/"]');
         const match = String(link?.getAttribute?.('href') || link?.href || '').match(/\/vehicles\/(\d+)(?:\/|$)/u);
         return match?.[1] || '';
@@ -11443,7 +11234,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         iconAnchor: [0, 18]
         });
     }
-    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(state.economyMode&&economyMapMoving){scheduleMissionAgeRefresh(700);return;}scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=operationalMissionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
+    function missionAgeRefreshPlan({enabled=true,moving=false,mapReady=true,markers=0,candidates=0,labels=0}={}){if(!enabled)return{clear:true,delay:0};if(moving||!mapReady)return{clear:!mapReady,delay:700};if(!markers||(!labels&&candidates))return{clear:false,delay:1000};return{clear:false,delay:MISSION_AGE_LABEL_REFRESH_MS};}
+    function updateMissionAgeLabels() { const enabled=Boolean(state.missionAge&&state.visibility.myMissions);if(!enabled){clearMissionAgeLabels();return;}if(state.economyMode&&economyMapMoving){scheduleMissionAgeRefresh(700);return;}scanInlineMissionMarkerData(true);installMissionMarkerAddHook();const map=findLeafletMapInstance(false);if(!map||!pageWindow.L||typeof pageWindow.L.layerGroup!=='function'||typeof pageWindow.L.marker!=='function'||typeof pageWindow.L.divIcon!=='function'){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}const floatPane=ensureMissionFloatPane(map);if(!floatPane){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(700);return;}let markers=getMissionMarkerIndex().markers;if(!markers.length){invalidateMarkerRegistryCaches('mission');markers=getMissionMarkerIndex().markers;}const economyBounds=state.economyMode?economyPaddedBounds(map,0.08):null,activeMissionIds=new Set(),now=Date.now();let candidates=0,rendered=0,missingEvidence=0;try{if(!missionAgeGroup||missionAgeGroup._map!==map){clearMissionAgeLabels();missionAgeGroup=pageWindow.L.layerGroup();missionAgeGroup.__mcmsMissionAgeLayer=true;missionAgeGroup.addTo(map);}for(const marker of markers){const missionId=normaliseMissionId(marker?.mission_id??marker?.missionId??marker?.options?.mission_id??marker?.options?.missionId);if(missionId===null)continue;if(!missionKnownPersonal(marker,missionId)){if(!missionHasExplicitAllianceOwner(marker,missionId))missingEvidence+=1;continue;}candidates+=1;const existingLabel=missionAgeLabels.get(missionId);let latLng;try{latLng=marker.getLatLng?.();}catch(error){latLng=null;}if(!latLng||(economyBounds&&!economyBounds.contains?.(latLng)))continue;try{const onMap=typeof map.hasLayer==='function'?map.hasLayer(marker):Boolean(marker._map);if(!onMap){if(existingLabel)activeMissionIds.add(missionId);continue;}}catch(error){if(existingLabel)activeMissionIds.add(missionId);continue;}let createdAt=getMissionCreatedAt(marker,missionId);if(createdAt===null){captureMissionMarkerData(marker);createdAt=getMissionCreatedAt(marker,missionId);}if(createdAt===null){missingEvidence+=1;if(existingLabel)activeMissionIds.add(missionId);continue;}const ageMs=Math.max(0,now-createdAt),ageText=formatMissionAge(createdAt,now),severity=missionAgeSeverity(ageMs);activeMissionIds.add(missionId);let label=existingLabel;const attached=Boolean(label&&typeof missionAgeGroup.hasLayer==='function'&&missionAgeGroup.hasLayer(label));if(!label||!attached){if(label)try{missionAgeGroup.removeLayer(label);}catch(error){}label=pageWindow.L.marker(latLng,{interactive:false,keyboard:false,bubblingMouseEvents:false,pane:floatPane,zIndexOffset:0,icon:makeMissionAgeIcon(ageText,severity)});label.__mcmsMissionAgeLabel=true;label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;label.__mcmsMissionAgeSourceMarker=marker;label.addTo(missionAgeGroup);missionAgeLabels.set(missionId,label);}else{try{label.setLatLng(latLng);}catch(error){}label.__mcmsMissionAgeSourceMarker=marker;if(label.__mcmsMissionAgeText!==ageText||label.__mcmsMissionAgeSeverityRank!==severity.rank||label.__mcmsMissionAgeCreatedAt!==createdAt){label.__mcmsMissionAgeText=ageText;label.__mcmsMissionAgeSeverityRank=severity.rank;label.__mcmsMissionAgeCreatedAt=createdAt;try{label.setIcon(makeMissionAgeIcon(ageText,severity));}catch(error){}}}rendered+=1;}for(const[missionId,label]of missionAgeLabels.entries()){if(activeMissionIds.has(missionId))continue;missionAgeLabels.delete(missionId);try{missionAgeGroup.removeLayer(label);}catch(error){}}const plan=missionAgeRefreshPlan({enabled,moving:false,mapReady:true,markers:markers.length,candidates:candidates+missingEvidence,labels:rendered});if(!document.hidden)scheduleMissionAgeRefresh(plan.delay);}catch(error){clearMissionAgeLabels();if(!document.hidden)scheduleMissionAgeRefresh(1000);} }
 
     function scheduleMissionAgeRefresh(delay = 220) {
         runtimeClearTimeout(missionAgeTimer);
@@ -11956,21 +11748,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
     }
 
 
-    function transportSweepReleaseVehicleIdFromHref(href) {
-        let pathname = String(href || '').trim();
-        try { pathname = new URL(pathname, document.baseURI || pageWindow.location.href).pathname; } catch (err) {}
-        const match = pathname.match(/^\/vehicles\/(\d+)\/patient\/-1\/?$/);
-        return match ? match[1] : null;
-    }
-
-    function transportSweepOwnerProfileId(row) {
-        if (!row?.querySelector) return null;
-        const ownerLink = row.querySelector('td.hidden-xs a[href*="/profile/"], small.visible-xs a[href*="/profile/"]');
-        const href = String(ownerLink?.getAttribute?.('href') || '');
-        const match = href.match(/\/profile\/(\d+)(?:\/|$)/);
-        return match ? match[1] : null;
-    }
-
+    
+    
     function transportSweepAnchorUsable(anchor) {
         if (!anchor || !anchor.isConnected || anchor.closest?.(`#${SCRIPT.panelId}`)) return false;
         try {
@@ -12252,94 +12031,8 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
     }
 
 
-    function collectTransportSweepLssmCandidates(excludedVehicleIds = null) {
-        const excluded = excludedVehicleIds instanceof Set ? excludedVehicleIds : new Set();
-        const ownIds = transportSweepOwnVehicleIdSet();
-        const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : null;
-        const anchors = [];
-        const seenAnchors = new Set();
-        const collectFrom = scope => {
-            let matches = [];
-            try { matches = Array.from(scope?.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || []); } catch (err) {}
-            for (const anchor of matches) {
-                if (seenAnchors.has(anchor)) continue;
-                seenAnchors.add(anchor);
-                anchors.push(anchor);
-            }
-        };
-        if (root) collectFrom(root);
-        if (!anchors.length) {
-            for (const context of transportSweepDocumentContexts()) collectFrom(context.doc);
-        }
-
-        const unique = new Map();
-        let rejectedOwn = 0;
-        let rejectedAmbiguousOwner = 0;
-        let rejectedNotFms5 = 0;
-        for (const anchor of anchors) {
-            if (!transportSweepAnchorUsable(anchor)) continue;
-            const actionHref = String(anchor.getAttribute?.('href') || '').trim();
-            const vehicleId = transportSweepReleaseVehicleIdFromHref(actionHref);
-            if (!vehicleId || excluded.has(String(vehicleId))) continue;
-            const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
-            if (!row?.querySelector?.('.building_list_fms_5')) {
-                rejectedNotFms5 += 1;
-                continue;
-            }
-            if (ownIds.has(String(vehicleId))) {
-                rejectedOwn += 1;
-                continue;
-            }
-            const ownerProfileId = transportSweepOwnerProfileId(row);
-            if (!ownerProfileId) {
-                rejectedAmbiguousOwner += 1;
-                continue;
-            }
-            const vehicleLink = Array.from(row.querySelectorAll?.('a[href*="/vehicles/"]') || [])
-                .find(item => transportSweepVehicleIdFromHref(item.getAttribute?.('href')) === String(vehicleId));
-            const ownerLink = row.querySelector('td.hidden-xs a[href*="/profile/"], small.visible-xs a[href*="/profile/"]');
-            const label = String(vehicleLink?.textContent || `Alliance ambulance ${vehicleId}`).trim() || `Alliance ambulance ${vehicleId}`;
-            const owner = String(ownerLink?.textContent || `profile ${ownerProfileId}`).trim() || `profile ${ownerProfileId}`;
-            const normalisedActionHref = `/vehicles/${vehicleId}/patient/-1`;
-            if (!unique.has(normalisedActionHref)) {
-                unique.set(normalisedActionHref, {
-                    actionHref: normalisedActionHref,
-                    vehicleId: String(vehicleId),
-                    ownerProfileId,
-                    owner,
-                    label,
-                    anchor,
-                    row,
-                    source: 'LSSM mission release control'
-                });
-            }
-        }
-
-        const candidates = Array.from(unique.values())
-            .sort((a, b) => a.label.localeCompare(b.label) || Number(a.vehicleId) - Number(b.vehicleId))
-            .slice(0, TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION);
-        transportSweepRuntime.rejectedOwn = rejectedOwn;
-        transportSweepRuntime.lastCandidateStats = {
-            source: 'LSSM mission release controls',
-            totalLinks: anchors.length,
-            candidates: candidates.length,
-            rejectedOwn,
-            rejectedAmbiguousOwner,
-            rejectedNotFms5
-        };
-        return candidates;
-    }
-
-    async function waitForTransportSweepLssmCandidates(excludedVehicleIds = null, timeoutMs = 18000) {
-        const first = await transportSweepWaitFor(() => {
-            const candidates = collectTransportSweepLssmCandidates(excludedVehicleIds);
-            return candidates.length ? candidates : null;
-        }, timeoutMs, 180);
-        if (!first?.length || transportSweepRuntime.stopRequested) return [];
-        await transportSweepSleep(1200);
-        return collectTransportSweepLssmCandidates(excludedVehicleIds);
-    }
-
+    
+    
     const TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT = 'Understood! We have released the patient.';
 
     function normaliseTransportSweepReleaseText(value) {
@@ -12429,36 +12122,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         return true;
     }
 
-    async function activateTransportSweepLssmRelease(candidate) {
-        if (!candidate?.actionHref || transportSweepRuntime.stopRequested) return false;
-        let anchor = candidate.anchor;
-        if (!anchor?.isConnected) {
-            const root = transportSweepRuntime.missionWindowRoot?.isConnected ? transportSweepRuntime.missionWindowRoot : document;
-            anchor = Array.from(root.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || [])
-                .find(item => transportSweepReleaseVehicleIdFromHref(item.getAttribute?.('href')) === String(candidate.vehicleId));
-        }
-        if (!anchor?.isConnected || !transportSweepAnchorUsable(anchor)) return false;
-        const row = anchor.closest?.('tr[id^="vehicle_row_"], tr, [id^="vehicle_row_"]');
-        const rowId = String(row?.id || `vehicle_row_${candidate.vehicleId}`);
-        const ownerDocument = anchor.ownerDocument || document;
-        const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
-        const clickedAt = Date.now();
-        anchor.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-        anchor.click();
-        return Boolean(await transportSweepWaitFor(() => {
-            if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
-            if (Date.now() - clickedAt < 900) return null;
-            const liveRow = ownerDocument.getElementById?.(rowId) || null;
-            if (!liveRow && (!row?.isConnected || !anchor?.isConnected)) return true;
-            if (!liveRow) return null;
-            const liveAction = Array.from(liveRow.querySelectorAll?.('a[href*="/vehicles/"][href*="/patient/-1"]') || [])
-                .find(item => transportSweepReleaseVehicleIdFromHref(item.getAttribute?.('href')) === String(candidate.vehicleId));
-            const stillFms5 = Boolean(liveRow.querySelector?.('.building_list_fms_5'));
-            const stillPatient = /\bpatient\s*:/i.test(String(liveRow.textContent || ''));
-            return !liveAction && (!stillFms5 || !stillPatient) ? true : null;
-        }, 10000, 140));
-    }
-
+    
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
         const seen = new Set();
@@ -12717,9 +12381,6 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
 
         const attemptedVehicleIds = new Set();
         let clearedHere = 0;
-        let lssmSeen = false;
-        let fallbackMode = false;
-        let fallbackLogged = false;
         let initialScanLogged = false;
         let missionHadCandidates = false;
 
@@ -12734,64 +12395,11 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         }
 
         while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-            if (!fallbackMode) {
-                const lssmCandidates = await waitForTransportSweepLssmCandidates(attemptedVehicleIds, 18000);
-                if (transportSweepRuntime.stopRequested) break;
-                const lssmCandidate = lssmCandidates.find(entry => !attemptedVehicleIds.has(String(entry.vehicleId)));
-                if (lssmCandidate) {
-                    lssmSeen = true;
-                    missionHadCandidates = true;
-                    attemptedVehicleIds.add(String(lssmCandidate.vehicleId));
-                    transportSweepRuntime.currentVehicleHref = lssmCandidate.actionHref;
-                    transportSweepRuntime.currentItem = `${lssmCandidate.label} · ${lssmCandidate.owner}`;
-                    renderTransportSweepPanel();
-                    transportSweepLog(`Releasing ${lssmCandidate.label} · ${lssmCandidate.owner} · direct LSSM control`);
-                    let confirmedThisAttempt = false;
-                    try {
-                        const cleared = await activateTransportSweepLssmRelease(lssmCandidate);
-                        if (!cleared) throw new Error('LSSM release confirmation timed out');
-                        confirmedThisAttempt = recordTransportSweepConfirmedRelease(
-                            transportSweepReleaseKey(missionId, lssmCandidate.vehicleId),
-                            `Released ${lssmCandidate.label} for ${lssmCandidate.owner} at ${item.caption}`
-                        );
-                        if (confirmedThisAttempt) clearedHere += 1;
-                    } catch (err) {
-                        transportSweepRuntime.errors += 1;
-                        transportSweepLog(`Failed ${lssmCandidate.label}: ${err?.message || 'unknown error'}`, 'error');
-                    }
-
-                    if (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-                        await transportSweepSleep(state.transportSweep.delayMs);
-                        transportSweepLog(`Returning to ${item.caption} for remaining alliance ambulances`);
-                        missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
-                        if (!missionOpen) {
-                            if (confirmedThisAttempt) transportSweepLog(`Released ${lssmCandidate.label}, but could not reopen ${item.caption}; continuing with the confirmed patient result`, 'warn');
-                            else {
-                                transportSweepRuntime.errors += 1;
-                                transportSweepLog(`Could not return to ${item.caption} after checking ${lssmCandidate.label}`, 'error');
-                            }
-                            break;
-                        }
-                    }
-                    continue;
-                }
-
-                if (lssmSeen) {
-                    transportSweepLog(`No further LSSM alliance release controls remain at ${item.caption}`);
-                    break;
-                }
-                fallbackMode = true;
-            }
-
-            if (!fallbackLogged) {
-                fallbackLogged = true;
-                transportSweepLog(`LSSM release controls did not appear at ${item.caption}; using the verified vehicle-window fallback`, 'warn');
-            }
             const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';
-                transportSweepLog(`Fallback scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
+                transportSweepLog(`Vehicle scan: ${candidateStats.totalLinks || 0} vehicle links · ${candidateStats.allianceLinks || 0} alliance FMS 5 · ${candidateStats.candidates || 0} patient candidates${source}`);
                 if (transportSweepRuntime.rejectedOwn > 0) {
                     transportSweepLog(`Ignored ${transportSweepRuntime.rejectedOwn} of your own FMS 5 vehicle${transportSweepRuntime.rejectedOwn === 1 ? '' : 's'} at ${item.caption}`);
                 }
@@ -12810,7 +12418,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
             transportSweepRuntime.currentVehicleHref = candidate.href;
             transportSweepRuntime.currentItem = String(candidate.label || `Vehicle ${candidate.vehicleId}`);
             renderTransportSweepPanel();
-            transportSweepLog(`Fallback check: FMS 5 ${candidate.label} (${candidate.vehicleId})`);
+            transportSweepLog(`Vehicle check: FMS 5 ${candidate.label} (${candidate.vehicleId})`);
 
             const vehicleResult = await openTransportSweepVehicle(candidate);
             if (transportSweepRuntime.stopRequested) break;
@@ -12886,7 +12494,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
         const confirmed = pageWindow.confirm(`Transport Sweep will attempt up to ${planned} alliance-member patient releases across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.
 
-The sweep waits dynamically for LSSM's “Release patient (No reward)” controls and processes one alliance ambulance at a time. Your own verified vehicle IDs are always excluded. If LSSM controls do not appear, the existing vehicle-window route remains available as a fallback. Continue?`);
+The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;
@@ -13852,7 +13460,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         const names = [
         'map', 'missionMap', 'mission_map', 'missionChiefMap', 'missionchiefMap',
         'leafletMap', 'leaflet_map', 'mainMap', 'gameMap', 'mapInstance',
-        'osmMap', 'osm_map', 'lssmMap'
+        'osmMap', 'osm_map'
         ];
 
         const addCandidate = value => {
@@ -14112,13 +13720,6 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         runtimeClearTimeout(coverageTimer);
         coverageTimer = runtimeSetTimeout(updateCoverageRings, state.economyMode ? 650 : 220);
     }
-
-
-
-
-
-
-
 
 
     function sanitiseBookmarkShortLabel(value) {
@@ -15265,26 +14866,6 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function qualifiedAllianceMissionCount() {
         let count = 0;
         if (missionSnapshotReady) {
@@ -15526,37 +15107,6 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         refreshVehicleCodeStatus(false);
         runtimeSetTimeout(() => drawer.querySelector('.mcms-vcs-close')?.focus?.(), 0);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     function missionWindowValueDetails(entry) {
@@ -15978,7 +15528,7 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
         frames.forEach(observeMissionValueFrame);
         const root = doc.documentElement || doc.body;
         if (!root) return;
-        const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, [id^="lssmv4-shareAlliancePost_alarm"], .navbar-header';
+        const activitySelector = '#lightbox_box, #lightbox, .lightbox_content, .modal, [role="dialog"], .ui-dialog, iframe, frame, a[href*="/missions/"], form[action*="/missions/"], #navbar-alarm-spacer, #navbar-right-help-button, .navbar-header';
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
         const relevant = mutations.some(mutation => Array.from(mutation.addedNodes || []).concat(Array.from(mutation.removedNodes || [])).some(node => {
             if (node?.nodeType !== 1) return false;
@@ -16009,1501 +15559,11 @@ The sweep waits dynamically for LSSM's “Release patient (No reward)” control
     }
 
 
-    // Issue #378 enhanced requirements pure engine.
-    // This block is intentionally DOM-free. Phase 3 validates the data model before any
-    // renderer or observer can replace the stable Matrix runtime.
-    const OPERATIONAL_REQUIREMENT_GROUPS = Object.freeze(['vehicles', 'staff', 'other']);
-
-    function operationalRequirementEscapeRegex(value) {
-        return String(value ?? '').replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-    }
-
-    function operationalRequirementNormaliseText(value) {
-        return String(value ?? '')
-            .replace(/[\u00a0\s]+/gu, ' ')
-            .replace(/\s+([,.:])/gu, '$1')
-            .trim();
-    }
-
-    function operationalRequirementNumber(value, fallback = 0) {
-        const normalised = String(value ?? '').replace(/[^0-9-]/gu, '');
-        const parsed = Number.parseInt(normalised, 10);
-        return Number.isFinite(parsed) ? parsed : fallback;
-    }
-
-    function operationalRequirementCloneRange(value) {
-        return {
-            min: Math.max(0, Number(value?.min) || 0),
-            max: Math.max(0, Number(value?.max) || 0)
-        };
-    }
-
-    function operationalRequirementDefinitionList(value) {
-        return Array.isArray(value) ? value.filter(item => item && typeof item === 'object') : [];
-    }
-
-    function operationalRequirementMatcher(texts) {
-        const labels = (Array.isArray(texts) ? texts : [texts])
-            .map(operationalRequirementNormaliseText)
-            .filter(Boolean)
-            .sort((left, right) => right.length - left.length)
-            .map(operationalRequirementEscapeRegex);
-        if (!labels.length) return null;
-        const number = '\\d{1,3}(?:[,.\\s]?\\d{3})*x?';
-        return new RegExp(`((?:${number}\\s+(?:${labels.join('|')}))|(?:(?:${labels.join('|')}):\\s*${number}))(?=[,.]|$)`, 'iu');
-    }
-
-    function operationalRequirementSplitMatch(value) {
-        const match = operationalRequirementNormaliseText(value);
-        const colon = /:\s*[0-9][0-9,.\s]*x?$/u.test(match);
-        const amountText = match.match(colon ? /[0-9][0-9,.\s]*x?$/u : /^[0-9][0-9,.\s]*x?/u)?.[0] ?? '0';
-        return {
-            requirement: match
-                .replace(colon ? /:\s*[0-9][0-9,.\s]*x?$/u : /^[0-9][0-9,.\s]*x?/u, '')
-                .trim(),
-            missing: Math.max(0, operationalRequirementNumber(amountText, 0))
-        };
-    }
-
-    function operationalRequirementCleanRemaining(value) {
-        return operationalRequirementNormaliseText(value)
-            .replace(/,\s*(?=,|$)/gmu, '')
-            .replace(/^,\s*/gmu, '')
-            .replace(/\s+,/gmu, ',')
-            .trim();
-    }
-
-    function operationalRequirementIndexAdd(index, type, group, requirementIndex) {
-        const key = String(type);
-        index[key] ??= {};
-        index[key][group] ??= [];
-        if (!index[key][group].includes(requirementIndex)) index[key][group].push(requirementIndex);
-    }
-
-    function operationalRequirementFactor(requirement, type, fallback = 1) {
-        const factor = requirement?.additional?.factors?.[String(type)];
-        return Number.isFinite(Number(factor)) ? Number(factor) : fallback;
-    }
-
-    function operationalRequirementCreateModel(input = {}) {
-        const catalog = input.catalog && typeof input.catalog === 'object' ? input.catalog : {};
-        const missionAdditional = input.missionAdditional && typeof input.missionAdditional === 'object'
-            ? input.missionAdditional
-            : {};
-        const requirements = { vehicles: [], staff: [], other: [] };
-        const requirementTexts = { vehicles: null, staff: null, other: null };
-        const requirementsForVehicle = {};
-        const requirementsForEquipment = {};
-
-        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-            const supplied = input.texts?.[group];
-            if (supplied === undefined || supplied === null) continue;
-            const raw = operationalRequirementNormaliseText(
-                typeof supplied === 'object' && !Array.isArray(supplied) ? supplied.raw : supplied
-            );
-            const infoText = operationalRequirementNormaliseText(
-                typeof supplied === 'object' && !Array.isArray(supplied) ? supplied.infoText : ''
-            );
-            requirementTexts[group] = { infoText, raw, remaining: raw };
-        }
-
-        for (const bar of ['water', 'foam', 'pump']) {
-            const progress = input.progress?.[bar];
-            const textGroup = requirementTexts.other;
-            if (!progress || !textGroup) continue;
-            const matcher = operationalRequirementMatcher(progress.texts ?? progress.requirement ?? bar);
-            const match = matcher?.exec(textGroup.remaining)?.[0];
-            if (!match) continue;
-            textGroup.remaining = textGroup.remaining.replace(match, '');
-            const driving = Math.max(0, Number(progress.driving) || 0);
-            requirements.other.push({
-                key: `progress:${bar}`,
-                requirement: operationalRequirementSplitMatch(match).requirement,
-                missing: Math.max(0, Number(progress.missing) || 0) + driving,
-                driving,
-                selected: Math.max(0, Number(progress.selected) || 0),
-                bar
-            });
-        }
-
-        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-            const textGroup = requirementTexts[group];
-            if (!textGroup) continue;
-            const preprocessors = Array.isArray(input.preprocessors?.[group]) ? input.preprocessors[group] : [];
-            for (const processor of preprocessors) {
-                if (!processor || typeof processor.pattern !== 'string') continue;
-                try {
-                    textGroup.remaining = textGroup.remaining.replace(
-                        new RegExp(processor.pattern, processor.flags || 'gu'),
-                        String(processor.replace ?? '')
-                    );
-                } catch (error) {
-                    // Invalid optional locale preprocessors are ignored without corrupting raw text.
-                }
-            }
-
-            for (const [definitionIndex, definition] of operationalRequirementDefinitionList(catalog[group]).entries()) {
-                const matcher = operationalRequirementMatcher(definition.texts);
-                const match = matcher?.exec(textGroup.remaining)?.[0];
-                if (!match) continue;
-                textGroup.remaining = textGroup.remaining.replace(match, '');
-                const parsed = operationalRequirementSplitMatch(match);
-                const requirementIndex = requirements[group].length;
-                const vehicles = new Set(
-                    operationalRequirementDefinitionList([])
-                );
-                for (const vehicle of Array.isArray(definition.vehicles) ? definition.vehicles : []) {
-                    if (Number.isFinite(Number(vehicle))) vehicles.add(Number(vehicle));
-                }
-                for (const [condition, conditional] of Object.entries(definition.conditionalVehicles ?? {})) {
-                    if (!missionAdditional[condition]) continue;
-                    for (const vehicle of Array.isArray(conditional) ? conditional : []) {
-                        if (Number.isFinite(Number(vehicle))) vehicles.add(Number(vehicle));
-                    }
-                }
-                for (const vehicle of vehicles) {
-                    operationalRequirementIndexAdd(requirementsForVehicle, vehicle, group, requirementIndex);
-                }
-                for (const equipment of Array.isArray(definition.equipment) ? definition.equipment : []) {
-                    if (String(equipment).trim()) {
-                        operationalRequirementIndexAdd(requirementsForEquipment, String(equipment), group, requirementIndex);
-                    }
-                }
-                requirements[group].push({
-                    key: String(definition.key ?? `${group}:${definitionIndex}`),
-                    requirement: parsed.requirement,
-                    missing: parsed.missing,
-                    driving: 0,
-                    selected: group === 'staff' ? { min: 0, max: 0 } : 0,
-                    additional: {
-                        texts: Array.isArray(definition.texts) ? definition.texts.slice() : [String(definition.texts ?? '')],
-                        vehicles: Array.from(vehicles),
-                        equipment: Array.isArray(definition.equipment) ? definition.equipment.slice() : [],
-                        conditionalVehicles: { ...(definition.conditionalVehicles ?? {}) },
-                        factors: { ...(definition.factors ?? {}) }
-                    }
-                });
-            }
-            textGroup.remaining = operationalRequirementCleanRemaining(textGroup.remaining);
-        }
-
-        const addDriving = (type, group, amount, isEquipment = false) => {
-            const index = isEquipment ? requirementsForEquipment : requirementsForVehicle;
-            for (const requirementIndex of index[String(type)]?.[group] ?? []) {
-                const requirement = requirements[group][requirementIndex];
-                requirement.driving += operationalRequirementFactor(requirement, type, amount);
-            }
-        };
-
-        for (const vehicle of Array.isArray(input.driving) ? input.driving : []) {
-            const vehicleType = Number(vehicle?.vehicleType);
-            if (Number.isFinite(vehicleType) && vehicleType >= 0) {
-                addDriving(vehicleType, 'vehicles', 1);
-                addDriving(vehicleType, 'other', 1);
-                const staff = Math.max(0, Number(vehicle?.staff) || 0);
-                if (staff > 0) addDriving(vehicleType, 'staff', staff);
-            }
-            for (const equipment of Array.isArray(vehicle?.equipment) ? vehicle.equipment : []) {
-                for (const group of OPERATIONAL_REQUIREMENT_GROUPS) addDriving(String(equipment), group, 1, true);
-            }
-        }
-
-        const selected = {
-            vehicles: new Array(requirements.vehicles.length).fill(0),
-            staff: new Array(requirements.staff.length).fill(0).map(() => ({ min: 0, max: 0 })),
-            other: new Array(requirements.other.length).fill(0)
-        };
-        const selectedVehicles = Array.isArray(input.selected) ? input.selected : [];
-        const selectedIds = new Set(selectedVehicles.map(vehicle => Number(vehicle?.id)).filter(Number.isFinite));
-
-        const increaseSelected = (type, group, amount = 1, range = null, isEquipment = false) => {
-            const index = isEquipment ? requirementsForEquipment : requirementsForVehicle;
-            for (const requirementIndex of index[String(type)]?.[group] ?? []) {
-                if (group === 'staff') {
-                    const staff = operationalRequirementCloneRange(range);
-                    selected.staff[requirementIndex].min += staff.min;
-                    selected.staff[requirementIndex].max += staff.max;
-                } else {
-                    selected[group][requirementIndex] += operationalRequirementFactor(
-                        requirements[group][requirementIndex],
-                        type,
-                        amount
-                    );
-                }
-            }
-        };
-
-        const vehicleTypes = input.vehicleTypes && typeof input.vehicleTypes === 'object' ? input.vehicleTypes : {};
-        const requirementsByRandomTractive = {};
-        for (const [trailerType, metadata] of Object.entries(vehicleTypes)) {
-            const tractives = Array.isArray(metadata?.tractiveVehicles)
-                ? metadata.tractiveVehicles.map(Number).filter(Number.isFinite)
-                : [];
-            if (!tractives.length) continue;
-            requirementsByRandomTractive[trailerType] = {};
-            for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-                let intersection = null;
-                for (const tractiveType of tractives) {
-                    const values = new Set(requirementsForVehicle[String(tractiveType)]?.[group] ?? []);
-                    intersection = intersection === null
-                        ? values
-                        : new Set(Array.from(intersection).filter(value => values.has(value)));
-                }
-                requirementsByRandomTractive[trailerType][group] = Array.from(intersection ?? []);
-            }
-        }
-
-        const randomTractiveCounts = {};
-        for (const vehicle of selectedVehicles) {
-            const vehicleType = Number(vehicle?.vehicleType);
-            if (!Number.isFinite(vehicleType) || vehicleType < 0) continue;
-            const staff = operationalRequirementCloneRange(vehicle?.staff);
-            increaseSelected(vehicleType, 'vehicles', 1);
-            increaseSelected(vehicleType, 'other', 1);
-            increaseSelected(vehicleType, 'staff', 1, staff);
-            for (const equipment of Array.isArray(vehicle?.equipment) ? vehicle.equipment : []) {
-                for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-                    increaseSelected(String(equipment), group, 1, null, true);
-                }
-            }
-
-            const tractiveId = Number(vehicle?.tractiveVehicleId);
-            const tractiveType = Number(vehicle?.tractiveVehicleType);
-            const explicitTractive = vehicle?.tractiveRandom === false || vehicle?.tractiveRandom === 0 || vehicle?.tractiveRandom === '0';
-            if (explicitTractive && Number.isFinite(tractiveType) && !selectedIds.has(tractiveId)) {
-                const tractiveStaff = operationalRequirementCloneRange(vehicle?.tractiveStaff);
-                increaseSelected(tractiveType, 'vehicles', 1);
-                increaseSelected(tractiveType, 'other', 1);
-                increaseSelected(tractiveType, 'staff', 1, tractiveStaff);
-            } else if (vehicleTypes[String(vehicleType)]?.tractiveVehicles) {
-                randomTractiveCounts[String(vehicleType)] = (randomTractiveCounts[String(vehicleType)] ?? 0) + 1;
-            }
-        }
-
-        for (const [trailerType, amount] of Object.entries(randomTractiveCounts)) {
-            for (const group of ['vehicles', 'other']) {
-                for (const requirementIndex of requirementsByRandomTractive[trailerType]?.[group] ?? []) {
-                    selected[group][requirementIndex] += Number(amount) || 0;
-                }
-            }
-        }
-
-        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-            requirements[group].forEach((requirement, index) => {
-                if (requirement.bar) {
-                    const progress = input.progress?.[requirement.bar];
-                    requirement.selected = Math.max(0, Number(progress?.selected) || 0);
-                } else {
-                    requirement.selected = group === 'staff'
-                        ? operationalRequirementCloneRange(selected.staff[index])
-                        : Math.max(0, Number(selected[group][index]) || 0);
-                }
-            });
-        }
-
-        return {
-            requirements,
-            requirementTexts,
-            requirementsForVehicle,
-            requirementsForEquipment
-        };
-    }
-
-    function operationalRequirementRows(model, options = {}) {
-        const calcMaxStaff = options.calcMaxStaff === true;
-        const rows = [];
-        for (const group of OPERATIONAL_REQUIREMENT_GROUPS) {
-            for (const requirement of model?.requirements?.[group] ?? []) {
-                const selectedValue = typeof requirement.selected === 'number'
-                    ? requirement.selected
-                    : calcMaxStaff
-                      ? requirement.selected.max
-                      : requirement.selected.min;
-                const remainingOnMission = requirement.missing - requirement.driving;
-                rows.push({
-                    ...requirement,
-                    group,
-                    remainingOnMission,
-                    selectedValue,
-                    covered: remainingOnMission <= selectedValue
-                });
-            }
-        }
-        return rows;
-    }
-
-    function operationalRequirementFingerprint(model, options = {}) {
-        return JSON.stringify({
-            rows: operationalRequirementRows(model, options),
-            remaining: OPERATIONAL_REQUIREMENT_GROUPS.map(group => model?.requirementTexts?.[group]?.remaining ?? null)
-        });
-    }
-    // Issue #378 end enhanced requirements pure engine.
-
-    // Issue #378 enhanced requirements runtime renderer.
-    const OPERATIONAL_REQUIREMENTS_STYLE_ID = 'mcms-operational-requirements-style';
-    const OPERATIONAL_REQUIREMENTS_PANEL_CLASS = 'mcms-operational-suite-panel';
-    let operationalRequirementsCatalogCache = null;
-
-    function operationalRequirementsActive() {
-        return operationalSuiteEnabled() && state.operationalWindow?.requirements?.enabled !== false;
-    }
-
-    function operationalRequirementsCandidateVisible(node) {
-        if (!node?.isConnected || node.hidden || node.getAttribute?.('aria-hidden') === 'true') return false;
-        try {
-            const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
-            if (style?.display === 'none' || style?.visibility === 'hidden' || style?.visibility === 'collapse') return false;
-            const rect = node.getBoundingClientRect?.();
-            if (rect && Number.isFinite(rect.width) && Number.isFinite(rect.height)) return rect.width > 1 || rect.height > 1;
-            if (node.getClientRects?.().length) return true;
-        } catch (error) {}
-        return true;
-    }
-    const OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS = 60000;
-    const OPERATIONAL_REQUIREMENTS_REMOTE_ERROR_BACKOFF_MS = 5000;
-    const operationalRequirementsRemoteCache = new Map();
-
-    function operationalRequirementsMissionKey(doc) {
-        const missionContainers = Array.from(doc?.querySelectorAll?.('#mission-form,[data-mission-window][data-mission-id],.mission-window[data-mission-id],.mission_window[data-mission-id]') || []);
-        const missionContainer = missionContainers.find(operationalRequirementsCandidateVisible) || missionContainers[0] || null;
-        const values = [
-            missionContainer?.getAttribute?.('data-mission-id'),
-            missionContainer?.querySelector?.('input[name="mission_id"]')?.value,
-            missionContainer?.querySelector?.('input[name="mission_id"]')?.getAttribute?.('value'),
-            missionContainer?.getAttribute?.('action'),
-            missionContainer?.querySelector?.('form[action*="/missions/"]')?.getAttribute?.('action'),
-            doc?.querySelector?.('#mission-form[action*="/missions/"],form[action*="/missions/"]')?.getAttribute?.('action'),
-            doc?.querySelector?.('#mission-form input[name="mission_id"],input[name="mission_id"]')?.value,
-            doc?.querySelector?.('#mission-form input[name="mission_id"],input[name="mission_id"]')?.getAttribute?.('value'),
-            doc?.defaultView?.location?.pathname,
-            doc?.defaultView?.location?.href,
-            doc?.URL,
-            doc?.baseURI
-        ];
-        for (const value of values) {
-            const text = String(value || '').trim();
-            if (/^\d+$/u.test(text)) return text;
-            const match = text.match(/\/missions\/(\d+)(?:\/|[?#]|$)/u);
-            if (match) return match[1];
-        }
-        return '';
-    }
-
-    function operationalRequirementsRemoteAnchor(doc, nativeRoots = []) {
-        const connected = nativeRoots.find(root => root?.isConnected !== false && root?.parentNode && operationalRequirementsCandidateVisible(root))
-            || nativeRoots.find(root => root?.isConnected !== false && root?.parentNode);
-        if (connected) return connected;
-        const mission = operationalRequirementsMissionContainer(null, doc);
-        return mission?.querySelector?.('#mission_general_info,.mission_general_info,#vehicle_show_table,.available-vehicles')
-            || mission?.firstElementChild
-            || mission
-            || null;
-    }
-
-    function operationalRequirementsEnsureRemoteSource(doc, missionKey) {
-        const key = String(missionKey || '');
-        if (!key || runtime.destroyed) return null;
-        const now = Date.now();
-        const current = operationalRequirementsRemoteCache.get(key);
-        if (current?.state === 'pending') return current;
-        if (current?.state === 'ready' && now - Number(current.updatedAt || 0) < OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS) return current;
-        if (current?.state === 'error' && now - Number(current.updatedAt || 0) < OPERATIONAL_REQUIREMENTS_REMOTE_ERROR_BACKOFF_MS) return current;
-        const entry = { state: 'pending', missionKey: key, root: current?.root || null, fingerprint: current?.fingerprint || '', updatedAt: now };
-        operationalRequirementsRemoteCache.set(key, entry);
-        void (async () => {
-            let recovered = null;
-            try {
-                const fetched = await fetchSameOriginDocument(`/missions/${encodeURIComponent(key)}`);
-                const fetchedDoc = fetched?.doc || fetched;
-                const source = operationalRequirementsResolveSource(fetchedDoc, { includeRemote: false });
-                if (source && (source.groupedCount > 0 || source.raw)) recovered = source;
-            } catch (error) {}
-            if (operationalRequirementsRemoteCache.get(key) !== entry) return;
-            if (!recovered) {
-                operationalRequirementsRemoteCache.set(key, { state: 'error', missionKey: key, root: null, fingerprint: '', updatedAt: Date.now() });
-            } else {
-                operationalRequirementsRemoteCache.set(key, {
-                    state: 'ready',
-                    missionKey: key,
-                    root: recovered.root,
-                    fingerprint: `remote:${key}:${recovered.fingerprint}`,
-                    updatedAt: Date.now()
-                });
-            }
-            scheduleOperationalSuiteScan(0);
-        })().catch(() => {
-            if (operationalRequirementsRemoteCache.get(key) === entry) {
-                operationalRequirementsRemoteCache.set(key, { state: 'error', missionKey: key, root: null, fingerprint: '', updatedAt: Date.now() });
-                scheduleOperationalSuiteScan(0);
-            }
-        });
-        return entry;
-    }
-
-    function operationalRequirementsRemoteCandidate(doc, nativeRoots, index) {
-        const missionKey = operationalRequirementsMissionKey(doc);
-        if (!missionKey) return null;
-        const cached = operationalRequirementsRemoteCache.get(missionKey);
-        if (cached?.state === 'ready' && cached.root) {
-            if (Date.now() - Number(cached.updatedAt || 0) >= OPERATIONAL_REQUIREMENTS_REMOTE_TTL_MS) {
-                operationalRequirementsEnsureRemoteSource(doc, missionKey);
-            }
-            const anchor = operationalRequirementsRemoteAnchor(doc, nativeRoots);
-            if (!anchor) return null;
-            const record = operationalRequirementsCandidateRecord(cached.root, anchor, 'remote', index, {
-                missionKey,
-                missionContainer: operationalRequirementsMissionContainer(anchor, doc)
-            });
-            if (!record) return null;
-            record.score += 1400;
-            record.fingerprint = cached.fingerprint || `remote:${missionKey}:${record.fingerprint}`;
-            record.remote = true;
-            return record;
-        }
-        operationalRequirementsEnsureRemoteSource(doc, missionKey);
-        return null;
-    }
-
-
-    function operationalRequirementsMissionContainer(node, doc = node?.ownerDocument) {
-        return node?.closest?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
-            || doc?.querySelector?.('#mission-form, [data-mission-id], .mission-window, .mission_window, .modal-content')
-            || null;
-    }
-
-    function operationalRequirementsRawHtmlRoot(doc, carrier) {
-        const rawHtml = String(carrier?.getAttribute?.('data-raw-html') || '').trim();
-        if (!rawHtml || !doc?.createRange) return null;
-        const range = doc.createRange();
-        const fragment = range?.createContextualFragment?.(rawHtml);
-        if (!fragment?.querySelector?.('[data-requirement-type]')) return null;
-        return fragment;
-    }
-    function operationalRequirementsCandidateRecord(root, anchor, kind, index, options = {}) {
-        if (!root || !anchor || root.closest?.('[data-mcms-operational-suite="requirements"]')) return null;
-        const grouped = Array.from(root.querySelectorAll?.('[data-requirement-type]') || []);
-        const raw = operationalRequirementNormaliseText(root.textContent || '');
-        const missionContainer = options.missionContainer || operationalRequirementsMissionContainer(anchor);
-        const missionVisible = operationalRequirementsCandidateVisible(missionContainer);
-        const visible = operationalRequirementsCandidateVisible(anchor);
-        const score = grouped.length * 300 + (raw ? 100 : 0) + (missionVisible ? 400 : 0)
-            + (visible ? 60 : 0) + (anchor.id === 'missing_text' ? 20 : 0)
-            + (kind === 'lssm-raw' ? 10 : 0) + (kind === 'remote' ? 400 : 0);
-        return {
-            root, anchor, kind, index, groupedCount: grouped.length, raw, visible, missionContainer, score,
-            missionKey: options.missionKey || operationalRequirementsMissionKey(anchor.ownerDocument),
-            fingerprint: `${kind}:${index}:${grouped.length}:${raw}`
-        };
-    }
-    function operationalRequirementsSourceCandidates(doc, options = {}) {
-        if (!doc?.querySelectorAll) return [];
-        const candidates = [];
-        const seenRoots = new Set();
-        const missingTextSelector = `[id=${JSON.stringify('missing_text')}]`;
-        const nativeRoots = Array.from(doc.querySelectorAll(missingTextSelector) || []);
-        for (const selector of ['[data-mission-requirements]', '[data-missing-requirements]', '[data-missing-vehicles]', '.mission-requirements', '.mission_requirements', '.missing-vehicles', '.missing_vehicles']) {
-            for (const root of Array.from(doc.querySelectorAll(selector) || [])) {
-                if (!nativeRoots.includes(root)) nativeRoots.push(root);
-            }
-        }
-        const add = (root, anchor = root, kind = 'native', extra = {}) => {
-            if (!root || !anchor || seenRoots.has(root)) return;
-            const record = operationalRequirementsCandidateRecord(root, anchor, kind, candidates.length, extra);
-            if (!record) return;
-            seenRoots.add(root);
-            candidates.push(record);
-        };
-        nativeRoots.forEach(root => add(root, root, 'native'));
-        for (const group of Array.from(doc.querySelectorAll('[data-requirement-type]') || [])) {
-            const root = group.closest?.(`${missingTextSelector}, .alert-missing-vehicles, [data-mission-requirements], [data-missing-requirements], [data-missing-vehicles], .mission-requirements, .mission_requirements, .missing-vehicles, .missing_vehicles`) || group.parentElement;
-            add(root, root, 'grouped');
-        }
-        const lssmCarriers = Array.from(doc.querySelectorAll('.alert-missing-vehicles[data-raw-html]') || []);
-        const rawCarriers = Array.from(new Set([
-            ...lssmCarriers,
-            ...Array.from(doc.querySelectorAll('[data-raw-html]') || [])
-        ]));
-        for (const carrier of rawCarriers) {
-            if (carrier.closest?.('[data-mcms-operational-suite="requirements"]')) continue;
-            const rawHtml = String(carrier.getAttribute?.('data-raw-html') || '').trim();
-            if (!rawHtml || !/data-requirement-type\s*=/iu.test(rawHtml)) continue;
-            const equivalentLssm = lssmCarriers.includes(carrier) || carrier.matches?.('.alert-missing-vehicles') === true;
-            if (equivalentLssm && operationalRequirementsCandidateVisible(carrier)) {
-                candidates.push({
-                    root: carrier, anchor: carrier, kind: 'lssm-live', index: candidates.length,
-                    groupedCount: 0, raw: rawHtml, visible: true,
-                    missionContainer: operationalRequirementsMissionContainer(carrier), score: Number.POSITIVE_INFINITY,
-                    missionKey: operationalRequirementsMissionKey(doc),
-                    fingerprint: `lssm-live:${rawHtml}`, suppressesToolkit: true
-                });
-                continue;
-            }
-            const root = operationalRequirementsRawHtmlRoot(doc, carrier);
-            const preferredAnchor = operationalRequirementsRemoteAnchor(doc, nativeRoots) || carrier;
-            add(root, preferredAnchor, equivalentLssm ? 'lssm-raw' : 'raw-html');
-        }
-        const localStructuredEvidence = candidates.some(candidate => candidate.suppressesToolkit === true || candidate.groupedCount > 0 || ['lssm-raw', 'raw-html'].includes(candidate.kind));
-        if (options.includeRemote !== false && !localStructuredEvidence) {
-            const remote = operationalRequirementsRemoteCandidate(doc, nativeRoots, candidates.length);
-            if (remote) candidates.push(remote);
-        }
-        return candidates;
-    }
-    function operationalRequirementsResolveSource(doc, options = {}) {
-        const candidates = operationalRequirementsSourceCandidates(doc, options);
-        const activeLssm = candidates.find(candidate => candidate.suppressesToolkit === true);
-        if (activeLssm) return { ...activeLssm, suppressed: true, candidates };
-        const evidenced = candidates.filter(candidate => candidate.groupedCount > 0 || candidate.raw);
-        const pool = evidenced.length ? evidenced : candidates;
-        const selected = pool.slice().sort((left, right) => right.score - left.score || right.index - left.index)[0] || null;
-        return selected ? { ...selected, suppressed: false, candidates } : null;
-    }
-
-    function operationalRequirementsEquivalentLssmActive(doc) {
-        return operationalRequirementsResolveSource(doc)?.suppressed === true;
-    }
-
-    function operationalRequirementsRuntimeCatalog() {
-        if (operationalRequirementsCatalogCache) return operationalRequirementsCatalogCache;
-        const catalog = { vehicles: [], staff: [], other: [] };
-        for (const definition of MISSION_REQUIREMENT_DEFINITIONS) {
-            const sourceGroup = String(definition?.group || 'vehicles').toLowerCase();
-            const group = sourceGroup === 'personnel' || sourceGroup === 'staff'
-                ? 'staff'
-                : sourceGroup === 'other'
-                  ? 'other'
-                  : 'vehicles';
-            const texts = Array.from(new Set([definition?.label, ...(definition?.aliases || [])]))
-                .map(value => String(value || '').trim())
-                .filter(Boolean);
-            if (!texts.length) continue;
-            catalog[group].push({
-                key: String(definition?.key || `${group}:${catalog[group].length}`),
-                texts,
-                vehicles: Array.from(new Set((definition?.types || []).map(Number).filter(Number.isFinite))),
-                equipment: Array.from(new Set((definition?.equipment || []).map(value => String(value || '').trim()).filter(Boolean))),
-                conditionalVehicles: definition?.conditionalVehicles && typeof definition.conditionalVehicles === 'object'
-                    ? { ...definition.conditionalVehicles }
-                    : {},
-                factors: definition?.factors && typeof definition.factors === 'object' ? { ...definition.factors } : {}
-            });
-        }
-        operationalRequirementsCatalogCache = Object.freeze({
-            vehicles: Object.freeze(catalog.vehicles),
-            staff: Object.freeze(catalog.staff),
-            other: Object.freeze(catalog.other)
-        });
-        return operationalRequirementsCatalogCache;
-    }
-
-    function operationalRequirementsAttribute(node, names) {
-        for (const name of names) {
-            const value = node?.getAttribute?.(name);
-            if (value !== null && value !== undefined && String(value).trim() !== '') return String(value).trim();
-        }
-        return '';
-    }
-
-    function operationalRequirementsNumberFrom(value, fallback = 0) {
-        const parsed = Number.parseInt(String(value ?? '').replace(/[^0-9-]/gu, ''), 10);
-        return Number.isFinite(parsed) ? parsed : fallback;
-    }
-
-    function operationalRequirementsVehicleType(node) {
-        const row = node?.closest?.('tr') || node;
-        return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
-            'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
-        ]) || operationalRequirementsAttribute(row, [
-            'vehicle_type_id', 'data-vehicle-type-id', 'data-vehicle-type', 'vehicle-type-id'
-        ]), -1);
-    }
-
-    function operationalRequirementsVehicleId(node) {
-        const row = node?.closest?.('tr') || node;
-        return operationalRequirementsNumberFrom(operationalRequirementsAttribute(node, [
-            'value', 'vehicle_id', 'data-vehicle-id'
-        ]) || operationalRequirementsAttribute(row, ['vehicle_id', 'data-vehicle-id']), -1);
-    }
-
-    function operationalRequirementsEquipment(node) {
-        const row = node?.closest?.('tr') || node;
-        const raw = operationalRequirementsAttribute(node, ['data-equipment-types', 'data-equipment-type', 'equipment_types'])
-            || operationalRequirementsAttribute(row, ['data-equipment-types', 'data-equipment-type', 'equipment_types']);
-        if (!raw) return [];
-        try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed.map(value => String(value)).filter(Boolean);
-        } catch (error) {}
-        return raw.split(/[|,;\s]+/gu).map(value => value.trim()).filter(Boolean);
-    }
-
-    function operationalRequirementsStaffRange(typeId, node = null) {
-        const row = node?.closest?.('tr') || node;
-        const explicitMin = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
-            'data-staff-min', 'data-personnel-min', 'data-crew-min'
-        ]), -1);
-        const explicitMax = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
-            'data-staff-max', 'data-personnel-max', 'data-crew-max', 'data-max-personnel-override'
-        ]), -1);
-        if (explicitMin >= 0 || explicitMax >= 0) {
-            const min = Math.max(0, explicitMin >= 0 ? explicitMin : explicitMax);
-            return { min, max: Math.max(min, explicitMax >= 0 ? explicitMax : min) };
-        }
-        const fallback = MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[String(typeId)]
-            || MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE?.[typeId];
-        if (!Array.isArray(fallback) || fallback.length < 2) return { min: 0, max: 0 };
-        return { min: Math.max(0, Number(fallback[0]) || 0), max: Math.max(0, Number(fallback[1]) || 0) };
-    }
-
-    function operationalRequirementsResolveVehicleType(doc, vehicleId) {
-        if (!doc?.querySelector || !Number.isFinite(Number(vehicleId)) || Number(vehicleId) < 0) return -1;
-        const selector = `.vehicle_checkbox[value="${Number(vehicleId)}"], [data-vehicle-id="${Number(vehicleId)}"], [vehicle_id="${Number(vehicleId)}"]`;
-        return operationalRequirementsVehicleType(doc.querySelector(selector));
-    }
-
-    function operationalRequirementsSelectedSnapshot(doc) {
-        const selector = '#vehicle_show_table_body_all .vehicle_checkbox:checked, #occupied .vehicle_checkbox:checked';
-        return Array.from(doc?.querySelectorAll?.(selector) || []).map(node => {
-            const vehicleType = operationalRequirementsVehicleType(node);
-            const tractiveVehicleId = operationalRequirementsNumberFrom(
-                operationalRequirementsAttribute(node, ['tractive_vehicle_id', 'data-tractive-vehicle-id'])
-                || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_vehicle_id', 'data-tractive-vehicle-id']),
-                -1
-            );
-            const tractiveRaw = operationalRequirementsAttribute(node, ['tractive_random', 'data-tractive-random'])
-                || operationalRequirementsAttribute(node.closest?.('tr'), ['tractive_random', 'data-tractive-random']);
-            return {
-                id: operationalRequirementsVehicleId(node),
-                vehicleType,
-                equipment: operationalRequirementsEquipment(node),
-                staff: operationalRequirementsStaffRange(vehicleType, node),
-                tractiveVehicleId,
-                tractiveVehicleType: operationalRequirementsResolveVehicleType(doc, tractiveVehicleId),
-                tractiveStaff: operationalRequirementsStaffRange(operationalRequirementsResolveVehicleType(doc, tractiveVehicleId), null),
-                tractiveRandom: tractiveRaw === '' ? null : !['0', 'false', 'no'].includes(tractiveRaw.toLowerCase())
-            };
-        }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
-    }
-
-    function operationalRequirementsDrivingStaff(row, typeId) {
-        const explicit = operationalRequirementsNumberFrom(operationalRequirementsAttribute(row, [
-            'data-staff', 'data-personnel', 'data-personnel-count', 'personnel_count'
-        ]), -1);
-        if (explicit >= 0) return explicit;
-        for (const cell of Array.from(row?.querySelectorAll?.('[data-column="personnel"], [data-column="staff"], .vehicle_staff, .staff') || [])) {
-            const value = operationalRequirementsNumberFrom(cell?.getAttribute?.('sortvalue') ?? cell?.textContent, -1);
-            if (value >= 0) return value;
-        }
-        const fallback = operationalRequirementsStaffRange(typeId, row);
-        return fallback.min;
-    }
-
-    function operationalRequirementsDrivingSnapshot(doc) {
-        return Array.from(doc?.querySelectorAll?.('#mission_vehicle_driving tbody tr') || []).map(row => {
-            const vehicleType = operationalRequirementsVehicleType(row);
-            return {
-                id: operationalRequirementsVehicleId(row),
-                vehicleType,
-                equipment: operationalRequirementsEquipment(row),
-                staff: operationalRequirementsDrivingStaff(row, vehicleType)
-            };
-        }).filter(vehicle => Number.isFinite(vehicle.vehicleType) && vehicle.vehicleType >= 0);
-    }
-
-    function operationalRequirementsTexts(root) {
-        const texts = { vehicles: null, staff: null, other: null };
-        const groups = Array.from(root?.querySelectorAll?.('[data-requirement-type]') || []);
-        for (const element of groups) {
-            const type = String(element.getAttribute('data-requirement-type') || '').toLowerCase();
-            const group = type === 'personnel' || type === 'staff' ? 'staff' : type === 'other' ? 'other' : type === 'vehicles' ? 'vehicles' : null;
-            if (!group) continue;
-            const infoText = operationalRequirementNormaliseText(
-                element.querySelector?.('b')?.textContent || element.getAttribute('data-info-text') || ''
-            );
-            const fullText = operationalRequirementNormaliseText(element.textContent || '');
-            const raw = operationalRequirementNormaliseText(
-                infoText && fullText.startsWith(infoText) ? fullText.slice(infoText.length) : fullText
-            );
-            if (!raw) continue;
-            texts[group] = texts[group]
-                ? { raw: `${texts[group].raw}, ${raw}`, infoText: texts[group].infoText || infoText }
-                : { raw, infoText };
-        }
-        if (!groups.length) {
-            const raw = operationalRequirementNormaliseText(root?.textContent || '');
-            if (raw) texts.other = { raw, infoText: '' };
-        }
-        return texts;
-    }
-
-    function operationalRequirementsVehicleTypes() {
-        const result = {};
-        for (const [trailerType, tractives] of Object.entries(MISSION_REQUIREMENTS_TRACTIVE_TYPES || {})) {
-            result[String(trailerType)] = { tractiveVehicles: Array.from(tractives || []).map(Number).filter(Number.isFinite) };
-        }
-        return result;
-    }
-
-    function operationalRequirementsProgress(root) {
-        const result = {};
-        const selectors = {
-            water: '[data-mcms-requirement-progress="water"], [data-requirement-progress="water"], #water_missing',
-            foam: '[data-mcms-requirement-progress="foam"], [data-requirement-progress="foam"], #foam_missing',
-            pump: '[data-mcms-requirement-progress="pump"], [data-requirement-progress="pump"], #pump_missing'
-        };
-        for (const [key, selector] of Object.entries(selectors)) {
-            const node = root?.querySelector?.(selector) || root?.ownerDocument?.querySelector?.(selector);
-            if (!node) continue;
-            result[key] = {
-                texts: [key, key === 'water' ? 'litres of water' : key === 'foam' ? 'litres of foam' : 'pump capacity'],
-                missing: operationalRequirementsNumberFrom(node.getAttribute?.('data-missing') ?? node.textContent, 0),
-                driving: operationalRequirementsNumberFrom(node.getAttribute?.('data-driving'), 0),
-                selected: operationalRequirementsNumberFrom(node.getAttribute?.('data-selected'), 0)
-            };
-        }
-        return result;
-    }
-
-    function operationalRequirementsSourceState(requirementRoot, texts, progress) {
-        const raw = operationalRequirementNormaliseText(requirementRoot?.textContent || '');
-        const groupedEvidence = OPERATIONAL_REQUIREMENT_GROUPS.some(group =>
-            Boolean(operationalRequirementNormaliseText(texts?.[group]?.raw || ''))
-        );
-        const progressEvidence = Object.keys(progress || {}).length > 0;
-        return {
-            state: groupedEvidence || progressEvidence ? 'available' : raw ? 'unparsed' : 'pending',
-            raw,
-            evidenceCount: Number(groupedEvidence) + Object.keys(progress || {}).length
-        };
-    }
-
-    function operationalRequirementsInput(context, requirementRoot) {
-        const doc = context.doc;
-        const texts = operationalRequirementsTexts(requirementRoot);
-        const progress = operationalRequirementsProgress(requirementRoot);
-        return {
-            texts,
-            catalog: operationalRequirementsRuntimeCatalog(),
-            vehicleTypes: operationalRequirementsVehicleTypes(),
-            driving: operationalRequirementsDrivingSnapshot(doc),
-            selected: operationalRequirementsSelectedSnapshot(doc),
-            progress,
-            missionAdditional: {},
-            source: operationalRequirementsSourceState(requirementRoot, texts, progress)
-        };
-    }
-
-    function operationalRequirementsEscapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/gu, character => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[character]);
-    }
-
-    function operationalRequirementsSelectedText(row, calcMaxStaff = false) {
-        if (typeof row?.selected === 'number') return Math.max(0, Number(row.selected) || 0).toLocaleString('en-GB');
-        const min = Math.max(0, Number(row?.selected?.min) || 0);
-        const max = Math.max(min, Number(row?.selected?.max) || 0);
-        if (calcMaxStaff || min === max) return (calcMaxStaff ? max : min).toLocaleString('en-GB');
-        return `${min.toLocaleString('en-GB')}–${max.toLocaleString('en-GB')}`;
-    }
-
-    function operationalRequirementsSortRows(rows, settings) {
-        const key = String(settings?.sort || 'requirement');
-        const direction = settings?.sortDir === 'desc' ? -1 : 1;
-        const value = row => {
-            if (key === 'missing') return Number(row.missing) || 0;
-            if (key === 'driving') return Number(row.driving) || 0;
-            if (key === 'selected') return Number(row.selectedValue) || 0;
-            if (key === 'total') return (Number(row.driving) || 0) + (Number(row.selectedValue) || 0);
-            return String(row.requirement || row.key || '').toLocaleLowerCase('en-GB');
-        };
-        return rows.slice().sort((left, right) => {
-            const a = value(left);
-            const b = value(right);
-            const comparison = typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - Number(b);
-            return comparison * direction;
-        });
-    }
-
-    function operationalRequirementsEnsureStyle(doc) {
-        if (!doc?.createElement || doc.getElementById?.(OPERATIONAL_REQUIREMENTS_STYLE_ID)) return;
-        const style = doc.createElement('style');
-        style.id = OPERATIONAL_REQUIREMENTS_STYLE_ID;
-        style.textContent = `
-            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{margin:0 0 12px;padding:0;border:1px solid rgba(220,53,69,.72);border-radius:12px;background:linear-gradient(180deg,rgba(79,16,25,.97),rgba(39,9,15,.97));color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.24);overflow:hidden;position:relative;z-index:2}
-            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-covered="true"]{border-color:rgba(40,167,69,.78);background:linear-gradient(180deg,rgba(20,82,39,.97),rgba(9,42,21,.97))}
-            .${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="pending"],.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}[data-requirement-state="unparsed"]{border-color:rgba(255,193,7,.78);background:linear-gradient(180deg,rgba(92,70,12,.97),rgba(48,36,6,.97))}
-            .mcms-operational-suite-header{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.14)}
-            .mcms-operational-suite-title{font-weight:800;letter-spacing:.02em;flex:1}.mcms-operational-suite-summary{font-size:12px;opacity:.84}
-            .mcms-operational-suite-toggle{min-width:42px;min-height:36px;border:1px solid rgba(255,255,255,.24);border-radius:8px;background:rgba(255,255,255,.1);color:inherit;font-weight:800;touch-action:manipulation}
-            .mcms-operational-suite-body{padding:10px 12px 12px}.mcms-operational-suite-panel[data-minified="true"] .mcms-operational-suite-body{display:none}
-            .mcms-operational-suite-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}.mcms-operational-suite-table th,.mcms-operational-suite-table td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.12);text-align:right;vertical-align:middle}
-            .mcms-operational-suite-table th:first-child,.mcms-operational-suite-table td:first-child{text-align:left}.mcms-operational-suite-table th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
-            .mcms-operational-suite-row[data-covered="true"]{opacity:.62}.mcms-operational-suite-needed{font-weight:800}.mcms-operational-suite-unresolved{margin-top:9px;padding:8px 10px;border:1px dashed rgba(255,193,7,.7);border-radius:8px;background:rgba(255,193,7,.1);font-size:12px}
-            @media(max-width:760px){.${OPERATIONAL_REQUIREMENTS_PANEL_CLASS}{border-radius:10px;margin-left:0;margin-right:0}.mcms-operational-suite-header{align-items:flex-start;flex-wrap:wrap;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 10px max(10px,env(safe-area-inset-left))}.mcms-operational-suite-summary{width:100%}.mcms-operational-suite-table thead{display:none}.mcms-operational-suite-table,.mcms-operational-suite-table tbody,.mcms-operational-suite-table tr,.mcms-operational-suite-table td{display:block;width:100%}.mcms-operational-suite-table tr{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.16)}.mcms-operational-suite-table td{display:grid;grid-template-columns:minmax(118px,1fr) minmax(70px,auto);gap:10px;padding:4px 2px;border:0;text-align:right}.mcms-operational-suite-table td::before{content:attr(data-label);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.72}.mcms-operational-suite-table td:first-child{font-weight:800;grid-template-columns:1fr}.mcms-operational-suite-table td:first-child::before{display:none}}
-        `;
-        (doc.head || doc.documentElement)?.appendChild(style);
-    }
-
-    function operationalRequirementsPanelHtml(rows, model, settings, minified, source = null) {
-        const sorted = operationalRequirementsSortRows(rows, settings);
-        const open = sorted.filter(row => !row.covered);
-        const unresolved = OPERATIONAL_REQUIREMENT_GROUPS
-            .map(group => model?.requirementTexts?.[group]?.remaining)
-            .filter(Boolean);
-        const sourceState = String(source?.state || 'pending');
-        const hasParsedRows = sorted.length > 0;
-        const unknown = !hasParsedRows && unresolved.length === 0;
-        const allCovered = sourceState === 'available' && hasParsedRows && open.length === 0 && unresolved.length === 0;
-        const bodyRows = sorted.map(row => {
-            const stillNeeded = Math.max(0, Number(row.remainingOnMission) - Number(row.selectedValue));
-            return `<tr class="mcms-operational-suite-row" data-covered="${row.covered ? 'true' : 'false'}"><td data-label="Requirement">${operationalRequirementsEscapeHtml(row.requirement || row.key)}</td><td data-label="Required">${Math.max(0, Number(row.missing) || 0).toLocaleString('en-GB')}</td><td data-label="Responding">${Math.max(0, Number(row.driving) || 0).toLocaleString('en-GB')}</td><td data-label="Selected">${operationalRequirementsEscapeHtml(operationalRequirementsSelectedText(row, settings?.calcMaxStaff === true))}</td><td class="mcms-operational-suite-needed" data-label="Still needed">${stillNeeded.toLocaleString('en-GB')}</td></tr>`;
-        }).join('');
-        const unresolvedHtml = unresolved.length
-            ? `<div class="mcms-operational-suite-unresolved"><strong>Unresolved MissionChief requirement</strong><br>${unresolved.map(operationalRequirementsEscapeHtml).join('<br>')}</div>`
-            : '';
-        const unknownMessage = sourceState === 'pending'
-            ? 'Waiting for MissionChief requirement data.'
-            : 'MissionChief requirement data could not be interpreted safely.';
-        const emptyHtml = unknown
-            ? `<div class="mcms-operational-suite-unresolved"><strong>Requirement status not confirmed</strong><br>${unknownMessage}</div>`
-            : '';
-        const summary = allCovered
-            ? 'All displayed requirements covered'
-            : unknown
-                ? (sourceState === 'pending' ? 'Waiting for requirement data' : 'Requirement status unresolved')
-                : `${open.length} requirement${open.length === 1 ? '' : 's'} still open${unresolved.length ? ` · ${unresolved.length} unresolved` : ''}`;
-        return {
-            allCovered,
-            state: allCovered ? 'covered' : unknown ? sourceState : 'open',
-            html: `<div class="mcms-operational-suite-header"><div class="mcms-operational-suite-title">Operational Requirements</div><div class="mcms-operational-suite-summary">${summary}</div><button type="button" class="mcms-operational-suite-toggle" aria-expanded="${minified ? 'false' : 'true'}" aria-label="${minified ? 'Expand' : 'Collapse'} operational requirements">${minified ? '＋' : '−'}</button></div><div class="mcms-operational-suite-body"><table class="mcms-operational-suite-table"><thead><tr><th>Requirement</th><th>Required</th><th>Responding</th><th>Selected</th><th>Still needed</th></tr></thead><tbody>${bodyRows}</tbody></table>${unresolvedHtml}${emptyHtml}</div>`
-        };
-    }
-
-    function operationalRequirementsMount(context, requirementRoot) {
-        const doc = context.doc;
-        operationalRequirementsEnsureStyle(doc);
-        const selector = '[data-mcms-operational-suite="requirements"]';
-        const mounted = Array.from(doc.querySelectorAll?.(selector) || []).filter(candidate => candidate?.isConnected);
-        let panel = context.panel;
-        if (!panel?.isConnected) panel = mounted[0] || null;
-        for (const duplicate of mounted) {
-            if (duplicate !== panel) duplicate.remove?.();
-        }
-        if (!panel?.isConnected) {
-            panel = doc.createElement('section');
-            panel.className = OPERATIONAL_REQUIREMENTS_PANEL_CLASS;
-            panel.setAttribute('data-mcms-operational-suite', 'requirements');
-            panel.setAttribute('aria-live', 'polite');
-        }
-        if (requirementRoot.parentNode && (panel.parentNode !== requirementRoot.parentNode || panel.nextSibling !== requirementRoot)) {
-            requirementRoot.parentNode.insertBefore(panel, requirementRoot);
-        }
-        context.panel = panel;
-        panel.onclick = event => {
-            const button = event.target?.closest?.('.mcms-operational-suite-toggle');
-            if (!button) return;
-            context.minified = !context.minified;
-            context.fingerprint = '';
-            operationalRequirementsScheduleContext(context, 0);
-        };
-        return panel;
-    }
-    function operationalRequirementsRenderContext(context) {
-        if (!context?.doc || runtime.destroyed) return;
-        if (!operationalRequirementsActive()) {
-            context.panel?.remove?.();
-            context.panel = null;
-            return;
-        }
-        const missionKey = operationalRequirementsMissionKey(context.doc);
-        if (context.requirementMissionKey !== missionKey) {
-            context.requirementMissionKey = missionKey;
-            context.fingerprint = '';
-            context.boundRequirementRoot = null;
-            context.boundRequirementSource = '';
-            context.boundRequirementMissionKey = '';
-        }
-        const requirementSource = operationalRequirementsResolveSource(context.doc);
-        const requirementRoot = requirementSource?.root;
-        if (!requirementRoot || requirementSource?.suppressed === true) {
-            context.panel?.remove?.();
-            context.panel = null;
-            context.fingerprint = '';
-            return;
-        }
-        const settings = state.operationalWindow?.requirements || {};
-        const input = operationalRequirementsInput(context, requirementRoot);
-        const model = operationalRequirementCreateModel(input);
-        const rows = operationalRequirementRows(model, { calcMaxStaff: settings.calcMaxStaff === true });
-        const fingerprint = JSON.stringify({
-            mission: missionKey,
-            model: operationalRequirementFingerprint(model, { calcMaxStaff: settings.calcMaxStaff === true }),
-            sourceState: input.source,
-            sort: settings.sort,
-            sortDir: settings.sortDir,
-            viewMode: settings.viewMode,
-            minified: context.minified === true,
-            sourceFingerprint: requirementSource.fingerprint
-        });
-        if (fingerprint === context.fingerprint && context.panel?.isConnected) return;
-        const panel = operationalRequirementsMount(context, requirementSource.anchor || requirementRoot);
-        const rendered = operationalRequirementsPanelHtml(rows, model, settings, context.minified === true, input.source);
-        panel.dataset.covered = rendered.allCovered ? 'true' : 'false';
-        panel.dataset.requirementState = rendered.state;
-        panel.dataset.minified = context.minified === true ? 'true' : 'false';
-        panel.dataset.missionKey = missionKey;
-        operationalReplaceContent(panel, rendered.html);
-        context.fingerprint = fingerprint;
-    }
-
-    function operationalRequirementsScheduleContext(context, delay = 0) {
-        if (!context || runtime.destroyed) return;
-        runtimeClearTimeout(context.renderTimer);
-        context.renderTimer = runtimeSetTimeout(() => {
-            context.renderTimer = null;
-            operationalRequirementsRenderContext(context);
-            operationalFeatureRenderContext(context);
-        }, Math.max(0, Number(delay) || 0));
-    }
-    function operationalRequirementsBindContext(context) {
-        const doc = context?.doc;
-        if (!doc?.querySelector || !operationalRequirementsActive()) return;
-        const missionKey = operationalRequirementsMissionKey(doc);
-        const requirementSource = operationalRequirementsResolveSource(doc);
-        const requirementRoot = requirementSource?.root || null;
-        const candidateAnchors = requirementSource?.candidates?.map(candidate => candidate.anchor) || [];
-        const missionHost = requirementSource?.missionContainer
-            || operationalRequirementsMissionContainer(requirementSource?.anchor, doc);
-        const contentRoots = Array.from(new Set([
-            requirementRoot,
-            ...candidateAnchors
-        ].filter(root => root && root.isConnected !== false)));
-        const structuralRoots = Array.from(new Set([
-            missionHost,
-            doc.querySelector('#mission_vehicle_driving'),
-            doc.querySelector('#vehicle_show_table_body_all'),
-            doc.querySelector('#occupied'),
-            ...operationalFeatureObservationRoots(doc)
-        ].filter(root => root && root.isConnected !== false && !contentRoots.includes(root))));
-        const roots = [...contentRoots, ...structuralRoots];
-        if (!roots.length) return;
-        const sourceFingerprint = requirementSource?.fingerprint || '';
-        const previousRoots = context.observedRoots || [];
-        const rootsUnchanged = previousRoots.length === roots.length && previousRoots.every((root, index) => root === roots[index]);
-        if (context.boundRequirementRoot === requirementSource?.anchor
-            && context.boundRequirementSource === sourceFingerprint
-            && context.boundRequirementMissionKey === missionKey
-            && context.observer
-            && rootsUnchanged) return;
-        try { context.observer?.disconnect?.(); } catch (error) {}
-        context.boundRequirementRoot = requirementSource?.anchor || null;
-        context.boundRequirementSource = sourceFingerprint;
-        context.boundRequirementMissionKey = missionKey;
-        context.observedRoots = roots;
-        const OperationalMutationObserver = doc.defaultView?.MutationObserver || pageWindow.MutationObserver;
-        context.observer = new OperationalMutationObserver(mutations => {
-            const relevant = mutations.some(mutation => {
-                const target = mutation.target?.nodeType === 1 ? mutation.target : mutation.target?.parentElement;
-                if (target?.closest?.(`[${OP_FEATURE_ATTR}], #${SCRIPT.panelId}`)) return false;
-                if (mutation.type === 'characterData') return contentRoots.some(root => root === mutation.target?.parentElement || root.contains?.(mutation.target));
-                if (mutation.type === 'attributes') return true;
-                const changedNodes = [...(mutation.addedNodes || []), ...(mutation.removedNodes || [])];
-                return changedNodes.some(node => {
-                    if (node?.nodeType !== 1) return true;
-                    if (node.matches?.(`[${OP_FEATURE_ATTR}]`) || node.closest?.(`[${OP_FEATURE_ATTR}], #${SCRIPT.panelId}`)) return false;
-                    return !node.querySelector?.(`[${OP_FEATURE_ATTR}]`) || node.children?.length !== 1;
-                });
-            });
-            if (relevant) operationalRequirementsScheduleContext(context, 120);
-        });
-        const attributes = {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['checked', 'vehicle_type_id', 'data-vehicle-type-id', 'data-equipment-types', 'data-equipment-type', 'tractive_vehicle_id', 'tractive_random', 'sortvalue', 'value', 'data-raw-html', 'data-mission-id']
-        };
-        for (const root of contentRoots) context.observer.observe(root, { ...attributes, characterData: true });
-        for (const root of structuralRoots) context.observer.observe(root, attributes);
-        if (!context.changeHandler) {
-            context.changeHandler = event => {
-                if (event.target?.matches?.('.vehicle_checkbox, #vehicle_show_table_body_all input, #occupied input')) {
-                    operationalRequirementsScheduleContext(context, 0);
-                }
-            };
-            doc.addEventListener('change', context.changeHandler, true);
-        }
-    }
-    // Issue #378 end enhanced requirements runtime renderer.
-
-    // Issue #378 complete operational feature suite.
-    const OP_FEATURE_ATTR = 'data-mcms-operational-feature';
-    const OP_BOOL_KEYS = Object.freeze({
-        requirements: 'enabled,calcMaxStaff,hoverTip,overlay,minified,pushRight',
-        callWindow: 'enabled,generationDate,redBorder,patientSummary,collapsiblePatients,arrCounter,arrCounterAsBadge,arrClickHighlight,arrCounterResetSelection,arrMatchHighlight,arrMatchHighlightAllWords,arrTime,arrSpecs,alarmTime,stickyHeader,loadMoreVehiclesInHeader,hideVehicleList,centerMap,stagingAreaSelectedCounter,vehicleTypeInList,remainingPatientTime,vehicleCounter,vehicleListPermanentSearch,playerCounter,selectedVehicleCounter,arrSearch,arrSearchDissolveCategories,arrSearchCompactResults,arrSearchSelectOnEnter,arrSearchClearOnEnter,arrSearchAutoFocus,arrSearchDropdown,arrSearchCloseDropdownOnSelect,moreReleasePatientButtons',
-        missionList: 'enabled,remainingTime,remainingTimeGreenOnly,remainingPatientTime,remainingPumpingTime,starrableMissions,averageCredits,collapsibleMissions,collapsibleMissionsAllButton,shareMissions,sortMissions,sortMissionsInMissionWindow,sortMissionsInMissionWindowChecked,currentPatients,hideZeroCurrentPatients,currentPatientsInTooltips,currentPrisoners,hideZeroCurrentPrisoners,currentPrisonersInTooltips,fixedEventInfo',
-        transport: 'enabled,autoClickSuccessButtons,autoOpenTransportRequest'
-    });
-    const OP_LABELS = Object.freeze({
-        requirements: 'Enhanced requirements', callWindow: 'Extended Call Window',
-        missionList: 'Extended Call List', transport: 'Enhanced Transport Requests'
-    });
-    const operationalFeatureContexts = new WeakMap();
-
-    function operationalQuery(root, selector) {
-        try { return root?.querySelector?.(selector) || null; } catch (error) { return null; }
-    }
-    function operationalQueryAll(root, selector) {
-        try { return Array.from(root?.querySelectorAll?.(selector) || []); } catch (error) { return []; }
-    }
-    function operationalEscape(value) {
-        return String(value ?? '').replace(/[&<>"']/gu, character => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[character]);
-    }
-    function operationalVisible(node) {
-        if (!node?.isConnected || node.hidden || node.disabled || node.getAttribute?.('aria-hidden') === 'true') return false;
-        try {
-            const style = node.ownerDocument?.defaultView?.getComputedStyle?.(node);
-            const rect = node.getBoundingClientRect?.();
-            return style?.display !== 'none' && style?.visibility !== 'hidden' && (!rect || rect.width > 0 || rect.height > 0);
-        } catch (error) { return true; }
-    }
-    function operationalFeatureState(context) { let value=operationalFeatureContexts.get(context); if(!value){value={transportTokens:new Set(),route:'',arrHandlers:new Map(),arrCounts:new Map(),arrClicked:new Set(),patientCollapsed:null,vehicleListHidden:null,vehicleTab:'all',arrQuery:'',nativeRows:new Set()};operationalFeatureContexts.set(context,value);} return value; }
-    function operationalFeatureValue(path) {
-        return String(path || '').split('.').filter(Boolean).reduce((value, part) => value?.[part], state.operationalWindow);
-    }
-    function operationalFeatureSet(path, value) {
-        const parts = String(path || '').split('.').filter(Boolean);
-        let target = state.operationalWindow;
-        for (const part of parts.slice(0, -1)) target = target[part] ??= {};
-        target[parts.at(-1)] = value;
-    }
-    function operationalFeatureMissionId(row) {
-        return String(row?.dataset?.missionId || row?.id?.match(/mission[_-](\d+)/u)?.[1]
-            || operationalQuery(row, 'a[href*="/missions/"]')?.href?.match(/\/missions\/(\d+)/u)?.[1] || '');
-    }
-    function operationalFeatureNumber(node, names) {
-        for (const name of names) {
-            const parsed = Number.parseInt(String(node?.getAttribute?.(name) ?? '').replace(/[^0-9-]/gu, ''), 10);
-            if (Number.isFinite(parsed)) return parsed;
-        }
-        return 0;
-    }
-    const operationalOwnedNodes = new WeakMap();
-    const operationalDecoratedNodes = new WeakMap();
-    function operationalDocumentNodeSet(registry, doc) {
-        if (!doc) return null;
-        let nodes = registry.get(doc);
-        if (!nodes) { nodes = new Set(); registry.set(doc, nodes); }
-        return nodes;
-    }
-    function operationalFeatureOwn(node, kind) {
-        node?.setAttribute?.(OP_FEATURE_ATTR, kind);
-        const nodes = operationalDocumentNodeSet(operationalOwnedNodes, node?.ownerDocument);
-        if (node && nodes) nodes.add(node);
-        return node;
-    }
-    function operationalTrackNativeNode(node) {
-        const nodes = operationalDocumentNodeSet(operationalDecoratedNodes, node?.ownerDocument);
-        if (node && nodes) nodes.add(node);
-        return node;
-    }
-    function operationalFeatureRemove(context, prefix = '') {
-        const doc = context?.doc;
-        const nodes = doc ? operationalOwnedNodes.get(doc) : null;
-        if (!nodes?.size) return;
-        const safe = String(prefix).replace(/[^a-z0-9_-]/giu, '');
-        for (const node of Array.from(nodes)) {
-            if (!node?.isConnected) { nodes.delete(node); continue; }
-            const kind = node.getAttribute?.(OP_FEATURE_ATTR) || '';
-            if (safe && !kind.startsWith(safe)) continue;
-            nodes.delete(node);
-            node.remove?.();
-        }
-        if (!nodes.size) operationalOwnedNodes.delete(doc);
-    }
-
-    // Issue #464 resilient launcher and typed operational settings.
-    const OP_SETTING_COLOURS = [['success','Green'],['warning','Orange'],['danger','Red'],['primary','Dark blue'],['info','Light blue'],['default','Grey']];
-    const OPERATIONAL_SETTINGS_SCHEMA = Object.freeze([
-        { id:'requirements', title:'Enhanced Requirements', description:'Live selected, en-route, on-scene and still-needed operational requirements.', settings:[
-            {p:'requirements.enabled',t:'boolean',l:'Enabled',d:'Show the Toolkit operational requirements panel.'},{p:'requirements.calcMaxStaff',t:'boolean',l:'Calculate maximum staff',d:'Assume vehicles carry their maximum staff for personnel calculations.',r:'requirements.enabled'},{p:'requirements.hoverTip',t:'boolean',l:'Tooltips',d:'Show explanatory tooltips on Enhanced Requirements controls.',r:'requirements.enabled'},{p:'requirements.viewMode',t:'select',l:'Display mode',d:'Choose the table or compact text presentation.',r:'requirements.enabled',o:[['table','Table'],['text','Text']]},{p:'requirements.sort',t:'select',l:'Sort by',d:'Choose the requirement column used for ordering.',r:'requirements.enabled',o:[['requirement','Requirement'],['missing','Still needed'],['driving','En-route'],['selected','Selected'],['total','Total']]},{p:'requirements.sortDir',t:'select',l:'Direction',d:'Choose ascending or descending requirement order.',r:'requirements.enabled',o:[['asc','Ascending'],['desc','Descending']]}
-        ]},
-        { id:'callWindow', title:'Extended Call Window', description:'Mission-window information, patients, vehicle list, ARR controls and search.', settings:[
-            {p:'callWindow.enabled',t:'boolean',l:'Enabled',d:'Enable Toolkit Extended Call Window features.'},{p:'callWindow.generationDate',t:'boolean',l:'Generation time',d:'Show when the mission was generated.',r:'callWindow.enabled'},{p:'callWindow.yellowBorderHours',t:'number',l:'Yellow border age',d:'Outline generation time after this many hours; 0 disables it.',r:'callWindow.enabled,callWindow.generationDate',min:0,max:48,step:1},{p:'callWindow.redBorder',t:'boolean',l:'Red expiry border',d:'Outline generation time in red when the mission is due to expire.',r:'callWindow.enabled,callWindow.generationDate'},{p:'callWindow.patientSummary',t:'boolean',l:'Patient summary',d:'Show patient count and required rescue-equipment combinations.',r:'callWindow.enabled'},{p:'callWindow.collapsiblePatients',t:'boolean',l:'Minimise patients',d:'Collapse large patient lists into a compact summary.',r:'callWindow.enabled'},{p:'callWindow.collapsiblePatientsMinPatients',t:'number',l:'Minimum patient count',d:'Number of patients required before minimising is activated.',r:'callWindow.enabled,callWindow.collapsiblePatients',min:1,max:250,step:1},{p:'callWindow.arrCounter',t:'boolean',l:'ARR counter',d:'Count how often an ARR or move is selected.',r:'callWindow.enabled'},{p:'callWindow.arrCounterAsBadge',t:'boolean',l:'ARR counter as badge',d:'Display the ARR counter as a badge on each ARR.',r:'callWindow.enabled,callWindow.arrCounter'},{p:'callWindow.arrClickHighlight',t:'boolean',l:'Highlight clicked ARRs',d:'Draw a border around ARRs that have already been clicked.',r:'callWindow.enabled'},{p:'callWindow.arrClickHighlightColor',t:'color',l:'Highlight colour',d:'Choose the border colour used for clicked ARRs.',r:'callWindow.enabled,callWindow.arrClickHighlight'},{p:'callWindow.arrClickHighlightWidth',t:'number',l:'Highlight width',d:'Set the ARR border width in pixels.',r:'callWindow.enabled,callWindow.arrClickHighlight',min:1,max:12,step:1},{p:'callWindow.arrCounterResetSelection',t:'boolean',l:'Reset vehicle selection',d:'Add a reset control for ARR counters, borders and selected vehicles.',r:'callWindow.enabled'},{p:'callWindow.arrMatchHighlight',t:'boolean',l:'Grey out unsuitable ARRs',d:'De-emphasise ARRs that do not match the mission name.',r:'callWindow.enabled'},{p:'callWindow.arrMatchHighlightAllWords',t:'boolean',l:'Use all mission-name words',d:'Require every relevant mission-name word when matching ARRs.',r:'callWindow.enabled,callWindow.arrMatchHighlight'},{p:'callWindow.arrTime',t:'boolean',l:'ARR projected journey time',d:'Show the longest journey time that selecting an ARR would create.',r:'callWindow.enabled'},{p:'callWindow.arrSpecs',t:'boolean',l:'ARR stored request details',d:'Show the vehicle requests stored in an ARR on hover.',r:'callWindow.enabled'},{p:'callWindow.alarmTime',t:'boolean',l:'Alarm-button journey time',d:'Show the longest selected-vehicle journey time beside Alarm.',r:'callWindow.enabled'},{p:'callWindow.stickyHeader',t:'boolean',l:'Sticky header',d:'Keep the mission-window header visible while scrolling.',r:'callWindow.enabled'},{p:'callWindow.loadMoreVehiclesInHeader',t:'boolean',l:'Reload vehicles in header',d:'Move the native Reload vehicles control into the header when available.',r:'callWindow.enabled'},{p:'callWindow.hideVehicleList',t:'boolean',l:'Hide vehicle list',d:'Start with the available-unit list hidden and expose a show button.',r:'callWindow.enabled'},{p:'callWindow.centerMap',t:'boolean',l:'Centre map',d:'Add a control that centres the main map on the mission.',r:'callWindow.enabled'},{p:'callWindow.stagingAreaSelectedCounter',t:'boolean',l:'Staging-area selected counter',d:'Show selected-unit totals beside staging-area alarm controls.',r:'callWindow.enabled'},{p:'callWindow.vehicleTypeInList',t:'boolean',l:'Show vehicle type',d:'Display each vehicle type in the Available Units list.',r:'callWindow.enabled'},{p:'callWindow.remainingPatientTime',t:'boolean',l:'Remaining patient treatment time',d:'Show how long remains until each patient is fully treated.',r:'callWindow.enabled'},{p:'callWindow.vehicleCounter',t:'boolean',l:'Vehicle counter',d:'Show how many vehicles are committed to the mission.',r:'callWindow.enabled'},{p:'callWindow.vehicleCounterColor',t:'select',l:'Vehicle counter colour',d:'Choose the vehicle-counter badge colour.',r:'callWindow.enabled,callWindow.vehicleCounter',o:OP_SETTING_COLOURS},{p:'callWindow.vehicleListPermanentSearch',t:'boolean',l:'Permanent vehicle search',d:'Keep the available-vehicle search field visible.',r:'callWindow.enabled'},{p:'callWindow.playerCounter',t:'boolean',l:'Player counter',d:'Show how many players have dispatched vehicles.',r:'callWindow.enabled'},{p:'callWindow.playerCounterColor',t:'select',l:'Player counter colour',d:'Choose the player-counter badge colour.',r:'callWindow.enabled,callWindow.playerCounter',o:OP_SETTING_COLOURS},{p:'callWindow.selectedVehicleCounter',t:'boolean',l:'Selected vehicle counter',d:'Show an expandable count of selected vehicles by type.',r:'callWindow.enabled'},{p:'callWindow.selectedVehicleCounterVehicleTypes',t:'multiselect',l:'Quick-counter vehicle types',d:'Choose the vehicle types shown directly on the counter button.',r:'callWindow.enabled,callWindow.selectedVehicleCounter',ph:'0, 1, 16'},{p:'callWindow.arrSearch',t:'boolean',l:'ARR search',d:'Add a search field above the ARR list.',r:'callWindow.enabled'},{p:'callWindow.arrSearchDissolveCategories',t:'boolean',l:'Show all ARR categories',d:'Display all ARR categories while searching.',r:'callWindow.enabled,callWindow.arrSearch',f:'callWindow.arrSearchDropdown'},{p:'callWindow.arrSearchCompactResults',t:'boolean',l:'Compact ARR results',d:'Show all matching ARRs in a compact single-row result.',r:'callWindow.enabled,callWindow.arrSearch',f:'callWindow.arrSearchDropdown'},{p:'callWindow.arrSearchSelectOnEnter',t:'boolean',l:'Select first ARR on Enter',d:'Click the first matching ARR when Enter is pressed.',r:'callWindow.enabled,callWindow.arrSearch',f:'callWindow.arrSearchDropdown'},{p:'callWindow.arrSearchClearOnEnter',t:'boolean',l:'Clear search on Enter',d:'Clear the ARR search after Enter is pressed.',r:'callWindow.enabled,callWindow.arrSearch',f:'callWindow.arrSearchDropdown'},{p:'callWindow.arrSearchAutoFocus',t:'boolean',l:'ARR search autofocus',d:'Focus ARR search automatically when the mission opens.',r:'callWindow.enabled,callWindow.arrSearch'},{p:'callWindow.arrSearchDropdown',t:'boolean',l:'ARR search as dropdown',d:'Replace the full ARR grid with a searchable compact dropdown.',r:'callWindow.enabled,callWindow.arrSearch'},{p:'callWindow.arrSearchCloseDropdownOnSelect',t:'boolean',l:'Close dropdown after selection',d:'Close the compact ARR dropdown after choosing an ARR.',r:'callWindow.enabled,callWindow.arrSearchDropdown'},{p:'callWindow.moreReleasePatientButtons',t:'boolean',l:'More patient-release buttons',d:'Add patient-release controls beside transport actions and vehicle headers.',r:'callWindow.enabled'}
-        ]},
-        { id:'missionList', title:'Extended Call List', description:'Mission sorting, starring, collapsing, sharing, patient and prisoner indicators.', settings:[
-            {p:'missionList.enabled',t:'boolean',l:'Enabled',d:'Enable Toolkit Extended Call List features.'},{p:'missionList.remainingTime',t:'boolean',l:'Remaining mission time',d:'Show mission countdown information.',r:'missionList.enabled'},{p:'missionList.remainingTimeGreenOnly',t:'boolean',l:'Green countdowns only',d:'Only show countdowns while they remain in the green state.',r:'missionList.enabled,missionList.remainingTime'},{p:'missionList.remainingPatientTime',t:'boolean',l:'Patient treatment time',d:'Show remaining patient treatment time in the mission list.',r:'missionList.enabled'},{p:'missionList.starrableMissions',t:'boolean',l:'Mission starring',d:'Allow missions to be starred and kept at the top.',r:'missionList.enabled'},{p:'missionList.averageCredits',t:'boolean',l:'Average credits',d:'Show estimated mission credits.',r:'missionList.enabled'},{p:'missionList.collapsibleMissions',t:'boolean',l:'Collapsible missions',d:'Allow mission rows to be collapsed.',r:'missionList.enabled'},{p:'missionList.collapsibleMissionsAllButton',t:'boolean',l:'Collapse-all button',d:'Show a control to collapse or expand all missions.',r:'missionList.enabled,missionList.collapsibleMissions'},{p:'missionList.shareMissions',t:'boolean',l:'Mission sharing controls',d:'Add native alliance-sharing controls to eligible missions.',r:'missionList.enabled'},{p:'missionList.shareMissionTypes',t:'multiselect',l:'Share mission types',d:'Choose which mission ownership types are eligible for sharing.',o:[['','Own missions'],['sicherheitswache','Standby missions'],['alliance','Alliance missions'],['alliance_event','Alliance event missions']],r:'missionList.enabled,missionList.shareMissions'},{p:'missionList.shareMissionsMinCredits',t:'number',l:'Minimum share credits',d:'Only offer sharing at or above this estimated credit value.',r:'missionList.enabled,missionList.shareMissions',min:0,max:10000000,step:1000},{p:'missionList.shareMissionsButtonColor',t:'select',l:'Share button colour',d:'Choose the mission-sharing button colour.',r:'missionList.enabled,missionList.shareMissions',o:OP_SETTING_COLOURS},{p:'missionList.sortMissions',t:'boolean',l:'Mission sorting',d:'Enable persisted mission-list sorting.',r:'missionList.enabled'},{p:'missionList.sortMissionsButtonColor',t:'select',l:'Sort button colour',d:'Choose the sorting-control colour.',r:'missionList.enabled,missionList.sortMissions',o:OP_SETTING_COLOURS},{p:'missionList.sortMissionsInMissionWindow',t:'boolean',l:'Sort opened mission list',d:'Apply ordering inside opened mission windows.',r:'missionList.enabled,missionList.sortMissions'},{p:'missionList.currentPatients',t:'boolean',l:'Current patients',d:'Show current patient counts.',r:'missionList.enabled'},{p:'missionList.hideZeroCurrentPatients',t:'boolean',l:'Hide zero patients',d:'Hide patient badges when the count is zero.',r:'missionList.enabled,missionList.currentPatients'},{p:'missionList.currentPatientsInTooltips',t:'boolean',l:'Patients in tooltips',d:'Include patient counts in mission tooltips.',r:'missionList.enabled,missionList.currentPatients'},{p:'missionList.currentPrisoners',t:'boolean',l:'Current prisoners',d:'Show current prisoner counts.',r:'missionList.enabled'},{p:'missionList.hideZeroCurrentPrisoners',t:'boolean',l:'Hide zero prisoners',d:'Hide prisoner badges when the count is zero.',r:'missionList.enabled,missionList.currentPrisoners'},{p:'missionList.currentPrisonersInTooltips',t:'boolean',l:'Prisoners in tooltips',d:'Include prisoner counts in mission tooltips.',r:'missionList.enabled,missionList.currentPrisoners'},{p:'missionList.fixedEventInfo',t:'boolean',l:'Fixed event information',d:'Keep event information visible for configured missions.',r:'missionList.enabled'},
-        ]},
-        { id:'transport', title:'Enhanced Transport Requests', description:'Safety-checked patient, prisoner and vehicle transport automation. Automation remains opt-in.', settings:[
-            {p:'transport.enabled',t:'boolean',l:'Enabled',d:'Enable Toolkit transport-request enhancements.'},{p:'transport.autoOpenTransportRequest',t:'boolean',l:'Open transport requests automatically',d:'Open a transport request only when exactly one safe candidate exists.',r:'transport.enabled'},{p:'transport.autoClickSuccessButtons',t:'boolean',l:'Confirm successful transport actions',d:'Allow validated success controls to be activated after an opted-in transport action.',r:'transport.enabled'}
-        ]}
-    ]);
-    const OP_OPERATIONAL_EDITORS = Object.freeze([
-        {p:'callWindow.tailoredTabs',l:'Vehicle categories',d:'Create custom vehicle tabs for the mission insert window.',r:'enabled,callWindow.enabled',v:{name:'',color:'#505050',vehicleTypes:[]},f:[{k:'name',l:'Name',t:'string'},{k:'color',l:'Colour',t:'color'},{k:'vehicleTypes',l:'Vehicle type IDs',t:'multiselect'}]},
-        {p:'callWindow.missionKeywords',l:'Mission keywords',d:'Display configured keywords beside matching mission names.',r:'enabled,callWindow.enabled',v:{keyword:'',color:'#777777',autotextcolor:true,textcolor:'#ffffff',prefix:false,missions:[]},f:[{k:'keyword',l:'Keyword',t:'string'},{k:'color',l:'Background',t:'color'},{k:'autotextcolor',l:'Automatic text colour',t:'boolean'},{k:'textcolor',l:'Text colour',t:'color'},{k:'prefix',l:'Show before mission name',t:'boolean'},{k:'missions',l:'Mission IDs',t:'csv'}]},
-        {p:'callWindow.alarmIcons',l:'Alarm icons',d:'Show Font Awesome icon names on Alarm controls for selected vehicle types.',r:'enabled,callWindow.enabled',v:{icon:'',type:'fas',vehicleTypes:[]},f:[{k:'icon',l:'Icon name',t:'string'},{k:'type',l:'Icon type',t:'select',o:[['fas','Solid'],['far','Regular'],['fab','Brand']]},{k:'vehicleTypes',l:'Vehicle type IDs',t:'multiselect'}]},
-        {p:'callWindow.arrCategoryColors',l:'ARR category colours',d:'Assign background and text colours to named ARR categories.',r:'enabled,callWindow.enabled',v:{categoryName:'',bgColor:'#505050',color:'#ffffff'},f:[{k:'categoryName',l:'Category name',t:'string'},{k:'bgColor',l:'Background',t:'color'},{k:'color',l:'Text',t:'color'}]},
-        {p:'missionList.eventMissions',l:'Fixed event missions',d:'Assign persistent event text to one or more MissionChief mission IDs.',r:'enabled,missionList.enabled,missionList.fixedEventInfo',v:{text:'',missions:[]},f:[{k:'text',l:'Displayed text',t:'string'},{k:'missions',l:'Mission IDs',t:'csv'}]}
-    ]);
-    function toolkitTopLevelDocument(doc = document) {
-        try {
-            const view = doc?.defaultView;
-            return !view || view.top === view;
-        } catch (error) {
-            return true;
-        }
-    }
-    function toolkitPrimaryMapElement(mapEl, doc = document) {
-        const missionSelector = '#mission-form,.mission-window,.mission_window,.modal,.modal-content,.lightbox,[data-mission-id]';
-        const candidates = [
-            doc?.querySelector?.('#map'),
-            mapEl,
-            ...Array.from(doc?.querySelectorAll?.('[data-leaflet-map="main"],.leaflet-container') || [])
-        ];
-        for (const candidate of candidates) {
-            if (!candidate || candidate.ownerDocument !== doc || candidate.isConnected === false) continue;
-            if (candidate.closest?.(missionSelector)) continue;
-            return candidate;
-        }
-        return null;
-    }
-    function toolkitControlHost(mapEl, doc = document) {
-        if (!toolkitTopLevelDocument(doc)) return null;
-        return toolkitPrimaryMapElement(mapEl, doc) || doc?.body || doc?.documentElement || null;
-    }
-    function toolkitApplyCommandBarState(control = null) {
-        control ||= document.querySelector?.(`#${SCRIPT.controlId}`) || null;
-        if (!control) return false;
-        const open = state.commandBarOpen !== false;
-        control.setAttribute('data-mcms-command-bar-open', String(open));
-        for (const selector of ['.mcms-floating-filter', '.mcms-screen-pins']) {
-            const element = control.querySelector?.(selector);
-            if (!element) continue;
-            if (open) element.style.removeProperty('display');
-            else element.style.setProperty('display', 'none', 'important');
-        }
-        const button = control.querySelector?.('.mcms-dock-toggle-btn');
-        if (button) {
-            const label = open ? 'Collapse command bar' : 'Expand command bar';
-            button.classList.toggle('mcms-open', open);
-            button.setAttribute('aria-expanded', String(open));
-            button.setAttribute('aria-label', label);
-            button.title = label;
-            const icon = button.querySelector?.('.mcms-dock-toggle-icon');
-            if (icon) icon.textContent = open ? '▴' : '▾';
-        }
-        return open;
-    }
-    function operationalWindowDependenciesMet(requires, forbids, getter = operationalFeatureValue, suiteEnabled = state.operationalWindow?.enabled !== false) { if (!suiteEnabled) return false; const required = String(requires || '').split(',').filter(Boolean); const blocked = String(forbids || '').split(',').filter(Boolean); return required.every(path => getter(path) === true) && !blocked.some(path => getter(path) === true); }
-    function operationalWindowSettingId(path, suffix = '') { return `mcms-op-${String(path).replace(/[^a-z0-9]+/giu, '-')}${suffix}`; }
-    function operationalWindowSettingAttrs(def) { const req = def.r ? ` data-operational-requires="${operationalEscape(def.r)}"` : ''; const forbid = def.f ? ` data-operational-forbids="${operationalEscape(def.f)}"` : ''; return `${req}${forbid}`; }
-    function operationalWindowControlMarkup(def) { const id=operationalWindowSettingId(def.p),type=def.t==='boolean'?'boolean':def.t,attrs=`id="${id}" data-operational-setting="${operationalEscape(def.p)}" data-operational-type="${type}"`;let control='';if(def.t==='boolean')control=`<span class="mcms-op-switch"><input type="checkbox" ${attrs}><span aria-hidden="true"></span></span>`;else if(def.t==='select')control=`<select class="mcms-select mcms-op-control" ${attrs}>${def.o.map(([value,label])=>`<option value="${operationalEscape(value)}">${operationalEscape(label)}</option>`).join('')}</select>`;else if(def.t==='multiselect'){const options=Array.isArray(def.o)?def.o:operationalVehicleSettingsOptions();control=`<select class="mcms-select mcms-op-control" multiple size="6" ${attrs}>${options.length?options.map(([value,label])=>`<option value="${operationalEscape(value)}">${operationalEscape(label)}</option>`).join(''):'<option disabled>No vehicle types detected</option>'}</select>`;}else if(def.t==='number')control=`<input class="mcms-input mcms-op-control" type="number" ${attrs} min="${def.min}" max="${def.max}" step="${def.step}">`;else if(def.t==='color')control=`<input class="mcms-op-colour" type="color" ${attrs}>`;else control=`<input class="mcms-input mcms-op-control" type="text" ${attrs}${def.ph?` placeholder="${operationalEscape(def.ph)}"`:''}>`;return `<label class="mcms-op-card" data-operational-row${operationalWindowSettingAttrs(def)} for="${id}"><span class="mcms-op-copy"><strong>${operationalEscape(def.l)}</strong><small>${operationalEscape(def.d)}</small></span>${control}</label>`; }
-    function operationalWindowSectionMarkup(section) { const open = section.id === 'requirements' ? ' open' : ''; return `<details class="mcms-op-section"${open}><summary><span>${operationalEscape(section.title)}</span><small>${operationalEscape(section.description)}</small></summary><div class="mcms-op-grid">${section.settings.map(operationalWindowControlMarkup).join('')}</div></details>`; }
-    function operationalWindowEditorField(editor,index,field,value) { const id=operationalWindowSettingId(editor.p,`-${index}-${field.k}`),attrs=`id="${id}" data-operational-array-path="${operationalEscape(editor.p)}" data-operational-array-index="${index}" data-operational-array-field="${operationalEscape(field.k)}" data-operational-type="${field.t}"`;let control='';if(field.t==='boolean')control=`<span class="mcms-op-switch mcms-op-switch-small"><input type="checkbox" ${attrs}><span aria-hidden="true"></span></span>`;else if(field.t==='select')control=`<select class="mcms-select" ${attrs}>${field.o.map(([v,l])=>`<option value="${operationalEscape(v)}">${operationalEscape(l)}</option>`).join('')}</select>`;else if(field.t==='multiselect'){const selected=new Set((Array.isArray(value)?value:[]).map(String)),options=Array.isArray(field.o)?field.o:operationalVehicleSettingsOptions();control=`<select class="mcms-select" multiple size="5" ${attrs}>${options.length?options.map(([v,l])=>`<option value="${operationalEscape(v)}"${selected.has(String(v))?' selected':''}>${operationalEscape(l)}</option>`).join(''):'<option disabled>No vehicle types detected</option>'}</select>`;}else if(field.t==='color')control=`<input class="mcms-op-colour" type="color" ${attrs}>`;else control=`<input class="mcms-input" type="text" ${attrs} value="${operationalEscape(field.t==='csv'&&Array.isArray(value)?value.join(', '):value??'')}">`;return `<label class="mcms-op-editor-field" for="${id}"><span>${operationalEscape(field.l)}</span>${control}</label>`; }
-    function operationalWindowEditorMarkup(editor) { const values = operationalFeatureValue(editor.p); const rows = (Array.isArray(values) ? values : []).map((item,index) => `<div class="mcms-op-editor-row"><div class="mcms-op-editor-toolbar"><strong>${operationalEscape(editor.l)} ${index + 1}</strong><span><button type="button" data-operational-action="up" data-operational-path="${editor.p}" data-operational-index="${index}" aria-label="Move up">↑</button><button type="button" data-operational-action="down" data-operational-path="${editor.p}" data-operational-index="${index}" aria-label="Move down">↓</button><button type="button" data-operational-action="remove" data-operational-path="${editor.p}" data-operational-index="${index}" aria-label="Remove">×</button></span></div><div class="mcms-op-editor-grid">${editor.f.map(field => operationalWindowEditorField(editor,index,field,item?.[field.k])).join('')}</div></div>`).join(''); return `<section class="mcms-op-editor" data-operational-editor="${editor.p}" data-operational-requires="${editor.r}"><header><span><strong>${operationalEscape(editor.l)}</strong><small>${operationalEscape(editor.d)}</small></span><button type="button" data-operational-action="add" data-operational-path="${editor.p}">Add</button></header>${rows || '<div class="mcms-op-empty">No entries configured.</div>'}</section>`; }
-    function operationalWindowSettingsInnerMarkup() { const suite = {p:'enabled',t:'boolean',l:'Operational Window Suite enabled',d:'Master switch for Enhanced Requirements, Extended Call Window, Extended Call List and Enhanced Transport Requests.'}; return `<div class="mcms-section-label">Operational Window Suite</div><div class="mcms-status">Typed Toolkit-native controls mapped to the authorised feature settings. Transport automation remains opt-in.</div><div class="mcms-op-grid mcms-op-master">${operationalWindowControlMarkup(suite)}</div>${OPERATIONAL_SETTINGS_SCHEMA.map(operationalWindowSectionMarkup).join('')}<details class="mcms-op-section mcms-op-editors"><summary><span>Custom lists and appearance</span><small>Structured editors for vehicle categories, mission keywords, alarm icons and ARR category colours.</small></summary>${OP_OPERATIONAL_EDITORS.map(operationalWindowEditorMarkup).join('')}</details>`; }
-    function operationalWindowEnsureSettingsStyle(doc = document) { const id = 'mcms-operational-settings-style'; if (doc.getElementById?.(id)) return; const style = doc.createElement('style'); style.id = id; style.textContent = `#${SCRIPT.panelId} .mcms-op-root{display:grid;gap:10px;min-width:0}#${SCRIPT.panelId} .mcms-op-section{min-width:0;border:1px solid rgba(127,127,127,.35);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.025)}#${SCRIPT.panelId} .mcms-op-section>summary{display:grid;gap:2px;padding:10px 12px;cursor:pointer;list-style:none;background:rgba(255,255,255,.04)}#${SCRIPT.panelId} .mcms-op-section>summary::-webkit-details-marker{display:none}#${SCRIPT.panelId} .mcms-op-section>summary span{font-weight:800}#${SCRIPT.panelId} .mcms-op-section>summary small,#${SCRIPT.panelId} .mcms-op-copy small,#${SCRIPT.panelId} .mcms-op-editor small{display:block;line-height:1.35;opacity:.78;overflow-wrap:anywhere}#${SCRIPT.panelId} .mcms-op-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px;min-width:0}#${SCRIPT.panelId} .mcms-op-master{padding:0}#${SCRIPT.panelId} .mcms-op-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(46px,auto);gap:10px;align-items:center;min-width:0;padding:10px;border:1px solid rgba(127,127,127,.22);border-radius:8px;background:rgba(0,0,0,.08);overflow:hidden}#${SCRIPT.panelId} .mcms-op-copy{min-width:0}#${SCRIPT.panelId} .mcms-op-copy strong{display:block;overflow-wrap:anywhere}#${SCRIPT.panelId} .mcms-op-control{width:min(210px,100%)!important;min-width:0!important;justify-self:end}#${SCRIPT.panelId} .mcms-op-colour{width:54px!important;height:34px!important;padding:2px!important;border-radius:7px!important;justify-self:end}#${SCRIPT.panelId} .mcms-op-switch{position:relative;display:inline-flex;width:44px;height:24px;justify-self:end;flex:0 0 auto}#${SCRIPT.panelId} .mcms-op-switch input{position:absolute!important;opacity:0!important;pointer-events:none!important;width:1px!important;height:1px!important}#${SCRIPT.panelId} .mcms-op-switch>span{display:block;width:44px;height:24px;border-radius:999px;background:#68727d;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);transition:.18s}#${SCRIPT.panelId} .mcms-op-switch>span:after{content:'';display:block;width:18px;height:18px;margin:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.45);transition:.18s}#${SCRIPT.panelId} .mcms-op-switch input:checked+span{background:#2fbf71}#${SCRIPT.panelId} .mcms-op-switch input:checked+span:after{transform:translateX(20px)}#${SCRIPT.panelId} .mcms-op-switch input:focus-visible+span{outline:2px solid #59a8ff;outline-offset:2px}#${SCRIPT.panelId} .mcms-op-disabled{opacity:.46}#${SCRIPT.panelId} .mcms-op-disabled .mcms-op-copy small:after{content:' · Enable the parent option first';font-weight:700}#${SCRIPT.panelId} .mcms-op-editor{margin:9px;padding:10px;border:1px solid rgba(127,127,127,.25);border-radius:9px;min-width:0}#${SCRIPT.panelId} .mcms-op-editor>header,#${SCRIPT.panelId} .mcms-op-editor-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px}#${SCRIPT.panelId} .mcms-op-editor button{min-height:32px;border-radius:7px;border:1px solid rgba(127,127,127,.4);background:rgba(255,255,255,.08);color:inherit;font-weight:700}#${SCRIPT.panelId} .mcms-op-editor-row{margin-top:8px;padding:8px;border:1px solid rgba(127,127,127,.22);border-radius:8px}#${SCRIPT.panelId} .mcms-op-editor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:7px}#${SCRIPT.panelId} .mcms-op-editor-field{display:grid;gap:4px;min-width:0}#${SCRIPT.panelId} .mcms-op-editor-field input,#${SCRIPT.panelId} .mcms-op-editor-field select{width:100%!important;min-width:0!important}#${SCRIPT.panelId} .mcms-op-empty{padding:9px;margin-top:8px;border:1px dashed rgba(127,127,127,.35);border-radius:8px;opacity:.72}#${SCRIPT.controlId}.mcms-control-fallback{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 8px)!important;left:calc(env(safe-area-inset-left,0px) + 8px)!important;right:auto!important;bottom:auto!important;transform:none!important;z-index:2147483000!important}@media(max-width:900px){#${SCRIPT.panelId} .mcms-op-grid,#${SCRIPT.panelId} .mcms-op-editor-grid{grid-template-columns:minmax(0,1fr)}}@media(max-width:760px){#${SCRIPT.panelId} .mcms-op-card{grid-template-columns:minmax(0,1fr) auto;padding:9px}#${SCRIPT.panelId} .mcms-op-control,#${SCRIPT.panelId} .mcms-op-editor input,#${SCRIPT.panelId} .mcms-op-editor select{font-size:16px!important}#${SCRIPT.panelId} .mcms-op-editor>header{align-items:flex-start}#${SCRIPT.controlId}.mcms-control-fallback{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 8px)!important;max-width:calc(100vw - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px) - 16px)!important}}`; (doc.head || doc.documentElement)?.appendChild(style); }
-
-    function operationalWindowApplyDependencies(panel) { const root = operationalQuery(panel, '[data-operational-settings-root]'); if (!root) return; operationalQueryAll(root, '[data-operational-row],[data-operational-editor]').forEach(row => { const path = operationalQuery(row, '[data-operational-setting]')?.dataset?.operationalSetting; const enabled = path === 'enabled' || operationalWindowDependenciesMet(row.dataset.operationalRequires,row.dataset.operationalForbids); row.classList.toggle('mcms-op-disabled',!enabled); row.setAttribute('aria-disabled',String(!enabled)); operationalQueryAll(row,'input,select,textarea,button').forEach(control => { control.disabled = !enabled; }); }); }
-    function operationalWindowParseValue(type,value,checked=false,control=null) { if(type==='boolean')return checked===true;if(type==='number')return Number(value);if(type==='csv')return String(value||'').split(',').map(item=>item.trim()).filter(Boolean);if(type==='multiselect')return Array.from(control?.selectedOptions||[],option=>String(option.value));return String(value??''); }
-    function operationalWindowCommit(message = 'Operational Window setting saved') { state.operationalWindow = normaliseOperationalWindowState(state.operationalWindow,state.operationalWindow?.requirements?.enabled !== false); saveState(); scheduleOperationalSuiteScan(120); operationalWindowSyncSettingsUi(); showToast(message); }
-    function operationalWindowRefreshSettingsPanel(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) { const root = operationalQuery(panel,'[data-operational-settings-root]'); if (!root) return; const scroll = panel.scrollTop; operationalReplaceContent(root,operationalWindowSettingsInnerMarkup()); operationalWindowSyncSettingsUi(panel); panel.scrollTop = scroll; }
-
-    function handleOperationalWindowAction(button) { const action = button?.dataset?.operationalAction; const path = button?.dataset?.operationalPath; if (!action || !path) return false; const editor = OP_OPERATIONAL_EDITORS.find(item => item.p === path); if (!editor) return false; const list = [...(operationalFeatureValue(path) || [])]; const index = Number(button.dataset.operationalIndex); if (action === 'add') list.push(JSON.parse(JSON.stringify(editor.v))); else if (action === 'remove' && Number.isInteger(index)) list.splice(index,1); else if (action === 'up' && index > 0) [list[index-1],list[index]] = [list[index],list[index-1]]; else if (action === 'down' && index >= 0 && index < list.length - 1) [list[index+1],list[index]] = [list[index],list[index+1]]; else return true; operationalFeatureSet(path,list); operationalWindowCommit(`${editor.l} updated`); operationalWindowRefreshSettingsPanel(); return true; }
-    // Issue #464 complete Operational Window and Mission Age runtime mapping.
-    const OP_RUNTIME_CLASSES = Object.freeze(['mcms-operational-arr-clicked','mcms-operational-arr-unmatched','mcms-operational-arr-filtered','mcms-operational-arr-dropdown-hidden','mcms-operational-arr-compact','mcms-operational-patient-hidden','mcms-operational-vehicle-hidden','mcms-operational-vehicle-filtered','mcms-operational-category-open','mcms-operational-category-coloured','mcms-operational-event','mcms-operational-starred','mcms-operational-collapsed']);
-    const OP_RUNTIME_STOP_WORDS = new Set(['a','an','and','at','by','for','from','in','of','on','or','the','to','with']);
-    function operationalSafeColour(value,fallback='#337ab7'){const colour=String(value||'').trim();return /^#[0-9a-f]{6}$/iu.test(colour)?colour:fallback;}
-    function operationalTextTokens(value){return String(value||'').toLocaleLowerCase('en-GB').replace(/[^a-z0-9]+/gu,' ').trim().split(/\s+/u).filter(token=>token.length>1&&!OP_RUNTIME_STOP_WORDS.has(token));}
-    function operationalArrMatchesText(title,rowText,allWords=false){const words=operationalTextTokens(title);if(!words.length)return true;const haystack=` ${operationalTextTokens(rowText).join(' ')} `;return allWords?words.every(word=>haystack.includes(` ${word} `)):words.some(word=>haystack.includes(` ${word} `));}
-    function operationalParseDurationSeconds(value){const raw=String(value??'').trim().toLocaleLowerCase('en-GB');if(!raw)return 0;if(/^\d+(?:\.\d+)?$/u.test(raw))return Math.max(0,Number(raw));if(raw.includes(':')){const parts=raw.split(':').map(part=>Number(part.replace(/[^0-9.]/gu,''))||0);return parts.length>=3?parts.at(-3)*3600+parts.at(-2)*60+parts.at(-1):parts.length===2?parts[0]*60+parts[1]:parts[0]||0;}const hours=Number(raw.match(/(\d+(?:\.\d+)?)\s*h/u)?.[1]||0),minutes=Number(raw.match(/(\d+(?:\.\d+)?)\s*m/u)?.[1]||0),seconds=Number(raw.match(/(\d+(?:\.\d+)?)\s*s/u)?.[1]||0);return Math.max(0,Math.round(hours*3600+minutes*60+seconds));}
-    function operationalFormatDuration(seconds){const value=Math.max(0,Math.round(Number(seconds)||0));const hours=Math.floor(value/3600),minutes=Math.floor((value%3600)/60),secs=value%60;return hours?`${hours}h ${minutes}m`:minutes?`${minutes}m ${secs}s`:`${secs}s`;}
-    function operationalNodeDuration(node){for(const name of ['data-duration','data-time','data-seconds','data-remaining-time','data-driving-time','data-treatment-time','data-pumping-time']){const parsed=operationalParseDurationSeconds(node?.getAttribute?.(name));if(parsed)return parsed;}const match=String(node?.textContent||'').match(/\b(?:\d+:)?\d{1,2}:\d{2}\b/u);return operationalParseDurationSeconds(match?.[0]);}
-    function operationalVehicleTypeToken(row){const type=operationalRequirementsVehicleType(row);if(Number.isFinite(type)&&type>=0)return String(type);return String(row?.dataset?.vehicleType??row?.getAttribute?.('data-vehicle-type')??'').trim();}
-    function operationalArrToken(row,index=0){return String(row?.dataset?.aaoId??row?.dataset?.arrId??row?.id??row?.getAttribute?.('data-aao-id')??row?.getAttribute?.('data-arr-id')??`arr-${index}`);}
-    function operationalNativeAction(row){return operationalQuery(row,'button:not([disabled]),a[href],input[type="button"]:not([disabled]),input[type="submit"]:not([disabled])');}
-    function operationalMissionShareEligible(record,settings){if(!settings?.shareMissions)return false;const allowed=(settings.shareMissionTypes||[]).map(value=>String(value).trim()).filter((value,index,array)=>value||array.length===1);if(allowed.length&&!allowed.includes(String(record?.type||'')))return false;return Math.max(0,Number(record?.credits)||0)>=Math.max(0,Number(settings.shareMissionsMinCredits)||0);}
-    function operationalBootstrapClass(value,prefix='label'){const allowed=['success','warning','danger','primary','info','default'];const tone=allowed.includes(String(value))?String(value):'default';return `${prefix} ${prefix}-${tone}`;}
-    function operationalRememberTitle(node){if(!node)return;operationalTrackNativeNode(node);if(!node.hasAttribute?.('data-mcms-operational-original-title'))node.setAttribute('data-mcms-operational-original-title',node.getAttribute?.('title')||'');}
-    function operationalApplyTitle(node,parts){if(!node)return;operationalRememberTitle(node);const original=node.getAttribute('data-mcms-operational-original-title')||'';const addition=(parts||[]).filter(Boolean).join(' · ');node.title=[original,addition].filter(Boolean).join(' · ');}
-    function operationalResetNativeDecorations(doc){const nodes=doc?operationalDecoratedNodes.get(doc):null;if(!nodes?.size)return;for(const node of Array.from(nodes)){nodes.delete(node);if(!node?.isConnected)continue;node.classList?.remove?.(...OP_RUNTIME_CLASSES);if(node.hasAttribute?.('data-mcms-operational-original-title')){const original=node.getAttribute('data-mcms-operational-original-title')||'';if(original)node.setAttribute('title',original);else node.removeAttribute('title');node.removeAttribute('data-mcms-operational-original-title');}if(node.hasAttribute?.('data-mcms-operational-colour')){for(const property of ['background-color','color','border-color','outline-color','--mcms-arr-colour','--mcms-arr-width'])node.style.removeProperty(property);node.removeAttribute('data-mcms-operational-colour');}if(node.dataset?.mcmsOperationalSticky==='true'){node.style.removeProperty('position');node.style.removeProperty('top');node.style.removeProperty('z-index');delete node.dataset.mcmsOperationalSticky;}}operationalDecoratedNodes.delete(doc);}
-    function operationalFeatureButton(doc,text,kind,handler,className='btn btn-default btn-sm'){const button=operationalFeatureOwn(doc.createElement('button'),kind);button.type='button';button.className=className;button.textContent=text;button.onclick=handler;return button;}
-    function operationalFeatureBadge(doc,text,kind,tone='info'){const badge=operationalFeatureOwn(doc.createElement('span'),kind);badge.className=`mcms-operational-pill ${operationalBootstrapClass(tone)}`;badge.textContent=text;return badge;}
-    function operationalPatientNodes(doc){return operationalQueryAll(doc,'#mission_patients .patient,#mission_patients [id^="patient_"],[data-patient-id],.mission_patient');}
-    function operationalVehicleRows(doc){return operationalQueryAll(doc,'#vehicle_show_table_body_all tr,#occupied tr,#mission_vehicle_driving tbody tr,#vehicle_show_table tr[data-vehicle-id]');}
-    function operationalArrRows(doc){return operationalQueryAll(doc,'[data-aao-id],[data-arr-id],.aao,.alarm-and-response-regulation,.alert-response-regulation,[id^="aao_"]').filter(operationalVisible);}
-    function operationalMissionAgeRefreshPlan({enabled=true,moving=false,mapReady=true,markers=0,candidates=0,labels=0}={}){if(!enabled)return{clear:true,delay:0};if(moving||!mapReady)return{clear:!mapReady,delay:700};if(!markers||(!labels&&candidates))return{clear:false,delay:1000};return{clear:false,delay:MISSION_AGE_LABEL_REFRESH_MS};}
-    function operationalGenerationTimestamp(doc){const node=operationalQuery(doc,'time[datetime],[data-generation-date],[data-created-at],[data-created_at],[mission-created-at],[data-mission-created-at]');const raw=node?.getAttribute?.('datetime')||node?.getAttribute?.('data-generation-date')||node?.getAttribute?.('data-created-at')||node?.getAttribute?.('data-created_at')||node?.getAttribute?.('mission-created-at')||node?.getAttribute?.('data-mission-created-at');const parsed=parseMissionTimestamp(raw);return{node,raw:String(raw||''),timestamp:parsed};}
-    function operationalSelectedVehicleRows(rows){return(rows||[]).filter(row=>row.matches?.('.selected,[aria-selected="true"]')||operationalQuery(row,'input[type="checkbox"]:checked,input[type="radio"]:checked'));}
-    function operationalVehicleSettingsOptions(){const values=new Map(),add=(id,label)=>{const key=String(id??'').trim();if(!key)return;const caption=String(label??`Type ${key}`).trim()||`Type ${key}`;if(!values.has(key))values.set(key,caption);};const catalog=pageWindow.vehicle_types||pageWindow.vehicleTypes||pageWindow.I18n?.translations?.vehicle_type||{};if(Array.isArray(catalog))catalog.forEach((item,index)=>add(item?.id??item?.vehicle_type??index,item?.caption??item?.name??item?.vehicle_type_caption));else if(catalog&&typeof catalog==='object')Object.entries(catalog).forEach(([id,item])=>add(id,item?.caption??item?.name??item));operationalVehicleRows(document).forEach(row=>{const id=operationalVehicleTypeToken(row),caption=row.dataset?.vehicleTypeCaption||row.getAttribute?.('data-vehicle-type-caption')||String(row.textContent||'').trim().split(/\s{2,}|\n/u)[0];add(id,caption?`[${id}] ${caption}`:`Type ${id}`);});return[...values.entries()].sort((a,b)=>a[1].localeCompare(b[1],'en-GB'));}
-    // Issue #464 end complete Operational Window and Mission Age runtime mapping.
-    // Issue #464 end resilient launcher and typed operational settings.
-
-    function operationalWindowSyncSettingsUi(panel = operationalQuery(document, `#${SCRIPT.panelId}`)) { operationalWindowEnsureSettingsStyle(document);operationalQueryAll(panel,'[data-operational-setting]').forEach(control=>{const value=operationalFeatureValue(control.dataset.operationalSetting),type=control.dataset.operationalType;if(type==='boolean')control.checked=value===true;else if(type==='multiselect'){const selected=new Set((Array.isArray(value)?value:[]).map(String));Array.from(control.options||[]).forEach(option=>{option.selected=selected.has(String(option.value));});}else if(document.activeElement!==control)control.value=type==='csv'&&Array.isArray(value)?value.join(', '):value??'';});operationalQueryAll(panel,'[data-operational-array-path]').forEach(control=>{const item=operationalFeatureValue(control.dataset.operationalArrayPath)?.[Number(control.dataset.operationalArrayIndex)]||{},value=item[control.dataset.operationalArrayField],type=control.dataset.operationalType;if(type==='boolean')control.checked=value===true;else if(type==='multiselect'){const selected=new Set((Array.isArray(value)?value:[]).map(String));Array.from(control.options||[]).forEach(option=>{option.selected=selected.has(String(option.value));});}else if(document.activeElement!==control)control.value=type==='csv'&&Array.isArray(value)?value.join(', '):value??'';});operationalWindowApplyDependencies(panel); }
-    const OP_FEATURE_STYLE_ID = 'mcms-operational-feature-style';
-    function operationalReplaceContent(node, html) {
-        if (!node) return;
-        node.replaceChildren();
-        const content = String(html ?? '');
-        if (content) node.insertAdjacentHTML('beforeend', content);
-    }
-    function operationalFeatureStyle(doc) { if(operationalQuery(doc,`#${OP_FEATURE_STYLE_ID}`))return;const style=doc.createElement('style');style.id=OP_FEATURE_STYLE_ID;style.textContent=`[${OP_FEATURE_ATTR}]{box-sizing:border-box}.mcms-operational-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:7px 0;padding:7px;border:1px solid rgba(13,110,253,.35);border-radius:9px;background:rgba(13,110,253,.08)}.mcms-operational-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:999px;background:rgba(13,110,253,.16);font-weight:700;font-size:12px}.mcms-operational-controls{display:inline-flex;gap:3px;margin-left:auto}.mcms-operational-starred{outline:2px solid #ffc107;outline-offset:-2px}.mcms-operational-collapsed>*:not(a[href*="/missions/"]):not(.mcms-operational-controls){display:none!important}.mcms-operational-patient-hidden,.mcms-operational-vehicle-hidden,.mcms-operational-vehicle-filtered,.mcms-operational-arr-filtered,.mcms-operational-arr-dropdown-hidden{display:none!important}.mcms-operational-arr-clicked{outline:var(--mcms-arr-width,2px) solid var(--mcms-arr-colour,#008000)!important;outline-offset:1px}.mcms-operational-arr-unmatched{filter:grayscale(1);opacity:.46}.mcms-operational-arr-compact{display:flex!important;flex-wrap:wrap!important;gap:5px!important}.mcms-operational-category-open{display:block!important;visibility:visible!important}.mcms-operational-event{box-shadow:inset 3px 0 #ffc107}.mcms-operational-generation-aged{border:2px solid #f0ad4e!important}.mcms-operational-generation-expiring{border:2px solid #d9534f!important}.mcms-operational-tailored-tabs{display:flex;flex-wrap:wrap;gap:4px}.mcms-operational-tailored-tabs button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px currentColor}.mcms-operational-arr-badge{margin-left:4px}.mcms-operational-alarm-icon{margin-right:4px}.mcms-operational-settings-group{margin:8px 0;padding:7px;border:1px solid rgba(127,127,127,.25);border-radius:8px}@media(max-width:760px){.mcms-operational-bar{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}.mcms-operational-bar>*{flex:1 1 120px}.mcms-operational-controls{margin-left:0}.mcms-operational-bar input,.mcms-operational-bar select,.mcms-operational-bar button{font-size:16px!important}}`; (doc.head||doc.documentElement)?.appendChild(style); }
-    function operationalFeatureBar(doc, anchor, kind) {
-        let bar = operationalQuery(doc, `[${OP_FEATURE_ATTR}="${kind}"]`);
-        if (!bar) {
-            bar = operationalFeatureOwn(doc.createElement('div'), kind);
-            bar.className = 'mcms-operational-bar';
-            anchor?.parentNode?.insertBefore(bar, anchor);
-        }
-        operationalReplaceContent(bar, '');
-        return bar;
-    }
-    function operationalPill(doc, text, kind) {
-        const node = operationalFeatureOwn(doc.createElement('span'), kind);
-        node.className = 'mcms-operational-pill'; node.textContent = text; return node;
-    }
-    function operationalCallWindowApply(context) { const settings=state.operationalWindow?.callWindow||{},doc=context.doc,path=String(doc.defaultView?.location?.pathname||''),feature=operationalFeatureState(context);operationalFeatureRemove(context,'call-');if(!settings.enabled||!/^\/missions\/\d+\/?$/u.test(path)||operationalQuery(doc,'[data-module="extendedCallWindow"]')){for(const[row,previous]of feature.arrHandlers){try{row.onclick=previous||null;}catch(error){}}feature.arrHandlers.clear();return;}operationalFeatureStyle(doc);const anchor=operationalQuery(doc,'#missing_text,#mission_general_info,.mission_general_info,h1');if(!anchor)return;const bar=operationalFeatureBar(doc,anchor,'call-toolbar'),patients=operationalPatientNodes(doc),vehicles=operationalVehicleRows(doc),selectedRows=operationalSelectedVehicleRows(vehicles),selectedSnapshot=operationalRequirementsSelectedSnapshot(doc),arr=operationalArrRows(doc),missionTitle=String(operationalQuery(doc,'h1,.mission_title,[data-mission-title]')?.textContent||'').trim();
-        [...patients,...vehicles,...arr].forEach(operationalTrackNativeNode);
-        const patientText=patients.map(node=>String(node.textContent||'').toLocaleLowerCase('en-GB')).join(' '),equipment=[['Ambulance',/ambulance|transport|hospital/u],['Critical care',/critical care|doctor|physician|ccp/u],['HEMS',/hems|helicopter/u]].map(([label,pattern])=>[label,patients.filter(node=>pattern.test(String(node.textContent||'').toLocaleLowerCase('en-GB'))).length]).filter(([,count])=>count);if(settings.patientSummary){const summary=[`Patients ${patients.length}`,...equipment.map(([label,count])=>`${label} ${count}`)].join(' · ');bar.appendChild(operationalFeatureBadge(doc,summary,'call-patients','info'));}
-        const generation=operationalGenerationTimestamp(doc);if(settings.generationDate&&generation.raw){const label=operationalFeatureBadge(doc,`Generated ${generation.raw}`,'call-generation','default'),age=Number.isFinite(generation.timestamp)?Date.now()-generation.timestamp:0,expiryNode=operationalQuery(doc,'[data-expires-at],[data-expire-at],.mission-expiring,.mission_expiring'),expiryRaw=expiryNode?.getAttribute?.('data-expires-at')||expiryNode?.getAttribute?.('data-expire-at'),expiry=Date.parse(String(expiryRaw||''));if(settings.yellowBorderHours>0&&age>=Number(settings.yellowBorderHours)*3600000)label.classList.add('mcms-operational-generation-aged');if(settings.redBorder&&(expiryNode?.matches?.('.mission-expiring,.mission_expiring')||(Number.isFinite(expiry)&&expiry-Date.now()<=86400000)))label.classList.add('mcms-operational-generation-expiring');bar.appendChild(label);}
-        const grouped=new Map();for(const row of selectedRows){const token=operationalVehicleTypeToken(row)||'Unknown';grouped.set(token,(grouped.get(token)||0)+1);}const selectedCount=Math.max(selectedRows.length,selectedSnapshot.length);if(settings.selectedVehicleCounter||settings.stagingAreaSelectedCounter){let text=`Selected ${selectedCount}`;if(settings.selectedVehicleCounter){const quick=(settings.selectedVehicleCounterVehicleTypes||[]).map(String),parts=[...grouped].filter(([type])=>!quick.length||quick.includes(type)).map(([type,count])=>`Type ${type} ×${count}`);if(parts.length)text+=` · ${parts.join(' · ')}`;}bar.appendChild(operationalFeatureBadge(doc,text,'call-selected','primary'));}if(settings.vehicleCounter)bar.appendChild(operationalFeatureBadge(doc,`Vehicles ${vehicles.length}`,'call-vehicles',settings.vehicleCounterColor));if(settings.playerCounter){const players=new Set(vehicles.map(row=>row.dataset?.userId||row.getAttribute?.('data-user-id')||row.dataset?.userName||row.getAttribute?.('data-user-name')).filter(Boolean));bar.appendChild(operationalFeatureBadge(doc,`Players ${players.size}`,'call-players',settings.playerCounterColor));}
-        if(settings.collapsiblePatients&&patients.length>=Number(settings.collapsiblePatientsMinPatients||0)){if(feature.patientCollapsed===null)feature.patientCollapsed=true;patients.forEach(node=>node.classList.toggle('mcms-operational-patient-hidden',feature.patientCollapsed));bar.appendChild(operationalFeatureButton(doc,feature.patientCollapsed?'Show patients':'Minimise patients','call-patient-toggle',()=>{feature.patientCollapsed=!feature.patientCollapsed;scheduleOperationalSuiteScan(0);}));}else feature.patientCollapsed=null;if(settings.remainingPatientTime)patients.forEach((node,index)=>{const seconds=operationalNodeDuration(node);if(seconds)(operationalQuery(node,'td:last-child,.patient-actions')||node).appendChild(operationalFeatureBadge(doc,operationalFormatDuration(seconds),`call-patient-time-${index}`,'info'));});
-        const vehicleList=operationalQuery(doc,'#vehicle_show_table_body_all,#vehicle_show_table,.vehicle-list,.available-vehicles');if(settings.hideVehicleList&&vehicleList){if(feature.vehicleListHidden===null)feature.vehicleListHidden=true;vehicleList.classList.toggle('mcms-operational-vehicle-hidden',feature.vehicleListHidden);bar.appendChild(operationalFeatureButton(doc,feature.vehicleListHidden?'Show vehicles':'Hide vehicles','call-vehicle-toggle',()=>{feature.vehicleListHidden=!feature.vehicleListHidden;scheduleOperationalSuiteScan(0);}));}else feature.vehicleListHidden=null;if(settings.vehicleListPermanentSearch&&vehicles.length){const input=operationalFeatureOwn(doc.createElement('input'),'call-vehicle-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search vehicles';input.oninput=()=>{const query=input.value.trim().toLocaleLowerCase('en-GB');vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',Boolean(query)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(query)));};bar.appendChild(input);}if(settings.vehicleTypeInList)vehicles.forEach((row,index)=>{const type=operationalVehicleTypeToken(row);if(type)(operationalQuery(row,'td')||row).appendChild(operationalFeatureBadge(doc,`Type ${type}`,`call-vehicle-type-${index}`,'default'));});
-        if((settings.tailoredTabs||[]).length&&vehicles.length){const tabs=operationalFeatureOwn(doc.createElement('div'),'call-tailored-tabs');tabs.className='mcms-operational-tailored-tabs';const configs=[{name:'All',vehicleTypes:[],color:''},...(settings.tailoredTabs||[])];configs.forEach((config,index)=>{const key=index?'tab-'+index:'all',button=operationalFeatureButton(doc,String(config?.name||`Tab ${index}`),`call-tab-${index}`,()=>{feature.vehicleTab=key;scheduleOperationalSuiteScan(0);},'btn btn-default btn-sm');button.setAttribute('aria-pressed',String(feature.vehicleTab===key));if(config?.color)button.style.borderColor=operationalSafeColour(config.color);tabs.appendChild(button);});bar.appendChild(tabs);const active=configs[feature.vehicleTab==='all'?0:Number(String(feature.vehicleTab).replace('tab-',''))]||configs[0],allowed=new Set((active.vehicleTypes||[]).map(String));vehicles.forEach(row=>row.classList.toggle('mcms-operational-vehicle-filtered',allowed.size&&!allowed.has(operationalVehicleTypeToken(row))));}
-        const durations=selectedRows.map(operationalNodeDuration).filter(Boolean);if(settings.alarmTime&&durations.length)bar.appendChild(operationalFeatureBadge(doc,`Longest journey ${operationalFormatDuration(Math.max(...durations))}`,'call-alarm-time','warning'));const reload=operationalQuery(doc,'#load_more_vehicles,[data-action="load-more-vehicles"],a[href*="load_more_vehicles"],button[name="load_more_vehicles"]');if(settings.loadMoreVehiclesInHeader&&reload)bar.appendChild(operationalFeatureButton(doc,'Reload vehicles','call-reload-vehicles',()=>reload.click()));const center=operationalQuery(doc,'.map_position_mover,[data-action="center-map"],#map_position');if(settings.centerMap&&center)bar.appendChild(operationalFeatureButton(doc,'Centre map','call-center-map',()=>center.click()));if(settings.stickyHeader)operationalQueryAll(doc,'#vehicle_show_table thead,.mission-header,.panel-heading').forEach(node=>{operationalTrackNativeNode(node);node.style.position='sticky';node.style.top='0';node.style.zIndex='4';node.dataset.mcmsOperationalSticky='true';});
-        if(settings.moreReleasePatientButtons){const releases=operationalQueryAll(doc,'a[href*="release"],button[data-action*="release"],a[href*="discharge"],button[data-action*="discharge"]').filter(operationalVisible).slice(0,6);releases.forEach((native,index)=>bar.appendChild(operationalFeatureButton(doc,`Release ${index+1}`,`call-release-${index}`,()=>native.click(),'btn btn-success btn-sm')));}
-        const arrContainer=arr[0]?.parentElement;const applyArrFilter=(query)=>{const needle=String(query||'').trim().toLocaleLowerCase('en-GB');arr.forEach(row=>row.classList.toggle('mcms-operational-arr-filtered',Boolean(needle)&&!String(row.textContent||'').toLocaleLowerCase('en-GB').includes(needle)));if(settings.arrSearchDissolveCategories&&needle)operationalQueryAll(doc,'.aao-category,.panel,.alarm-and-response-regulation-category').forEach(node=>{operationalTrackNativeNode(node);node.classList.add('mcms-operational-category-open');});};if(arrContainer)arrContainer.classList.toggle('mcms-operational-arr-compact',Boolean(settings.arrSearchCompactResults&&!settings.arrSearchDropdown));
-        arr.forEach((row,index)=>{const token=operationalArrToken(row,index),previous=feature.arrHandlers.get(row);if(!feature.arrHandlers.has(row)){feature.arrHandlers.set(row,row.onclick||null);row.onclick=function(event){feature.arrHandlers.get(row)?.call?.(this,event);const live=state.operationalWindow?.callWindow||{};if(live.arrCounter)feature.arrCounts.set(token,(feature.arrCounts.get(token)||0)+1);if(live.arrClickHighlight)feature.arrClicked.add(token);scheduleOperationalSuiteScan(0);};}row.style.setProperty('--mcms-arr-colour',operationalSafeColour(settings.arrClickHighlightColor,'#008000'));row.style.setProperty('--mcms-arr-width',`${Math.max(1,Math.min(12,Number(settings.arrClickHighlightWidth)||2))}px`);row.setAttribute('data-mcms-operational-colour','true');row.classList.toggle('mcms-operational-arr-clicked',Boolean(settings.arrClickHighlight&&feature.arrClicked.has(token)));row.classList.toggle('mcms-operational-arr-unmatched',Boolean(settings.arrMatchHighlight&&!operationalArrMatchesText(missionTitle,row.textContent,settings.arrMatchHighlightAllWords)));if(settings.arrCounterAsBadge){const count=feature.arrCounts.get(token)||0;(operationalQuery(row,'.btn,a,td')||row).appendChild(operationalFeatureBadge(doc,String(count),`call-arr-badge-${index}`,'info')).classList.add('mcms-operational-arr-badge');}const title=[];if(settings.arrTime){const seconds=operationalNodeDuration(row);if(seconds)title.push(`Longest journey ${operationalFormatDuration(seconds)}`);}if(settings.arrSpecs){const specs=row.getAttribute?.('data-requirements')||row.getAttribute?.('data-vehicles')||row.getAttribute?.('data-description');if(specs)title.push(String(specs));}if(title.length)operationalApplyTitle(row,title);});
-        if(settings.arrCounter){const total=[...feature.arrCounts.values()].reduce((sum,value)=>sum+Number(value||0),0);bar.appendChild(operationalFeatureBadge(doc,`ARR clicks ${total}`,'call-arr-count','info'));}if(settings.arrCounterResetSelection)bar.appendChild(operationalFeatureButton(doc,'Reset ARR / selection','call-arr-reset',()=>{feature.arrCounts.clear();feature.arrClicked.clear();operationalQueryAll(doc,'#vehicle_show_table_body_all input[type="checkbox"]:checked,#vehicle_show_table input[type="checkbox"]:checked').forEach(input=>input.click?.());scheduleOperationalSuiteScan(0);}));
-        if(settings.arrSearch&&arr.length){if(settings.arrSearchDropdown){arr.forEach(row=>row.classList.add('mcms-operational-arr-dropdown-hidden'));const select=operationalFeatureOwn(doc.createElement('select'),'call-arr-dropdown');select.className='form-control input-sm';operationalReplaceContent(select,`<option value="">Select ARR…</option>${arr.map((row,index)=>`<option value="${index}">${operationalEscape(String(row.textContent||`ARR ${index+1}`).trim())}</option>`).join('')}`);select.onchange=()=>{const row=arr[Number(select.value)];if(row)operationalNativeAction(row)?.click?.();if(settings.arrSearchCloseDropdownOnSelect){select.value='';select.blur?.();}};bar.appendChild(select);if(settings.arrSearchAutoFocus)queueMicrotask(()=>select.focus());}else{const input=operationalFeatureOwn(doc.createElement('input'),'call-arr-search');input.type='search';input.className='form-control input-sm';input.placeholder='Search ARR';input.value=feature.arrQuery||'';input.oninput=()=>{feature.arrQuery=input.value;applyArrFilter(input.value);};input.onkeydown=event=>{if(event.key!=='Enter')return;const visible=arr.filter(row=>!row.classList.contains('mcms-operational-arr-filtered'));if(settings.arrSearchSelectOnEnter&&visible[0])operationalNativeAction(visible[0])?.click?.();if(settings.arrSearchClearOnEnter){feature.arrQuery='';input.value='';applyArrFilter('');}};bar.appendChild(input);applyArrFilter(feature.arrQuery);if(settings.arrSearchAutoFocus)queueMicrotask(()=>input.focus());}}
-        for(const keyword of settings.missionKeywords||[]){const word=String(keyword?.keyword||'').trim();if(!word||!missionTitle.toLocaleLowerCase('en-GB').includes(word.toLocaleLowerCase('en-GB')))continue;const badge=operationalFeatureBadge(doc,word,`call-keyword-${word.replace(/[^a-z0-9]/giu,'-')}`,'default');badge.style.backgroundColor=operationalSafeColour(keyword.color,'#777777');badge.style.color=keyword.autotextcolor===false?operationalSafeColour(keyword.textcolor,'#ffffff'):'#ffffff';if(keyword.prefix)bar.insertBefore(badge,bar.firstChild);else bar.appendChild(badge);}const selectedTypes=new Set([...grouped.keys()]);const alarm=operationalQuery(doc,'#alarm_button,button[name="commit"],input[name="commit"],.alarm-button');for(const config of settings.alarmIcons||[]){const types=new Set((config?.vehicleTypes||[]).map(String));if(!alarm||!config?.icon||(types.size&&![...types].some(type=>selectedTypes.has(type))))continue;const icon=operationalFeatureOwn(doc.createElement('span'),`call-alarm-icon-${String(config.icon).replace(/[^a-z0-9]/giu,'-')}`),glyph=doc.createElement('i');icon.className='mcms-operational-alarm-icon';glyph.className=`${String(config.type||'fas').replace(/[^a-z]/giu,'')} fa-${String(config.icon).replace(/[^a-z0-9-]/giu,'')}`;glyph.setAttribute('aria-hidden','true');icon.appendChild(glyph);alarm.insertBefore(icon,alarm.firstChild);}
-        for(const config of settings.arrCategoryColors||[]){const name=String(config?.categoryName||'').trim().toLocaleLowerCase('en-GB');if(!name)continue;operationalQueryAll(doc,'.aao-category,.alarm-and-response-regulation-category,.panel').filter(node=>String(operationalQuery(node,'.panel-heading,h3,h4,legend')?.textContent||node.getAttribute?.('data-category')||'').trim().toLocaleLowerCase('en-GB')===name).forEach(node=>{operationalTrackNativeNode(node);node.classList.add('mcms-operational-category-coloured');node.style.setProperty('background-color',operationalSafeColour(config.bgColor,'#505050'));node.style.setProperty('color',operationalSafeColour(config.color,'#ffffff'));node.setAttribute('data-mcms-operational-colour','true');});}
-    }
-
-    function operationalMissionListRoot(doc) {
-        for (const selector of ['#mission_list','#missions','#mission-list','#missions-panel','#mission_panel','.mission-list','.missionSideBarList','[data-mission-list]']) {
-            const root = operationalQuery(doc, selector);
-            if (root && operationalQuery(root, 'a[href*="/missions/"]')) return root;
-        }
-        return null;
-    }
-    function operationalMissionRows(root) {
-        const rows = operationalQueryAll(root, '.missionSideBarEntry,.mission-side-bar-entry,[data-mission-id],[id^="mission_"]').filter(operationalFeatureMissionId);
-        return rows.length ? Array.from(new Set(rows)) : Array.from(new Set(operationalQueryAll(root, 'a[href*="/missions/"]').map(link => link.closest?.('li,.panel,[id^="mission_"]')).filter(Boolean)));
-    }
-    function operationalMissionListComputeOrder(records, type = '', direction = '', starredIds = []) {
-        const starred = new Set((starredIds || []).map(String)); const multiplier = direction === 'desc' ? -1 : 1;
-        const value = record => type === 'name' ? record.name.toLocaleLowerCase('en-GB') : type ? Number(record[type]) || 0 : record.index;
-        return records.slice().sort((left, right) => {
-            const stars = Number(starred.has(right.id)) - Number(starred.has(left.id)); if (stars) return stars;
-            const a = value(left), b = value(right); return (typeof a === 'string' ? a.localeCompare(String(b), 'en-GB') : a - b) * multiplier;
-        });
-    }
-    function operationalMissionListApply(context) { const settings=state.operationalWindow?.missionList||{},doc=context.doc,root=operationalMissionListRoot(doc),feature=operationalFeatureState(context);operationalFeatureRemove(context,'list-');if(!settings.enabled||!root||operationalQuery(doc,'[data-module="extendedCallList"]'))return;operationalFeatureStyle(doc);const rows=operationalMissionRows(root),records=rows.map((row,index)=>{const id=operationalFeatureMissionId(row),link=operationalQuery(row,'a[href*="/missions/"]'),name=String(link?.textContent||row.textContent||'').trim(),type=String(row.dataset?.missionType??row.dataset?.missionTypeId??row.getAttribute?.('data-mission-type')??row.getAttribute?.('data-mission-type-id')??new URL(link?.href||location.href,location.href).searchParams.get('mission_type_id')??'');return{id,row,name,type,credits:operationalFeatureNumber(row,['data-credits','data-average-credits']),patients:operationalFeatureNumber(row,['data-patients','data-patient-count']),prisoners:operationalFeatureNumber(row,['data-prisoners','data-prisoner-count']),time:operationalFeatureNumber(row,['data-remaining-time','data-time-left']),patientTime:operationalFeatureNumber(row,['data-patient-time','data-treatment-time']),pumpingTime:operationalFeatureNumber(row,['data-pumping-time','data-water-time','data-foam-time']),index};});const toolbar=operationalFeatureBar(doc,root.firstChild||root,'list-toolbar');root.insertBefore(toolbar,root.firstChild);
-        records.forEach(record=>operationalTrackNativeNode(record.row));
-        if(settings.sortMissions){const sort=operationalFeatureOwn(doc.createElement('select'),'list-sort');sort.className='form-control input-sm';operationalReplaceContent(sort,'<option value="">Default</option><option value="name">Name</option><option value="credits">Credits</option><option value="patients">Patients</option><option value="prisoners">Prisoners</option><option value="time">Time</option>');sort.value=settings.sortMissionsType||'';sort.onchange=()=>{settings.sortMissionsType=sort.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(sort);const direction=operationalFeatureOwn(doc.createElement('select'),'list-sort-direction');direction.className='form-control input-sm';operationalReplaceContent(direction,'<option value="">Default</option><option value="asc">Ascending</option><option value="desc">Descending</option>');direction.value=settings.sortMissionsDirection||'';direction.onchange=()=>{settings.sortMissionsDirection=direction.value;saveState();scheduleOperationalSuiteScan(0);};toolbar.appendChild(direction);toolbar.classList.add(...operationalBootstrapClass(settings.sortMissionsButtonColor,'btn').split(' '));}
-        if(settings.collapsibleMissions&&settings.collapsibleMissionsAllButton)toolbar.appendChild(operationalFeatureButton(doc,settings.allMissionsCollapsed?'Expand all':'Collapse all','list-collapse-all',()=>{settings.allMissionsCollapsed=!settings.allMissionsCollapsed;settings.collapsedMissions=settings.allMissionsCollapsed?records.map(record=>record.id):[];saveState();scheduleOperationalSuiteScan(0);}));records.forEach(record=>{const controls=operationalFeatureOwn(doc.createElement('span'),`list-controls-${record.id}`);controls.className='mcms-operational-controls';if(settings.starrableMissions){const star=operationalFeatureButton(doc,settings.starredMissions.includes(record.id)?'★':'☆',`list-star-${record.id}`,event=>{event?.preventDefault?.();settings.starredMissions=settings.starredMissions.includes(record.id)?settings.starredMissions.filter(id=>id!==record.id):[...settings.starredMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs');controls.appendChild(star);record.row.classList.toggle('mcms-operational-starred',settings.starredMissions.includes(record.id));}if(settings.collapsibleMissions){controls.appendChild(operationalFeatureButton(doc,settings.collapsedMissions.includes(record.id)?'＋':'−',`list-collapse-${record.id}`,event=>{event?.preventDefault?.();settings.collapsedMissions=settings.collapsedMissions.includes(record.id)?settings.collapsedMissions.filter(id=>id!==record.id):[...settings.collapsedMissions,record.id];saveState();scheduleOperationalSuiteScan(0);},'btn btn-default btn-xs'));record.row.classList.toggle('mcms-operational-collapsed',settings.collapsedMissions.includes(record.id));}if(operationalMissionShareEligible(record,settings)){const native=operationalQuery(record.row,'a[href*="share"],button[data-action*="share"],.mission-share-button');if(native)controls.appendChild(operationalFeatureButton(doc,'Share',`list-share-${record.id}`,event=>{event?.preventDefault?.();native.click();},`btn btn-${['success','warning','danger','primary','info','default'].includes(settings.shareMissionsButtonColor)?settings.shareMissionsButtonColor:'success'} btn-xs`));}(operationalQuery(record.row,'a[href*="/missions/"]')||record.row).appendChild(controls);const badges=[];if(settings.currentPatients&&(!settings.hideZeroCurrentPatients||record.patients))badges.push(`Patients ${record.patients}`);if(settings.currentPrisoners&&(!settings.hideZeroCurrentPrisoners||record.prisoners))badges.push(`Prisoners ${record.prisoners}`);if(settings.averageCredits&&record.credits)badges.push(`Avg ${record.credits.toLocaleString('en-GB')}`);const green=!record.row.matches?.('.danger,.alert-danger,.mission-red,[data-state="red"]');if(settings.remainingTime&&record.time&&(!settings.remainingTimeGreenOnly||green))badges.push(`Time ${operationalFormatDuration(record.time)}`);if(settings.remainingPatientTime&&record.patientTime)badges.push(`Patient ${operationalFormatDuration(record.patientTime)}`);if(settings.remainingPumpingTime&&record.pumpingTime)badges.push(`Pump ${operationalFormatDuration(record.pumpingTime)}`);if(settings.fixedEventInfo){const event=(settings.eventMissions||[]).find(entry=>entry&&typeof entry==='object'?(entry.missions||[]).map(String).includes(String(record.id)):String(entry)===String(record.id));if(event){badges.push(String(event?.text||'Event'));record.row.classList.add('mcms-operational-event');}}if(settings.currentPatientsInTooltips||settings.currentPrisonersInTooltips)operationalApplyTitle(record.row,[settings.currentPatientsInTooltips?`Patients ${record.patients}`:'',settings.currentPrisonersInTooltips?`Prisoners ${record.prisoners}`:'']);if(badges.length){const badge=operationalFeatureOwn(doc.createElement('div'),`list-badges-${record.id}`);badge.className='mcms-operational-bar';operationalReplaceContent(badge,badges.map(value=>`<span class="mcms-operational-pill">${operationalEscape(value)}</span>`).join(''));record.row.appendChild(badge);}});if(settings.sortMissions)operationalMissionListComputeOrder(records,settings.sortMissionsType,settings.sortMissionsDirection,settings.starredMissions).forEach(record=>record.row.parentNode?.appendChild(record.row)); }
-
-    function operationalTransportChooseAction(route, candidates, settings, usedTokens = []) {
-        const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
-        const mode = settings?.enabled && mission && settings.autoOpenTransportRequest ? 'open' : settings?.enabled && vehicle && settings.autoClickSuccessButtons ? 'success' : '';
-        const used = new Set((usedTokens || []).map(String));
-        const eligible = (candidates || []).filter(item => item?.mode === mode && item.visible !== false && item.disabled !== true && !used.has(String(item.token || '')));
-        return eligible.length === 1 ? eligible[0] : null;
-    }
-    function operationalTransportApply(context) {
-        const settings = state.operationalWindow?.transport || {}; const doc = context.doc;
-        if (!settings.enabled || operationalQuery(doc, '[data-module="enhancedTransportRequests"]')) return;
-        const feature = operationalFeatureState(context); const route = String(doc.defaultView?.location?.pathname || '');
-        if (feature.route !== route) { feature.route = route; feature.transportTokens.clear(); }
-        const mission = /^\/missions\/\d+\/?$/u.test(route); const vehicle = /^\/vehicles\/\d+(?:\/(?:patient|gefangener|prisoner)\/\d+)?\/?$/u.test(route);
-        const selector = mission ? 'a[href*="/patient/"],a[href*="/gefangener/"],a[href*="/prisoner/"],a[href*="transport"],button[data-action*="transport"],.transport_request' : vehicle ? 'a.btn-success,button.btn-success,input.btn-success' : '';
-        const mode = mission ? 'open' : 'success';
-        const candidates = selector ? operationalQueryAll(doc, selector).filter(node => /transport|hospital|prison|patient|continue|confirm|select/i.test(String(node.textContent || node.value || node.title || node.getAttribute?.('href') || ''))).map(node => ({
-            node, mode, visible: operationalVisible(node), disabled: Boolean(node.disabled || node.classList?.contains('disabled') || node.getAttribute?.('aria-disabled') === 'true'),
-            token: `${route}|${mode}|${node.id || node.getAttribute?.('href') || node.textContent || node.value}`
-        })) : [];
-        const action = operationalTransportChooseAction(route, candidates, settings, feature.transportTokens);
-        if (!action?.node) return; feature.transportTokens.add(action.token);
-        runtimeSetTimeout(() => { if (!runtime.destroyed && operationalVisible(action.node)) action.node.click(); }, 80);
-    }
-
-    function operationalFeatureObservationRoots(doc) {
-        return [operationalMissionListRoot(doc), operationalQuery(doc, '#mission_patients,.mission_patients'), operationalQuery(doc, '#aao,#aao_search_results,.aao-container'), operationalQuery(doc, '#mission_general_info,.mission_general_info'), operationalQuery(doc, '.vehicle_patient_select,.vehicle_prisoner_select')].filter(Boolean);
-    }
-    function operationalFeatureRenderContext(context) {
-        if (!context?.doc || runtime.destroyed || !operationalSuiteEnabled()) return;
-        operationalResetNativeDecorations(context.doc);
-        operationalCallWindowApply(context);
-        operationalMissionListApply(context);
-        operationalTransportApply(context);
-    }
-    function operationalFeatureCleanupContext(context) { const feature=operationalFeatureContexts.get(context);for(const[row,previous]of feature?.arrHandlers||[]){try{row.onclick=previous||null;}catch(error){}}operationalFeatureRemove(context);operationalResetNativeDecorations(context?.doc);if(context?.doc){operationalOwnedNodes.delete(context.doc);operationalDecoratedNodes.delete(context.doc);}operationalFeatureContexts.delete(context); }
-    // Issue #378 end complete operational feature suite.
-
-
-    // Issue #378 LSSM operational-suite lifecycle shell.
-    // This phase owns settings, context identity, scheduling and teardown only. It must not
-    // render a second requirements surface while the legacy Matrix remains the stable runtime.
-    function operationalSuiteEnabled() {
-        return state.operationalWindow?.enabled === true;
-    }
-
-    function operationalSuiteDocumentContexts() {
-        const contexts = [];
-        const seen = new Set();
-        for (const candidate of transportSweepDocumentContexts()) {
-            const doc = candidate?.doc;
-            if (!doc?.querySelector || seen.has(doc)) continue;
-            seen.add(doc);
-            contexts.push(doc);
-        }
-        return contexts;
-    }
-
-    function operationalSuiteDisposeContext(context) {
-        if (!context) return;
-        operationalFeatureCleanupContext(context);
-        try { context.observer?.disconnect?.(); } catch (err) {}
-        context.observer = null;
-        context.observedRoots = [];
-        runtimeClearTimeout(context.renderTimer);
-        context.renderTimer = null;
-        if (context.changeHandler && context.doc) context.doc.removeEventListener('change', context.changeHandler, true);
-        context.changeHandler = null;
-        context.panel?.remove?.();
-        context.panel = null;
-        context.root = null;
-        if (context.doc) operationalSuiteContexts.delete(context.doc);
-        context.doc = null;
-    }
-
-    function clearOperationalSuiteContexts() {
-        for (const context of Array.from(operationalSuiteContexts.values())) operationalSuiteDisposeContext(context);
-        operationalSuiteContexts.clear();
-    }
-
-    function operationalSuiteEnsureContext(doc) {
-        if (!doc?.querySelector) return null;
-        const existing = operationalSuiteContexts.get(doc);
-        if (existing) {
-            existing.root = doc.documentElement || doc.body || existing.root;
-            existing.seenAt = Date.now();
-            operationalRequirementsBindContext(existing);
-            return existing;
-        }
-        const context = {
-            doc,
-            root: doc.documentElement || doc.body || null,
-            observer: null,
-            renderTimer: null,
-            changeHandler: null,
-            panel: null,
-            fingerprint: '',
-            minified: state.operationalWindow?.requirements?.minified === true,
-            boundRequirementRoot: null,
-            boundRequirementSource: '',
-            observedRoots: [],
-            generation: 0,
-            seenAt: Date.now(),
-            baseline: OPERATIONAL_SUITE_LSSM_BASELINE.commit
-        };
-        operationalSuiteContexts.set(doc, context);
-        operationalRequirementsBindContext(context);
-        return context;
-    }
-
-    function scanOperationalSuiteShell() {
-        if (runtime.destroyed) return;
-        if (!operationalSuiteEnabled()) {
-            clearOperationalSuiteContexts();
-            return;
-        }
-        const activeDocuments = new Set();
-        for (const doc of operationalSuiteDocumentContexts()) {
-            const context = operationalSuiteEnsureContext(doc);
-            if (!context) continue;
-            activeDocuments.add(doc);
-            context.generation = ++operationalSuiteRevision;
-            operationalRequirementsBindContext(context);
-            operationalRequirementsScheduleContext(context, 0);
-        }
-        for (const [doc, context] of Array.from(operationalSuiteContexts.entries())) {
-            if (!activeDocuments.has(doc) || context.root?.isConnected === false) operationalSuiteDisposeContext(context);
-        }
-    }
-
-    function scheduleOperationalSuiteScan(delay = 0) {
-        if (runtime.destroyed) return;
-        runtimeClearTimeout(operationalSuiteScanTimer);
-        operationalSuiteScanTimer = runtimeSetTimeout(() => {
-            operationalSuiteScanTimer = null;
-            try {
-                scanOperationalSuiteShell();
-            } catch (error) {
-                console.error(`[${SCRIPT.name}] Operational suite scan failed without blocking the Toolkit menu.`, error);
-            }
-        }, Math.max(0, Number(delay) || 0));
-    }
-
-    function installOperationalSuiteShell() {
-        if (operationalSuiteInstalled) {
-            if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
-            return;
-        }
-        operationalSuiteInstalled = true;
-        runtime.operationalSuite = Object.freeze({
-            baseline: OPERATIONAL_SUITE_LSSM_BASELINE,
-            settingsVersion: OPERATIONAL_SUITE_SETTINGS_VERSION,
-            phase: 'operational-suite',
-            schedule: scheduleOperationalSuiteScan,
-            contextCount: () => operationalSuiteContexts.size
-        });
-        runtimeOnCleanup(() => {
-            runtimeClearTimeout(operationalSuiteScanTimer);
-            operationalSuiteScanTimer = null;
-            clearOperationalSuiteContexts();
-            operationalRequirementsRemoteCache.clear();
-            if (runtime.operationalSuite?.phase === 'operational-suite') delete runtime.operationalSuite;
-        });
-        if (operationalSuiteEnabled() && operationalStartupComplete) scheduleOperationalSuiteScan(0);
-    }
-
-    // Issue #378 retained UK operational capability catalogue.
-    const MISSION_REQUIREMENT_DEFINITIONS = Object.freeze([{"key":"police-helicopter-or-drone","label":"Police Helicopter or Drone","aliases":["Police Helicopter or Drone","Police Helicopters or Drones"],"types":[11,89,90,91],"equipment":["drone"]},{"key":"riv-or-major-foam","label":"RIV or Major Foam Tender","aliases":["RIV or Major Foam Tender","RIVs or Major Foam Tenders"],"types":[75,76]},{"key":"fire-engine-or-major-foam","label":"Fire Engine or Major Foam Tender","aliases":["Fire Engine or Major Foam Tender","Fire Engines or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75]},{"key":"fire-engine-riv-or-major-foam","label":"Fire Engine, RIV or Major Foam Tender","aliases":["Fire Engine, RIV or Major Foam Tender","Fire Engines, RIVs or Major Foam Tenders"],"types":[0,1,16,17,26,37,38,47,75,76]},{"key":"mountain-or-sar-4x4","label":"Mountain Rescue 4x4 or SAR 4x4","aliases":["Mountain Rescue 4x4 or SAR 4x4","Mountain Rescue 4x4s or SAR 4x4s"],"types":[93,99]},{"key":"rrv-or-specialist-paramedic","label":"RRV or Specialist Paramedic RRV","aliases":["RRV or Specialist Paramedic RRV","RRVs or Specialist Paramedic RRVs"],"types":[10,94,96]},{"key":"fire-engine-or-riv","label":"Fire Engine or RIV","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-or-stairs","label":"Aerial Appliance or Rescue Stairs","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-rescue-aerial","label":"Fire, rescue or aerial appliance","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-or-rescue","label":"Fire Engine or Rescue Support Vehicle","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"police-or-arv","label":"Police Car or ARV","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"rsu-or-rescue-pump","label":"Rescue Support Unit or Rescue Pump","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"rescue-support-vehicle","label":"Rescue Support Vehicle","aliases":["Rescue Support Vehicle","Rescue Support Vehicles"],"types":[4,16,38,43]},{"key":"iccu-or-control","label":"ICCU or Ambulance Control Unit","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units","ICCU or Ambulance Control Unit or Airfield Firefighting Command Vehicle","ICCU or Ambulance Control Units or Airfield Firefighting Command Vehicles"],"types":[15,31,44,77]},{"key":"hazmat-or-cbrn","label":"HazMat Unit or CBRN Vehicle","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"boat-or-inland","label":"Inland Rescue Boat (Trailer)","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats","Inland Rescue Boat (Trailer)","Inland Rescue Boats (Trailer)","Inland Rescue Boat (Trailers)","Inland Rescue Boats (Trailers)"],"types":[67,74],"pair":true},{"key":"ilb-or-alb","label":"Seagoing Vessel","aliases":["ILB or ALB","ILBs or ALBs","Seagoing Vessel","Seagoing Vessels","ALB or ILB","ALBs or ILBs"],"types":[68,69]},{"key":"sar-support","label":"Operational Support or SAR Vehicle","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle","Operational Support Vans, Trailers or Personal SAR Vehicles"],"types":[86,87,92],"pair":true},{"key":"fire-engine","label":"Fire Engine","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"aerial","label":"Aerial Appliance Truck","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"fire-officer","label":"Fire Officer","aliases":["Fire Officer","Fire Officers","Fire Officer or Airfield Firefighting Command Vehicle","Fire Officers or Airfield Firefighting Command Vehicles"],"types":[3,15,44,77]},{"key":"basu","label":"Breathing Apparatus Support Unit (BASU)","aliases":["BASU","BASUs","Breathing Apparatus Support Unit","Breathing Apparatus Support Units"],"types":[14,39,46,49],"details":"Eligible vehicles: BASU, OSU, BASU Pod and OSU Pod. Prime Movers only count when paired with an eligible pod."},{"key":"water-carrier","label":"Water Carrier","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone","label":"Drone","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"control-van","label":"Control Van","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"ambulance","label":"Ambulance","aliases":["Ambulance","Ambulances"],"types":[5,9]},{"key":"police-car","label":"Police Car","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems","label":"HEMS","aliases":["HEMS"],"types":[9]},{"key":"critical-care-patient","label":"Critical Care","aliases":["Critical Care"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"patient-transport","label":"Patient Transport","aliases":["Patient Transport"],"group":"other","types":[],"countable":true,"patientCondition":true},{"key":"police-helicopter","label":"Police Helicopter","aliases":["Police helicopter","Police helicopters","Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response","label":"Armed Response","aliases":["Armed Response","Armed Response Vehicle","Armed Response Vehicles"],"types":[13,25,52,56,82]},{"key":"dsu","label":"Dog Support Unit (DSU)","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"otl","label":"Operational Team Leader","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car","label":"Traffic Car","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier","label":"ATV Carrier","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response","label":"Primary Response Vehicle","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response","label":"Secondary Response Vehicle","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare","label":"Welfare Vehicle","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer","label":"Ambulance Officer","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit","label":"Foam Unit","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty","label":"Mass Casualty Equipment","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted","label":"Mounted Unit","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4","label":"4x4 Vehicle","aliases":["4x4 Vehicle","4x4 Vehicles","4x4 Unit","4x4 Units"],"types":[66,73,93]},{"key":"coastguard-rope","label":"Coastguard Rope Rescue Unit","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue","label":"Flood Rescue Unit","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv","label":"CRV","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander","label":"Coastguard Commander","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"ilb","label":"ILB","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-helicopter","label":"Coastguard Rescue Helicopter","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb","label":"ALB","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decon","label":"Mud Decontamination Unit","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit","label":"Support Unit","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft","label":"Rescue Watercraft Trailer","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70],"pair":true},{"key":"coastguard-mud","label":"Coastguard Mud Rescue Unit","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft","label":"Hovercraft Trailer","aliases":["Hovercraft (trailer)","Hovercrafts (trailer)"],"types":[71],"pair":true},{"key":"major-foam","label":"Major Foam Tender","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair","label":"Rescue Stair","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-command","label":"Airfield Firefighting Command Vehicle","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations","label":"Airfield Operations Vehicle","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv","label":"RIV","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-trailer","label":"Medical Equipment Trailer","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81],"pair":true},{"key":"airfield-supervisor","label":"Airfield Operations Supervisor","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell","label":"Armed Cell Van","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"cycle-responder","label":"Medical Cycle Responder","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"midwife","label":"Community Midwife","aliases":["Community Midwife","Community Midwives","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic","label":"Specialist Paramedic RRV","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog","label":"Rescue Dog","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-4x4","label":"Mountain Rescue 4x4","aliases":["Mountain Rescue 4x4","Mountain Rescue 4x4s"],"types":[99]},{"key":"car-recovery","label":"Car Recovery","aliases":["car to tow","cars to tow"],"types":[104,105],"factors":{"105":2}},{"key":"road-rail","label":"Road Rail Unit","aliases":["Road Rail Unit","Road Rail Units"],"types":[107]},{"key":"eiu","label":"EIU","aliases":["EIU","EIUs"],"types":[108]},{"key":"eod-commander","label":"EOD Commander","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response","label":"EOD Response Vehicle","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium","label":"EOD Medium Equipment Van","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy","label":"EOD Heavy Equipment Vehicle","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response","label":"Marine EOD Response Vehicle","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment","label":"Marine EOD Equipment Van","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]},{"key":"public-order-level-1","label":"Level 1 Public Order Officer","aliases":["Level 1 Public Order Officer","Level 1 Public Order Officers"],"group":"staff","types":[],"training":["Level 1 Public Order Officer","Level 1 Public Order","Level 1 Public Order Training","level_1_public_order"],"countable":true,"arrAttributes":["level_1_public_order"]},{"key":"public-order-level-2","label":"Level 2 Public Order Officer","aliases":["Level 2 Public Order Officer","Level 2 Public Order Officers"],"group":"staff","types":[],"training":["Level 2 Public Order Officer","Level 2 Public Order","level_2_public_order"],"countable":true,"arrAttributes":["level_2_public_order"]},{"key":"police-medic-personnel","label":"Police Medic","aliases":["Police Medic","Police Medics"],"group":"staff","types":[],"countable":false},{"key":"police-sergeant-personnel","label":"Police Sergeant","aliases":["Police Sergeant","Police Sergeants"],"group":"staff","types":[],"training":["Police Sergeant","Police Sergeant Training","police_sergeant"],"countable":true,"arrAttributes":["police_sergeant"],"requireExplicitTraining":true},{"key":"police-inspector-personnel","label":"Police Inspector","aliases":["Police Inspector","Police Inspectors"],"group":"staff","types":[],"countable":true,"training":["Police Inspector","Police Inspector Training","police_inspector"],"arrAttributes":["police_inspector"],"requireExplicitTraining":true},{"key":"railway-police-officer","label":"Railway Police Officer","aliases":["Railway Police Officer","Railway Police Officers"],"group":"staff","types":[108],"training":["Railway Police Officer","Railway Police","railway_police"],"countable":true,"requireExplicitTraining":true,"arrAttributes":["railway_police"]},{"key":"search-advisor-personnel","label":"Search Advisor","aliases":["Search Advisor","Search Advisors"],"group":"staff","types":[],"training":["Search Advisor","Search Advisor Training","Police Search Advisor Training","Coastguard Search Advisor Training","search_and_rescue"],"arrAttributes":["search_and_rescue"],"countable":true},{"key":"sar-commander-personnel","label":"SAR Commander","aliases":["SAR Commander","SAR Commanders"],"group":"staff","types":[85,100],"training":["SAR Commander","Search Management Training","search_and_rescue_command"],"arrAttributes":["search_and_rescue_command"],"countable":true},{"key":"firefighters","label":"Firefighters","aliases":["more firefighter","more firefighters","Firefighter","Firefighters"],"group":"staff","types":[0,1,2,3,4,6,7,14,15,16,17,18,23,26,35,36,37,38,39,40]},{"key":"armed-personnel","label":"Armed Response Personnel","aliases":["Armed Response Personnel (In Armed Vehicles)","Armed Response Personnel"],"group":"staff","types":[13,25,52,56,82]},{"key":"police-officers","label":"Police Officers","aliases":["Police Officer","Police Officers"],"group":"staff","types":[8,12,13,19,24,25,51,52,53,55,56,82,116]},{"key":"paramedics","label":"Paramedics","aliases":["Paramedic","Paramedics"],"group":"staff","types":[5,9,20,27,28,31,34,81,83,95,96]},{"key":"search-technicians","label":"Search Technicians","aliases":["Search Technician","Search Technicians"],"group":"staff","types":[86,87,92,93,99,101,102]},{"key":"water-resource","label":"Water","aliases":["Water","litres of water","liters of water"],"group":"other","bar":"water","types":[]},{"key":"foam-resource","label":"Foam","aliases":["Foam","litres of foam","liters of foam"],"group":"other","bar":"foam","types":[]},{"key":"pump-resource","label":"Pumping Capacity","aliases":["l/min pumping process","l/min pumping capacity","Pumping Capacity"],"group":"other","bar":"pump","types":[]},{"key":"fire-engine-2","group":"vehicles","aliases":["Fire engine","Fire engines"],"types":[0,1,16,17,26,37,38,47]},{"key":"fire-engine-or-riv-2","group":"vehicles","aliases":["Fire Engine or RIV","Fire Engines or RIVs"],"types":[0,1,16,17,26,37,38,47,76]},{"key":"aerial-appliance-truck","group":"vehicles","aliases":["Aerial Appliance Truck","Aerial Appliance Trucks"],"types":[2,17]},{"key":"aerial-appliance-truck-or-rescue-stairs","group":"vehicles","aliases":["Aerial Appliance Truck or Rescue Stairs","Aerial Appliance Trucks or Rescue Stairs"],"types":[2,17,78]},{"key":"fire-officer-2","group":"vehicles","aliases":["Fire Officer","Fire Officers"],"types":[3,15,44,77]},{"key":"rescue-support-unit-or-rescue-pump","group":"vehicles","aliases":["Rescue Support Unit or Rescue Pump","Rescue Support Units or Rescue Pumps"],"types":[4,16,38,43]},{"key":"fire-engine-rescue-support-vehicle-or-aerial-appliance-truck","group":"vehicles","aliases":["Fire engine, Rescue Support Vehicle or Aerial Appliance Truck","Fire engines, Rescue Support Vehicles or Aerial Appliance Trucks"],"types":[0,1,2,4,16,17,26,37,38,43,47]},{"key":"fire-engine-or-rescue-support-vehicle","group":"vehicles","aliases":["Fire engine or Rescue Support Vehicle","Fire engines or Rescue Support Vehicles"],"types":[0,1,4,16,17,26,37,38,43,47]},{"key":"basu-2","group":"vehicles","aliases":["BASU","BASUs"],"types":[14,39,46,49]},{"key":"water-carrier-2","group":"vehicles","aliases":["Water Carrier","Water Carriers"],"types":[6,26,36,41,50]},{"key":"drone-2","group":"vehicles","aliases":["Drone","Drones"],"types":[89,90,91],"equipment":["drone"]},{"key":"operational-support-van-trailer-or-personal-sar-vehicle","group":"vehicles","aliases":["Operational Support Van, Trailer or Personal SAR Vehicle"],"types":[86,87,92]},{"key":"control-van-2","group":"vehicles","aliases":["Control Van","Control Vans"],"types":[85]},{"key":"iccu-or-ambulance-control-unit","group":"vehicles","aliases":["ICCU or Ambulance Control Unit","ICCU or Ambulance Control Units"],"types":[15,31,44,77]},{"key":"hazmat-unit-or-cbrn-vehicle","group":"vehicles","aliases":["HazMat Unit or CBRN Vehicle","HazMat Units or CBRN Vehicles"],"types":[7,32,39,48,49]},{"key":"ambulance-2","group":"vehicles","aliases":["Ambulance","Ambulances"],"types":[5]},{"key":"police-car-2","group":"vehicles","aliases":["Police car","Police cars"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"police-car-or-armed-response-vehicle","group":"vehicles","aliases":["Police Car or Armed Response Vehicle (ARV)","Police Cars or Armed Response Vehicles (ARVs)"],"types":[8,12,13,19,24,25,51,52,56,82,116]},{"key":"hems-2","group":"vehicles","aliases":["HEMS"],"types":[9]},{"key":"policehelicopter","group":"vehicles","aliases":["Policehelicopter","Policehelicopters"],"types":[11]},{"key":"armed-response-2","group":"vehicles","aliases":["Armed Response"],"types":[13,25,52,56,82]},{"key":"dog-support-unit","group":"vehicles","aliases":["Dog Support Unit (DSU)","Dog Support Units (DSUs)"],"types":[12,53]},{"key":"operational-team-leader","group":"vehicles","aliases":["Operational Team Leader","Operational Team Leaders"],"types":[20,31,34]},{"key":"traffic-car-2","group":"vehicles","aliases":["Traffic Car","Traffic Cars"],"types":[24,25]},{"key":"atv-carrier-2","group":"vehicles","aliases":["ATV Carrier","ATV Carriers"],"types":[30]},{"key":"primary-response-vehicle","group":"vehicles","aliases":["Primary Response Vehicle","Primary Response Vehicles","PRV","PRVs"],"types":[27]},{"key":"secondary-response-vehicle","group":"vehicles","aliases":["Secondary Response Vehicle","Secondary Response Vehicles","SRV","SRVs"],"types":[28]},{"key":"welfare-vehicle","group":"vehicles","aliases":["Welfare Vehicle","Welfare Vehicles"],"types":[29,39,45,49,115]},{"key":"ambulance-officer-2","group":"vehicles","aliases":["Ambulance Officer","Ambulance Officers"],"types":[34]},{"key":"foam-unit-2","group":"vehicles","aliases":["Foam Unit","Foam Units"],"types":[35,36,37,38,42,75]},{"key":"mass-casualty-equipment","group":"vehicles","aliases":["Mass Casualty Equipment"],"types":[33]},{"key":"mounted-unit","group":"vehicles","aliases":["Mounted Unit","Mounted Units"],"types":[55]},{"key":"4x4-vehicle","group":"vehicles","aliases":["4x4 Vehicle","4x4 Vehicles"],"types":[66,73,93]},{"key":"coastguard-rope-rescue-unit","group":"vehicles","aliases":["Coastguard Rope Rescue Unit","Coastguard Rope Rescue Units"],"types":[59]},{"key":"flood-rescue-unit","group":"vehicles","aliases":["Flood Rescue Unit","Flood Rescue Units"],"types":[61]},{"key":"crv-2","group":"vehicles","aliases":["CRV","CRVs"],"types":[57,58,59]},{"key":"coastguard-commander-2","group":"vehicles","aliases":["Coastguard Commander","Coastguard Commanders"],"types":[60]},{"key":"boat-trailer-or-inland-rescue-boat","group":"vehicles","aliases":["Boat Trailer or Inland Rescue Boat","Boat Trailers or Inland Rescue Boats"],"types":[67,74]},{"key":"ilb-or-alb-2","group":"vehicles","aliases":["ILB or ALB","ILBs or ALBs"],"types":[68,69]},{"key":"ilb-2","group":"vehicles","aliases":["ILB","ILBs"],"types":[68,69]},{"key":"coastguard-rescue-helicopter","group":"vehicles","aliases":["Coastguard Rescue Helicopter","Coastguard Rescue Helicopters"],"types":[64,65]},{"key":"alb-2","group":"vehicles","aliases":["ALB","ALBs"],"types":[69]},{"key":"mud-decontamination-unit","group":"vehicles","aliases":["Mud Decontamination Unit","Mud Decontamination Units"],"types":[62]},{"key":"support-unit-2","group":"vehicles","aliases":["Support Unit","Support Units"],"types":[63]},{"key":"rescue-watercraft-trailer","group":"vehicles","aliases":["Rescue Watercraft (Trailer)","Rescue Watercraft (Trailers)"],"types":[70]},{"key":"coastguard-mud-rescue-unit","group":"vehicles","aliases":["Coastguard Mud Rescue Unit","Coastguard Mud Rescue Units"],"types":[58]},{"key":"hovercraft-trailer","group":"vehicles","aliases":["Hovercraft (trailer)","hovercrafts (trailer)"],"types":[71]},{"key":"major-foam-tender","group":"vehicles","aliases":["Major Foam Tender","Major Foam Tenders"],"types":[75]},{"key":"rescue-stair-2","group":"vehicles","aliases":["Rescue Stair","Rescue Stairs"],"types":[78,2,17]},{"key":"airfield-firefighting-command-vehicle","group":"vehicles","aliases":["Airfield Firefighting Command Vehicle","Airfield Firefighting Command Vehicles"],"types":[77]},{"key":"airfield-operations-vehicle","group":"vehicles","aliases":["Airfield Operations Vehicle","Airfield Operations Vehicles"],"types":[79,80]},{"key":"riv-2","group":"vehicles","aliases":["RIV","RIVs"],"types":[76]},{"key":"medical-equipment-trailer","group":"vehicles","aliases":["Medical equipment trailer","Medical equipment trailers"],"types":[81]},{"key":"airfield-operations-supervisor","group":"vehicles","aliases":["Airfield Operations Supervisor","Airfield Operations Supervisors"],"types":[80]},{"key":"armed-cell-van","group":"vehicles","aliases":["Armed Cell Van","Armed Cell Vans"],"types":[82]},{"key":"medical-cycle-responder","group":"vehicles","aliases":["Medical cycle responder","Medical cycle responders"],"types":[83]},{"key":"community-midwife","group":"vehicles","aliases":["Community Midwife","Community Midwifes"],"types":[95]},{"key":"specialist-paramedic-rrv","group":"vehicles","aliases":["Specialist Paramedic RRV","Specialist Paramedic RRVs"],"types":[96]},{"key":"rescue-dog-2","group":"vehicles","aliases":["Rescue Dog","Rescue Dogs"],"types":[101,102]},{"key":"mountain-rescue-4x4","group":"vehicles","aliases":["Mountain Rescue 4x4"],"types":[99]},{"key":"road-rail-unit","group":"vehicles","aliases":["Road Rail Unit"],"types":[107]},{"key":"eiu-2","group":"vehicles","aliases":["EIU"],"types":[108]},{"key":"eod-commander-2","group":"vehicles","aliases":["EOD Commander","EOD Commanders"],"types":[109]},{"key":"eod-response-vehicle","group":"vehicles","aliases":["EOD Response Vehicle","EOD Response Vehicles"],"types":[110]},{"key":"eod-medium-equipment-van","group":"vehicles","aliases":["EOD Medium Equipment Van","EOD Medium Equipment Vans"],"types":[111]},{"key":"eod-heavy-equipment-vehicle","group":"vehicles","aliases":["EOD Heavy Equipment Vehicle","EOD Heavy Equipment Vehicles"],"types":[112]},{"key":"marine-eod-response-vehicle","group":"vehicles","aliases":["Marine EOD Response Vehicle","Marine EOD Response Vehicles"],"types":[113]},{"key":"marine-eod-equipment-van","group":"vehicles","aliases":["Marine EOD Equipment Van","Marine EOD Equipment Vans"],"types":[114]}].map(definition => Object.freeze({ group: 'vehicles', aliases: [], types: [], equipment: [], factors: {}, ...definition })));
-const MISSION_REQUIREMENTS_DEFAULT_STAFF_BY_TYPE = Object.freeze({"0":[1,9],"1":[1,5],"2":[1,3],"3":[1,3],"4":[1,5],"5":[1,2],"6":[1,3],"7":[1,6],"8":[1,2],"9":[3,5],"12":[1,2],"13":[1,4],"14":[1,3],"15":[1,6],"16":[1,9],"17":[1,6],"18":[1,1],"19":[1,3],"20":[1,1],"23":[1,12],"24":[1,2],"25":[1,2],"26":[1,3],"27":[1,2],"28":[1,2],"31":[1,2],"34":[1,1],"35":[1,2],"36":[1,2],"37":[2,9],"38":[2,9],"39":[1,6],"40":[1,2],"51":[1,9],"52":[1,9],"53":[1,4],"55":[1,8],"56":[1,6],"81":[0,0],"82":[1,2],"83":[1,1],"85":[1,3],"86":[1,3],"87":[0,0],"92":[1,1],"93":[1,1],"95":[1,2],"96":[1,2],"99":[1,4],"100":[1,3],"101":[1,1],"102":[1,1],"116":[1,5]});
-const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85,86,89,94],"88":[85,86,89,94]});
-    function handleOperationalWindowSettingChange(target) { const path=target?.dataset?.operationalSetting,arrayPath=target?.dataset?.operationalArrayPath;if(!path&&!arrayPath)return false;try{const value=operationalWindowParseValue(target.dataset.operationalType,target.value,target.checked,target);if(arrayPath){const list=[...(operationalFeatureValue(arrayPath)||[])],index=Number(target.dataset.operationalArrayIndex),item={...(list[index]||{})};item[target.dataset.operationalArrayField]=value;list[index]=item;operationalFeatureSet(arrayPath,list);}else operationalFeatureSet(path,value);operationalWindowCommit();}catch(error){showToast('Operational Window setting could not be saved');}return true; }
-
-    // Issue #391: legacy Mission Requirements Matrix retired; operationalWindow is authoritative.
-
-
-
-
-
-
-
-
-
-
-
     function normaliseMissionTimestampMs(value) {
         const number = Number(value);
         if (!Number.isFinite(number) || number <= 0) return null;
         return number < 100000000000 ? number * 1000 : number;
     }
-
-
-
-
-
-
-
-
-
 
 
     function missionLockOnReducedMotion() {
@@ -17791,9 +15851,6 @@ const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85
     }
 
 
-
-
-
     function loadMissionProgressState() {
         try {
             const parsed = JSON.parse(localStorage.getItem(SCRIPT.missionProgressState) || '{}');
@@ -18003,14 +16060,6 @@ const MISSION_REQUIREMENTS_TRACTIVE_TYPES = Object.freeze({"84":[0,1,4],"87":[85
         runtimeClearTimeout(stuckMissionTimer);
         stuckMissionTimer = runtimeSetTimeout(updateStuckMissionLabels, state.economyMode ? Math.max(900, delay) : delay);
     }
-
-
-
-
-
-
-
-
 
 
     function extractMissionIdsFromPayload(payload, target = new Set(), seen = new WeakSet()) {
@@ -23579,10 +21628,9 @@ Create the private backup now?`);
                 <div class="mcms-bookmark-list"></div>
                 <div class="mcms-section-label">Saved Map Profiles</div>
                 <div class="mcms-profile-list" data-profile-list></div>
-                <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and operational overlays.</div>
+                <div class="mcms-status">Profiles store your map location, zoom, skin, visibility filters and Toolkit overlays.</div>
             </section>
             <section class="mcms-tab-panel" data-panel="settings">
-                <div class="mcms-op-root" data-operational-settings-root>${operationalWindowSettingsInnerMarkup()}</div>
                 <div class="mcms-section-label">Device layout</div>
                 <div class="mcms-row"><span class="mcms-row-label">Mobile Mode · iOS Safari</span><select class="mcms-select" data-setting="mobile-mode"><option value="auto">Auto detect iPhone</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
@@ -23668,8 +21716,6 @@ Create the private backup now?`);
             const toggleButton = closestEventTarget(event, '[data-toggle]');
             const positionButton = closestEventTarget(event, '.mcms-position-btn');
             const actionButton = closestEventTarget(event, '[data-action]');
-            const operationalAction = closestEventTarget(event, '[data-operational-action]');
-            if (operationalAction && handleOperationalWindowAction(operationalAction)) { event.preventDefault(); return; }
             if (closeButton) { closePanel({ restoreFocus: true }); return; }
             if (tabButton) { setActiveTab(tabButton.dataset.tab); return; }
             if (uiThemeButton) { applyUiTheme(uiThemeButton.dataset.uiTheme, true); return; }
@@ -23938,7 +21984,6 @@ Create the private backup now?`);
         showToast(activeDeviceLayout === 'mobile' ? 'iOS Mobile Mode active' : activeDeviceLayout === 'tablet' ? 'Tablet Mode active' : 'Desktop layout active');
         return true; }
     function handleSettingChange(target) {
-        if (handleOperationalWindowSettingChange(target)) return;
         const setting = target.dataset.setting;
         if (!setting) return;
         if (handleDeviceLayoutSettingChange(target, setting)) return;
@@ -24029,7 +22074,6 @@ Create the private backup now?`);
     }
     function updateUI() {
         applyRootAttributes();
-        operationalWindowSyncSettingsUi();
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
         else if (!state.majorIncidentFeed.enabled) removeMajorIncidentFeed();
         const control = document.getElementById(SCRIPT.controlId);
@@ -24203,7 +22247,6 @@ Create the private backup now?`);
         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
     }
     function ensureUi() {
-        operationalWindowEnsureSettingsStyle(document);
         if (!toolkitTopLevelDocument(document)) return true;
         const discoveredMap = getLargestLeafletMap();
         const mapEl = toolkitPrimaryMapElement(discoveredMap, document);
@@ -24829,9 +22872,6 @@ Create the private backup now?`);
                 runBootIntegration('deferred operational startup', () => {
                     scheduleDeferredOperationalStartup();
                 });
-                runBootIntegration('operational suite scan', () => {
-                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
-                });
                 runBootIntegration('version status check', () => {
                     scheduleVersionStatusCheck(VERSION_STATUS.bootDelayMs, false);
                 });
@@ -24917,7 +22957,6 @@ Create the private backup now?`);
         lastObservedCredits = runBootIntegration('initial credit total', readCurrentCreditTotal);
         runBootIntegration('credits update hook', installCreditsUpdateHook);
         runBootIntegration('credits observer', observeCreditValue);
-        runBootIntegration('operational suite shell', installOperationalSuiteShell);
         runBootIntegration('custom vehicle badges', installCustomVehicleBadges);
         const observer = runtimeTrackObserver(new MutationObserver(mutations => {
             if (state.economyMode && economyMapMoving) {
@@ -24974,7 +23013,6 @@ Create the private backup now?`);
                 }
                 if (missionChanged) {
                     scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: false });
-                    if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(120);
                 }
             }, mutationDelay);
         }));
@@ -25060,7 +23098,6 @@ Create the private backup now?`);
             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
             if (state.economyMode) scheduleEconomyLayerSync(0);
             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
-            if (operationalSuiteEnabled()) scheduleOperationalSuiteScan(0);
             scheduleMajorIncidentFeedRender(80);
         });
         runtimeSetTimeout(() => {

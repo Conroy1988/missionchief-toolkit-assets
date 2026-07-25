@@ -4,13 +4,25 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.0.0] - 2026-07-25
+
+### The One We Knew Before
+
+- Completely removed the imported mission-window requirements, extended call-window, extended call-list and enhanced transport-request systems.
+- Removed their settings schemas, persisted state, observers, timers, listeners, schedulers, DOM decorations, styles, compatibility detection and teardown paths.
+- Removed the direct extension-control branch from Patient Transport Sweep while preserving MissionChief’s native vehicle-window discharge route, ownership checks, confirmation evidence, idempotent counters and HUD.
+- Decoupled Custom Vehicle Badges from the retired requirements parser with a standalone native vehicle-ID resolver.
+- Preserved Mission Age map timers, Mission Value, Transport Watcher, Unit Commitment, Resource Gap, Major Incident Feed, Vehicle Code Status, financial intelligence, bookmarks, profiles, themes and responsive layouts.
+- Added permanent repository-wide retirement contracts that fail if the removed integration returns.
+- Restored the Toolkit’s product boundary: native map command, fleet identity, transport support and financial intelligence without competing mission-window engines.
+
 ## [6.0.0] - 2026-07-25
 
 ### Critical performance overhaul
 
 - Removed Automatic day/night, Coverage Heat Map, Mission Inspector, Mission Age Workflow and Age Watch from runtime state, settings, timers, observers, map ownership, styles and teardown.
 - Preserved the separate Mission Age map timer badges and shortcut `6`.
-- Rebuilt Operational Window settings with typed toggles, numbers, colours, selects, multiselects, structured editors and current LSSM V.4 dependency rules.
+- Rebuilt Operational Window settings with typed toggles, numbers, colours, selects, multiselects, structured editors and current external extension V.4 dependency rules.
 - Prevented Toolkit-owned Operational Window mutations and unrelated structural text changes from repeatedly scheduling full reconciliation.
 - Replaced repeated document-wide Operational Window cleanup scans with per-document owned-node and decorated-node registries.
 - Removed duplicate Operational Window scheduling and stopped settings changes from rebuilding the complete Toolkit panel.
@@ -24,7 +36,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 - Prevented child mission frames and mission-window maps from mounting or stealing the main Toolkit command launcher.
 - Committed the command-bar open or collapsed choice before any UI reconciliation and applied the state directly to the command controls, eliminating mission-open reopen races on Desktop, Tablet/iPad and iOS.
-- Broadened native and LSSM requirement-source discovery while retaining visible-equivalent LSSM suppression.
+- Broadened native and external extension requirement-source discovery while retaining visible-equivalent external extension suppression.
 - Added bounded same-origin mission-page recovery when the live MissionChief requirement placeholder is empty, with mission-scoped caching, error backoff and automatic source rebinding.
 - Preserved amber unknown states and continued to require positive parsed evidence before showing green coverage.
 
@@ -47,12 +59,12 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ## [5.0.5] - 2026-07-23
 
 ### Critical requirement-source discovery recovery
-- Replaced first-match `#missing_text` binding with authoritative candidate discovery across active, duplicated, replaced and LSSM-transformed mission markup.
+- Replaced first-match `#missing_text` binding with authoritative candidate discovery across active, duplicated, replaced and external extension-transformed mission markup.
 - Added active-mission and visibility scoring so retained empty or stale roots cannot trap the requirements panel in a permanent waiting state.
-- Recovered requirement evidence from hidden LSSM `data-raw-html` carriers while continuing to suppress a genuinely visible equivalent LSSM panel.
-- Removed native MissionChief requirement headings before parsing, matching the authorised LSSM parser contract.
-- Rebound the operational observer whenever the authoritative source changes and added behavioural coverage for duplicate, stale, delayed, LSSM and Toolkit-owned roots.
-- Decoded hidden LSSM raw markup with a contextual fragment rather than adding another `innerHTML` assignment site, preserving the established performance ceiling.
+- Recovered requirement evidence from hidden external extension `data-raw-html` carriers while continuing to suppress a genuinely visible equivalent external extension panel.
+- Removed native MissionChief requirement headings before parsing, matching the authorised external extension parser contract.
+- Rebound the operational observer whenever the authoritative source changes and added behavioural coverage for duplicate, stale, delayed, external extension and Toolkit-owned roots.
+- Decoded hidden external extension raw markup with a contextual fragment rather than adding another `innerHTML` assignment site, preserving the established performance ceiling.
 
 
 ## [5.0.4] - 2026-07-23
@@ -103,14 +115,14 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ## [5.0.0] - 2026-07-23
 
 ### Major operational-window replacement
-- Replaced the legacy Mission Requirements Matrix with a Toolkit-native operational suite built from the authorised LSSM Extended Call Window, Extended Call List and Enhanced Transport Requests behaviour.
+- Replaced the legacy Mission Requirements Matrix with a Toolkit-native operational suite built from the authorised external extension Extended Call Window, Extended Call List and Enhanced Transport Requests behaviour.
 - Added one versioned `operationalWindow` settings model, one lifecycle coordinator per active document, coalesced rendering and deterministic teardown across MissionChief navigation.
 - Migrated the former Matrix preference once into the new requirements setting and permanently retired the old parser, panel, observers, scheduler and toggle.
 
 ### Enhanced mission requirements
 - Added a fixture-first requirements engine covering vehicle, equipment, personnel, conditional, capacity, trailer and tractive requirements.
 - Added selected, en-route and on-scene reconciliation, water/foam/pump progress, unresolved-text preservation and immutable render fingerprints.
-- Added a responsive normal-flow requirements surface for Desktop, Tablet and iOS, with LSSM coexistence detection to prevent duplicate panels.
+- Added a responsive normal-flow requirements surface for Desktop, Tablet and iOS, with external extension coexistence detection to prevent duplicate panels.
 
 ### Extended Call Window
 - Added patient and vehicle summaries, selected-unit and ARR counters, generation/alarm information, collapsible patient and vehicle areas, permanent vehicle and ARR search, mission keyword badges, map-centre controls and ARR highlighting.
@@ -118,7 +130,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Extended Call List
 - Added mission sorting, starring, collapsing, patient/prisoner/credit/time badges and native share controls.
-- Preserved deterministic ordering and state across live list refreshes while remaining compatible with MissionChief and equivalent LSSM modules.
+- Preserved deterministic ordering and state across live list refreshes while remaining compatible with MissionChief and equivalent external extension modules.
 
 ### Enhanced Transport Requests
 - Added opt-in transport automation with strict route validation, visible/enabled candidate filtering, single-candidate ambiguity rejection and per-route idempotency tokens.
@@ -131,7 +143,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Upgrade compatibility
 - Existing Toolkit settings are retained. The former Matrix enablement preference is migrated automatically; no manual reset is required.
-- The operational suite supports Desktop, Tablet and iOS/Safari and suppresses equivalent Toolkit surfaces when the matching LSSM module is active.
+- The operational suite supports Desktop, Tablet and iOS/Safari and suppresses equivalent Toolkit surfaces when the matching external extension module is active.
 
 ## [4.20.37] - 2026-07-22
 
@@ -299,7 +311,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ## [4.20.23] - 2026-07-21
 
 ### Fixed
-- Counted MissionChief's confirmed patient-release state exactly once across direct LSSM and fallback Transport Sweep routes.
+- Counted MissionChief's confirmed patient-release state exactly once across direct external extension and fallback Transport Sweep routes.
 - Recognised release confirmation outside the active lightbox, including `Understood! We have released the patient.`, while rejecting stale pre-existing messages.
 - Preserved successful patient totals when a later mission-window cleanup or reopen operation fails.
 - Kept the persistent HUD, main panel and final summary on the same canonical cleared, processed and error counters.
@@ -332,7 +344,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Patient transport, critical-care and unknown boolean catalogue metadata remain outside operational Matrix demand.
 
 ### Validation
-- Added deterministic normal-page, parser, catalogue, conditional-activation, mission-isolation and Matrix-summary regressions based on the official LSSM V4 separation of `requirements`, `chances` and `prerequisites`.
+- Added deterministic normal-page, parser, catalogue, conditional-activation, mission-isolation and Matrix-summary regressions based on the official external extension V4 separation of `requirements`, `chances` and `prerequisites`.
 
 ## [4.20.19] - 2026-07-21
 
@@ -349,7 +361,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Required 5 with On site 3 and Responding 1 now reports Still needed 1.
 
 ### Audit
-- Expanded the pinned LSSM compatibility audit across Enhanced Missing Vehicles, Mission Helper captions, UK vehicle captions and MissionChief authoritative labels.
+- Expanded the pinned external extension compatibility audit across Enhanced Missing Vehicles, Mission Helper captions, UK vehicle captions and MissionChief authoritative labels.
 - Added runtime-backed parser, Selected, Responding, On-site, ineligible-type and contribution-deduplication checks for every supported UK vehicle capability.
 - Integrated the cross-source audit into the canonical Mission Requirements contract and userscript validation gate.
 
@@ -413,7 +425,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Removed whole-row caption text as evidence of specialist personnel training.
 
 ### Audit
-- Completed the pinned LSSM V.4 Enhanced Missing Vehicles compatibility audit.
+- Completed the pinned external extension V.4 Enhanced Missing Vehicles compatibility audit.
 - Added an offline upstream capability snapshot and drift checker.
 - Added resource, nested-equipment, tractive and personnel reliability fixtures.
 
@@ -474,7 +486,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Safety
 - Unresolved, uncertain, loading and unavailable requirements remain visible and continue to block false success states.
-- Requirement calculations, authoritative reconciliation, unit de-duplication and MissionChief/LSSM coexistence are unchanged.
+- Requirement calculations, authoritative reconciliation, unit de-duplication and MissionChief/external extension coexistence are unchanged.
 
 ### Validation
 - Added deterministic fixtures for fulfilled-row suppression, mixed outstanding/fulfilled rows, renewed shortages after upgrade or re-entry, and unresolved-authority precedence.
@@ -637,7 +649,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Behaviour
 - Reuses the Toolkit's existing `/api/vehicles` cache and never performs a second vehicle-list request.
-- Reapplies badges after MissionChief or LSSM replaces, filters or sorts the Available Units DOM, without duplicates, repeat DOM insertion or dispatch-side effects.
+- Reapplies badges after MissionChief or external extension replaces, filters or sorts the Available Units DOM, without duplicates, repeat DOM insertion or dispatch-side effects.
 - Vehicles without an Own Vehicle Category remain unchanged.
 
 ### Validation
@@ -724,7 +736,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Compatibility
 - MissionChief remains the sole mission-window and requirement authority; no GitHub token or direct issue-creation credential is embedded in the userscript.
-- Single-owner mounting, LSSM coexistence and Desktop, Tablet and iOS layouts remain intact.
+- Single-owner mounting, external extension coexistence and Desktop, Tablet and iOS layouts remain intact.
 
 ## [4.15.3] - 2026-07-18
 
@@ -735,7 +747,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Repeated scans and AJAX/lightbox replacements remain idempotent, with exactly one Toolkit panel retained per concrete MissionChief mission host.
 
 ### Compatibility
-- MissionChief remains the sole mission-window, requirements, selection and en-route authority; LSSM remains optional and is used only for explicit duplicate-equivalent detection.
+- MissionChief remains the sole mission-window, requirements, selection and en-route authority; external extension remains optional and is used only for explicit duplicate-equivalent detection.
 - Desktop, Tablet and iOS normal-flow layouts and the seven equal interface systems are unchanged.
 
 ## [4.15.2] - 2026-07-18
@@ -750,17 +762,17 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Compatibility
 - MissionChief's native mission DOM remains the sole requirements, selection, en-route and layout authority.
-- LSSM remains optional and is consulted only through explicit duplicate-panel ownership detection.
+- external extension remains optional and is consulted only through explicit duplicate-panel ownership detection.
 
 ## [4.15.1] - 2026-07-18
 
 ### Fixed
 - Mission Requirements now mounts against MissionChief's native mission window when the game's own missing-vehicle or missing-personnel alert uses the shared `alert-missing-vehicles` class.
-- LSSM coexistence detection now requires explicit ownership metadata such as `data-raw-html`; the shared presentation class alone can no longer suppress the Toolkit.
+- external extension coexistence detection now requires explicit ownership metadata such as `data-raw-html`; the shared presentation class alone can no longer suppress the Toolkit.
 
 ### Compatibility
-- The Toolkit remains fully independent of LSSM and continues to use MissionChief's own `#missing_text`, mission form, vehicle lists and en-route table as its data and layout sources.
-- Added deterministic coverage for both MissionChief-native alerts and an active LSSM enhanced-missing-vehicles component.
+- The Toolkit remains fully independent of external extension and continues to use MissionChief's own `#missing_text`, mission form, vehicle lists and en-route table as its data and layout sources.
+- Added deterministic coverage for both MissionChief-native alerts and an active external extension enhanced-missing-vehicles component.
 
 ## [4.15.0] - 2026-07-17
 
@@ -771,7 +783,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Safety and compatibility
 - Unknown requirement wording remains visibly unresolved and can never produce a false all-covered state.
-- The Toolkit yields to an active LSSM enhanced-missing-vehicles panel instead of rendering a competing duplicate.
+- The Toolkit yields to an active external extension enhanced-missing-vehicles panel instead of rendering a competing duplicate.
 - Mission-window replacement, same-origin frames, checkbox changes, en-route changes and runtime teardown use bounded observers with one owned panel per mission window.
 - Added fixture-backed release validation for calculation, ownership, layout, coexistence and lifecycle contracts.
 
@@ -789,9 +801,9 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ## [4.14.9] - 2026-07-17
 
 ### Added
-- Ambulance Transport Sweep now displays a compact persistent live HUD while MissionChief and LSSM mission/vehicle windows are opening, processing and closing.
+- Ambulance Transport Sweep now displays a compact persistent live HUD while MissionChief and external extension mission/vehicle windows are opening, processing and closing.
 - The HUD shows current sweep status, mission progress, confirmed patients cleared, skipped items, errors, processed count and elapsed time.
-- Successful clear totals update immediately after the existing confirmed LSSM or fallback discharge gate succeeds.
+- Successful clear totals update immediately after the existing confirmed external extension or fallback discharge gate succeeds.
 
 ### Compatibility
 - The HUD is mounted outside sweep-owned lightbox layers, deduplicated, non-blocking and removed on completion, cancellation or Toolkit runtime teardown.
@@ -824,7 +836,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 ## [4.14.6] - 2026-07-17
 
 ### Changed
-- Moved Mission Value into MissionChief's native mission action toolbar spacer so it automatically yields space to MissionChief and LSSM action buttons.
+- Moved Mission Value into MissionChief's native mission action toolbar spacer so it automatically yields space to MissionChief and external extension action buttons.
 - The toolbar badge now adapts through full, shortened and value-only presentations as the available spacer width changes.
 
 ### Fixed
@@ -857,7 +869,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - The sweep now closes the owned layer through its own close control first and force-removes only newly created sweep-owned layers when MissionChief leaves their outer wrappers behind.
 
 ### Performance
-- Prevents mission and vehicle lightbox shells, iframes and backdrops from accumulating underneath later sweep windows while preserving unrelated MissionChief, LSSM and Toolkit dialogs.
+- Prevents mission and vehicle lightbox shells, iframes and backdrops from accumulating underneath later sweep windows while preserving unrelated MissionChief, external extension and Toolkit dialogs.
 
 ## [4.14.3] - 2026-07-17
 
@@ -867,7 +879,7 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Restored changed-content baselines so persistent page UI cannot be mistaken for a newly loaded mission or vehicle window.
 
 ### Performance and compatibility
-- Retains the v4.14.2 single-window lifecycle without closing or blocking unrelated MissionChief, LSSM or Toolkit interface elements.
+- Retains the v4.14.2 single-window lifecycle without closing or blocking unrelated MissionChief, external extension or Toolkit interface elements.
 
 ## [4.14.2] - 2026-07-17
 
@@ -882,20 +894,20 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ### Fixed
 - Corrected Patient Transport Sweep so a mission containing several alliance-member ambulances is explicitly reopened after every confirmed release.
-- The sweep now waits for release completion before returning to the mission, rescans the fresh mission DOM for the next delayed LSSM control and repeats until no eligible alliance controls remain.
+- The sweep now waits for release completion before returning to the mission, rescans the fresh mission DOM for the next delayed external extension control and repeats until no eligible alliance controls remain.
 
 ### Safety
-- Own-vehicle exclusion, ambiguous-owner rejection, sequential processing, duplicate protection, cancellation, per-run limits and the non-LSSM fallback remain unchanged.
+- Own-vehicle exclusion, ambiguous-owner rejection, sequential processing, duplicate protection, cancellation, per-run limits and the non-external extension fallback remain unchanged.
 
 ## [4.14.0] - 2026-07-17
 
 ### Added
-- Upgraded Patient Transport Sweep to use LSSM's mission-level **Release patient (No reward)** controls before opening individual vehicle windows.
-- The sweep waits dynamically for delayed LSSM controls, processes alliance-member ambulances sequentially, rescans after every release and supports several patient-held units in the same mission.
+- Upgraded Patient Transport Sweep to use external extension's mission-level **Release patient (No reward)** controls before opening individual vehicle windows.
+- The sweep waits dynamically for delayed external extension controls, processes alliance-member ambulances sequentially, rescans after every release and supports several patient-held units in the same mission.
 
 ### Safety
 - The signed-in player's verified vehicle IDs remain excluded before any release action.
-- Ambiguous owner rows are skipped, duplicate mission/vehicle actions are blocked, cancellation and per-run limits remain active, and the existing vehicle-window route is retained only as a fallback when LSSM controls do not appear.
+- Ambiguous owner rows are skipped, duplicate mission/vehicle actions are blocked, cancellation and per-run limits remain active, and the existing vehicle-window route is retained only as a fallback when external extension controls do not appear.
 
 ## [4.13.9] - 2026-07-16
 

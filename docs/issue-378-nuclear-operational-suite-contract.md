@@ -4,7 +4,7 @@
 
 Phase 1 baseline for the first post-4.20 major Toolkit release.
 
-This contract governs the retirement of the existing Mission Requirements Matrix and the Toolkit-native port of the current LSSM V.4 Extended Call Window, Extended Call List and Enhanced Transport Requests feature families.
+This contract governs the retirement of the existing Mission Requirements Matrix and the Toolkit-native port of the current external extension V.4 Extended Call Window, Extended Call List and Enhanced Transport Requests feature families.
 
 Production publication is prohibited until every release gate in this document is satisfied.
 
@@ -18,19 +18,19 @@ Production publication is prohibited until every release gate in this document i
 - Baseline version: `4.20.37`
 - Canonical userscript: `src/MissionChief_Map_Command_Toolkit.user.js`
 
-### LSSM
+### external extension
 
-- Repository: `LSS-Manager/LSSM-V.4`
+- Repository: `LSS-Manager/external extension-V.4`
 - Canonical development branch: `dev`
 - Inspected baseline commit: `88e41646e59a7d620624f90f1d9a0a62320c2775`
 
-The LSSM baseline must be refreshed at the start of every implementation phase. An upstream change after this baseline is not imported automatically; it must be reviewed against this contract.
+The external extension baseline must be refreshed at the start of every implementation phase. An upstream change after this baseline is not imported automatically; it must be reviewed against this contract.
 
 ## Permission basis
 
-The Toolkit owner and LSSM developer has confirmed explicit permission to reuse, adapt, integrate and redistribute the relevant LSSM implementation in the MIT-licensed Toolkit.
+The Toolkit owner and external extension developer has confirmed explicit permission to reuse, adapt, integrate and redistribute the relevant external extension implementation in the MIT-licensed Toolkit.
 
-The public LSSM repository is otherwise distributed under CC BY-NC-SA 4.0. The direct port therefore relies on the confirmed permission exception rather than the repository's default public licence terms.
+The public external extension repository is otherwise distributed under CC BY-NC-SA 4.0. The direct port therefore relies on the confirmed permission exception rather than the repository's default public licence terms.
 
 The authorised scope is limited to the three module families named in this contract and direct dependencies required to reproduce their behaviour.
 
@@ -211,21 +211,21 @@ Mutation bursts must be coalesced. A recalculation that produces an unchanged vi
 
 ## Toolkit adaptation boundaries
 
-LSSM's implementation depends on Vue, Pinia, webpack chunks, module settings, API stores, translation stores and utility methods. None of those runtime dependencies may be imported into the Toolkit.
+external extension's implementation depends on Vue, Pinia, webpack chunks, module settings, API stores, translation stores and utility methods. None of those runtime dependencies may be imported into the Toolkit.
 
 Required substitutions:
 
-| LSSM dependency | Toolkit replacement |
+| external extension dependency | Toolkit replacement |
 |---|---|
 | Vue components/reactivity | Toolkit-owned DOM renderer and immutable view model |
 | Pinia/settings store | Existing Toolkit state and persistence layer |
-| LSSM API vehicle cache | MissionChief live attributes plus Toolkit capability catalogue |
-| LSSM translations | Toolkit locale tables with UK-first verified mappings |
+| external extension API vehicle cache | MissionChief live attributes plus Toolkit capability catalogue |
+| external extension translations | Toolkit locale tables with UK-first verified mappings |
 | webpack dynamic imports | Route-gated initialisers in the standalone userscript |
-| LSSM root style manager | Collision-resistant Toolkit stylesheet rules |
-| LSSM module lifecycle | Toolkit coordinator with deterministic teardown |
+| external extension root style manager | Collision-resistant Toolkit stylesheet rules |
+| external extension module lifecycle | Toolkit coordinator with deterministic teardown |
 
-The port may preserve upstream algorithms and interaction semantics, but it must not emulate or bootstrap an LSSM runtime.
+The port may preserve upstream algorithms and interaction semantics, but it must not emulate or bootstrap an external extension runtime.
 
 ## Settings namespace
 
@@ -266,23 +266,23 @@ The following must be identified and removed from active runtime:
 
 Removal occurs only after the new engine passes the same mission fixtures plus the expanded Issue #378 suite.
 
-## LSSM coexistence
+## external extension coexistence
 
 The Toolkit must support:
 
-1. LSSM absent;
-2. LSSM present with equivalent modules disabled;
-3. LSSM present with Extended Call Window active;
-4. LSSM present with Extended Call List active;
-5. LSSM present with Enhanced Transport Requests active;
+1. external extension absent;
+2. external extension present with equivalent modules disabled;
+3. external extension present with Extended Call Window active;
+4. external extension present with Extended Call List active;
+5. external extension present with Enhanced Transport Requests active;
 6. both load orders.
 
 Rules:
 
-- Do not mutate LSSM-owned nodes.
+- Do not mutate external extension-owned nodes.
 - Suppress only the equivalent Toolkit surface/action.
 - Generic MissionChief classes are not sufficient ownership markers.
-- Enhanced requirements can identify the active LSSM component through explicit structure such as `.alert-missing-vehicles[data-raw-html]`.
+- Enhanced requirements can identify the active external extension component through explicit structure such as `.alert-missing-vehicles[data-raw-html]`.
 - Mission-list coexistence must detect feature-specific controls/ownership rather than disabling the entire Toolkit mission-list suite.
 - Transport coexistence must use one-action tokens so only one automation performs each navigation/click.
 
@@ -382,7 +382,7 @@ Forbidden patterns:
 - one-action idempotency;
 - hidden/disabled controls;
 - navigation replacement;
-- coexistence with LSSM.
+- coexistence with external extension.
 
 ### Compatibility
 
@@ -392,7 +392,7 @@ Every release fixture runs in:
 - Tablet Mode;
 - iOS Mobile Mode;
 - light and dark MissionChief themes;
-- LSSM absent/present;
+- external extension absent/present;
 - both load orders.
 
 ## Performance gates
@@ -434,7 +434,7 @@ A major release may proceed only when:
 - deterministic fixtures pass;
 - live UK mission validation passes;
 - Desktop, Tablet and iOS pass;
-- LSSM coexistence passes;
+- external extension coexistence passes;
 - performance budgets pass;
 - all required workflows are green;
 - rollback has been rehearsed;

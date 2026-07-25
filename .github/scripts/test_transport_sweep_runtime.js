@@ -9,7 +9,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..', '..');
 const source = fs.readFileSync(path.join(root, 'src', 'MissionChief_Map_Command_Toolkit.user.js'), 'utf8');
 const start = source.indexOf("    const TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT = 'Understood! We have released the patient.';");
-const end = source.indexOf('    async function activateTransportSweepLssmRelease(candidate)', start);
+const end = source.indexOf('    function transportSweepVisibleDischargeButtons()', start);
 assert.ok(start >= 0 && end > start, 'Transport Sweep release helpers are missing from the userscript');
 const helperSource = source.slice(start, end);
 

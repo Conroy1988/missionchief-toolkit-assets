@@ -1,6 +1,6 @@
 # Issue 282 — maritime requirements and cross-source capability audit
 
-Toolkit v4.20.19 closes the gap between MissionChief's authoritative maritime wording and the existing LSSM-derived UK capability catalogue.
+Toolkit v4.20.19 closes the gap between MissionChief's authoritative maritime wording and the existing external extension-derived UK capability catalogue.
 
 ## Runtime correction
 
@@ -20,9 +20,9 @@ A row with Required `3`, Selected `1`, Responding `0`, On site `0` now remains o
 
 The pinned, non-mutating compatibility fixture now records:
 
-- LSSM Enhanced Missing Vehicles aliases and type/equipment contracts;
-- LSSM Mission Helper UK vehicle captions and reviewed canonical mappings;
-- the complete pinned LSSM UK vehicle-caption catalogue;
+- external extension Enhanced Missing Vehicles aliases and type/equipment contracts;
+- external extension Mission Helper UK vehicle captions and reviewed canonical mappings;
+- the complete pinned external extension UK vehicle-caption catalogue;
 - MissionChief authoritative Mission Info labels requiring parser support;
 - Toolkit aliases, types, equipment, factors, conditional mappings and pair semantics;
 - the compiled random-tractive compatibility map.
@@ -31,4 +31,4 @@ The audit is executed by the canonical Mission Requirements contract and userscr
 
 ## Review boundary
 
-The audit does not import upstream changes automatically. Added or removed labels, types, equipment, factors, conditions, trailer semantics or Mission Helper tokens produce a blocking or actionable report for human review. The Toolkit remains standalone and has no LSSM runtime dependency.
+The audit does not import upstream changes automatically. Added or removed labels, types, equipment, factors, conditions, trailer semantics or Mission Helper tokens produce a blocking or actionable report for human review. The Toolkit remains standalone and has no external extension runtime dependency.

@@ -164,7 +164,7 @@
       "teardown": "disconnectAutoLoadAllVehiclesRootObserver and runtime.destroy.",
       "duplicateGuard": "Always disconnects previous root observer before binding.",
       "documentReplacement": "Root disconnection resets mission state.",
-      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "coverage": [".github/scripts/test_transport_sweep_external extension_contract.py"],
       "status": "owned"
     },
     {
@@ -176,7 +176,7 @@
       "teardown": "disconnectAutoLoadAllVehiclesLinkObserver and runtime.destroy.",
       "duplicateGuard": "Always disconnects previous link observer before binding.",
       "documentReplacement": "Disconnected/rebound when link identity changes.",
-      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "coverage": [".github/scripts/test_transport_sweep_external extension_contract.py"],
       "status": "owned"
     },
     {
@@ -188,7 +188,7 @@
       "teardown": "stopAutoLoadAllVehicles untracks/disconnects; runtime.destroy is final owner.",
       "duplicateGuard": "autoLoadAllVehiclesObserver singleton",
       "documentReplacement": "Detects mission-root/native-link replacement and resets stale identities.",
-      "coverage": [".github/scripts/test_transport_sweep_lssm_contract.py"],
+      "coverage": [".github/scripts/test_transport_sweep_external extension_contract.py"],
       "status": "owned"
     },
     {

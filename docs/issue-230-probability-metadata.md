@@ -2,15 +2,15 @@
 
 ## Corrected model
 
-The Mission Requirements Matrix now follows the same structural separation used by the official LSSM V4 Mission Helper:
+The Mission Requirements Matrix now follows the same structural separation used by the official external extension V4 Mission Helper:
 
 - `requirements` supplies resource quantities;
 - `chances` supplies probability metadata;
 - `prerequisites` and availability rules remain non-operational metadata.
 
-The reviewed implementation is pinned to LSSM commit `4f731e1d6d009cbf2129530fb31d10177b21a52a`. In `src/modules/missionHelper/missionHelper.vue`, LSSM derives each vehicle amount from `missionSpecs.requirements[vehicle]`, reads the chance independently from `missionSpecs.chances[vehicle]`, and renders prerequisite data through the separate `missionSpecs.prerequisites` model.
+The reviewed implementation is pinned to external extension commit `4f731e1d6d009cbf2129530fb31d10177b21a52a`. In `src/modules/missionHelper/missionHelper.vue`, external extension derives each vehicle amount from `missionSpecs.requirements[vehicle]`, reads the chance independently from `missionSpecs.chances[vehicle]`, and renders prerequisite data through the separate `missionSpecs.prerequisites` model.
 
-The Toolkit has no LSSM runtime dependency. The LSSM implementation was used only to verify the semantic model and regression expectations.
+The Toolkit has no external extension runtime dependency. The external extension implementation was used only to verify the semantic model and regression expectations.
 
 ## Runtime behaviour
 
@@ -26,4 +26,4 @@ The Toolkit has no LSSM runtime dependency. The LSSM implementation was used onl
 
 Fixtures cover Traffic Cars, Water Carrier, Aerial Appliance Truck, patient transport probability, critical-care probability, unknown booleans, direct parsing, normal source parsing, conditional activation, unconditional preservation, cross-mission isolation and header totals.
 
-The release candidate must continue to pass canonical source/distribution parity, JavaScript syntax, the Mission Requirements runtime and contract suites, the pinned cross-source LSSM audit, and the repository performance ceiling.
+The release candidate must continue to pass canonical source/distribution parity, JavaScript syntax, the Mission Requirements runtime and contract suites, the pinned cross-source external extension audit, and the repository performance ceiling.

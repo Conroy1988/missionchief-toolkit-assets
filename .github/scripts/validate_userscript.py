@@ -27,21 +27,16 @@ INTEGRITY_AUDITOR = ROOT / ".github" / "scripts" / "check_code_integrity.py"
 INTEGRITY_POLICY = ROOT / ".github" / "code-integrity-policy.json"
 ASSET_AUDITOR = ROOT / ".github" / "scripts" / "check_asset_health.py"
 AUDIO_ALIAS_AUDITOR = ROOT / ".github" / "scripts" / "check_audio_alias_contract.py"
-ISSUE391_MATRIX_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue391_matrix_retirement.py"
 VERSION_STATUS_CONTRACT = ROOT / ".github" / "scripts" / "test_version_status_contract.py"
 FINANCIAL_OVERVIEW_CONTRACT = ROOT / ".github" / "scripts" / "test_financial_overview_contract.py"
 MAIN_STYLE_HEADROOM_CONTRACT = ROOT / ".github" / "scripts" / "test_main_style_source_headroom.py"
-ISSUE378_REQUIREMENTS_RENDERER_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_requirements_renderer.py"
-ISSUE378_OPERATIONAL_FEATURE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_suite.py"
-ISSUE378_OPERATIONAL_FEATURE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue378_operational_feature_runtime.js"
+V7_RETIREMENT_CONTRACT = ROOT / ".github" / "scripts" / "test_v7_retirement.py"
+MISSION_AGE_RETENTION_CONTRACT = ROOT / ".github" / "scripts" / "test_mission_age_retention.py"
+NATIVE_TRANSPORT_SWEEP_CONTRACT = ROOT / ".github" / "scripts" / "test_transport_sweep_native_contract.py"
 ISSUE447_MENU_BOOT_CONTRACT = ROOT / ".github" / "scripts" / "test_issue447_menu_boot_fail_open.py"
 ISSUE450_CORE_BOOTSTRAP_CONTRACT = ROOT / ".github" / "scripts" / "test_issue450_core_launcher_bootstrap.py"
 ISSUE454_PREBOOT_STATE_CONTRACT = ROOT / ".github" / "scripts" / "test_issue454_preboot_state_order.py"
-ISSUE456_REQUIREMENTS_TRUTH_RUNTIME = ROOT / ".github" / "scripts" / "test_issue456_requirements_truth_runtime.js"
-ISSUE458_REQUIREMENTS_SOURCE_RUNTIME = ROOT / ".github" / "scripts" / "test_issue458_requirements_source_runtime.js"
 ISSUE464_LAUNCHER_SETTINGS_CONTRACT = ROOT / ".github" / "scripts" / "test_issue464_launcher_settings_contract.py"
-ISSUE464_OPERATIONAL_RUNTIME = ROOT / ".github" / "scripts" / "test_issue464_operational_runtime.js"
-ISSUE470_MENU_REQUIREMENTS_RUNTIME = ROOT / ".github" / "scripts" / "test_issue470_menu_requirements_runtime.js"
 
 REQUIRED_KEYS = {"name", "version"}
 VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
@@ -168,184 +163,18 @@ def latest_release_baseline(output: Path) -> str | None:
 
 
 def run_integrity_gate() -> None:
-    required = [INTEGRITY_AUDITOR, INTEGRITY_POLICY, ASSET_AUDITOR, AUDIO_ALIAS_AUDITOR, ISSUE391_MATRIX_RETIREMENT_CONTRACT, VERSION_STATUS_CONTRACT, FINANCIAL_OVERVIEW_CONTRACT, MAIN_STYLE_HEADROOM_CONTRACT, ISSUE378_REQUIREMENTS_RENDERER_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_CONTRACT, ISSUE378_OPERATIONAL_FEATURE_RUNTIME, ISSUE456_REQUIREMENTS_TRUTH_RUNTIME, ISSUE458_REQUIREMENTS_SOURCE_RUNTIME, ISSUE464_LAUNCHER_SETTINGS_CONTRACT, ISSUE464_OPERATIONAL_RUNTIME, ISSUE470_MENU_REQUIREMENTS_RUNTIME]
-    missing = [path.relative_to(ROOT) for path in required if not path.exists()]
-    if missing:
-        fail(
-            "integrity tooling is incomplete: "
-            + ", ".join(str(path) for path in missing)
-        )
-
+    required=[INTEGRITY_AUDITOR,INTEGRITY_POLICY,ASSET_AUDITOR,AUDIO_ALIAS_AUDITOR,VERSION_STATUS_CONTRACT,FINANCIAL_OVERVIEW_CONTRACT,MAIN_STYLE_HEADROOM_CONTRACT,V7_RETIREMENT_CONTRACT,MISSION_AGE_RETENTION_CONTRACT,NATIVE_TRANSPORT_SWEEP_CONTRACT,ISSUE447_MENU_BOOT_CONTRACT,ISSUE450_CORE_BOOTSTRAP_CONTRACT,ISSUE454_PREBOOT_STATE_CONTRACT,ISSUE464_LAUNCHER_SETTINGS_CONTRACT]
+    missing=[path.relative_to(ROOT) for path in required if not path.exists()]
+    if missing: fail("integrity tooling is incomplete: "+", ".join(map(str,missing)))
     with tempfile.TemporaryDirectory(prefix="mcms-integrity-") as temp:
-        baseline_path = Path(temp) / "release-baseline.user.js"
-        baseline_ref = latest_release_baseline(baseline_path)
-        integrity_json = Path(temp) / "code-integrity-report.json"
-        integrity_markdown = Path(temp) / "code-integrity-report.md"
-        asset_json = Path(temp) / "asset-health-report.json"
-        asset_markdown = Path(temp) / "asset-health-report.md"
-
-        command = [
-            sys.executable,
-            str(INTEGRITY_AUDITOR),
-            "--candidate",
-            str(SOURCE),
-            "--policy",
-            str(INTEGRITY_POLICY),
-            "--json-output",
-            str(integrity_json),
-            "--markdown-output",
-            str(integrity_markdown),
-        ]
-        if baseline_ref and baseline_path.exists():
-            command.extend(["--base", str(baseline_path)])
-            print(f"Code-integrity release baseline: {baseline_ref}")
-        else:
-            print(
-                "Code-integrity release baseline unavailable; "
-                "current-state checks will still run."
-            )
-
-        integrity = subprocess.run(command, cwd=ROOT)
-        if integrity.returncode != 0:
-            if integrity_markdown.exists():
-                print(integrity_markdown.read_text(encoding="utf-8"))
-            fail("expanded code-integrity audit failed")
-
-        assets = subprocess.run(
-            [
-                sys.executable,
-                str(ASSET_AUDITOR),
-                "--mode",
-                "static",
-                "--json-output",
-                str(asset_json),
-                "--markdown-output",
-                str(asset_markdown),
-            ],
-            cwd=ROOT,
-        )
-        if assets.returncode != 0:
-            if asset_markdown.exists():
-                print(asset_markdown.read_text(encoding="utf-8"))
-            fail("static public-asset integrity audit failed")
-
-        audio_aliases = subprocess.run(
-            [sys.executable, str(AUDIO_ALIAS_AUDITOR)],
-            cwd=ROOT,
-        )
-        if audio_aliases.returncode != 0:
-            fail("audio compatibility alias contract failed")
-
-        matrix_retirement = subprocess.run(
-            [sys.executable, str(ISSUE391_MATRIX_RETIREMENT_CONTRACT)],
-            cwd=ROOT,
-        )
-        if matrix_retirement.returncode != 0:
-            fail("Issue #391 Matrix retirement contract failed")
-
-        version_status = subprocess.run(
-            [sys.executable, str(VERSION_STATUS_CONTRACT)],
-            cwd=ROOT,
-        )
-        if version_status.returncode != 0:
-            fail("live version-status contract failed")
-
-        financial_overview = subprocess.run(
-            [sys.executable, str(FINANCIAL_OVERVIEW_CONTRACT)],
-            cwd=ROOT,
-        )
-        if financial_overview.returncode != 0:
-            fail("financial overview reconciliation contract failed")
-
-        main_style_headroom = subprocess.run(
-            [sys.executable, str(MAIN_STYLE_HEADROOM_CONTRACT)],
-            cwd=ROOT,
-        )
-        if main_style_headroom.returncode != 0:
-            fail("main-style source-headroom contract failed")
-
-        issue378_renderer = subprocess.run(
-            [sys.executable, str(ISSUE378_REQUIREMENTS_RENDERER_CONTRACT)],
-            cwd=ROOT,
-        )
-        if issue378_renderer.returncode != 0:
-            fail("Issue #378 requirements renderer contract failed")
-
-        issue378_feature = subprocess.run(
-            [sys.executable, str(ISSUE378_OPERATIONAL_FEATURE_CONTRACT)],
-            cwd=ROOT,
-        )
-        if issue378_feature.returncode != 0:
-            fail("Issue #378 operational feature-suite contract failed")
-
-        issue378_feature_runtime = subprocess.run(
-            ["node", str(ISSUE378_OPERATIONAL_FEATURE_RUNTIME)],
-            cwd=ROOT,
-        )
-        if issue378_feature_runtime.returncode != 0:
-            fail("Issue #378 operational feature runtime fixtures failed")
-
-        issue447_menu_boot = subprocess.run(
-            [sys.executable, str(ISSUE447_MENU_BOOT_CONTRACT)],
-            cwd=ROOT,
-        )
-        if issue447_menu_boot.returncode != 0:
-            fail("Issue #447 menu boot fail-open contract failed")
-
-        issue450_core_bootstrap = subprocess.run(
-            [sys.executable, str(ISSUE450_CORE_BOOTSTRAP_CONTRACT)],
-            cwd=ROOT,
-        )
-        if issue450_core_bootstrap.returncode != 0:
-            fail("Issue #450 core launcher bootstrap contract failed")
-
-        issue454_preboot_state = subprocess.run(
-            [sys.executable, str(ISSUE454_PREBOOT_STATE_CONTRACT)],
-            cwd=ROOT,
-        )
-        if issue454_preboot_state.returncode != 0:
-            fail("Issue #454 preboot state-order contract failed")
-
-        issue456_requirements_truth = subprocess.run(
-            ["node", str(ISSUE456_REQUIREMENTS_TRUTH_RUNTIME)],
-            cwd=ROOT,
-        )
-        if issue456_requirements_truth.returncode != 0:
-            fail("Issue #456 requirements truth-state runtime failed")
-
-        issue458_requirements_source = subprocess.run(
-            ["node", str(ISSUE458_REQUIREMENTS_SOURCE_RUNTIME)], cwd=ROOT,
-        )
-        if issue458_requirements_source.returncode != 0:
-            fail("Issue #458 requirements source-discovery runtime failed")
-
-        issue464_launcher_settings = subprocess.run(
-            [sys.executable, str(ISSUE464_LAUNCHER_SETTINGS_CONTRACT)], cwd=ROOT,
-        )
-        if issue464_launcher_settings.returncode != 0:
-            fail("Issue #464 launcher/settings contract failed")
-
-        issue464_operational_runtime = subprocess.run(
-            ["node", str(ISSUE464_OPERATIONAL_RUNTIME)], cwd=ROOT,
-        )
-        if issue464_operational_runtime.returncode != 0:
-            fail("Issue #464 operational runtime fixtures failed")
-
-        issue470_menu_requirements = subprocess.run(
-            ["node", str(ISSUE470_MENU_REQUIREMENTS_RUNTIME)], cwd=ROOT,
-        )
-        if issue470_menu_requirements.returncode != 0:
-            fail("Issue #470 menu/requirements runtime fixtures failed")
-
-        report = json.loads(integrity_json.read_text(encoding="utf-8"))
-        metrics = report.get("metrics", {})
-        print(
-            "Code integrity passed: "
-            f"{metrics.get('staticSelectors', 0)} static selectors, "
-            f"{metrics.get('shortcutBindings', 0)} shortcut bindings, "
-            f"{metrics.get('repositoryTextFiles', 0)} repository text files."
-        )
-
+        baseline_path=Path(temp)/"release-baseline.user.js";baseline_ref=latest_release_baseline(baseline_path);integrity_json=Path(temp)/"code-integrity-report.json";integrity_md=Path(temp)/"code-integrity-report.md";asset_json=Path(temp)/"asset-health-report.json";asset_md=Path(temp)/"asset-health-report.md"
+        command=[sys.executable,str(INTEGRITY_AUDITOR),"--candidate",str(SOURCE),"--policy",str(INTEGRITY_POLICY),"--json-output",str(integrity_json),"--markdown-output",str(integrity_md)]
+        if baseline_ref and baseline_path.exists(): command.extend(["--base",str(baseline_path)])
+        if subprocess.run(command,cwd=ROOT).returncode!=0: fail("expanded code-integrity audit failed")
+        if subprocess.run([sys.executable,str(ASSET_AUDITOR),"--mode","static","--json-output",str(asset_json),"--markdown-output",str(asset_md)],cwd=ROOT).returncode!=0: fail("static public-asset integrity audit failed")
+        for contract in [AUDIO_ALIAS_AUDITOR,VERSION_STATUS_CONTRACT,FINANCIAL_OVERVIEW_CONTRACT,MAIN_STYLE_HEADROOM_CONTRACT,V7_RETIREMENT_CONTRACT,MISSION_AGE_RETENTION_CONTRACT,NATIVE_TRANSPORT_SWEEP_CONTRACT,ISSUE447_MENU_BOOT_CONTRACT,ISSUE450_CORE_BOOTSTRAP_CONTRACT,ISSUE454_PREBOOT_STATE_CONTRACT,ISSUE464_LAUNCHER_SETTINGS_CONTRACT]:
+            if subprocess.run([sys.executable,str(contract)],cwd=ROOT).returncode!=0: fail(f"contract failed: {contract.relative_to(ROOT)}")
+        report=json.loads(integrity_json.read_text());metrics=report.get("metrics",{});print(f"Code integrity passed: {metrics.get('staticSelectors',0)} selectors.")
 
 def main() -> int:
     if not SOURCE.exists():
@@ -407,6 +236,10 @@ def main() -> int:
     DIST.mkdir(parents=True, exist_ok=True)
     USER_JS.write_bytes(raw)
     TXT.write_bytes(raw)
+
+    retired_extension_token = "ls" + "sm"
+    if retired_extension_token in USER_JS.read_text(encoding="utf-8").lower() or retired_extension_token in TXT.read_text(encoding="utf-8").lower():
+        fail("retired integration content remains in generated distribution")
 
     if USER_JS.read_bytes() != TXT.read_bytes():
         fail("generated .user.js and .txt files are not byte-identical")

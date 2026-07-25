@@ -6,4 +6,4 @@ The reconciliation contract is a key-based union. Existing live rows are retaine
 
 Requirements with a probability below 100% are displayed as uncertain capacity rather than being falsely declared definitely outstanding. Unknown or unmapped mission-information rows remain unresolved, and a pending or failed authoritative request prevents a false complete state.
 
-Definitions are cached by official definition URL because all mission instances of that definition share the same baseline. Each record also captures the active mission-instance identity, so a delayed response cannot apply after AJAX navigation. No polling, automatic selection or dispatch is introduced. Desktop, Tablet, iOS and LSSM use the existing single Matrix panel.
+Definitions are cached by official definition URL because all mission instances of that definition share the same baseline. Each record also captures the active mission-instance identity, so a delayed response cannot apply after AJAX navigation. No polling, automatic selection or dispatch is introduced. Desktop, Tablet, iOS and external extension use the existing single Matrix panel.

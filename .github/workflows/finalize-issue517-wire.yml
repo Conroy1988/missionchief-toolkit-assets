@@ -29,7 +29,19 @@ jobs:
 
       - name: Apply compact wire reconciliation
         shell: bash
-        run: python3 .github/issue517/finalize_wire.py
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/issue517/finalize_wire.py')
+          text = path.read_text(encoding='utf-8')
+          old = '    end = source.index("        `);", start)'
+          new = '    end = source.index("`);", start)'
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one finalizer boundary, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          python3 .github/issue517/finalize_wire.py
 
       - name: Validate canonical candidate
         shell: bash

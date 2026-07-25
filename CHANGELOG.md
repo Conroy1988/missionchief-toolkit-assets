@@ -6,13 +6,14 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 
 ## [7.1.3] - 2026-07-25
 
-### Incident Command Wire reduced-motion autoplay recovery
+### Continuous Incident Command news reel
 
-- Removed the browser reduced-motion preference from the automatic card scheduling blockade.
-- Continued discrete incident progression at the normal cadence while respecting manual Pause, hidden-tab, Economy Mode, expanded-queue and interaction gates.
-- Restored a smooth 0.85-second horizontal news-banner slide so the outgoing incident exits left while the next incident enters from the right.
-- Changed the executable runtime contract to run with `prefers-reduced-motion: reduce` enabled and prove Play plus continued automatic progression.
-- Kept previous/next navigation, queue expansion, theme styling and responsive control containment unchanged.
+- Replaced card-by-card carousel transitions with a constant-speed broadcast ticker reel that moves continuously from right to left.
+- Rendered two accessibility-safe copies of the unique incident sequence so the loop resets off-screen without a visible jump or empty gap.
+- Kept the title block and controls fixed while only the incident reel moves.
+- Made Pause freeze the reel at its exact position; Play resumes from that position, and previous/next nudge by one incident.
+- Retained the unique expanded priority queue, click-to-open behaviour, all seven themes and Desktop, Tablet/iPad and iOS layouts.
+- Added static and executable contracts for linear infinite motion, seamless duplication, dynamic speed, pause ownership and manual reel seeking.
 
 ## [7.1.2] - 2026-07-25
 

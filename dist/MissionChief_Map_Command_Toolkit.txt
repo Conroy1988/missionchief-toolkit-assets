@@ -1117,8 +1117,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let majorIncidentFeedLayoutTimer = null;
     let majorIncidentFeedMotionTimer = null;
     let majorIncidentFeedMotionRevision = 0;
-    let majorIncidentFeedAdvanceTimer = null;
-    let majorIncidentFeedAdvanceRevision = 0;
     let majorIncidentFeedCurrentIndex = 0;
     let majorIncidentFeedManualPaused = false;
     let majorIncidentFeedInteractionPauseUntil = 0;
@@ -9000,9 +8998,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title,#${SCRIPT.majorIncidentFeedId} .mcms-incident-name,#${SCRIPT.majorIncidentFeedId} .mcms-incident-state{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-count{flex:0 0 auto;min-width:34px;padding:3px 5px;border:1px solid currentColor;border-radius:999px;font-size:7px;line-height:1;text-align:center}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-viewport{height:100%!important;min-width:0;overflow:hidden!important}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{display:flex!important;align-items:stretch!important;width:100%!important;min-width:100%!important;height:100%!important;animation:none!important;will-change:transform;transition:transform .85s cubic-bezier(.22,.75,.18,1)!important}
-        @media (prefers-reduced-motion:reduce){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{transition:transform .85s cubic-bezier(.22,.75,.18,1)!important}}
-        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{flex:0 0 100%!important;width:100%!important;min-width:100%!important;height:100%!important;padding:0 12px!important;gap:9px!important;overflow:hidden!important;border:0!important;border-left:3px solid var(--mcms-wire-accent)!important;background:linear-gradient(90deg,rgba(104,207,255,.08),transparent 30%)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{display:flex!important;align-items:stretch!important;width:max-content!important;min-width:200%!important;height:100%!important;will-change:transform;animation:mcmsIncidentWireReel var(--mcms-incident-feed-duration,90s) linear infinite!important;transition:none!important}
+        @keyframes mcmsIncidentWireReel{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-group{display:flex!important;align-items:stretch!important;flex:0 0 auto!important;width:max-content!important;min-width:max-content!important;height:100%!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{flex:0 0 auto!important;width:clamp(520px,52vw,820px)!important;min-width:clamp(520px,52vw,820px)!important;max-width:820px!important;height:100%!important;padding:0 12px!important;gap:9px!important;overflow:hidden!important;border:0!important;border-left:3px solid var(--mcms-wire-accent)!important;background:linear-gradient(90deg,rgba(104,207,255,.08),transparent 30%)!important}#${SCRIPT.majorIncidentFeedId}.mcms-feed-paused .mcms-incident-feed-track,#${SCRIPT.majorIncidentFeedId}.mcms-feed-interacting .mcms-incident-feed-track,#${SCRIPT.majorIncidentFeedId}.mcms-feed-expanded .mcms-incident-feed-track,#${SCRIPT.majorIncidentFeedId}.mcms-feed-static .mcms-incident-feed-track{animation-play-state:paused!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy,#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{min-width:0;display:flex;align-items:center;gap:7px;overflow:hidden}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy{flex:1 1 auto}.mcms-incident-feed-meta{color:var(--mcms-wire-muted)}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-name{min-width:80px;max-width:52%;color:var(--mcms-wire-text)!important}
@@ -9024,8 +9022,8 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d8bd72;--mcms-wire-border:#b99a4f;--mcms-wire-bg:#07080a;--mcms-wire-bg2:#1b1d20;--mcms-wire-label:#d8bd72;--mcms-wire-text:#f5efe2;--mcms-wire-muted:#b7babd}
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#59e3df;--mcms-wire-border:#d5b85a;--mcms-wire-bg:#07171c;--mcms-wire-bg2:#123039;--mcms-wire-label:#1b574f;--mcms-wire-text:#f4f0d8;--mcms-wire-muted:#b7d8ce}
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label,html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{color:#111!important}
-        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important}}
-        @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
+        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{width:78vw!important;min-width:78vw!important;max-width:78vw!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important}}
+        @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{width:86vw!important;min-width:86vw!important;max-width:86vw!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
 `);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
     }
@@ -14220,18 +14218,17 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function majorIncidentFeedSyncControls(feed) {
         if (!feed) return;
         const count = majorIncidentFeedEntryCount(feed);
-        const current = count ? ((majorIncidentFeedCurrentIndex % count) + count) % count : 0;
-        feed.dataset.mcmsIncidentIndex = String(current);
+        feed.dataset.mcmsIncidentIndex = String(majorIncidentFeedCurrentIndex);
         const counter = feed.querySelector('.mcms-incident-feed-count');
-        if (counter) counter.textContent = count ? `${current + 1} / ${count}` : '0';
+        if (counter) counter.textContent = count ? `${count} LIVE` : '0';
         feed.querySelectorAll('[data-mcms-incident-action="previous"],[data-mcms-incident-action="next"]').forEach(button => {
             button.disabled = count <= 1;
         });
         const pauseButton = feed.querySelector('[data-mcms-incident-action="pause"]');
         if (pauseButton) {
             pauseButton.setAttribute('aria-pressed', String(majorIncidentFeedManualPaused));
-            pauseButton.setAttribute('aria-label', majorIncidentFeedManualPaused ? 'Resume incident rotation' : 'Pause incident rotation');
-            pauseButton.title = majorIncidentFeedManualPaused ? 'Resume incident rotation' : 'Pause incident rotation';
+            pauseButton.setAttribute('aria-label', majorIncidentFeedManualPaused ? 'Resume incident reel' : 'Pause incident reel');
+            pauseButton.title = majorIncidentFeedManualPaused ? 'Resume incident reel' : 'Pause incident reel';
             pauseButton.textContent = majorIncidentFeedManualPaused ? '▶' : 'Ⅱ';
             pauseButton.disabled = count <= 1;
         }
@@ -14245,68 +14242,55 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function majorIncidentFeedApplyIndex(feed, index = majorIncidentFeedCurrentIndex) {
-        const track = feed?.querySelector?.('.mcms-incident-feed-track');
         const count = majorIncidentFeedEntryCount(feed);
-        if (!feed || !track || !count) {
+        if (!feed || count <= 0) {
             majorIncidentFeedCurrentIndex = 0;
-            if (track) track.style.removeProperty('transform');
             majorIncidentFeedSyncControls(feed);
             return false;
         }
         const normalised = ((Number(index) || 0) % count + count) % count;
         majorIncidentFeedCurrentIndex = normalised;
-        track.style.setProperty('transform', `translate3d(${-normalised * 100}%,0,0)`);
-        track.querySelectorAll('.mcms-incident-feed-item').forEach((item, itemIndex) => {
-            const active = itemIndex === normalised;
-            item.setAttribute('aria-hidden', String(!active));
-            item.tabIndex = active ? 0 : -1;
-        });
+        const animation = majorIncidentFeedAnimation(feed);
+        const duration = Number(animation?.effect?.getTiming?.().duration) || 0;
+        if (animation && duration > 0) animation.currentTime = (duration / count) * normalised;
         majorIncidentFeedSyncControls(feed);
         return true;
     }
 
-    function majorIncidentFeedCancelAdvance() {
-        runtimeClearTimeout(majorIncidentFeedAdvanceTimer);
-        majorIncidentFeedAdvanceTimer = null;
-        majorIncidentFeedAdvanceRevision += 1;
+    function majorIncidentFeedAnimation(feed) {
+        const track = feed?.querySelector?.('.mcms-incident-feed-track');
+        if (!track || typeof track.getAnimations !== 'function') return null;
+        const animations = track.getAnimations();
+        return animations.find(animation => animation.animationName === 'mcmsIncidentWireReel') || animations[0] || null;
     }
 
-    function majorIncidentFeedScheduleAdvance(feed, delay = MAJOR_INCIDENT_FEED_ROTATION_MS, restart = false) {
+    function majorIncidentFeedSyncReelState(feed) {
+        if (!feed) return false;
         const count = majorIncidentFeedEntryCount(feed);
-        if (!feed?.isConnected || count <= 1 || state.economyMode || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) {
-            majorIncidentFeedCancelAdvance();
-            return false;
+        const shouldPause = Boolean(
+            count <= 1 ||
+            state.economyMode ||
+            majorIncidentFeedManualPaused ||
+            majorIncidentFeedExpanded ||
+            document.hidden ||
+            feed.classList.contains('mcms-feed-interacting')
+        );
+        feed.classList.toggle('mcms-feed-static', count <= 1 || state.economyMode);
+        const animation = majorIncidentFeedAnimation(feed);
+        if (animation) {
+            try {
+                if (shouldPause) animation.pause();
+                else animation.play();
+            } catch (err) {}
         }
-        if (majorIncidentFeedAdvanceTimer !== null && !restart) return true;
-        majorIncidentFeedCancelAdvance();
-        const now = Date.now();
-        const interactionDelay = Math.max(0, majorIncidentFeedInteractionPauseUntil - now);
-        const wait = Math.max(500, Number(delay) || MAJOR_INCIDENT_FEED_ROTATION_MS, interactionDelay + 350);
-        const revision = ++majorIncidentFeedAdvanceRevision;
-        majorIncidentFeedAdvanceTimer = runtimeSetTimeout(() => {
-            majorIncidentFeedAdvanceTimer = null;
-            if (revision !== majorIncidentFeedAdvanceRevision || !feed.isConnected) return;
-            if (majorIncidentFeedInteractionActive(feed)) {
-                majorIncidentFeedScheduleAdvance(feed, 850, true);
-                return;
-            }
-            majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + 1);
-            majorIncidentFeedScheduleAdvance(feed, MAJOR_INCIDENT_FEED_ROTATION_MS, true);
-        }, wait);
-        return true;
+        return !shouldPause;
     }
 
     function majorIncidentFeedSetPaused(feed, paused) {
         majorIncidentFeedManualPaused = Boolean(paused);
         feed?.classList?.toggle('mcms-feed-paused', majorIncidentFeedManualPaused);
         majorIncidentFeedSyncControls(feed);
-        if (majorIncidentFeedManualPaused) {
-            majorIncidentFeedCancelAdvance();
-        } else {
-            majorIncidentFeedInteractionPauseUntil = 0;
-            feed?.classList?.remove('mcms-feed-interacting');
-            majorIncidentFeedScheduleAdvance(feed, 650, true);
-        }
+        majorIncidentFeedSyncReelState(feed);
     }
 
     function majorIncidentFeedSetExpanded(feed, expanded) {
@@ -14315,19 +14299,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const panel = feed?.querySelector?.('.mcms-incident-feed-panel');
         if (panel) panel.hidden = !majorIncidentFeedExpanded;
         majorIncidentFeedSyncControls(feed);
-        if (majorIncidentFeedExpanded) {
-            majorIncidentFeedCancelAdvance();
-        } else {
-            majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-            majorIncidentFeedScheduleAdvance(feed, 1500, true);
-        }
+        majorIncidentFeedSyncReelState(feed);
     }
 
     function majorIncidentFeedAdvance(feed, delta, manual = false) {
-        if (majorIncidentFeedEntryCount(feed) <= 1) return false;
-        if (manual) majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
-        const changed = majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + Number(delta || 0));
-        majorIncidentFeedScheduleAdvance(feed, manual ? MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS : MAJOR_INCIDENT_FEED_ROTATION_MS, true);
+        const count = majorIncidentFeedEntryCount(feed);
+        if (count <= 1) return false;
+        const animation = majorIncidentFeedAnimation(feed);
+        const duration = Number(animation?.effect?.getTiming?.().duration) || 0;
+        const currentTime = duration > 0 ? ((Number(animation?.currentTime) || 0) % duration + duration) % duration : 0;
+        const currentIndex = duration > 0 ? Math.floor(currentTime / (duration / count)) : majorIncidentFeedCurrentIndex;
+        const changed = majorIncidentFeedApplyIndex(feed, currentIndex + Number(delta || 0));
+        if (!majorIncidentFeedManualPaused) majorIncidentFeedSyncReelState(feed);
         return changed;
     }
 
@@ -14337,7 +14320,6 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(majorIncidentFeedMotionTimer);
         majorIncidentFeedMotionTimer = null;
         majorIncidentFeedMotionRevision += 1;
-        majorIncidentFeedCancelAdvance();
         majorIncidentFeedCurrentIndex = 0;
         majorIncidentFeedManualPaused = false;
         majorIncidentFeedInteractionPauseUntil = 0;
@@ -14398,17 +14380,33 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return false;
     }
 
-    function refreshMajorIncidentFeedMotion(feed, forceRestart = false, attempt = 0, revision = majorIncidentFeedMotionRevision) {
+    function refreshMajorIncidentFeedMotion(feed = document.querySelector?.(`#${SCRIPT.majorIncidentFeedId}`), forceRestart = false, attempt = 0, revision = majorIncidentFeedMotionRevision) {
         if (!feed || revision !== majorIncidentFeedMotionRevision || !feed.isConnected || !state.majorIncidentFeed.enabled) return false;
         const viewport = feed.querySelector('.mcms-incident-feed-viewport');
         const track = feed.querySelector('.mcms-incident-feed-track');
-        if (!viewport || !track) return false;
+        const firstGroup = track?.querySelector('.mcms-incident-feed-group');
+        if (!viewport || !track || !firstGroup) return false;
+        const groupWidth = Math.max(firstGroup.scrollWidth || 0, firstGroup.getBoundingClientRect?.().width || 0);
+        if (groupWidth < 20 && attempt < 6) {
+            runtimeClearTimeout(majorIncidentFeedMotionTimer);
+            majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
+                majorIncidentFeedMotionTimer = null;
+                refreshMajorIncidentFeedMotion(feed, true, attempt + 1, revision);
+            }, 70 + (attempt * 55));
+            return false;
+        }
         const count = majorIncidentFeedEntryCount(feed);
-        feed.classList.toggle('mcms-feed-static', count <= 1 || state.economyMode);
-        if (forceRestart) majorIncidentFeedCurrentIndex = Math.min(majorIncidentFeedCurrentIndex, Math.max(0, count - 1));
-        majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
-        majorIncidentFeedScheduleAdvance(feed, forceRestart ? 1200 : MAJOR_INCIDENT_FEED_ROTATION_MS, forceRestart);
-        return true;
+        const duration = Math.round(clamp(groupWidth / 85, 28, 240, 90));
+        feed.style.setProperty('--mcms-incident-feed-duration', `${duration}s`);
+        if (forceRestart) {
+            track.style.setProperty('animation', 'none', 'important');
+            void track.offsetWidth;
+            track.style.removeProperty('animation');
+            majorIncidentFeedCurrentIndex = 0;
+        }
+        majorIncidentFeedSyncControls(feed);
+        majorIncidentFeedSyncReelState(feed);
+        return count > 1;
     }
 
     function scheduleMajorIncidentFeedMotion(feed = document.getElementById(SCRIPT.majorIncidentFeedId), forceRestart = false, delay = 50) {
@@ -14473,7 +14471,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedLayoutFrame = runtimeRequestAnimationFrame(positionMajorIncidentFeed);
     }
 
-    function majorIncidentFeedItemHtml(entry, mode = 'wire') {
+    function majorIncidentFeedItemHtml(entry, mode = 'wire', duplicate = false) {
         const snapshot = entry.snapshot;
         const source = snapshot.source === 'alliance' ? 'ALLIANCE' : 'PERSONAL';
         const creditText = Number.isFinite(entry.credits) ? `≈${formatOperationalCompactCredits(entry.credits)} CR` : 'VALUE UNKNOWN';
@@ -14483,7 +14481,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const details = [entry.postcode, creditText, source, ageText, casualtyText].filter(Boolean);
         const title = `${caption} · ${details.join(' · ')} · Click to open the mission`;
         const modeClass = mode === 'list' ? ' mcms-incident-feed-list-item' : '';
-        return `<button class="mcms-incident-feed-item${modeClass} mcms-incident-${escapeHtml(entry.operational.key)}" type="button" data-mcms-major-mission-id="${escapeHtml(snapshot.missionId)}" title="${escapeHtml(title)}" aria-label="Open ${escapeHtml(caption)} at ${escapeHtml(entry.postcode)}">
+        const accessibility = duplicate ? ' aria-hidden="true" tabindex="-1"' : '';
+        return `<button class="mcms-incident-feed-item${modeClass} mcms-incident-${escapeHtml(entry.operational.key)}" type="button" data-mcms-major-mission-id="${escapeHtml(snapshot.missionId)}" title="${escapeHtml(title)}" aria-label="Open ${escapeHtml(caption)} at ${escapeHtml(entry.postcode)}"${accessibility}>
             <span class="mcms-incident-level">MAJOR</span>
             <span class="mcms-incident-feed-copy">
                 <span class="mcms-incident-name">${allianceAwareHtml(caption)}</span>
@@ -14545,7 +14544,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
                 if (!zone || zone.contains(event.relatedTarget)) return;
                 feed.classList.add('mcms-feed-interacting');
-                majorIncidentFeedCancelAdvance();
+                majorIncidentFeedSyncReelState(feed);
             });
             feed.addEventListener('pointerout', event => {
                 const zone = closestEventTarget(event, '.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
@@ -14553,8 +14552,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const nextZone = event.relatedTarget?.closest?.('.mcms-incident-feed-viewport,.mcms-incident-feed-panel');
                 if (nextZone && feed.contains(nextZone)) return;
                 feed.classList.remove('mcms-feed-interacting');
-                majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-                majorIncidentFeedScheduleAdvance(feed, 1500, true);
+                majorIncidentFeedInteractionPauseUntil = 0;
+                majorIncidentFeedSyncReelState(feed);
             });
             feed.addEventListener('focusin', event => {
                 if (closestEventTarget(event, '[data-mcms-incident-action]')) return;
@@ -14566,13 +14565,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const active = document.activeElement;
                 if (!feed.contains(active) || active?.closest?.('[data-mcms-incident-action]')) {
                     feed.classList.remove('mcms-feed-interacting');
-                    majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
-                    majorIncidentFeedScheduleAdvance(feed, 1500, true);
+                    majorIncidentFeedInteractionPauseUntil = 0;
+                    majorIncidentFeedSyncReelState(feed);
                 }
             }, 0));
             feed.addEventListener('pointerdown', event => {
                 if (closestEventTarget(event, '[data-mcms-incident-action]')) return;
-                majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
+                majorIncidentFeedInteractionPauseUntil = 0;
             }, { passive: true });
             document.body.appendChild(feed);
         }
@@ -14596,6 +14595,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function renderMajorIncidentFeed(force = false) {
+        if (!state.majorIncidentFeed.enabled || isAllianceBuildingsContext()) {
+            removeMajorIncidentFeed();
+            return;
+        }
         const feed = ensureMajorIncidentFeed();
         if (!feed) return;
         const entries = state.economyMode ? majorIncidentFeedEntries().slice(0, 1) : majorIncidentFeedEntries();
@@ -14611,30 +14614,28 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             scheduleMajorIncidentFeedMotion(feed, false, 60);
             return;
         }
-        const activeMissionId = existingTrack?.querySelector?.('.mcms-incident-feed-item[aria-hidden="false"]')?.dataset?.mcmsMajorMissionId || '';
         majorIncidentFeedRenderSignature = signature;
         const label = feed.querySelector('.mcms-incident-feed-label-title');
         const track = feed.querySelector('.mcms-incident-feed-track');
         const list = feed.querySelector('.mcms-incident-feed-list');
         if (label) label.textContent = majorIncidentThemeLabel();
         if (!track || !list) return;
-
         feed.classList.toggle('mcms-feed-empty', entries.length === 0);
         feed.classList.toggle('mcms-feed-static', entries.length <= 1 || state.economyMode);
         feed.dataset.mcmsEntryCount = String(entries.length);
         if (!entries.length) {
-            track.innerHTML = '<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>';
-            list.innerHTML = '<div class="mcms-incident-feed-list-empty">No major incidents currently meet the configured threshold.</div>';
+            track.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>'));
+            list.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-list-empty">No major incidents currently meet the configured threshold.</div>'));
             majorIncidentFeedCurrentIndex = 0;
             majorIncidentFeedSetExpanded(feed, false);
-            majorIncidentFeedApplyIndex(feed, 0);
+            majorIncidentFeedSyncControls(feed);
         } else {
-            track.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire')).join('')));
-            list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list')).join('')));
-            const preservedIndex = entries.findIndex(entry => String(entry.snapshot.missionId) === String(activeMissionId));
-            if (preservedIndex >= 0) majorIncidentFeedCurrentIndex = preservedIndex;
-            else majorIncidentFeedCurrentIndex = Math.min(majorIncidentFeedCurrentIndex, entries.length - 1);
-            majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
+            const primary = entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire', false)).join('');
+            const duplicate = entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire', true)).join('');
+            track.replaceChildren(document.createRange().createContextualFragment(`<div class="mcms-incident-feed-group" data-mcms-reel-copy="primary">${primary}</div><div class="mcms-incident-feed-group" data-mcms-reel-copy="duplicate" aria-hidden="true">${duplicate}</div>`));
+            list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list', false)).join('')));
+            majorIncidentFeedCurrentIndex = 0;
+            majorIncidentFeedSyncControls(feed);
             scheduleMajorIncidentFeedMotion(feed, true, 70);
         }
         scheduleMajorIncidentFeedLayout();

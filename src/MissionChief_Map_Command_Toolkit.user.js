@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.3
+// @version      7.1.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.3',
+        version: '7.1.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1243,6 +1243,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         startedAt: 0,
         missionIndex: 0,
         missionTotal: 0,
+        completedMissionCount: 0,
         currentItem: '',
         statusMessage: '',
         statusLevel: 'info',
@@ -11731,6 +11732,47 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         return `${minutes}:${String(totalSeconds % 60).padStart(2, '0')}`;
     }
 
+    function transportSweepMissionProgress() {
+        const sweep = transportSweepRuntime;
+        const total = Math.max(0, Number(sweep.missionTotal) || Number(sweep.queue?.length) || 0);
+        const current = total ? Math.min(total, Math.max(1, Number(sweep.missionIndex) || 1)) : 0;
+        const completed = total ? Math.min(total, Math.max(0, Number(sweep.completedMissionCount) || 0)) : 0;
+        return { current, total, completed, text: `${current}/${total}` };
+    }
+
+    function setTransportSweepMissionProgress(missionNumber, missionTotal = transportSweepRuntime.missionTotal, options = {}) {
+        const total = Math.max(0, Number(missionTotal) || Number(transportSweepRuntime.queue?.length) || 0);
+        const current = total ? Math.min(total, Math.max(1, Number(missionNumber) || 1)) : 0;
+        const changed = current !== Number(transportSweepRuntime.missionIndex) || total !== Number(transportSweepRuntime.missionTotal);
+        transportSweepRuntime.missionIndex = current;
+        transportSweepRuntime.missionTotal = total;
+        if (Object.prototype.hasOwnProperty.call(options, 'item')) transportSweepRuntime.currentItem = String(options.item || '');
+        if (Object.prototype.hasOwnProperty.call(options, 'message')) transportSweepRuntime.statusMessage = String(options.message || '');
+        if (options.level) transportSweepRuntime.statusLevel = String(options.level);
+        if (options.render !== false && (changed || options.forceRender)) renderTransportSweepPanel();
+        return transportSweepMissionProgress();
+    }
+
+    function completeTransportSweepMissionProgress(missionNumber, options = {}) {
+        const progress = transportSweepMissionProgress();
+        const completed = progress.total ? Math.min(progress.total, Math.max(0, Number(missionNumber) || 0)) : 0;
+        const changed = completed > Number(transportSweepRuntime.completedMissionCount || 0);
+        if (changed) transportSweepRuntime.completedMissionCount = completed;
+        if (options.render !== false && (changed || options.forceRender)) renderTransportSweepPanel();
+        return changed;
+    }
+
+    function finaliseTransportSweepMissionProgress(wasStopped = false) {
+        const progress = transportSweepMissionProgress();
+        if (!wasStopped && progress.total > 0) {
+            transportSweepRuntime.missionIndex = progress.total;
+            transportSweepRuntime.completedMissionCount = progress.total;
+        }
+        const finalProgress = transportSweepMissionProgress();
+        renderTransportSweepPanel();
+        return finalProgress;
+    }
+
     function renderTransportSweepHud() {
         const sweep = transportSweepRuntime;
         const visible = sweep.running || sweep.stopRequested || sweep.hudFinal;
@@ -11740,15 +11782,14 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         }
         const hud = ensureTransportSweepHud();
         if (!hud) return;
-        const total = Math.max(0, Number(sweep.missionTotal) || Number(sweep.queue?.length) || 0);
-        const index = total ? Math.min(total, Math.max(1, Number(sweep.missionIndex) || 1)) : 0;
+        const progress = transportSweepMissionProgress();
         const phase = sweep.hudFinal ? (sweep.statusLevel === 'error' ? 'Finished with errors' : 'Sweep complete')
         : sweep.stopRequested ? 'Stopping'
         : 'Sweep running';
         const current = String(sweep.currentItem || '').trim();
         const message = String(sweep.statusMessage || (sweep.running ? 'Preparing patient transport sweep' : phase)).trim();
         hud.dataset.state = sweep.hudFinal ? (sweep.errors ? 'error' : 'complete') : sweep.stopRequested ? 'stopping' : 'running';
-        hud.innerHTML = `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(phase)}</b></div><div class="mcms-sweep-hud-status">${escapeHtml(message)}</div>${current ? `<div class="mcms-sweep-hud-current">${escapeHtml(current)}</div>` : ''}<div class="mcms-sweep-hud-stats"><span><b>${index}/${total}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${Math.max(0, Number(sweep.cleared) || 0)}</b><small>Patients cleared</small></span><span><b>${Math.max(0, Number(sweep.skipped) || 0)}</b><small>Skipped</small></span><span><b>${Math.max(0, Number(sweep.errors) || 0)}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(transportSweepHudElapsed())} elapsed</span><span>${Math.max(0, Number(sweep.processed) || 0)} processed</span></div>`;
+        hud.innerHTML = `<div class="mcms-sweep-hud-head"><span><i></i>Patient Transport Sweep</span><b>${escapeHtml(phase)}</b></div><div class="mcms-sweep-hud-status">${escapeHtml(message)}</div>${current ? `<div class="mcms-sweep-hud-current">${escapeHtml(current)}</div>` : ''}<div class="mcms-sweep-hud-stats"><span><b>${escapeHtml(progress.text)}</b><small>Missions</small></span><span class="mcms-sweep-hud-cleared"><b>${Math.max(0, Number(sweep.cleared) || 0)}</b><small>Patients cleared</small></span><span><b>${Math.max(0, Number(sweep.skipped) || 0)}</b><small>Skipped</small></span><span><b>${Math.max(0, Number(sweep.errors) || 0)}</b><small>Errors</small></span></div><div class="mcms-sweep-hud-foot"><span>${escapeHtml(transportSweepHudElapsed())} elapsed</span><span>${Math.max(0, Number(sweep.processed) || 0)} processed</span></div>`;
     }
 
     runtimeOnCleanup(removeTransportSweepHud);
@@ -11759,6 +11800,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         if (!host) return;
         const runtime = transportSweepRuntime;
         const queue = runtime.queue || [];
+        const missionProgress = transportSweepMissionProgress();
         const currentId = normaliseMissionId(runtime.currentMissionId);
         const status = runtime.running ? 'RUNNING' : runtime.stopRequested ? 'STOPPING' : queue.length ? 'READY' : 'IDLE';
         const list = queue.length ? queue.map((item, index) => {
@@ -11769,7 +11811,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
             const stamp = new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         return `<div>${escapeHtml(stamp)} · ${escapeHtml(entry.message)}</div>`;
         }).join('') : '<div>No sweep activity yet.</div>';
-        const html = `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${queue.length}</b><span>Missions</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
+        const html = `<div class="mcms-sweep-card"><div class="mcms-sweep-head"><span>Patient Transport Sweep</span><span class="mcms-sweep-state ${runtime.running ? 'mcms-running' : ''}">${status}</span></div><div class="mcms-sweep-stats"><div class="mcms-sweep-stat"><b>${escapeHtml(missionProgress.text)}</b><span>Mission progress</span></div><div class="mcms-sweep-stat"><b>${runtime.cleared}</b><span>Cleared</span></div><div class="mcms-sweep-stat"><b>${runtime.skipped}</b><span>Skipped</span></div><div class="mcms-sweep-stat"><b>${runtime.errors}</b><span>Errors</span></div></div><div class="mcms-sweep-queue">${list}</div><div class="mcms-sweep-log">${logs}</div></div>`;
         setInnerHtmlIfChanged(host, html);
         const start = document.querySelector(`#${SCRIPT.panelId} [data-action="start-transport-sweep"]`);
         const stop = document.querySelector(`#${SCRIPT.panelId} [data-action="stop-transport-sweep"]`);
@@ -12555,10 +12597,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeClearTimeout(transportSweepRuntime.hudDismissTimer);
         transportSweepRuntime.hudDismissTimer = null;
         transportSweepRuntime.startedAt = Date.now();
-        transportSweepRuntime.missionIndex = 0;
-        transportSweepRuntime.missionTotal = queue.length;
-        transportSweepRuntime.currentItem = 'Preparing sweep';
-        transportSweepRuntime.statusMessage = 'Preparing patient transport sweep';
+        transportSweepRuntime.completedMissionCount = 0;
+        setTransportSweepMissionProgress(queue.length ? 1 : 0, queue.length, {
+            item: 'Preparing sweep',
+            message: 'Preparing patient transport sweep',
+            render: false
+        });
         transportSweepRuntime.statusLevel = 'info';
         transportSweepRuntime.hudFinal = false;
         transportSweepRuntime.log = [];
@@ -12568,11 +12612,24 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             for (let missionOffset = 0; missionOffset < queue.length; missionOffset += 1) {
                 const item = queue[missionOffset];
                 if (transportSweepRuntime.stopRequested || transportSweepRuntime.cleared >= state.transportSweep.maxPerRun) break;
-                transportSweepRuntime.missionIndex = missionOffset + 1;
-                transportSweepRuntime.currentItem = String(item?.caption || `Mission ${item?.missionId || missionOffset + 1}`);
-                renderTransportSweepPanel();
+                const missionNumber = missionOffset + 1;
+                const missionLabel = String(item?.caption || `Mission ${item?.missionId || missionNumber}`);
+                setTransportSweepMissionProgress(missionNumber, queue.length, {
+                    item: missionLabel,
+                    message: `Processing mission ${missionNumber} of ${queue.length}`,
+                    forceRender: true
+                });
                 const remaining = state.transportSweep.maxPerRun - transportSweepRuntime.cleared;
-                await processTransportSweepMission(item, remaining);
+                try {
+                    await processTransportSweepMission(item, remaining);
+                } catch (err) {
+                    transportSweepRuntime.errors += 1;
+                    transportSweepLog(`Mission ${missionLabel} failed: ${err?.message || 'unknown error'}`, 'error');
+                    await closeTransportSweepWindows('recovering from a mission error');
+                } finally {
+                    transportSweepRuntime.currentItem = missionLabel;
+                    completeTransportSweepMissionProgress(missionNumber, { forceRender: true });
+                }
                 if (!transportSweepRuntime.stopRequested) await transportSweepSleep(state.transportSweep.delayMs);
             }
         } catch (err) {
@@ -12592,10 +12649,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             transportSweepRuntime.ownedWindowLayers = new Set();
             transportSweepRuntime.activeWindowCreatedLayer = false;
             transportSweepRuntime.hudFinal = true;
+            const missionProgress = finaliseTransportSweepMissionProgress(wasStopped);
             buildTransportSweepQueue();
             scheduleTransportWatcherRefresh(0);
-            showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared`);
-            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
+            showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared · ${missionProgress.text} missions` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared · ${missionProgress.text} missions`);
+            transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: missions ${missionProgress.text}, ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
             scheduleTransportSweepHudDismiss(6500);
         }
     }

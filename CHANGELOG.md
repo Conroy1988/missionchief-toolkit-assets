@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.4] - 2026-07-25
+
+### Patient Transport Sweep mission-progress synchronization
+
+- Added one canonical mission-position state shared by the persistent HUD, Toolkit panel and final summary.
+- Initialised active runs at `1/total` and updated the numerator only at mission queue boundaries, never for individual patients or vehicle candidates.
+- Made skipped missions and recoverable mission-level errors finalise exactly once before the queue continues.
+- Preserved the last accurate mission position on cancellation and rendered `total/total` on normal completion before HUD dismissal.
+- Added deterministic static and runtime contracts for multiple patient releases, repeated renders, skips, mission errors, cancellation and final completion.
+
 ## [7.1.3] - 2026-07-25
 
 ### Continuous Incident Command news reel

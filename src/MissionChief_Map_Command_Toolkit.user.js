@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.5
+// @version      7.1.6
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.5',
+        version: '7.1.6',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1232,6 +1232,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         processed: 0,
         confirmedReleaseKeys: new Set(),
         skippedPatientKeys: new Set(),
+        confirmedDischargeDialogKeys: new Set(),
+        pendingDischargeKey: '',
         rejectedOwn: 0,
         missionAnchorBaseline: new Set(),
         vehicleButtonBaseline: new Set(),
@@ -12175,6 +12177,72 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         return elements;
     }
 
+    const TRANSPORT_SWEEP_DISCHARGE_DIALOG_TITLE = 'discharge patient';
+    const TRANSPORT_SWEEP_DISCHARGE_DIALOG_WARNING = 'do you really want to discharge the patient of this vehicle? no payment will be credited for the patient!';
+    const TRANSPORT_SWEEP_DISCHARGE_DIALOG_ABORT = 'abort';
+    const TRANSPORT_SWEEP_DISCHARGE_DIALOG_DISABLE = 'discharge and disable confirmation';
+    const TRANSPORT_SWEEP_DISCHARGE_DIALOG_CONFIRM = 'yes, discharge!';
+
+    function transportSweepDialogControlText(control) {
+        return normaliseTransportSweepReleaseText(
+            control?.value || control?.textContent || control?.getAttribute?.('aria-label') || control?.title || ''
+        );
+    }
+
+    function transportSweepDischargeConfirmationRoots() {
+        const selectors = [
+            '[role="alertdialog"]', '[role="dialog"]', '.modal.show .modal-content', '.modal.in .modal-content',
+            '.modal.show', '.modal.in', '.modal-dialog', '.modal-content', '.bootbox', '.bootbox-modal',
+            '.swal2-popup', '.sweet-alert', '.ui-dialog', '.ui-dialog-content', '#lightbox_box', '#lightbox'
+        ];
+        const roots = [];
+        const seen = new Set();
+        const add = root => {
+            if (!root || seen.has(root) || !transportSweepElementVisible(root)) return;
+            if (root.closest?.(`#${SCRIPT.panelId}`)) return;
+            seen.add(root);
+            roots.push(root);
+        };
+        transportSweepVisibleWindowRoots().forEach(add);
+        for (const context of transportSweepDocumentContexts()) {
+            for (const selector of selectors) {
+                let matches = [];
+                try { matches = Array.from(context.doc.querySelectorAll(selector)); } catch (err) {}
+                matches.forEach(add);
+            }
+        }
+        return roots;
+    }
+
+    function clickTransportSweepDischargeConfirmation(releaseKey) {
+        const key = String(releaseKey || '').trim();
+        if (!key || !transportSweepRuntime.running || transportSweepRuntime.pendingDischargeKey !== key) return false;
+        if (transportSweepRuntime.confirmedDischargeDialogKeys.has(key)) return false;
+
+        for (const root of transportSweepDischargeConfirmationRoots()) {
+            const rootText = normaliseTransportSweepReleaseText(root.textContent);
+            if (!rootText.includes(TRANSPORT_SWEEP_DISCHARGE_DIALOG_TITLE) || !rootText.includes(TRANSPORT_SWEEP_DISCHARGE_DIALOG_WARNING)) continue;
+
+            let controls = [];
+            try {
+                controls = Array.from(root.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"], a.btn'));
+            } catch (err) {}
+            const visibleControls = controls.filter(control => transportSweepElementVisible(control));
+            const labels = new Map(visibleControls.map(control => [transportSweepDialogControlText(control), control]));
+            const abort = labels.get(TRANSPORT_SWEEP_DISCHARGE_DIALOG_ABORT);
+            const disable = labels.get(TRANSPORT_SWEEP_DISCHARGE_DIALOG_DISABLE);
+            const confirm = labels.get(TRANSPORT_SWEEP_DISCHARGE_DIALOG_CONFIRM);
+            if (!abort || !disable || !confirm) continue;
+            if (confirm.disabled || confirm.getAttribute?.('aria-disabled') === 'true') continue;
+
+            transportSweepRuntime.confirmedDischargeDialogKeys.add(key);
+            confirm.click();
+            transportSweepLog('Confirmed MissionChief Discharge patient dialog');
+            return true;
+        }
+        return false;
+    }
+
     function captureTransportSweepReleaseConfirmationBaseline() {
         return new Map(transportSweepReleaseEvidenceElements().map(element => [element, transportSweepReleaseConfirmationSignature(element.textContent)]));
     }
@@ -12528,16 +12596,25 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
                 );
             } else {
                 try {
+                    const releaseKey = transportSweepReleaseKey(missionId, candidate.vehicleId);
                     const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
+                    transportSweepRuntime.pendingDischargeKey = releaseKey;
                     button.click();
-                    const cleared = await transportSweepWaitFor(() => {
-                        if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
-                        if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
-                        return normaliseTransportSweepReleaseText(button.textContent) !== 'discharge patient' ? true : null;
-                    }, 5000, 140);
+                    clickTransportSweepDischargeConfirmation(releaseKey);
+                    let cleared = false;
+                    try {
+                        cleared = await transportSweepWaitFor(() => {
+                            clickTransportSweepDischargeConfirmation(releaseKey);
+                            if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
+                            if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
+                            return normaliseTransportSweepReleaseText(button.textContent) !== 'discharge patient' ? true : null;
+                        }, 5000, 70);
+                    } finally {
+                        if (transportSweepRuntime.pendingDischargeKey === releaseKey) transportSweepRuntime.pendingDischargeKey = '';
+                    }
                     if (!cleared) throw new Error('Discharge confirmation timed out');
                     confirmedThisAttempt = recordTransportSweepConfirmedRelease(
-                        transportSweepReleaseKey(missionId, candidate.vehicleId),
+                        releaseKey,
                         `Cleared ${candidate.label} at ${item.caption}`
                     );
                     if (confirmedThisAttempt) clearedHere += 1;
@@ -12597,6 +12674,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         transportSweepRuntime.processed = 0;
         transportSweepRuntime.confirmedReleaseKeys = new Set();
         transportSweepRuntime.skippedPatientKeys = new Set();
+        transportSweepRuntime.confirmedDischargeDialogKeys = new Set();
+        transportSweepRuntime.pendingDischargeKey = '';
         transportSweepRuntime.rejectedOwn = 0;
         transportSweepRuntime.missionAnchorBaseline = new Set();
         transportSweepRuntime.vehicleButtonBaseline = new Set();
@@ -12653,6 +12732,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             transportSweepRuntime.stopRequested = false;
             transportSweepRuntime.currentMissionId = null;
             transportSweepRuntime.currentVehicleHref = '';
+            transportSweepRuntime.pendingDischargeKey = '';
             transportSweepRuntime.currentItem = '';
             transportSweepRuntime.missionAnchorBaseline = new Set();
             transportSweepRuntime.vehicleButtonBaseline = new Set();

@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.6] - 2026-07-25
+
+### Native Discharge patient confirmation handling
+
+- Detected the intermittent MissionChief Discharge patient confirmation dialog only while a sweep-owned mission/vehicle discharge action is armed.
+- Clicked the exact **Yes, discharge!** action immediately and during the existing bounded release-evidence wait.
+- Explicitly left **Abort** and **discharge and disable confirmation** untouched, preserving the user's MissionChief confirmation preference.
+- Ignored unrelated dialogs, manual discharges, inactive sweeps and mismatched release identities.
+- Added idempotent dialog-confirmation ownership plus static and executable regressions for immediate, delayed, absent, unrelated and repeated dialog scans.
+
 ## [7.1.5] - 2026-07-25
 
 ### Patient Transport Sweep skipped-patient accounting

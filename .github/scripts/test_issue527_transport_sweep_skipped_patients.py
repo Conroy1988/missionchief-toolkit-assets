@@ -9,7 +9,9 @@ def section(text,start,end):
 def main():
  source=SOURCE.read_text(encoding='utf-8')
  metadata=re.search(r'(?m)^//\s*@version\s+([^\s]+)$',source);runtime=re.search(r"version:\s*'([^']+)'",source)
- assert metadata and runtime and metadata.group(1)==runtime.group(1)=='7.1.5'
+ assert metadata and runtime and metadata.group(1)==runtime.group(1)
+ version=tuple(int(part) for part in metadata.group(1).split('.'))
+ assert version >= (7,1,5)
  for marker in ['skippedPatientKeys: new Set()','function recordTransportSweepSkippedPatient(skipKey, message)','transportSweepRuntime.skippedPatientKeys = new Set();']:
   assert marker in source,marker
  helper=section(source,'    function recordTransportSweepSkippedPatient(','    function transportSweepVisibleDischargeButtons(')

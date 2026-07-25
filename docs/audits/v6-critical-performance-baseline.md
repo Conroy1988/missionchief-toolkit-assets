@@ -3,7 +3,7 @@
 **Issue:** #510  
 **Baseline release:** v5.0.7  
 **Baseline canonical SHA-256:** `97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da`  
-**Candidate canonical SHA-256:** `b0cd653d52705fe0af3d1777c0436c6ba4cb296bb2fcfd89473a588a44c509d3`  
+**Candidate canonical SHA-256:** `9c3199e9eee3fe6937abddb045f4bcfdff127bb18c87014a77bf5627c3da71b1`  
 **LSSM settings reference:** `LSS-Manager/LSSM-V.4@88e41646e59a7d620624f90f1d9a0a62320c2775`
 
 ## Scope
@@ -42,8 +42,8 @@ This combination could create repeated full mission-window scans and rebuilds du
 
 | Metric | v5.0.7 | v6 candidate | Delta |
 |---|---:|---:|---:|
-| Source bytes | 2,060,765 | 1,726,527 | −334,259 (−16.2%) |
-| Source lines | 31,761 | 25,147 | −6,615 (−20.8%) |
+| Source bytes | 2,060,765 | 1,727,090 | −333,675 (−16.2%) |
+| Source lines | 31,761 | 25,146 | −6,615 (−20.8%) |
 | Named function declarations | 979 | 886 | −93 (−9.5%) |
 | MutationObserver constructions | 9 | 9 | no increase |
 | Registered recurring tasks | 8 | 6 | −2 (−25.0%) |

@@ -18,9 +18,9 @@
     "operationalDecorationFullDocumentQueries": 1
   },
   "candidate": {
-    "sha256": "b0cd653d52705fe0af3d1777c0436c6ba4cb296bb2fcfd89473a588a44c509d3",
-    "bytes": 1726527,
-    "lines": 25147,
+    "sha256": "9c3199e9eee3fe6937abddb045f4bcfdff127bb18c87014a77bf5627c3da71b1",
+    "bytes": 1727090,
+    "lines": 25146,
     "functionDeclarations": 886,
     "mutationObservers": 9,
     "recurringTasks": 6,

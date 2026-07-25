@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.4
+// @version      7.1.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.4',
+        version: '7.1.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1231,6 +1231,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         errors: 0,
         processed: 0,
         confirmedReleaseKeys: new Set(),
+        skippedPatientKeys: new Set(),
         rejectedOwn: 0,
         missionAnchorBaseline: new Set(),
         vehicleButtonBaseline: new Set(),
@@ -12203,6 +12204,17 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         return true;
     }
 
+    function recordTransportSweepSkippedPatient(skipKey, message) {
+        const key = String(skipKey || '').trim();
+        if (!key || transportSweepRuntime.confirmedReleaseKeys.has(key) || transportSweepRuntime.skippedPatientKeys.has(key)) return false;
+        transportSweepRuntime.skippedPatientKeys.add(key);
+        transportSweepRuntime.skipped += 1;
+        transportSweepRuntime.processed += 1;
+        transportSweepLog(message, 'warn');
+        renderTransportSweepPanel();
+        return true;
+    }
+
     
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
@@ -12469,8 +12481,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
         let missionOpen = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
         if (!missionOpen || transportSweepRuntime.stopRequested) {
             if (!transportSweepRuntime.stopRequested) {
-                transportSweepRuntime.skipped += 1;
-                transportSweepLog(`Skipped ${item.caption} because its mission window did not become available`, 'warn');
+                transportSweepLog(`Could not inspect ${item.caption} because its mission window did not become available; no patient skip was recorded`, 'warn');
             }
             return 0;
         }
@@ -12511,7 +12522,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
 
             let confirmedThisAttempt = false;
             if (!button) {
-                transportSweepLog(`${candidate.label} is carrying a patient but is not transport-ready; continuing in the same mission`);
+                recordTransportSweepSkippedPatient(
+                    transportSweepReleaseKey(missionId, candidate.vehicleId),
+                    `Skipped ${candidate.label} at ${item.caption}: no usable Discharge patient control was available`
+                );
             } else {
                 try {
                     const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
@@ -12550,10 +12564,6 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217
 
         await closeTransportSweepWindows('finishing the mission');
 
-        if (clearedHere === 0 && !transportSweepRuntime.stopRequested) {
-            transportSweepRuntime.skipped += 1;
-            renderTransportSweepPanel();
-        }
         return clearedHere;
     }
 
@@ -12586,6 +12596,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         transportSweepRuntime.errors = 0;
         transportSweepRuntime.processed = 0;
         transportSweepRuntime.confirmedReleaseKeys = new Set();
+        transportSweepRuntime.skippedPatientKeys = new Set();
         transportSweepRuntime.rejectedOwn = 0;
         transportSweepRuntime.missionAnchorBaseline = new Set();
         transportSweepRuntime.vehicleButtonBaseline = new Set();
@@ -12652,7 +12663,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const missionProgress = finaliseTransportSweepMissionProgress(wasStopped);
             buildTransportSweepQueue();
             scheduleTransportWatcherRefresh(0);
-            showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared · ${missionProgress.text} missions` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared · ${missionProgress.text} missions`);
+            showToast(wasStopped ? `Transport Sweep stopped · ${transportSweepRuntime.cleared} cleared · ${transportSweepRuntime.skipped} skipped · ${missionProgress.text} missions` : `Transport Sweep complete · ${transportSweepRuntime.cleared} cleared · ${transportSweepRuntime.skipped} skipped · ${missionProgress.text} missions`);
             transportSweepLog(`${wasStopped ? 'Stopped' : 'Complete'}: missions ${missionProgress.text}, ${transportSweepRuntime.cleared} cleared, ${transportSweepRuntime.skipped} skipped, ${transportSweepRuntime.errors} errors`, transportSweepRuntime.errors ? 'error' : 'info');
             scheduleTransportSweepHudDismiss(6500);
         }

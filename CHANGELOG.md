@@ -4,6 +4,17 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.5] - 2026-07-25
+
+### Patient Transport Sweep skipped-patient accounting
+
+- Made **Skipped** an idempotent patient/vehicle outcome counter instead of a mission-level fallback.
+- Counted each unique patient vehicle once when no usable native MissionChief **Discharge patient** control is available.
+- Updated the persistent HUD and Toolkit panel immediately when a patient skip is recorded.
+- Prevented mission-window failures and missions with no identifiable patient vehicle from fabricating skipped patients.
+- Included skipped patients in the final completion toast while preserving errors and confirmed releases as separate outcomes.
+- Added permanent static and executable coverage for duplicate observations, multiple skipped patients, confirmed-release exclusion and mission-progress isolation.
+
 ## [7.1.4] - 2026-07-25
 
 ### Patient Transport Sweep mission-progress synchronization

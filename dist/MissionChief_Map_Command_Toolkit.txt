@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.0.1
+// @version      7.1.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.0.1',
+        version: '7.1.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1010,6 +1010,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const MAP_PROFILE_LIMIT = 5;
     const MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS = [10000, 25000, 50000, 100000];
     const MAJOR_INCIDENT_FEED_MAX_ITEMS = 12;
+    const MAJOR_INCIDENT_FEED_ROTATION_MS = 6500;
+    const MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS = 9000;
     const MAJOR_INCIDENT_MASS_CASUALTY_PATIENTS = 10;
     const MAJOR_INCIDENT_MASS_CASUALTY_PRISONERS = 5;
     const UK_POSTCODE_PATTERN = /\b(?:GIR\s?0AA|(?:(?:[A-PR-UWYZ][0-9][0-9A-HJKSTUW]?|[A-PR-UWYZ][A-HK-Y][0-9][0-9ABEHMNPRV-Y]?)\s?[0-9][ABD-HJLNP-UW-Z]{2}))\b/iu;
@@ -1115,6 +1117,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let majorIncidentFeedLayoutTimer = null;
     let majorIncidentFeedMotionTimer = null;
     let majorIncidentFeedMotionRevision = 0;
+    let majorIncidentFeedCurrentIndex = 0;
+    let majorIncidentFeedManualPaused = false;
+    let majorIncidentFeedInteractionPauseUntil = 0;
+    let majorIncidentFeedExpanded = false;
     let majorIncidentFeedResizeObserver = null;
     let majorIncidentFeedObservedElement = null;
     const missionLifecycleLastSeen = new Map();
@@ -8985,7 +8991,39 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         @media (prefers-reduced-motion:reduce) {html[data-mcms-ui-theme="hyrule"] #${SCRIPT.panelId}::after,
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
-        `);
+        
+        /* v7.1.0 Incident Command Wire: bounded, theme-aware card navigation. */
+        #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#68cfff;--mcms-wire-border:#467ca4;--mcms-wire-bg:#0a161f;--mcms-wire-bg2:#142734;--mcms-wire-label:linear-gradient(180deg,#24628e,#173e5b);--mcms-wire-text:#f4fbff;--mcms-wire-muted:#abc0cd;position:relative;height:44px!important;overflow:visible!important;border-color:var(--mcms-wire-border)!important;background:linear-gradient(180deg,var(--mcms-wire-bg2),var(--mcms-wire-bg))!important;color:var(--mcms-wire-text)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:148px!important;padding:0 9px!important;gap:7px!important;border-right:1px solid var(--mcms-wire-border)!important;background:var(--mcms-wire-label)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title,#${SCRIPT.majorIncidentFeedId} .mcms-incident-name,#${SCRIPT.majorIncidentFeedId} .mcms-incident-state{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-count{flex:0 0 auto;min-width:34px;padding:3px 5px;border:1px solid currentColor;border-radius:999px;font-size:7px;line-height:1;text-align:center}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-viewport{height:100%!important;min-width:0;overflow:hidden!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-track{display:flex!important;align-items:stretch!important;width:100%!important;min-width:100%!important;height:100%!important;animation:none!important;will-change:transform;transition:transform .46s cubic-bezier(.22,.75,.18,1)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{flex:0 0 100%!important;width:100%!important;min-width:100%!important;height:100%!important;padding:0 12px!important;gap:9px!important;overflow:hidden!important;border:0!important;border-left:3px solid var(--mcms-wire-accent)!important;background:linear-gradient(90deg,rgba(104,207,255,.08),transparent 30%)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy,#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{min-width:0;display:flex;align-items:center;gap:7px;overflow:hidden}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-copy{flex:1 1 auto}.mcms-incident-feed-meta{color:var(--mcms-wire-muted)}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-name{min-width:80px;max-width:52%;color:var(--mcms-wire-text)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{color:var(--mcms-wire-muted)!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-postcode{color:var(--mcms-wire-accent)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-state{flex:0 0 auto;max-width:180px}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls{position:relative;z-index:7;flex:0 0 auto;align-self:stretch;display:flex;align-items:center;gap:3px;padding:0 5px;border-left:1px solid var(--mcms-wire-border);background:rgba(0,0,0,.12)}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{appearance:none;display:grid;place-items:center;width:27px;height:27px;min-width:27px;padding:0;border:1px solid var(--mcms-wire-border);border-radius:5px;background:rgba(255,255,255,.055);color:var(--mcms-wire-text);font:900 13px/1 Arial,sans-serif;cursor:pointer}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:hover,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button:focus-visible,#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls [aria-pressed="true"]{background:var(--mcms-wire-accent);color:#09131a;outline:1px solid var(--mcms-wire-accent)}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel{position:absolute;z-index:12;top:calc(100% + 5px);right:0;width:min(860px,calc(100vw - 18px));max-height:min(58vh,520px);overflow:hidden;border:1px solid var(--mcms-wire-border);border-radius:9px;background:linear-gradient(180deg,var(--mcms-wire-bg2),var(--mcms-wire-bg));box-shadow:0 15px 38px rgba(0,0,0,.52);color:var(--mcms-wire-text)}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel[hidden]{display:none!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 13px;border-bottom:1px solid var(--mcms-wire-border)}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-list{display:grid;gap:5px;max-height:calc(min(58vh,520px) - 43px);padding:7px;overflow:auto}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-list-item{flex:none!important;width:100%!important;min-width:0!important;min-height:54px!important;height:auto!important;padding:8px 11px!important;border:1px solid var(--mcms-wire-border)!important;border-left:4px solid var(--mcms-wire-accent)!important;border-radius:6px!important;background:rgba(255,255,255,.025)!important}
+        #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-list-item .mcms-incident-feed-copy{flex-direction:column;align-items:flex-start;gap:4px}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-list-empty{padding:22px;color:var(--mcms-wire-muted);text-align:center}
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#00f0ff;--mcms-wire-border:#fcee0a;--mcms-wire-bg:#080d12;--mcms-wire-bg2:#10151b;--mcms-wire-label:#fcee0a;--mcms-wire-text:#f8ffff;--mcms-wire-muted:#9dd8dc}
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#9af26f;--mcms-wire-border:#78d85b;--mcms-wire-bg:#0b140d;--mcms-wire-bg2:#172419;--mcms-wire-label:#254326;--mcms-wire-text:#d9ffc7;--mcms-wire-muted:#9edb88}
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#ff4b57;--mcms-wire-border:#d82632;--mcms-wire-bg:#101216;--mcms-wire-bg2:#1d2025;--mcms-wire-label:#b1121c;--mcms-wire-text:#fff;--mcms-wire-muted:#c9cdd2}
+        html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#f6a34c;--mcms-wire-border:#d87822;--mcms-wire-bg:#20211e;--mcms-wire-bg2:#34352f;--mcms-wire-label:#6b421f;--mcms-wire-text:#fff3df;--mcms-wire-muted:#d9c8aa}
+        html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d8bd72;--mcms-wire-border:#b99a4f;--mcms-wire-bg:#07080a;--mcms-wire-bg2:#1b1d20;--mcms-wire-label:#d8bd72;--mcms-wire-text:#f5efe2;--mcms-wire-muted:#b7babd}
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#59e3df;--mcms-wire-border:#d5b85a;--mcms-wire-bg:#07171c;--mcms-wire-bg2:#123039;--mcms-wire-label:#1b574f;--mcms-wire-text:#f4f0d8;--mcms-wire-muted:#b7d8ce}
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label,html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{color:#111!important}
+        @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:32px;height:32px;min-width:32px}}
+        @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
+`);
         recordStartupMetric('stylesheetInstallMs', styleStartedAt, { stylesheetPhase: 'document-start' });
     }
 
@@ -14162,12 +14200,138 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return { bar, brandElement, clockElement, searchInput };
     }
 
+    function majorIncidentFeedEntryCount(feed) {
+        return Math.max(0, Number(feed?.dataset?.mcmsEntryCount) || 0);
+    }
+
+    function majorIncidentFeedInteractionActive(feed, now = Date.now()) {
+        return Boolean(
+            majorIncidentFeedManualPaused ||
+            majorIncidentFeedExpanded ||
+            document.hidden ||
+            now < majorIncidentFeedInteractionPauseUntil ||
+            feed?.classList?.contains('mcms-feed-interacting')
+        );
+    }
+
+    function majorIncidentFeedSyncControls(feed) {
+        if (!feed) return;
+        const count = majorIncidentFeedEntryCount(feed);
+        const current = count ? ((majorIncidentFeedCurrentIndex % count) + count) % count : 0;
+        feed.dataset.mcmsIncidentIndex = String(current);
+        const counter = feed.querySelector('.mcms-incident-feed-count');
+        if (counter) counter.textContent = count ? `${current + 1} / ${count}` : '0';
+        feed.querySelectorAll('[data-mcms-incident-action="previous"],[data-mcms-incident-action="next"]').forEach(button => {
+            button.disabled = count <= 1;
+        });
+        const pauseButton = feed.querySelector('[data-mcms-incident-action="pause"]');
+        if (pauseButton) {
+            pauseButton.setAttribute('aria-pressed', String(majorIncidentFeedManualPaused));
+            pauseButton.setAttribute('aria-label', majorIncidentFeedManualPaused ? 'Resume incident rotation' : 'Pause incident rotation');
+            pauseButton.title = majorIncidentFeedManualPaused ? 'Resume incident rotation' : 'Pause incident rotation';
+            pauseButton.textContent = majorIncidentFeedManualPaused ? '▶' : 'Ⅱ';
+            pauseButton.disabled = count <= 1;
+        }
+        const expandButton = feed.querySelector('[data-mcms-incident-action="expand"]');
+        if (expandButton) {
+            expandButton.setAttribute('aria-expanded', String(majorIncidentFeedExpanded));
+            expandButton.setAttribute('aria-label', majorIncidentFeedExpanded ? 'Collapse incident queue' : 'Expand incident queue');
+            expandButton.title = majorIncidentFeedExpanded ? 'Collapse incident queue' : 'Expand incident queue';
+            expandButton.textContent = majorIncidentFeedExpanded ? '⌃' : '⌄';
+        }
+    }
+
+    function majorIncidentFeedApplyIndex(feed, index = majorIncidentFeedCurrentIndex) {
+        const track = feed?.querySelector?.('.mcms-incident-feed-track');
+        const count = majorIncidentFeedEntryCount(feed);
+        if (!feed || !track || !count) {
+            majorIncidentFeedCurrentIndex = 0;
+            if (track) track.style.removeProperty('transform');
+            majorIncidentFeedSyncControls(feed);
+            return false;
+        }
+        const normalised = ((Number(index) || 0) % count + count) % count;
+        majorIncidentFeedCurrentIndex = normalised;
+        track.style.setProperty('transform', `translate3d(${-normalised * 100}%,0,0)`);
+        track.querySelectorAll('.mcms-incident-feed-item').forEach((item, itemIndex) => {
+            const active = itemIndex === normalised;
+            item.setAttribute('aria-hidden', String(!active));
+            item.tabIndex = active ? 0 : -1;
+        });
+        majorIncidentFeedSyncControls(feed);
+        return true;
+    }
+
+    function majorIncidentFeedScheduleAdvance(feed, delay = MAJOR_INCIDENT_FEED_ROTATION_MS) {
+        runtimeClearTimeout(majorIncidentFeedMotionTimer);
+        majorIncidentFeedMotionTimer = null;
+        const count = majorIncidentFeedEntryCount(feed);
+        const reducedMotion = Boolean(pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+        if (!feed?.isConnected || count <= 1 || state.economyMode || reducedMotion || majorIncidentFeedManualPaused || majorIncidentFeedExpanded || document.hidden) return false;
+        const now = Date.now();
+        const interactionDelay = Math.max(0, majorIncidentFeedInteractionPauseUntil - now);
+        const wait = Math.max(500, Number(delay) || MAJOR_INCIDENT_FEED_ROTATION_MS, interactionDelay + 350);
+        const revision = ++majorIncidentFeedMotionRevision;
+        majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
+            majorIncidentFeedMotionTimer = null;
+            if (revision !== majorIncidentFeedMotionRevision || !feed.isConnected) return;
+            if (majorIncidentFeedInteractionActive(feed)) {
+                majorIncidentFeedScheduleAdvance(feed, 850);
+                return;
+            }
+            majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + 1);
+            majorIncidentFeedScheduleAdvance(feed, MAJOR_INCIDENT_FEED_ROTATION_MS);
+        }, wait);
+        return true;
+    }
+
+    function majorIncidentFeedSetPaused(feed, paused) {
+        majorIncidentFeedManualPaused = Boolean(paused);
+        feed?.classList?.toggle('mcms-feed-paused', majorIncidentFeedManualPaused);
+        majorIncidentFeedSyncControls(feed);
+        if (majorIncidentFeedManualPaused) {
+            runtimeClearTimeout(majorIncidentFeedMotionTimer);
+            majorIncidentFeedMotionTimer = null;
+            majorIncidentFeedMotionRevision += 1;
+        } else {
+            majorIncidentFeedScheduleAdvance(feed, 900);
+        }
+    }
+
+    function majorIncidentFeedSetExpanded(feed, expanded) {
+        majorIncidentFeedExpanded = Boolean(expanded);
+        feed?.classList?.toggle('mcms-feed-expanded', majorIncidentFeedExpanded);
+        const panel = feed?.querySelector?.('.mcms-incident-feed-panel');
+        if (panel) panel.hidden = !majorIncidentFeedExpanded;
+        majorIncidentFeedSyncControls(feed);
+        if (majorIncidentFeedExpanded) {
+            runtimeClearTimeout(majorIncidentFeedMotionTimer);
+            majorIncidentFeedMotionTimer = null;
+            majorIncidentFeedMotionRevision += 1;
+        } else {
+            majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
+            majorIncidentFeedScheduleAdvance(feed, 1500);
+        }
+    }
+
+    function majorIncidentFeedAdvance(feed, delta, manual = false) {
+        if (majorIncidentFeedEntryCount(feed) <= 1) return false;
+        if (manual) majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
+        const changed = majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex + Number(delta || 0));
+        majorIncidentFeedScheduleAdvance(feed, manual ? MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS : MAJOR_INCIDENT_FEED_ROTATION_MS);
+        return changed;
+    }
+
     function removeMajorIncidentFeed() {
         runtimeClearTimeout(majorIncidentFeedRenderTimer);
         majorIncidentFeedRenderTimer = null;
         runtimeClearTimeout(majorIncidentFeedMotionTimer);
         majorIncidentFeedMotionTimer = null;
         majorIncidentFeedMotionRevision += 1;
+        majorIncidentFeedCurrentIndex = 0;
+        majorIncidentFeedManualPaused = false;
+        majorIncidentFeedInteractionPauseUntil = 0;
+        majorIncidentFeedExpanded = false;
         if (majorIncidentFeedLayoutFrame !== null) runtimeCancelAnimationFrame(majorIncidentFeedLayoutFrame);
         majorIncidentFeedLayoutFrame = null;
         runtimeClearTimeout(majorIncidentFeedLayoutTimer);
@@ -14181,10 +14345,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function majorIncidentFeedDomComplete(feed) {
         return Boolean(
-        feed?.isConnected &&
-        feed.querySelector?.('.mcms-incident-feed-label') &&
-        feed.querySelector?.('.mcms-incident-feed-viewport') &&
-        feed.querySelector?.('.mcms-incident-feed-track')
+            feed?.isConnected &&
+            feed.querySelector?.('.mcms-incident-feed-label-title') &&
+            feed.querySelector?.('.mcms-incident-feed-count') &&
+            feed.querySelector?.('.mcms-incident-feed-viewport') &&
+            feed.querySelector?.('.mcms-incident-feed-track') &&
+            feed.querySelector?.('.mcms-incident-feed-controls') &&
+            feed.querySelector?.('.mcms-incident-feed-panel') &&
+            feed.querySelector?.('.mcms-incident-feed-list')
         );
     }
 
@@ -14224,62 +14392,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!feed || revision !== majorIncidentFeedMotionRevision || !feed.isConnected || !state.majorIncidentFeed.enabled) return false;
         const viewport = feed.querySelector('.mcms-incident-feed-viewport');
         const track = feed.querySelector('.mcms-incident-feed-track');
-        const firstGroup = track?.querySelector('.mcms-incident-feed-group');
-        if (!viewport || !track || !firstGroup) return false;
-
-        if (state.economyMode) {
-        feed.classList.add('mcms-feed-static');
-        feed.style.removeProperty('--mcms-incident-feed-duration');
-        track.style.removeProperty('animation');
-        return true;
-        }
-
-        const viewportWidth = viewport.clientWidth;
-        const groupWidth = Math.max(firstGroup.scrollWidth || 0, firstGroup.getBoundingClientRect?.().width || 0);
-        if ((viewportWidth < 40 || groupWidth < 20) && attempt < 6) {
-        runtimeClearTimeout(majorIncidentFeedMotionTimer);
-        majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
-            majorIncidentFeedMotionTimer = null;
-            refreshMajorIncidentFeedMotion(feed, true, attempt + 1, revision);
-        }, 70 + (attempt * 55));
-        return false;
-        }
-
-        const entryCount = Math.max(0, Number(feed.dataset.mcmsEntryCount) || 0);
-        const shouldScroll = entryCount > 1 || groupWidth > viewportWidth - 8;
-        feed.classList.toggle('mcms-feed-static', !shouldScroll);
-        if (!shouldScroll) {
-        feed.style.removeProperty('--mcms-incident-feed-duration');
-        track.style.removeProperty('animation');
-        return true;
-        }
-
-        const reducedMotion = Boolean(pageWindow.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
-        const pixelsPerSecond = reducedMotion ? 25 : 32;
-        const duration = Math.round(clamp(groupWidth / pixelsPerSecond, 42, 210, 60));
-        feed.style.setProperty('--mcms-incident-feed-duration', `${duration}s`);
-
-        const animations = typeof track.getAnimations === 'function' ? track.getAnimations() : [];
-        if (forceRestart || animations.length === 0) {
-        track.style.setProperty('animation', 'none', 'important');
-        void track.offsetWidth;
-        track.style.removeProperty('animation');
-        }
+        if (!viewport || !track) return false;
+        const count = majorIncidentFeedEntryCount(feed);
+        feed.classList.toggle('mcms-feed-static', count <= 1 || state.economyMode);
+        if (forceRestart) majorIncidentFeedCurrentIndex = Math.min(majorIncidentFeedCurrentIndex, Math.max(0, count - 1));
+        majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
+        majorIncidentFeedScheduleAdvance(feed, forceRestart ? 1200 : MAJOR_INCIDENT_FEED_ROTATION_MS);
         return true;
     }
 
     function scheduleMajorIncidentFeedMotion(feed = document.getElementById(SCRIPT.majorIncidentFeedId), forceRestart = false, delay = 50) {
         if (!feed) return;
         runtimeClearTimeout(majorIncidentFeedMotionTimer);
-        if (state.economyMode) {
         majorIncidentFeedMotionTimer = null;
-        refreshMajorIncidentFeedMotion(feed, false, 0, ++majorIncidentFeedMotionRevision);
-        return;
-        }
         const revision = ++majorIncidentFeedMotionRevision;
         majorIncidentFeedMotionTimer = runtimeSetTimeout(() => {
-        majorIncidentFeedMotionTimer = null;
-        refreshMajorIncidentFeedMotion(feed, forceRestart, 0, revision);
+            majorIncidentFeedMotionTimer = null;
+            refreshMajorIncidentFeedMotion(feed, forceRestart, 0, revision);
         }, Math.max(0, Number(delay) || 0));
     }
 
@@ -14334,70 +14463,111 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         majorIncidentFeedLayoutFrame = runtimeRequestAnimationFrame(positionMajorIncidentFeed);
     }
 
-    function majorIncidentFeedItemHtml(entry) {
+    function majorIncidentFeedItemHtml(entry, mode = 'wire') {
         const snapshot = entry.snapshot;
         const source = snapshot.source === 'alliance' ? 'ALLIANCE' : 'PERSONAL';
         const creditText = Number.isFinite(entry.credits) ? `≈${formatOperationalCompactCredits(entry.credits)} CR` : 'VALUE UNKNOWN';
-        const ageText = entry.ageMs >= 8 * 60 * 60 * 1000 ? ` · ${formatElapsedCompact(entry.ageMs)} OLD` : '';
-        const casualtyText = entry.patients >= MAJOR_INCIDENT_MASS_CASUALTY_PATIENTS ? ` · ${entry.patients} PATIENTS` : entry.prisoners >= MAJOR_INCIDENT_MASS_CASUALTY_PRISONERS ? ` · ${entry.prisoners} PRISONERS` : '';
+        const ageText = entry.ageMs >= 8 * 60 * 60 * 1000 ? `${formatElapsedCompact(entry.ageMs)} OLD` : '';
+        const casualtyText = entry.patients >= MAJOR_INCIDENT_MASS_CASUALTY_PATIENTS ? `${entry.patients} PATIENTS` : entry.prisoners >= MAJOR_INCIDENT_MASS_CASUALTY_PRISONERS ? `${entry.prisoners} PRISONERS` : '';
         const caption = snapshot.caption || `Mission ${snapshot.missionId}`;
-        const title = `${caption} · ${entry.postcode} · ${creditText} · Click to zoom to the mission`;
-        return `<button class="mcms-incident-feed-item mcms-incident-${escapeHtml(entry.operational.key)}" type="button" data-mcms-major-mission-id="${escapeHtml(snapshot.missionId)}" title="${escapeHtml(title)}" aria-label="Zoom to ${escapeHtml(caption)} at ${escapeHtml(entry.postcode)}">
+        const details = [entry.postcode, creditText, source, ageText, casualtyText].filter(Boolean);
+        const title = `${caption} · ${details.join(' · ')} · Click to open the mission`;
+        const modeClass = mode === 'list' ? ' mcms-incident-feed-list-item' : '';
+        return `<button class="mcms-incident-feed-item${modeClass} mcms-incident-${escapeHtml(entry.operational.key)}" type="button" data-mcms-major-mission-id="${escapeHtml(snapshot.missionId)}" title="${escapeHtml(title)}" aria-label="Open ${escapeHtml(caption)} at ${escapeHtml(entry.postcode)}">
             <span class="mcms-incident-level">MAJOR</span>
-            <span class="mcms-incident-name">${allianceAwareHtml(caption)}</span>
-            <span class="mcms-incident-postcode">${escapeHtml(entry.postcode)}</span>
-        <span class="mcms-incident-meta">${escapeHtml(`${creditText} · `)}<span class="${source === 'ALLIANCE' ? 'mcms-alliance-text' : ''}">${escapeHtml(source)}</span>${escapeHtml(`${ageText}${casualtyText}`)}</span>
+            <span class="mcms-incident-feed-copy">
+                <span class="mcms-incident-name">${allianceAwareHtml(caption)}</span>
+                <span class="mcms-incident-meta"><span class="mcms-incident-postcode">${escapeHtml(entry.postcode)}</span><span>${escapeHtml(creditText)}</span><span class="${source === 'ALLIANCE' ? 'mcms-alliance-text' : ''}">${escapeHtml(source)}</span>${ageText ? `<span>${escapeHtml(ageText)}</span>` : ''}${casualtyText ? `<span>${escapeHtml(casualtyText)}</span>` : ''}</span>
+            </span>
             <span class="mcms-incident-state">${escapeHtml(entry.operational.label)}</span>
         </button>`;
     }
 
     function ensureMajorIncidentFeed() {
         if (!state.majorIncidentFeed.enabled || !getLargestLeafletMap() || isAllianceBuildingsContext()) {
-        removeMajorIncidentFeed();
-        return null;
+            removeMajorIncidentFeed();
+            return null;
         }
 
         let feed = document.getElementById(SCRIPT.majorIncidentFeedId);
         if (feed && !majorIncidentFeedDomComplete(feed)) {
-        feed.remove();
-        feed = null;
-        resetMajorIncidentFeedObserver();
-        majorIncidentFeedRenderSignature = '';
+            feed.remove();
+            feed = null;
+            resetMajorIncidentFeedObserver();
+            majorIncidentFeedRenderSignature = '';
         }
 
         if (!feed) {
-        resetMajorIncidentFeedObserver();
-        majorIncidentFeedRenderSignature = '';
-        feed = document.createElement('section');
-        feed.id = SCRIPT.majorIncidentFeedId;
-        feed.setAttribute('aria-label', 'Major incident news feed');
-        feed.innerHTML = '<div class="mcms-incident-feed-label"></div><div class="mcms-incident-feed-viewport" aria-live="off"><div class="mcms-incident-feed-track"></div></div>';
-        feed.addEventListener('click', event => {
-            const item = closestEventTarget(event, '[data-mcms-major-mission-id]');
-            if (!item) return;
-            event.preventDefault();
-            event.stopPropagation();
-            focusMissionById(item.dataset.mcmsMajorMissionId, false);
-        });
-        feed.addEventListener('pointerdown', () => {
-            feed.classList.add('mcms-feed-paused');
-            runtimeSetTimeout(() => feed?.classList?.remove('mcms-feed-paused'), 1800);
-        }, { passive: true });
-        document.body.appendChild(feed);
+            resetMajorIncidentFeedObserver();
+            majorIncidentFeedRenderSignature = '';
+            feed = document.createElement('section');
+            feed.id = SCRIPT.majorIncidentFeedId;
+            feed.setAttribute('aria-label', 'Major incident command wire');
+            feed.innerHTML = `<div class="mcms-incident-feed-label"><span class="mcms-incident-feed-label-title"></span><span class="mcms-incident-feed-count">0</span></div>
+                <div class="mcms-incident-feed-viewport" aria-live="polite"><div class="mcms-incident-feed-track"></div></div>
+                <div class="mcms-incident-feed-controls" aria-label="Incident wire controls">
+                    <button type="button" data-mcms-incident-action="previous" aria-label="Previous incident" title="Previous incident">‹</button>
+                    <button type="button" data-mcms-incident-action="pause" aria-label="Pause incident rotation" title="Pause incident rotation">Ⅱ</button>
+                    <button type="button" data-mcms-incident-action="next" aria-label="Next incident" title="Next incident">›</button>
+                    <button type="button" data-mcms-incident-action="expand" aria-label="Expand incident queue" aria-expanded="false" title="Expand incident queue">⌄</button>
+                </div>
+                <div class="mcms-incident-feed-panel" hidden><div class="mcms-incident-feed-panel-head"><strong>Active major incidents</strong><span>Priority ordered</span></div><div class="mcms-incident-feed-list"></div></div>`;
+            feed.addEventListener('click', event => {
+                const action = closestEventTarget(event, '[data-mcms-incident-action]');
+                if (action) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const command = action.dataset.mcmsIncidentAction;
+                    if (command === 'previous') majorIncidentFeedAdvance(feed, -1, true);
+                    else if (command === 'next') majorIncidentFeedAdvance(feed, 1, true);
+                    else if (command === 'pause') majorIncidentFeedSetPaused(feed, !majorIncidentFeedManualPaused);
+                    else if (command === 'expand') majorIncidentFeedSetExpanded(feed, !majorIncidentFeedExpanded);
+                    return;
+                }
+                const item = closestEventTarget(event, '[data-mcms-major-mission-id]');
+                if (!item) return;
+                event.preventDefault();
+                event.stopPropagation();
+                majorIncidentFeedSetExpanded(feed, false);
+                focusMissionById(item.dataset.mcmsMajorMissionId, false);
+            });
+            feed.addEventListener('pointerenter', () => {
+                feed.classList.add('mcms-feed-interacting');
+                runtimeClearTimeout(majorIncidentFeedMotionTimer);
+                majorIncidentFeedMotionTimer = null;
+                majorIncidentFeedMotionRevision += 1;
+            });
+            feed.addEventListener('pointerleave', () => {
+                feed.classList.remove('mcms-feed-interacting');
+                majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
+                majorIncidentFeedScheduleAdvance(feed, 1500);
+            });
+            feed.addEventListener('focusin', () => feed.classList.add('mcms-feed-interacting'));
+            feed.addEventListener('focusout', () => runtimeSetTimeout(() => {
+                if (!feed.contains(document.activeElement)) {
+                    feed.classList.remove('mcms-feed-interacting');
+                    majorIncidentFeedInteractionPauseUntil = Date.now() + 1200;
+                    majorIncidentFeedScheduleAdvance(feed, 1500);
+                }
+            }, 0));
+            feed.addEventListener('pointerdown', () => {
+                majorIncidentFeedInteractionPauseUntil = Date.now() + MAJOR_INCIDENT_FEED_INTERACTION_PAUSE_MS;
+            }, { passive: true });
+            document.body.appendChild(feed);
         }
 
         if (state.economyMode) {
-        resetMajorIncidentFeedObserver();
+            resetMajorIncidentFeedObserver();
         } else if (majorIncidentFeedObservedElement !== feed && typeof pageWindow.ResizeObserver === 'function') {
-        resetMajorIncidentFeedObserver();
-        majorIncidentFeedObservedElement = feed;
-        majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
-            if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
-            else recoverMajorIncidentFeed('header replacement');
-        }));
-        majorIncidentFeedResizeObserver.observe(feed);
-        const viewport = feed.querySelector('.mcms-incident-feed-viewport');
-        if (viewport) majorIncidentFeedResizeObserver.observe(viewport);
+            resetMajorIncidentFeedObserver();
+            majorIncidentFeedObservedElement = feed;
+            majorIncidentFeedResizeObserver = runtimeTrackObserver(new pageWindow.ResizeObserver(() => {
+                if (feed.isConnected) scheduleMajorIncidentFeedMotion(feed, false, 70);
+                else recoverMajorIncidentFeed('header replacement');
+            }));
+            majorIncidentFeedResizeObserver.observe(feed);
+            const viewport = feed.querySelector('.mcms-incident-feed-viewport');
+            if (viewport) majorIncidentFeedResizeObserver.observe(viewport);
         }
 
         scheduleMajorIncidentFeedLayout();
@@ -14409,34 +14579,42 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!feed) return;
         const entries = state.economyMode ? majorIncidentFeedEntries().slice(0, 1) : majorIncidentFeedEntries();
         const signature = JSON.stringify({
-        theme: state.uiTheme,
-        minimum: state.majorIncidentFeed.minimumCredits,
-        entries: entries.map(entry => [entry.snapshot.missionId, entry.snapshot.caption, entry.postcode, entry.operational.key, entry.operational.label, entry.credits, Math.floor(entry.ageMs / 60000)])
+            theme: state.uiTheme,
+            minimum: state.majorIncidentFeed.minimumCredits,
+            entries: entries.map(entry => [entry.snapshot.missionId, entry.snapshot.caption, entry.postcode, entry.operational.key, entry.operational.label, entry.credits, Math.floor(entry.ageMs / 60000)])
         });
         const existingTrack = feed.querySelector('.mcms-incident-feed-track');
         const hasRenderedContent = Boolean(existingTrack?.childElementCount);
         if (!force && signature === majorIncidentFeedRenderSignature && hasRenderedContent) {
-        scheduleMajorIncidentFeedLayout();
-        scheduleMajorIncidentFeedMotion(feed, false, 60);
-        return;
+            scheduleMajorIncidentFeedLayout();
+            scheduleMajorIncidentFeedMotion(feed, false, 60);
+            return;
         }
+        const activeMissionId = existingTrack?.querySelector?.('.mcms-incident-feed-item[aria-hidden="false"]')?.dataset?.mcmsMajorMissionId || '';
         majorIncidentFeedRenderSignature = signature;
-        const label = feed.querySelector('.mcms-incident-feed-label');
+        const label = feed.querySelector('.mcms-incident-feed-label-title');
         const track = feed.querySelector('.mcms-incident-feed-track');
+        const list = feed.querySelector('.mcms-incident-feed-list');
         if (label) label.textContent = majorIncidentThemeLabel();
-        if (!track) return;
+        if (!track || !list) return;
 
         feed.classList.toggle('mcms-feed-empty', entries.length === 0);
-        feed.classList.remove('mcms-feed-static');
+        feed.classList.toggle('mcms-feed-static', entries.length <= 1 || state.economyMode);
         feed.dataset.mcmsEntryCount = String(entries.length);
         if (!entries.length) {
-        track.innerHTML = '<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>';
-        feed.style.removeProperty('--mcms-incident-feed-duration');
+            track.innerHTML = '<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>';
+            list.innerHTML = '<div class="mcms-incident-feed-list-empty">No major incidents currently meet the configured threshold.</div>';
+            majorIncidentFeedCurrentIndex = 0;
+            majorIncidentFeedSetExpanded(feed, false);
+            majorIncidentFeedApplyIndex(feed, 0);
         } else {
-        const itemHtml = entries.map(majorIncidentFeedItemHtml).join('');
-        const group = `<div class="mcms-incident-feed-group">${itemHtml}</div>`;
-        track.innerHTML = state.economyMode ? group : `${group}${group}`;
-        scheduleMajorIncidentFeedMotion(feed, true, 70);
+            track.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire')).join('')));
+            list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list')).join('')));
+            const preservedIndex = entries.findIndex(entry => String(entry.snapshot.missionId) === String(activeMissionId));
+            if (preservedIndex >= 0) majorIncidentFeedCurrentIndex = preservedIndex;
+            else majorIncidentFeedCurrentIndex = Math.min(majorIncidentFeedCurrentIndex, entries.length - 1);
+            majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
+            scheduleMajorIncidentFeedMotion(feed, true, 70);
         }
         scheduleMajorIncidentFeedLayout();
     }

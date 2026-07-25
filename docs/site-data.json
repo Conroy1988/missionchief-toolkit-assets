@@ -73,13 +73,13 @@
           ]
         },
         {
-          "name": "Major Incident Feed",
-          "summary": "Provides a high-priority incident feed with quick map navigation.",
+          "name": "Incident Command Wire",
+          "summary": "Presents priority-ordered major incidents one complete card at a time with manual navigation and an expandable queue.",
           "details": [
-            "Incident banner",
-            "Mission context",
-            "Hover pause",
-            "Click-to-zoom"
+            "Bounded card-by-card rotation",
+            "Previous, pause, next and expanded queue controls",
+            "Seven theme-aware presentations",
+            "Static reduced-motion and Economy Mode fallback"
           ],
           "visual": "feed",
           "tags": [

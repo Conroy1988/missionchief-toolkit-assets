@@ -1,0 +1,28 @@
+name: Validate Incident Command Wire
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/MissionChief_Map_Command_Toolkit.user.js"
+      - "dist/MissionChief_Map_Command_Toolkit.user.js"
+      - ".github/scripts/test_issue517_incident_command_wire.py"
+      - ".github/scripts/test_issue517_incident_command_wire_runtime.js"
+      - ".github/workflows/v7-incident-command-wire.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - run: python3 .github/scripts/test_issue517_incident_command_wire.py
+      - run: node .github/scripts/test_issue517_incident_command_wire_runtime.js
+      - run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+      - run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt

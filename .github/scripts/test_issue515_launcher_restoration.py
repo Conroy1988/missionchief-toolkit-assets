@@ -17,7 +17,8 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "7.0.1"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1)
+    assert tuple(int(part) for part in metadata.group(1).split(".")[:3]) >= (7, 0, 1)
 
     helpers = [
         "toolkitTopLevelDocument",

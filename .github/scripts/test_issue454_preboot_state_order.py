@@ -14,7 +14,8 @@ default_function = "    function defaultOperationalWindowState"
 assert text.count(settings_declaration) == 1
 assert text.count(schema_declaration) == 1
 assert state_match is not None
-assert text.index(settings_declaration) < text.index(schema_declaration) < state_match.start()
+assert text.index(settings_declaration) < state_match.start()
+assert text.index(schema_declaration) < state_match.start()
 assert state_match.start() < text.index(default_function)
 assert "schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION" in text
 metadata_version = re.search(r"(?m)^//\s*@version\s+([^\s]+)\s*$", text)

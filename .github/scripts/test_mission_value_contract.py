@@ -15,21 +15,22 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github" / "fixtures" / "mission-value-toolbar-contract.json"
 
 
-def extract_function(source: str, masked: str, name: str) -> str:
-    matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", masked))
+def extract_function(source: str, name: str) -> str:
+    matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", source))
     if len(matches) != 1:
         raise AssertionError(f"Expected one declaration for {name}, found {len(matches)}")
     start = matches[0].start()
-    opening = masked.find("{", start)
-    closing = audit.matching_brace(masked, opening)
+    segment = source[start:]
+    masked_segment = audit.mask_non_code(segment)
+    opening = masked_segment.find("{")
+    closing = audit.matching_brace(masked_segment, opening)
     if opening < 0 or closing is None:
         raise AssertionError(f"Could not extract {name}")
-    return source[start:closing + 1]
+    return segment[:closing + 1]
 
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    masked = audit.mask_non_code(source)
     fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
     required = [
         "missionValue: true",
@@ -82,7 +83,7 @@ def main() -> int:
     assert '#navbar-alarm-spacer > .mcms-mission-value-row' in source
     assert '.mcms-mission-value-row[data-mcms-host="fallback"]' in source
 
-    functions = "\n\n".join(extract_function(source, masked, name) for name in [
+    functions = "\n\n".join(extract_function(source, name) for name in [
         "missionValueCurrencyMeta",
         "formatMissionWindowValue",
         "missionValueIdFromUrl",

@@ -33,14 +33,34 @@ jobs:
         run: python3 .github/issue515/apply_launcher_fix.py
 
       - name: Validate complete v7.0.1 candidate
+        id: validation
         shell: bash
         run: |
-          set -euo pipefail
-          bash .github/scripts/run_userscript_preflight.sh --all
-          python3 .github/scripts/test_documentation_consistency.py \
-            --allow-release-candidate \
-            --json-output documentation-drift-report.json \
-            --markdown-output documentation-drift-report.md
+          set +e
+          set -o pipefail
+          {
+            bash .github/scripts/run_userscript_preflight.sh --all
+            python3 .github/scripts/test_documentation_consistency.py \
+              --allow-release-candidate \
+              --json-output documentation-drift-report.json \
+              --markdown-output documentation-drift-report.md
+          } 2>&1 | tee issue515-launcher-validation.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload exact launcher validation diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue515-launcher-validation-${{ github.sha }}
+          path: issue515-launcher-validation.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on launcher validation failure
+        if: steps.validation.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Commit exact emergency candidate
         env:

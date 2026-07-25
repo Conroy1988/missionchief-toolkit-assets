@@ -16,10 +16,11 @@ def main() -> int:
     render = section(source, '    function renderMajorIncidentFeed(', '    function scheduleMajorIncidentFeedRender(')
     ensure = section(source, '    function ensureMajorIncidentFeed(', '    function renderMajorIncidentFeed(')
     motion = section(source, '    function refreshMajorIncidentFeedMotion(', '    function scheduleMajorIncidentFeedMotion(')
-    assert "track.innerHTML = entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire')).join('');" in render
-    assert "list.innerHTML = entries.map(entry => majorIncidentFeedItemHtml(entry, 'list')).join('');" in render
+    assert "track.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire')).join('')));" in render
+    assert "list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list')).join('')));" in render
     assert '${group}${group}' not in render and 'mcms-incident-feed-group' not in render
     assert 'mcmsIncidentWireScroll' not in render
+    assert 'innerHTML = entries.map' not in render
     for action in ['previous','pause','next','expand']:
         assert f'data-mcms-incident-action="{action}"' in ensure
     assert 'mcms-incident-feed-panel' in ensure and 'mcms-incident-feed-list' in ensure

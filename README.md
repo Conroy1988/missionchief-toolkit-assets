@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit retro emergency control room" width="100%">
+<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit cinematic UK emergency command console" width="100%">
 
 # MissionChief Map Command Toolkit
 
-### **A retro emergency control layer for the MissionChief map**
+### **A cinematic emergency-command network for the MissionChief map**
 
 **Incident command · Mission intelligence · Fleet identity · Native transport · Geographic control · Financial reconciliation**
 
@@ -24,13 +24,15 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Control-room briefing**](#control-room-briefing) · [**Incident Command**](#incident-command-wire) · [**Command divisions**](#four-command-divisions) · [**Interfaces**](#seven-complete-interface-systems) · [**Field devices**](#built-for-every-screen) · [**Install**](#install-in-under-a-minute) · [**Release control**](#verified-delivery-and-recovery)
+[**Control-room briefing**](#control-room-briefing) · [**Incident Command**](#incident-command-wire) · [**Command divisions**](#native-command-divisions) · [**Interfaces**](#seven-complete-interface-systems) · [**Field devices**](#built-for-every-screen) · [**Install**](#install-in-under-a-minute) · [**Release control**](#verified-delivery-and-recovery)
 
 </div>
 
 ---
 
 # Control-room briefing
+
+> **UK EMERGENCY COMMAND NETWORK // SYSTEM STATUS: OPERATIONAL**
 
 MissionChief exposes operational information across the map, opened incidents, vehicle tables, transport controls, alliance pages, finance views and separate navigation surfaces.
 
@@ -45,17 +47,19 @@ MissionChief exposes operational information across the map, opened incidents, v
 </tr>
 </table>
 
-> **Control-room doctrine:** see the signal, understand the source, act through the correct native control, and leave the page recoverable.
+> **CONTROL-ROOM DOCTRINE:** see the signal, understand the source, act through the correct native control, and leave the page recoverable.
 
 <div align="center">
 
-<img src="docs/media/readme-command-board.svg" alt="MissionChief Toolkit emergency command board" width="100%">
+<img src="docs/media/readme-command-board.svg" alt="MissionChief Toolkit cinematic emergency systems board" width="100%">
 
 </div>
 
 ---
 
 # Live dispatch status
+
+> **CHANNEL STATUS // VERIFIED PRODUCTION SIGNALS**
 
 | Control channel | State | Evidence |
 |---|:---:|---|
@@ -64,7 +68,7 @@ MissionChief exposes operational information across the map, opened incidents, v
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned backup commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
-| **Hosted media** | 🟢 | 37 discovered · 33 referenced · 0 missing |
+| **Hosted media** | 🟢 | v7.1.3 snapshot: 37 discovered · 33 referenced · 0 missing |
 | **Responsive command** | 🟢 | Desktop · Tablet/iPad · iPhone/iPad Safari |
 
 The release control panel is machine-backed rather than manually asserted: [open the current verified release state](status/README.md).
@@ -72,6 +76,8 @@ The release control panel is machine-backed rather than manually asserted: [open
 ---
 
 # Incident Command Wire
+
+> **CHANNEL 01 // LIVE INCIDENT BROADCAST**
 
 The Toolkit's live incident surface is designed like a restrained emergency broadcast strip rather than a second mission list.
 
@@ -90,9 +96,9 @@ The result is persistent situational awareness without card clutter, duplicated 
 
 ---
 
-# Four command divisions
+# Native command divisions
 
-## 1. Mission command
+## 🔵 Channel 02 — Mission control
 
 | Capability | Operational purpose |
 |---|---|
@@ -102,7 +108,7 @@ The result is persistent situational awareness without card clutter, duplicated 
 | **Unit Commitment** | Presents committed response context without replacing native dispatch controls |
 | **Transport Watcher** | Identifies patient and prisoner transport demand |
 
-## 2. Fleet and transport command
+## 🟢 Channel 03 — Fleet and transport control
 
 | Capability | Operational purpose |
 |---|---|
@@ -114,7 +120,7 @@ The result is persistent situational awareness without card clutter, duplicated 
 
 Patient Transport Sweep remains deliberately bounded. It preserves ownership checks, confirmation evidence, idempotent counters and a controlled HUD. It is not a generic click engine and does not create arbitrary vehicle actions.
 
-## 3. Map and place command
+## 🟡 Channel 04 — Map and place control
 
 | Capability | Operational purpose |
 |---|---|
@@ -123,7 +129,7 @@ Patient Transport Sweep remains deliberately bounded. It preserves ownership che
 | **Profiles and layouts** | Preserves distinct command presentations without changing MissionChief's underlying data |
 | **Responsive modes** | Reflows the command surface for desktop, tablet/iPad and iOS Mobile Mode |
 
-## 4. Financial command
+## 🔴 Channel 05 — Financial control
 
 | Capability | Operational purpose |
 |---|---|
@@ -138,6 +144,8 @@ Patient Transport Sweep remains deliberately bounded. It preserves ownership che
 
 # The One We Knew Before
 
+> **PRODUCT BOUNDARY // MISSIONCHIEF REMAINS AUTHORITATIVE**
+
 Version 7 restored a clear product boundary.
 
 The Toolkit no longer owns a copied global mission-window stack. That retired code, its settings, stored state, observers, timers, listeners, schedulers, DOM transforms, compatibility hooks and teardown paths were removed rather than hidden.
@@ -150,11 +158,13 @@ The Toolkit no longer owns a copied global mission-window stack. That retired co
 | **Retirement contracts were added** | Validation fails if the removed integration is accidentally reintroduced |
 | **The product identity was restored** | Toolkit is a focused map-command and operational-intelligence layer |
 
-The later v7.1 line then advanced that native boundary with Incident Command Wire instead of rebuilding a competing global interface.
+The later v7.1 line advanced that native boundary with Incident Command Wire instead of rebuilding a competing global interface.
 
 ---
 
 # Performance is an operational feature
+
+> **RUNTIME CONTROL // FAST SIGNALS, BOUNDED OWNERSHIP, DETERMINISTIC TEARDOWN**
 
 A command tool that slows the incident map is not a command tool.
 
@@ -172,6 +182,8 @@ The target is not the largest possible feature list. It is the strongest useful 
 ---
 
 # Seven complete interface systems
+
+> **INTERFACE NETWORK // SAME OPERATIONAL CONTRACT, SEVEN COMMAND LANGUAGES**
 
 Every interface presents the same retained capability and stored configuration. The visual language changes; the operational contract does not.
 
@@ -191,6 +203,8 @@ Inactive interfaces do not run theme-specific effects. [Explore all seven interf
 
 # Built for every screen
 
+> **FIELD TERMINALS // DESKTOP · TABLET · iOS**
+
 | Mode | Designed behaviour |
 |---|---|
 | **Desktop** | Full command panels, fixed chrome, internal scrolling and keyboard control |
@@ -205,6 +219,8 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 ---
 
 # Install in under a minute
+
+> **DEPLOYMENT CHANNEL // GREASY FORK STABLE**
 
 1. Install **Tampermonkey** or a compatible userscript manager.
 2. Open the verified public installer: **[Install MissionChief Map Command Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)**.
@@ -229,6 +245,14 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 # Verified delivery and recovery
 
+> **RELEASE NETWORK // GOVERNED SOURCE · VERIFIED RELEASE · RECOVERABLE DELIVERY**
+
+<div align="center">
+
+<img src="docs/media/readme-release-control.svg" alt="MissionChief Toolkit release and recovery control board" width="100%">
+
+</div>
+
 ## Current verified identity
 
 | Field | Verified value |
@@ -241,7 +265,7 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 | **Greasy Fork** | Verified against the stable release |
 | **Private backup** | `7ef15ed04bd98e7851aefb5cc7735c6c2ee71375` |
 | **Discord release delivery** | Posted |
-| **Hosted media audit** | 37 discovered · 33 referenced · 0 missing |
+| **Hosted media audit** | v7.1.3 snapshot: 37 discovered · 33 referenced · 0 missing |
 
 ## Release topology
 
@@ -296,6 +320,8 @@ Transient candidates and audits are retained as immutable workflow artefacts rat
 
 # Configuration and privacy
 
+> **SECURITY CHANNEL // LOCAL CONFIGURATION, EXPLICIT REPORTING**
+
 The Toolkit runs in the browser against the signed-in MissionChief page. It does not operate a separate player-account service.
 
 - Most configuration remains local to the browser.
@@ -308,6 +334,8 @@ The Toolkit runs in the browser against the signed-in MissionChief page. It does
 ---
 
 # Development model
+
+> **ENGINEERING CONTROL // ISSUE-SCOPED, VALIDATED, RECOVERABLE**
 
 - `main` is canonical.
 - Confirmed work is tracked through GitHub Issues.

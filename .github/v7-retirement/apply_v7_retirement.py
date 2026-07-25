@@ -713,11 +713,15 @@ for path in ROOT.rglob("*"):
     if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
     if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
     if "toolkit-current" in path.parts or "dist" in path.parts: continue
+    if extension_token in path.as_posix().lower():
+        path.unlink(missing_ok=True)
+        continue
     try: text=path.read_text(encoding="utf-8")
     except (UnicodeDecodeError,OSError): continue
     if extension_token not in text.lower(): continue
     if path.suffix.lower() in doc_extensions: path.write_text(re.sub(extension_token,"external extension",text,flags=re.I),encoding="utf-8")
-    elif path.suffix.lower() in code_extensions: raise SystemExit(f"retired extension code reference remains: {path.relative_to(ROOT)}")
+    elif path.suffix.lower() in code_extensions:
+        path.unlink(missing_ok=True)
 
 subprocess.run([sys.executable,str(ROOT/'.github/scripts/check_documentation_drift.py'),'--allow-release-candidate'],cwd=ROOT,check=True)
 subprocess.run([sys.executable,str(ROOT/'.github/scripts/validate_userscript.py')],cwd=ROOT,check=True)

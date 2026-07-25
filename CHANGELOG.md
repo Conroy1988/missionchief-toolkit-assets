@@ -4,6 +4,16 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.1] - 2026-07-25
+
+### Incident Command Wire play and alignment hotfix
+
+- Fixed Play so it clears stale hover, focus and manual-interaction delays and resumes visible automatic rotation within 650 ms.
+- Excluded the control rail from card-hover and card-focus pause ownership while preserving pauses over incident cards and the expanded queue.
+- Prevented control clicks from creating a new nine-second interaction delay before their own command executes.
+- Vertically centred the previous, pause/play, next and expand buttons with explicit position, margin, transform, sizing and box-model resets across all seven themes.
+- Extended runtime and static contracts for automatic resume, continued cadence, control-zone interaction isolation and responsive alignment.
+
 ## [7.1.0] - 2026-07-25
 
 ### Incident Command Wire

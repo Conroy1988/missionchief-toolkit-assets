@@ -1,16 +1,180 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="720" viewBox="0 0 1600 720" role="img" aria-labelledby="title desc">
 <title id="title">MissionChief Map Command Toolkit cinematic emergency command console</title>
-<desc id="desc">Verified v7.1.4 UK emergency command network with live incident, mission, fleet, map and finance systems.</desc>
+<desc id="desc">Verified v7.1.4 UK emergency command network with live incident wire, mission, fleet, map and finance systems.</desc>
 <defs>
-  <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#26343e"/><stop offset=".25" stop-color="#0b1217"/><stop offset=".72" stop-color="#131d24"/><stop offset="1" stop-color="#04070a"/></linearGradient>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".75"/></filter>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#02060a"/>
+    <stop offset=".42" stop-color="#07141e"/>
+    <stop offset="1" stop-color="#12080b"/>
+  </linearGradient>
+  <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#36434d"/>
+    <stop offset=".12" stop-color="#141c22"/>
+    <stop offset=".52" stop-color="#080d11"/>
+    <stop offset=".88" stop-color="#1b252c"/>
+    <stop offset="1" stop-color="#05080a"/>
+  </linearGradient>
+  <linearGradient id="steel2" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#26343e"/>
+    <stop offset=".25" stop-color="#0b1217"/>
+    <stop offset=".72" stop-color="#131d24"/>
+    <stop offset="1" stop-color="#04070a"/>
+  </linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#0a537d"/>
+    <stop offset=".45" stop-color="#0b2b41"/>
+    <stop offset="1" stop-color="#07131c"/>
+  </linearGradient>
+  <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#225b2a"/>
+    <stop offset=".45" stop-color="#15351c"/>
+    <stop offset="1" stop-color="#08130b"/>
+  </linearGradient>
+  <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#6c4d0b"/>
+    <stop offset=".45" stop-color="#3a2a0e"/>
+    <stop offset="1" stop-color="#151006"/>
+  </linearGradient>
+  <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#6d161e"/>
+    <stop offset=".45" stop-color="#391218"/>
+    <stop offset="1" stop-color="#16080b"/>
+  </linearGradient>
+  <linearGradient id="goldText" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fff2a8"/>
+    <stop offset=".28" stop-color="#f6c84f"/>
+    <stop offset=".7" stop-color="#b87512"/>
+    <stop offset="1" stop-color="#f4bc2d"/>
+  </linearGradient>
+  <linearGradient id="whiteText" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset=".55" stop-color="#e7e1d4"/>
+    <stop offset="1" stop-color="#a9a49a"/>
+  </linearGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#16b9ff"/>
+    <stop offset=".48" stop-color="#5dd9ff"/>
+    <stop offset=".52" stop-color="#ff805c"/>
+    <stop offset="1" stop-color="#e2242f"/>
+  </linearGradient>
+  <pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+    <path d="M42 0H0V42" fill="none" stroke="#66d1ff" stroke-opacity=".055"/>
+  </pattern>
+  <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+    <rect width="4" height="1.2" fill="#fff" opacity=".025"/>
+  </pattern>
+  <pattern id="micro" width="12" height="12" patternUnits="userSpaceOnUse">
+    <circle cx="1.5" cy="1.5" r=".7" fill="#7fdfff" opacity=".12"/>
+  </pattern>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000" flood-opacity=".7"/>
+  </filter>
+  <filter id="glowB" x="-120%" y="-120%" width="340%" height="340%">
+    <feGaussianBlur stdDeviation="7" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glowR" x="-120%" y="-120%" width="340%" height="340%">
+    <feGaussianBlur stdDeviation="8" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="grit" x="-20%" y="-20%" width="140%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="2" seed="9" result="noise"/>
+    <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+    <feComponentTransfer in="mono" result="soft">
+      <feFuncA type="table" tableValues="0 0 .08"/>
+    </feComponentTransfer>
+    <feBlend in="SourceGraphic" in2="soft" mode="screen"/>
+  </filter>
 </defs>
-<image href="readme-hero-cinematic-base.svg" x="0" y="0" width="1600" height="720"/>
-<!-- Exact current-release overlay: the base artwork remains immutable while this badge tracks production. -->
-<g filter="url(#shadow)">
-  <path d="M418 28h275l12 12v44l-12 12H418l-12-12V40z" fill="url(#steel)" stroke="#168ddd" stroke-width="2"/>
-  <path d="M447 45 461 50v13c0 10-6 16-14 20-8-4-14-10-14-20V50z" fill="#159eff"/>
-  <path d="m440 63 6 6 10-13" fill="none" stroke="#031019" stroke-width="4"/>
-  <text x="482" y="70" fill="#e5f7ff" font-family="Arial Narrow,Arial,sans-serif" font-size="22" font-weight="900" letter-spacing="2.4">VERIFIED v7.1.4</text>
+<rect width="1600" height="720" rx="28" fill="url(#bg)"/>
+<rect width="1600" height="720" rx="28" fill="url(#grid)"/>
+<rect width="1600" height="720" rx="28" fill="url(#scan)"/>
+<path d="M22 10H1578l12 12v676l-12 12H22L10 698V22z" fill="none" stroke="url(#steel)" stroke-width="18"/>
+<rect x="24" y="24" width="1552" height="672" rx="18" fill="none" stroke="#6b7b84" stroke-opacity=".45" stroke-width="2"/>
+<g fill="#aeb8bd" opacity=".5">
+  <circle cx="35" cy="35" r="4"/><circle cx="1565" cy="35" r="4"/><circle cx="35" cy="685" r="4"/><circle cx="1565" cy="685" r="4"/>
 </g>
+<g filter="url(#shadow)">
+  <path d="M34 30H1566v66H34z" fill="url(#steel)" stroke="#4c5c65" stroke-width="2"/>
+  <g transform="translate(48 40)">
+    <rect width="72" height="46" rx="6" fill="#0a1116" stroke="#4f6470"/>
+    <path d="M0 0 72 46M72 0 0 46" stroke="#fff" stroke-width="12" opacity=".9"/>
+    <path d="M0 0 72 46M72 0 0 46" stroke="#c92632" stroke-width="5"/>
+    <path d="M36 0v46M0 23h72" stroke="#fff" stroke-width="14"/>
+    <path d="M36 0v46M0 23h72" stroke="#c92632" stroke-width="7"/>
+  </g>
+  <text x="134" y="68" fill="#5ed2ff" font-family="Courier New,monospace" font-size="13" font-weight="900" letter-spacing="2.1">UK EMERGENCY COMMAND NETWORK</text>
+  <g transform="translate(436 40)">
+    <path d="M0 0h230l10 10v26l-10 10H0l-10-10V10z" fill="#07131f" stroke="#168ddd"/>
+    <path d="M22 9 35 14v12c0 9-6 14-13 18-7-4-13-9-13-18V14z" fill="#159eff"/>
+    <path d="m16 26 5 5 9-11" fill="none" stroke="#031019" stroke-width="4"/>
+    <text x="52" y="29" fill="#e5f7ff" font-family="Arial Narrow,Arial,sans-serif" font-size="17" font-weight="900" letter-spacing="2">VERIFIED v7.1.4</text>
+  </g>
+  <g transform="translate(698 40)">
+    <path d="M0 0h230l10 10v26l-10 10H0l-10-10V10z" fill="#270a0c" stroke="#d3342f"/>
+    <circle cx="24" cy="23" r="10" fill="#e9443b"/>
+    <path d="m19 23 4 4 7-9" fill="none" stroke="#250408" stroke-width="3"/>
+    <text x="48" y="29" fill="#ffd9d2" font-family="Arial Narrow,Arial,sans-serif" font-size="17" font-weight="900" letter-spacing="2">INCIDENT COMMAND</text>
+  </g>
+  <g transform="translate(960 40)">
+    <path d="M0 0h255l10 10v26l-10 10H0l-10-10V10z" fill="#251a05" stroke="#d99a16"/>
+    <rect x="15" y="11" width="22" height="17" rx="2" fill="none" stroke="#ffd64d" stroke-width="3"/>
+    <path d="M12 33h28" stroke="#ffd64d" stroke-width="3"/>
+    <text x="54" y="29" fill="#ffe39b" font-family="Arial Narrow,Arial,sans-serif" font-size="17" font-weight="900" letter-spacing="1.8">DESKTOP · TABLET · iOS</text>
+  </g>
+  <text x="1518" y="60" text-anchor="end" fill="#8f9aa2" font-family="Courier New,monospace" font-size="12" letter-spacing="2">SYSTEM STATUS</text>
+  <text x="1518" y="82" text-anchor="end" fill="#37c6ff" font-family="Courier New,monospace" font-size="14" font-weight="900" letter-spacing="2">OPERATIONAL</text>
+  <circle cx="1540" cy="76" r="6" fill="#49e080" filter="url(#glowB)"/>
+</g>
+<g transform="translate(30 104)" filter="url(#glowR)">
+  <path d="M0 40h68L58 0H10z" fill="#6a1711" stroke="#ff6a43" stroke-width="2"/>
+  <rect x="10" y="36" width="48" height="10" rx="4" fill="#fa5a2b"/>
+  <ellipse cx="34" cy="17" rx="22" ry="13" fill="#ff8b45" opacity=".75"/>
+  <path d="M10 17H-8M58 17h18M34-4v-14" stroke="#ff6a43" stroke-width="4"/>
+</g>
+<g filter="url(#grit)">
+  <text x="72" y="245" fill="url(#whiteText)" font-family="Impact,Arial Black,Arial,sans-serif" font-size="118" letter-spacing="2">MISSIONCHIEF</text>
+  <text x="74" y="324" fill="url(#goldText)" font-family="Impact,Arial Black,Arial,sans-serif" font-size="64" letter-spacing="3.5">MAP COMMAND TOOLKIT</text>
+</g>
+<path d="M80 346h870" stroke="#20b9ff" stroke-width="4"/>
+<path d="M85 358h150l16 12H70zM795 358h150l16 12H779z" fill="#159fdf" opacity=".8"/>
+<text x="512" y="380" text-anchor="middle" fill="#65cfff" font-family="Arial Narrow,Arial,sans-serif" font-size="22" font-weight="900" letter-spacing="8">EMERGENCY COMMAND CONSOLE</text>
+<g transform="translate(52 -2) scale(.92)" opacity=".94">
+  <path d="M1098 136 l-29 13 -10 32 -27 12 -10 33 -34 13 -2 30 -23 24 7 29 -25 28 10 29 -18 24 4 36 24 9 12 33 31 -3 22 26 38 -4 19 -25 32 -5 14 -31 31 -18 -6 -36 20 -29 -4 -36 -26 -18 -4 -26 -27 -17 8 -25 -19 -26 -27 8 -18 -22 z" fill="#06121a" stroke="#27b7ff" stroke-width="3"/>
+  <path d="M1098 136 l-29 13 -10 32 -27 12 -10 33 -34 13 -2 30 -23 24 7 29 -25 28 10 29 -18 24 4 36 24 9 12 33 31 -3 22 26 38 -4 19 -25 32 -5 14 -31 31 -18 -6 -36 20 -29 -4 -36 -26 -18 -4 -26 -27 -17 8 -25 -19 -26 -27 8 -18 -22 z" fill="url(#micro)" opacity=".8"/>
+  <g stroke="#3ad1ff" stroke-opacity=".22"><path d="M990 210 1170 490M1030 190 1200 420M970 300 1180 340M1010 430 1170 250"/></g>
+  <g fill="#ff3f36" filter="url(#glowR)"><circle cx="1046" cy="238" r="6"/><circle cx="1080" cy="286" r="5"/><circle cx="1096" cy="350" r="7"/><circle cx="1134" cy="426" r="6"/></g>
+  <g fill="#ffb82e" filter="url(#glowB)"><circle cx="1062" cy="315" r="6"/><circle cx="1122" cy="382" r="5"/><circle cx="1160" cy="462" r="6"/></g>
+  <g fill="#29b7ff" filter="url(#glowB)"><circle cx="1018" cy="270" r="5"/><circle cx="1106" cy="330" r="5"/><circle cx="1148" cy="400" r="5"/></g>
+  <g stroke="#fff" stroke-opacity=".45" fill="none"><circle cx="1096" cy="350" r="45"/><circle cx="1096" cy="350" r="85"/><circle cx="1096" cy="350" r="125"/></g>
+</g>
+<g transform="translate(1180 118)" filter="url(#shadow)">
+  <path d="M0 0h365l18 18v458l-18 18H0l-18-18V18z" fill="url(#steel2)" stroke="#6a7c86" stroke-width="3"/>
+  <rect x="16" y="16" width="333" height="462" rx="9" fill="#05090c" stroke="#24333c"/>
+  <text x="36" y="48" fill="#c7d0d5" font-family="Arial Narrow,Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="4">INCIDENT COMMAND WIRE</text>
+  <circle cx="42" cy="80" r="7" fill="#ef4238" filter="url(#glowR)"/>
+  <text x="64" y="88" fill="#fff" font-family="Impact,Arial Black,sans-serif" font-size="26" letter-spacing="2">LIVE DISPATCH</text>
+  <rect x="30" y="104" width="305" height="36" rx="5" fill="#0b1115" stroke="#3e1a1c"/>
+  <text x="48" y="128" fill="#ff5b4d" font-family="Arial Narrow,Arial,sans-serif" font-size="16" font-weight="900" letter-spacing="3">PRIORITY INCIDENTS</text>
+  <g font-family="Arial Narrow,Arial,sans-serif">
+    <g transform="translate(30 154)"><rect width="305" height="62" rx="6" fill="#0c0e10" stroke="#453033"/><rect x="10" y="10" width="42" height="42" rx="6" fill="#4b1010" stroke="#e13c31"/><path d="M31 17c11 13 4 19 11 26-5 8-17 10-24 0 9-7 4-16 13-26z" fill="#f05241"/><text x="66" y="24" fill="#9ba5aa" font-size="11">12:47</text><text x="110" y="25" fill="#fff" font-size="15" font-weight="900">MAJOR FIRE</text><text x="110" y="45" fill="#a8b0b4" font-size="11">MANCHESTER, M1</text><rect x="252" y="17" width="42" height="22" rx="4" fill="#3e0b0e" stroke="#d52e2f"/><text x="273" y="32" text-anchor="middle" fill="#ff766a" font-size="10" font-weight="900">HIGH</text></g>
+    <g transform="translate(30 226)"><rect width="305" height="62" rx="6" fill="#0c0e10" stroke="#263c49"/><rect x="10" y="10" width="42" height="42" rx="6" fill="#0a3150" stroke="#168fe1"/><path d="M23 17h16v8h8v16h-8v8H23v-8h-8V25h8z" fill="#5bc4ff"/><text x="66" y="24" fill="#9ba5aa" font-size="11">12:44</text><text x="110" y="25" fill="#fff" font-size="14" font-weight="900">MEDICAL EMERGENCY</text><text x="110" y="45" fill="#a8b0b4" font-size="11">LEEDS, LS1</text><rect x="244" y="17" width="50" height="22" rx="4" fill="#3c2d05" stroke="#d49b16"/><text x="269" y="32" text-anchor="middle" fill="#ffd85b" font-size="9" font-weight="900">MEDIUM</text></g>
+    <g transform="translate(30 298)"><rect width="305" height="62" rx="6" fill="#0c0e10" stroke="#55451b"/><rect x="10" y="10" width="42" height="42" rx="6" fill="#4b3705" stroke="#e0a81d"/><path d="M31 15 48 47H14z" fill="#f3bd35"/><rect x="29" y="25" width="4" height="12" fill="#3f2c03"/><circle cx="31" cy="42" r="2" fill="#3f2c03"/><text x="66" y="24" fill="#9ba5aa" font-size="11">12:41</text><text x="110" y="25" fill="#fff" font-size="14" font-weight="900">RTC – MULTI VEHICLE</text><text x="110" y="45" fill="#a8b0b4" font-size="11">BIRMINGHAM, M6</text><rect x="252" y="17" width="42" height="22" rx="4" fill="#3e0b0e" stroke="#d52e2f"/><text x="273" y="32" text-anchor="middle" fill="#ff766a" font-size="10" font-weight="900">HIGH</text></g>
+    <g transform="translate(30 370)"><rect width="305" height="62" rx="6" fill="#0c0e10" stroke="#263c49"/><rect x="10" y="10" width="42" height="42" rx="6" fill="#0a3150" stroke="#168fe1"/><path d="M31 16 43 21v10c0 9-6 14-12 18-6-4-12-9-12-18V21z" fill="#48b9ff"/><text x="66" y="24" fill="#9ba5aa" font-size="11">12:39</text><text x="110" y="25" fill="#fff" font-size="14" font-weight="900">SECURITY INCIDENT</text><text x="110" y="45" fill="#a8b0b4" font-size="11">LONDON, SE1</text><rect x="244" y="17" width="50" height="22" rx="4" fill="#3c2d05" stroke="#d49b16"/><text x="269" y="32" text-anchor="middle" fill="#ffd85b" font-size="9" font-weight="900">MEDIUM</text></g>
+  </g>
+</g>
+<g transform="translate(66 448)" filter="url(#shadow)">
+  <g><rect width="260" height="142" rx="12" fill="url(#blue)" stroke="#2db9ff" stroke-width="2"/><circle cx="42" cy="45" r="25" fill="#08233a" stroke="#32baff" stroke-width="2"/><circle cx="42" cy="45" r="12" fill="none" stroke="#45c5ff" stroke-width="3"/><path d="M42 15v12M42 63v12M12 45h12M60 45h12" stroke="#45c5ff" stroke-width="3"/><text x="82" y="42" fill="#4bc7ff" font-family="Impact,Arial Black,sans-serif" font-size="29">MISSION</text><text x="82" y="67" fill="#f3f6f8" font-family="Arial Narrow,Arial,sans-serif" font-size="15">Age · Value · Commitment</text><path d="M20 105h220" stroke="#1f6c9d"/><path d="M20 118h72M104 118h40M160 118h80" stroke="#30aeea" stroke-width="5"/></g>
+  <g transform="translate(278)"><rect width="260" height="142" rx="12" fill="url(#green)" stroke="#50bc55" stroke-width="2"/><path d="M42 18 65 27v18c0 18-11 29-23 38-12-9-23-20-23-38V27z" fill="#173d1e" stroke="#5ed067" stroke-width="2"/><path d="m42 31 5 10 11 2-8 8 2 11-10-5-10 5 2-11-8-8 11-2z" fill="#6bd36b"/><text x="82" y="42" fill="#62d063" font-family="Impact,Arial Black,sans-serif" font-size="29">FLEET</text><text x="82" y="67" fill="#f3f6f8" font-family="Arial Narrow,Arial,sans-serif" font-size="15">Codes · Badges · Gap</text><path d="M20 105h220" stroke="#2d7136"/><path d="M20 118h55M86 118h68M166 118h74" stroke="#45bd55" stroke-width="5"/></g>
+  <g transform="translate(556)"><rect width="260" height="142" rx="12" fill="url(#amber)" stroke="#dca522" stroke-width="2"/><path d="M42 18c-16 0-28 12-28 27 0 22 28 47 28 47s28-25 28-47c0-15-12-27-28-27z" fill="#553b08" stroke="#f1bd38" stroke-width="2"/><circle cx="42" cy="44" r="10" fill="#ffd052"/><text x="82" y="42" fill="#f0bb34" font-family="Impact,Arial Black,sans-serif" font-size="29">MAP</text><text x="82" y="67" fill="#f3f6f8" font-family="Arial Narrow,Arial,sans-serif" font-size="15">Coverage · Places · Profiles</text><path d="M20 105h220" stroke="#81611e"/><path d="M20 118h45M78 118h88M178 118h62" stroke="#d7a726" stroke-width="5"/></g>
+  <g transform="translate(834)"><rect width="260" height="142" rx="12" fill="url(#red)" stroke="#dc3b40" stroke-width="2"/><text x="27" y="70" fill="#ef544f" font-family="Georgia,serif" font-size="67" font-weight="900">£</text><text x="82" y="42" fill="#ef514c" font-family="Impact,Arial Black,sans-serif" font-size="29">FINANCE</text><text x="82" y="67" fill="#f3f6f8" font-family="Arial Narrow,Arial,sans-serif" font-size="15">Income · Spend · Variance</text><path d="M20 105h220" stroke="#7f2428"/><path d="m22 120 32-14 28 8 34-29 35 18 31-25 55 12" fill="none" stroke="#e54242" stroke-width="4"/></g>
+</g>
+<g transform="translate(30 620)">
+  <path d="M0 0h1540l18 18v56l-18 18H0L-18 74V18z" fill="url(#steel)" stroke="#596872" stroke-width="2"/>
+  <circle cx="52" cy="46" r="27" fill="#1a1110" stroke="#b98d30" stroke-width="2"/>
+  <path d="m52 20 7 18 19 1-15 12 5 19-16-10-16 10 5-19-15-12 19-1z" fill="#d3a646"/>
+  <text x="760" y="53" text-anchor="middle" fill="#cfdae0" font-family="Arial Narrow,Arial,sans-serif" font-size="18" font-weight="900" letter-spacing="4">SEE THE MISSION  •  READ THE FLEET  •  COMMAND THE MAP  •  RECONCILE THE OPERATION</text>
+  <g transform="translate(1424 22)"><text x="0" y="12" fill="#8b969d" font-size="9">COMMS</text><circle cx="18" cy="35" r="6" fill="#e33131" filter="url(#glowR)"/><text x="54" y="12" fill="#8b969d" font-size="9">DATA</text><circle cx="68" cy="35" r="6" fill="#e2a72f"/><text x="104" y="12" fill="#8b969d" font-size="9">LINK</text><circle cx="116" cy="35" r="6" fill="#3fdb70"/></g>
+</g>
+<rect y="710" width="800" height="10" fill="#21b8ff"/><rect x="800" y="710" width="800" height="10" fill="#e32f38"/>
 </svg>

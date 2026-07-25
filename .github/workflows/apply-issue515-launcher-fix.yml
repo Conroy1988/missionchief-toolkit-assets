@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/issue515/apply_launcher_fix.py"
       - ".github/issue515/patch_candidate_ledgers.py"
+      - ".github/scripts/test_issue464_launcher_settings_contract.py"
       - ".github/workflows/apply-issue515-launcher-fix.yml"
 
 permissions:

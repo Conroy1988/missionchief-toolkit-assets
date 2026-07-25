@@ -57,7 +57,31 @@ jobs:
           persist-credentials: false
 
       - name: Run deterministic contract preflight
-        run: bash .github/scripts/run_userscript_preflight.sh --contracts
+        id: preflight
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          bash .github/scripts/run_userscript_preflight.sh --contracts 2>&1 \
+            | tee full-userscript-contract-preflight.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload contract preflight diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-contract-preflight
+          path: full-userscript-contract-preflight.log
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Stop on deterministic contract failure
+        if: steps.preflight.outputs.exit_code != '0'
+        run: |
+          echo "One or more deterministic contract gates failed. Review the retained preflight log."
+          exit 1
 
   static-audit:
     name: Static-analysis lane
@@ -173,11 +197,12 @@ jobs:
           exit 0
 
       - name: Extract exact source evidence
+        if: always()
         run: |
           python3 .github/scripts/extract_userscript_audit_evidence.py \
             --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --eslint eslint-userscript-audit.json \
-            --output userscript-audit-evidence.md
+            --eslint-json eslint-userscript-raw.json \
+            --output eslint-userscript-evidence.txt
 
       - name: Publish ESLint audit summary
         if: always()
@@ -192,17 +217,19 @@ jobs:
             eslint-userscript-raw.json
             eslint-userscript-audit.json
             eslint-userscript-audit.md
-            userscript-audit-evidence.md
+            eslint-userscript-evidence.txt
           if-no-files-found: error
           retention-days: 90
 
       - name: Stop on definite ESLint failure
-        if: steps.eslint.outputs.summary_exit_code != '0'
+        if: >-
+          steps.eslint.outputs.eslint_exit_code != '0' ||
+          steps.eslint.outputs.summary_exit_code != '0'
         run: |
-          echo "The definite ESLint summary gate failed. Review the workflow summary and evidence artifact."
+          echo "One or more definite ESLint gates failed. Review the workflow summary and evidence artifact."
           exit 1
 
-  audit:
+  complete:
     name: Audit complete canonical userscript
     if: always()
     needs:
@@ -210,18 +237,17 @@ jobs:
       - static-audit
       - eslint-audit
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-
     steps:
       - name: Aggregate parallel audit lanes
         env:
-          CONTRACT_RESULT: ${{ needs.contracts.result }}
+          CONTRACTS_RESULT: ${{ needs.contracts.result }}
           STATIC_RESULT: ${{ needs.static-audit.result }}
           ESLINT_RESULT: ${{ needs.eslint-audit.result }}
         run: |
           set -euo pipefail
           printf 'Contract lane: %s\nStatic lane: %s\nESLint lane: %s\n' \
-            "$CONTRACT_RESULT" "$STATIC_RESULT" "$ESLINT_RESULT"
-          [[ "$CONTRACT_RESULT" == "success" ]]
-          [[ "$STATIC_RESULT" == "success" ]]
-          [[ "$ESLINT_RESULT" == "success" ]]
+            "$CONTRACTS_RESULT" "$STATIC_RESULT" "$ESLINT_RESULT" \
+            >> "$GITHUB_STEP_SUMMARY"
+          [[ "$CONTRACTS_RESULT" == 'success' ]]
+          [[ "$STATIC_RESULT" == 'success' ]]
+          [[ "$ESLINT_RESULT" == 'success' ]]

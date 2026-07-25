@@ -21,17 +21,37 @@
     "iOS Mobile"
   ],
   "shortcuts": [
-    { "key": "1", "action": "Toggle My Missions" },
-    { "key": "2", "action": "Toggle Alliance Missions" },
-    { "key": "3", "action": "Toggle Vehicles" },
-    { "key": "4", "action": "Toggle My Buildings" },
-    { "key": "5", "action": "Toggle Alliance Credits" },
-    { "key": "6", "action": "Toggle Mission Age" },
-    { "key": "V", "action": "Open or close Vehicle Code Status" }
+    {
+      "key": "1",
+      "action": "Toggle My Missions"
+    },
+    {
+      "key": "2",
+      "action": "Toggle Alliance Missions"
+    },
+    {
+      "key": "3",
+      "action": "Toggle Vehicles"
+    },
+    {
+      "key": "4",
+      "action": "Toggle My Buildings"
+    },
+    {
+      "key": "5",
+      "action": "Toggle Alliance Credits"
+    },
+    {
+      "key": "6",
+      "action": "Toggle Mission Age"
+    },
+    {
+      "key": "V",
+      "action": "Open or close Vehicle Code Status"
+    }
   ],
   "requiredSourceTokens": [
-    "Mission Age Watch",
-    "Critical View",
+    "Mission Age",
     "Transport Watcher",
     "Vehicle Code Status",
     "Smart Bookmark Labels",
@@ -56,17 +76,16 @@
     "https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit"
   ],
   "requiredFeatureNames": [
-    "Mission Age Watch",
+    "Mission Age map timers",
     "Mission Value",
     "Enhanced Operational Requirements",
     "Extended Call Window",
-    "Extended Mission List",
+    "Extended Call List",
     "Enhanced Transport Requests",
     "Patient Transport Sweep",
     "Resource Gap",
     "Auto-load all vehicles",
     "Vehicle Code Status",
-    "Coverage Heat Map",
     "Smart Bookmark Labels",
     "Alliance Credits",
     "Financial intelligence",
@@ -79,7 +98,7 @@
       "Operational Window Suite",
       "Enhanced Operational Requirements",
       "Extended Call Window",
-      "Extended Mission List",
+      "Extended Call List",
       "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Mission Value",
@@ -90,13 +109,18 @@
     ],
     "readmeForbiddenTokens": [
       "Mission Requirements Matrix",
-      "Current verified release: `v4.20.33`"
+      "Current verified release: `v4.20.33`",
+      "Mission Age Watch",
+      "Critical View",
+      "Mission Inspector",
+      "Coverage Heat Map",
+      "Automatic day / night"
     ],
     "helpRequiredTokens": [
       "Operational Window Suite",
       "Enhanced Operational Requirements",
       "Extended Call Window",
-      "Extended Mission List",
+      "Extended Call List",
       "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Hyrule Command",
@@ -109,13 +133,18 @@
       "live Mission Requirements matrix",
       "v4.2.1",
       "six interface themes",
-      "all six themes"
+      "all six themes",
+      "Mission Age Watch",
+      "Critical View",
+      "Mission Inspector",
+      "Coverage Heat Map",
+      "Automatic day / night"
     ],
     "greasyForkRequiredTokens": [
       "Operational Window Suite",
       "Enhanced Operational Requirements",
       "Extended Call Window",
-      "Extended Mission List",
+      "Extended Call List",
       "Enhanced Transport Requests",
       "Patient Transport Sweep",
       "Mission Value",
@@ -124,7 +153,12 @@
     "greasyForkForbiddenTokens": [
       "Mission Requirements Matrix",
       "live Mission Requirements",
-      "Exported Toolkit settings do not include the Discord webhook"
+      "Exported Toolkit settings do not include the Discord webhook",
+      "Mission Age Watch",
+      "Critical View",
+      "Mission Inspector",
+      "Coverage Heat Map",
+      "Automatic day / night"
     ]
   }
 }

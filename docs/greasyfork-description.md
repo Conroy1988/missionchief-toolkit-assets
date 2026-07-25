@@ -6,16 +6,16 @@ A configurable command-centre enhancement for MissionChief, combining operationa
 
 ## Main features
 
-- Operational Window Suite with Enhanced Operational Requirements, Extended Call Window, Extended Mission List and opt-in Enhanced Transport Requests
-- Mission Age Watch, Mission Value, Critical View and Mission Inspector
+- Operational Window Suite with Enhanced Operational Requirements, Extended Call Window, Extended Call List and opt-in Enhanced Transport Requests
+- Mission Age map timer badges and Mission Value
 - Authoritative selected, en-route, on-scene and still-needed demand with amber waiting/unresolved truth states
 - Patient and prisoner transport alerts plus a manual, guarded Patient Transport Sweep for eligible alliance-member ambulances
 - Resource Gap, Vehicle Code Status and custom specialist vehicle identity
-- Smart bookmarks, Map Jump, coverage rings and Coverage Heat Map
+- Smart bookmarks, Map Jump and coverage rings
 - Financial reconciliation and optional Discord reporting
 - Cinematic payout presentations and seven complete interface systems
 - Responsive Desktop, Tablet/iPad and iOS Mobile/Safari operating modes
-- Performance-aware startup, bounded monitoring and deterministic cleanup
+- v6 performance architecture with bounded monitoring, owned-node cleanup and deterministic teardown
 
 ## Operational Window Suite
 
@@ -27,7 +27,7 @@ Reconciles MissionChief requirement evidence across vehicles, equipment, personn
 
 Adds patient and vehicle summaries, selected-unit and ARR counters, search, highlighting, generation and alarm context, mission keywords and map controls without creating a competing mission-window lifecycle.
 
-### Extended Mission List
+### Extended Call List
 
 Adds sorting, starring, collapsing, patient and prisoner indicators, credit and remaining-time badges, and native sharing controls while retaining deterministic state through live refreshes.
 

@@ -23,7 +23,7 @@ TARGET_RULES = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--eslint", type=Path, required=True)
+    parser.add_argument("--eslint", "--eslint-json", dest="eslint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
@@ -38,12 +38,28 @@ def fenced(text: str) -> list[str]:
     return ["```javascript", text.replace("```", "```​"), "```"]
 
 
+def eslint_messages(payload: object) -> list[dict]:
+    if isinstance(payload, dict):
+        messages = payload.get("messages", [])
+        return [item for item in messages if isinstance(item, dict)] if isinstance(messages, list) else []
+    if isinstance(payload, list):
+        flattened: list[dict] = []
+        for report in payload:
+            if not isinstance(report, dict):
+                continue
+            messages = report.get("messages", [])
+            if isinstance(messages, list):
+                flattened.extend(item for item in messages if isinstance(item, dict))
+        return flattened
+    raise ValueError("Unsupported ESLint JSON payload")
+
+
 def main() -> int:
     args = parse_args()
     source = args.source.read_text(encoding="utf-8")
     lines = source.splitlines()
     eslint = json.loads(args.eslint.read_text(encoding="utf-8"))
-    messages = eslint.get("messages", [])
+    messages = eslint_messages(eslint)
     masked = base.mask_non_code(source)
     functions = base.extract_functions(source, masked)
     by_name = defaultdict(list)
@@ -114,8 +130,6 @@ def main() -> int:
         (16735, 16780, "Personal building marker class synchronisation"),
         (17100, 17145, "Map event state assignments"),
         (19350, 19390, "Vehicle status assignment"),
-        (20390, 20425, "Critical drawer refresh lifecycle"),
-        (20815, 20865, "Critical view async lifecycle"),
         (22770, 22815, "Discord finance chart references"),
         (23145, 23205, "First Promise executor"),
         (23615, 23665, "Second local finish helper"),
@@ -125,13 +139,13 @@ def main() -> int:
         (25125, 25190, "Chart Promise executor and async loop"),
         (25235, 25270, "Discord finance finalisation"),
         (25550, 25590, "Feature toggle assignment"),
-        (27435, 27525, "Mutation observer targeting"),
-        (27555, 27620, "Boot timer and startup"),
     ]
     output.extend(["", "## Selected lifecycle and optimisation regions", ""])
     for start, end, title in selected_ranges:
+        if start > len(lines):
+            continue
         output.extend([
-            f"### {title} · lines {start}-{end}",
+            f"### {title} · lines {start}-{min(end, len(lines))}",
             "",
             *fenced("\n".join(f"{number}: {lines[number - 1]}" for number in range(start, min(end, len(lines)) + 1))),
             "",

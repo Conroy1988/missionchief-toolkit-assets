@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verify Issue #41 operational branch roles and governed-file policy.
 
-Mirrored paths must remain byte-identical to the current checkout. Operational
-paths may differ, but must satisfy their reviewed schemas and cross-file
+Mirrored paths must remain byte-identical to the selected production authority ref.
+Operational paths may differ, but must satisfy their reviewed schemas and cross-file
 consistency rules. This verifier is read-only and never updates a ref.
 """
 
@@ -223,7 +223,7 @@ def cross_validate_release_state(files: list[dict[str, object]]) -> list[str]:
     return errors
 
 
-def compare_branch(branch: str, policy: dict) -> dict:
+def compare_branch(branch: str, policy: dict, mirror_source: str) -> dict:
     role = branch_json(branch, ROLE_PATH)
     errors = validate_role(branch, role, policy)
     files: list[dict[str, object]] = []
@@ -238,7 +238,13 @@ def compare_branch(branch: str, policy: dict) -> dict:
             errors.append(f"{branch} is missing governed path {path}")
             files.append({"path": path, "mode": "missing", "acceptable": False})
             continue
-        local = local_path.read_bytes() if local_path.is_file() else None
+        if path in mirrored:
+            try:
+                local = git("show", f"{mirror_source}:{path}", binary=True)
+            except subprocess.CalledProcessError:
+                local = None
+        else:
+            local = local_path.read_bytes() if local_path.is_file() else None
         equal = local == remote if local is not None else False
 
         if path in mirrored:
@@ -291,6 +297,7 @@ def render_markdown(report: dict) -> str:
         "",
         f"- State: **{'acceptable' if report['acceptable'] else 'mismatch'}**",
         f"- Source commit: `{report['sourceCommit']}`",
+        f"- Mirror authority: `{report.get('mirrorSource', 'HEAD')}`",
         f"- Generated: `{report['generatedAt']}`",
         "- External consumers changed: **no**",
         "- Public `main` changed: **no**",
@@ -365,6 +372,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--mirror-source", default="HEAD")
     return parser.parse_args()
 
 
@@ -378,7 +386,7 @@ def main() -> int:
 
     policy = load_policy()
     branches = [
-        compare_branch(branch, branch_policy)
+        compare_branch(branch, branch_policy, args.mirror_source)
         for branch, branch_policy in policy["branches"].items()
     ]
     acceptable = all(branch["acceptable"] for branch in branches)
@@ -387,6 +395,7 @@ def main() -> int:
         "state": "acceptable" if acceptable else "mismatch",
         "acceptable": acceptable,
         "sourceCommit": str(git("rev-parse", "HEAD")).strip(),
+        "mirrorSource": args.mirror_source,
         "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "publicMainChanged": False,
         "externalConsumersChanged": False,

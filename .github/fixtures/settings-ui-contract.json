@@ -22,14 +22,12 @@
     "finance-archive-import",
     "finance-archive-scan",
     "finance-rules-refresh",
-    "fit-critical",
     "import-config",
     "nudge-down",
     "nudge-left",
     "nudge-reset",
     "nudge-right",
     "nudge-up",
-    "open-critical-drawer",
     "open-help-center",
     "open-vehicle-status",
     "panel-down",
@@ -50,7 +48,6 @@
     "bookmark-label",
     "bookmark-pin",
     "bookmark-save",
-    "critical-go",
     "place-go",
     "profile-delete",
     "profile-load",
@@ -60,10 +57,6 @@
   ],
   "settings": [
     "alliance-credit-minimum",
-    "auto-day-start",
-    "auto-day-theme",
-    "auto-night-start",
-    "auto-night-theme",
     "coverage-radius",
     "discord-chart",
     "discord-comparison",
@@ -79,10 +72,6 @@
     "finance-rule-feed",
     "finance-vault-enabled",
     "finance-vault-retention",
-    "heatmap-opacity",
-    "heatmap-radius",
-    "heatmap-service",
-    "heatmap-source",
     "major-incident-minimum",
     "mobile-mode",
     "payout-duration",
@@ -99,27 +88,20 @@
   "intentionalNoopSettings": [
     "payout-test-amount"
   ],
-  "settingFamilies": [
-    "auto-",
-    "heatmap-"
-  ],
+  "settingFamilies": [],
   "toggleRoutes": [
     "allianceBuildingsMapBlocker",
     "allianceCredits",
     "allianceMissions",
     "autoLoadAllVehicles",
-    "autoNight",
     "buildings",
     "clean",
     "compactDock",
     "coverage",
-    "criticalView",
     "customVehicleBadges",
-    "heatmap",
     "majorIncidentFeed",
     "markerFocus",
     "missionAge",
-    "missionInspector",
     "missionLockAudio",
     "missionPulse",
     "missionSpawn",
@@ -143,16 +125,13 @@
     "allianceCredits": "allianceCredits",
     "allianceMissions": "visibility.allianceMissions",
     "autoLoadAllVehicles": "autoLoadAllVehicles",
-    "autoNight": "autoNight.enabled",
     "buildings": "visibility.buildings",
     "clean": "cleanMode",
     "compactDock": "compactDock",
     "coverage": "coverage.enabled",
-    "heatmap": "heatmap.enabled",
     "majorIncidentFeed": "majorIncidentFeed.enabled",
     "markerFocus": "markerFocus",
     "missionAge": "missionAge",
-    "missionInspector": "missionInspector",
     "missionLockAudio": "missionLockAudio",
     "missionPulse": "missionPulse",
     "missionSpawn": "missionSpawn.enabled",
@@ -185,10 +164,6 @@
     },
     "coverage": {
       "radiusMi": "25"
-    },
-    "heatmap": {
-      "radiusMi": "invalid",
-      "opacity": 9
     },
     "allianceCreditMinimum": 12345,
     "autoLoadAllVehicles": true,
@@ -295,7 +270,6 @@
     "allianceMissions",
     "buildings",
     "coverage",
-    "heatmap",
     "markerFocus",
     "missionPulse",
     "myMissions",
@@ -311,7 +285,6 @@
     "allianceMissions": "visibility.allianceMissions",
     "buildings": "visibility.buildings",
     "coverage": "coverage.enabled",
-    "heatmap": "heatmap.enabled",
     "markerFocus": "markerFocus",
     "missionPulse": "missionPulse",
     "myMissions": "visibility.myMissions",
@@ -320,17 +293,14 @@
   },
   "extractedMissionWindowToggleRoutes": [
     "customVehicleBadges",
-    "missionInspector",
     "missionValue"
   ],
   "extractedMissionWindowEffectRoutes": [
     "customVehicleBadges",
-    "missionInspector",
     "missionValue"
   ],
   "extractedMissionWindowToggleStatePaths": {
     "customVehicleBadges": "customVehicleBadges",
-    "missionInspector": "missionInspector",
     "missionValue": "missionValue"
   },
   "extractedPayoutAudioToggleRoutes": [

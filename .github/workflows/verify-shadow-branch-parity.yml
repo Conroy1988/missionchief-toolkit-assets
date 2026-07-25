@@ -33,11 +33,12 @@ jobs:
           persist-credentials: false
           show-progress: false
 
-      - name: Fetch shadow branch refs read-only
+      - name: Fetch production authority and shadow branch refs read-only
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags origin \
+            +refs/heads/main:refs/remotes/origin/main \
             +refs/heads/release-state:refs/remotes/origin/release-state \
             +refs/heads/distribution:refs/remotes/origin/distribution
 
@@ -54,6 +55,7 @@ jobs:
           python3 .github/scripts/verify_shadow_branch_parity.py \
             --json-output shadow-branch-evidence/shadow-branch-parity.json \
             --markdown-output shadow-branch-evidence/shadow-branch-parity.md \
+            --mirror-source refs/remotes/origin/main \
             2>&1 | tee shadow-branch-evidence/parity.log
 
       - name: Upload immutable shadow-branch evidence

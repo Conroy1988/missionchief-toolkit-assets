@@ -7,7 +7,8 @@ start = source.index("// Issue #378 complete operational feature suite.")
 end = source.index("// Issue #378 end complete operational feature suite.", start)
 block = source[start:end]
 required = [
-    "function operationalWindowSettingsMarkup()",
+    "function operationalWindowSettingsInnerMarkup()",
+    "function operationalWindowSectionMarkup(section)",
     "function handleOperationalWindowSettingChange(target)",
     "function operationalCallWindowApply(context)",
     "function operationalMissionListComputeOrder(records",
@@ -20,10 +21,12 @@ required = [
     "function operationalFeatureCleanupContext(context)",
     "env(safe-area-inset-left)",
     "data-operational-setting",
+    "data-operational-settings-root",
+    "OPERATIONAL_SETTINGS_SCHEMA.map(operationalWindowSectionMarkup).join('')",
     "operationalFeatureRenderContext(context);",
     "...operationalFeatureObservationRoots(doc)",
     "operationalFeatureCleanupContext(context);",
-    "${operationalWindowSettingsMarkup()}",
+    "${operationalWindowSettingsInnerMarkup()}",
     "if (handleOperationalWindowSettingChange(target)) return;",
     "operationalWindowSyncSettingsUi();",
     "phase: 'operational-suite'",
@@ -31,6 +34,9 @@ required = [
 for needle in required:
     if needle not in source:
         raise SystemExit(f"Issue #378 operational feature marker missing: {needle}")
+for retired in ["function operationalWindowSettingsMarkup()", "${operationalWindowSettingsMarkup()}"]:
+    if retired in source:
+        raise SystemExit(f"Issue #378 obsolete raw settings renderer returned: {retired}")
 for forbidden in ["new MutationObserver(", ".addEventListener(", "setInterval(", "LSS-Manager", "createPinia(", "new Vue("]:
     if forbidden in block:
         raise SystemExit(f"Issue #378 operational feature block contains forbidden pattern: {forbidden}")
@@ -42,4 +48,4 @@ for path in [
 ]:
     if path.exists():
         raise SystemExit(f"Issue #378 temporary staging file remains: {path.relative_to(ROOT)}")
-print("Issue #378 complete operational feature-suite contract passed.")
+print("Issue #378 complete operational feature-suite contract passed with typed v6 settings.")

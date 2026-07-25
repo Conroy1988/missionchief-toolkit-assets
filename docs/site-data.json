@@ -11,12 +11,30 @@
     "pages": "https://conroy1988.github.io/missionchief-toolkit-assets/"
   },
   "navigation": [
-    { "label": "Home", "path": "" },
-    { "label": "Features", "path": "features/" },
-    { "label": "Themes", "path": "themes/" },
-    { "label": "Documentation", "path": "docs/" },
-    { "label": "Changelog", "path": "changelog/" },
-    { "label": "Status", "path": "status/" }
+    {
+      "label": "Home",
+      "path": ""
+    },
+    {
+      "label": "Features",
+      "path": "features/"
+    },
+    {
+      "label": "Themes",
+      "path": "themes/"
+    },
+    {
+      "label": "Documentation",
+      "path": "docs/"
+    },
+    {
+      "label": "Changelog",
+      "path": "changelog/"
+    },
+    {
+      "label": "Status",
+      "path": "status/"
+    }
   ],
   "featureCategories": [
     {
@@ -24,39 +42,51 @@
       "description": "Prioritise incidents, understand mission state and act without losing map context.",
       "features": [
         {
-          "name": "Mission Age Watch",
-          "summary": "Tracks personal and alliance missions by age, ownership, category, severity, distance and clearing state.",
-          "details": ["Age and operational-state filters", "Closest and furthest sorting", "Fast zoom and mission opening", "Desktop, Tablet/iPad and iOS positioning"],
-          "visual": "mission-age",
-          "tags": ["missions", "monitoring", "priority"]
-        },
-        {
-          "name": "Critical View",
-          "summary": "Concentrates missions requiring immediate attention into a focused workflow.",
-          "details": ["Dedicated critical workflow", "Mission-state and unit awareness", "On-demand interface construction"],
-          "visual": "critical",
-          "tags": ["missions", "critical", "workflow"]
-        },
-        {
-          "name": "Mission Inspector",
-          "summary": "Opens deeper operational context only when requested.",
-          "details": ["On-demand construction", "Works alongside Critical View", "Avoids unnecessary startup cost"],
-          "visual": "inspector",
-          "tags": ["missions", "inspection"]
+          "name": "Mission Age map timers",
+          "summary": "Displays compact age timer badges above missions on the map without running the retired Age Watch workflow.",
+          "details": [
+            "Map timer badges",
+            "Shortcut 6",
+            "Deterministic marker cleanup",
+            "Desktop, Tablet/iPad and iOS support"
+          ],
+          "visual": "mission-age-map-timers",
+          "tags": [
+            "missions",
+            "map",
+            "timers"
+          ]
         },
         {
           "name": "Mission Value",
           "summary": "Displays verified mission value inside opened MissionChief windows without obstructing native controls.",
-          "details": ["Verified live sources", "Unavailable values remain hidden", "Dynamic clearance from native controls"],
+          "details": [
+            "Verified live sources",
+            "Unavailable values remain hidden",
+            "Dynamic clearance from native controls"
+          ],
           "visual": "mission-value",
-          "tags": ["missions", "value", "finance"]
+          "tags": [
+            "missions",
+            "value",
+            "finance"
+          ]
         },
         {
           "name": "Major Incident Feed",
           "summary": "Provides a high-priority incident feed with quick map navigation.",
-          "details": ["Incident banner", "Mission context", "Hover pause", "Click-to-zoom"],
+          "details": [
+            "Incident banner",
+            "Mission context",
+            "Hover pause",
+            "Click-to-zoom"
+          ],
           "visual": "feed",
-          "tags": ["missions", "feed", "navigation"]
+          "tags": [
+            "missions",
+            "feed",
+            "navigation"
+          ]
         }
       ]
     },
@@ -74,28 +104,59 @@
             "Qualified personnel, patient demand, trailers and capacity factors retain reviewed evidence boundaries"
           ],
           "visual": "mission-requirements",
-          "tags": ["missions", "requirements", "dispatch"]
+          "tags": [
+            "missions",
+            "requirements",
+            "dispatch"
+          ]
         },
         {
           "name": "Extended Call Window",
           "summary": "Adds typed mission-window intelligence without creating a second mission-window lifecycle.",
-          "details": ["Patient and vehicle summaries", "Selected-unit and ARR counters", "Vehicle and ARR search", "Generation, alarm, keyword and map-centre context"],
+          "details": [
+            "Patient and vehicle summaries",
+            "Selected-unit and ARR counters",
+            "Vehicle and ARR search",
+            "Generation, alarm, keyword and map-centre context"
+          ],
           "visual": "extended-call-window",
-          "tags": ["missions", "window", "arr"]
+          "tags": [
+            "missions",
+            "window",
+            "arr"
+          ]
         },
         {
-          "name": "Extended Mission List",
+          "name": "Extended Call List",
           "summary": "Prioritises the live mission list with deterministic state across MissionChief refreshes.",
-          "details": ["Sorting, starring and collapsing", "Patient, prisoner, credit and time badges", "Native sharing controls", "LSSM-equivalent suppression"],
+          "details": [
+            "Sorting, starring and collapsing",
+            "Patient, prisoner, credit and time badges",
+            "Native sharing controls",
+            "LSSM-equivalent suppression"
+          ],
           "visual": "extended-mission-list",
-          "tags": ["missions", "list", "priority"]
+          "tags": [
+            "missions",
+            "list",
+            "priority"
+          ]
         },
         {
           "name": "Enhanced Transport Requests",
           "summary": "Provides opt-in transport assistance through strict route and candidate safety checks.",
-          "details": ["Exact route validation", "Visible and enabled candidate filtering", "Ambiguity rejection", "Per-route duplicate protection"],
+          "details": [
+            "Exact route validation",
+            "Visible and enabled candidate filtering",
+            "Ambiguity rejection",
+            "Per-route duplicate protection"
+          ],
           "visual": "enhanced-transport",
-          "tags": ["transport", "safety", "opt-in"]
+          "tags": [
+            "transport",
+            "safety",
+            "opt-in"
+          ]
         }
       ]
     },
@@ -106,37 +167,80 @@
         {
           "name": "Vehicle Code Status",
           "summary": "Summarises vehicle status codes, descriptions and counts.",
-          "details": ["Live response-code totals", "Includes Out of Service", "Persistent toggle and V shortcut"],
+          "details": [
+            "Live response-code totals",
+            "Includes Out of Service",
+            "Persistent toggle and V shortcut"
+          ],
           "visual": "vehicle-code",
-          "tags": ["vehicles", "status", "shortcut"]
+          "tags": [
+            "vehicles",
+            "status",
+            "shortcut"
+          ]
         },
         {
           "name": "Transport Watcher",
           "summary": "Highlights missions still requiring patient or prisoner transport.",
-          "details": ["Patient and prisoner markers", "Live counts", "Operational overlay integration"],
+          "details": [
+            "Patient and prisoner markers",
+            "Live counts",
+            "Operational overlay integration"
+          ],
           "visual": "transport",
-          "tags": ["transport", "patients", "vehicles"]
+          "tags": [
+            "transport",
+            "patients",
+            "vehicles"
+          ]
         },
         {
           "name": "Patient Transport Sweep",
           "summary": "Manually releases eligible alliance ambulances sequentially while excluding the signed-in player's own vehicles.",
-          "details": ["Prefers LSSM release controls", "One verified vehicle at a time", "Ambiguous ownership is skipped", "Bounded MissionChief fallback"],
+          "details": [
+            "Prefers LSSM release controls",
+            "One verified vehicle at a time",
+            "Ambiguous ownership is skipped",
+            "Bounded MissionChief fallback"
+          ],
           "visual": "transport-sweep",
-          "tags": ["transport", "alliance", "lssm"]
+          "tags": [
+            "transport",
+            "alliance",
+            "lssm"
+          ]
         },
         {
           "name": "Resource Gap",
           "summary": "Compares mission demand with available personal vehicle context inside a selected radius.",
-          "details": ["Configurable radius", "Mission Inspector breakdown", "Optional map badge", "No assumed alliance availability"],
+          "details": [
+            "Configurable radius",
+            "Live requirement breakdown",
+            "Optional map badge",
+            "No assumed alliance availability"
+          ],
           "visual": "resource-gap",
-          "tags": ["resources", "vehicles", "coverage"]
+          "tags": [
+            "resources",
+            "vehicles",
+            "coverage"
+          ]
         },
         {
           "name": "Auto-load all vehicles",
           "summary": "Uses MissionChief's native hidden-vehicle batch control inside the active mission window.",
-          "details": ["Native load-more control", "Active-window scope", "Bounded retries", "Duplicate-request protection"],
+          "details": [
+            "Native load-more control",
+            "Active-window scope",
+            "Bounded retries",
+            "Duplicate-request protection"
+          ],
           "visual": "auto-load-vehicles",
-          "tags": ["vehicles", "missions", "performance"]
+          "tags": [
+            "vehicles",
+            "missions",
+            "performance"
+          ]
         }
       ]
     },
@@ -145,25 +249,35 @@
       "description": "Make the map faster to read, easier to navigate and more useful during busy sessions.",
       "features": [
         {
-          "name": "Coverage Heat Map",
-          "summary": "Visualises operational coverage directly on the MissionChief map.",
-          "details": ["Leaflet coverage visualisation", "Toolkit map-control integration", "Rapid geographic assessment"],
-          "visual": "coverage",
-          "tags": ["map", "coverage", "leaflet"]
-        },
-        {
           "name": "Smart Bookmark Labels",
           "summary": "Creates compact place labels while preserving access to the complete location name.",
-          "details": ["UK-aware abbreviation", "Compression fallback", "Manual overrides", "Desktop and touch previews"],
+          "details": [
+            "UK-aware abbreviation",
+            "Compression fallback",
+            "Manual overrides",
+            "Desktop and touch previews"
+          ],
           "visual": "bookmarks",
-          "tags": ["map", "bookmarks", "labels"]
+          "tags": [
+            "map",
+            "bookmarks",
+            "labels"
+          ]
         },
         {
           "name": "Coverage rings and map overlays",
           "summary": "Adds geographic context, visibility controls and presentation options around the map.",
-          "details": ["Coverage rings", "Day and night presentation", "Quick jumps and landmarks", "Alliance Buildings performance guard"],
+          "details": [
+            "Coverage rings",
+            "Quick jumps and landmarks",
+            "Alliance Buildings performance guard"
+          ],
           "visual": "rings",
-          "tags": ["map", "overlays", "performance"]
+          "tags": [
+            "map",
+            "overlays",
+            "performance"
+          ]
         }
       ]
     },
@@ -174,23 +288,49 @@
         {
           "name": "Alliance Credits",
           "summary": "Shows alliance mission values with eligibility-aware states and value filters.",
-          "details": ["Compact values", "Eligibility colouring", "Configurable thresholds"],
+          "details": [
+            "Compact values",
+            "Eligibility colouring",
+            "Configurable thresholds"
+          ],
           "visual": "credits",
-          "tags": ["finance", "alliance", "missions"]
+          "tags": [
+            "finance",
+            "alliance",
+            "missions"
+          ]
         },
         {
           "name": "Financial intelligence",
           "summary": "Reconciles income, spending, net position and variance with Discord-ready reporting.",
-          "details": ["Daily, weekly, monthly and custom periods", "Overview reconciliation", "Unexplained variance preservation", "Discord summaries"],
+          "details": [
+            "Daily, weekly, monthly and custom periods",
+            "Overview reconciliation",
+            "Unexplained variance preservation",
+            "Discord summaries"
+          ],
           "visual": "finance",
-          "tags": ["finance", "reporting", "discord"]
+          "tags": [
+            "finance",
+            "reporting",
+            "discord"
+          ]
         },
         {
           "name": "Payout presentations",
           "summary": "Displays themed mission-completion banners with optional sound and emergency flash.",
-          "details": ["Smooth payout counter", "Mission accent", "Configurable duration", "Completion history"],
+          "details": [
+            "Smooth payout counter",
+            "Mission accent",
+            "Configurable duration",
+            "Completion history"
+          ],
           "visual": "payout",
-          "tags": ["payout", "themes", "audio"]
+          "tags": [
+            "payout",
+            "themes",
+            "audio"
+          ]
         }
       ]
     },
@@ -201,23 +341,50 @@
         {
           "name": "Desktop, Tablet and iOS Mobile Mode",
           "summary": "Purpose-built layouts for full desktop maps, landscape tablets and Safari on iOS.",
-          "details": ["Responsive map-space calculations", "Safe-area geometry", "44px mobile targets", "Visual-viewport recovery"],
+          "details": [
+            "Responsive map-space calculations",
+            "Safe-area geometry",
+            "44px mobile targets",
+            "Visual-viewport recovery"
+          ],
           "visual": "modes",
-          "tags": ["desktop", "tablet", "ios"]
+          "tags": [
+            "desktop",
+            "tablet",
+            "ios"
+          ]
         },
         {
           "name": "Economy Mode",
           "summary": "Suppresses non-essential presentation overhead while retaining operational controls and state.",
-          "details": ["Reduced animation", "Static presentation where possible", "Reduced-motion compatibility", "No operational feature removal"],
+          "details": [
+            "Reduced animation",
+            "Static presentation where possible",
+            "Reduced-motion compatibility",
+            "No operational feature removal"
+          ],
           "visual": "economy-mode",
-          "tags": ["performance", "devices", "accessibility"]
+          "tags": [
+            "performance",
+            "devices",
+            "accessibility"
+          ]
         },
         {
           "name": "Settings import and export",
           "summary": "Moves Toolkit configuration between devices and operating modes.",
-          "details": ["Cross-mode configuration", "Timestamped exports", "Persistent feature state", "Recovery-oriented handling"],
+          "details": [
+            "Cross-mode configuration",
+            "Timestamped exports",
+            "Persistent feature state",
+            "Recovery-oriented handling"
+          ],
           "visual": "settings",
-          "tags": ["settings", "backup", "devices"]
+          "tags": [
+            "settings",
+            "backup",
+            "devices"
+          ]
         }
       ]
     },
@@ -228,98 +395,334 @@
         {
           "name": "Live Version Status",
           "summary": "Shows LATEST or UPDATE as a single-line map control with manual rechecking.",
-          "details": ["Responsive placement", "Successful cache and failure cooldown", "Theme-resistant label", "Direct update awareness"],
+          "details": [
+            "Responsive placement",
+            "Successful cache and failure cooldown",
+            "Theme-resistant label",
+            "Direct update awareness"
+          ],
           "visual": "version-status",
-          "tags": ["updates", "releases", "status"]
+          "tags": [
+            "updates",
+            "releases",
+            "status"
+          ]
         }
       ]
     }
   ],
   "themes": [
-    { "name": "Map Command", "slug": "map-command", "description": "Restrained, high-contrast and map focused.", "palette": ["#07111f", "#14233a", "#28a9ff", "#77d7ff", "#eaf7ff"] },
-    { "name": "Cyberpunk", "slug": "cyberpunk", "description": "Neon cyan, warning-yellow and magenta telemetry.", "palette": ["#09020f", "#1b0630", "#00f0ff", "#fcee09", "#ff2bd6"] },
-    { "name": "Fallout 4", "slug": "fallout", "description": "Green phosphor terminal styling with worn industrial panels.", "palette": ["#071008", "#102218", "#76ff70", "#c7ff9b", "#314d35"] },
-    { "name": "Umbrella", "slug": "umbrella", "description": "Clinical black, white and red containment presentation.", "palette": ["#07090d", "#171b22", "#ed1c24", "#f1f3f5", "#818994"] },
-    { "name": "Factorio", "slug": "factorio", "description": "Industrial controls, amber machinery and mechanical status panels.", "palette": ["#16130f", "#2f2920", "#e79227", "#ffd083", "#91806a"] },
-    { "name": "007 Intelligence", "slug": "bond-007", "description": "Classified dossiers, gun-barrel geometry and champagne-gold controls.", "palette": ["#050505", "#161616", "#d5b76d", "#f5e7bb", "#8d1c23"] },
-    { "name": "Hyrule Command", "slug": "hyrule", "description": "Parchment, royal gold and ancient-energy command styling.", "palette": ["#061319", "#203c2b", "#e8bf4d", "#3de7e5", "#50ec8c"] }
+    {
+      "name": "Map Command",
+      "slug": "map-command",
+      "description": "Restrained, high-contrast and map focused.",
+      "palette": [
+        "#07111f",
+        "#14233a",
+        "#28a9ff",
+        "#77d7ff",
+        "#eaf7ff"
+      ]
+    },
+    {
+      "name": "Cyberpunk",
+      "slug": "cyberpunk",
+      "description": "Neon cyan, warning-yellow and magenta telemetry.",
+      "palette": [
+        "#09020f",
+        "#1b0630",
+        "#00f0ff",
+        "#fcee09",
+        "#ff2bd6"
+      ]
+    },
+    {
+      "name": "Fallout 4",
+      "slug": "fallout",
+      "description": "Green phosphor terminal styling with worn industrial panels.",
+      "palette": [
+        "#071008",
+        "#102218",
+        "#76ff70",
+        "#c7ff9b",
+        "#314d35"
+      ]
+    },
+    {
+      "name": "Umbrella",
+      "slug": "umbrella",
+      "description": "Clinical black, white and red containment presentation.",
+      "palette": [
+        "#07090d",
+        "#171b22",
+        "#ed1c24",
+        "#f1f3f5",
+        "#818994"
+      ]
+    },
+    {
+      "name": "Factorio",
+      "slug": "factorio",
+      "description": "Industrial controls, amber machinery and mechanical status panels.",
+      "palette": [
+        "#16130f",
+        "#2f2920",
+        "#e79227",
+        "#ffd083",
+        "#91806a"
+      ]
+    },
+    {
+      "name": "007 Intelligence",
+      "slug": "bond-007",
+      "description": "Classified dossiers, gun-barrel geometry and champagne-gold controls.",
+      "palette": [
+        "#050505",
+        "#161616",
+        "#d5b76d",
+        "#f5e7bb",
+        "#8d1c23"
+      ]
+    },
+    {
+      "name": "Hyrule Command",
+      "slug": "hyrule",
+      "description": "Parchment, royal gold and ancient-energy command styling.",
+      "palette": [
+        "#061319",
+        "#203c2b",
+        "#e8bf4d",
+        "#3de7e5",
+        "#50ec8c"
+      ]
+    }
   ],
-  "payoutThemes": ["GTA V", "GTA Vice City", "Battlefield Bad Company", "Scarface", "Cyberpunk", "Fallout Inspired", "Biohazard Containment", "Factorio", "007 Intelligence", "Hellfire Inspired", "Galactic Command", "Dark Fantasy Inspired", "Underworld Inspired", "Pixel Arcade Inspired", "Hyrule Quest Reward"],
+  "payoutThemes": [
+    "GTA V",
+    "GTA Vice City",
+    "Battlefield Bad Company",
+    "Scarface",
+    "Cyberpunk",
+    "Fallout Inspired",
+    "Biohazard Containment",
+    "Factorio",
+    "007 Intelligence",
+    "Hellfire Inspired",
+    "Galactic Command",
+    "Dark Fantasy Inspired",
+    "Underworld Inspired",
+    "Pixel Arcade Inspired",
+    "Hyrule Quest Reward"
+  ],
   "shortcuts": [
-    { "key": "1", "action": "Toggle My Missions" },
-    { "key": "2", "action": "Toggle Alliance Missions" },
-    { "key": "3", "action": "Toggle Vehicles" },
-    { "key": "4", "action": "Toggle My Buildings" },
-    { "key": "5", "action": "Toggle Alliance Credits" },
-    { "key": "6", "action": "Toggle Mission Age" },
-    { "key": "V", "action": "Open or close Vehicle Code Status" }
+    {
+      "key": "1",
+      "action": "Toggle My Missions"
+    },
+    {
+      "key": "2",
+      "action": "Toggle Alliance Missions"
+    },
+    {
+      "key": "3",
+      "action": "Toggle Vehicles"
+    },
+    {
+      "key": "4",
+      "action": "Toggle My Buildings"
+    },
+    {
+      "key": "5",
+      "action": "Toggle Alliance Credits"
+    },
+    {
+      "key": "6",
+      "action": "Toggle Mission Age"
+    },
+    {
+      "key": "V",
+      "action": "Open or close Vehicle Code Status"
+    }
   ],
   "modes": [
-    { "name": "Desktop", "summary": "Full map workspace with complete command panels.", "bestFor": "Large displays, mouse and keyboard operation, multi-panel monitoring." },
-    { "name": "Tablet", "summary": "Landscape-optimised touch controls fitted to available map space.", "bestFor": "iPad and tablet operation with readable persistent controls." },
-    { "name": "iOS Mobile", "summary": "Safe-area-aware Safari layout with mobile controls and viewport recovery.", "bestFor": "MissionChief operation from iPhone with minimal map obstruction." }
+    {
+      "name": "Desktop",
+      "summary": "Full map workspace with complete command panels.",
+      "bestFor": "Large displays, mouse and keyboard operation, multi-panel monitoring."
+    },
+    {
+      "name": "Tablet",
+      "summary": "Landscape-optimised touch controls fitted to available map space.",
+      "bestFor": "iPad and tablet operation with readable persistent controls."
+    },
+    {
+      "name": "iOS Mobile",
+      "summary": "Safe-area-aware Safari layout with mobile controls and viewport recovery.",
+      "bestFor": "MissionChief operation from iPhone with minimal map obstruction."
+    }
   ],
   "documentation": [
     {
       "title": "Installation",
       "sections": [
-        { "heading": "Install through Greasy Fork", "body": "Install Tampermonkey or a compatible userscript manager, open the Toolkit installation link, review permissions and confirm installation. Greasy Fork remains the supported automatic-update channel." },
-        { "heading": "First launch", "body": "Open MissionChief and use the map command button. Core controls load first; larger panels and monitors are constructed only when required." }
+        {
+          "heading": "Install through Greasy Fork",
+          "body": "Install Tampermonkey or a compatible userscript manager, open the Toolkit installation link, review permissions and confirm installation. Greasy Fork remains the supported automatic-update channel."
+        },
+        {
+          "heading": "First launch",
+          "body": "Open MissionChief and use the map command button. Core controls load first; larger panels and monitors are constructed only when required."
+        }
       ]
     },
     {
       "title": "Operating model",
       "sections": [
-        { "heading": "Persistent controls", "body": "Feature state, theme, operating mode and toolbar state are retained. Export settings before substantial browser or device changes." },
-        { "heading": "Map-first behaviour", "body": "The Toolkit adds summaries, overlays and shortcuts around MissionChief rather than replacing its native workflows." }
+        {
+          "heading": "Persistent controls",
+          "body": "Feature state, theme, operating mode and toolbar state are retained. Export settings before substantial browser or device changes."
+        },
+        {
+          "heading": "Map-first behaviour",
+          "body": "The Toolkit adds summaries, overlays and shortcuts around MissionChief rather than replacing its native workflows."
+        }
       ]
     },
     {
       "title": "Operational Window Suite",
       "sections": [
-        { "heading": "Four coordinated operational families", "body": "The suite combines Enhanced Operational Requirements, Extended Call Window, Extended Mission List and opt-in Enhanced Transport Requests under one versioned settings model and lifecycle coordinator." },
-        { "heading": "Requirement truth states", "body": "Green coverage requires positive parsed evidence and every known row to be satisfied. Amber waiting means usable evidence has not arrived; amber unresolved means evidence cannot be classified safely." },
-        { "heading": "MissionChief and LSSM coexistence", "body": "The Toolkit evaluates active native, grouped and compatible hidden LSSM sources, rebinds when authority changes and suppresses matching output when a visible equivalent LSSM panel is active." },
-        { "heading": "Guarded transport", "body": "Enhanced Transport Requests remains opt-in and validates the exact route, candidate visibility, candidate enablement, ambiguity and duplicate-action state." }
+        {
+          "heading": "Four coordinated operational families",
+          "body": "The suite combines Enhanced Operational Requirements, Extended Call Window, Extended Mission List and opt-in Enhanced Transport Requests under one versioned settings model and lifecycle coordinator."
+        },
+        {
+          "heading": "Requirement truth states",
+          "body": "Green coverage requires positive parsed evidence and every known row to be satisfied. Amber waiting means usable evidence has not arrived; amber unresolved means evidence cannot be classified safely."
+        },
+        {
+          "heading": "MissionChief and LSSM coexistence",
+          "body": "The Toolkit evaluates active native, grouped and compatible hidden LSSM sources, rebinds when authority changes and suppresses matching output when a visible equivalent LSSM panel is active."
+        },
+        {
+          "heading": "Guarded transport",
+          "body": "Enhanced Transport Requests remains opt-in and validates the exact route, candidate visibility, candidate enablement, ambiguity and duplicate-action state."
+        }
       ]
     },
     {
       "title": "Mission systems",
       "sections": [
-        { "heading": "Mission Age Watch", "body": "Filter and sort personal and alliance missions by age, ownership, category, operational state and distance origin, then zoom or open a mission directly." },
-        { "heading": "Critical View and Mission Inspector", "body": "Critical View concentrates urgent work; Mission Inspector provides deeper on-demand context." },
-        { "heading": "Mission Value", "body": "Mission Value displays a verified value, hides unavailable values and stays clear of native controls." },
-        { "heading": "Transport Watcher", "body": "Transport Watcher identifies patient or prisoner transport-required missions." },
-        { "heading": "Patient Transport Sweep", "body": "The manual bounded alliance workflow excludes the signed-in player's vehicles and processes one verified eligible ambulance at a time." }
+        {
+          "heading": "Mission Age Watch",
+          "body": "Filter and sort personal and alliance missions by age, ownership, category, operational state and distance origin, then zoom or open a mission directly."
+        },
+        {
+          "heading": "Critical View and Mission Inspector",
+          "body": "Critical View concentrates urgent work; Mission Inspector provides deeper on-demand context."
+        },
+        {
+          "heading": "Mission Value",
+          "body": "Mission Value displays a verified value, hides unavailable values and stays clear of native controls."
+        },
+        {
+          "heading": "Transport Watcher",
+          "body": "Transport Watcher identifies patient or prisoner transport-required missions."
+        },
+        {
+          "heading": "Patient Transport Sweep",
+          "body": "The manual bounded alliance workflow excludes the signed-in player's vehicles and processes one verified eligible ambulance at a time."
+        }
       ]
     },
     {
       "title": "Fleet, map and finance",
       "sections": [
-        { "heading": "Resource Gap", "body": "Compares mission demand with personal vehicle context inside a configurable radius." },
-        { "heading": "Coverage tools", "body": "Coverage Heat Map and rings provide geographic context; high-cost overlays should be enabled only when useful." },
-        { "heading": "Smart Bookmark Labels", "body": "Automatically shortens labels while retaining the full name through tooltips or touch previews." },
-        { "heading": "Financial intelligence", "body": "Reconciles income, spending and variance and can send configured summaries to a saved Discord webhook." }
+        {
+          "heading": "Resource Gap",
+          "body": "Compares mission demand with personal vehicle context inside a configurable radius."
+        },
+        {
+          "heading": "Coverage tools",
+          "body": "Coverage Heat Map and rings provide geographic context; high-cost overlays should be enabled only when useful."
+        },
+        {
+          "heading": "Smart Bookmark Labels",
+          "body": "Automatically shortens labels while retaining the full name through tooltips or touch previews."
+        },
+        {
+          "heading": "Financial intelligence",
+          "body": "Reconciles income, spending and variance and can send configured summaries to a saved Discord webhook."
+        }
       ]
     },
     {
       "title": "Settings and recovery",
       "sections": [
-        { "heading": "Import and export", "body": "Move configuration between Desktop, Tablet and iOS. Exports may contain a saved Discord webhook and must remain private." },
-        { "heading": "Reset strategy", "body": "Export first, reset only the affected feature where possible and test with the default Map Command interface before a full reset." }
+        {
+          "heading": "Import and export",
+          "body": "Move configuration between Desktop, Tablet and iOS. Exports may contain a saved Discord webhook and must remain private."
+        },
+        {
+          "heading": "Reset strategy",
+          "body": "Export first, reset only the affected feature where possible and test with the default Map Command interface before a full reset."
+        }
       ]
     }
   ],
   "troubleshooting": [
-    { "problem": "MissionChief feels slow immediately after page load", "steps": ["Confirm the installed version is current", "Allow idle bootstrap to complete", "Disable unneeded high-cost overlays", "Compare with the Toolkit disabled and capture startup metrics"] },
-    { "problem": "A button or panel is missing", "steps": ["Reload MissionChief once", "Confirm the correct operating mode", "Check whether the toolbar is collapsed", "Report browser, userscript manager and Toolkit versions"] },
-    { "problem": "Requirements remain amber", "steps": ["Allow the mission window to finish loading", "Check whether MissionChief exposes requirement evidence", "Check for an equivalent visible LSSM panel", "Report the exact mission and unresolved wording rather than assuming coverage"] },
-    { "problem": "Settings did not carry to another device", "steps": ["Export from the original device", "Import the complete timestamped file", "Confirm the target operating mode", "Reload MissionChief once"] }
+    {
+      "problem": "MissionChief feels slow immediately after page load",
+      "steps": [
+        "Confirm the installed version is current",
+        "Allow idle bootstrap to complete",
+        "Disable unneeded high-cost overlays",
+        "Compare with the Toolkit disabled and capture startup metrics"
+      ]
+    },
+    {
+      "problem": "A button or panel is missing",
+      "steps": [
+        "Reload MissionChief once",
+        "Confirm the correct operating mode",
+        "Check whether the toolbar is collapsed",
+        "Report browser, userscript manager and Toolkit versions"
+      ]
+    },
+    {
+      "problem": "Requirements remain amber",
+      "steps": [
+        "Allow the mission window to finish loading",
+        "Check whether MissionChief exposes requirement evidence",
+        "Check for an equivalent visible LSSM panel",
+        "Report the exact mission and unresolved wording rather than assuming coverage"
+      ]
+    },
+    {
+      "problem": "Settings did not carry to another device",
+      "steps": [
+        "Export from the original device",
+        "Import the complete timestamped file",
+        "Confirm the target operating mode",
+        "Reload MissionChief once"
+      ]
+    }
   ],
   "knownIssues": [
-    { "level": "information", "title": "No release-blocking issue is recorded for the current verified release", "body": "Release channels and integrity state remain visible on the status page and in GitHub." },
-    { "level": "watch", "title": "MissionChief interface changes can affect selectors", "body": "A live MissionChief markup change may require a userscript update even where static selector contracts remain green." },
-    { "level": "watch", "title": "Large overlays have a deliberate performance cost", "body": "Coverage and monitoring systems should be enabled when operationally useful rather than left active on low-power devices." }
+    {
+      "level": "information",
+      "title": "No release-blocking issue is recorded for the current verified release",
+      "body": "Release channels and integrity state remain visible on the status page and in GitHub."
+    },
+    {
+      "level": "watch",
+      "title": "MissionChief interface changes can affect selectors",
+      "body": "A live MissionChief markup change may require a userscript update even where static selector contracts remain green."
+    },
+    {
+      "level": "watch",
+      "title": "Large overlays have a deliberate performance cost",
+      "body": "Coverage and monitoring systems should be enabled when operationally useful rather than left active on low-power devices."
+    }
   ],
   "mediaRoadmap": [
     "Before-and-after map comparison",

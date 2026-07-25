@@ -4,6 +4,20 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [6.0.0] - 2026-07-25
+
+### Critical performance overhaul
+
+- Removed Automatic day/night, Coverage Heat Map, Mission Inspector, Mission Age Workflow and Age Watch from runtime state, settings, timers, observers, map ownership, styles and teardown.
+- Preserved the separate Mission Age map timer badges and shortcut `6`.
+- Rebuilt Operational Window settings with typed toggles, numbers, colours, selects, multiselects, structured editors and current LSSM V.4 dependency rules.
+- Prevented Toolkit-owned Operational Window mutations and unrelated structural text changes from repeatedly scheduling full reconciliation.
+- Replaced repeated document-wide Operational Window cleanup scans with per-document owned-node and decorated-node registries.
+- Removed duplicate Operational Window scheduling and stopped settings changes from rebuilding the complete Toolkit panel.
+- Reduced the canonical source by more than 330 KB and 6,600 lines while lowering recurring tasks, managed timer call sites, listeners and selector call sites.
+- Added permanent v6 retirement, Mission Age retention, typed-settings and static runtime-budget contracts.
+- Browser profiler evidence remains mandatory before the guarded production release.
+
 ## [5.0.7] - 2026-07-24
 
 ### Critical mission-window recovery

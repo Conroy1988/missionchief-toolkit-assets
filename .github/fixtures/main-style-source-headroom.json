@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -79,5 +79,26 @@
       "phase": "legacy-mission-requirements-matrix",
       "lines": 1398
     }
-  ]
+  ],
+  "v6Candidate": {
+    "issue": 510,
+    "version": "6.0.0",
+    "sourceBytes": 1727090,
+    "sourceLines": 25146,
+    "sourceSha256": "9c3199e9eee3fe6937abddb045f4bcfdff127bb18c87014a77bf5627c3da71b1",
+    "templateBytes": 636507,
+    "templateLines": 7247,
+    "templateSha256": "23b6189091ef8da8c2bde69bf5839a031820644af41dd62b6dd25e4adc47d969",
+    "canonicalCssSha256": "e126a3251b2cff7ebb2684ec68c3cad6f7fdfc8ad8cc27ab8bba4f74ea29b60b",
+    "maxSourceBytes": 1800000,
+    "minTemplateBytes": 600000,
+    "retiredSystems": [
+      "automatic-day-night",
+      "heatmap",
+      "mission-inspector",
+      "mission-age-workflow",
+      "age-watch"
+    ],
+    "invariant": "v6 retains the reviewed remaining stylesheet exactly while removing only CSS owned by retired systems and keeping zero blank/comment padding inside installMainStyles."
+  }
 }

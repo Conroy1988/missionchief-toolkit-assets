@@ -365,7 +365,6 @@ function fitControlToMap() {{ record("fitControlToMap"); }}
 function positionPanelOverlay(value) {{ record("positionPanelOverlay", value); }}
 function formatOperationalCompactCredits(value) {{ return String(value); }}
 function scheduleCoverageRefresh() {{ record("scheduleCoverageRefresh"); }}
-function scheduleHeatmapRefresh() {{ record("scheduleHeatmapRefresh"); }}
 function scheduleStuckMissionRefresh(value) {{ record("scheduleStuckMissionRefresh", value); }}
 function scheduleAllianceCreditRefresh(value) {{ record("scheduleAllianceCreditRefresh", value); }}
 function setDiscordStatus(...args) {{ record("setDiscordStatus", ...args); }}
@@ -379,7 +378,6 @@ function resetEnvironment() {{
     storage.clear();
     gmStorage.clear();
     clearCalls();
-    criticalViewActive = false;
     activeDeviceLayout = "desktop";
     missionSpawnArmed = false;
     missionSpawnPrimeTimer = null;
@@ -445,8 +443,11 @@ function testStateMigration() {{
     assert.equal(migrated.visibility.vehicles, false);
     assert.equal(migrated.visibility.buildings, true);
     assert.equal(migrated.coverage.radiusMi, 25);
-    assert.equal(migrated.heatmap.radiusMi, 10);
-    assert.equal(migrated.heatmap.opacity, 0.55);
+    assert.equal(Object.hasOwn(migrated, "heatmap"), false);
+    assert.equal(Object.hasOwn(migrated, "autoNight"), false);
+    assert.equal(Object.hasOwn(migrated, "missionInspector"), false);
+    assert.equal(Object.hasOwn(migrated, "criticalView"), false);
+    assert.equal(Object.hasOwn(migrated, "missionAgeWatch"), false);
     assert.equal(migrated.allianceCreditMinimum, 0);
     assert.equal(migrated.autoLoadAllVehicles, true);
     assert.equal(migrated.missionValue, false);
@@ -642,9 +643,6 @@ function testExtractedMissionWindowToggleContracts() {{
     }}
 
     resetEnvironment();
-    applyMissionWindowToggleEffects("missionInspector");
-    assert.equal(callFor("showToast").args[0], "Mission Inspector on");
-    resetEnvironment();
     applyMissionWindowToggleEffects("coverage");
     assert.equal(calls.length, 0, "unrelated toggle entered mission-window effect phase");
 }}
@@ -777,7 +775,6 @@ async function testToggleContracts() {{
     const missionEffects = [
         ["missionValue", "installMissionValueWindows"],
         ["customVehicleBadges", "installCustomVehicleBadges"],
-        ["missionInspector", "showToast"],
     ];
     for (const [feature, effectName] of missionEffects) {{
         resetEnvironment();
@@ -846,10 +843,6 @@ async function testToggleContracts() {{
         }}
     }}
 
-    resetEnvironment();
-    toggleFeature("criticalView");
-    assert.equal(wasCalled("toggleCriticalView"), true);
-    assert.equal(localStorage.getItem(SCRIPT.storageState), null);
 }}
 
 async function testActionContracts() {{
@@ -984,13 +977,6 @@ async function testSettingContracts() {{
     assert.equal(state.majorIncidentFeed.minimumCredits, 25000);
     handleSettingChange({{ dataset: {{ setting: "coverage-radius" }}, value: "50" }});
     assert.equal(state.coverage.radiusMi, 50);
-    handleSettingChange({{ dataset: {{ setting: "heatmap-source" }}, value: "invalid" }});
-    assert.equal(state.heatmap.source, "stations");
-    handleSettingChange({{ dataset: {{ setting: "heatmap-service" }}, value: "police" }});
-    assert.equal(state.heatmap.service, "police");
-    handleSettingChange({{ dataset: {{ setting: "heatmap-opacity" }}, value: "0.42" }});
-    assert.equal(state.heatmap.opacity, 0.42);
-
     handleSettingChange({{ dataset: {{ setting: "transport-sweep-delay" }}, value: "5000" }});
     assert.equal(state.transportSweep.delayMs, 5000);
     handleSettingChange({{ dataset: {{ setting: "transport-sweep-max" }}, value: "999" }});
@@ -1027,11 +1013,6 @@ async function testSettingContracts() {{
     assert.equal(state.payoutFlash.threshold, 500000);
     handleSettingChange({{ dataset: {{ setting: "payout-volume" }}, value: "0.8" }});
     assert.equal(state.payoutFlash.soundVolume, 0.8);
-
-    handleSettingChange({{ dataset: {{ setting: "auto-night-start" }}, value: "20:30" }});
-    assert.equal(state.autoNight.nightStart, "20:30");
-    handleSettingChange({{ dataset: {{ setting: "auto-night-theme" }}, value: "nightshift" }});
-    assert.equal(state.autoNight.nightTheme, "nightshift");
 
     const before = JSON.stringify(state);
     handleSettingChange({{ dataset: {{ setting: "payout-test-amount" }}, value: "90000" }});

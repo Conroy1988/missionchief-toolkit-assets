@@ -15,21 +15,22 @@ SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github" / "fixtures" / "mission-value-toolbar-contract.json"
 
 
-def extract_function(source: str, masked: str, name: str) -> str:
-    matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", masked))
+def extract_function(source: str, name: str) -> str:
+    matches = list(re.finditer(rf"\bfunction\s+{re.escape(name)}\s*\(", source))
     if len(matches) != 1:
         raise AssertionError(f"Expected one declaration for {name}, found {len(matches)}")
     start = matches[0].start()
-    opening = masked.find("{", start)
-    closing = audit.matching_brace(masked, opening)
+    segment = source[start:]
+    masked_segment = audit.mask_non_code(segment)
+    opening = masked_segment.find("{")
+    closing = audit.matching_brace(masked_segment, opening)
     if opening < 0 or closing is None:
         raise AssertionError(f"Could not extract {name}")
-    return source[start:closing + 1]
+    return segment[:closing + 1]
 
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    masked = audit.mask_non_code(source)
     fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
     required = [
         "missionValue: true",
@@ -37,7 +38,8 @@ def main() -> int:
         "makeToggleButton('missionValue', '£', 'Mission Value'",
         "if (feature === 'missionValue') state.missionValue = !state.missionValue",
         "missionValue: state.missionValue",
-        "criticalMissionValueDetails({ missionId, marker, snapshot })",
+        "function missionWindowValueDetails(entry)",
+        "const details = missionWindowValueDetails({ missionId, marker, snapshot })",
         "installMissionValueWindows()",
         "ensureMissionValueDocumentStyle(doc)",
         "clearMissionValueDocumentStyles()",
@@ -64,6 +66,7 @@ def main() -> int:
     ]
     missing = [fragment for fragment in required if fragment not in source]
     assert not missing, f"Mission Value contract fragments missing: {missing}"
+    assert "criticalMissionValueDetails" not in source
     assert "function missionValueRightControlOffset" not in source
     assert "function positionMissionValueRow" not in source
     assert "missionValueRowsAcrossDocuments" not in source
@@ -80,7 +83,7 @@ def main() -> int:
     assert '#navbar-alarm-spacer > .mcms-mission-value-row' in source
     assert '.mcms-mission-value-row[data-mcms-host="fallback"]' in source
 
-    functions = "\n\n".join(extract_function(source, masked, name) for name in [
+    functions = "\n\n".join(extract_function(source, name) for name in [
         "missionValueCurrencyMeta",
         "formatMissionWindowValue",
         "missionValueIdFromUrl",
@@ -89,14 +92,14 @@ def main() -> int:
     ])
     cases = json.dumps(fixture["presentations"], ensure_ascii=False)
     candidate_cases = json.dumps(fixture["candidateScenarios"], ensure_ascii=False)
-    harness = r""""use strict";
+    harness = r'''"use strict";
 const assert = require("node:assert/strict");
 global.location = { hostname: "missionchief.co.uk", href: "https://missionchief.co.uk/" };
 function normaliseMissionId(value) {
   const number = Number(value);
   return Number.isInteger(number) && number > 0 ? number : null;
 }
-""" + functions + f"""\nconst presentationCases = {cases};\nconst candidateScenarios = {candidate_cases};\n""" + r"""
+''' + functions + f"""\nconst presentationCases = {cases};\nconst candidateScenarios = {candidate_cases};\n""" + r'''
 assert.equal(formatMissionWindowValue(12345, "missionchief.co.uk"), "£12,345");
 assert.equal(formatMissionWindowValue(12345, "www.missionchief.com"), "$12,345");
 assert.equal(formatMissionWindowValue(12345, "leitstellenspiel.de"), "€12.345");
@@ -134,7 +137,7 @@ for (const scenario of candidateScenarios) {
   );
 }
 console.log("Mission Value formatting, route, responsive presentation and host ownership contracts passed.");
-"""
+'''
     with tempfile.TemporaryDirectory(prefix="mcms-mission-value-") as temp:
         path = Path(temp) / "contract.js"
         path.write_text(harness, encoding="utf-8")

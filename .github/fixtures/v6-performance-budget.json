@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "version": "5.0.7",
+    "sourceSha256": "97a71c7df20a9d896872e554b671f789c74069f2ec8a1dbb8f4afd7135c303da",
+    "bytes": 2060765,
+    "lines": 31761,
+    "functionDeclarations": 979,
+    "mutationObservers": 9,
+    "recurringTasks": 8,
+    "runtimeSetTimeoutCallsites": 97,
+    "runtimeRafCallsites": 12,
+    "eventListenerCallsites": 38,
+    "querySelectorAllCallsites": 73,
+    "operationalOwnedFullDocumentQueries": 1,
+    "operationalDecorationFullDocumentQueries": 1
+  },
+  "v6Budgets": {
+    "maxBytes": 1800000,
+    "maxLines": 26000,
+    "maxFunctionDeclarations": 900,
+    "maxMutationObservers": 9,
+    "maxRecurringTasks": 6,
+    "maxRuntimeSetTimeoutCallsites": 86,
+    "maxRuntimeRafCallsites": 11,
+    "maxEventListenerCallsites": 34,
+    "maxQuerySelectorAllCallsites": 64,
+    "maxOperationalOwnedFullDocumentQueries": 0,
+    "maxOperationalDecorationFullDocumentQueries": 0
+  }
+}

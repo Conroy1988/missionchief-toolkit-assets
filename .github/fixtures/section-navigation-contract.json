@@ -1,48 +1,20 @@
 {
   "tabs": [
-    {
-      "key": "skins",
-      "label": "Skins"
-    },
-    {
-      "key": "tools",
-      "label": "Tools"
-    },
-    {
-      "key": "resources",
-      "label": "Resources"
-    },
-    {
-      "key": "ops",
-      "label": "Ops"
-    },
-    {
-      "key": "payouts",
-      "label": "Payouts"
-    },
-    {
-      "key": "discord",
-      "label": "Finance"
-    },
-    {
-      "key": "places",
-      "label": "Places"
-    },
-    {
-      "key": "settings",
-      "label": "Settings"
-    }
+    { "key": "skins", "label": "Skins" },
+    { "key": "tools", "label": "Tools" },
+    { "key": "resources", "label": "Resources" },
+    { "key": "ops", "label": "Ops" },
+    { "key": "payouts", "label": "Payouts" },
+    { "key": "discord", "label": "Finance" },
+    { "key": "places", "label": "Places" },
+    { "key": "settings", "label": "Settings" }
   ],
   "placements": {
-    "skins": [
-      "makeToggleButton('autoNight'",
-      "data-setting=\"auto-night-start\""
-    ],
+    "skins": [],
     "tools": [
       "makeToggleButton('allianceBuildingsMapBlocker'",
       "makeToggleButton('transportWatcher'",
       "makeToggleButton('unitCommitment'",
-      "makeToggleButton('criticalView'",
       "makeToggleButton('missionAge'"
     ],
     "resources": [
@@ -51,7 +23,6 @@
       "makeToggleButton('autoLoadAllVehicles'"
     ],
     "ops": [
-      "makeToggleButton('missionInspector'",
       "makeToggleButton('majorIncidentFeed'",
       "makeToggleButton('missionLockAudio'",
       "data-action=\"open-vehicle-status\""
@@ -76,14 +47,12 @@
     ]
   },
   "singlePlacementTokens": [
-    "makeToggleButton('autoNight'",
     "makeToggleButton('allianceBuildingsMapBlocker'",
     "makeToggleButton('autoLoadAllVehicles'",
     "makeToggleButton('majorIncidentFeed'",
     "makeToggleButton('missionLockAudio'",
     "makeToggleButton('transportWatcher'",
     "makeToggleButton('unitCommitment'",
-    "makeToggleButton('criticalView'",
     "makeToggleButton('missionAge'",
     "data-profile-list"
   ],
@@ -113,15 +82,6 @@
       "gap": 6,
       "padding": 12,
       "font": 10.5,
-      "maxLines": 2
-    },
-    {
-      "label": "Open Mission Drawer (W)",
-      "width": 136,
-      "icon": 0,
-      "gap": 0,
-      "padding": 12,
-      "font": 9,
       "maxLines": 2
     },
     {

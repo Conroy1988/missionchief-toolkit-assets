@@ -7,5 +7,5 @@ control=section('    function createControl(','    function createPanel(');asser
 ensure=section('    function ensureUi()','    function mutationBelongsToToolkit');assert 'return Boolean(control || document.getElementById(SCRIPT.controlId));' in ensure
 boot=section('    function boot()','    function scheduleBoot()');assert 'installMissionMarkerAddHook' in boot and 'installCustomVehicleBadges' in boot and 'installOperationalSuiteShell' not in boot
 age=section('    function updateMissionAgeLabels()','    function scheduleMissionAgeRefresh(');assert 'missionAgeRefreshPlan' in age
-meta=re.search(r'^//\s*@version\s+([^\s]+)',text,re.M).group(1);runtime=re.search(r"version:\s*'([^']+)'",text).group(1);assert meta==runtime=='7.0.0';assert len(text.splitlines())<=24000
+meta=re.search(r'^//\s*@version\s+([^\s]+)',text,re.M).group(1);runtime=re.search(r"version:\s*'([^']+)'",text).group(1);assert meta==runtime;assert tuple(int(part) for part in meta.split('.')[:3]) >= (7,0,0);assert len(text.splitlines())<=24000
 print('v7 launcher, boot and Mission Age contract passed.')

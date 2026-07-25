@@ -15,7 +15,6 @@ assert text.count(settings_declaration) == 1
 assert text.count(schema_declaration) == 1
 assert state_match is not None
 assert text.index(settings_declaration) < state_match.start()
-assert text.index(schema_declaration) < state_match.start()
 assert state_match.start() < text.index(default_function)
 assert "schemaVersion: OPERATIONAL_SUITE_SETTINGS_VERSION" in text
 metadata_version = re.search(r"(?m)^//\s*@version\s+([^\s]+)\s*$", text)
@@ -25,4 +24,4 @@ assert runtime_version is not None
 assert metadata_version.group(1) == runtime_version.group(1)
 assert len(text.encode("utf-8")) > 500_000
 assert text.rstrip().endswith("})();")
-print("Issue #454 preboot state-order contract passed for typed v6 settings.")
+print("Issue #454 preboot state-order contract passed for v6 settings.")

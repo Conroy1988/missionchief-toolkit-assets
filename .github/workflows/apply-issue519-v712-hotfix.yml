@@ -31,14 +31,34 @@ jobs:
         run: python3 .github/issue519/apply_v712_hotfix.py
 
       - name: Validate complete v7.1.2 candidate
+        id: validate
         shell: bash
         run: |
-          set -euo pipefail
-          python3 .github/scripts/validate_userscript.py
-          bash .github/scripts/run_userscript_preflight.sh --contracts
-          python3 .github/scripts/test_documentation_consistency.py
-          node --check src/MissionChief_Map_Command_Toolkit.user.js
-          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          set +e
+          set -o pipefail
+          {
+            python3 .github/scripts/validate_userscript.py &&
+            bash .github/scripts/run_userscript_preflight.sh --contracts &&
+            python3 .github/scripts/test_documentation_consistency.py &&
+            node --check src/MissionChief_Map_Command_Toolkit.user.js &&
+            cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          } 2>&1 | tee issue519-v712-validation.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload v7.1.2 validation diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue519-v712-validation-${{ github.sha }}
+          path: issue519-v712-validation.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on validation failure
+        if: steps.validate.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Enforce unchanged performance envelope
         shell: bash
@@ -65,6 +85,7 @@ jobs:
           test "$GITHUB_HEAD_REF" = "fix/issue-519-v712-dedicated-rotation"
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          rm -f issue519-v712-validation.log
           git add -A
           git diff --cached --quiet && { echo "No v7.1.2 hotfix changes produced."; exit 1; }
           git commit -m "Fix v7.1.2 Incident Command Wire live rotation"

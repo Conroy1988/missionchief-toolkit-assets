@@ -512,7 +512,7 @@ def main() -> int:
     for path in ROOT.rglob("*"):
         if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
         if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
-        if "toolkit-current" in path.parts: continue
+        if "toolkit-current" in path.parts or "dist" in path.parts: continue
         if TOKEN in path.as_posix().lower(): tracked.append(path.as_posix())
         try: text=path.read_text(encoding="utf-8")
         except (UnicodeDecodeError,OSError): continue
@@ -664,7 +664,13 @@ new_gate=r'''def run_integrity_gate() -> None:
         for contract in [AUDIO_ALIAS_AUDITOR,VERSION_STATUS_CONTRACT,FINANCIAL_OVERVIEW_CONTRACT,MAIN_STYLE_HEADROOM_CONTRACT,V7_RETIREMENT_CONTRACT,MISSION_AGE_RETENTION_CONTRACT,NATIVE_TRANSPORT_SWEEP_CONTRACT,ISSUE447_MENU_BOOT_CONTRACT,ISSUE450_CORE_BOOTSTRAP_CONTRACT,ISSUE454_PREBOOT_STATE_CONTRACT,ISSUE464_LAUNCHER_SETTINGS_CONTRACT]:
             if subprocess.run([sys.executable,str(contract)],cwd=ROOT).returncode!=0: fail(f"contract failed: {contract.relative_to(ROOT)}")
         report=json.loads(integrity_json.read_text());metrics=report.get("metrics",{});print(f"Code integrity passed: {metrics.get('staticSelectors',0)} selectors.")'''
-validate=validate[:run_start]+new_gate+validate[run_end:];validate_path.write_text(validate,encoding="utf-8")
+validate=validate[:run_start]+new_gate+validate[run_end:]
+dist_anchor = "    USER_JS.write_bytes(raw)\n    TXT.write_bytes(raw)\n"
+dist_guard = dist_anchor + "\n    retired_extension_token = \"ls\" + \"sm\"\n    if retired_extension_token in USER_JS.read_text(encoding=\"utf-8\").lower() or retired_extension_token in TXT.read_text(encoding=\"utf-8\").lower():\n        fail(\"retired integration content remains in generated distribution\")\n"
+if validate.count(dist_anchor) != 1:
+    raise SystemExit(f"distribution guard anchor count {validate.count(dist_anchor)}")
+validate = validate.replace(dist_anchor, dist_guard, 1)
+validate_path.write_text(validate,encoding="utf-8")
 
 PREFLIGHT='''#!/usr/bin/env bash
 set -euo pipefail

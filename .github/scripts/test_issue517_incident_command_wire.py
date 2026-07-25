@@ -27,7 +27,12 @@ def main():
  assert 'majorIncidentFeedScheduleAdvance' not in source and 'majorIncidentFeedAdvanceTimer' not in source
  assert "`${count} LIVE`" in source
  assert 'animation-play-state:paused!important' in source
- for action in ['previous','pause','next','expand']: assert f'data-mcms-incident-action="{action}"' in ensure
+ template=ensure[ensure.index('feed.innerHTML = `'):ensure.index('`;',ensure.index('feed.innerHTML = `'))]
+ assert 'data-mcms-incident-action="expand"' in template
+ for action in ['previous','pause','next']: assert f'data-mcms-incident-action="{action}"' not in template
+ assert 'width:38px!important' in source and 'flex-basis:38px!important' in source
+ assert 'display:flex!important;align-items:center!important;justify-content:flex-start!important;line-height:1!important' in source
+ assert source.count('align-self:center!important') >= 5
  for theme in ['cyberpunk','fallout4','umbrella','factorio','bond007','hyrule']: assert f'html[data-mcms-ui-theme="{theme}"] #${{SCRIPT.majorIncidentFeedId}}' in source
  assert 'width:78vw!important' in source and 'width:86vw!important' in source
  token='ls'+'sm';assert token not in source.lower()

@@ -83,13 +83,13 @@
   "v7Candidate": {
     "issue": 519,
     "version": "7.1.3",
-    "sourceBytes": 1555859,
+    "sourceBytes": 1556152,
     "sourceLines": 23434,
-    "sourceSha256": "b55ba9f91ce5195b57f11ed3f89788e6ba2ea3dfec342f34eebdcbc242e54fc8",
-    "templateBytes": 645970,
+    "sourceSha256": "8123b4fa344a304c6701dbeaff0caf3af7b75ef4b7f6808edeb74df8878b703a",
+    "templateBytes": 646644,
     "templateLines": 7280,
-    "templateSha256": "b424bebba713359f95ef3a6fd60e7fbd2188a317ac6dd6302cd79f3b5d1b6b3f",
-    "canonicalCssSha256": "ec2443725c4f72ecee8069fcabab38dcef00b433b2bd21b873939656829af999",
+    "templateSha256": "dd6fce3979de08286dad8b4200966bdb63916dd547ddf68903afc12af2a549e2",
+    "canonicalCssSha256": "02b237025516949c097ce700ceb66b2dfaa283487f8c66a1e4298cdcfe47ed4e",
     "maxSourceBytes": 1600000,
     "minTemplateBytes": 500000,
     "retiredSystems": [

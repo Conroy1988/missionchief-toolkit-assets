@@ -11,8 +11,8 @@ The format is based on Keep a Changelog, and releases use semantic version numbe
 - Replaced card-by-card carousel transitions with a constant-speed broadcast ticker reel that moves continuously from right to left.
 - Rendered two accessibility-safe copies of the unique incident sequence so the loop resets off-screen without a visible jump or empty gap.
 - Kept the title block and controls fixed while only the incident reel moves.
-- Made Pause freeze the reel at its exact position; Play resumes from that position, and previous/next nudge by one incident.
-- Retained the unique expanded priority queue, click-to-open behaviour, all seven themes and Desktop, Tablet/iPad and iOS layouts.
+- Removed the previous, pause/play and next controls; the reel now runs continuously with only the expanded-queue dropdown retained.
+- Vertically centred the fixed label, live count, priority badge, mission title, metadata and response state across all seven themes and supported layouts.
 - Added static and executable contracts for linear infinite motion, seamless duplication, dynamic speed, pause ownership and manual reel seeking.
 
 ## [7.1.2] - 2026-07-25

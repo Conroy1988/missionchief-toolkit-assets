@@ -1,0 +1,84 @@
+name: Apply Issue 517 Incident Command Wire
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/issue517/apply_incident_wire.py"
+      - ".github/workflows/apply-issue517-incident-wire.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-issue-517-incident-wire
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and validate v7.1.0 Incident Command Wire
+    if: github.actor == 'Conroy1988' && github.head_ref == 'feature/issue-517-incident-command-wire'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out exact Issue 517 branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: feature/issue-517-incident-command-wire
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build Incident Command Wire candidate
+        run: python3 .github/issue517/apply_incident_wire.py
+
+      - name: Validate complete v7.1.0 candidate
+        id: validation
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          {
+            bash .github/scripts/run_userscript_preflight.sh --all
+            python3 .github/scripts/test_documentation_consistency.py \
+              --allow-release-candidate \
+              --json-output documentation-drift-report.json \
+              --markdown-output documentation-drift-report.md
+            python3 .github/scripts/build_pages_site.py \
+              --output _site \
+              --base-path /missionchief-toolkit-assets/
+          } 2>&1 | tee issue517-incident-wire-validation.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload exact Issue 517 diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue517-incident-wire-validation-${{ github.sha }}
+          path: issue517-incident-wire-validation.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on validation failure
+        if: steps.validation.outputs.exit_code != '0'
+        run: exit 1
+
+      - name: Commit exact v7.1.0 candidate
+        env:
+          DEVELOPMENT_PR_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEVELOPMENT_PR_TOKEN"
+          test "$GITHUB_HEAD_REF" = "feature/issue-517-incident-command-wire"
+          rm -f issue517-incident-wire-validation.log
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No Incident Command Wire changes produced."; exit 1; }
+          git commit -m "Build v7.1.0 Incident Command Wire"
+          BASIC_AUTH="$(printf 'x-access-token:%s' "$DEVELOPMENT_PR_TOKEN" | base64 -w0)"
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" \
+            push origin HEAD:refs/heads/feature/issue-517-incident-command-wire

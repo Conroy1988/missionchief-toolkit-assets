@@ -10,12 +10,13 @@ def main() -> int:
     source = SOURCE.read_text(encoding='utf-8')
     metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == '7.1.0'
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == '7.1.1'
     for name in ['majorIncidentFeedEntryCount','majorIncidentFeedInteractionActive','majorIncidentFeedSyncControls','majorIncidentFeedApplyIndex','majorIncidentFeedScheduleAdvance','majorIncidentFeedSetPaused','majorIncidentFeedSetExpanded','majorIncidentFeedAdvance']:
         assert source.count(f'function {name}(') == 1, name
     render = section(source, '    function renderMajorIncidentFeed(', '    function scheduleMajorIncidentFeedRender(')
     ensure = section(source, '    function ensureMajorIncidentFeed(', '    function renderMajorIncidentFeed(')
     motion = section(source, '    function refreshMajorIncidentFeedMotion(', '    function scheduleMajorIncidentFeedMotion(')
+    pause = section(source, '    function majorIncidentFeedSetPaused(', '    function majorIncidentFeedSetExpanded(')
     assert "track.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire')).join('')));" in render
     assert "list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list')).join('')));" in render
     assert '${group}${group}' not in render and 'mcms-incident-feed-group' not in render
@@ -25,10 +26,18 @@ def main() -> int:
         assert f'data-mcms-incident-action="{action}"' in ensure
     assert 'mcms-incident-feed-panel' in ensure and 'mcms-incident-feed-list' in ensure
     assert "focusMissionById(item.dataset.mcmsMajorMissionId, false);" in ensure
-    assert "feed.addEventListener('pointerenter'" in ensure
+    assert "feed.addEventListener('pointerover'" in ensure
+    assert "feed.addEventListener('pointerout'" in ensure
+    assert "if (closestEventTarget(event, '[data-mcms-incident-action]')) return;" in ensure
     assert "feed.addEventListener('focusin'" in ensure
     assert 'pageWindow.matchMedia' in source and 'prefers-reduced-motion: reduce' in source
     assert 'state.economyMode' in motion
+    assert 'majorIncidentFeedInteractionPauseUntil = 0;' in pause
+    assert "feed?.classList?.remove('mcms-feed-interacting');" in pause
+    assert 'majorIncidentFeedScheduleAdvance(feed, 650);' in pause
+    assert 'align-self:center!important' in source and 'height:100%!important' in source
+    assert 'box-sizing:border-box!important' in source and 'margin:0!important' in source
+    assert 'min-height:32px' in source
     for theme in ['cyberpunk','fallout4','umbrella','factorio','bond007','hyrule']:
         assert f'html[data-mcms-ui-theme="{theme}"] #${{SCRIPT.majorIncidentFeedId}}' in source, theme
     for marker in ['Incident Command Wire','mcms-incident-feed-controls','mcms-incident-feed-panel-head','mcms-incident-feed-list-item','@media (max-width:760px)','@media (max-width:480px)']:

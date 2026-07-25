@@ -43,7 +43,7 @@ This combination could create repeated full mission-window scans and rebuilds du
 | Metric | v5.0.7 | v6 candidate | Delta |
 |---|---:|---:|---:|
 | Source bytes | 2,060,765 | 1,727,090 | −333,675 (−16.2%) |
-| Source lines | 31,761 | 25,146 | −6,615 (−20.8%) |
+| Source lines | 31,761 | 25,147 | −6,614 (−20.8%) |
 | Named function declarations | 979 | 886 | −93 (−9.5%) |
 | MutationObserver constructions | 9 | 9 | no increase |
 | Registered recurring tasks | 8 | 6 | −2 (−25.0%) |

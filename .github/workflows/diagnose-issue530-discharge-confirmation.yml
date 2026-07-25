@@ -1,0 +1,34 @@
+name: Diagnose Issue 530 Discharge Confirmation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/issue530/extract_confirmation_flow.py"
+      - ".github/workflows/diagnose-issue530-discharge-confirmation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'fix/issue-530-transport-sweep-discharge-confirmation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact Issue 530 branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: fix/issue-530-transport-sweep-discharge-confirmation
+          persist-credentials: false
+
+      - name: Extract Transport Sweep confirmation flow
+        run: python3 .github/issue530/extract_confirmation_flow.py
+
+      - name: Upload confirmation-flow diagnostic
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue530-confirmation-flow-${{ github.sha }}
+          path: issue530-confirmation-flow.txt
+          if-no-files-found: error
+          retention-days: 14

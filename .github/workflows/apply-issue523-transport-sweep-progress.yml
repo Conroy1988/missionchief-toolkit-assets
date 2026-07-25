@@ -85,11 +85,9 @@ jobs:
         run: exit 1
 
       - name: Validate complete v7.1.4 candidate
-        id: validate
         shell: bash
         run: |
-          set +e
-          set -o pipefail
+          set -euo pipefail
           {
             python3 .github/scripts/validate_userscript.py &&
             bash .github/scripts/run_userscript_preflight.sh --contracts &&
@@ -97,9 +95,6 @@ jobs:
             node --check src/MissionChief_Map_Command_Toolkit.user.js &&
             cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
           } 2>&1 | tee issue523-validation.log
-          STATUS=${PIPESTATUS[0]}
-          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
-          exit 0
 
       - name: Upload Issue 523 validation diagnostic
         if: always()
@@ -109,10 +104,6 @@ jobs:
           path: issue523-validation.log
           if-no-files-found: error
           retention-days: 14
-
-      - name: Stop on validation failure
-        if: steps.validate.outputs.exit_code != '0'
-        run: exit 1
 
       - name: Enforce unchanged performance envelope
         shell: bash

@@ -87,6 +87,14 @@ jobs:
           ]
           missing = [name for name in required if not (root / name).is_file()]
           empty = [name for name in required if (root / name).is_file() and (root / name).stat().st_size == 0]
+          diagnostic = [
+              f'file_count={len(files)}',
+              f'total_bytes={total_bytes}',
+              'missing=' + ','.join(missing),
+              'empty=' + ','.join(empty),
+              *[f'{path.relative_to(root)}={path.stat().st_size}' for path in sorted(files)],
+          ]
+          Path('pages-limits-diagnostic.txt').write_text('\n'.join(diagnostic) + '\n', encoding='utf-8')
           if missing:
               raise SystemExit('Missing Pages outputs: ' + ', '.join(missing))
           if empty:
@@ -98,13 +106,15 @@ jobs:
           print(f'Pages output: {len(files)} files, {total_bytes} bytes.')
           PY
 
-      - name: Upload validated site preview
+      - name: Upload Pages preview and diagnostics
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: missionchief-toolkit-pages-preview
           path: |
             _site/
             pages-build-report.json
+            pages-limits-diagnostic.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -185,6 +195,6 @@ jobs:
         with:
           path: _site/
 
-      - name: Deploy GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be6e763baed58fa128 # v5
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

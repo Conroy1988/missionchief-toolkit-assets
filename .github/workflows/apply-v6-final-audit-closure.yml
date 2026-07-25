@@ -2,12 +2,8 @@ name: Apply v6 Final Audit Closure
 
 on:
   pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-    branches:
-      - main
+    types: [opened, reopened, synchronize]
+    branches: [main]
     paths:
       - ".github/workflows/apply-v6-final-audit-closure.yml"
 
@@ -37,11 +33,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from __future__ import annotations
-
-          import hashlib
-          import json
-          import re
-          import sys
+          import hashlib, json, re, sys
           from pathlib import Path
 
           ROOT = Path.cwd()
@@ -62,8 +54,7 @@ jobs:
                   'html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} button:active,'
                   'html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} button:active,'
                   'html[data-mcms-tablet-active="true"] #${SCRIPT.panelId} button:active {'
-                  + feedback_token
-                  + '}'
+                  + feedback_token + '}'
               )
               source = source.replace(anchor, feedback_css + anchor, 1)
           if source.count(feedback_token) != 1:
@@ -81,7 +72,6 @@ jobs:
 
           sys.path.insert(0, str(ROOT / ".github" / "scripts"))
           import test_main_style_source_headroom as headroom
-
           raw = headroom.extract_main_style(source)
           style_lines, template_hash, canonical_hash = headroom.validate_template_shape(raw)
           source_bytes = len(source.encode("utf-8"))
@@ -93,75 +83,37 @@ jobs:
           profile = fixture.get("v6Candidate")
           if not isinstance(profile, dict) or profile.get("version") != "6.0.0":
               raise SystemExit("v6 source/style evidence profile is missing")
-          profile.update(
-              {
-                  "sourceBytes": source_bytes,
-                  "sourceLines": source_split_lines,
-                  "sourceSha256": source_hash,
-                  "templateBytes": len(raw.encode("utf-8")),
-                  "templateLines": len(style_lines),
-                  "templateSha256": template_hash,
-                  "canonicalCssSha256": canonical_hash,
-              }
-          )
+          profile.update({
+              "sourceBytes": source_bytes,
+              "sourceLines": source_split_lines,
+              "sourceSha256": source_hash,
+              "templateBytes": len(raw.encode("utf-8")),
+              "templateLines": len(style_lines),
+              "templateSha256": template_hash,
+              "canonicalCssSha256": canonical_hash,
+          })
           FIXTURE.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
 
           evidence = json.loads(EVIDENCE.read_text(encoding="utf-8"))
           candidate = evidence.get("candidate")
           if not isinstance(candidate, dict):
               raise SystemExit("v6 performance candidate evidence is missing")
-          candidate.update(
-              {
-                  "sha256": source_hash,
-                  "bytes": source_bytes,
-                  "lines": source_physical_lines,
-              }
-          )
+          candidate.update({"sha256": source_hash, "bytes": source_bytes, "lines": source_physical_lines})
           EVIDENCE.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
 
-          baseline_bytes = 2_060_765
-          baseline_lines = 31_761
+          baseline_bytes, baseline_lines = 2_060_765, 31_761
           byte_delta = source_bytes - baseline_bytes
           line_delta = source_physical_lines - baseline_lines
-
-          def signed(value: int) -> str:
-              return f"−{abs(value):,}" if value < 0 else f"+{value:,}"
-
-          def signed_pct(value: int, baseline: int) -> str:
-              percentage = value / baseline * 100
-              return f"−{abs(percentage):.1f}%" if percentage < 0 else f"+{percentage:.1f}%"
-
+          def signed(value): return f"−{abs(value):,}" if value < 0 else f"+{value:,}"
+          def signed_pct(value, base):
+              p = value / base * 100
+              return f"−{abs(p):.1f}%" if p < 0 else f"+{p:.1f}%"
           baseline = BASELINE.read_text(encoding="utf-8")
-          baseline = re.sub(
-              r"(?m)^\*\*Candidate canonical SHA-256:\*\* `[^`]+`\s*$",
-              f"**Candidate canonical SHA-256:** `{source_hash}`  ",
-              baseline,
-          )
-          baseline = re.sub(
-              r"(?m)^\| Source bytes \| 2,060,765 \| [^|]+ \|.*$",
-              f"| Source bytes | 2,060,765 | {source_bytes:,} | {signed(byte_delta)} ({signed_pct(byte_delta, baseline_bytes)}) |",
-              baseline,
-          )
-          baseline = re.sub(
-              r"(?m)^\| Source lines \| 31,761 \| [^|]+ \|.*$",
-              f"| Source lines | 31,761 | {source_physical_lines:,} | {signed(line_delta)} ({signed_pct(line_delta, baseline_lines)}) |",
-              baseline,
-          )
+          baseline = re.sub(r"(?m)^\*\*Candidate canonical SHA-256:\*\* `[^`]+`\s*$", f"**Candidate canonical SHA-256:** `{source_hash}`  ", baseline)
+          baseline = re.sub(r"(?m)^\| Source bytes \| 2,060,765 \| [^|]+ \|.*$", f"| Source bytes | 2,060,765 | {source_bytes:,} | {signed(byte_delta)} ({signed_pct(byte_delta, baseline_bytes)}) |", baseline)
+          baseline = re.sub(r"(?m)^\| Source lines \| 31,761 \| [^|]+ \|.*$", f"| Source lines | 31,761 | {source_physical_lines:,} | {signed(line_delta)} ({signed_pct(line_delta, baseline_lines)}) |", baseline)
           BASELINE.write_text(baseline, encoding="utf-8")
-
-          print(
-              json.dumps(
-                  {
-                      "sourceSha256": source_hash,
-                      "sourceBytes": source_bytes,
-                      "sourceLines": source_split_lines,
-                      "physicalLines": source_physical_lines,
-                      "templateBytes": len(raw.encode("utf-8")),
-                      "templateLines": len(style_lines),
-                  },
-                  indent=2,
-              )
-          )
+          print(json.dumps({"sourceSha256":source_hash,"sourceBytes":source_bytes,"sourceLines":source_split_lines,"physicalLines":source_physical_lines,"templateBytes":len(raw.encode('utf-8')),"templateLines":len(style_lines)}, indent=2))
           PY
 
       - name: Build and validate complete v6 candidate
@@ -176,10 +128,7 @@ jobs:
           cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
           printf '{"schemaVersion":1,"summary":{"errors":0,"warnings":0,"messages":0,"rules":{}},"messages":[]}' > /tmp/eslint-summary.json
-          python3 .github/scripts/extract_userscript_audit_evidence.py \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --eslint /tmp/eslint-summary.json \
-            --output /tmp/eslint-evidence.txt
+          python3 .github/scripts/extract_userscript_audit_evidence.py --source src/MissionChief_Map_Command_Toolkit.user.js --eslint /tmp/eslint-summary.json --output /tmp/eslint-evidence.txt
 
       - name: Commit exact audit closure and delete one-use workflow
         env:
@@ -192,20 +141,10 @@ jobs:
           find . -type d -name __pycache__ -prune -exec rm -rf {} +
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
-          git add -- \
-            src/MissionChief_Map_Command_Toolkit.user.js \
-            .github/workflows/full-userscript-audit.yml \
-            .github/fixtures/main-style-source-headroom.json \
-            docs/audits/v6-critical-performance-evidence.json \
-            docs/audits/v6-critical-performance-baseline.md \
-            dist/MissionChief_Map_Command_Toolkit.user.js \
-            dist/MissionChief_Map_Command_Toolkit.txt \
-            dist/SHA256SUMS.txt \
-            dist/release-manifest.json
+          git add -- src/MissionChief_Map_Command_Toolkit.user.js .github/workflows/full-userscript-audit.yml .github/fixtures/main-style-source-headroom.json docs/audits/v6-critical-performance-evidence.json docs/audits/v6-critical-performance-baseline.md dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt dist/SHA256SUMS.txt dist/release-manifest.json
           git rm -- .github/workflows/apply-v6-final-audit-closure.yml
           git diff --cached --quiet && { echo "::error::No final audit closure change was produced."; exit 1; }
           git diff --quiet || { echo "::error::Unexpected unstaged reconciliation output remains."; git status --short; exit 1; }
           git commit -m "Restore v6 touch feedback and close full audit gates"
           BASIC_AUTH="$(printf 'x-access-token:%s' "$DEVELOPMENT_PR_TOKEN" | base64 -w0)"
-          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" \
-            push origin HEAD:refs/heads/feat/issue-510-v6-performance-overhaul
+          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic ${BASIC_AUTH}" push origin HEAD:refs/heads/feat/issue-510-v6-performance-overhaul

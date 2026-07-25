@@ -15,18 +15,13 @@
   "requiredTasks": [
     "ui-integrity",
     "vehicle-data-refresh",
-    "auto-night",
     "mission-maintenance",
-    "critical-countdowns",
     "minute-maintenance",
     "major-incident-feed-integrity",
     "building-visibility"
   ],
   "requiredDocumentListeners": [
     "keydown",
-    "pointerover",
-    "pointermove",
-    "pointerout",
     "pointerdown",
     "click",
     "visibilitychange"
@@ -64,15 +59,13 @@
     "data-mcms-show-my-missions",
     "data-mcms-show-vehicles",
     "data-mcms-show-buildings",
-    "data-mcms-critical-view",
     "data-mcms-help-open"
   ],
   "cleanupCaches": [
     "missionSnapshotCache",
     "missionPanelCache",
     "missionOverlayVersions",
-    "markerRegistryCache",
-    "criticalMissionStableCache"
+    "markerRegistryCache"
   ],
   "requiredCleanupCalls": [
     "stopAutoLoadAllVehicles",
@@ -87,7 +80,6 @@
     "clearTransportWatcherLabels",
     "clearResourceGapLabels",
     "clearStuckMissionLabels",
-    "clearCoverageHeatmap",
     "stopPayoutFlashAnimation",
     "disposePayoutMediaAudio",
     "clearDiscordPreviewChartUrl",

@@ -12,7 +12,7 @@
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-1677A3?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-7_INTERFACE_SYSTEMS-6D28D9?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 
-**Current verified release: `v5.0.7`**
+**Current verified release: `v5.0.7` · Development candidate: `v6.0.0`**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -39,7 +39,7 @@ MissionChief exposes operational information across map markers, mission windows
 | **Triage** | Surface old, critical, blocked and transport-dependent missions |
 | **Understand demand** | Reconcile required, selected, en-route, on-scene and still-needed capability |
 | **Identify capability** | Expose specialist vehicle roles, equipment and qualified personnel evidence |
-| **Command the map** | Use heat maps, rings, bookmarks, focus modes and visibility controls |
+| **Command the map** | Use coverage rings, bookmarks, focus modes and visibility controls |
 | **Reconcile performance** | Track income, spending, variance, mission value and session results |
 
 Every major family can be enabled independently. Run the complete suite or retain only the systems that improve the current account, workflow and device.
@@ -79,7 +79,7 @@ Toolkit v5 replaced the former requirements-only mission panel with one coordina
 |---|---|
 | **Enhanced Operational Requirements** | Reconciles vehicles, equipment, personnel, capacity, trailers, selected units, en-route units, on-scene units and remaining demand |
 | **Extended Call Window** | Adds patient and vehicle summaries, selected and ARR counters, search, highlighting, generation/alarm context, keywords and map controls |
-| **Extended Mission List** | Adds sorting, starring, collapsing, patient/prisoner indicators, credit and remaining-time badges, and native sharing controls |
+| **Extended Call List** | Adds sorting, starring, collapsing, patient/prisoner indicators, credit and remaining-time badges, and native sharing controls |
 | **Enhanced Transport Requests** | Provides opt-in guarded transport assistance with exact-route validation, candidate filtering, ambiguity rejection and per-route duplicate protection |
 
 All settings use typed controls—switches, numbers, colour controls, selects and structured editors. Internal drag, overlay and persisted list state is not exposed as raw configuration.
@@ -109,6 +109,7 @@ A genuinely visible equivalent LSSM panel suppresses the matching Toolkit surfac
 
 | Release | Production result |
 |---|---|
+| **v6.0.0 candidate** | Critical performance overhaul, clean feature retirement and typed Operational Window settings rebuild |
 | **v5.0.0** | Introduced the Operational Window Suite and migrated existing requirements enablement automatically |
 | **v5.0.1–v5.0.3** | Recovered menu startup, isolated launcher bootstrap and fixed the fatal preboot declaration-order failure |
 | **v5.0.4** | Stopped empty or failed requirement parsing from appearing as confirmed green coverage |
@@ -126,11 +127,9 @@ Existing Toolkit settings are retained. No manual reset is required when upgradi
 
 | Capability | Operational purpose |
 |---|---|
-| **Mission Age Watch** | Surfaces personal and alliance missions by age, ownership, category, urgency, assistance state and clearing progress |
-| **Critical View** | Creates a concentrated workflow for missions requiring immediate attention |
+| **Mission Age map timers** | Displays compact age timer badges above map missions; shortcut `6` toggles the badges |
 | **Mission Value** | Displays verified mission value inside opened mission windows |
 | **Operational Window Suite** | Coordinates requirements, mission-window intelligence, mission-list controls and guarded transport assistance |
-| **Mission Inspector** | Loads deeper mission context only when requested |
 | **Mission Spawn** | Detects newly appearing mission activity through bounded state ownership |
 | **Stuck Detector** | Identifies missions that remain unresolved beyond the configured monitoring contract |
 | **Major Incident Feed** | Maintains a high-priority incident feed with click-to-zoom navigation |
@@ -145,7 +144,6 @@ Existing Toolkit settings are retained. No manual reset is required when upgradi
 | **Vehicle Code Status** | Summarises the live fleet by response code, description and count |
 | **Custom Vehicle Badges** | Exposes Own Vehicle Categories beside native vehicle types without replacing them |
 | **Auto-load all vehicles** | Uses MissionChief’s native hidden-vehicle batch control |
-| **Coverage Heat Map** | Visualises geographic operational coverage |
 | **Coverage rings** | Adds readable range context around locations |
 | **Smart Bookmark Labels** | Creates compact place labels with overrides and touch previews |
 | **Visibility command layer** | Controls missions, vehicles and buildings without leaving the map |

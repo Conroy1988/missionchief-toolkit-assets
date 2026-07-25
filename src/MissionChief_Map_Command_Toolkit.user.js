@@ -22586,6 +22586,7 @@ Create the private backup now?`);
         if (feature === 'transportWatcher') state.transportWatcher = !state.transportWatcher;
         if (feature === 'resourceGap') state.resourceGap.enabled = !state.resourceGap.enabled;
         if (state.cleanMode) closePanel();
+        saveState();
         applyRootAttributes();
         updateUI();
         applyMapVisibilityToggleEffects(feature);

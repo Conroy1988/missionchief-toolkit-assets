@@ -38,7 +38,7 @@ def main() -> int:
         "if (feature === 'missionValue') state.missionValue = !state.missionValue",
         "missionValue: state.missionValue",
         "function missionWindowValueDetails(entry)",
-        "const details = missionWindowValueDetails(candidate)",
+        "const details = missionWindowValueDetails({ missionId, marker, snapshot })",
         "installMissionValueWindows()",
         "ensureMissionValueDocumentStyle(doc)",
         "clearMissionValueDocumentStyles()",

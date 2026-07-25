@@ -27,6 +27,39 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Make candidate README update format-independent
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/issue523/apply_fix.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    readme = README.read_text(encoding="utf-8")
+              readme = replace_once(
+                  readme,
+                  "## **Current verified release: `v7.1.3`**\\n### **Continuous Incident Command news reel**",
+                  "## **Current verified release: `v7.1.3` · Development candidate: `v7.1.4`**\\n### **Patient Transport Sweep mission-progress synchronization**",
+                  "README candidate marker",
+              )
+              README.write_text(readme, encoding="utf-8")
+          '''
+          new = '''    readme = README.read_text(encoding="utf-8")
+              readme, readme_count = re.subn(
+                  r"## \\*\\*Current verified release: `v[^`]+`[^\\n]*\\*\\*",
+                  "## **Current verified release: `v7.1.3` · Development candidate: `v7.1.4` — Patient Transport Sweep mission-progress synchronization**",
+                  readme,
+                  count=1,
+              )
+              if readme_count != 1:
+                  raise SystemExit(f"Expected one README release heading, found {readme_count}")
+              README.write_text(readme, encoding="utf-8")
+          '''
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one README update block, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Apply canonical mission-progress synchronization
         id: apply
         shell: bash

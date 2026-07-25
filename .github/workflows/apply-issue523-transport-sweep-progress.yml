@@ -28,7 +28,28 @@ jobs:
           persist-credentials: false
 
       - name: Apply canonical mission-progress synchronization
-        run: python3 .github/issue523/apply_fix.py
+        id: apply
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          python3 .github/issue523/apply_fix.py 2>&1 | tee issue523-builder.log
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload Issue 523 builder diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue523-builder-${{ github.sha }}
+          path: issue523-builder.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on builder failure
+        if: steps.apply.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Validate complete v7.1.4 candidate
         shell: bash
@@ -63,6 +84,7 @@ jobs:
           set -euo pipefail
           test -n "$DEVELOPMENT_PR_TOKEN"
           test "$GITHUB_HEAD_REF" = "fix/issue-523-transport-sweep-mission-progress"
+          rm -f issue523-builder.log
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git add -A

@@ -51,7 +51,6 @@ jobs:
           set -euo pipefail
 
           SHOULD_POST='true'
-          V6_RECONCILIATION_BRANCH='feat/issue-510-v6-performance-overhaul'
           if [[ "$GITHUB_EVENT_NAME" == 'pull_request' ]]; then
             ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
             PR_NUMBER="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
@@ -80,10 +79,6 @@ jobs:
                 SHOULD_POST='false'
                 ;;
             esac
-
-            if [[ "$BRANCH" == "$V6_RECONCILIATION_BRANCH" && "$ACTION" == 'synchronize' ]]; then
-              SHOULD_POST='false'
-            fi
           else
             ACTION="$(jq -r '.action' "$GITHUB_EVENT_PATH")"
             WORKFLOW_NAME="$(jq -r '.workflow_run.name' "$GITHUB_EVENT_PATH")"
@@ -147,10 +142,6 @@ jobs:
                 COLOR='15548997'
                 STAGE='Failure'
               fi
-            fi
-
-            if [[ "$BRANCH" == "$V6_RECONCILIATION_BRANCH" && "$WORKFLOW_NAME" == 'Validate Canonical Userscript' && "$CONCLUSION" != 'success' ]]; then
-              SHOULD_POST='false'
             fi
           fi
 

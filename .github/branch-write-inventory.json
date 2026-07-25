@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-07-25",
+  "reviewedAt": "2026-07-24",
   "reviewedMainCommit": "e51a44431c1769dcdab292f1d5f3b570b4c1f867",
   "strictProtectionEnabled": false,
   "directMainWriters": [
@@ -43,49 +43,77 @@
       "purpose": "Validate canonical source and retain the exact commit/ref distribution candidate without changing public main or release state.",
       "permission": "contents: read",
       "artifact": "missionchief-toolkit-validation-candidate-<commit>",
-      "evidence": ["validation-candidate.json", "dist userscript", "dist text", "checksums", "release manifest"]
+      "evidence": [
+        "validation-candidate.json",
+        "dist userscript",
+        "dist text",
+        "checksums",
+        "release manifest"
+      ]
     },
     {
       "workflow": ".github/workflows/release-toolkit-dry-run.yml",
       "purpose": "Validate and package a candidate without changing public main or any publication channel.",
       "permission": "contents: read",
       "artifact": "missionchief-toolkit-v<version>-release-dry-run",
-      "evidence": ["release-dry-run-v<version>.json", "release-dry-run-v<version>.md"]
+      "evidence": [
+        "release-dry-run-v<version>.json",
+        "release-dry-run-v<version>.md"
+      ]
     },
     {
       "workflow": ".github/workflows/repository-audit.yml",
       "purpose": "Audit repository dependencies and live Greasy Fork references without changing public main or the release dashboard.",
       "permission": "contents: read",
       "artifact": "missionchief-repository-audit-<commit>",
-      "evidence": ["repository-audit.json", "repository-audit.md"]
+      "evidence": [
+        "repository-audit.json",
+        "repository-audit.md"
+      ]
     },
     {
       "workflow": ".github/workflows/update-release-dashboard.yml",
       "purpose": "Verify the committed release-dashboard JSON and Markdown projection without changing public main.",
       "permission": "contents: read",
       "artifact": "missionchief-release-dashboard-projection-<commit>",
-      "evidence": ["status-README.md", "status-README.diff", "projection.log"]
+      "evidence": [
+        "status-README.md",
+        "status-README.diff",
+        "projection.log"
+      ]
     },
     {
       "workflow": ".github/workflows/import-canonical-userscript.yml",
       "purpose": "Verify GitHub-authoritative canonical source against live Greasy Fork without importing or modifying repository state.",
       "permission": "contents: read",
       "artifact": "missionchief-greasyfork-canonical-parity-<commit>",
-      "evidence": ["greasyfork-canonical-parity.json", "greasyfork-canonical-parity.md", "live userscript", "parity.log"]
+      "evidence": [
+        "greasyfork-canonical-parity.json",
+        "greasyfork-canonical-parity.md",
+        "live userscript",
+        "parity.log"
+      ]
     },
     {
       "workflow": ".github/workflows/reconcile-release-announcement-state.yml",
       "purpose": "Verify dashboard and announcement tracker consistency without changing repository state.",
       "permission": "contents: read",
       "artifact": "missionchief-release-announcement-state-<commit>",
-      "evidence": ["release-announcement-state.json", "release-announcement-state.md"]
+      "evidence": [
+        "release-announcement-state.json",
+        "release-announcement-state.md"
+      ]
     },
     {
       "workflow": ".github/workflows/publish-update-manifest.yml",
       "purpose": "Verify the committed stable update manifest against the verified release ledger without changing repository state.",
       "permission": "contents: read",
       "artifact": "missionchief-update-manifest-verification-<commit>",
-      "evidence": ["update-manifest-verification.json", "update-manifest-verification.md", "update-manifest-verification.log"]
+      "evidence": [
+        "update-manifest-verification.json",
+        "update-manifest-verification.md",
+        "update-manifest-verification.log"
+      ]
     }
   ],
   "directMainPushSources": [
@@ -98,7 +126,9 @@
       "helper": ".github/scripts/release_state_branch.py",
       "sourceAuthority": "main release dashboard",
       "target": "release-state",
-      "writes": [".github/greasyfork-version.txt"],
+      "writes": [
+        ".github/greasyfork-version.txt"
+      ],
       "credential": "github.token",
       "actor": "github-actions[bot]",
       "mainMutationAllowed": false,
@@ -143,14 +173,6 @@
       "workflow": ".github/workflows/prepare-release-rollback.yml",
       "target": "new recovery branch and owner-created pull request",
       "credential": "DEVELOPMENT_PR_TOKEN"
-    },
-    {
-      "workflow": ".github/workflows/apply-v6-repository-reconciliation.yml",
-      "target": "feat/issue-510-v6-performance-overhaul only",
-      "credential": "DEVELOPMENT_PR_TOKEN",
-      "purpose": "One-use v6 candidate source, documentation, fixture and distribution reconciliation.",
-      "mainMutationAllowed": false,
-      "expiresAfter": "PR #511 candidate reconciliation"
     }
   ],
   "shadowBranchWriters": [
@@ -158,7 +180,10 @@
       "workflow": ".github/workflows/sync-shadow-branches.yml",
       "script": ".github/scripts/sync_shadow_branches.py",
       "source": "main",
-      "targets": ["release-state", "distribution"],
+      "targets": [
+        "release-state",
+        "distribution"
+      ],
       "credential": "DEVELOPMENT_PR_TOKEN",
       "workflowPermission": "contents: read",
       "dispatch": "manual owner-confirmed rehearsal",

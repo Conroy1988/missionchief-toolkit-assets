@@ -32,19 +32,22 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
+          import re
           from pathlib import Path
           path = Path('.github/issue519/apply_v713_final_ui.py')
           text = path.read_text(encoding='utf-8')
-          block = '''    source = append_css_properties(
-              source,
-              '#${SCRIPT.majorIncidentFeedId} .mcms-incident-level',
-              'align-self:center!important;line-height:1!important;margin-block:0!important;transform:none!important;',
-              "priority badge alignment",
+          pattern = re.compile(
+              r'\n    source = append_css_properties\(\n'
+              r'        source,\n'
+              r"        '#\$\{SCRIPT\.majorIncidentFeedId\} \.mcms-incident-level',\n"
+              r"        'align-self:center!important;line-height:1!important;margin-block:0!important;transform:none!important;',\n"
+              r'        "priority badge alignment",\n'
+              r'    \)\n'
           )
-          '''
-          if text.count(block) != 1:
-              raise SystemExit(f'Expected one standalone priority-badge edit, found {text.count(block)}')
-          path.write_text(text.replace(block, '', 1), encoding='utf-8')
+          text, count = pattern.subn('\n', text, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected one standalone priority-badge edit, found {count}')
+          path.write_text(text, encoding='utf-8')
           PY
 
       - name: Apply dropdown-only and vertical-centre cleanup

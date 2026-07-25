@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/issue515/apply_launcher_fix.py"
+      - ".github/issue515/patch_candidate_ledgers.py"
       - ".github/workflows/apply-issue515-launcher-fix.yml"
 
 permissions:
@@ -30,7 +31,11 @@ jobs:
           persist-credentials: false
 
       - name: Apply exact launcher restoration
-        run: python3 .github/issue515/apply_launcher_fix.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/issue515/apply_launcher_fix.py
+          python3 .github/issue515/patch_candidate_ledgers.py
 
       - name: Validate complete v7.0.1 candidate
         id: validation

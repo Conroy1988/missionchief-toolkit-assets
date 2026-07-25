@@ -57,7 +57,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Apply boot fixture cleanup
+      - name: Apply preboot and lifecycle reconciliation
         run: python3 .github/v6-reconcile/fix_v6_boot_contract.py
 
       - name: Validate updated boot lifecycle fixture
@@ -118,6 +118,7 @@ jobs:
             docs/audits/v6-critical-performance-baseline.md \
             docs/audits/v6-critical-performance-evidence.json \
             .github/documentation-contract.json \
+            .github/fixtures/main-style-source-headroom.json \
             .github/fixtures/settings-ui-contract.json \
             .github/fixtures/boot-lifecycle-contract.json \
             .github/scripts/test_settings_ui_contract.py \

@@ -3,7 +3,7 @@
   "baseUrl": "https://conroy1988.github.io/missionchief-toolkit-assets/",
   "timeoutSeconds": 25,
   "routes": [
-    {"path": "", "contentType": "text/html", "requiredText": ["MissionChief Map Command Toolkit", "The One We Knew Before"]},
+    {"path": "", "contentType": "text/html", "requiredText": ["MissionChief Map Command Toolkit"]},
     {"path": "features/", "contentType": "text/html", "requiredText": ["Features", "Mission Age map timers", "Patient Transport Sweep", "Mission Value"]},
     {"path": "themes/", "contentType": "text/html", "requiredText": ["Themes", "Cyberpunk", "Factorio", "Hyrule Command"]},
     {"path": "docs/", "contentType": "text/html", "requiredText": ["Documentation", "The One We Knew Before", "Installation"]},

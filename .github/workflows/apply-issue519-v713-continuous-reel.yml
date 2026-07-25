@@ -43,17 +43,32 @@ jobs:
       - name: Enforce unchanged performance envelope
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
           git fetch origin main --depth=1
           git show origin/main:src/MissionChief_Map_Command_Toolkit.user.js > /tmp/performance-base.user.js
           python3 .github/scripts/test_performance_budget.py
+          TEST_STATUS=$?
           python3 .github/scripts/check_performance_budget.py \
             --candidate src/MissionChief_Map_Command_Toolkit.user.js \
             --base /tmp/performance-base.user.js \
             --policy .github/performance-budget.json \
-            --json-output /tmp/issue519-v713-continuous-reel.json \
-            --markdown-output /tmp/issue519-v713-continuous-reel.md
-          cat /tmp/issue519-v713-continuous-reel.md
+            --json-output issue519-v713-continuous-reel.json \
+            --markdown-output issue519-v713-continuous-reel.md
+          CHECK_STATUS=$?
+          cat issue519-v713-continuous-reel.md || true
+          if [ "$TEST_STATUS" -ne 0 ]; then exit "$TEST_STATUS"; fi
+          exit "$CHECK_STATUS"
+
+      - name: Upload continuous reel performance report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue519-v713-continuous-reel-${{ github.sha }}
+          path: |
+            issue519-v713-continuous-reel.json
+            issue519-v713-continuous-reel.md
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Commit validated continuous reel candidate
         env:
@@ -63,6 +78,7 @@ jobs:
           set -euo pipefail
           test -n "$DEVELOPMENT_PR_TOKEN"
           test "$GITHUB_HEAD_REF" = "fix/issue-519-v713-reduced-motion-autoplay"
+          rm -f issue519-v713-continuous-reel.json issue519-v713-continuous-reel.md
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git add -A

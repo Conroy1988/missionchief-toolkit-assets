@@ -1,0 +1,51 @@
+name: Materialise cinematic README assets
+
+on:
+  push:
+    branches:
+      - docs/cinematic-emergency-command-suite-v714
+    paths:
+      - .github/workflows/materialise-cinematic-readme-assets.yml
+      - docs/media/readme-hero-cinematic-base.svg
+      - docs/media/readme-command-board-cinematic-base.svg
+      - docs/media/readme-release-control-cinematic-base.svg
+
+permissions:
+  contents: write
+
+jobs:
+  materialise:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out presentation branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/cinematic-emergency-command-suite-v714
+          persist-credentials: true
+
+      - name: Build self-contained v7.1.4 media
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp docs/media/readme-hero-cinematic-base.svg docs/media/readme-hero.svg
+          cp docs/media/readme-command-board-cinematic-base.svg docs/media/readme-command-board.svg
+          cp docs/media/readme-release-control-cinematic-base.svg docs/media/readme-release-control.svg
+          sed -i 's/v7\.1\.3/v7.1.4/g' \
+            docs/media/readme-hero.svg \
+            docs/media/readme-command-board.svg \
+            docs/media/readme-release-control.svg
+
+      - name: Commit materialised assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            docs/media/readme-hero.svg \
+            docs/media/readme-command-board.svg \
+            docs/media/readme-release-control.svg
+          git diff --cached --quiet && exit 0
+          git commit -m 'Materialise self-contained cinematic README assets'
+          git push origin HEAD:docs/cinematic-emergency-command-suite-v714

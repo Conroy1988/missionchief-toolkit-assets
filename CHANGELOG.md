@@ -4,6 +4,17 @@ All notable changes to the MissionChief Map Command Toolkit will be documented i
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.
 
+## [7.1.3] - 2026-07-25
+
+### Continuous Incident Command news reel
+
+- Replaced card-by-card carousel transitions with a constant-speed broadcast ticker reel that moves continuously from right to left.
+- Rendered two accessibility-safe copies of the unique incident sequence so the loop resets off-screen without a visible jump or empty gap.
+- Kept the title block and controls fixed while only the incident reel moves.
+- Removed the previous, pause/play and next controls; the reel now runs continuously with only the expanded-queue dropdown retained.
+- Centred the fixed label and complete moving incident row inside the full bar height using container-level asymmetric padding, eliminating the low text baseline across all seven themes and supported layouts.
+- Added static and executable contracts for linear infinite motion, seamless duplication, dynamic speed, pause ownership and manual reel seeking.
+
 ## [7.1.2] - 2026-07-25
 
 ### Incident Command Wire live rotation recovery

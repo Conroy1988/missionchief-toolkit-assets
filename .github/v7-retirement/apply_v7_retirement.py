@@ -556,7 +556,7 @@ import json,re
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2];source=(ROOT/'src'/'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8');fixtures=json.loads((ROOT/'.github/fixtures/settings-ui-contract.json').read_text(encoding='utf-8'))
 def section(start,end): a=source.index(start);b=source.index(end,a);return source[a:b]
-panel=section('    function createPanel(', '    function ensureControlAndPanel')
+panel=section('    function createPanel(', '    function ensureUi()')
 actions=sorted(set(re.findall(r'data-action\s*=\s*["\']([^"\']+)',panel)));settings=sorted(set(re.findall(r'data-setting\s*=\s*["\']([^"\']+)',panel)));tabs=sorted(set(re.findall(r'data-tab\s*=\s*["\']([^"\']+)',panel)))
 assert actions==sorted(fixtures['actions']);assert settings==sorted(fixtures['settings']);assert tabs==sorted(fixtures['tabs'])
 assert 'delete merged.operationalWindow;' in source and 'delete merged.missionRequirements;' in source

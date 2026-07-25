@@ -1,0 +1,35 @@
+name: Inspect v8 Godfather Architecture
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/v8-godfather/inspect_architecture.py"
+      - ".github/workflows/inspect-v8-godfather-architecture.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'feat/v8-godfather-an-offer-he-cant-refuse'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact v8 branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: feat/v8-godfather-an-offer-he-cant-refuse
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Extract theme and payout architecture
+        run: python3 .github/v8-godfather/inspect_architecture.py
+
+      - name: Upload architecture report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-godfather-architecture-${{ github.sha }}
+          path: v8-godfather-architecture.txt
+          if-no-files-found: error
+          retention-days: 14

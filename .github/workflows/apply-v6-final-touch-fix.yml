@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/v6-final/fix_touch_feedback.py"
       - ".github/workflows/apply-v6-final-touch-fix.yml"
+      - ".github/workflows/apply-v6-final-audit-closure.yml"
 
 permissions:
   contents: read
@@ -29,7 +30,12 @@ jobs:
           persist-credentials: false
 
       - name: Restore touch feedback and refresh evidence
-        run: python3 .github/v6-final/fix_touch_feedback.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i 's/source_lines = source.count("\\n") + 1/source_lines = len(source.splitlines())/' \
+            .github/v6-final/fix_touch_feedback.py
+          python3 .github/v6-final/fix_touch_feedback.py
 
       - name: Build and validate final candidate distribution
         run: python3 .github/scripts/validate_userscript.py
@@ -45,10 +51,11 @@ jobs:
           cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
-      - name: Remove one-use final builder
+      - name: Remove one-use final builders
         run: |
           rm -f .github/v6-final/fix_touch_feedback.py
           rm -f .github/workflows/apply-v6-final-touch-fix.yml
+          rm -f .github/workflows/apply-v6-final-audit-closure.yml
           rmdir .github/v6-final 2>/dev/null || true
 
       - name: Commit exact final v6 candidate
@@ -71,7 +78,8 @@ jobs:
             docs/audits/v6-critical-performance-evidence.json \
             docs/audits/v6-critical-performance-baseline.md \
             .github/v6-final/fix_touch_feedback.py \
-            .github/workflows/apply-v6-final-touch-fix.yml
+            .github/workflows/apply-v6-final-touch-fix.yml \
+            .github/workflows/apply-v6-final-audit-closure.yml
           git diff --cached --quiet && { echo "No final v6 touch fix required."; exit 0; }
           git commit -m "Restore retained touch feedback and finalise v6 evidence"
           BASIC_AUTH="$(printf 'x-access-token:%s' "$DEVELOPMENT_PR_TOKEN" | base64 -w0)"

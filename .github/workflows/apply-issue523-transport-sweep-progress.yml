@@ -114,6 +114,21 @@ jobs:
           path.write_text(text.replace(old, new, 1), encoding='utf-8')
           PY
 
+      - name: Make Issue 523 runtime extractor default-parameter safe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/test_issue523_transport_sweep_progress_runtime.js')
+          text = path.read_text(encoding='utf-8')
+          old = "const start=Math.min(...starts);const open=source.indexOf('{',start);let depth=0,quote='',escaped=false;"
+          new = "const start=Math.min(...starts);const signatureEnd=source.indexOf(') {',start);assert.ok(signatureEnd>=0,`${name} signature end missing`);const open=signatureEnd+2;let depth=0,quote='',escaped=false;"
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected one unsafe runtime extractor, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Validate complete v7.1.4 candidate
         shell: bash
         run: |

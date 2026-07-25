@@ -712,7 +712,7 @@ doc_extensions={".md",".html",".svg",".json",".txt",".css"};code_extensions={".p
 for path in ROOT.rglob("*"):
     if not path.is_file() or ".git" in path.parts or "release-bundle" in path.parts: continue
     if path.parent == ROOT and path.name in {"MissionChief_Map_Command_Toolkit.user.js", "MissionChief_Map_Command_Toolkit.txt"}: continue
-    if "toolkit-current" in path.parts: continue
+    if "toolkit-current" in path.parts or "dist" in path.parts: continue
     try: text=path.read_text(encoding="utf-8")
     except (UnicodeDecodeError,OSError): continue
     if extension_token not in text.lower(): continue

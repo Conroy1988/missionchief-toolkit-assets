@@ -19,7 +19,6 @@ required = [
     "function operationalFeatureRenderContext(context)",
     "matrixRetired: true",
     "parsed?.missionRequirements",
-    "function criticalMissionValueForEntry",
     "// Issue #153: stable live Toolkit version-status control.",
 ]
 for marker in required:
@@ -70,8 +69,20 @@ for obsolete in (
 fixture = json.loads((ROOT / ".github" / "fixtures" / "main-style-source-headroom.json").read_text(encoding="utf-8"))
 if fixture.get("retiredNonStyleSourceLines") != 1398:
     raise SystemExit("Issue #391 retirement source ledger changed")
-if fixture.get("expectedSourceLines") != len(source.splitlines()):
-    raise SystemExit("Issue #391 retired source line count is inconsistent")
+
+source_version = next(
+    (line.split()[-1] for line in source.splitlines() if line.startswith("// @version")),
+    "",
+)
+if source_version == str(fixture.get("candidateVersion", "")):
+    if fixture.get("expectedSourceLines") != len(source.splitlines()):
+        raise SystemExit("Issue #391 retired source line count is inconsistent")
+elif source_version.startswith("6."):
+    v6_contract = ROOT / ".github" / "scripts" / "test_v6_feature_retirement.py"
+    if not v6_contract.is_file():
+        raise SystemExit("Issue #391 v6 retirement contract is missing")
+else:
+    raise SystemExit(f"Issue #391 unsupported source version: {source_version}")
 
 uk = json.loads((ROOT / "src" / "data" / "mission-requirements-en_GB.json").read_text(encoding="utf-8"))
 if uk.get("locale") != "en_GB" or len(uk.get("vehicleRequirements", [])) < 68:

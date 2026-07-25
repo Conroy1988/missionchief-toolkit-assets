@@ -91,12 +91,16 @@ def main() -> int:
         "site-data has no Operational Window guide",
     )
 
-    require(
-        f"Guide for Toolkit v{version}" in help_text,
-        "Help Centre version differs from the manifest",
-    )
     if candidate:
-        require("candidate" in help_text.lower(), "Help Centre does not identify candidate status")
+        require(
+            f"v{version}" in help_text and "candidate" in help_text.lower(),
+            "Help Centre does not identify the candidate version and state",
+        )
+    else:
+        require(
+            f"Guide for Toolkit v{version}" in help_text,
+            "Help Centre version differs from the manifest",
+        )
     require(
         "live Mission Requirements matrix" not in help_text,
         "Help Centre still advertises the retired matrix wording",

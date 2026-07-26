@@ -1,0 +1,43 @@
+name: Export v8 Builder Staging
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/v8-godfather/builder-parts/**"
+      - ".github/workflows/export-v8-builder-staging.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'feature/v8-godfather-an-offer-he-cant-refuse'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact v8 branch head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: feature/v8-godfather-an-offer-he-cant-refuse
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Record staged chunk hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum .github/v8-godfather/builder-parts/part-*.b64 \
+            | tee .github/v8-godfather/builder-parts/SHA256SUMS.txt
+
+      - name: Upload exact staged chunks
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-builder-staging-${{ github.event.pull_request.head.sha }}
+          path: .github/v8-godfather/builder-parts
+          if-no-files-found: error
+          retention-days: 3

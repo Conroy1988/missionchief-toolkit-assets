@@ -202,7 +202,7 @@ The target is not the largest possible feature list. It is the strongest useful 
 
 # Eight complete interface systems
 
-> **INTERFACE NETWORK // SAME OPERATIONAL CONTRACT, SEVEN COMMAND LANGUAGES**
+> **INTERFACE NETWORK // SAME OPERATIONAL CONTRACT, EIGHT COMMAND LANGUAGES**
 
 Every interface presents the same retained capability and stored configuration. The visual language changes; the operational contract does not.
 
@@ -215,6 +215,7 @@ Every interface presents the same retained capability and stored configuration. 
 | **Factorio** | Machinery panels, amber controls and production-line logic |
 | **007 Intelligence** | Classified dossiers, restrained black surfaces and champagne-gold controls |
 | **Hyrule Command** | Royal cartography, luminous energy and ancient command motifs |
+| **The Godfather** | Oxblood, antique gold, polished wood and restrained family-command authority |
 
 Inactive interfaces do not run theme-specific effects. [Explore all eight interfaces](https://conroy1988.github.io/missionchief-toolkit-assets/themes/).
 
@@ -350,7 +351,7 @@ The Toolkit runs in the browser against the signed-in MissionChief page. It does
 | Resource | Purpose |
 |---|---|
 | [Documentation](https://conroy1988.github.io/missionchief-toolkit-assets/) | User guidance and system explanations |
-| [Interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) | Seven visual command systems |
+| [Interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) | Eight visual command systems |
 | [Release Control Panel](status/README.md) | Current verified release identity and channel health |
 | [Issues](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) | Bugs, enhancements and roadmap work |
 | [Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases) | Immutable release history and verified assets |

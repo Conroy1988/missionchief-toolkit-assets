@@ -43,6 +43,8 @@ jobs:
           python3 .github/development-packages/issue543_release_pipeline_v4.py
           python3 - <<'PY'
           from pathlib import Path
+
+          # Reconcile the permanent version/status contract with Pipeline v4.
           path = Path('.github/scripts/test_version_status_contract.py')
           text = path.read_text(encoding='utf-8')
           replacements = (
@@ -68,6 +70,36 @@ jobs:
               raise SystemExit('Unexpected forbidden-marker anchor')
           text = text.replace(anchor, anchor + '        \'gh run watch "$PAGES_RUN_ID" --exit-status\',\n', 1)
           path.write_text(text, encoding='utf-8')
+
+          # Correct generated workflow-text defects and make them permanent tests.
+          release_path = Path('.github/workflows/release-toolkit.yml')
+          release = release_path.read_text(encoding='utf-8')
+          if release.count('\x01') != 1:
+              raise SystemExit(f'Unexpected metadata-regex control-character count: {release.count(chr(1))}')
+          release = release.replace('\x01', r'\1', 1)
+          old = '''        env:\n          RELEASE_VERSION: ${{ inputs.version }}\n          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}\n        env:\n          RELEASE_STARTED_EPOCH: ${{ steps.release_start.outputs.started_epoch }}\n'''
+          new = '''        env:\n          RELEASE_VERSION: ${{ inputs.version }}\n          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}\n          RELEASE_STARTED_EPOCH: ${{ steps.release_start.outputs.started_epoch }}\n'''
+          if release.count(old) != 1:
+              raise SystemExit(f'Unexpected duplicate env block count: {release.count(old)}')
+          release = release.replace(old, new, 1)
+          old = '''            echo "- ✅ Greasy Fork verification and private backup ran concurrently\n            echo "- ✅ Greasy Fork version verified""\n'''
+          new = '''            echo "- ✅ Greasy Fork verification and private backup ran concurrently"\n            echo "- ✅ Greasy Fork version verified"\n'''
+          if release.count(old) != 1:
+              raise SystemExit(f'Unexpected malformed summary count: {release.count(old)}')
+          release = release.replace(old, new, 1)
+          old = '            echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"\n'
+          new = '            echo "- ✅ GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}"\n'
+          if release.count(old) != 1:
+              raise SystemExit(f'Unexpected legacy Pages summary count: {release.count(old)}')
+          release = release.replace(old, new, 1)
+          release_path.write_text(release, encoding='utf-8')
+
+          contract_path = Path('.github/scripts/test_release_pipeline_v4.py')
+          contract = contract_path.read_text(encoding='utf-8')
+          addition = '''\nassert "\\x01" not in p\nassert p.count("      - name: Record successful release, manifest, announcement and speed state") == 1\nassert "Greasy Fork verification and private backup ran concurrently\\\"" in p\nassert "GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}" in p\n'''
+          if addition.strip() not in contract:
+              contract = contract.replace('print("Release Pipeline v4 contract passed.")', addition + '\nprint("Release Pipeline v4 contract passed.")', 1)
+          contract_path.write_text(contract, encoding='utf-8')
           PY
           rm -f .github/development-packages/issue543_release_pipeline_v4.py
           rm -f .github/workflows/preflight-release-pipeline-v4.yml
@@ -76,12 +108,17 @@ jobs:
           rm -f .github/workflows/diagnose-release-pipeline-v4-materialise.yml
           rm -f .github/workflows/build-release-pipeline-v4-candidate-v2.yml
           rm -f .github/workflows/diagnose-release-pipeline-v4-contract-v2.yml
+          rm -f .github/workflows/diagnose-release-pipeline-v4-contract-v2.yml
           rm -f .github/workflows/build-release-pipeline-v4-candidate-v3.yml
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
       - name: Run complete retained validation
         run: |
           set -euo pipefail
+          ruby -e 'require "yaml"; ARGV.each { |file| YAML.load_file(file) }' \
+            .github/workflows/validate-userscript.yml \
+            .github/workflows/auto-release-after-validation.yml \
+            .github/workflows/release-toolkit.yml
           python3 .github/scripts/test_release_pipeline_v4.py
           python3 .github/scripts/validate_userscript.py
           node --check src/MissionChief_Map_Command_Toolkit.user.js

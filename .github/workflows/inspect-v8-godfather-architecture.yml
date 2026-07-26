@@ -47,7 +47,7 @@ jobs:
           output = Path('v8-materialised')
           debug: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
 
-          def part_metadata(directory: Path) -> tuple[list[Path], list[str]]:
+          def read_parts(directory: Path) -> tuple[list[Path], list[str]]:
               parts = sorted(directory.glob('part-*.b64'))
               if not parts:
                   raise RuntimeError(f'No transport parts found in {directory}')
@@ -65,78 +65,106 @@ jobs:
               ]
               return parts, texts
 
-          def padded(text: str) -> str:
-              return text + ('=' * ((-len(text)) % 4))
-
-          def decode_parts(directory: Path) -> tuple[bytes, str, list[str]]:
-              parts, texts = part_metadata(directory)
-              attempts: list[tuple[str, object]] = []
-
+          def decode_joined(texts: list[str]) -> bytes:
               joined = ''.join(texts)
-              for mode, value, validate in (
-                  ('continuous-strict', joined, True),
-                  ('continuous-padded', padded(joined), False),
-              ):
-                  try:
-                      payload = base64.b64decode(value, validate=validate)
-                      attempts.append((mode, {'ok': True, 'bytes': len(payload)}))
-                      debug[f'{directory}-attempts'] = attempts
-                      return payload, mode, [path.name for path in parts]
-                  except Exception as error:
-                      attempts.append((mode, {'ok': False, 'error': repr(error)}))
+              joined += '=' * ((-len(joined)) % 4)
+              return base64.b64decode(joined, validate=True)
 
-              for mode, add_padding, validate in (
-                  ('independent-strict', False, True),
-                  ('independent-padded', True, False),
-              ):
-                  try:
-                      decoded = [
-                          base64.b64decode(padded(text) if add_padding else text, validate=validate)
-                          for text in texts
-                      ]
-                      payload = b''.join(decoded)
-                      attempts.append((mode, {'ok': True, 'bytes': len(payload), 'partBytes': [len(item) for item in decoded]}))
-                      debug[f'{directory}-attempts'] = attempts
-                      return payload, mode, [path.name for path in parts]
-                  except Exception as error:
-                      attempts.append((mode, {'ok': False, 'error': repr(error)}))
+          def recover_gzip_payload(parts: list[Path], texts: list[str]) -> tuple[bytes, bytes, dict[str, object]]:
+              initial_error = None
+              try:
+                  transport = decode_joined(texts)
+                  return transport, gzip.decompress(transport), {'mode': 'exact'}
+              except Exception as error:
+                  initial_error = repr(error)
 
-              debug[f'{directory}-attempts'] = attempts
-              raise RuntimeError(f'All base64 transport modes failed for {directory}')
+              candidates = [index for index, text in enumerate(texts) if len(text) % 4 == 1]
+              if not candidates:
+                  candidates = list(range(len(texts)))
+
+              tested = 0
+              for part_index in candidates:
+                  text = texts[part_index]
+                  for char_index in range(len(text)):
+                      candidate_texts = texts.copy()
+                      candidate_texts[part_index] = text[:char_index] + text[char_index + 1:]
+                      if sum(map(len, candidate_texts)) % 4:
+                          continue
+                      tested += 1
+                      try:
+                          transport = decode_joined(candidate_texts)
+                          payload = gzip.decompress(transport)
+                      except Exception:
+                          continue
+                      return transport, payload, {
+                          'mode': 'removed-one-extra-base64-character',
+                          'part': parts[part_index].name,
+                          'index': char_index,
+                          'character': text[char_index],
+                          'testedCandidates': tested,
+                          'initialError': initial_error,
+                      }
+
+              raise RuntimeError(
+                  f'Builder transport was not recoverable after {tested} single-character candidates; '
+                  f'initial error={initial_error}'
+              )
+
+          def decode_audio(parts: list[Path], texts: list[str]) -> tuple[bytes, dict[str, object]]:
+              attempts: list[dict[str, object]] = []
+              try:
+                  payload = decode_joined(texts)
+                  attempts.append({'mode': 'continuous', 'ok': True, 'bytes': len(payload)})
+                  return payload, {'mode': 'continuous', 'attempts': attempts}
+              except Exception as error:
+                  attempts.append({'mode': 'continuous', 'ok': False, 'error': repr(error)})
+
+              decoded: list[bytes] = []
+              try:
+                  for text in texts:
+                      padded = text + ('=' * ((-len(text)) % 4))
+                      decoded.append(base64.b64decode(padded, validate=True))
+                  payload = b''.join(decoded)
+                  attempts.append({
+                      'mode': 'independent-padded',
+                      'ok': True,
+                      'bytes': len(payload),
+                      'partBytes': [len(item) for item in decoded],
+                  })
+                  return payload, {'mode': 'independent-padded', 'attempts': attempts}
+              except Exception as error:
+                  attempts.append({'mode': 'independent-padded', 'ok': False, 'error': repr(error)})
+                  raise RuntimeError(f'Audio transport decode failed: {attempts}') from error
 
           failure: str | None = None
           try:
-              builder_transport, builder_mode, builder_parts = decode_parts(
-                  Path('.github/v8-godfather/builder-parts')
-              )
+              builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
+              builder_transport, builder_payload, recovery = recover_gzip_payload(builder_parts, builder_texts)
+              builder = output / 'v8_godfather_builder.py'
+              builder.write_bytes(builder_payload)
               debug['builderTransport'] = {
-                  'mode': builder_mode,
-                  'parts': builder_parts,
                   'bytes': len(builder_transport),
                   'head': builder_transport[:16].hex(),
                   'tail': builder_transport[-16:].hex(),
                   'sha256': hashlib.sha256(builder_transport).hexdigest(),
+                  'recovery': recovery,
               }
-              builder_payload = gzip.decompress(builder_transport)
-              builder = output / 'v8_godfather_builder.py'
-              builder.write_bytes(builder_payload)
               debug['builder'] = {
                   'bytes': len(builder_payload),
                   'sha256': hashlib.sha256(builder_payload).hexdigest(),
               }
 
-              audio_payload, audio_mode, audio_parts = decode_parts(
-                  Path('.github/v8-godfather/audio-parts')
-              )
+              audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
+              audio_payload, audio_decode = decode_audio(audio_parts, audio_texts)
               audio = output / 'godfather-flash-payout.mp3'
               audio.write_bytes(audio_payload)
               debug['audio'] = {
-                  'mode': audio_mode,
-                  'parts': audio_parts,
+                  'parts': [path.name for path in audio_parts],
                   'bytes': len(audio_payload),
                   'sha256': hashlib.sha256(audio_payload).hexdigest(),
                   'head': audio_payload[:16].hex(),
                   'tail': audio_payload[-16:].hex(),
+                  'decode': audio_decode,
               }
 
               if len(audio_payload) < 32_000:

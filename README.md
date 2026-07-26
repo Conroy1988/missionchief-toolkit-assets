@@ -13,8 +13,8 @@
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
-## **Current verified release: `v8.0.1` · Development candidate: `v8.0.2`**
-### **Godfather layout and payout-audio hotfix**
+## **Current verified release: `v8.0.2` · Development candidate: `v8.0.3`**
+### **Godfather duration and payout-position hotfix**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -24,17 +24,17 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v801) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v802) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
 
 ---
 
-# v8.0.2 hotfix signal
+# v8.0.3 hotfix signal
 
-> **CRITICAL GODFATHER LAYOUT AND AUDIO REPAIR // DEVELOPMENT BRANCH ONLY**
+> **CRITICAL GODFATHER DURATION AND PAYOUT-POSITION REPAIR // DEVELOPMENT BRANCH ONLY**
 
-The verified production release is **v8.0.1**. Candidate **v8.0.2** contains the decorative family seal, restores compact Tablet controls, raises the Offer payout above the command dock and replaces the payout audio byte-for-byte with the newly supplied stereo MP3. Production remains on v8.0.1 until the guarded hotfix release completes.
+The verified production release is **v8.0.2**. Candidate **v8.0.3** defaults the Godfather Offer flash to seven seconds when the normal four-second default is still active, preserves non-default user choices, and raises/compacts the payout on short-height layouts so the complete banner clears the command dock. Production remains on v8.0.2 until the guarded hotfix release completes.
 
 ---
 
@@ -72,7 +72,7 @@ MissionChief distributes operational information across the map, opened incident
 | Control channel | State | Evidence |
 |---|:---:|---|
 | **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v8.0.1` published |
+| **Production release** | 🟢 | GitHub Release `v8.0.2` published |
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned recovery commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
@@ -83,15 +83,15 @@ The [Release Control Panel](status/README.md) is machine-backed from the current
 
 ---
 
-# Current release signal — v8.0.1
+# Current release signal — v8.0.2
 
-> **CHANNEL UPDATE // GODFATHER STYLESHEET ACTIVATION**
+> **CHANNEL UPDATE // GODFATHER LAYOUT AND PAYOUT AUDIO**
 
-Version 8.0.1 restored the complete Godfather stylesheet boundary and added permanent top-level CSS-depth validation.
+Version 8.0.2 contained the decorative family seal, restored compact Tablet controls, raised the Offer payout and replaced its audio byte-for-byte with the verified stereo MP3.
 
-- The Godfather command system now activates as a complete interface.
+- The exact replacement audio remains protected by digest, byte-size, channel and bitrate contracts.
 - The v7 native MissionChief boundary and every retained operational system remain in force.
-- Candidate v8.0.2 addresses the remaining Tablet layout, payout placement and replacement-audio defects.
+- Candidate v8.0.3 adds the seven-second Godfather default and short-height dock-clearance repair.
 
 ---
 
@@ -273,13 +273,13 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 | Field | Verified value |
 |---|---|
-| **Version** | `8.0.0` |
-| **Release focus** | The Godfather complete interface system |
+| **Version** | `8.0.2` |
+| **Release focus** | Godfather layout and payout-audio hotfix |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b` |
-| **GitHub Release** | [`v8.0.0`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.0) |
+| **Validated SHA-256** | `5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474` |
+| **GitHub Release** | [`v8.0.2`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.2) |
 | **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `cd0b94a59bdccb248dc7bdfe461f3e7419cc18bf` |
+| **Private backup** | `071c56229fc9a680f9ccbf5cddb5f57b83935958` |
 | **Discord release delivery** | Posted |
 | **Hosted media audit** | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
 

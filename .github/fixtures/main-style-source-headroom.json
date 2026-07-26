@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 539,
-    "version": "8.0.2",
-    "sourceBytes": 1603031,
-    "sourceLines": 24164,
-    "sourceSha256": "5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474",
-    "templateBytes": 682308,
-    "templateLines": 7833,
-    "templateSha256": "a3681e77153ad29050058f5ed2c691dfa88892d66d38074f26c2129601956a6b",
-    "canonicalCssSha256": "f16e1ce9b8f6e1a3fd095833205fd5ba48650508e2b67d6ff87f68deec26cf5b",
+    "issue": 541,
+    "version": "8.0.3",
+    "sourceBytes": 1604731,
+    "sourceLines": 24195,
+    "sourceSha256": "773d6686fdcfe0af5901f54bdd58c58cf0ef8503bddaae354f32ed25879ac19b",
+    "templateBytes": 683558,
+    "templateLines": 7858,
+    "templateSha256": "cddf2bf9536cc8ca186415693ea7399c2734e60fcbe48890d20afec3dd06a898",
+    "canonicalCssSha256": "313b4564e5d7225ac222c86e6886345a3c866940d53dff624f400e7b961e3c68",
     "maxSourceBytes": 1650000,
     "maxSourceLines": 24500,
     "minTemplateBytes": 500000,
     "baseline": "v7Candidate",
     "approvedGrowth": {
-      "sourceBytes": 38134,
-      "sourceLines": 581,
-      "templateBytes": 35465,
-      "templateLines": 553
+      "sourceBytes": 39834,
+      "sourceLines": 612,
+      "templateBytes": 36715,
+      "templateLines": 578
     },
-    "scope": "Issue #539 Godfather Tablet control geometry, unobstructed payout placement and exact replacement audio"
+    "scope": "Issue #541 Godfather seven-second default and dock-safe payout placement"
   }
 }

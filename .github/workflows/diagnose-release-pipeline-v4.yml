@@ -1,0 +1,70 @@
+name: Diagnose Release Pipeline v4
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-release-pipeline-v4.yml"
+      - ".github/development-packages/issue543_release_pipeline_v4.py"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.head_ref == 'feature/release-pipeline-v4-fast-lane'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Apply package and retain validation output
+        shell: bash
+        run: |
+          set +e
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/development-packages/issue543_release_pipeline_v4.py')
+          text = path.read_text(encoding='utf-8')
+          fixes = (
+              ('path.write_text(json.dumps(data,indent=2)+"\\n",encoding="utf-8")',
+               'path.write_text(json.dumps(data,indent=2)+"\\\\n",encoding="utf-8")'),
+              ('(root/"status/RELEASE_SPEED.md").write_text("\\n".join(lines),encoding="utf-8")',
+               '(root/"status/RELEASE_SPEED.md").write_text("\\\\n".join(lines),encoding="utf-8")'),
+          )
+          for old, new in fixes:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected embedded escape token count: {old!r} -> {text.count(old)}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          python3 .github/development-packages/issue543_release_pipeline_v4.py > pipeline-v4-diagnostics.log 2>&1
+          package_status=$?
+          if [[ "$package_status" -eq 0 ]]; then
+            {
+              python3 .github/scripts/test_release_pipeline_v4.py
+              python3 .github/scripts/validate_userscript.py
+              node --check src/MissionChief_Map_Command_Toolkit.user.js
+              cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+            } >> pipeline-v4-diagnostics.log 2>&1
+            validation_status=$?
+          else
+            validation_status=$package_status
+          fi
+          cat pipeline-v4-diagnostics.log
+          echo "$validation_status" > pipeline-v4-exit-code.txt
+          exit 0
+
+      - name: Upload exact diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-pipeline-v4-full-diagnostics-${{ github.sha }}
+          path: |
+            pipeline-v4-diagnostics.log
+            pipeline-v4-exit-code.txt
+          if-no-files-found: error
+          retention-days: 14

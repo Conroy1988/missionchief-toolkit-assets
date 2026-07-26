@@ -36,21 +36,16 @@ jobs:
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
       - name: Validate complete hotfix candidate
-        id: validate
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
           {
             python3 .github/scripts/test_issue536_alliance_building_visibility.py
             python3 .github/scripts/validate_userscript.py
             node --check src/MissionChief_Map_Command_Toolkit.user.js
             cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
             bash .github/scripts/run_userscript_preflight.sh
-          } > issue536-validation.log 2>&1
-          status=$?
-          cat issue536-validation.log
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
+          } 2>&1 | tee issue536-validation.log
 
       - name: Upload exact validation diagnostics
         if: always()
@@ -60,10 +55,6 @@ jobs:
           path: issue536-validation.log
           if-no-files-found: error
           retention-days: 7
-
-      - name: Stop on candidate validation failure
-        if: steps.validate.outputs.exit_code != '0'
-        run: exit 1
 
       - name: Restore permanent workflow and security policy
         run: |

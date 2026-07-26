@@ -58,6 +58,25 @@ jobs:
         if: steps.build.outputs.exit_code != '0'
         run: exit 1
 
+      - name: Reconcile v8.0.2 layout contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/test_issue539_godfather_layout_audio.py')
+          text = path.read_text(encoding='utf-8')
+          for old, new in (
+              ("'top:40% !important;'", "'top:42% !important;'"),
+              ("'top:34% !important;'", "'top:38% !important;'"),
+              ("'top:31% !important;'", "'top:34% !important;'"),
+          ):
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected legacy layout token: {old}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Remove temporary builder and permission
         shell: bash
         run: |

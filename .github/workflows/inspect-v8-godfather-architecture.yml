@@ -1,17 +1,17 @@
-name: Inspect v8 Godfather Architecture
+name: Materialise v8 Godfather Development Inputs
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - ".github/v8-godfather/inspect_architecture.py"
+      - ".github/v8-godfather/**"
       - ".github/workflows/inspect-v8-godfather-architecture.yml"
 
 permissions:
   contents: read
 
 jobs:
-  inspect:
+  materialise:
     if: github.actor == 'Conroy1988' && github.head_ref == 'feat/v8-godfather-an-offer-he-cant-refuse'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -25,6 +25,64 @@ jobs:
 
       - name: Extract theme and payout architecture
         run: python3 .github/v8-godfather/inspect_architecture.py
+
+      - name: Materialise staged builder and supplied payout audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p v8-materialised
+
+          cat .github/v8-godfather/builder-parts/part-*.b64 \
+            | base64 --decode \
+            | gzip --decompress \
+            > v8-materialised/v8_godfather_builder.py
+          python3 -m py_compile v8-materialised/v8_godfather_builder.py
+
+          cat .github/v8-godfather/audio-parts/part-*.b64 \
+            | base64 --decode \
+            > v8-materialised/godfather-flash-payout.mp3
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from pathlib import Path
+
+          root = Path('v8-materialised')
+          builder = root / 'v8_godfather_builder.py'
+          audio = root / 'godfather-flash-payout.mp3'
+          payload = audio.read_bytes()
+          if len(payload) < 32_000:
+              raise SystemExit(f'Godfather payout audio is unexpectedly small: {len(payload)} bytes')
+          if not (payload.startswith(b'ID3') or payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
+              raise SystemExit('Godfather payout audio does not have an MP3 signature')
+          report = {
+              'builderBytes': builder.stat().st_size,
+              'builderSha256': hashlib.sha256(builder.read_bytes()).hexdigest(),
+              'audioBytes': len(payload),
+              'audioSha256': hashlib.sha256(payload).hexdigest(),
+              'audioSignature': payload[:10].hex(),
+              'sourceCommit': '${{ github.sha }}',
+          }
+          (root / 'materialisation-report.json').write_text(
+              json.dumps(report, indent=2) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(report, indent=2))
+          PY
+
+          if command -v ffprobe >/dev/null 2>&1; then
+            ffprobe -v error \
+              -show_entries format=duration,size,bit_rate:stream=codec_name,channels,sample_rate \
+              -of json \
+              v8-materialised/godfather-flash-payout.mp3 \
+              > v8-materialised/audio-probe.json
+          else
+            printf '{"warning":"ffprobe unavailable"}\n' > v8-materialised/audio-probe.json
+          fi
+
+          python3 v8-materialised/v8_godfather_builder.py --help \
+            > v8-materialised/builder-help.txt 2>&1 || true
 
       - name: Stage exact development inputs
         shell: bash
@@ -40,12 +98,13 @@ jobs:
           cp .github/fixtures/main-style-source-headroom.json v8-inputs/.github/fixtures/
           cp -R themes/* v8-inputs/themes/
 
-      - name: Upload architecture report and exact inputs
+      - name: Upload architecture, exact inputs and materialised payloads
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: v8-godfather-inputs-${{ github.sha }}
+          name: v8-godfather-materialised-${{ github.sha }}
           path: |
             v8-godfather-architecture.txt
             v8-inputs
+            v8-materialised
           if-no-files-found: error
           retention-days: 14

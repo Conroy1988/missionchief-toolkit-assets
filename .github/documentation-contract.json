@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -13,7 +13,8 @@
     "Umbrella",
     "Factorio",
     "007 Intelligence",
-    "Hyrule Command"
+    "Hyrule Command",
+    "The Godfather"
   ],
   "modes": [
     "Desktop",
@@ -65,6 +66,7 @@
     "Factorio",
     "007 Intelligence",
     "Hyrule Command",
+    "The Godfather",
     "Auto-load all vehicles",
     "Patient Transport Sweep",
     "Mission Value",
@@ -97,7 +99,8 @@
       "Resource Gap",
       "Economy Mode",
       "saved Discord webhook",
-      "seven complete interface systems"
+      "eight complete interface systems",
+      "The Godfather"
     ],
     "readmeForbiddenTokens": [
       "Operational Window Suite",
@@ -119,7 +122,8 @@
       "Resource Gap",
       "Economy Mode",
       "saved Discord webhook",
-      "seven complete interface systems"
+      "eight complete interface systems",
+      "The Godfather"
     ],
     "helpForbiddenTokens": [
       "Operational Window Suite",
@@ -141,7 +145,8 @@
       "Resource Gap",
       "Economy Mode",
       "saved Discord webhook",
-      "seven complete interface systems"
+      "eight complete interface systems",
+      "The Godfather"
     ],
     "greasyForkForbiddenTokens": [
       "Operational Window Suite",

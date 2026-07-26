@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" role="img" aria-labelledby="title desc">
+<title id="title">Offer authorised seal</title><desc id="desc">Original antique-gold settlement seal with a wax-red command star and the words offer authorised.</desc>
+<defs><radialGradient id="m" cx="35%" cy="28%" r="75%"><stop stop-color="#f2dda0"/><stop offset=".5" stop-color="#c6a052"/><stop offset="1" stop-color="#6e491c"/></radialGradient><radialGradient id="w" cx="40%" cy="30%" r="72%"><stop stop-color="#a33b49"/><stop offset=".58" stop-color="#641621"/><stop offset="1" stop-color="#2b0810"/></radialGradient></defs>
+<circle cx="140" cy="140" r="124" fill="#0c0908" stroke="url(#m)" stroke-width="8"/><circle cx="140" cy="140" r="105" fill="none" stroke="#d9bb72" stroke-opacity=".56" stroke-width="2"/>
+<path id="top" d="M50 139a90 90 0 0 1 180 0" fill="none"/><path id="bottom" d="M230 151a90 90 0 0 1-180 0" fill="none"/>
+<text fill="#e6cf92" font-family="Georgia,serif" font-size="15" font-weight="700" letter-spacing="3"><textPath href="#top" startOffset="50%" text-anchor="middle">OFFER AUTHORISED</textPath><textPath href="#bottom" startOffset="50%" text-anchor="middle">FAMILY ACCOUNT SETTLED</textPath></text>
+<circle cx="140" cy="140" r="60" fill="url(#w)" stroke="#d7b767" stroke-width="5"/>
+<path fill="url(#m)" d="M140 90l11 31 33 1-26 20 10 32-28-18-28 18 10-32-26-20 33-1z"/>
+<circle cx="140" cy="140" r="10" fill="#4b101a" stroke="#f0dc9c" stroke-width="3"/>
+</svg>

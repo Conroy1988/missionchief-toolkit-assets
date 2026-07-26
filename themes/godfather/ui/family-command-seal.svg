@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">Family Command seal</title><desc id="desc">Original antique-gold command seal with a tailored cuff, guiding hand and marionette strings.</desc>
+<defs><radialGradient id="g" cx="38%" cy="28%" r="75%"><stop stop-color="#f1d58a"/><stop offset=".55" stop-color="#c39a47"/><stop offset="1" stop-color="#76501f"/></radialGradient><filter id="s"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".7"/></filter></defs>
+<g fill="none" stroke="url(#g)" stroke-linecap="round" stroke-linejoin="round" filter="url(#s)">
+<circle cx="128" cy="128" r="111" stroke-width="7"/><circle cx="128" cy="128" r="96" stroke-width="2" opacity=".72"/>
+<path d="M70 77h116M82 181h92" stroke-width="2" opacity=".55"/>
+<path d="M92 37v47m36-55v55m36-47v47" stroke-width="3"/>
+<path d="M86 84h84l-8 19-24 10-12 23-15-17-30-9z" fill="#17110d" stroke-width="5"/>
+<path d="M111 119l-5 35 17 20 13-4 11-26-9-31" fill="#27130f" stroke-width="5"/>
+<path d="M107 154l-18 18 15 12 18-10m25-30 18 22-13 14-16-10" stroke-width="5"/>
+<path d="M86 84l10-19h66l8 19" fill="#3b171a" stroke-width="5"/>
+<path d="M100 65l11 19m39-19-10 19" stroke-width="3" opacity=".75"/>
+<path d="M98 181h60l-10 18h-40z" fill="#2b0d13" stroke-width="4"/>
+<path d="M92 84v88m36-59v61m36-90v82" stroke-width="2" opacity=".76"/>
+</g>
+<g fill="#d6b566"><circle cx="92" cy="84" r="4"/><circle cx="128" cy="84" r="4"/><circle cx="164" cy="84" r="4"/></g>
+</svg>

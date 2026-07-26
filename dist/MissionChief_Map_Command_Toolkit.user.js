@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      7.1.6
+// @version      8.0.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '7.1.6',
+        version: '8.0.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -905,7 +905,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         hyruleSwordShield: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/master-sword-shield-silhouette.svg',
         hyruleMap: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/ui/parchment-command-map.svg',
         hyruleQuestSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/quest-complete-seal.svg',
-        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg'
+        hyruleRupeeBurst: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/payout/rupee-burst.svg',
+        godfatherFamilySeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/ui/family-command-seal.svg',
+        godfatherWaxSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/ui/wax-seal.svg',
+        godfatherRose: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/ui/velvet-rose.svg',
+        godfatherPinstripe: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/ui/pinstripe-panel.svg',
+        godfatherWood: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/ui/polished-wood.svg',
+        godfatherPayoutSeal: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/payout/offer-authorised-seal.svg'
     });
 
     const UI_THEMES = Object.freeze({
@@ -915,9 +921,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         umbrella: Object.freeze({ label: 'Umbrella Containment', short: 'BSL-4', icon: '☣', description: 'Corporate BSL-4 containment interface with original transparent artwork, classified facility schematics, surveillance graphics and protected operational states.' }),
         factorio: Object.freeze({ label: 'Factorio', short: 'AUTOMATION', icon: '⚙', description: 'Industrial automation interface with riveted steel panels, copper controls, hazard markings and factory-line motion.' }),
         bond007: Object.freeze({ label: '007 Intelligence', short: 'MI6', icon: '◉', description: 'Complete Section 00 intelligence interface with original transparent MI6 artwork, gun-barrel targeting graphics, classified dossiers, champagne-gold controls and protected operational states.' }),
-        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '△', description: 'Fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' })
+        hyrule: Object.freeze({ label: 'Hyrule Command', short: 'TRIFORCE', icon: '△', description: 'Fantasy command interface with parchment cartography, royal gold, ancient blue technology, green energy glyphs and transparent Hyrule-inspired artwork.' }),
+        godfather: Object.freeze({ label: 'The Godfather', short: 'FAMILY', icon: '✦', description: 'Cinematic old-money command interface with original marionette, wax-seal, rose, pinstripe, leather, brass and polished-wood treatments.' })
     });
-    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule']);
+    const UI_THEME_ORDER = Object.freeze(['mapCommand', 'cyberpunk', 'fallout4', 'umbrella', 'factorio', 'bond007', 'hyrule', 'godfather']);
 
     const THEMES = {
         default: { full: 'Default', label: 'Default', short: 'STD', icon: '□' },
@@ -948,10 +955,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         underworld: { label: 'Underworld Inspired', kicker: 'REWARD CLAIMED', titleCase: true, particleMode: 'embers' },
         pixelArcade: { label: 'Pixel Arcade Inspired', kicker: 'SCORE BONUS AWARDED', titleCase: false, particleMode: 'pixels' },
         jamesBond: { label: '007 Intelligence', kicker: 'MI6 FUNDS TRANSFER AUTHORISED', titleCase: false, particleMode: 'none' },
-        hyruleQuest: { label: 'Hyrule Quest Reward', kicker: 'RUPEE REWARD ACQUIRED', titleCase: false, particleMode: 'rupees' }
+        hyruleQuest: { label: 'Hyrule Quest Reward', kicker: 'RUPEE REWARD ACQUIRED', titleCase: false, particleMode: 'rupees' },
+        godfatherOffer: { label: 'The Godfather Offer', kicker: 'FAMILY ACCOUNT SETTLED', titleCase: true, particleMode: 'embers' }
     };
 
-    const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'hyruleQuest', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];
+    const PAYOUT_TEMPLATE_ORDER = ['gta5', 'viceCity', 'badCompany', 'scarface', 'cyberpunk', 'hellfire', 'wasteland', 'factorio', 'jamesBond', 'hyruleQuest', 'godfatherOffer', 'galactic', 'darkFantasy', 'biohazard', 'underworld', 'pixelArcade'];
 
     // Hosted real-audio cues remain lazy-loaded through direct raw GitHub URLs.
     // Hosted payout cues are mapped by template and lazy-loaded only when played.
@@ -991,6 +999,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         hyruleQuest: Object.freeze({
         label: 'Hyrule Quest Reward',
         url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/hyrule/audio/hyrule-quest-reward.mp3'
+        }),
+        godfatherOffer: Object.freeze({
+        label: 'The Godfather Flash Payout',
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3'
         })
     });
 
@@ -1478,15 +1490,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     function applyUiTheme(key, announce = false) {
         const nextTheme = normaliseUiTheme(key);
         const changed = state.uiTheme !== nextTheme;
-        const pairedHyrulePayout = nextTheme === 'hyrule' && state.payoutFlash.template !== 'hyruleQuest';
+        const pairedPayoutByTheme = Object.freeze({ hyrule: 'hyruleQuest', godfather: 'godfatherOffer' });
+        const pairedTemplate = pairedPayoutByTheme[nextTheme] || '';
+        const pairedPayoutChanged = Boolean(pairedTemplate && state.payoutFlash.template !== pairedTemplate);
         state.uiTheme = nextTheme;
-        if (pairedHyrulePayout) state.payoutFlash.template = 'hyruleQuest';
+        if (pairedPayoutChanged) state.payoutFlash.template = pairedTemplate;
         saveState();
         updateUI();
         if (announce && changed) {
-        showToast(pairedHyrulePayout
-            ? 'Hyrule Command interface and Quest Reward payout active'
-            : `${UI_THEMES[nextTheme].label} interface active`);
+        const pairedMessages = {
+            hyrule: 'Hyrule Command interface and Quest Reward payout active',
+            godfather: 'The Godfather interface and Offer payout active'
+        };
+        showToast(pairedPayoutChanged ? pairedMessages[nextTheme] : `${UI_THEMES[nextTheme].label} interface active`);
         }
     }
 
@@ -1551,6 +1567,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         },
         hyruleQuest: {
             standard: 'QUEST COMPLETE', major: "HERO'S REWARD", high: 'TREASURE OF HYRULE', elite: 'LEGENDARY RELIC CLAIMED'
+        },
+        godfatherOffer: {
+            standard: 'The Account Is Settled', major: 'A Respectable Arrangement', high: 'The Family Is Rewarded', elite: 'An Offer No One Refused'
         }
         };
         return themedTitles[template]?.[tier] || presentation?.title || '';
@@ -8984,6 +9003,494 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-particles {
             animation:none !important;
             display:none !important;
+        /* v8.0.0 — The Godfather: complete original old-money command interface. */
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather {
+            position:relative !important;
+            overflow:hidden !important;
+            border-color:#c7a45b !important;
+            border-radius:6px !important;
+            background:
+                url("${THEME_ASSETS.godfatherFamilySeal}") 50% 47%/28px 28px no-repeat,
+                linear-gradient(155deg,#0a0908 0 38%,#351019 39% 67%,#55361d 68% 100%) !important;
+            box-shadow:inset 0 0 0 1px rgba(255,238,188,.22),inset 0 -9px 14px rgba(0,0,0,.55),0 0 12px rgba(188,143,59,.24) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather::before {
+            content:'✦' !important;
+            position:absolute !important;
+            left:5px !important;
+            top:4px !important;
+            color:#e6c980 !important;
+            font:900 11px/1 Georgia,serif !important;
+            text-shadow:0 0 6px rgba(219,175,77,.55) !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather::after {
+            content:'FAMILY' !important;
+            position:absolute !important;
+            right:4px !important;
+            bottom:3px !important;
+            color:#f3e4be !important;
+            font:900 4.5px/1 Georgia,serif !important;
+            letter-spacing:.5px !important;
+        }
+        #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather span { opacity:0 !important; }
+        html[data-mcms-ui-theme="godfather"] {
+            --mcms-gf-black:#080706;
+            --mcms-gf-charcoal:#171412;
+            --mcms-gf-tobacco:#4b2f1b;
+            --mcms-gf-wood:#6a4527;
+            --mcms-gf-oxblood:#641722;
+            --mcms-gf-oxblood-dark:#2c0910;
+            --mcms-gf-cream:#f0e2bd;
+            --mcms-gf-paper:#d7c79e;
+            --mcms-gf-gold:#c9a354;
+            --mcms-gf-gold-bright:#efd58d;
+            --mcms-gf-brass:#9c742f;
+            --mcms-gf-green:#6fc28a;
+            --mcms-gf-red:#e36a70;
+            --mcms-gf-amber:#e1ad56;
+            --mcms-gf-shadow:rgba(0,0,0,.78);
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId},
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId},
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId},
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.majorIncidentFeedId},
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.helpCenterId},
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.transportSweepHudId} {
+            font-family:Georgia,"Times New Roman",serif !important;
+            color:var(--mcms-gf-cream) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} { filter:drop-shadow(0 12px 18px rgba(0,0,0,.52)) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell {
+            position:relative !important;
+            overflow:visible !important;
+            border:1px solid rgba(212,175,91,.80) !important;
+            border-radius:11px !important;
+            background:
+                linear-gradient(180deg,rgba(255,235,176,.07),transparent 30%),
+                repeating-linear-gradient(102deg,rgba(255,255,255,.018) 0 1px,transparent 1px 7px),
+                linear-gradient(145deg,rgba(30,24,19,.98),rgba(8,7,6,.99) 67%,rgba(51,19,23,.98)) !important;
+            box-shadow:inset 0 0 0 2px rgba(77,46,23,.78),inset 0 1px rgba(255,239,187,.18),0 11px 28px rgba(0,0,0,.54),0 0 16px rgba(180,130,47,.10) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell::before {
+            content:'' !important;
+            position:absolute !important;
+            width:44px !important;
+            height:44px !important;
+            left:-14px !important;
+            top:-16px !important;
+            background:url("${THEME_ASSETS.godfatherFamilySeal}") center/contain no-repeat !important;
+            filter:drop-shadow(0 4px 6px rgba(0,0,0,.72)) !important;
+            pointer-events:none !important;
+            z-index:5 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-menu-btn {
+            border-color:rgba(229,199,127,.90) !important;
+            background:
+                url("${THEME_ASSETS.godfatherWaxSeal}") center/62% 62% no-repeat,
+                radial-gradient(circle at 50% 38%,rgba(149,28,43,.30),transparent 62%),
+                linear-gradient(150deg,#3c1119,#0a0808 72%) !important;
+            color:#f4e4b8 !important;
+            box-shadow:inset 0 0 0 2px rgba(78,42,23,.88),0 0 13px rgba(145,27,40,.28) !important;
+            text-shadow:0 2px 2px #000 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-menu-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-menu-btn:focus-visible {
+            border-color:#f4d887 !important;
+            box-shadow:inset 0 0 0 2px rgba(114,72,33,.92),0 0 19px rgba(202,157,67,.34),0 0 10px rgba(133,20,36,.46) !important;
+            transform:translateY(-1px) scale(1.02) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-dock-toggle-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-screen-pin-btn {
+            border:1px solid rgba(190,147,66,.66) !important;
+            border-radius:7px !important;
+            background:
+                linear-gradient(180deg,rgba(245,220,158,.07),transparent 34%),
+                repeating-linear-gradient(90deg,transparent 0 8px,rgba(255,255,255,.018) 8px 9px),
+                linear-gradient(145deg,rgba(38,30,23,.98),rgba(10,8,7,.99)) !important;
+            color:#e9dbb7 !important;
+            box-shadow:inset 0 0 0 1px rgba(70,42,22,.72),0 4px 10px rgba(0,0,0,.32) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-screen-pin-btn:hover {
+            border-color:#d9b563 !important;
+            color:#fff0c8 !important;
+            background:linear-gradient(145deg,rgba(79,45,24,.98),rgba(21,13,10,.99)) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-key {
+            border-color:rgba(206,166,81,.48) !important;
+            background:rgba(24,15,10,.78) !important;
+            color:#e9cc82 !important;
+            box-shadow:0 0 7px rgba(191,143,53,.18) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-btn.mcms-on,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-screen-pin-btn.mcms-on {
+            border-color:#e7c875 !important;
+            background:linear-gradient(135deg,rgba(118,24,39,.64),rgba(50,11,18,.72)),linear-gradient(145deg,#3b2416,#0c0908) !important;
+            color:#fff1c4 !important;
+            box-shadow:inset 0 0 0 1px rgba(245,218,144,.22),0 0 14px rgba(139,23,39,.35) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} {
+            position:fixed !important;
+            overflow-x:hidden !important;
+            border:1px solid rgba(216,178,88,.88) !important;
+            border-radius:13px !important;
+            background:
+                linear-gradient(rgba(11,9,8,.93),rgba(12,9,8,.96)),
+                url("${THEME_ASSETS.godfatherPinstripe}") center/260px 260px repeat,
+                url("${THEME_ASSETS.godfatherWood}") center/cover no-repeat,
+                linear-gradient(145deg,#2d2118,#070606 67%,#351019) !important;
+            box-shadow:inset 0 0 0 3px rgba(82,48,23,.82),inset 0 0 58px rgba(0,0,0,.46),0 20px 54px rgba(0,0,0,.66),0 0 25px rgba(174,129,42,.10) !important;
+            backdrop-filter:blur(12px) saturate(108%) !important;
+            -webkit-backdrop-filter:blur(12px) saturate(108%) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::before {
+            content:'' !important;
+            position:absolute !important;
+            right:-35px !important;
+            top:74px !important;
+            width:205px !important;
+            height:205px !important;
+            background:url("${THEME_ASSETS.godfatherRose}") center/contain no-repeat !important;
+            opacity:.13 !important;
+            filter:drop-shadow(0 12px 18px rgba(0,0,0,.75)) !important;
+            pointer-events:none !important;
+            z-index:0 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::after {
+            content:'' !important;
+            position:absolute !important;
+            left:-64px !important;
+            bottom:30px !important;
+            width:210px !important;
+            height:210px !important;
+            background:url("${THEME_ASSETS.godfatherFamilySeal}") center/contain no-repeat !important;
+            opacity:.09 !important;
+            pointer-events:none !important;
+            z-index:0 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} > * { position:relative !important; z-index:1 !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::-webkit-scrollbar { width:8px !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::-webkit-scrollbar-track { background:rgba(8,6,5,.82) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::-webkit-scrollbar-thumb { border:2px solid #24150d !important; border-radius:8px !important; background:linear-gradient(#d4b15f,#75501f) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-header,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-head {
+            border-bottom:1px solid rgba(211,168,77,.66) !important;
+            background:
+                url("${THEME_ASSETS.godfatherFamilySeal}") 12px center/43px 38px no-repeat,
+                linear-gradient(90deg,rgba(82,48,24,.96),rgba(55,15,23,.93) 33%,rgba(11,9,8,.94) 72%,rgba(80,47,23,.92)) !important;
+            box-shadow:inset 0 -1px rgba(255,230,159,.12),0 6px 18px rgba(0,0,0,.28) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-header { padding-left:56px !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-title,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-title {
+            color:#f2d889 !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+            font-weight:900 !important;
+            letter-spacing:.7px !important;
+            text-shadow:0 2px 2px #000,0 0 12px rgba(201,157,68,.22) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-subtitle { color:rgba(232,217,181,.68) !important; font-style:italic !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-tabs {
+            border-bottom:1px solid rgba(205,158,70,.40) !important;
+            background:linear-gradient(180deg,rgba(55,34,21,.76),rgba(13,9,8,.86)) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-tab-btn {
+            border-color:transparent !important;
+            color:rgba(235,219,180,.66) !important;
+            background:transparent !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+            letter-spacing:.18px !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-tab-btn:hover { color:#f6df9e !important; background:rgba(107,31,43,.16) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-tab-btn.mcms-active {
+            color:#ffe9a8 !important;
+            background:linear-gradient(180deg,rgba(115,29,44,.30),rgba(49,13,20,.38)) !important;
+            box-shadow:inset 0 -2px #cfa64e,0 2px 10px rgba(116,24,39,.18) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-section-label {
+            color:#efd787 !important;
+            border-color:rgba(205,159,70,.42) !important;
+            background:linear-gradient(90deg,rgba(101,57,27,.42),rgba(82,19,30,.26),transparent) !important;
+            text-shadow:0 1px 2px #000 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-section-label::before { color:#b74a57 !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-theme-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-toggle-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-place-main,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-position-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-small-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-bookmark-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-pin-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-ui-theme-btn,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-status,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-profile-main,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-discord-card,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-finance-card,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-sweep-card {
+            border-color:rgba(182,137,59,.45) !important;
+            border-radius:7px !important;
+            background:
+                linear-gradient(180deg,rgba(255,234,176,.035),transparent 32%),
+                repeating-linear-gradient(102deg,rgba(255,255,255,.014) 0 1px,transparent 1px 8px),
+                linear-gradient(145deg,rgba(42,31,22,.94),rgba(15,10,8,.96)) !important;
+            color:#eadab4 !important;
+            box-shadow:inset 0 1px rgba(255,239,191,.045),0 5px 12px rgba(0,0,0,.20) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-theme-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-toggle-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-place-main:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-position-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-small-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-bookmark-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-pin-btn:hover,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-ui-theme-btn:hover {
+            border-color:#cda450 !important;
+            color:#fff0c4 !important;
+            background:linear-gradient(145deg,rgba(79,45,24,.96),rgba(37,11,17,.96)) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-theme-btn.mcms-active,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-toggle-btn.mcms-on,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-position-btn.mcms-active,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-pin-btn.mcms-on,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-ui-theme-btn.mcms-active {
+            border-color:#efd27c !important;
+            background:linear-gradient(135deg,rgba(111,27,42,.74),rgba(55,13,21,.76)),linear-gradient(145deg,#4a2c18,#0d0908) !important;
+            color:#fff1c7 !important;
+            box-shadow:inset 0 0 0 1px rgba(244,220,153,.16),0 0 14px rgba(139,25,40,.26) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-iconbox,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-pill {
+            border-color:rgba(205,164,79,.48) !important;
+            background:rgba(24,14,10,.74) !important;
+            color:#e9ce87 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} input,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} select,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} textarea {
+            border-color:rgba(184,139,61,.50) !important;
+            border-radius:6px !important;
+            background:linear-gradient(180deg,rgba(15,11,9,.98),rgba(28,18,13,.98)) !important;
+            color:#f0e1bd !important;
+            box-shadow:inset 0 1px 5px rgba(0,0,0,.52) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} input:focus,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} select:focus,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} textarea:focus { border-color:#e2bd67 !important; outline:1px solid rgba(202,162,77,.42) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} select option { background:#17110d !important; color:#f0e1bd !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-close,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-reset-panel {
+            border-color:rgba(201,157,69,.52) !important;
+            background:linear-gradient(145deg,#2e1b12,#0b0807) !important;
+            color:#e9d49b !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-close:hover { border-color:#e77b80 !important; color:#ffd8d9 !important; background:#4b1019 !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId} {
+            border:1px solid rgba(209,168,78,.78) !important;
+            border-radius:11px !important;
+            background:linear-gradient(rgba(12,9,8,.94),rgba(8,6,5,.98)),url("${THEME_ASSETS.godfatherPinstripe}") center/240px 240px repeat !important;
+            box-shadow:inset 0 0 0 2px rgba(72,42,22,.76),0 16px 44px rgba(0,0,0,.62) !important;
+            color:#eadbb8 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId} .mcms-vehicle-status-row {
+            border-color:rgba(188,143,60,.27) !important;
+            background:linear-gradient(90deg,rgba(85,43,21,.18),rgba(77,16,27,.10),transparent) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.majorIncidentFeedId} {
+            --mcms-wire-accent:#d3ae5b;
+            --mcms-wire-border:#9f7836;
+            --mcms-wire-bg:#090706;
+            --mcms-wire-bg2:#25170f;
+            --mcms-wire-label:#4e151f;
+            --mcms-wire-text:#f2e5c5;
+            --mcms-wire-muted:#c4b58f;
+            border-color:rgba(204,158,68,.72) !important;
+            background:linear-gradient(180deg,rgba(38,22,14,.98),rgba(8,6,5,.99)) !important;
+            box-shadow:0 7px 22px rgba(0,0,0,.50),inset 0 1px rgba(255,234,176,.05) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label {
+            color:#f2dfac !important;
+            background:
+                url("${THEME_ASSETS.godfatherWaxSeal}") 8px center/24px 24px no-repeat,
+                linear-gradient(90deg,#5b1421,#2c0b11) !important;
+            text-shadow:0 1px 2px #000 !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item { background:linear-gradient(90deg,rgba(202,158,68,.09),rgba(106,25,39,.04),transparent 38%) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-finance-vault-summary span,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-discord-stat,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-sweep-stat {
+            border-color:rgba(190,144,61,.30) !important;
+            background:rgba(92,53,24,.18) !important;
+            color:#cbbd9d !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-finance-vault-summary b,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-discord-stat strong,
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-sweep-stat b { color:#f2d889 !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-sweep-head { color:#efd28a !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId} .mcms-sweep-state.mcms-running { background:rgba(102,25,39,.66) !important; color:#fff0c7 !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.transportSweepHudId} {
+            border:1px solid rgba(210,168,77,.78) !important;
+            border-radius:10px !important;
+            background:
+                url("${THEME_ASSETS.godfatherWaxSeal}") right 12px top 11px/42px 42px no-repeat,
+                linear-gradient(145deg,rgba(44,27,18,.97),rgba(9,7,6,.98) 66%,rgba(61,15,24,.97)) !important;
+            color:#eadbb6 !important;
+            box-shadow:inset 0 0 0 2px rgba(75,44,22,.72),0 12px 32px rgba(0,0,0,.56) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.transportSweepHudId} .mcms-sweep-hud-head { color:#f1d78b !important; border-color:rgba(197,150,62,.38) !important; }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.helpCenterId} .mcms-help-window {
+            border-color:rgba(211,168,77,.78) !important;
+            background:linear-gradient(rgba(13,9,8,.96),rgba(7,5,5,.98)),url("${THEME_ASSETS.godfatherPinstripe}") center/240px 240px repeat !important;
+            box-shadow:inset 0 0 0 3px rgba(73,42,22,.74),0 22px 60px rgba(0,0,0,.70) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.helpCenterId} .mcms-help-toolbar {
+            border-color:rgba(201,156,66,.48) !important;
+            background:linear-gradient(90deg,#5b1421,#2c1710 55%,#0a0807) !important;
+        }
+        html[data-mcms-ui-theme="godfather"] .mcms-alliance-credit-badge,
+        html[data-mcms-ui-theme="godfather"] .mcms-mission-age-badge,
+        html[data-mcms-ui-theme="godfather"] .mcms-mission-spawn-label {
+            border-color:rgba(211,169,78,.72) !important;
+            border-radius:6px !important;
+            background:linear-gradient(145deg,rgba(50,30,19,.96),rgba(10,7,6,.98)) !important;
+            color:#f1dfad !important;
+            box-shadow:0 4px 13px rgba(0,0,0,.48),inset 0 0 0 1px rgba(109,28,42,.34) !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+        }
+        html[data-mcms-ui-theme="godfather"] .mcms-transport-watcher-badge {
+            border-color:rgba(208,164,74,.74) !important;
+            background:linear-gradient(145deg,rgba(74,22,32,.95),rgba(13,8,8,.98)) !important;
+            color:#f3dfae !important;
+            box-shadow:0 3px 10px rgba(0,0,0,.45) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-cinematic {
+            background:
+                radial-gradient(circle at 50% 42%,transparent 0 13%,rgba(36,10,16,.30) 58%,rgba(2,2,2,.95) 100%),
+                linear-gradient(135deg,rgba(115,25,39,.11),transparent 42%,rgba(192,147,55,.08)) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-a {
+            background:
+                url("${THEME_ASSETS.godfatherRose}") left 7% bottom 9%/190px 190px no-repeat,
+                url("${THEME_ASSETS.godfatherFamilySeal}") right 6% top 8%/180px 180px no-repeat !important;
+            opacity:.18 !important;
+            animation:mcmsGodfatherDrift 18s ease-in-out infinite alternate !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-b {
+            background:
+                repeating-linear-gradient(90deg,transparent 0 76px,rgba(220,178,78,.035) 76px 77px),
+                repeating-linear-gradient(0deg,transparent 0 48px,rgba(105,24,38,.045) 48px 50px) !important;
+            mask-image:linear-gradient(90deg,#000 0 16%,transparent 34% 66%,#000 84%) !important;
+            -webkit-mask-image:linear-gradient(90deg,#000 0 16%,transparent 34% 66%,#000 84%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-c {
+            background:radial-gradient(circle at 50% 50%,transparent 0 20%,rgba(211,169,72,.055) 20.5% 21%,transparent 21.5% 34%,rgba(117,26,40,.06) 34.5% 35%,transparent 35.5%) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+            width:min(760px,calc(100% - 28px)) !important;
+            min-height:250px !important;
+            padding:34px 46px 29px !important;
+            border:1px solid rgba(225,190,104,.80) !important;
+            border-top:5px solid #6e1725 !important;
+            border-bottom:5px solid #cba551 !important;
+            border-radius:9px !important;
+            background:
+                url("${THEME_ASSETS.godfatherPayoutSeal}") right 26px bottom 23px/126px 126px no-repeat,
+                url("${THEME_ASSETS.godfatherPinstripe}") center/250px 250px repeat,
+                radial-gradient(circle at 50% 120%,rgba(112,22,35,.28),transparent 44%),
+                linear-gradient(106deg,rgba(6,5,5,.99),rgba(37,17,13,.98) 49%,rgba(7,5,5,.99)) !important;
+            box-shadow:0 34px 84px rgba(0,0,0,.86),0 0 42px rgba(151,28,43,.22),inset 0 0 42px rgba(211,168,60,.07) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner::before {
+            content:'AN OFFER WAS ACCEPTED' !important;
+            position:absolute !important;
+            left:46px !important;
+            top:17px !important;
+            color:rgba(226,198,126,.62) !important;
+            font:900 8px/1 Georgia,"Times New Roman",serif !important;
+            letter-spacing:2px !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner::after {
+            content:'' !important;
+            position:absolute !important;
+            left:38px !important;
+            right:38px !important;
+            top:31px !important;
+            height:1px !important;
+            background:linear-gradient(90deg,#7c1b29,#d5b465,transparent) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-tier {
+            border-color:#b98c3b !important;
+            border-radius:3px !important;
+            background:rgba(25,10,9,.78) !important;
+            color:#e4c16c !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+            letter-spacing:1.6px !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-title {
+            margin-top:8px !important;
+            color:#f3e7cb !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+            font-size:clamp(34px,5vw,61px) !important;
+            font-weight:900 !important;
+            letter-spacing:.5px !important;
+            text-transform:none !important;
+            text-shadow:2px 2px 0 #160609,0 0 16px rgba(211,169,69,.32),4px 4px 0 rgba(94,17,29,.52) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-divider {
+            height:4px !important;
+            background:linear-gradient(90deg,transparent,#711724 12%,#d8b865 46%,#f5e0a2 50%,#d8b865 54%,#711724 88%,transparent) !important;
+            box-shadow:none !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-source { color:#cf9a55 !important; }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-kicker { color:#c9b98e !important; letter-spacing:1.2px !important; }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-amount {
+            color:#ffe8a6 !important;
+            font-family:Georgia,"Times New Roman",serif !important;
+            text-shadow:0 3px 0 #1c070b,0 0 14px rgba(217,177,72,.46),0 0 28px rgba(115,22,36,.30) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-particle {
+            border-radius:50% !important;
+            background:radial-gradient(circle at 36% 30%,#fff1bd 0 14%,#d9ad54 20% 52%,#7b4e18 74%,rgba(63,22,9,0) 76%) !important;
+            box-shadow:0 0 8px rgba(225,181,77,.62),0 0 15px rgba(114,21,35,.34) !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"][data-tier="elite"] .mcms-payout-banner {
+            border-color:#f0d58b !important;
+            box-shadow:0 34px 84px rgba(0,0,0,.86),0 0 45px rgba(222,181,78,.30),0 0 28px rgba(128,22,38,.26),inset 0 0 48px rgba(211,168,60,.09) !important;
+        }
+        @keyframes mcmsGodfatherDrift { from { transform:translate3d(-8px,5px,0) scale(.98); } to { transform:translate3d(8px,-5px,0) scale(1.02); } }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::before { width:250px !important; height:250px !important; right:-60px !important; opacity:.10 !important; }
+        html[data-mcms-mobile-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::before { width:160px !important; height:160px !important; right:-45px !important; top:92px !important; opacity:.09 !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+            width:min(94%,620px) !important;
+            min-height:220px !important;
+            padding:39px 24px 28px !important;
+            background:
+                url("${THEME_ASSETS.godfatherPayoutSeal}") right 8px bottom 10px/88px 88px no-repeat,
+                url("${THEME_ASSETS.godfatherPinstripe}") center/220px 220px repeat,
+                linear-gradient(145deg,rgba(40,24,16,.98),rgba(7,5,5,.99) 62%,rgba(69,15,25,.97)) !important;
+        }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-title { font-size:clamp(25px,8vw,45px) !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-amount { font-size:clamp(28px,9vw,51px) !important; }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner::before { left:24px !important; font-size:7px !important; letter-spacing:1.2px !important; }
+        html[data-mcms-economy="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.panelId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.vehicleStatusId},
+        html[data-mcms-economy="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.helpCenterId} .mcms-help-window {
+            backdrop-filter:none !important;
+            -webkit-backdrop-filter:none !important;
+        }
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-a,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-b,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-c,
+        html[data-mcms-economy="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-particles {
+            animation:none !important;
+            display:none !important;
+        }
+        @media (prefers-reduced-motion:reduce) {
+            html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::before,
+            html[data-mcms-ui-theme="godfather"] #${SCRIPT.panelId}::after,
+            #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-fx-a,
+            #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-theme-particles { animation:none !important; }
+        }
         }html[data-mcms-mobile-active="true"],
         html[data-mcms-tablet-active="true"] {--mcms-touch-target:44px}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tl {left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-tr {right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(5px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-bl {left:max(5px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId}.mcms-pos-br {right:max(5px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(5px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tl {left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-tr {right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;top:max(10px,env(safe-area-inset-top),var(--mcms-visual-offset-top,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-bl {left:max(10px,env(safe-area-inset-left),var(--mcms-visual-offset-left,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId}.mcms-pos-br {right:max(10px,env(safe-area-inset-right),var(--mcms-visual-gap-right,0px))!important;bottom:max(10px,env(safe-area-inset-bottom),var(--mcms-visual-gap-bottom,0px))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell {grid-column:span 2!important;width:100%!important;height:var(--mcms-mobile-filter-height,44px)!important;min-height:44px!important;flex-direction:row!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-menu-btn {min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:14px!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} {width:140px!important;max-width:140px!important;grid-template-columns:repeat(3,44px)!important}html[data-mcms-command-bar-open="false"][data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-shell {grid-column:span 2!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} {grid-template-columns:145px minmax(0,1fr)!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-launch-row {width:145px!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-shell {width:92px!important;height:48px!important;flex-direction:row!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-menu-btn {min-width:44px!important;min-height:44px!important;height:100%!important;flex:1 1 auto!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {width:44px!important;min-width:44px!important;height:100%!important;min-height:44px!important;flex:0 0 44px!important;border-top:0!important;border-left:1px solid rgba(255,255,255,.16)!important;font-size:15px!important}html[data-mcms-command-bar-open="false"][data-mcms-tablet-active="true"] #${SCRIPT.controlId} {width:145px!important;max-width:145px!important;grid-template-columns:145px!important;grid-template-areas:"menu"!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins {display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:1px 0 3px!important;pointer-events:auto!important;touch-action:pan-x!important;overscroll-behavior-x:contain!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:none!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pins::-webkit-scrollbar {display:none!important}html[data-mcms-mobile-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {flex:0 0 clamp(88px,28vw,118px)!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;scroll-snap-align:start!important}html[data-mcms-tablet-active="true"] #${SCRIPT.controlId} .mcms-screen-pin-btn {height:44px!important;min-height:44px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} {max-height:calc(var(--mcms-visual-height,100dvh) - 8px)!important;padding-bottom:max(10px,calc(8px + env(safe-area-inset-bottom)))!important;scroll-padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tabs {display:flex!important;grid-template-columns:none!important;gap:6px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:3px 2px 7px!important;touch-action:pan-x!important;scroll-snap-type:x proximity!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-tab-btn {flex:0 0 auto!important;width:auto!important;min-width:88px!important;height:44px!important;min-height:44px!important;padding:0 11px!important;font-size:10px!important;scroll-snap-align:start!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-row {grid-template-columns:repeat(4,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-bookmark-name {grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-row {grid-template-columns:repeat(3,minmax(44px,1fr))!important;gap:6px!important}html[data-mcms-mobile-active="true"] #${SCRIPT.panelId} .mcms-profile-main {grid-column:1/-1!important}html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId},
         html[data-mcms-tablet-active="true"] #${SCRIPT.vehicleStatusId},
@@ -9025,6 +9532,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         html[data-mcms-ui-theme="factorio"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#f6a34c;--mcms-wire-border:#d87822;--mcms-wire-bg:#20211e;--mcms-wire-bg2:#34352f;--mcms-wire-label:#6b421f;--mcms-wire-text:#fff3df;--mcms-wire-muted:#d9c8aa}
         html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d8bd72;--mcms-wire-border:#b99a4f;--mcms-wire-bg:#07080a;--mcms-wire-bg2:#1b1d20;--mcms-wire-label:#d8bd72;--mcms-wire-text:#f5efe2;--mcms-wire-muted:#b7babd}
         html[data-mcms-ui-theme="hyrule"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#59e3df;--mcms-wire-border:#d5b85a;--mcms-wire-bg:#07171c;--mcms-wire-bg2:#123039;--mcms-wire-label:#1b574f;--mcms-wire-text:#f4f0d8;--mcms-wire-muted:#b7d8ce}
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#d3ae5b;--mcms-wire-border:#9f7836;--mcms-wire-bg:#090706;--mcms-wire-bg2:#25170f;--mcms-wire-label:#4e151f;--mcms-wire-text:#f2e5c5;--mcms-wire-muted:#c4b58f}
         html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label,html[data-mcms-ui-theme="bond007"] #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{color:#111!important}
         @media (max-width:760px){#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:104px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-meta{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{width:78vw!important;min-width:78vw!important;max-width:78vw!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-controls button{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important}}
         @media (max-width:480px){#${SCRIPT.majorIncidentFeedId}{height:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label-title{display:none}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:42px!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-item{width:86vw!important;min-width:86vw!important;max-width:86vw!important}#${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-state{max-width:92px}}
@@ -10718,6 +11226,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="umbrella"]{border-color:rgba(2
 ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="factorio"]{border-color:rgba(240,164,74,.58)!important;background:rgba(240,164,74,.14)!important;color:#ffe1b7!important;border-radius:3px!important}
 ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="bond007"]{border-color:rgba(217,189,119,.58)!important;background:rgba(217,189,119,.13)!important;color:#f6e9c7!important}
 ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="hyrule"]{border-color:rgba(217,183,90,.58)!important;background:rgba(110,230,214,.12)!important;color:#e8fff8!important}
+${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(205,164,79,.62)!important;background:rgba(102,24,39,.17)!important;color:#f3dfae!important;border-radius:5px!important;font-family:Georgia,"Times New Roman",serif!important}
 @media(max-width:767px){${CUSTOM_VEHICLE_BADGE_SELECTOR}{max-width:42vw!important;margin-inline-start:3px!important;padding:1px 3px!important;font-size:8.5px!important}}
 `;
     }
@@ -14182,7 +14691,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         fallout4: 'ROBCO EMERGENCY BAND',
         umbrella: 'CONTAINMENT ALERTS',
         factorio: 'FACTORY INCIDENT BUS',
-        bond007: 'MI6 INCIDENT WIRE'
+        bond007: 'MI6 INCIDENT WIRE',
+        hyrule: 'HYRULE INCIDENT HERALD',
+        godfather: 'FAMILY INCIDENT WIRE'
         };
         return labels[state.uiTheme] || labels.mapCommand;
     }
@@ -17132,6 +17643,12 @@ Create the private backup now?`);
                 tone(.12, 293.66, .24, 'triangle', .15, 369.99);
                 tone(.27, 440, .32, 'sine', .17, 659.25);
                 tone(.48, 987.77, .48, 'sine', .13, 1318.51);
+                break;
+            case 'godfatherOffer':
+                tone(0, 146.83, .42, 'sine', .18, 130.81);
+                tone(.18, 220, .48, 'triangle', .15, 196);
+                tone(.38, 293.66, .55, 'sine', .14, 261.63);
+                tone(.62, 440, .60, 'sine', .12, 392);
                 break;
             case 'gta5':
             default:
@@ -21970,7 +22487,7 @@ Create the private backup now?`);
                 <div class="mcms-section-label">Emergency Payout Flash</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('payoutFlash', '🚨', 'Payout Flash', 'Flash the map red and blue when a single credit gain reaches the configured threshold.')}
-                    ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Vice City, Bad Company, Scarface and Cyberpunk use hosted MP3 cashout sounds; other templates retain synthesized cues.')}
+                    ${makeToggleButton('payoutSound', '♪', 'Theme Audio', 'Play the selected template completion cue. Theme-owned hosted MP3s load only when a matching payout is played; synthesized fallback remains available.')}
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>

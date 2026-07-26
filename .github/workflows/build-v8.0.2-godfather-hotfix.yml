@@ -9,7 +9,7 @@ on:
       - ".github/actions-security-policy.json"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: v8-0-2-godfather-layout-audio-hotfix
@@ -19,127 +19,92 @@ jobs:
   build:
     if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.2-godfather-layout-audio'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 15
     steps:
       - name: Check out exact hotfix branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: hotfix/v8.0.2-godfather-layout-audio
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
-      - name: Retrieve and verify exact supplied audio
-        shell: bash
-        run: |
-          set -euo pipefail
-          AUDIO_TMP=/tmp/godfather-v8.0.2.mp3
-          curl --fail --silent --show-error --location --max-time 60 \
-            'https://drive.usercontent.google.com/download?id=1T8rDJDn9xXZQq7WucYmt0akLsHEStvjo&export=download&confirm=t' \
-            --output "$AUDIO_TMP"
-          python3 - <<'PY' > v8-hotfix-inputs.txt 2>&1
-          from pathlib import Path
-          import base64
-          import hashlib
-
-          source = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_bytes()
-          audio = Path('/tmp/godfather-v8.0.2.mp3').read_bytes()
-          print('source_sha256', hashlib.sha256(source).hexdigest())
-          print('audio_bytes', len(audio))
-          print('audio_sha256', hashlib.sha256(audio).hexdigest())
-          if len(audio) != 136254:
-              raise SystemExit(f'Exact audio byte size mismatch: {len(audio)}')
-          digest = hashlib.sha256(audio).hexdigest()
-          if digest != '53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4':
-              raise SystemExit(f'Exact audio digest mismatch: {digest}')
-          encoded = base64.b64encode(audio).decode('ascii')
-          expected_lengths = [12000, 12000, 60000, 60000, 37672]
-          if sum(expected_lengths) != len(encoded):
-              raise SystemExit(f'Exact encoded length mismatch: {len(encoded)}')
-          target = Path('.github/v8.0.2/audio-parts')
-          target.mkdir(parents=True, exist_ok=True)
-          offset = 0
-          for index, length in enumerate(expected_lengths):
-              payload = encoded[offset:offset + length]
-              offset += length
-              (target / f'part-{index:02d}.b64').write_text(payload, encoding='ascii')
-          print('audio_transport_lengths', expected_lengths)
-          PY
-          python3 -m py_compile .github/v8.0.2/build_hotfix.py
-          cat v8-hotfix-inputs.txt
-
-      - name: Build exact v8.0.2 candidate
-        id: build
-        shell: bash
-        run: |
-          set +e
-          python3 .github/v8.0.2/build_hotfix.py > v8-hotfix-build.log 2>&1
-          status=$?
-          cat v8-hotfix-build.log
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Upload hotfix build diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: v8-0-2-godfather-hotfix-diagnostics
-          path: |
-            v8-hotfix-inputs.txt
-            v8-hotfix-build.log
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Stop on build failure
-        if: steps.build.outputs.exit_code != '0'
-        run: |
-          echo "The deterministic v8.0.2 builder failed. Review the retained diagnostics."
-          exit 1
-
-      - name: Remove temporary builder and permission
+      - name: Map every staged audio fragment
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import hashlib
           import json
-          import shutil
 
-          policy_path = Path('.github/actions-security-policy.json')
-          policy = json.loads(policy_path.read_text(encoding='utf-8'))
-          removed = policy['allowedWritePermissions'].pop(
-              '.github/workflows/build-v8.0.2-godfather-hotfix.yml',
-              None,
-          )
-          if removed != ['contents']:
-              raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
-          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
-          Path('.github/workflows/build-v8.0.2-godfather-hotfix.yml').unlink()
-          shutil.rmtree('.github/v8.0.2')
+          records = []
+          for path in sorted(Path('.github/v8.0.2').glob('**/*.b64')):
+              value = ''.join(path.read_text(encoding='ascii').split())
+              records.append({
+                  'path': str(path),
+                  'length': len(value),
+                  'sha256': hashlib.sha256(value.encode()).hexdigest(),
+                  'head': value[:96],
+                  'tail': value[-96:],
+              })
+
+          # Remove exact duplicates and fragments wholly contained in larger staged fragments.
+          values = []
+          for record in records:
+              value = ''.join(Path(record['path']).read_text(encoding='ascii').split())
+              if value and value not in values:
+                  values.append(value)
+          maximal = [value for value in values if not any(value != other and value in other for other in values)]
+
+          # Greedy overlap assembly, retained only as diagnostic evidence.
+          work = maximal[:]
+          merges = []
+          while len(work) > 1:
+              best = None
+              for i, left in enumerate(work):
+                  for j, right in enumerate(work):
+                      if i == j:
+                          continue
+                      limit = min(len(left), len(right))
+                      overlap = 0
+                      for size in range(limit, 15, -1):
+                          if left[-size:] == right[:size]:
+                              overlap = size
+                              break
+                      if best is None or overlap > best[0]:
+                          best = (overlap, i, j)
+              if best is None or best[0] < 16:
+                  break
+              overlap, i, j = best
+              left, right = work[i], work[j]
+              merged = left + right[overlap:]
+              merges.append({'leftLength': len(left), 'rightLength': len(right), 'overlap': overlap, 'mergedLength': len(merged)})
+              work = [value for index, value in enumerate(work) if index not in (i, j)] + [merged]
+
+          report = {
+              'targetEncodedLength': 181672,
+              'targetAudioBytes': 136254,
+              'targetAudioSha256': '53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4',
+              'records': records,
+              'uniqueFragments': len(values),
+              'maximalFragments': len(maximal),
+              'assembledCandidates': sorted([len(value) for value in work], reverse=True),
+              'merges': merges,
+          }
+          Path('v8-audio-fragment-map.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+          print(json.dumps(report, indent=2))
           PY
 
-      - name: Validate exact repaired candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          node --check src/MissionChief_Map_Command_Toolkit.user.js
-          python3 .github/scripts/test_issue539_godfather_layout_audio.py
-          python3 .github/scripts/test_issue537_godfather_css_activation.py
-          python3 .github/scripts/test_v8_godfather_contract.py
-          python3 .github/scripts/test_main_style_source_headroom.py
-          bash .github/scripts/run_userscript_preflight.sh
-          python3 .github/scripts/validate_userscript.py
-          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
-          test ! -e .github/workflows/build-v8.0.2-godfather-hotfix.yml
-          test ! -e .github/v8.0.2
+      - name: Upload fragment map
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-0-2-audio-fragment-map
+          path: v8-audio-fragment-map.json
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Commit exact v8.0.2 hotfix
-        shell: bash
+      - name: Stop after evidence capture
         run: |
-          set -euo pipefail
-          rm -f v8-hotfix-inputs.txt v8-hotfix-build.log
-          git config user.name "Conroy1988"
-          git config user.email "27301455+Conroy1988@users.noreply.github.com"
-          git add -A
-          git commit -m "Fix Godfather layout and payout audio for v8.0.2"
-          git push origin HEAD:hotfix/v8.0.2-godfather-layout-audio
+          echo "Audio fragment map captured for exact local reconciliation."
+          exit 1

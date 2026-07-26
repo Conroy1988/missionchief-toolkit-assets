@@ -1,5 +1,7 @@
 # Reviewed development-package workflow
 
+> **Recovery-only transport.** Pipeline v5 uses direct atomic Git blobs, one tree, one commit and one branch-ref update for normal work. This workflow remains available only when a required file cannot be represented by the direct atomic lane.
+
 The reviewed development-package workflow operates only inside an **existing open pull request** owned by `Conroy1988`, hosted in this repository, and targeting `main`.
 
 The development branch and pull request must be created directly before either command is used. The workflow never creates an issue, branch, or pull request. This prevents diagnostic issue proliferation, duplicate pull requests, and GitHub Actions runs becoming stuck behind maintainer approval because they were created by `github-actions[bot]`.

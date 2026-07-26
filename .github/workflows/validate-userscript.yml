@@ -23,30 +23,6 @@ on:
       - ".github/workflows/validate-userscript.yml"
       - "status/source-baseline.json"
       - "status/update-manifest.json"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "CHANGELOG.md"
-      - "README.md"
-      - "docs/site-data.json"
-      - "docs/media/readme-hero.svg"
-      - "help/index.html"
-      - "documentation-drift-report.json"
-      - "documentation-drift-report.md"
-      - ".github/scripts/validate_userscript.py"
-      - ".github/scripts/verify_validation_candidate.py"
-      - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/test_validation_candidate_pipeline.py"
-      - ".github/scripts/test_version_status_contract.py"
-      - ".github/workflows/auto-release-after-validation.yml"
-      - ".github/workflows/owner-release-command.yml"
-      - ".github/workflows/publish-update-manifest.yml"
-      - ".github/workflows/release-toolkit.yml"
-      - ".github/workflows/validate-userscript.yml"
-      - "status/source-baseline.json"
-      - "status/update-manifest.json"
   workflow_dispatch:
 
 permissions:
@@ -123,6 +99,9 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Write immutable validation candidate evidence
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -132,13 +111,21 @@ jobs:
           SOURCE_HASH="$(sha256sum src/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
           USER_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
           TEXT_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.txt | awk '{print $1}')"
+          SOURCE_TREE="$(git rev-parse HEAD^{tree})"
+          CHECKOUT_COMMIT="$(git rev-parse HEAD)"
           [[ "$HASH" == "$SOURCE_HASH" && "$HASH" == "$USER_HASH" && "$HASH" == "$TEXT_HASH" ]]
+
+          PR_JSON=null
+          if [[ -n "$PR_NUMBER" ]]; then PR_JSON="$PR_NUMBER"; fi
 
           jq -n \
             --arg workflow "Validate Canonical Userscript" \
-            --arg commit "$GITHUB_SHA" \
+            --arg commit "$CHECKOUT_COMMIT" \
             --arg ref "$GITHUB_REF" \
+            --arg sourceTree "$SOURCE_TREE" \
             --arg event "$GITHUB_EVENT_NAME" \
+            --arg headCommit "$PR_HEAD_SHA" \
+            --argjson pullRequest "$PR_JSON" \
             --arg version "$VERSION" \
             --arg sha256 "$HASH" \
             --arg generatedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
@@ -148,7 +135,10 @@ jobs:
               workflow: $workflow,
               sourceCommit: $commit,
               sourceRef: $ref,
+              sourceTree: $sourceTree,
               eventName: $event,
+              headCommit: $headCommit,
+              pullRequest: $pullRequest,
               version: $version,
               sha256: $sha256,
               generatedAt: $generatedAt,
@@ -169,7 +159,7 @@ jobs:
             --evidence validation-candidate/validation-candidate.json \
             --source src/MissionChief_Map_Command_Toolkit.user.js \
             --dist-dir dist \
-            --expected-commit "$GITHUB_SHA" \
+            --expected-commit "$CHECKOUT_COMMIT" \
             --expected-ref "$GITHUB_REF" \
             --expected-version "$VERSION"
 
@@ -192,6 +182,7 @@ jobs:
         run: |
           VERSION="$(jq -r '.version' validation-candidate/validation-candidate.json)"
           HASH="$(jq -r '.sha256' validation-candidate/validation-candidate.json)"
+          TREE="$(jq -r '.sourceTree' validation-candidate/validation-candidate.json)"
           {
             echo "# Toolkit v${VERSION} canonical validation"
             echo
@@ -200,7 +191,8 @@ jobs:
             echo "- ✅ Distribution files are byte-identical"
             echo "- ✅ Complete release bundle prepared once and retained with the candidate"
             echo "- ✅ Candidate SHA-256: \`${HASH}\`"
-            echo "- ✅ Exact source commit: \`${GITHUB_SHA}\`"
+            echo "- ✅ Validated repository tree: \`${TREE}\`"
+            echo "- ✅ Exact validation commit: \`${GITHUB_SHA}\`"
             echo "- 📦 Candidate retained as an immutable workflow artifact"
             echo "- ⛔ Public main changed: no"
             echo "- ⛔ Release dashboard changed: no"

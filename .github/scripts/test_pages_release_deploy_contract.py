@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Static contract for deterministic verified GitHub Pages deployment."""
+"""Static contract for deterministic, non-blocking GitHub Pages deployment."""
 from __future__ import annotations
 
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[2]
 PAGES_WORKFLOW = ROOT / ".github" / "workflows" / "github-pages.yml"
@@ -30,51 +29,40 @@ def main() -> int:
     missing = [fragment for fragment in required if fragment not in pages]
     assert not missing, f"Pages production deployment contract fragments missing: {missing}"
     assert "  release:\n" not in pages, "Release publication must not trigger a duplicate Pages deployment"
-    assert "group: toolkit-pages-${{" not in pages, (
-        "Legacy event-specific production concurrency group still permits release/push deployment races"
-    )
+    assert "group: toolkit-pages-${{" not in pages, "Legacy production concurrency group returned"
 
     resolve_index = pages.index("Resolve verified production source")
     build_index = pages.index("Build deployment site")
     deploy_index = pages.index("Deploy GitHub Pages")
-    assert resolve_index < build_index < deploy_index, (
-        "Verified production source must be resolved before building and deploying Pages"
-    )
+    assert resolve_index < build_index < deploy_index
 
     release = RELEASE_WORKFLOW.read_text(encoding="utf-8")
     release_required = [
         "permissions:\n  contents: write\n  actions: write",
-        "Record successful release, manifest and announcement state",
-        "Publish GitHub Pages",
+        "Record successful release, manifest, announcement and speed state",
+        "Dispatch GitHub Pages asynchronously",
         "gh workflow run github-pages.yml --ref main",
-        "gh run list --workflow github-pages.yml --event workflow_dispatch --branch main",
-        "The dispatched GitHub Pages run was not found",
-        'gh run watch "$PAGES_RUN_ID" --exit-status',
-        "steps.pages.outputs.pages_run_id",
+        'echo "dispatched=true" >> "$GITHUB_OUTPUT"',
+        "PAGES_DISPATCHED: ${{ steps.pages.outputs.dispatched }}",
+        "GitHub Pages deployment dispatched asynchronously",
     ]
     release_missing = [fragment for fragment in release_required if fragment not in release]
-    assert not release_missing, (
-        "Production release-to-Pages dispatch contract fragments missing: "
-        f"{release_missing}"
-    )
-    for retired in [
-        "Publish update channels in parallel",
-        "gh workflow run publish-update-manifest.yml",
-        "steps.channels.outputs.pages_run_id",
+    assert not release_missing, f"Pipeline v4 Pages dispatch fragments missing: {release_missing}"
+    for forbidden in [
+        'gh run watch "$PAGES_RUN_ID" --exit-status',
+        "gh run list --workflow github-pages.yml",
+        "steps.pages.outputs.pages_run_id",
+        "The dispatched GitHub Pages run was not found",
+        "- name: Publish GitHub Pages",
     ]:
-        assert retired not in release, f"Retired parallel-channel marker returned: {retired}"
+        assert forbidden not in release, f"Blocking Pages marker returned: {forbidden}"
 
-    state_index = release.index("Record successful release, manifest and announcement state")
-    pages_dispatch_index = release.index("Publish GitHub Pages")
+    state_index = release.index("Record successful release, manifest, announcement and speed state")
+    dispatch_index = release.index("Dispatch GitHub Pages asynchronously")
     summary_index = release.index("Write release summary")
-    assert state_index < pages_dispatch_index < summary_index, (
-        "The release must record verified atomic state, await Pages, then write its final summary"
-    )
+    assert state_index < dispatch_index < summary_index
 
-    print(
-        "Pages deployment contract passed: production events share one concurrency group, "
-        "build from verified current main state, and every Toolkit release explicitly awaits Pages."
-    )
+    print("Pages deployment contract passed: verified source, one production concurrency group and asynchronous non-blocking release dispatch.")
     return 0
 
 

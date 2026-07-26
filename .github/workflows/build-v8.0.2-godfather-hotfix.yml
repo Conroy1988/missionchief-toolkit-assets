@@ -1,0 +1,81 @@
+name: Build v8.0.2 Godfather Layout and Audio Hotfix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-v8.0.2-godfather-hotfix.yml"
+      - ".github/v8.0.2/**"
+      - ".github/actions-security-policy.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-0-2-godfather-layout-audio-hotfix
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.2-godfather-layout-audio'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out exact hotfix branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: hotfix/v8.0.2-godfather-layout-audio
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Build exact v8.0.2 candidate
+        run: python3 .github/v8.0.2/build_hotfix.py
+
+      - name: Remove temporary builder and permission
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import shutil
+
+          policy_path = Path('.github/actions-security-policy.json')
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          removed = policy['allowedWritePermissions'].pop(
+              '.github/workflows/build-v8.0.2-godfather-hotfix.yml',
+              None,
+          )
+          if removed != ['contents']:
+              raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
+          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+
+          Path('.github/workflows/build-v8.0.2-godfather-hotfix.yml').unlink()
+          shutil.rmtree('.github/v8.0.2')
+          PY
+
+      - name: Validate exact repaired candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          python3 .github/scripts/test_issue539_godfather_layout_audio.py
+          python3 .github/scripts/test_issue537_godfather_css_activation.py
+          python3 .github/scripts/test_v8_godfather_contract.py
+          python3 .github/scripts/test_main_style_source_headroom.py
+          bash .github/scripts/run_userscript_preflight.sh
+          python3 .github/scripts/validate_userscript.py
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test ! -e .github/workflows/build-v8.0.2-godfather-hotfix.yml
+          test ! -e .github/v8.0.2
+
+      - name: Commit exact v8.0.2 hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Godfather layout and payout audio for v8.0.2"
+          git push origin HEAD:hotfix/v8.0.2-godfather-layout-audio

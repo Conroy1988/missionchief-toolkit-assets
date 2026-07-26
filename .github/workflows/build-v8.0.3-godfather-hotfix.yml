@@ -1,0 +1,123 @@
+name: Reconcile v8.0.3 README Evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-v8.0.3-godfather-hotfix.yml"
+      - ".github/actions-security-policy.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-0-3-readme-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.3-godfather-duration-position'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact hotfix branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: hotfix/v8.0.3-godfather-duration-position
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Reconcile verified release and candidate evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = (
+              ('## **Current verified release: `v8.0.1` · Development candidate: `v8.0.3`**',
+               '## **Current verified release: `v8.0.2` · Development candidate: `v8.0.3`**'),
+              ('### **Godfather layout and payout-audio hotfix**',
+               '### **Godfather duration and payout-position hotfix**'),
+              ('#current-release-signal--v801', '#current-release-signal--v802'),
+              ('| **Production release** | 🟢 | GitHub Release `v8.0.1` published |',
+               '| **Production release** | 🟢 | GitHub Release `v8.0.2` published |'),
+              ('| **Version** | `8.0.0` |', '| **Version** | `8.0.2` |'),
+              ('| **Release focus** | The Godfather complete interface system |',
+               '| **Release focus** | Godfather layout and payout-audio hotfix |'),
+              ('| **Validated SHA-256** | `049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b` |',
+               '| **Validated SHA-256** | `5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474` |'),
+              ('| **GitHub Release** | [`v8.0.0`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.0) |',
+               '| **GitHub Release** | [`v8.0.2`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.2) |'),
+              ('| **Private backup** | `cd0b94a59bdccb248dc7bdfe461f3e7419cc18bf` |',
+               '| **Private backup** | `071c56229fc9a680f9ccbf5cddb5f57b83935958` |'),
+          )
+          for old, new in replacements:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected README token count for {old!r}: {text.count(old)}')
+              text = text.replace(old, new, 1)
+
+          signal_start = text.index('# v8.0.2 hotfix signal')
+          signal_end = text.index('\n---\n', signal_start)
+          signal = '''# v8.0.3 hotfix signal
+
+> **CRITICAL GODFATHER DURATION AND PAYOUT-POSITION REPAIR // DEVELOPMENT BRANCH ONLY**
+
+The verified production release is **v8.0.2**. Candidate **v8.0.3** defaults the Godfather Offer flash to seven seconds when the normal four-second default is still active, preserves non-default user choices, and raises/compacts the payout on short-height layouts so the complete banner clears the command dock. Production remains on v8.0.2 until the guarded hotfix release completes.
+'''
+          text = text[:signal_start] + signal + text[signal_end:]
+
+          release_start = text.index('# Current release signal — v8.0.1')
+          release_end = text.index('\n---\n', release_start)
+          release = '''# Current release signal — v8.0.2
+
+> **CHANNEL UPDATE // GODFATHER LAYOUT AND PAYOUT AUDIO**
+
+Version 8.0.2 contained the decorative family seal, restored compact Tablet controls, raised the Offer payout and replaced its audio byte-for-byte with the verified stereo MP3.
+
+- The exact replacement audio remains protected by digest, byte-size, channel and bitrate contracts.
+- The v7 native MissionChief boundary and every retained operational system remain in force.
+- Candidate v8.0.3 adds the seven-second Godfather default and short-height dock-clearance repair.
+'''
+          text = text[:release_start] + release + text[release_end:]
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow and permission
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          policy_path = Path('.github/actions-security-policy.json')
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          removed = policy['allowedWritePermissions'].pop('.github/workflows/build-v8.0.3-godfather-hotfix.yml', None)
+          if removed != ['contents']:
+              raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
+          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          Path('.github/workflows/build-v8.0.3-godfather-hotfix.yml').unlink()
+          PY
+
+      - name: Validate reconciled documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_documentation_consistency.py
+          python3 .github/scripts/check_documentation_drift.py --root . --allow-release-candidate --json-output /tmp/docs.json --markdown-output /tmp/docs.md
+          python3 .github/scripts/test_issue541_godfather_duration_position.py
+          test ! -e .github/workflows/build-v8.0.3-godfather-hotfix.yml
+
+      - name: Commit README reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git commit -m "Reconcile README for v8.0.3 hotfix"
+          git push origin HEAD:hotfix/v8.0.3-godfather-duration-position

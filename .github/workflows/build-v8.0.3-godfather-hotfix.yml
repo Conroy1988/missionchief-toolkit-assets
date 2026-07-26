@@ -29,7 +29,28 @@ jobs:
           persist-credentials: true
 
       - name: Build exact v8.0.3 candidate
-        run: python3 .github/v8.0.3/build_hotfix.py
+        id: build
+        shell: bash
+        run: |
+          set +e
+          python3 .github/v8.0.3/build_hotfix.py > v8-0-3-build.log 2>&1
+          status=$?
+          cat v8-0-3-build.log
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload builder diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-0-3-godfather-hotfix-diagnostics
+          path: v8-0-3-build.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop on build failure
+        if: steps.build.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Remove temporary builder and permission
         shell: bash
@@ -69,6 +90,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rm -f v8-0-3-build.log
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git add -A

@@ -79,9 +79,9 @@ for name in ('test_issue537_godfather_css_activation.py', 'test_issue539_godfath
 layout_path = ROOT / '.github/scripts/test_issue539_godfather_layout_audio.py'
 layout = layout_path.read_text(encoding='utf-8')
 for current, legacy in (
-    ("'top:42% !important;'", "'top:40% !important;'"),
-    ("'top:38% !important;'", "'top:34% !important;'"),
     ("'top:34% !important;'", "'top:31% !important;'"),
+    ("'top:38% !important;'", "'top:34% !important;'"),
+    ("'top:42% !important;'", "'top:40% !important;'"),
 ):
     if layout.count(current) != 1:
         raise SystemExit(f'Unexpected current layout token: {current}')

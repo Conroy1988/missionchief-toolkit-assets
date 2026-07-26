@@ -11,18 +11,19 @@ from pathlib import Path
 
 EXPECTED_BUILDER_BYTES = 62_027
 EXPECTED_BUILDER_SHA256 = "3fb14418ac75e0022a40c0bce4a4ffc15f5e2f8ef517b6b8d311fec04c434d13"
-EXPECTED_PARTS = ("part-00.b64", "part-01.b64", "part-02.b64")
+EXPECTED_SLICE_COUNT = 39
 
 
 def main() -> int:
     root = Path(__file__).resolve().parents[2]
-    parts_dir = root / ".github" / "v8-godfather" / "builder-parts"
-    parts = sorted(path for path in parts_dir.glob("part-*.b64") if path.is_file())
-    names = tuple(path.name for path in parts)
-    if names != EXPECTED_PARTS:
-        raise SystemExit(f"Unexpected v8 builder parts: {names!r}")
+    slices_dir = root / ".github" / "v8-godfather" / "builder-slices"
+    slices = sorted(path for path in slices_dir.glob("slice-*.b64") if path.is_file())
+    expected_names = tuple(f"slice-{index:03d}.b64" for index in range(EXPECTED_SLICE_COUNT))
+    names = tuple(path.name for path in slices)
+    if names != expected_names:
+        raise SystemExit(f"Unexpected v8 builder slices: {names!r}")
 
-    encoded = "".join("".join(path.read_text(encoding="utf-8").split()) for path in parts)
+    encoded = "".join(path.read_text(encoding="ascii") for path in slices)
     try:
         compressed = base64.b64decode(encoded, validate=True)
         builder = gzip.decompress(compressed)

@@ -84,12 +84,28 @@ jobs:
           python3 -m json.tool status/media-asset-audit.json >/dev/null
           python3 -m json.tool .github/asset-compatibility-aliases.json >/dev/null
 
-      - name: Validate asset and source budgets
+      - name: Validate asset health contracts
         shell: bash
         run: |
           set -euo pipefail
-          python3 .github/scripts/test_asset_health.py
-          python3 .github/scripts/test_main_style_source_headroom.py
+          mkdir -p /tmp/v8-validation
+          python3 .github/scripts/test_asset_health.py 2>&1 | tee /tmp/v8-validation/asset-health.log
+
+      - name: Validate main-style source headroom
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/v8-validation
+          python3 .github/scripts/test_main_style_source_headroom.py 2>&1 | tee /tmp/v8-validation/main-style-headroom.log
+
+      - name: Preserve validation diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-godfather-validation-${{ github.sha }}
+          path: /tmp/v8-validation
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Run canonical userscript preflight
         shell: bash

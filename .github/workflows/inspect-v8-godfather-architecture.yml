@@ -26,7 +26,9 @@ jobs:
       - name: Extract theme and payout architecture
         run: python3 .github/v8-godfather/inspect_architecture.py
 
-      - name: Materialise supplied payout audio and audit abandoned builder transport
+      - name: Audit staged builder and payout-audio transports
+        id: materialise
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -39,81 +41,127 @@ jobs:
           import gzip
           import hashlib
           import json
+          import traceback
           from pathlib import Path
 
           output = Path('v8-materialised')
+          report: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
+          failures: list[str] = []
 
           def read_parts(directory: Path) -> tuple[list[Path], list[str]]:
               parts = sorted(directory.glob('part-*.b64'))
               if not parts:
-                  raise SystemExit(f'No transport parts found in {directory}')
-              return parts, [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
+                  raise RuntimeError(f'No transport parts found in {directory}')
+              texts = [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
+              report[str(directory)] = [
+                  {
+                      'name': path.name,
+                      'fileBytes': path.stat().st_size,
+                      'base64Chars': len(text),
+                      'mod4': len(text) % 4,
+                      'head': text[:16],
+                      'tail': text[-16:],
+                  }
+                  for path, text in zip(parts, texts, strict=True)
+              ]
+              return parts, texts
 
           def decode_continuous(texts: list[str]) -> bytes:
               joined = ''.join(texts)
               joined += '=' * ((-len(joined)) % 4)
               return base64.b64decode(joined, validate=True)
 
-          report: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
-
-          builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
-          report['builderParts'] = [
-              {'name': path.name, 'base64Chars': len(text), 'mod4': len(text) % 4}
-              for path, text in zip(builder_parts, builder_texts, strict=True)
-          ]
           try:
+              builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
               builder_transport = decode_continuous(builder_texts)
-              gzip.decompress(builder_transport)
-              report['builderTransport'] = {
-                  'status': 'unexpectedly-valid',
-                  'bytes': len(builder_transport),
-                  'sha256': hashlib.sha256(builder_transport).hexdigest(),
-              }
+              try:
+                  builder_payload = gzip.decompress(builder_transport)
+                  (output / 'staged-v8-builder.py').write_bytes(builder_payload)
+                  report['builder'] = {
+                      'status': 'valid',
+                      'bytes': len(builder_payload),
+                      'sha256': hashlib.sha256(builder_payload).hexdigest(),
+                  }
+              except Exception as error:
+                  report['builder'] = {
+                      'status': 'abandoned-malformed-staging-payload',
+                      'transportBytes': len(builder_transport),
+                      'transportSha256': hashlib.sha256(builder_transport).hexdigest(),
+                      'error': repr(error),
+                      'decision': 'Replace with a clean-room deterministic builder based on verified v7.1.6.',
+                  }
           except Exception as error:
-              report['builderTransport'] = {
-                  'status': 'abandoned-malformed-staging-payload',
-                  'error': repr(error),
-                  'decision': 'Replace with a clean-room deterministic builder based on the verified v7.1.6 source.',
+              report['builder'] = {'status': 'decode-failed', 'error': repr(error)}
+
+          try:
+              audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
+              attempts: list[dict[str, object]] = []
+              audio_payload: bytes | None = None
+              try:
+                  audio_payload = decode_continuous(audio_texts)
+                  attempts.append({'mode': 'continuous', 'ok': True, 'bytes': len(audio_payload)})
+              except Exception as error:
+                  attempts.append({'mode': 'continuous', 'ok': False, 'error': repr(error)})
+
+              if audio_payload is None:
+                  try:
+                      chunks = []
+                      for text in audio_texts:
+                          padded = text + ('=' * ((-len(text)) % 4))
+                          chunks.append(base64.b64decode(padded, validate=True))
+                      audio_payload = b''.join(chunks)
+                      attempts.append({
+                          'mode': 'independent-padded',
+                          'ok': True,
+                          'bytes': len(audio_payload),
+                          'partBytes': [len(chunk) for chunk in chunks],
+                      })
+                  except Exception as error:
+                      attempts.append({'mode': 'independent-padded', 'ok': False, 'error': repr(error)})
+
+              report['audioDecodeAttempts'] = attempts
+              if audio_payload is None:
+                  raise RuntimeError('All payout-audio transport decode modes failed')
+
+              audio = output / 'godfather-flash-payout.mp3'
+              audio.write_bytes(audio_payload)
+              report['audio'] = {
+                  'status': 'decoded',
+                  'bytes': len(audio_payload),
+                  'sha256': hashlib.sha256(audio_payload).hexdigest(),
+                  'head': audio_payload[:16].hex(),
+                  'tail': audio_payload[-16:].hex(),
               }
+              if len(audio_payload) < 32_000:
+                  raise RuntimeError(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
+              if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
+                  raise RuntimeError('Godfather payout audio does not have an MP3 signature')
+          except Exception as error:
+              failures.append(f'audio: {type(error).__name__}: {error}')
+              report['audioFailure'] = {
+                  'error': repr(error),
+                  'traceback': traceback.format_exc(),
+              }
+          finally:
+              report['failures'] = failures
+              (output / 'materialisation-report.json').write_text(
+                  json.dumps(report, indent=2) + '\n', encoding='utf-8'
+              )
 
-          audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
-          report['audioParts'] = [
-              {'name': path.name, 'base64Chars': len(text), 'mod4': len(text) % 4}
-              for path, text in zip(audio_parts, audio_texts, strict=True)
-          ]
-          audio_payload = decode_continuous(audio_texts)
-          audio = output / 'godfather-flash-payout.mp3'
-          audio.write_bytes(audio_payload)
-
-          if len(audio_payload) < 32_000:
-              raise SystemExit(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
-          if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
-              raise SystemExit('Godfather payout audio does not have an MP3 signature')
-
-          report['audio'] = {
-              'status': 'materialised',
-              'bytes': len(audio_payload),
-              'sha256': hashlib.sha256(audio_payload).hexdigest(),
-              'head': audio_payload[:16].hex(),
-              'tail': audio_payload[-16:].hex(),
-          }
-          (output / 'materialisation-report.json').write_text(
-              json.dumps(report, indent=2) + '\n', encoding='utf-8'
-          )
-          print(json.dumps(report, indent=2))
+          if failures:
+              raise SystemExit('; '.join(failures))
           PY
 
-          if command -v ffprobe >/dev/null 2>&1; then
+          if [ -f v8-materialised/godfather-flash-payout.mp3 ] && command -v ffprobe >/dev/null 2>&1; then
             ffprobe -v error \
               -show_entries format=duration,size,bit_rate:stream=codec_name,channels,sample_rate \
               -of json \
               v8-materialised/godfather-flash-payout.mp3 \
-              > v8-materialised/audio-probe.json
-          else
-            printf '{"warning":"ffprobe unavailable"}\n' > v8-materialised/audio-probe.json
+              > v8-materialised/audio-probe.json || true
           fi
 
       - name: Stage exact development inputs
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -127,7 +175,8 @@ jobs:
           cp .github/fixtures/main-style-source-headroom.json v8-inputs/.github/fixtures/
           cp -R themes/* v8-inputs/themes/
 
-      - name: Upload architecture, exact inputs and materialised audio
+      - name: Upload architecture, exact inputs and transport evidence
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: v8-godfather-materialised-${{ github.sha }}
@@ -137,3 +186,9 @@ jobs:
             v8-materialised
           if-no-files-found: error
           retention-days: 14
+
+      - name: Enforce valid payout audio
+        if: steps.materialise.outcome != 'success'
+        run: |
+          cat v8-materialised/materialisation-report.json || true
+          exit 1

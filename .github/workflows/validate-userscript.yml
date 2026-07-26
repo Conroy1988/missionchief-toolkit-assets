@@ -2,189 +2,117 @@ name: Validate Canonical Userscript
 
 on:
   pull_request:
+    branches: [main]
     paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "CHANGELOG.md"
-      - "README.md"
-      - "docs/site-data.json"
-      - "docs/media/readme-hero.svg"
-      - "help/index.html"
-      - "documentation-drift-report.json"
-      - "documentation-drift-report.md"
-      - ".github/scripts/validate_userscript.py"
-      - ".github/scripts/verify_validation_candidate.py"
-      - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/test_validation_candidate_pipeline.py"
-      - ".github/scripts/test_version_status_contract.py"
-      - ".github/workflows/auto-release-after-validation.yml"
-      - ".github/workflows/owner-release-command.yml"
-      - ".github/workflows/publish-update-manifest.yml"
-      - ".github/workflows/release-toolkit.yml"
       - ".github/workflows/validate-userscript.yml"
-      - "status/source-baseline.json"
-      - "status/update-manifest.json"
-  push:
-    branches:
-      - main
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "CHANGELOG.md"
+      - ".github/workflows/build-v8.0.3-godfather-hotfix.yml"
+      - ".github/actions-security-policy.json"
       - "README.md"
-      - "docs/site-data.json"
-      - "docs/media/readme-hero.svg"
-      - "help/index.html"
-      - "documentation-drift-report.json"
-      - "documentation-drift-report.md"
-      - ".github/scripts/validate_userscript.py"
-      - ".github/scripts/verify_validation_candidate.py"
-      - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/test_validation_candidate_pipeline.py"
-      - ".github/scripts/test_version_status_contract.py"
-      - ".github/workflows/auto-release-after-validation.yml"
-      - ".github/workflows/owner-release-command.yml"
-      - ".github/workflows/publish-update-manifest.yml"
-      - ".github/workflows/release-toolkit.yml"
-      - ".github/workflows/validate-userscript.yml"
-      - "status/source-baseline.json"
-      - "status/update-manifest.json"
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: canonical-userscript-validation-${{ github.ref }}
+  group: v8-0-3-canonical-readme-reconciliation
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Validate and package immutable candidate evidence
+  reconcile-v803:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.3-godfather-duration-position'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 15
     steps:
-      - name: Check out exact repository state
+      - name: Check out exact hotfix branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: hotfix/v8.0.3-godfather-duration-position
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
-      - name: Validate candidate-verifier self-tests
-        run: python3 .github/scripts/verify_validation_candidate.py --self-test
-
-      - name: Validate userscript and build candidate distribution
-        id: validate
-        shell: bash
-        run: |
-          set +e
-          python3 .github/scripts/validate_userscript.py > validation.log 2>&1
-          status=$?
-          cat validation.log
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Upload validation diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-validation-diagnostics-${{ github.sha }}
-          path: validation.log
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Stop on validation failure
-        if: steps.validate.outputs.exit_code != '0'
-        run: |
-          echo "Userscript validation failed. See the diagnostics artifact."
-          exit 1
-
-      - name: Validate documentation consistency
-        run: python3 .github/scripts/test_documentation_consistency.py
-
-      - name: Check JavaScript syntax
-        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
-
-      - name: Verify distribution files are identical
-        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
-
-      - name: Write immutable validation candidate evidence
+      - name: Reconcile verified release and candidate evidence
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p validation-candidate
-          VERSION="$(jq -r '.version' dist/release-manifest.json)"
-          HASH="$(jq -r '.sha256' dist/release-manifest.json)"
-          SOURCE_HASH="$(sha256sum src/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
-          USER_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.user.js | awk '{print $1}')"
-          TEXT_HASH="$(sha256sum dist/MissionChief_Map_Command_Toolkit.txt | awk '{print $1}')"
-          [[ "$HASH" == "$SOURCE_HASH" && "$HASH" == "$USER_HASH" && "$HASH" == "$TEXT_HASH" ]]
+          python3 - <<'PY'
+          from pathlib import Path
 
-          jq -n \
-            --arg workflow "Validate Canonical Userscript" \
-            --arg commit "$GITHUB_SHA" \
-            --arg ref "$GITHUB_REF" \
-            --arg event "$GITHUB_EVENT_NAME" \
-            --arg version "$VERSION" \
-            --arg sha256 "$HASH" \
-            --arg generatedAt "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-            '{
-              schemaVersion: 1,
-              state: "validated",
-              workflow: $workflow,
-              sourceCommit: $commit,
-              sourceRef: $ref,
-              eventName: $event,
-              version: $version,
-              sha256: $sha256,
-              generatedAt: $generatedAt,
-              distribution: {
-                userScript: "dist/MissionChief_Map_Command_Toolkit.user.js",
-                text: "dist/MissionChief_Map_Command_Toolkit.txt",
-                checksums: "dist/SHA256SUMS.txt",
-                manifest: "dist/release-manifest.json"
-              },
-              storage: {
-                type: "workflow-artifact",
-                publicMainChanged: false,
-                releaseDashboardChanged: false
-              }
-            }' > validation-candidate/validation-candidate.json
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+          replacements = (
+              ('## **Current verified release: `v8.0.1` · Development candidate: `v8.0.3`**',
+               '## **Current verified release: `v8.0.2` · Development candidate: `v8.0.3`**'),
+              ('### **Godfather layout and payout-audio hotfix**',
+               '### **Godfather duration and payout-position hotfix**'),
+              ('#current-release-signal--v801', '#current-release-signal--v802'),
+              ('| **Production release** | 🟢 | GitHub Release `v8.0.1` published |',
+               '| **Production release** | 🟢 | GitHub Release `v8.0.2` published |'),
+              ('| **Version** | `8.0.0` |', '| **Version** | `8.0.2` |'),
+              ('| **Release focus** | The Godfather complete interface system |',
+               '| **Release focus** | Godfather layout and payout-audio hotfix |'),
+              ('| **Validated SHA-256** | `049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b` |',
+               '| **Validated SHA-256** | `5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474` |'),
+              ('| **GitHub Release** | [`v8.0.0`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.0) |',
+               '| **GitHub Release** | [`v8.0.2`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.2) |'),
+              ('| **Private backup** | `cd0b94a59bdccb248dc7bdfe461f3e7419cc18bf` |',
+               '| **Private backup** | `071c56229fc9a680f9ccbf5cddb5f57b83935958` |'),
+          )
+          for old, new in replacements:
+              actual = text.count(old)
+              if actual != 1:
+                  raise SystemExit(f'Unexpected README token count for {old!r}: {actual}')
+              text = text.replace(old, new, 1)
 
-          python3 .github/scripts/verify_validation_candidate.py \
-            --evidence validation-candidate/validation-candidate.json \
-            --source src/MissionChief_Map_Command_Toolkit.user.js \
-            --dist-dir dist \
-            --expected-commit "$GITHUB_SHA" \
-            --expected-ref "$GITHUB_REF" \
-            --expected-version "$VERSION"
+          start = text.index('# v8.0.2 hotfix signal')
+          end = text.index('\n---\n', start)
+          signal = '''# v8.0.3 hotfix signal
 
-      - name: Upload immutable validation candidate
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-validation-candidate-${{ github.sha }}
-          path: |
-            validation-candidate/validation-candidate.json
-            dist/MissionChief_Map_Command_Toolkit.user.js
-            dist/MissionChief_Map_Command_Toolkit.txt
-            dist/SHA256SUMS.txt
-            dist/release-manifest.json
-          if-no-files-found: error
-          retention-days: 14
+> **CRITICAL GODFATHER DURATION AND PAYOUT-POSITION REPAIR // DEVELOPMENT BRANCH ONLY**
 
-      - name: Write validation summary
+The verified production release is **v8.0.2**. Candidate **v8.0.3** defaults the Godfather Offer flash to seven seconds when the normal four-second default is still active, preserves non-default user choices, and raises/compacts the payout on short-height layouts so the complete banner clears the command dock. Production remains on v8.0.2 until the guarded hotfix release completes.
+'''
+          text = text[:start] + signal + text[end:]
+
+          start = text.index('# Current release signal — v8.0.1')
+          end = text.index('\n---\n', start)
+          release = '''# Current release signal — v8.0.2
+
+> **CHANNEL UPDATE // GODFATHER LAYOUT AND PAYOUT AUDIO**
+
+Version 8.0.2 contained the decorative family seal, restored compact Tablet controls, raised the Offer payout and replaced its audio byte-for-byte with the verified stereo MP3.
+
+- The exact replacement audio remains protected by digest, byte-size, channel and bitrate contracts.
+- The v7 native MissionChief boundary and every retained operational system remain in force.
+- Candidate v8.0.3 adds the seven-second Godfather default and short-height dock-clearance repair.
+'''
+          text = text[:start] + release + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Restore canonical workflow and security policy
         shell: bash
         run: |
-          VERSION="$(jq -r '.version' validation-candidate/validation-candidate.json)"
-          HASH="$(jq -r '.sha256' validation-candidate/validation-candidate.json)"
-          {
-            echo "# Toolkit v${VERSION} canonical validation"
-            echo
-            echo "- ✅ Canonical source validated"
-            echo "- ✅ JavaScript syntax checked"
-            echo "- ✅ Distribution files are byte-identical"
-            echo "- ✅ Candidate SHA-256: \`${HASH}\`"
-            echo "- ✅ Exact source commit: \`${GITHUB_SHA}\`"
-            echo "- 📦 Candidate retained as an immutable workflow artifact"
-            echo "- ⛔ Public main changed: no"
-            echo "- ⛔ Release dashboard changed: no"
-          } >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          rm -f .github/workflows/build-v8.0.3-godfather-hotfix.yml
+          git checkout origin/main -- .github/workflows/validate-userscript.yml .github/actions-security-policy.json
+
+      - name: Validate reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_documentation_consistency.py
+          python3 .github/scripts/check_documentation_drift.py --root . --allow-release-candidate --json-output /tmp/docs.json --markdown-output /tmp/docs.md
+          python3 .github/scripts/test_issue541_godfather_duration_position.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          test ! -e .github/workflows/build-v8.0.3-godfather-hotfix.yml
+          cmp --silent .github/workflows/validate-userscript.yml <(git show origin/main:.github/workflows/validate-userscript.yml)
+          cmp --silent .github/actions-security-policy.json <(git show origin/main:.github/actions-security-policy.json)
+
+      - name: Commit clean reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git commit -m "Reconcile README for v8.0.3 hotfix"
+          git push origin HEAD:hotfix/v8.0.3-godfather-duration-position

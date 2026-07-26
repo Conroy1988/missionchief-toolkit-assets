@@ -33,6 +33,12 @@ jobs:
         shell: bash
         run: |
           set +e
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/v8.0.3/build_hotfix.py')
+          lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+          path.write_text(''.join(line for line in lines if not line.lstrip().startswith("'top:34% !important;")), encoding='utf-8')
+          PY
           python3 .github/v8.0.3/build_hotfix.py > v8-0-3-build.log 2>&1
           status=$?
           cat v8-0-3-build.log

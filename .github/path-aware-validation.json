@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "description": "Fail-closed path policy for the consolidated Toolkit pull-request gate and exact-tree release promotion.",
+  "groups": {
+    "product": [
+      "src/MissionChief_Map_Command_Toolkit.user.js",
+      "dist/MissionChief_Map_Command_Toolkit.user.js",
+      "dist/MissionChief_Map_Command_Toolkit.txt",
+      "dist/SHA256SUMS.txt",
+      "dist/release-manifest.json",
+      "MissionChief_Map_Command_Toolkit.user.js",
+      "MissionChief_Map_Command_Toolkit.txt"
+    ],
+    "runtime": [
+      ".github/fixtures/**",
+      ".github/scripts/run_userscript_preflight.sh",
+      ".github/scripts/test_*contract.py",
+      ".github/scripts/test_issue*.py",
+      ".github/scripts/test_issue*.js",
+      ".github/scripts/test_*runtime*.js",
+      ".github/scripts/test_v7_retirement.py",
+      ".github/scripts/test_mission_age_retention.py",
+      ".github/scripts/test_transport_sweep_native_contract.py"
+    ],
+    "integrity": [
+      ".github/code-integrity-policy.json",
+      ".github/userscript-audit-policy.json",
+      ".github/eslint-userscript.config.mjs",
+      ".github/scripts/validate_userscript.py",
+      ".github/scripts/verify_validation_candidate.py",
+      ".github/scripts/audit_userscript_structure.py",
+      ".github/scripts/check_code_integrity.py",
+      ".github/scripts/test_code_integrity.py",
+      ".github/scripts/prepare_release_bundle.py"
+    ],
+    "integrityExhaustive": [
+      ".github/eslint-userscript.config.mjs",
+      ".github/scripts/full_userscript_audit.py",
+      ".github/scripts/refine_full_userscript_audit.py",
+      ".github/scripts/summarise_eslint_audit.py",
+      ".github/scripts/extract_userscript_audit_evidence.py"
+    ],
+    "performance": [
+      "tools/mcms-performance-profiler.user.js",
+      ".github/performance-budget.json",
+      ".github/scripts/check_performance_budget.py",
+      ".github/scripts/test_performance_budget.py",
+      ".github/scripts/test_performance_profiler.js",
+      ".github/scripts/test_runtime_optimisations.py"
+    ],
+    "performanceExhaustive": [
+      ".github/scripts/deep_performance_audit.mjs",
+      ".github/scripts/reconcile_deep_performance_audit.mjs",
+      ".github/scripts/extract_deep_performance_evidence.mjs",
+      ".github/scripts/test_deep_performance_audit.mjs",
+      ".github/scripts/test_reconcile_deep_performance_audit.mjs",
+      "docs/audits/deep-performance-audit-*.md"
+    ],
+    "documentation": [
+      "README.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "docs/**",
+      "help/**",
+      "_site/**",
+      "documentation-drift-report.json",
+      "documentation-drift-report.md"
+    ],
+    "assets": [
+      "assets/**",
+      "themes/**",
+      ".github/asset-health-policy.json",
+      ".github/asset-compatibility-aliases.json",
+      ".github/ASSET_HEALTH.md",
+      ".github/THEME_ASSET_ARCHITECTURE.md",
+      ".github/scripts/check_asset_health.py",
+      ".github/scripts/check_distribution_body_parity.py",
+      ".github/scripts/check_audio_alias_contract.py",
+      ".github/scripts/test_asset_health.py",
+      "status/media-asset-audit.json",
+      "status/theme-asset-inventory.json",
+      "status/theme-asset-migration.json"
+    ],
+    "release": [
+      ".github/release-settings.json",
+      ".github/workflows/release-toolkit.yml",
+      ".github/workflows/auto-release-after-validation.yml",
+      ".github/workflows/release-planning.yml",
+      ".github/workflows/publish-update-manifest.yml",
+      ".github/scripts/prepare_release_plan.py",
+      ".github/scripts/build_stable_update_manifest.py",
+      ".github/scripts/test_update_manifest_pipeline.py",
+      ".github/scripts/test_validation_candidate_pipeline.py",
+      ".github/scripts/test_release_pipeline_v4.py",
+      ".github/scripts/prepare_release_bundle.py",
+      "status/release-dashboard.json",
+      "status/update-manifest.json",
+      "status/release-speed-history.json",
+      "status/RELEASE_SPEED.md",
+      "CHANGELOG.md"
+    ],
+    "workflowPolicy": [
+      ".github/workflows/**",
+      ".github/actions-security-policy.json",
+      ".github/branch-write-inventory.json",
+      ".github/scripts/audit_actions_security.py",
+      ".github/scripts/test_development_package_workflow.py",
+      ".github/scripts/test_automation_record_hygiene.py",
+      ".github/scripts/test_branch_write_inventory.py",
+      ".github/scripts/test_greasyfork_parity_pipeline.py",
+      ".github/scripts/test_release_announcement_state_pipeline.py",
+      ".github/scripts/test_release_state_monitor_pipeline.py",
+      ".github/scripts/test_release_recovery_state_pipeline.py",
+      ".github/scripts/test_shadow_branch_parity.py",
+      ".github/scripts/test_shadow_sync_writer.py"
+    ],
+    "criticalInfrastructure": [
+      ".github/path-aware-validation.json",
+      ".github/workflows/validate-userscript.yml",
+      ".github/workflows/auto-release-after-validation.yml",
+      ".github/scripts/classify_pr_paths.py",
+      ".github/scripts/test_path_aware_blocking.py",
+      ".github/scripts/test_consolidated_pr_gate.py",
+      ".github/scripts/test_validation_candidate_pipeline.py",
+      ".github/scripts/test_release_pipeline_v4.py"
+    ],
+    "repository": [
+      ".github/ISSUE_TEMPLATE/**",
+      ".github/PULL_REQUEST_TEMPLATE.md",
+      ".github/dependabot.yml",
+      ".github/CODEOWNERS",
+      ".gitignore",
+      ".gitattributes",
+      "LICENSE",
+      "package.json",
+      "package-lock.json"
+    ]
+  }
+}

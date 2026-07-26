@@ -10,6 +10,8 @@ assert "release-readiness-check.yml" not in a and "validation_run_id:" in a and 
 assert "Consume exact successful PR validation tree" in a
 assert "Upload promoted merged-main candidate" in a
 assert "Post-merge userscript validation used: no" in a
+assert "No release-critical path changed; exact candidate promotion is intentionally skipped." in a
+assert "Path-aware release candidate required" in a
 for token in ("Resolve exact immutable release candidate","Verify Greasy Fork and back up concurrently","BACKUP_PID=$!","GF_PID=$!","sleep 2","sleep 5","sleep 15","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md"):
     assert token in p, token
 assert "gh run watch" not in p
@@ -26,3 +28,4 @@ print("Release Pipeline v4 publication contract passed with v5 validated-tree pr
 
 assert "name: Toolkit Hotfix Gate" in v
 assert "test_consolidated_pr_gate.py" in v
+assert "test_path_aware_blocking.py" in v

@@ -53,6 +53,8 @@ def main() -> int:
         "releaseDashboardChanged: false",
         "verify_validation_candidate.py --self-test",
         "name: Toolkit Hotfix Gate",
+        "name: Classify changed paths",
+        "classify_pr_paths.py",
         "name: Runtime lane",
         "name: Integrity lane",
         "name: Performance lane",
@@ -82,6 +84,8 @@ def main() -> int:
         "validation_run_id: ${{ github.run_id }}",
         "Post-merge userscript validation used: no",
         "Post-merge release bundle rebuild used: no",
+        "No release-critical path changed; exact candidate promotion is intentionally skipped.",
+        "Path-aware release candidate required",
         "gh workflow run validate-userscript.yml --ref main",
         "github.event.workflow_run.event == 'workflow_dispatch'",
     ], "Automatic release workflow")

@@ -24,6 +24,9 @@ def main() -> int:
     text = GATE.read_text(encoding="utf-8")
     for marker in [
         "run-name: Toolkit Hotfix Gate",
+        "classify:",
+        "name: Classify changed paths",
+        "classify_pr_paths.py",
         "runtime:",
         "name: Runtime lane",
         "integrity:",
@@ -38,16 +41,18 @@ def main() -> int:
         "missionchief-toolkit-validation-candidate-${{ github.sha }}",
         "Write immutable validation candidate evidence",
         "test_consolidated_pr_gate.py",
+        "test_path_aware_blocking.py",
+        "Allow intentionally skipped lanes",
     ]:
         assert marker in text, marker
-    assert text.count("runs-on: ubuntu-latest") == 5
+    assert text.count("runs-on: ubuntu-latest") == 6
     assert "cancel-in-progress: true" in text
     for path in LEGACY:
         legacy = (ROOT / path).read_text(encoding="utf-8")
         on_block = legacy.split("\npermissions:", 1)[0]
         assert "\n  pull_request:" not in on_block, path
         assert "workflow_dispatch:" in on_block or "schedule:" in on_block or "\n  push:" in on_block
-    print("Consolidated PR gate contract passed: four parallel lanes, one aggregate gate and no legacy PR triggers.")
+    print("Consolidated PR gate contract passed: path classifier, four selective lanes, one aggregate gate and no legacy PR triggers.")
     return 0
 
 if __name__ == "__main__":

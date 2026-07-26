@@ -56,11 +56,11 @@ jobs:
                       raise SystemExit(f'{label}: conflicting staged byte at encoded offset {index}')
                   target[index] = char
 
-          # Exact fragments already staged on the branch.
           p = read('.github/v8.0.2/audio-parts/part-00.b64')
           place(0, p[0:108], 'audio-parts/00 head')
           place(509, p[413:7722], 'audio-parts/00 middle')
           place(9487, p[7719:10232], 'audio-parts/00 tail')
+          place(0, read('.github/v8.0.2/audio-exact/part-00.b64'), 'audio-exact/00')
 
           place(12000, read('.github/v8.0.2/audio-parts/part-01.b64'), 'audio-parts/01')
 
@@ -154,9 +154,6 @@ jobs:
           audio_path = root / 'themes/godfather/audio/godfather-flash-payout.mp3'
           audio_path.write_bytes(audio)
 
-          # The reviewed builder originally decoded temporary transport parts.
-          # Replace that section with an exact final-file verification because the
-          # audio has already been reconstructed and hash-verified above.
           builder_path = root / '.github/v8.0.2/build_hotfix.py'
           builder = builder_path.read_text(encoding='utf-8')
           start = builder.index("parts = sorted(AUDIO_PARTS.glob('part-*.b64'))")

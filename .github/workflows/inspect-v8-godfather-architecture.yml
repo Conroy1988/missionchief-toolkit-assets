@@ -1,194 +1,95 @@
-name: Materialise v8 Godfather Development Inputs
+name: Build v8 Godfather Interface
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - feat/v8-godfather-an-offer-he-cant-refuse
     paths:
-      - ".github/v8-godfather/**"
+      - ".github/v8-godfather/builder-parts/**"
       - ".github/workflows/inspect-v8-godfather-architecture.yml"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: v8-godfather-builder
+  cancel-in-progress: false
 
 jobs:
-  materialise:
-    if: github.actor == 'Conroy1988' && github.head_ref == 'feat/v8-godfather-an-offer-he-cant-refuse'
+  build:
+    if: github.actor == 'Conroy1988' && github.ref_name == 'feat/v8-godfather-an-offer-he-cant-refuse'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
-      - name: Check out exact v8 branch
+      - name: Check out exact development branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: feat/v8-godfather-an-offer-he-cant-refuse
-          fetch-depth: 1
-          persist-credentials: false
+          fetch-depth: 0
+          persist-credentials: true
 
-      - name: Extract theme and payout architecture
-        run: python3 .github/v8-godfather/inspect_architecture.py
-
-      - name: Audit staged builder and payout-audio transports
-        id: materialise
-        continue-on-error: true
+      - name: Verify isolated branch context
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p v8-materialised
+          test "$(git branch --show-current)" = "feat/v8-godfather-an-offer-he-cant-refuse"
+          test "$(git remote get-url origin)" = "https://github.com/Conroy1988/missionchief-toolkit-assets"
+          git diff --quiet
+          git diff --cached --quiet
 
-          python3 - <<'PY'
-          from __future__ import annotations
+      - name: Reconstruct deterministic clean-room builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/v8-godfather/builder-parts/part-*.b64 \
+            | base64 --decode \
+            | gzip --decompress \
+            > /tmp/build_v8_godfather.py
+          python3 -m py_compile /tmp/build_v8_godfather.py
+          test "$(wc -c < /tmp/build_v8_godfather.py)" -ge 50000
 
-          import base64
-          import gzip
-          import hashlib
-          import json
-          import traceback
-          from pathlib import Path
+      - name: Build and self-clean v8 interface
+        run: python3 /tmp/build_v8_godfather.py --root . --clean-staging
 
-          output = Path('v8-materialised')
-          report: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
-          failures: list[str] = []
+      - name: Validate generated JavaScript and theme package
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          python3 .github/scripts/test_v8_godfather_contract.py
+          python3 -m json.tool themes/godfather/manifest.json >/dev/null
+          python3 -m json.tool docs/site-data.json >/dev/null
+          python3 -m json.tool help/manifest.json >/dev/null
+          python3 -m json.tool status/theme-asset-inventory.json >/dev/null
+          python3 -m json.tool status/media-asset-audit.json >/dev/null
 
-          def read_parts(directory: Path) -> tuple[list[Path], list[str]]:
-              parts = sorted(directory.glob('part-*.b64'))
-              if not parts:
-                  raise RuntimeError(f'No transport parts found in {directory}')
-              texts = [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
-              report[str(directory)] = [
-                  {
-                      'name': path.name,
-                      'fileBytes': path.stat().st_size,
-                      'base64Chars': len(text),
-                      'mod4': len(text) % 4,
-                      'head': text[:16],
-                      'tail': text[-16:],
-                  }
-                  for path, text in zip(parts, texts, strict=True)
-              ]
-              return parts, texts
+      - name: Run canonical userscript preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          git restore --worktree --staged -- dist
+          git clean -fd -- dist
 
-          def decode_continuous(texts: list[str]) -> bytes:
-              joined = ''.join(texts)
-              joined += '=' * ((-len(joined)) % 4)
-              return base64.b64decode(joined, validate=True)
+      - name: Verify staging teardown and intended scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e .github/v8-godfather
+          test ! -e .github/workflows/inspect-v8-godfather-architecture.yml
+          git status --short
+          test -n "$(git status --porcelain)"
 
-          try:
-              builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
-              builder_transport = decode_continuous(builder_texts)
-              try:
-                  builder_payload = gzip.decompress(builder_transport)
-                  (output / 'staged-v8-builder.py').write_bytes(builder_payload)
-                  report['builder'] = {
-                      'status': 'valid',
-                      'bytes': len(builder_payload),
-                      'sha256': hashlib.sha256(builder_payload).hexdigest(),
-                  }
-              except Exception as error:
-                  report['builder'] = {
-                      'status': 'abandoned-malformed-staging-payload',
-                      'transportBytes': len(builder_transport),
-                      'transportSha256': hashlib.sha256(builder_transport).hexdigest(),
-                      'error': repr(error),
-                      'decision': 'Replace with a clean-room deterministic builder based on verified v7.1.6.',
-                  }
-          except Exception as error:
-              report['builder'] = {'status': 'decode-failed', 'error': repr(error)}
-
-          try:
-              audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
-              attempts: list[dict[str, object]] = []
-              audio_payload: bytes | None = None
-              try:
-                  audio_payload = decode_continuous(audio_texts)
-                  attempts.append({'mode': 'continuous', 'ok': True, 'bytes': len(audio_payload)})
-              except Exception as error:
-                  attempts.append({'mode': 'continuous', 'ok': False, 'error': repr(error)})
-
-              if audio_payload is None:
-                  try:
-                      chunks = []
-                      for text in audio_texts:
-                          padded = text + ('=' * ((-len(text)) % 4))
-                          chunks.append(base64.b64decode(padded, validate=True))
-                      audio_payload = b''.join(chunks)
-                      attempts.append({
-                          'mode': 'independent-padded',
-                          'ok': True,
-                          'bytes': len(audio_payload),
-                          'partBytes': [len(chunk) for chunk in chunks],
-                      })
-                  except Exception as error:
-                      attempts.append({'mode': 'independent-padded', 'ok': False, 'error': repr(error)})
-
-              report['audioDecodeAttempts'] = attempts
-              if audio_payload is None:
-                  raise RuntimeError('All payout-audio transport decode modes failed')
-
-              audio = output / 'godfather-flash-payout.mp3'
-              audio.write_bytes(audio_payload)
-              report['audio'] = {
-                  'status': 'decoded',
-                  'bytes': len(audio_payload),
-                  'sha256': hashlib.sha256(audio_payload).hexdigest(),
-                  'head': audio_payload[:16].hex(),
-                  'tail': audio_payload[-16:].hex(),
-              }
-              if len(audio_payload) < 32_000:
-                  raise RuntimeError(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
-              if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
-                  raise RuntimeError('Godfather payout audio does not have an MP3 signature')
-          except Exception as error:
-              failures.append(f'audio: {type(error).__name__}: {error}')
-              report['audioFailure'] = {
-                  'error': repr(error),
-                  'traceback': traceback.format_exc(),
-              }
-          finally:
-              report['failures'] = failures
-              (output / 'materialisation-report.json').write_text(
-                  json.dumps(report, indent=2) + '\n', encoding='utf-8'
-              )
-
-          if failures:
-              raise SystemExit('; '.join(failures))
-          PY
-
-          if [ -f v8-materialised/godfather-flash-payout.mp3 ] && command -v ffprobe >/dev/null 2>&1; then
-            ffprobe -v error \
-              -show_entries format=duration,size,bit_rate:stream=codec_name,channels,sample_rate \
-              -of json \
-              v8-materialised/godfather-flash-payout.mp3 \
-              > v8-materialised/audio-probe.json || true
+      - name: Commit exact generated result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated changes found"
+            exit 1
           fi
-
-      - name: Stage exact development inputs
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p v8-inputs/.github/scripts v8-inputs/.github/fixtures v8-inputs/docs v8-inputs/help v8-inputs/status v8-inputs/themes
-          cp src/MissionChief_Map_Command_Toolkit.user.js v8-inputs/source.user.js
-          cp CHANGELOG.md README.md v8-inputs/
-          cp help/index.html help/manifest.json v8-inputs/help/
-          cp docs/site-data.json v8-inputs/docs/
-          cp status/theme-asset-inventory.json status/media-asset-audit.json v8-inputs/status/
-          cp .github/scripts/validate_userscript.py .github/scripts/test_asset_health.py .github/scripts/test_main_style_source_headroom.py .github/scripts/run_userscript_preflight.sh v8-inputs/.github/scripts/
-          cp .github/fixtures/main-style-source-headroom.json v8-inputs/.github/fixtures/
-          cp -R themes/* v8-inputs/themes/
-
-      - name: Upload architecture, exact inputs and transport evidence
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: v8-godfather-materialised-${{ github.sha }}
-          path: |
-            v8-godfather-architecture.txt
-            v8-inputs
-            v8-materialised
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Enforce valid payout audio
-        if: steps.materialise.outcome != 'success'
-        run: |
-          cat v8-materialised/materialisation-report.json || true
-          exit 1
+          git commit -m "Implement v8.0.0 Godfather interface"
+          git push origin HEAD:feat/v8-godfather-an-offer-he-cant-refuse

@@ -71,6 +71,81 @@ jobs:
           path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
           PY
 
+      - name: Record reviewed v8 source-headroom contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.github/fixtures/main-style-source-headroom.json')
+          fixture = json.loads(path.read_text(encoding='utf-8'))
+          fixture['v8Candidate'] = {
+              'issue': 533,
+              'version': '8.0.0',
+              'sourceBytes': 1600028,
+              'sourceLines': 24100,
+              'sourceSha256': '049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b',
+              'templateBytes': 679313,
+              'templateLines': 7769,
+              'templateSha256': '16cfb67472e02fb1c187144c078591b79553fe9deaa633067ae59fea1c1863ab',
+              'canonicalCssSha256': '494b03f1a5b3571ba51105c009dbcde4f29f1458b15beeb6f2440b55db855f48',
+              'maxSourceBytes': 1650000,
+              'minTemplateBytes': 500000,
+              'baseline': 'v7Candidate',
+              'approvedGrowth': {
+                  'sourceBytes': 35131,
+                  'sourceLines': 517,
+                  'templateBytes': 32470,
+                  'templateLines': 489,
+              },
+              'scope': 'Issue #533 complete eighth interface system, original theme assets and theme-scoped payout integration',
+          }
+          path.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
+          PY
+          cat > .github/scripts/test_main_style_source_headroom.py <<'PY'
+          #!/usr/bin/env python3
+          import hashlib
+          import json
+          import re
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[2]
+          text = (ROOT / 'src' / 'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
+          fixture = json.loads((ROOT / '.github/fixtures/main-style-source-headroom.json').read_text(encoding='utf-8'))
+          candidate = fixture['v8Candidate']
+          start = text.index('function installMainStyles()')
+          template_start = text.index('addStyle(`', start) + len('addStyle(`')
+          metric = text.index("recordStartupMetric('stylesheetInstallMs'", template_start)
+          template_end = text.rfind('`);', template_start, metric)
+          raw = text[template_start:template_end]
+          lines = raw.split('\n')
+          canonical = re.sub(
+              r'\n[\t ]*}',
+              '}',
+              '\n'.join(
+                  line
+                  for index, line in enumerate(lines)
+                  if not (0 < index < len(lines) - 1 and not line.strip())
+              ),
+          )
+          actual = {
+              'sourceBytes': len(text.encode()),
+              'sourceLines': len(text.splitlines()),
+              'sourceSha256': hashlib.sha256(text.encode()).hexdigest(),
+              'templateBytes': len(raw.encode()),
+              'templateLines': len(lines),
+              'templateSha256': hashlib.sha256(raw.encode()).hexdigest(),
+              'canonicalCssSha256': hashlib.sha256(canonical.encode()).hexdigest(),
+          }
+          assert all(actual[key] == candidate[key] for key in actual), (actual, candidate)
+          assert actual['sourceBytes'] <= candidate['maxSourceBytes'], (actual, candidate)
+          assert actual['templateBytes'] >= candidate['minTemplateBytes'], (actual, candidate)
+          print('Main-style source-headroom contract passed for v8.')
+          PY
+          chmod +x .github/scripts/test_main_style_source_headroom.py
+
       - name: Validate generated JavaScript and Godfather contracts
         shell: bash
         run: |
@@ -83,6 +158,7 @@ jobs:
           python3 -m json.tool status/theme-asset-inventory.json >/dev/null
           python3 -m json.tool status/media-asset-audit.json >/dev/null
           python3 -m json.tool .github/asset-compatibility-aliases.json >/dev/null
+          python3 -m json.tool .github/fixtures/main-style-source-headroom.json >/dev/null
 
       - name: Validate asset health contracts
         shell: bash

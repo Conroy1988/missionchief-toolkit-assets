@@ -21,7 +21,6 @@ jobs:
   apply:
     if: >-
       github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
-      github.actor == 'Conroy1988' &&
       github.ref_name == 'feature/v8-godfather-an-offer-he-cant-refuse'
     runs-on: ubuntu-latest
     timeout-minutes: 20

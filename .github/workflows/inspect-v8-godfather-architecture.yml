@@ -32,37 +32,67 @@ jobs:
           set -euo pipefail
           mkdir -p v8-materialised
 
-          cat .github/v8-godfather/builder-parts/part-*.b64 \
-            | base64 --decode \
-            | gzip --decompress \
-            > v8-materialised/v8_godfather_builder.py
-          python3 -m py_compile v8-materialised/v8_godfather_builder.py
-
-          cat .github/v8-godfather/audio-parts/part-*.b64 \
-            | base64 --decode \
-            > v8-materialised/godfather-flash-payout.mp3
-
           python3 - <<'PY'
           from __future__ import annotations
 
+          import base64
+          import gzip
           import hashlib
           import json
           from pathlib import Path
 
+          def decode_parts(directory: Path) -> tuple[bytes, str, list[str]]:
+              parts = sorted(directory.glob('part-*.b64'))
+              if not parts:
+                  raise SystemExit(f'No transport parts found in {directory}')
+              texts = [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
+              joined = ''.join(texts)
+              try:
+                  return base64.b64decode(joined, validate=True), 'continuous', [path.name for path in parts]
+              except Exception as continuous_error:
+                  decoded: list[bytes] = []
+                  try:
+                      for text in texts:
+                          decoded.append(base64.b64decode(text, validate=True))
+                      return b''.join(decoded), 'independent', [path.name for path in parts]
+                  except Exception as independent_error:
+                      raise SystemExit(
+                          f'Base64 transport decode failed for {directory}: '
+                          f'continuous={continuous_error}; independent={independent_error}'
+                      ) from independent_error
+
           root = Path('v8-materialised')
+          builder_transport, builder_mode, builder_parts = decode_parts(
+              Path('.github/v8-godfather/builder-parts')
+          )
+          try:
+              builder_payload = gzip.decompress(builder_transport)
+          except Exception as error:
+              raise SystemExit(f'Builder gzip decode failed: {error}') from error
           builder = root / 'v8_godfather_builder.py'
+          builder.write_bytes(builder_payload)
+
+          audio_payload, audio_mode, audio_parts = decode_parts(
+              Path('.github/v8-godfather/audio-parts')
+          )
           audio = root / 'godfather-flash-payout.mp3'
-          payload = audio.read_bytes()
-          if len(payload) < 32_000:
-              raise SystemExit(f'Godfather payout audio is unexpectedly small: {len(payload)} bytes')
-          if not (payload.startswith(b'ID3') or payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
+          audio.write_bytes(audio_payload)
+
+          if len(audio_payload) < 32_000:
+              raise SystemExit(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
+          if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
               raise SystemExit('Godfather payout audio does not have an MP3 signature')
+
           report = {
-              'builderBytes': builder.stat().st_size,
-              'builderSha256': hashlib.sha256(builder.read_bytes()).hexdigest(),
-              'audioBytes': len(payload),
-              'audioSha256': hashlib.sha256(payload).hexdigest(),
-              'audioSignature': payload[:10].hex(),
+              'builderBytes': len(builder_payload),
+              'builderSha256': hashlib.sha256(builder_payload).hexdigest(),
+              'builderTransportMode': builder_mode,
+              'builderParts': builder_parts,
+              'audioBytes': len(audio_payload),
+              'audioSha256': hashlib.sha256(audio_payload).hexdigest(),
+              'audioSignature': audio_payload[:10].hex(),
+              'audioTransportMode': audio_mode,
+              'audioParts': audio_parts,
               'sourceCommit': '${{ github.sha }}',
           }
           (root / 'materialisation-report.json').write_text(
@@ -70,6 +100,8 @@ jobs:
           )
           print(json.dumps(report, indent=2))
           PY
+
+          python3 -m py_compile v8-materialised/v8_godfather_builder.py
 
           if command -v ffprobe >/dev/null 2>&1; then
             ffprobe -v error \
@@ -99,6 +131,7 @@ jobs:
           cp -R themes/* v8-inputs/themes/
 
       - name: Upload architecture, exact inputs and materialised payloads
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: v8-godfather-materialised-${{ github.sha }}
@@ -106,5 +139,5 @@ jobs:
             v8-godfather-architecture.txt
             v8-inputs
             v8-materialised
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14

@@ -98,9 +98,9 @@ jobs:
                   'sourceBytes': 35131,
                   'sourceLines': 517,
                   'templateBytes': 32470,
-                  'templateLines': 489,
+                  'templateLines': 489
               },
-              'scope': 'Issue #533 complete eighth interface system, original theme assets and theme-scoped payout integration',
+              'scope': 'Issue #533 complete eighth interface system, original theme assets and theme-scoped payout integration'
           }
           path.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
           PY
@@ -174,6 +174,16 @@ jobs:
           mkdir -p /tmp/v8-validation
           python3 .github/scripts/test_main_style_source_headroom.py 2>&1 | tee /tmp/v8-validation/main-style-headroom.log
 
+      - name: Run canonical userscript preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/v8-validation
+          bash .github/scripts/run_userscript_preflight.sh 2>&1 | tee /tmp/v8-validation/userscript-preflight.log
+          python3 .github/scripts/validate_userscript.py 2>&1 | tee /tmp/v8-validation/validate-userscript.log
+          git restore --worktree --staged -- dist || true
+          git clean -fd -- dist
+
       - name: Preserve validation diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -182,15 +192,6 @@ jobs:
           path: /tmp/v8-validation
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Run canonical userscript preflight
-        shell: bash
-        run: |
-          set -euo pipefail
-          bash .github/scripts/run_userscript_preflight.sh
-          python3 .github/scripts/validate_userscript.py
-          git restore --worktree --staged -- dist || true
-          git clean -fd -- dist
 
       - name: Verify staging teardown and generated scope
         shell: bash

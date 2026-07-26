@@ -1,0 +1,193 @@
+name: Run v8.0.1 Godfather Hotfix
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/run-v8-godfather-hotfix.yml"
+      - ".github/workflows/hotfix-v8-godfather-css.yml"
+      - ".github/actions-security-policy.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-0-1-godfather-hotfix-runner
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.1-godfather-css-activation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact hotfix branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: hotfix/v8.0.1-godfather-css-activation
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Execute reviewed deterministic repair payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path('.github/workflows/hotfix-v8-godfather-css.yml').read_text(encoding='utf-8')
+          lines = workflow.splitlines()
+          blocks = []
+          index = 0
+          while index < len(lines):
+              if lines[index].strip() == "python3 - <<'PY'":
+                  body = []
+                  index += 1
+                  while index < len(lines) and lines[index].strip() != 'PY':
+                      body.append(lines[index])
+                      index += 1
+                  blocks.append(textwrap.dedent('\n'.join(body)) + '\n')
+              index += 1
+          if len(blocks) != 2:
+              raise SystemExit(f'Expected exactly two reviewed Python payloads, found {len(blocks)}')
+          exec(compile(blocks[0], 'v8-hotfix-build', 'exec'), {})
+          PY
+
+      - name: Install permanent stylesheet activation regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .github/scripts/test_issue537_godfather_css_activation.py <<'PY'
+          #!/usr/bin/env python3
+          from pathlib import Path
+          import hashlib
+          import re
+
+          ROOT = Path(__file__).resolve().parents[2]
+          SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
+          EXPECTED_HASH = "f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525"
+
+          def css_depth(text: str, stop: int) -> int:
+              depth = 0
+              quote = ""
+              escaped = False
+              comment = False
+              index = 0
+              while index < stop:
+                  char = text[index]
+                  nxt = text[index + 1] if index + 1 < stop else ""
+                  if comment:
+                      if char == "*" and nxt == "/":
+                          comment = False
+                          index += 2
+                          continue
+                      index += 1
+                      continue
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif char == "\\":
+                          escaped = True
+                      elif char == quote:
+                          quote = ""
+                      index += 1
+                      continue
+                  if char == "/" and nxt == "*":
+                      comment = True
+                      index += 2
+                      continue
+                  if char in ("'", '"'):
+                      quote = char
+                  elif char == "{":
+                      depth += 1
+                  elif char == "}":
+                      depth -= 1
+                      assert depth >= 0, "stylesheet closes below top-level depth"
+                  index += 1
+              return depth
+
+          source = SOURCE.read_text(encoding="utf-8")
+          assert hashlib.sha256(source.encode()).hexdigest() == EXPECTED_HASH
+          assert re.search(r"(?m)^//\s*@version\s+8\.0\.1$", source)
+          install = source.index("function installMainStyles()")
+          css_start = source.index("addStyle(`", install) + len("addStyle(`")
+          css_end_marker = source.index("recordStartupMetric('stylesheetInstallMs'", css_start)
+          css_end = source.rfind("`);", css_start, css_end_marker)
+          css = source[css_start:css_end]
+          godfather = css.index("/* v8.0.1 — The Godfather: complete original old-money command interface. */")
+          responsive = css.index('html[data-mcms-mobile-active="true"],', godfather)
+          assert css_depth(css, godfather) == 0, "Godfather stylesheet starts inside another CSS rule"
+          assert css_depth(css, responsive) == 0, "responsive stylesheet starts inside the Godfather block"
+          assert css_depth(css, len(css)) == 0, "main stylesheet has unbalanced rule braces"
+          assert 'display:none !important;\n        }\n        /* v8.0.1 — The Godfather' in css
+          assert '}html[data-mcms-mobile-active="true"],' not in css
+          assert css.count('html[data-mcms-ui-theme="godfather"]') >= 100
+          for path in (
+              ROOT / 'dist/MissionChief_Map_Command_Toolkit.user.js',
+              ROOT / 'dist/MissionChief_Map_Command_Toolkit.txt',
+          ):
+              assert path.read_bytes() == SOURCE.read_bytes(), f"distribution parity failed: {path}"
+          print("Issue #537 Godfather stylesheet activation contract passed.")
+          PY
+          chmod +x .github/scripts/test_issue537_godfather_css_activation.py
+
+      - name: Remove both temporary writers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import textwrap
+
+          original = Path('.github/workflows/hotfix-v8-godfather-css.yml')
+          workflow = original.read_text(encoding='utf-8')
+          lines = workflow.splitlines()
+          blocks = []
+          index = 0
+          while index < len(lines):
+              if lines[index].strip() == "python3 - <<'PY'":
+                  body = []
+                  index += 1
+                  while index < len(lines) and lines[index].strip() != 'PY':
+                      body.append(lines[index])
+                      index += 1
+                  blocks.append(textwrap.dedent('\n'.join(body)) + '\n')
+              index += 1
+          exec(compile(blocks[1], 'v8-hotfix-cleanup', 'exec'), {})
+
+          policy_path = Path('.github/actions-security-policy.json')
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          removed = policy['allowedWritePermissions'].pop('.github/workflows/run-v8-godfather-hotfix.yml', None)
+          if removed != ['contents']:
+              raise SystemExit(f'Unexpected runner writer policy: {removed!r}')
+          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          Path('.github/workflows/run-v8-godfather-hotfix.yml').unlink()
+          PY
+
+      - name: Validate exact repaired candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          python3 -m py_compile .github/scripts/test_issue537_godfather_css_activation.py
+          python3 .github/scripts/test_issue537_godfather_css_activation.py
+          python3 .github/scripts/test_v8_godfather_contract.py
+          python3 .github/scripts/test_main_style_source_headroom.py
+          bash .github/scripts/run_userscript_preflight.sh
+          python3 .github/scripts/validate_userscript.py
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test ! -e .github/workflows/hotfix-v8-godfather-css.yml
+          test ! -e .github/workflows/run-v8-godfather-hotfix.yml
+
+      - name: Commit exact v8.0.1 hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Godfather stylesheet activation for v8.0.1"
+          git push origin HEAD:hotfix/v8.0.1-godfather-css-activation

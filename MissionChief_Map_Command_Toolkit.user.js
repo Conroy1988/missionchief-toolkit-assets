@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.0.2
+// @version      8.0.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.0.2',
+        version: '8.0.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1002,7 +1002,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }),
         godfatherOffer: Object.freeze({
         label: 'The Godfather Flash Payout',
-        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3?v=8.0.2'
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3?v=8.0.3'
         })
     });
 
@@ -1011,7 +1011,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const THEME_ORDER = [...CORE_THEME_ORDER, ...SERVICE_THEME_ORDER];
     const PAYOUT_FLASH_MIN_MS = 2000;
     const PAYOUT_FLASH_MAX_MS = 30000;
-    const PAYOUT_FLASH_STEP_MS = 2000;
+    const PAYOUT_FLASH_STEP_MS = 1000;
     const PAYOUT_HISTORY_LIMIT = 40;
     const PAYOUT_MATCH_WINDOW_MS = 20000;
     const MISSION_AGE_LABEL_REFRESH_MS = 60 * 1000;
@@ -1413,7 +1413,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
         merged.payoutFlash.threshold = Math.round(clamp(merged.payoutFlash.threshold, 1000, 1000000000, 10000));
+        const loadedPayoutDuration = Number(parsed?.payoutFlash?.durationMs);
         merged.payoutFlash.durationMs = normalisePayoutFlashDuration(merged.payoutFlash.durationMs);
+        if (merged.uiTheme === 'godfather' && (!Number.isFinite(loadedPayoutDuration) || loadedPayoutDuration === 4000)) {
+        merged.payoutFlash.durationMs = 7000;
+        }
         merged.payoutFlash.template = PAYOUT_TEMPLATES[merged.payoutFlash.template] ? merged.payoutFlash.template : 'gta5';
         merged.payoutFlash.soundEnabled = Boolean(merged.payoutFlash.soundEnabled);
         merged.payoutFlash.soundVolume = clamp(merged.payoutFlash.soundVolume, 0, 1, 0.35);
@@ -1493,14 +1497,16 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         const pairedPayoutByTheme = Object.freeze({ hyrule: 'hyruleQuest', godfather: 'godfatherOffer' });
         const pairedTemplate = pairedPayoutByTheme[nextTheme] || '';
         const pairedPayoutChanged = Boolean(pairedTemplate && state.payoutFlash.template !== pairedTemplate);
+        const godfatherDurationChanged = nextTheme === 'godfather' && state.payoutFlash.durationMs === 4000;
         state.uiTheme = nextTheme;
         if (pairedPayoutChanged) state.payoutFlash.template = pairedTemplate;
+        if (godfatherDurationChanged) state.payoutFlash.durationMs = 7000;
         saveState();
         updateUI();
         if (announce && changed) {
         const pairedMessages = {
             hyrule: 'Hyrule Command interface and Quest Reward payout active',
-            godfather: 'The Godfather interface and Offer payout active'
+            godfather: 'The Godfather interface and 7-second Offer payout active'
         };
         showToast(pairedPayoutChanged ? pairedMessages[nextTheme] : `${UI_THEMES[nextTheme].label} interface active`);
         }
@@ -9004,7 +9010,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             animation:none !important;
             display:none !important;
         }
-        /* v8.0.2 — The Godfather: complete original old-money command interface. */
+        /* v8.0.3 — The Godfather: complete original old-money command interface. */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather {
             position:relative !important;
             overflow:hidden !important;
@@ -9504,7 +9510,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
         
-        /* v8.0.2 — Godfather launcher, dock and payout placement hotfix. */
+        /* v8.0.3 — Godfather launcher, dock and payout placement hotfix. */
         html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell::before {
             width:22px !important;
             height:22px !important;
@@ -9558,13 +9564,38 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             line-height:1 !important;
         }
         #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
-            top:40% !important;
+            top:42% !important;
+            margin-top:-24px !important;
         }
         html[data-mcms-tablet-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
-            top:34% !important;
+            top:38% !important;
+            margin-top:-32px !important;
         }
         html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
-            top:31% !important;
+            top:34% !important;
+            margin-top:-28px !important;
+        }
+        @media (max-height:560px) {
+            #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+                top:50% !important;
+                margin-top:-48px !important;
+                min-height:210px !important;
+                padding:24px 38px 20px !important;
+            }
+            #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-title {
+                font-size:clamp(30px,4.5vw,52px) !important;
+            }
+            #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-amount {
+                font-size:clamp(34px,5vw,50px) !important;
+            }
+            html[data-mcms-tablet-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+                margin-top:-58px !important;
+            }
+            html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+                margin-top:-52px !important;
+                min-height:196px !important;
+                padding:34px 20px 20px !important;
+            }
         }
 
         /* v7.1.0 Incident Command Wire: bounded, theme-aware card navigation. */
@@ -22555,7 +22586,7 @@ Create the private backup now?`);
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Banner style</span><select class="mcms-select" data-setting="payout-template">${buildPayoutTemplateOptions(state.payoutFlash.template)}</select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Minimum payout</span><input class="mcms-input" type="number" min="1000" step="1000" data-setting="payout-threshold"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="2" data-setting="payout-duration"></div>
+                <div class="mcms-row"><span class="mcms-row-label">Flash duration (sec)</span><input class="mcms-input" type="number" min="2" max="30" step="1" data-setting="payout-duration"></div>
                 <div class="mcms-row"><span class="mcms-row-label">Sound volume</span><input class="mcms-input" type="range" min="0" max="1" step="0.05" data-setting="payout-volume"></div>
                 <div class="mcms-row"><span class="mcms-row-label">Test payout tier</span><select class="mcms-select" data-setting="payout-test-amount"><option value="10000">10K Standard</option><option value="25000">25K Major</option><option value="50000">50K High Value</option><option value="100000">100K Elite</option></select></div>
                 <button class="mcms-small-btn" style="width:100% !important;margin-bottom:8px !important" type="button" data-action="test-payout-flash">Test Emergency Flash</button>

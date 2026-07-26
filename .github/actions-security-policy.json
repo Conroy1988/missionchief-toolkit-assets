@@ -19,6 +19,9 @@
       "actions",
       "contents"
     ],
+    ".github/workflows/build-v8.0.3-godfather-hotfix.yml": [
+      "contents"
+    ],
     ".github/workflows/discord-release-preview.yml": [
       "issues"
     ],

@@ -3,12 +3,6 @@ name: Prepare Release Plan
 run-name: Release plan · ${{ inputs.release_level || 'auto' }} · ${{ inputs.proposed_version || 'recommended' }}
 
 on:
-  pull_request:
-    paths:
-      - ".github/scripts/prepare_release_plan.py"
-      - ".github/workflows/release-planning.yml"
-      - "status/release-dashboard.json"
-      - "CHANGELOG.md"
   workflow_dispatch:
     inputs:
       release_level:

@@ -52,6 +52,11 @@ def main() -> int:
         "publicMainChanged: false",
         "releaseDashboardChanged: false",
         "verify_validation_candidate.py --self-test",
+        "name: Toolkit Hotfix Gate",
+        "name: Runtime lane",
+        "name: Integrity lane",
+        "name: Performance lane",
+        "name: Repository lane",
     ], "Canonical validation workflow")
     forbid(validation, [
         "contents: write",

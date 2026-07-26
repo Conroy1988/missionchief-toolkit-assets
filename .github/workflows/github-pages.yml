@@ -3,19 +3,6 @@ name: GitHub Pages Documentation
 run-name: Documentation site · ${{ github.event_name }}
 
 on:
-  pull_request:
-    paths:
-      - ".github/scripts/build_pages_site.py"
-      - ".github/scripts/test_pages_release_deploy_contract.py"
-      - ".github/workflows/github-pages.yml"
-      - ".github/release-settings.json"
-      - "docs/site-data.json"
-      - "docs/site-assets/**"
-      - "docs/SITE.md"
-      - "docs/media/**"
-      - "status/release-dashboard.json"
-      - "CHANGELOG.md"
-      - "README.md"
   push:
     branches:
       - main

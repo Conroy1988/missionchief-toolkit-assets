@@ -6,20 +6,22 @@ on:
     paths:
       - ".github/workflows/build-release-pipeline-v4-candidate-v3.yml"
       - ".github/development-packages/issue543_release_pipeline_v4.py"
+      - ".github/actions-security-policy.json"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   candidate:
-    if: github.head_ref == 'feature/release-pipeline-v4-fast-lane'
+    if: github.actor == 'Conroy1988' && github.head_ref == 'feature/release-pipeline-v4-fast-lane'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: feature/release-pipeline-v4-fast-lane
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Materialise reviewed Pipeline v4 candidate
         run: |
@@ -44,7 +46,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          # Reconcile the permanent version/status contract with Pipeline v4.
           path = Path('.github/scripts/test_version_status_contract.py')
           text = path.read_text(encoding='utf-8')
           replacements = (
@@ -71,7 +72,6 @@ jobs:
           text = text.replace(anchor, anchor + '        \'gh run watch "$PAGES_RUN_ID" --exit-status\',\n', 1)
           path.write_text(text, encoding='utf-8')
 
-          # Correct generated workflow-text defects without embedding GitHub expressions.
           release_path = Path('.github/workflows/release-toolkit.yml')
           release = release_path.read_text(encoding='utf-8')
           if release.count(chr(1)) != 1:
@@ -110,6 +110,7 @@ jobs:
               contract = contract.replace('print("Release Pipeline v4 contract passed.")', addition + '\nprint("Release Pipeline v4 contract passed.")', 1)
           contract_path.write_text(contract, encoding='utf-8')
           PY
+
           rm -f .github/development-packages/issue543_release_pipeline_v4.py
           rm -f .github/workflows/preflight-release-pipeline-v4.yml
           rm -f .github/workflows/diagnose-release-pipeline-v4.yml
@@ -120,6 +121,17 @@ jobs:
           rm -f .github/workflows/diagnose-release-pipeline-v4-final.yml
           rm -f .github/workflows/build-release-pipeline-v4-candidate-v3.yml
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('.github/actions-security-policy.json')
+          policy = json.loads(path.read_text(encoding='utf-8'))
+          removed = policy['allowedWritePermissions'].pop('.github/workflows/build-release-pipeline-v4-candidate-v3.yml', None)
+          if removed != ['contents']:
+              raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
+          path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          PY
 
       - name: Run complete retained validation
         run: |
@@ -163,3 +175,17 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+      - name: Commit clean Pipeline v4 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf pipeline-v4-candidate
+          find . -type d -name __pycache__ -prune -exec rm -rf {} +
+          find . -type f -name '*.pyc' -delete
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "::error::Pipeline v4 candidate produced no repository changes."; exit 1; }
+          git commit -m "Implement Release Pipeline v4 maximum-speed delivery"
+          git push origin HEAD:feature/release-pipeline-v4-fast-lane

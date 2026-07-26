@@ -1,5 +1,14 @@
 # Changelog
 
+## [8.0.3] - 2026-07-26
+
+### Godfather duration and payout-position hotfix
+
+- Defaults the Godfather Offer flash to seven seconds when the normal four-second default is still active.
+- Allows one-second payout-duration steps so seven seconds remains a valid persisted value.
+- Raises the Godfather payout and adds short-viewport compaction so the full banner clears the command dock.
+- Adds a permanent Godfather duration and dock-clearance regression contract.
+
 ## [8.0.2] - 2026-07-26
 
 ### Godfather layout and payout-audio hotfix

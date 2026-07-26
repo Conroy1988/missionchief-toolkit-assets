@@ -48,7 +48,7 @@ def css_depth(text: str, stop: int) -> int:
 
 source = SOURCE.read_text(encoding='utf-8')
 assert hashlib.sha256(source.encode()).hexdigest() == EXPECTED_HASH
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.2$', source)
+assert re.search(r'(?m)^//\s*@version\s+8\.0\.3$', source)
 install = source.index('function installMainStyles()')
 css_start = source.index('addStyle(`', install) + len('addStyle(`')
 metric = source.index("recordStartupMetric('stylesheetInstallMs'", css_start)

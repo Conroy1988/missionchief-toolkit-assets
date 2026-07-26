@@ -12,7 +12,7 @@ EXPECTED_AUDIO_SHA = '53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf
 EXPECTED_AUDIO_BYTES = 136254
 
 assert hashlib.sha256(SOURCE.encode()).hexdigest() == EXPECTED_SOURCE_SHA
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.2$', SOURCE)
+assert re.search(r'(?m)^//\s*@version\s+8\.0\.3$', SOURCE)
 assert 'godfather-flash-payout.mp3?v=8.0.3' in SOURCE
 
 marker = '/* v8.0.3 — Godfather launcher, dock and payout placement hotfix. */'

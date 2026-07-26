@@ -29,33 +29,30 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Reconstruct exact supplied audio transport
+      - name: Retrieve and verify exact supplied audio
         shell: bash
         run: |
           set -euo pipefail
+          AUDIO_TMP=/tmp/godfather-v8.0.2.mp3
+          curl --fail --silent --show-error --location --max-time 60 \
+            'https://drive.usercontent.google.com/download?id=1T8rDJDn9xXZQq7WucYmt0akLsHEStvjo&export=download&confirm=t' \
+            --output "$AUDIO_TMP"
           python3 - <<'PY' > v8-hotfix-inputs.txt 2>&1
           from pathlib import Path
           import base64
           import hashlib
 
           source = Path('src/MissionChief_Map_Command_Toolkit.user.js').read_bytes()
-          exact_parts = sorted(Path('.github/v8.0.2/audio-exact').glob('part-*.b64'))
-          encoded_parts = [path.read_text(encoding='ascii').strip() for path in exact_parts]
-          encoded = ''.join(encoded_parts)
+          audio = Path('/tmp/godfather-v8.0.2.mp3').read_bytes()
           print('source_sha256', hashlib.sha256(source).hexdigest())
-          print('exact_part_count', len(exact_parts))
-          print('exact_part_names', [path.name for path in exact_parts])
-          print('exact_part_lengths', [len(value) for value in encoded_parts])
-          print('encoded_length', len(encoded))
-          decoded = base64.b64decode(encoded, validate=True)
-          digest = hashlib.sha256(decoded).hexdigest()
-          print('decoded_bytes', len(decoded))
-          print('decoded_sha256', digest)
-          if len(decoded) != 136254:
-              raise SystemExit(f'Exact audio byte size mismatch: {len(decoded)}')
+          print('audio_bytes', len(audio))
+          print('audio_sha256', hashlib.sha256(audio).hexdigest())
+          if len(audio) != 136254:
+              raise SystemExit(f'Exact audio byte size mismatch: {len(audio)}')
+          digest = hashlib.sha256(audio).hexdigest()
           if digest != '53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4':
               raise SystemExit(f'Exact audio digest mismatch: {digest}')
-
+          encoded = base64.b64encode(audio).decode('ascii')
           expected_lengths = [12000, 12000, 60000, 60000, 37672]
           if sum(expected_lengths) != len(encoded):
               raise SystemExit(f'Exact encoded length mismatch: {len(encoded)}')
@@ -66,7 +63,7 @@ jobs:
               payload = encoded[offset:offset + length]
               offset += length
               (target / f'part-{index:02d}.b64').write_text(payload, encoding='ascii')
-          print('legacy_part_lengths', expected_lengths)
+          print('audio_transport_lengths', expected_lengths)
           PY
           python3 -m py_compile .github/v8.0.2/build_hotfix.py
           cat v8-hotfix-inputs.txt
@@ -117,7 +114,6 @@ jobs:
           if removed != ['contents']:
               raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
           policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
-
           Path('.github/workflows/build-v8.0.2-godfather-hotfix.yml').unlink()
           shutil.rmtree('.github/v8.0.2')
           PY

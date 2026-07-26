@@ -49,6 +49,9 @@
     ],
     ".github/workflows/sync-repository-labels.yml": [
       "issues"
+    ],
+    ".github/workflows/validate-userscript.yml": [
+      "contents"
     ]
   },
   "forbiddenTriggers": [

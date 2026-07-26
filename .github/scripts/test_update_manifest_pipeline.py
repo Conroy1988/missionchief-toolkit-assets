@@ -82,14 +82,13 @@ def main() -> int:
     require(
         release,
         [
-            "Record successful release, manifest and announcement state",
+            "Record successful release, manifest, announcement and speed state",
             "python3 .github/scripts/build_stable_update_manifest.py",
             "status/update-manifest.json",
             'git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"',
-            "- name: Publish GitHub Pages",
+            "- name: Dispatch GitHub Pages asynchronously",
             "gh workflow run github-pages.yml --ref main",
-            'gh run watch "$PAGES_RUN_ID" --exit-status',
-            "Dashboard, stable update manifest and announcement tracker updated atomically",
+            "Dashboard, release-speed telemetry, stable update manifest and announcement tracker updated atomically",
         ],
         "Production release workflow",
     )
@@ -100,15 +99,16 @@ def main() -> int:
             "MANIFEST_RUN_ID",
             "manifest_run_id",
             "Update-manifest publication failed",
+            'gh run watch "$PAGES_RUN_ID" --exit-status',
         ],
         "Production release workflow",
     )
 
-    state_index = release.index("Record successful release, manifest and announcement state")
+    state_index = release.index("Record successful release, manifest, announcement and speed state")
     builder_index = release.index("python3 .github/scripts/build_stable_update_manifest.py", state_index)
     add_index = release.index("git add", builder_index)
     push_index = release.index("git push origin HEAD:main", add_index)
-    pages_index = release.index("- name: Publish GitHub Pages", push_index)
+    pages_index = release.index("- name: Dispatch GitHub Pages asynchronously", push_index)
     assert state_index < builder_index < add_index < push_index < pages_index
 
     public_url = "raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/status/update-manifest.json"
@@ -124,7 +124,7 @@ def main() -> int:
         if result.returncode != 0:
             raise AssertionError(f"Stable update-manifest command failed: {' '.join(command)}")
 
-    print("Atomic update-manifest pipeline passed: one release-state commit, read-only verification and unchanged public URL.")
+    print("Atomic update-manifest pipeline passed: one release-state commit, asynchronous Pages dispatch, read-only verification and unchanged public URL.")
     return 0
 
 

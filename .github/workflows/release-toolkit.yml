@@ -11,6 +11,16 @@ on:
         description: "Type RELEASE to confirm a public release"
         required: true
         type: string
+      validation_run_id:
+        description: "Exact successful canonical-validation workflow run ID"
+        required: false
+        default: ""
+        type: string
+      validated_sha:
+        description: "Exact validated main commit SHA"
+        required: false
+        default: ""
+        type: string
     secrets:
       DISCORD_RELEASE_WEBHOOK:
         required: true
@@ -25,6 +35,16 @@ on:
       confirmation:
         description: "Type RELEASE to confirm a public release"
         required: true
+        type: string
+      validation_run_id:
+        description: "Optional canonical-validation workflow run ID"
+        required: false
+        default: ""
+        type: string
+      validated_sha:
+        description: "Optional exact validated main commit SHA"
+        required: false
+        default: ""
         type: string
 
 permissions:
@@ -45,42 +65,75 @@ jobs:
       - name: Check out latest main
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          ref: main
+          ref: ${{ inputs.validated_sha != '' && inputs.validated_sha || 'main' }}
           fetch-depth: 0
 
       - name: Production release safety gate
+        id: release_start
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          VALIDATED_SHA: ${{ inputs.validated_sha }}
           GH_TOKEN: ${{ github.token }}
           MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
+          echo "started_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
           [[ "$CONFIRMATION" == "RELEASE" ]] || { echo "::error::Type RELEASE exactly to confirm."; exit 1; }
           [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || { echo "::error::Invalid release version: $RELEASE_VERSION"; exit 1; }
           [[ "$(jq -r '.greasyFork.syncEnabled' .github/release-settings.json)" == "true" ]] || { echo "::error::Greasy Fork release synchronization is not enabled."; exit 1; }
           [[ -n "${MIGRATION_REPO_TOKEN:-}" ]] || { echo "::error::MIGRATION_REPO_TOKEN is not configured."; exit 1; }
+          if [[ -n "$VALIDATED_SHA" ]]; then
+            git fetch origin main --prune
+            [[ "$(git rev-parse origin/main)" == "$VALIDATED_SHA" ]]
+            [[ "$(git rev-parse HEAD)" == "$VALIDATED_SHA" ]]
+          fi
           gh release view "v${RELEASE_VERSION}" >/dev/null 2>&1 && { echo "::error::GitHub Release v${RELEASE_VERSION} already exists."; exit 1; } || true
 
-      - name: Validate canonical source and rebuild distribution
-        run: python3 .github/scripts/validate_userscript.py
-
-      - name: Check JavaScript syntax
-        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
-
-      - name: Verify distribution files are identical
-        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+      - name: Resolve exact immutable release candidate
+        id: candidate
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          VALIDATION_RUN_ID: ${{ inputs.validation_run_id }}
+          VALIDATED_SHA: ${{ inputs.validated_sha }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$VALIDATION_RUN_ID" && -n "$VALIDATED_SHA" ]]; then
+            ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${VALIDATED_SHA}"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
+            ARTIFACT_ID="$(jq -r --arg name "$ARTIFACT_NAME" '.artifacts | map(select(.name == $name and .expired == false)) | sort_by(.created_at) | last | .id // empty' /tmp/validation-artifacts.json)"
+            [[ -n "$ARTIFACT_ID" ]] || { echo "::error::Exact validation candidate artifact was not found."; exit 1; }
+            rm -rf /tmp/validation-candidate
+            mkdir -p /tmp/validation-candidate
+            gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/validation-candidate.zip
+            unzip -q /tmp/validation-candidate.zip -d /tmp/validation-candidate
+            EVIDENCE="/tmp/validation-candidate/validation-candidate/validation-candidate.json"
+            CANDIDATE_DIST="/tmp/validation-candidate/dist"
+            CANDIDATE_BUNDLE="/tmp/validation-candidate/release-bundle"
+            python3 .github/scripts/verify_validation_candidate.py --evidence "$EVIDENCE" --source src/MissionChief_Map_Command_Toolkit.user.js --dist-dir "$CANDIDATE_DIST" --expected-commit "$VALIDATED_SHA" --expected-ref refs/heads/main --expected-version "$RELEASE_VERSION"
+            test -d "$CANDIDATE_BUNDLE"
+            rm -rf dist release-bundle
+            cp -a "$CANDIDATE_DIST" dist
+            cp -a "$CANDIDATE_BUNDLE" release-bundle
+            echo "mode=immutable-candidate" >> "$GITHUB_OUTPUT"
+          else
+            python3 .github/scripts/validate_userscript.py
+            node --check src/MissionChief_Map_Command_Toolkit.user.js
+            cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+            python3 .github/scripts/prepare_release_bundle.py "$RELEASE_VERSION"
+            echo "mode=manual-recovery" >> "$GITHUB_OUTPUT"
+          fi
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test "$(jq -r '.version' dist/release-manifest.json)" = "$RELEASE_VERSION"
 
       - name: Commit stable Greasy Fork source mirror
         id: greasyfork_mirror
         shell: bash
         run: bash .github/scripts/sync_greasyfork_root_mirror.sh
-
-      - name: Prepare immutable release bundle
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: python3 .github/scripts/prepare_release_bundle.py "$RELEASE_VERSION"
 
       - name: Prepare stable Greasy Fork release assets
         env:
@@ -119,6 +172,7 @@ jobs:
           retention-days: 90
 
       - name: Create GitHub Release
+        id: github_release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_VERSION: ${{ inputs.version }}
@@ -139,43 +193,64 @@ jobs:
             "release-bundle/release-manifest-v${RELEASE_VERSION}.json" \
             "release-bundle/SHA256SUMS-v${RELEASE_VERSION}.txt" \
             "release-bundle/migration-handover-v${RELEASE_VERSION}.md"
+          echo "created_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+          echo "created_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for Greasy Fork synchronization
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
-          SYNCED=false
-          for attempt in $(seq 1 180); do
-            echo "Greasy Fork verification attempt $attempt of 180..."
-            if curl --fail --silent --show-error --location --compressed --max-time 30 \
-              --header "Cache-Control: no-cache" \
-              "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork-release.meta.js; then
-              LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork-release.meta.js | head -n 1 | xargs)"
-              echo "Expected version: $RELEASE_VERSION"
-              echo "Greasy Fork version: ${LIVE_VERSION:-unavailable}"
-              [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]] && { SYNCED=true; break; }
-            fi
-            sleep 10
-          done
-          [[ "$SYNCED" == "true" ]] || { echo "::error::Greasy Fork did not publish version $RELEASE_VERSION within 30 minutes. Discord was not notified."; exit 1; }
-
-      - name: Back up validated release to private migration repository
-        id: private_backup
+      - name: Verify Greasy Fork and back up concurrently
+        id: external
         env:
           RELEASE_VERSION: ${{ inputs.version }}
           MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
         shell: bash
-        run: bash .github/scripts/backup_release_to_private_repo.sh
+        run: |
+          set -euo pipefail
+          META_URL="$(jq -r '.greasyFork.metadataUrl' .github/release-settings.json)"
+          BACKUP_OUTPUT="$RUNNER_TEMP/private-backup-output"
+          (
+            GITHUB_OUTPUT="$BACKUP_OUTPUT" bash .github/scripts/backup_release_to_private_repo.sh > "$RUNNER_TEMP/private-backup.log" 2>&1
+            date +%s > "$RUNNER_TEMP/private-backup-epoch"
+          ) &
+          BACKUP_PID=$!
+          (
+            attempt=0
+            while true; do
+              attempt=$((attempt + 1))
+              if curl --fail --silent --show-error --location --compressed --max-time 30 --header "Cache-Control: no-cache" "${META_URL}?cache_bust=$(date +%s%N)" --output greasyfork-release.meta.js; then
+                LIVE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' greasyfork-release.meta.js | head -n 1 | xargs)"
+                if [[ "$LIVE_VERSION" == "$RELEASE_VERSION" ]]; then
+                  echo "$attempt" > "$RUNNER_TEMP/greasyfork-attempts"
+                  date +%s > "$RUNNER_TEMP/greasyfork-epoch"
+                  exit 0
+                fi
+              fi
+              elapsed=$(( $(date +%s) - ${{ steps.github_release.outputs.created_epoch }} ))
+              (( elapsed < 30 )) && sleep 2 && continue
+              (( elapsed < 150 )) && sleep 5 && continue
+              (( elapsed < 1800 )) && sleep 15 && continue
+              exit 1
+            done
+          ) &
+          GF_PID=$!
+          backup_status=0; gf_status=0
+          wait "$BACKUP_PID" || backup_status=$?
+          wait "$GF_PID" || gf_status=$?
+          cat "$RUNNER_TEMP/private-backup.log" || true
+          [[ "$backup_status" -eq 0 ]] || { echo "::error::Private backup failed."; exit "$backup_status"; }
+          [[ "$gf_status" -eq 0 ]] || { echo "::error::Greasy Fork verification failed."; exit "$gf_status"; }
+          BACKUP_COMMIT="$(sed -n 's/^backup_commit=//p' "$BACKUP_OUTPUT" | tail -n 1)"
+          [[ -n "$BACKUP_COMMIT" ]]
+          echo "backup_commit=$BACKUP_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "backup_epoch=$(cat "$RUNNER_TEMP/private-backup-epoch")" >> "$GITHUB_OUTPUT"
+          echo "greasyfork_epoch=$(cat "$RUNNER_TEMP/greasyfork-epoch")" >> "$GITHUB_OUTPUT"
+          echo "greasyfork_attempts=$(cat "$RUNNER_TEMP/greasyfork-attempts")" >> "$GITHUB_OUTPUT"
 
       - name: Post verified release to Discord
+        id: discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
           RELEASE_VERSION: ${{ inputs.version }}
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ inputs.version }}
-          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
+          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}
         shell: bash
         run: |
           set -euo pipefail
@@ -199,15 +274,29 @@ jobs:
           curl --fail --silent --show-error --max-time 30 --retry 2 --retry-delay 5 \
             --request POST --header "Content-Type: application/json" \
             --data @discord-release-payload.json "${DISCORD_WEBHOOK_URL}?wait=true"
+          echo "posted_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+          echo "posted_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
-      - name: Record successful release, manifest and announcement state
+      - name: Record successful release, manifest, announcement and speed state
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
+          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}
+          RELEASE_STARTED_EPOCH: ${{ steps.release_start.outputs.started_epoch }}
+          RELEASE_STARTED_AT: ${{ steps.release_start.outputs.started_at }}
+          GITHUB_RELEASE_EPOCH: ${{ steps.github_release.outputs.created_epoch }}
+          GITHUB_RELEASE_AT: ${{ steps.github_release.outputs.created_at }}
+          GREASYFORK_EPOCH: ${{ steps.external.outputs.greasyfork_epoch }}
+          GREASYFORK_ATTEMPTS: ${{ steps.external.outputs.greasyfork_attempts }}
+          BACKUP_EPOCH: ${{ steps.external.outputs.backup_epoch }}
+          DISCORD_EPOCH: ${{ steps.discord.outputs.posted_epoch }}
+          DISCORD_AT: ${{ steps.discord.outputs.posted_at }}
+          VALIDATED_SHA: ${{ inputs.validated_sha }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           NOW="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          VERIFIED_EPOCH="$(date +%s)"
           HASH="$(jq -r '.sha256' "release-bundle/release-manifest-v${RELEASE_VERSION}.json")"
           RELEASE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/v${RELEASE_VERSION}"
           jq --arg version "$RELEASE_VERSION" --arg hash "$HASH" --arg now "$NOW" \
@@ -228,56 +317,64 @@ jobs:
           python3 .github/scripts/generate_release_dashboard.py
           python3 .github/scripts/build_stable_update_manifest.py
           test "$(jq -r '.version' status/update-manifest.json)" = "$RELEASE_VERSION"
+          SOURCE_SHA="${VALIDATED_SHA:-$(git rev-parse HEAD)}"
+          PR_JSON="$(gh api -H 'Accept: application/vnd.github+json' "repos/${GITHUB_REPOSITORY}/commits/${SOURCE_SHA}/pulls" 2>/dev/null || echo '[]')"
+          PR_NUMBER="$(jq -r '.[0].number // empty' <<< "$PR_JSON")"
+          PR_CREATED_AT="$(jq -r '.[0].created_at // empty' <<< "$PR_JSON")"
+          PR_MERGED_AT="$(jq -r '.[0].merged_at // empty' <<< "$PR_JSON")"
+          PR_TO_VERIFIED=null; MERGE_TO_GITHUB=null; MERGE_TO_VERIFIED=null
+          if [[ -n "$PR_CREATED_AT" ]]; then PR_TO_VERIFIED=$(( VERIFIED_EPOCH - $(date -d "$PR_CREATED_AT" +%s) )); fi
+          if [[ -n "$PR_MERGED_AT" ]]; then
+            PR_MERGED_EPOCH="$(date -d "$PR_MERGED_AT" +%s)"
+            MERGE_TO_GITHUB=$(( GITHUB_RELEASE_EPOCH - PR_MERGED_EPOCH ))
+            MERGE_TO_VERIFIED=$(( VERIFIED_EPOCH - PR_MERGED_EPOCH ))
+          fi
+          python3 .github/scripts/record_release_speed.py --version "$RELEASE_VERSION" --source "$SOURCE_SHA" --pr "${PR_NUMBER:-}" --pr-created "$PR_CREATED_AT" --merged "$PR_MERGED_AT" --release-started "$RELEASE_STARTED_AT" --github-release "$GITHUB_RELEASE_AT" --discord "$DISCORD_AT" --verified "$NOW" --pr-to-verified "$PR_TO_VERIFIED" --merge-to-github "$MERGE_TO_GITHUB" --merge-to-verified "$MERGE_TO_VERIFIED" --release-workflow "$(( VERIFIED_EPOCH - RELEASE_STARTED_EPOCH ))" --greasyfork "$(( GREASYFORK_EPOCH - GITHUB_RELEASE_EPOCH ))" --backup "$(( BACKUP_EPOCH - GITHUB_RELEASE_EPOCH ))" --discord-seconds "$(( DISCORD_EPOCH - GITHUB_RELEASE_EPOCH ))" --attempts "$GREASYFORK_ATTEMPTS"
+          python3 .github/scripts/generate_release_speed_dashboard.py
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             status/release-dashboard.json \
             status/README.md \
             status/update-manifest.json \
+            status/release-speed-history.json \
+            status/RELEASE_SPEED.md \
             .github/greasyfork-version.txt
           git commit -m "Record Toolkit ${RELEASE_VERSION} verified release state"
           git pull --rebase origin main
           git push origin HEAD:main
 
-      - name: Publish GitHub Pages
+      - name: Dispatch GitHub Pages asynchronously
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          STARTED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           gh workflow run github-pages.yml --ref main
-
-          PAGES_RUN_ID=""
-          for attempt in $(seq 1 60); do
-            PAGES_RUN_ID="$(gh run list --workflow github-pages.yml --event workflow_dispatch --branch main --limit 30 --json databaseId,createdAt -q "map(select(.createdAt >= \"${STARTED_AT}\")) | sort_by(.createdAt) | reverse | .[0].databaseId // empty")"
-            [[ -n "$PAGES_RUN_ID" ]] && break
-            sleep 2
-          done
-          [[ -n "$PAGES_RUN_ID" ]] || { echo "::error::The dispatched GitHub Pages run was not found."; exit 1; }
-          echo "pages_run_id=$PAGES_RUN_ID" >> "$GITHUB_OUTPUT"
-          gh run watch "$PAGES_RUN_ID" --exit-status
+          echo "dispatched=true" >> "$GITHUB_OUTPUT"
+          echo "GitHub Pages deployment dispatched asynchronously."
 
       - name: Write release summary
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-          BACKUP_COMMIT: ${{ steps.private_backup.outputs.backup_commit }}
-          PAGES_RUN_ID: ${{ steps.pages.outputs.pages_run_id }}
+          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}
+          PAGES_DISPATCHED: ${{ steps.pages.outputs.dispatched }}
         shell: bash
         run: |
           {
             echo "# Toolkit v${RELEASE_VERSION} release"
             echo
-            echo "- ✅ Canonical source validated"
-            echo "- ✅ JavaScript syntax checked"
+            echo "- ✅ Exact immutable canonical-validation candidate consumed"
+            echo "- ✅ Duplicate release-readiness and production rebuilds skipped"
             echo "- ✅ Stable root-level Greasy Fork source mirror committed"
-            echo "- ✅ Immutable release bundle prepared"
+            echo "- ✅ Immutable release bundle reused without rebuilding"
             echo "- ✅ Stable Greasy Fork release asset published"
             echo "- ✅ GitHub Release published"
+            echo "- ✅ Greasy Fork verification and private backup ran concurrently"
             echo "- ✅ Greasy Fork version verified"
             echo "- ✅ Private migration backup committed: ${BACKUP_COMMIT}"
             echo "- ✅ Discord release announcement posted"
-            echo "- ✅ Dashboard, stable update manifest and announcement tracker updated atomically"
-            echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"
+            echo "- ✅ Dashboard, release-speed telemetry, stable update manifest and announcement tracker updated atomically"
+            echo "- ✅ GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}"
           } >> "$GITHUB_STEP_SUMMARY"

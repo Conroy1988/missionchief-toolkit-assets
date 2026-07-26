@@ -111,26 +111,26 @@ def main() -> int:
         assert marker in builder, f"stable manifest builder marker missing: {marker}"
 
     for marker in [
-        "- name: Record successful release, manifest and announcement state",
+        "- name: Record successful release, manifest, announcement and speed state",
         "python3 .github/scripts/build_stable_update_manifest.py",
         "status/update-manifest.json",
-        "- name: Publish GitHub Pages",
+        "- name: Dispatch GitHub Pages asynchronously",
         "gh workflow run github-pages.yml --ref main",
-        'gh run watch "$PAGES_RUN_ID" --exit-status',
-        "PAGES_RUN_ID: ${{ steps.pages.outputs.pages_run_id }}",
+        "PAGES_DISPATCHED: ${{ steps.pages.outputs.dispatched }}",
     ]:
         assert marker in release_workflow, f"release workflow atomic manifest marker missing: {marker}"
     for forbidden in [
         "gh workflow run publish-update-manifest.yml",
         "MANIFEST_RUN_ID",
         "manifest_run_id",
+        'gh run watch "$PAGES_RUN_ID" --exit-status',
     ]:
         assert forbidden not in release_workflow, f"retired manifest dispatch marker returned: {forbidden}"
 
-    dashboard_index = release_workflow.index("- name: Record successful release, manifest and announcement state")
+    dashboard_index = release_workflow.index("- name: Record successful release, manifest, announcement and speed state")
     build_index = release_workflow.index("python3 .github/scripts/build_stable_update_manifest.py", dashboard_index)
     push_index = release_workflow.index("git push origin HEAD:main", build_index)
-    pages_index = release_workflow.index("- name: Publish GitHub Pages", push_index)
+    pages_index = release_workflow.index("- name: Dispatch GitHub Pages asynchronously", push_index)
     assert dashboard_index < build_index < push_index < pages_index
 
     result = subprocess.run(["node", str(RUNTIME)], cwd=ROOT)

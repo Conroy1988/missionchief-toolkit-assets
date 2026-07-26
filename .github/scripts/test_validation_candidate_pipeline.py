@@ -96,7 +96,7 @@ def main() -> int:
     ], "Stable distribution publication helper")
     require(release, [
         "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
-        "Record successful release, manifest and announcement state",
+        "Record successful release, manifest, announcement and speed state",
         "python3 .github/scripts/build_stable_update_manifest.py",
     ], "Production release workflow")
 

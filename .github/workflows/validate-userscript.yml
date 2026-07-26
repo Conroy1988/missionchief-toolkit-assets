@@ -107,6 +107,21 @@ jobs:
       - name: Verify distribution files are identical
         run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
 
+      - name: Prepare immutable release-ready bundle
+        id: release_bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(jq -r '.version' dist/release-manifest.json)"
+          python3 .github/scripts/prepare_release_bundle.py "$VERSION"
+          USER_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${VERSION}.user.js"
+          TXT_FILE="release-bundle/MissionChief_Map_Command_Toolkit_v${VERSION}.txt"
+          MANIFEST="release-bundle/release-manifest-v${VERSION}.json"
+          cmp --silent "$USER_FILE" "$TXT_FILE"
+          test "$(jq -r '.version' "$MANIFEST")" = "$VERSION"
+          test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$(jq -r '.sha256' "$MANIFEST")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Write immutable validation candidate evidence
         shell: bash
         run: |
@@ -168,6 +183,7 @@ jobs:
             dist/MissionChief_Map_Command_Toolkit.txt
             dist/SHA256SUMS.txt
             dist/release-manifest.json
+            release-bundle/
           if-no-files-found: error
           retention-days: 14
 
@@ -182,6 +198,7 @@ jobs:
             echo "- ✅ Canonical source validated"
             echo "- ✅ JavaScript syntax checked"
             echo "- ✅ Distribution files are byte-identical"
+            echo "- ✅ Complete release bundle prepared once and retained with the candidate"
             echo "- ✅ Candidate SHA-256: \`${HASH}\`"
             echo "- ✅ Exact source commit: \`${GITHUB_SHA}\`"
             echo "- 📦 Candidate retained as an immutable workflow artifact"

@@ -29,10 +29,12 @@ jobs:
           persist-credentials: true
 
       - name: Execute direct repair and install regression
+        id: execute
         shell: bash
         run: |
-          set -euo pipefail
-          python3 - <<'PY'
+          set +e
+          set -o pipefail
+          python3 - <<'PY' 2>&1 | tee v8-hotfix-execution.log
           from pathlib import Path
           import textwrap
 
@@ -68,6 +70,24 @@ jobs:
 
           exec(compile(python_blocks[1], 'v8-hotfix-cleanup', 'exec'), {})
           PY
+          STATUS=${PIPESTATUS[0]}
+          echo "exit_code=$STATUS" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Preserve execution diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v8-godfather-hotfix-execution
+          path: v8-hotfix-execution.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop on execution failure
+        if: steps.execute.outputs.exit_code != '0'
+        run: |
+          cat v8-hotfix-execution.log
+          exit 1
 
       - name: Validate exact repaired candidate
         shell: bash

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Owner-reviewed release contract for Issue #541 and Toolkit v8.0.3.
 from pathlib import Path
 import hashlib
 import re

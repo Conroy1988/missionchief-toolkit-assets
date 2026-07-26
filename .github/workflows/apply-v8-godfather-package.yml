@@ -9,6 +9,14 @@ on:
       - ".github/v8-godfather/**"
       - ".github/workflows/apply-v8-godfather-package.yml"
       - ".github/branch-write-inventory.json"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/development-packages/v8_godfather.py"
+      - ".github/v8-godfather/**"
+      - ".github/workflows/apply-v8-godfather-package.yml"
+      - ".github/branch-write-inventory.json"
 
 permissions:
   contents: read
@@ -21,7 +29,10 @@ jobs:
   apply:
     if: >-
       github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
-      github.ref_name == 'feature/v8-godfather-an-offer-he-cant-refuse'
+      ((github.event_name == 'push' && github.ref_name == 'feature/v8-godfather-an-offer-he-cant-refuse') ||
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.head_ref == 'feature/v8-godfather-an-offer-he-cant-refuse'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -46,11 +57,13 @@ jobs:
           persist-credentials: true
 
       - name: Verify exact branch and package state
+        env:
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
         shell: bash
         run: |
           set -euo pipefail
           test "$(git branch --show-current)" = "feature/v8-godfather-an-offer-he-cant-refuse"
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
           test -f .github/development-packages/v8_godfather.py
           test -f .github/v8-godfather/builder-parts/part-00.b64
           test -f .github/v8-godfather/builder-parts/part-01.b64
@@ -102,9 +115,10 @@ jobs:
             --markdown-report /tmp/actions-security-report.md
 
       - name: Commit exact validated result
-        shell: bash
         env:
           BRANCH: feature/v8-godfather-an-offer-he-cant-refuse
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        shell: bash
         run: |
           set -euo pipefail
           git config user.name "Conroy1988"
@@ -115,4 +129,4 @@ jobs:
             exit 1
           }
           git commit -m "Implement v8.0.0 Godfather interface"
-          git push --force-with-lease="refs/heads/${BRANCH}:${GITHUB_SHA}" origin "HEAD:${BRANCH}"
+          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"

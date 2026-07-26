@@ -5,7 +5,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
-EXPECTED_HASH = 'f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525'
+EXPECTED_HASH = '5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474'
 
 def css_depth(text: str, stop: int) -> int:
     depth = 0

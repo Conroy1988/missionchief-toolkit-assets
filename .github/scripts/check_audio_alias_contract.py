@@ -62,6 +62,7 @@ def source_audio_paths(source: str, repository: str, stable_ref: str) -> set[str
         if match.group("ref") != stable_ref:
             continue
         path = match.group("path").rstrip(".,;:")
+        path = path.split("?", 1)[0].split("#", 1)[0]
         if Path(path).suffix.lower() in AUDIO_EXTENSIONS:
             result.add(path)
     return result

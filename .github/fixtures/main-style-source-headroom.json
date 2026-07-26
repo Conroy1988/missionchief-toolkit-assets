@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 537,
-    "version": "8.0.1",
-    "sourceBytes": 1600037,
-    "sourceLines": 24101,
-    "sourceSha256": "f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525",
-    "templateBytes": 679322,
-    "templateLines": 7770,
-    "templateSha256": "0202d83ed6eacf94c7454a290a36d0d473afb69f84d4c5d2f7f9de7b4f3727df",
-    "canonicalCssSha256": "02f76d27d1ae1b74dcf515e9d646b438bca2ab492669e386b1e7ec7322d38ffb",
+    "issue": 539,
+    "version": "8.0.2",
+    "sourceBytes": 1603031,
+    "sourceLines": 24164,
+    "sourceSha256": "5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474",
+    "templateBytes": 682308,
+    "templateLines": 7833,
+    "templateSha256": "a3681e77153ad29050058f5ed2c691dfa88892d66d38074f26c2129601956a6b",
+    "canonicalCssSha256": "f16e1ce9b8f6e1a3fd095833205fd5ba48650508e2b67d6ff87f68deec26cf5b",
     "maxSourceBytes": 1650000,
     "maxSourceLines": 24500,
     "minTemplateBytes": 500000,
     "baseline": "v7Candidate",
     "approvedGrowth": {
-      "sourceBytes": 35140,
-      "sourceLines": 518,
-      "templateBytes": 32479,
-      "templateLines": 490
+      "sourceBytes": 38134,
+      "sourceLines": 581,
+      "templateBytes": 35465,
+      "templateLines": 553
     },
-    "scope": "Issue #537 Godfather stylesheet activation hotfix with balanced top-level CSS boundaries"
+    "scope": "Issue #539 Godfather Tablet control geometry, unobstructed payout placement and exact replacement audio"
   }
 }

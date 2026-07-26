@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.0.2] - 2026-07-26
+
+### Godfather layout and payout-audio hotfix
+
+- Contained the decorative family seal so it no longer overlaps the launcher or adjacent controls.
+- Restored compact Godfather Tablet controls with 44px safe touch targets and reduced visual footprint.
+- Raised the Godfather Offer payout on Desktop, Tablet and mobile so the command dock no longer obstructs it.
+- Replaced the payout MP3 byte-for-byte with the user-supplied 8.516-second stereo 128 kbps file and versioned its URL to prevent stale audio caching.
+- Added permanent launcher geometry, payout placement and exact audio digest/byte-size contracts.
+
 ## [8.0.1] - 2026-07-26
 
 ### Godfather interface activation hotfix

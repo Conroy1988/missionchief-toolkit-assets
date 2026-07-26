@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.0.1
+// @version      8.0.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.0.1',
+        version: '8.0.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1002,7 +1002,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }),
         godfatherOffer: Object.freeze({
         label: 'The Godfather Flash Payout',
-        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3'
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3?v=8.0.2'
         })
     });
 
@@ -9004,7 +9004,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             animation:none !important;
             display:none !important;
         }
-        /* v8.0.1 — The Godfather: complete original old-money command interface. */
+        /* v8.0.2 — The Godfather: complete original old-money command interface. */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather {
             position:relative !important;
             overflow:hidden !important;
@@ -9504,6 +9504,69 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
         
+        /* v8.0.2 — Godfather launcher, dock and payout placement hotfix. */
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell::before {
+            width:22px !important;
+            height:22px !important;
+            left:-5px !important;
+            top:-7px !important;
+            opacity:.92 !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} {
+            grid-template-columns:109px minmax(0,1fr) !important;
+            column-gap:5px !important;
+            row-gap:5px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-launch-row {
+            width:109px !important;
+            gap:5px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell {
+            width:52px !important;
+            height:44px !important;
+            min-height:44px !important;
+            flex-direction:column !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-menu-btn {
+            min-width:0 !important;
+            min-height:0 !important;
+            height:auto !important;
+            flex:1 1 auto !important;
+            font-size:19px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-dock-toggle-btn {
+            width:100% !important;
+            min-width:0 !important;
+            height:14px !important;
+            min-height:14px !important;
+            flex:0 0 14px !important;
+            border-left:0 !important;
+            border-top:1px solid rgba(190,147,66,.42) !important;
+            font-size:10px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-floating-filter {
+            gap:5px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-btn {
+            height:44px !important;
+            min-height:44px !important;
+            padding:0 5px !important;
+            border-radius:9px !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-float-label-tablet {
+            font-size:clamp(8.5px,1vw,9.75px) !important;
+            line-height:1 !important;
+        }
+        #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+            top:40% !important;
+        }
+        html[data-mcms-tablet-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+            top:34% !important;
+        }
+        html[data-mcms-mobile-active="true"] #${SCRIPT.payoutFlashId}[data-template="godfatherOffer"] .mcms-payout-banner {
+            top:31% !important;
+        }
+
         /* v7.1.0 Incident Command Wire: bounded, theme-aware card navigation. */
         #${SCRIPT.majorIncidentFeedId}{--mcms-wire-accent:#68cfff;--mcms-wire-border:#467ca4;--mcms-wire-bg:#0a161f;--mcms-wire-bg2:#142734;--mcms-wire-label:linear-gradient(180deg,#24628e,#173e5b);--mcms-wire-text:#f4fbff;--mcms-wire-muted:#abc0cd;position:relative;height:44px!important;overflow:visible!important;border-color:var(--mcms-wire-border)!important;background:linear-gradient(180deg,var(--mcms-wire-bg2),var(--mcms-wire-bg))!important;color:var(--mcms-wire-text)!important}
         #${SCRIPT.majorIncidentFeedId} .mcms-incident-feed-label{min-width:148px!important;padding:0 9px!important;gap:7px!important;border-right:1px solid var(--mcms-wire-border)!important;background:var(--mcms-wire-label)!importantalign-items:center!important;line-height:1!important;padding-top:0!important;padding-bottom:14px!important;box-sizing:border-box!important;}

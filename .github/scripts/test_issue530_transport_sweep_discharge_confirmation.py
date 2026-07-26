@@ -19,7 +19,7 @@ def main() -> int:
     metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
     assert metadata and runtime
-    assert metadata.group(1) == runtime.group(1) == '8.0.1'
+    assert metadata.group(1) == runtime.group(1) == '8.0.2'
 
     for marker in [
         'confirmedDischargeDialogKeys: new Set()',

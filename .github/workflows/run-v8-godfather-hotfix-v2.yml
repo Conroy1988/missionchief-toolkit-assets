@@ -1,0 +1,254 @@
+name: Run v8.0.1 Godfather Hotfix v2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/run-v8-godfather-hotfix-v2.yml"
+      - ".github/actions-security-policy.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-0-1-godfather-hotfix-v2
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.1-godfather-css-activation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact hotfix branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: hotfix/v8.0.1-godfather-css-activation
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Apply direct hash-guarded repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          root = Path('.')
+          paths = [
+              root / 'src/MissionChief_Map_Command_Toolkit.user.js',
+              root / 'dist/MissionChief_Map_Command_Toolkit.user.js',
+              root / 'dist/MissionChief_Map_Command_Toolkit.txt',
+          ]
+          released_hash = '049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b'
+          repaired_hash = 'f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525'
+          values = [path.read_text(encoding='utf-8') for path in paths]
+          assert len(set(values)) == 1, 'source and distribution mirrors differ before repair'
+          text = values[0]
+          assert hashlib.sha256(text.encode()).hexdigest() == released_hash, 'unexpected v8.0.0 source baseline'
+
+          broken_boundary = '            display:none !important;\n        /* v8.0.0 — The Godfather: complete original old-money command interface. */'
+          fixed_boundary = '            display:none !important;\n        }\n        /* v8.0.1 — The Godfather: complete original old-money command interface. */'
+          displaced_tail = '        }\n        }html[data-mcms-mobile-active="true"],'
+          fixed_tail = '        }\n        html[data-mcms-mobile-active="true"],'
+          assert text.count(broken_boundary) == 1, f'broken boundary count={text.count(broken_boundary)}'
+          assert text.count(displaced_tail) == 1, f'displaced tail count={text.count(displaced_tail)}'
+          text = text.replace(broken_boundary, fixed_boundary)
+          text = text.replace(displaced_tail, fixed_tail)
+          text = text.replace('// @version      8.0.0', '// @version      8.0.1', 1)
+          text = text.replace("version: '8.0.0'", "version: '8.0.1'", 1)
+          assert hashlib.sha256(text.encode()).hexdigest() == repaired_hash, 'repaired v8.0.1 hash mismatch'
+          for path in paths:
+              path.write_text(text, encoding='utf-8')
+
+          fixture_path = root / '.github/fixtures/main-style-source-headroom.json'
+          fixture = json.loads(fixture_path.read_text(encoding='utf-8'))
+          fixture['v8Candidate'].update({
+              'issue': 537,
+              'version': '8.0.1',
+              'sourceBytes': 1600037,
+              'sourceLines': 24101,
+              'sourceSha256': repaired_hash,
+              'templateBytes': 679322,
+              'templateLines': 7770,
+              'templateSha256': '0202d83ed6eacf94c7454a290a36d0d473afb69f84d4c5d2f7f9de7b4f3727df',
+              'canonicalCssSha256': '02f76d27d1ae1b74dcf515e9d646b438bca2ab492669e386b1e7ec7322d38ffb',
+              'approvedGrowth': {'sourceBytes': 35140, 'sourceLines': 518, 'templateBytes': 32479, 'templateLines': 490},
+              'scope': 'Issue #537 Godfather stylesheet activation hotfix with balanced top-level CSS boundaries',
+          })
+          fixture_path.write_text(json.dumps(fixture, indent=2) + '\n', encoding='utf-8')
+
+          contract_path = root / '.github/scripts/test_v8_godfather_contract.py'
+          contract = contract_path.read_text(encoding='utf-8').replace(released_hash, repaired_hash).replace('8.0.0', '8.0.1')
+          contract_path.write_text(contract, encoding='utf-8')
+
+          issue530 = root / '.github/scripts/test_issue530_transport_sweep_discharge_confirmation.py'
+          issue530.write_text(issue530.read_text(encoding='utf-8').replace("== '8.0.0'", "== '8.0.1'"), encoding='utf-8')
+
+          manifest_path = root / 'themes/godfather/manifest.json'
+          manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['toolkitVersion'] = '8.0.1'
+          manifest['notes'] = 'Original Toolkit-made old-money command system. v8.0.1 restores the complete stylesheet activation boundary. No film stills, actor likenesses, studio logos or copied franchise artwork.'
+          manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
+
+          help_manifest_path = root / 'help/manifest.json'
+          help_manifest = json.loads(help_manifest_path.read_text(encoding='utf-8'))
+          help_manifest['guideVersion'] = '8.0.1'
+          help_manifest['toolkitVersion'] = '8.0.1'
+          help_manifest['runtimeGuidePatch'] = 'Toolkit v8.0.1 restores the complete Godfather stylesheet boundary and adds a permanent activation regression while retaining the v7 native product boundary.'
+          help_manifest_path.write_text(json.dumps(help_manifest, indent=2) + '\n', encoding='utf-8')
+
+          help_path = root / 'help/index.html'
+          help_text = help_path.read_text(encoding='utf-8').replace('v8.0.0', 'v8.0.1')
+          help_text = help_text.replace('<h2>What changed in v7.1.6</h2><p>Patient Transport Sweep now confirms the intermittent native Discharge patient dialog by clicking only Yes, discharge! during an armed sweep action. Abort and discharge-and-disable-confirmation remain untouched.</p>', '<h2>What changed in v8.0.1</h2><p>The complete Godfather interface now activates correctly. A displaced CSS closing brace had caused the browser to discard the theme rules while leaving the selection state active. The stylesheet boundary is repaired and permanently validated.</p>')
+          help_text = help_text.replace('MissionChief Map Command Toolkit · v7.1.6 candidate', 'MissionChief Map Command Toolkit · v8.0.1 candidate')
+          help_path.write_text(help_text, encoding='utf-8')
+
+          changelog_path = root / 'CHANGELOG.md'
+          changelog = changelog_path.read_text(encoding='utf-8')
+          entry = '''## [8.0.1] - 2026-07-26
+
+### Godfather interface activation hotfix
+
+- Closed the Hyrule Economy Mode payout rule before the Godfather stylesheet so browsers parse the complete eighth interface at top level.
+- Removed the displaced trailing brace that had silently contained and discarded the Godfather selectors.
+- Added a permanent stylesheet-boundary regression that verifies balanced CSS depth at the Godfather and responsive-layout boundaries.
+- Preserved all Godfather assets, payout audio, responsive behaviour, existing themes and the v7 native MissionChief boundary.
+
+'''
+          assert '## [8.0.1]' not in changelog
+          changelog_path.write_text(changelog.replace('# Changelog\n\n', '# Changelog\n\n' + entry, 1), encoding='utf-8')
+
+          preflight_path = root / '.github/scripts/run_userscript_preflight.sh'
+          preflight = preflight_path.read_text(encoding='utf-8')
+          anchor = '.github/scripts/test_issue530_transport_sweep_discharge_confirmation.py'
+          assert anchor in preflight
+          preflight = preflight.replace(anchor, anchor + ' .github/scripts/test_issue537_godfather_css_activation.py')
+          preflight_path.write_text(preflight, encoding='utf-8')
+          PY
+
+      - name: Write permanent activation regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .github/scripts/test_issue537_godfather_css_activation.py <<'PY'
+          #!/usr/bin/env python3
+          from pathlib import Path
+          import hashlib
+          import re
+
+          ROOT = Path(__file__).resolve().parents[2]
+          SOURCE = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
+          EXPECTED_HASH = 'f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525'
+
+          def css_depth(text: str, stop: int) -> int:
+              depth = 0
+              quote = ''
+              escaped = False
+              comment = False
+              index = 0
+              while index < stop:
+                  char = text[index]
+                  nxt = text[index + 1] if index + 1 < stop else ''
+                  if comment:
+                      if char == '*' and nxt == '/':
+                          comment = False
+                          index += 2
+                          continue
+                      index += 1
+                      continue
+                  if quote:
+                      if escaped:
+                          escaped = False
+                      elif char == '\\':
+                          escaped = True
+                      elif char == quote:
+                          quote = ''
+                      index += 1
+                      continue
+                  if char == '/' and nxt == '*':
+                      comment = True
+                      index += 2
+                      continue
+                  if char in ("'", '"'):
+                      quote = char
+                  elif char == '{':
+                      depth += 1
+                  elif char == '}':
+                      depth -= 1
+                      assert depth >= 0, 'stylesheet closes below top-level depth'
+                  index += 1
+              return depth
+
+          source = SOURCE.read_text(encoding='utf-8')
+          assert hashlib.sha256(source.encode()).hexdigest() == EXPECTED_HASH
+          assert re.search(r'(?m)^//\s*@version\s+8\.0\.1$', source)
+          install = source.index('function installMainStyles()')
+          css_start = source.index('addStyle(`', install) + len('addStyle(`')
+          metric = source.index("recordStartupMetric('stylesheetInstallMs'", css_start)
+          css_end = source.rfind('`);', css_start, metric)
+          css = source[css_start:css_end]
+          godfather = css.index('/* v8.0.1 — The Godfather: complete original old-money command interface. */')
+          responsive = css.index('html[data-mcms-mobile-active="true"],', godfather)
+          assert css_depth(css, godfather) == 0, 'Godfather stylesheet starts inside another CSS rule'
+          assert css_depth(css, responsive) == 0, 'responsive stylesheet starts inside the Godfather block'
+          assert css_depth(css, len(css)) == 0, 'main stylesheet has unbalanced rule braces'
+          assert 'display:none !important;\n        }\n        /* v8.0.1 — The Godfather' in css
+          assert '}html[data-mcms-mobile-active="true"],' not in css
+          assert css.count('html[data-mcms-ui-theme="godfather"]') >= 100
+          for path in (ROOT / 'dist/MissionChief_Map_Command_Toolkit.user.js', ROOT / 'dist/MissionChief_Map_Command_Toolkit.txt'):
+              assert path.read_bytes() == SOURCE.read_bytes(), f'distribution parity failed: {path}'
+          print('Issue #537 Godfather stylesheet activation contract passed.')
+          PY
+          chmod +x .github/scripts/test_issue537_godfather_css_activation.py
+
+      - name: Remove temporary workflows and permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          policy_path = Path('.github/actions-security-policy.json')
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          expected = {
+              '.github/workflows/hotfix-v8-godfather-css.yml',
+              '.github/workflows/run-v8-godfather-hotfix.yml',
+              '.github/workflows/run-v8-godfather-hotfix-v2.yml',
+          }
+          for path in expected:
+              removed = policy['allowedWritePermissions'].pop(path, None)
+              assert removed == ['contents'], (path, removed)
+              workflow = Path(path)
+              if workflow.exists():
+                  workflow.unlink()
+          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          PY
+
+      - name: Validate exact repaired candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          python3 -m py_compile .github/scripts/test_issue537_godfather_css_activation.py
+          python3 .github/scripts/test_issue537_godfather_css_activation.py
+          python3 .github/scripts/test_v8_godfather_contract.py
+          python3 .github/scripts/test_main_style_source_headroom.py
+          bash .github/scripts/run_userscript_preflight.sh
+          python3 .github/scripts/validate_userscript.py
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test ! -e .github/workflows/hotfix-v8-godfather-css.yml
+          test ! -e .github/workflows/run-v8-godfather-hotfix.yml
+          test ! -e .github/workflows/run-v8-godfather-hotfix-v2.yml
+
+      - name: Commit exact v8.0.1 hotfix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Conroy1988'
+          git config user.email '27301455+Conroy1988@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix Godfather stylesheet activation for v8.0.1'
+          git push origin HEAD:hotfix/v8.0.1-godfather-css-activation

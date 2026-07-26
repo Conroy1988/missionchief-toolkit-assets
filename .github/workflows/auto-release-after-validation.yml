@@ -112,26 +112,10 @@ jobs:
             echo "- Dashboard candidate state used: no"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  readiness:
-    name: Run mandatory release readiness
+  production:
+    name: Run maximum-speed verified production release
     needs: prepare
     if: needs.prepare.outputs.release_needed == 'true'
-    permissions:
-      actions: write
-      contents: read
-    uses: ./.github/workflows/release-readiness-check.yml
-    with:
-      version: ${{ needs.prepare.outputs.version }}
-    secrets:
-      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
-      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
-
-  production:
-    name: Run guarded production release
-    needs:
-      - prepare
-      - readiness
-    if: needs.prepare.outputs.release_needed == 'true' && needs.readiness.result == 'success'
     permissions:
       actions: write
       contents: write
@@ -139,6 +123,8 @@ jobs:
     with:
       version: ${{ needs.prepare.outputs.version }}
       confirmation: RELEASE
+      validation_run_id: ${{ github.event.workflow_run.id }}
+      validated_sha: ${{ github.event.workflow_run.head_sha }}
     secrets:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
       MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}

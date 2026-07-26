@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "normalHotfixPrToVerifiedMedianSeconds": 240,
+    "normalHotfixPrToVerifiedP90Seconds": 420,
+    "mergeToVerifiedMedianSeconds": 60,
+    "mergeToGitHubReleaseMedianSeconds": 40
+  },
+  "releases": [
+    {
+      "version": "8.0.1",
+      "pipelineVersion": 3,
+      "benchmarkClass": "normal",
+      "includeInHotfixBaseline": true,
+      "pullRequest": 538,
+      "prCreatedAt": "2026-07-26T08:30:33Z",
+      "mergedAt": "2026-07-26T09:02:31Z",
+      "verifiedAt": "2026-07-26T09:03:57Z",
+      "durationsSeconds": {
+        "prToVerified": 2004,
+        "mergeToVerified": 86
+      }
+    },
+    {
+      "version": "8.0.2",
+      "pipelineVersion": 3,
+      "benchmarkClass": "binary-transfer-exception",
+      "includeInHotfixBaseline": false,
+      "pullRequest": 540,
+      "prCreatedAt": "2026-07-26T10:06:29Z",
+      "mergedAt": "2026-07-26T13:38:20Z",
+      "verifiedAt": "2026-07-26T13:39:45Z",
+      "durationsSeconds": {
+        "prToVerified": 12796,
+        "mergeToVerified": 85
+      }
+    },
+    {
+      "version": "8.0.3",
+      "pipelineVersion": 3,
+      "benchmarkClass": "normal",
+      "includeInHotfixBaseline": true,
+      "pullRequest": 542,
+      "prCreatedAt": "2026-07-26T14:02:09Z",
+      "mergedAt": "2026-07-26T14:31:18Z",
+      "verifiedAt": "2026-07-26T14:33:11Z",
+      "durationsSeconds": {
+        "prToVerified": 1862,
+        "mergeToVerified": 113
+      }
+    }
+  ]
+}

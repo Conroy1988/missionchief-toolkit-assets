@@ -1,8 +1,12 @@
 name: Automatic Toolkit Release
 
-run-name: Automatic release after validated main
+run-name: Automatic release from validated PR tree
 
 on:
+  pull_request:
+    branches: [main]
+    types:
+      - closed
   workflow_run:
     workflows:
       - Validate Canonical Userscript
@@ -12,17 +16,231 @@ on:
 permissions:
   actions: write
   contents: write
+  pull-requests: read
 
 concurrency:
   group: toolkit-automatic-release
   cancel-in-progress: false
 
 jobs:
-  prepare:
-    name: Resolve exact validated unreleased candidate
+  prepare_pr:
+    name: Promote exact merged PR candidate
     if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      release_needed: ${{ steps.candidate.outputs.release_needed }}
+      version: ${{ steps.candidate.outputs.version }}
+      validated_sha: ${{ steps.candidate.outputs.validated_sha }}
+    steps:
+      - name: Check out exact merged main commit
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Consume exact successful PR validation tree
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "release_needed=false" >> "$GITHUB_OUTPUT"
+          echo "version=" >> "$GITHUB_OUTPUT"
+          echo "validated_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
+
+          for attempt in $(seq 1 15); do
+            git fetch origin main --prune
+            CURRENT_MAIN="$(git rev-parse origin/main)"
+            [[ "$CURRENT_MAIN" == "$MERGE_SHA" ]] && break
+            (( attempt == 15 )) && {
+              echo "::error::Merged commit ${MERGE_SHA} did not become current main."
+              exit 1
+            }
+            sleep 2
+          done
+          [[ "$(git rev-parse HEAD)" == "$MERGE_SHA" ]]
+
+          gh api --method GET \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/validate-userscript.yml/runs" \
+            -f event=pull_request \
+            -f status=completed \
+            -f branch="$PR_HEAD_REF" \
+            -f per_page=100 \
+            > /tmp/validation-runs.json
+
+          VALIDATION_RUN_ID="$(jq -r \
+            --arg head "$PR_HEAD_SHA" \
+            --argjson pr "$PR_NUMBER" \
+            '[.workflow_runs[]
+              | select(.conclusion == "success")
+              | select(.head_sha == $head)
+              | select(any(.pull_requests[]?; .number == $pr))]
+             | sort_by(.updated_at)
+             | last
+             | .id // empty' \
+            /tmp/validation-runs.json)"
+
+          if [[ -z "$VALIDATION_RUN_ID" ]]; then
+            echo "No successful exact-head PR validation was found; dispatching guarded main fallback."
+            gh workflow run validate-userscript.yml --ref main
+            exit 0
+          fi
+
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
+          ARTIFACT_ID="$(jq -r \
+            '[.artifacts[]
+              | select(.expired == false)
+              | select(.name | startswith("missionchief-toolkit-validation-candidate-"))]
+             | sort_by(.created_at)
+             | last
+             | .id // empty' \
+            /tmp/validation-artifacts.json)"
+
+          if [[ -z "$ARTIFACT_ID" ]]; then
+            echo "Exact PR validation artifact is unavailable; dispatching guarded main fallback."
+            gh workflow run validate-userscript.yml --ref main
+            exit 0
+          fi
+
+          rm -rf /tmp/validation-candidate
+          mkdir -p /tmp/validation-candidate
+          gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/validation-candidate.zip
+          unzip -q /tmp/validation-candidate.zip -d /tmp/validation-candidate
+
+          ORIGINAL_EVIDENCE="/tmp/validation-candidate/validation-candidate/validation-candidate.json"
+          CANDIDATE_DIST="/tmp/validation-candidate/dist"
+          CANDIDATE_COMMIT="$(jq -r '.sourceCommit' "$ORIGINAL_EVIDENCE")"
+          CANDIDATE_REF="$(jq -r '.sourceRef' "$ORIGINAL_EVIDENCE")"
+          CANDIDATE_TREE="$(jq -r '.sourceTree' "$ORIGINAL_EVIDENCE")"
+          EVIDENCE_HEAD="$(jq -r '.headCommit' "$ORIGINAL_EVIDENCE")"
+          EVIDENCE_PR="$(jq -r '.pullRequest' "$ORIGINAL_EVIDENCE")"
+          CURRENT_TREE="$(git rev-parse HEAD^{tree})"
+
+          [[ "$EVIDENCE_HEAD" == "$PR_HEAD_SHA" ]]
+          [[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]
+
+          if [[ "$CURRENT_TREE" != "$CANDIDATE_TREE" ]]; then
+            echo "Merged tree ${CURRENT_TREE} differs from validated PR tree ${CANDIDATE_TREE}; dispatching guarded main fallback."
+            gh workflow run validate-userscript.yml --ref main
+            exit 0
+          fi
+
+          python3 .github/scripts/verify_validation_candidate.py \
+            --evidence "$ORIGINAL_EVIDENCE" \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist-dir "$CANDIDATE_DIST" \
+            --expected-commit "$CANDIDATE_COMMIT" \
+            --expected-ref "$CANDIDATE_REF" \
+            > /tmp/verified-pr-candidate.json
+
+          VERSION="$(jq -r '.version' /tmp/verified-pr-candidate.json)"
+          SOURCE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' src/MissionChief_Map_Command_Toolkit.user.js | head -n 1 | xargs)"
+          [[ "$VERSION" == "$SOURCE_VERSION" ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Toolkit v${VERSION} is already published."
+            exit 0
+          fi
+
+          rm -rf validation-candidate dist release-bundle
+          cp -a /tmp/validation-candidate/validation-candidate validation-candidate
+          cp -a "$CANDIDATE_DIST" dist
+          cp -a /tmp/validation-candidate/release-bundle release-bundle
+
+          jq \
+            --arg commit "$MERGE_SHA" \
+            --arg ref "refs/heads/main" \
+            --arg tree "$CURRENT_TREE" \
+            --arg originalCommit "$CANDIDATE_COMMIT" \
+            --arg originalRef "$CANDIDATE_REF" \
+            '.sourceCommit=$commit
+             | .sourceRef=$ref
+             | .sourceTree=$tree
+             | .eventName="promoted_pull_request"
+             | .promotedFrom={sourceCommit:$originalCommit,sourceRef:$originalRef,sourceTree:$tree}' \
+            validation-candidate/validation-candidate.json \
+            > validation-candidate/validation-candidate.promoted.json
+          mv validation-candidate/validation-candidate.promoted.json \
+             validation-candidate/validation-candidate.json
+
+          python3 .github/scripts/verify_validation_candidate.py \
+            --evidence validation-candidate/validation-candidate.json \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist-dir dist \
+            --expected-commit "$MERGE_SHA" \
+            --expected-ref refs/heads/main \
+            --expected-version "$VERSION"
+
+          echo "release_needed=true" >> "$GITHUB_OUTPUT"
+          echo "Toolkit v${VERSION} promoted from validated PR tree ${CANDIDATE_TREE} without rebuilding."
+
+      - name: Upload promoted merged-main candidate
+        if: steps.candidate.outputs.release_needed == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-validation-candidate-${{ steps.candidate.outputs.validated_sha }}
+          path: |
+            validation-candidate/validation-candidate.json
+            dist/MissionChief_Map_Command_Toolkit.user.js
+            dist/MissionChief_Map_Command_Toolkit.txt
+            dist/SHA256SUMS.txt
+            dist/release-manifest.json
+            release-bundle/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Write direct-tree promotion summary
+        env:
+          RELEASE_NEEDED: ${{ steps.candidate.outputs.release_needed }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+          VALIDATED_SHA: ${{ steps.candidate.outputs.validated_sha }}
+        shell: bash
+        run: |
+          {
+            echo "# Direct validated-tree release promotion"
+            echo
+            echo "- Pull request: \`#${{ github.event.pull_request.number }}\`"
+            echo "- Merged main commit: \`${VALIDATED_SHA}\`"
+            echo "- Version: \`${VERSION:-fallback}\`"
+            echo "- Release required: \`${RELEASE_NEEDED}\`"
+            echo "- Authority: exact validated PR repository tree"
+            echo "- Post-merge userscript validation used: no"
+            echo "- Post-merge release bundle rebuild used: no"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production_pr:
+    name: Release promoted validated PR tree
+    needs: prepare_pr
+    if: needs.prepare_pr.outputs.release_needed == 'true'
+    permissions:
+      actions: write
+      contents: write
+    uses: ./.github/workflows/release-toolkit.yml
+    with:
+      version: ${{ needs.prepare_pr.outputs.version }}
+      confirmation: RELEASE
+      validation_run_id: ${{ github.run_id }}
+      validated_sha: ${{ needs.prepare_pr.outputs.validated_sha }}
+    secrets:
+      DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+      MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}
+
+  prepare_fallback:
+    name: Resolve explicitly dispatched main fallback
+    if: >-
+      github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.event == 'workflow_dispatch' &&
       github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -30,14 +248,14 @@ jobs:
       release_needed: ${{ steps.candidate.outputs.release_needed }}
       version: ${{ steps.candidate.outputs.version }}
     steps:
-      - name: Check out exact validated commit
+      - name: Check out exact fallback validation commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Download and verify exact validation candidate
+      - name: Verify exact fallback candidate
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -51,17 +269,21 @@ jobs:
           if [[ "$CURRENT_MAIN" != "$VALIDATED_SHA" ]]; then
             echo "release_needed=false" >> "$GITHUB_OUTPUT"
             echo "version=" >> "$GITHUB_OUTPUT"
-            echo "Validated commit ${VALIDATED_SHA} is stale; current main is ${CURRENT_MAIN}. Automatic release suppressed."
+            echo "Fallback validation ${VALIDATED_SHA} is stale; current main is ${CURRENT_MAIN}."
             exit 0
           fi
 
           ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${VALIDATED_SHA}"
           gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
           ARTIFACT_ID="$(jq -r --arg name "$ARTIFACT_NAME" \
-            '.artifacts | map(select(.name == $name and .expired == false)) | sort_by(.created_at) | last | .id // empty' \
+            '.artifacts
+             | map(select(.name == $name and .expired == false))
+             | sort_by(.created_at)
+             | last
+             | .id // empty' \
             /tmp/validation-artifacts.json)"
           [[ -n "$ARTIFACT_ID" ]] || {
-            echo "::error::Exact validation candidate artifact was not found for run ${VALIDATION_RUN_ID}."
+            echo "::error::Exact fallback validation candidate artifact was not found."
             exit 1
           }
 
@@ -81,47 +303,25 @@ jobs:
             > /tmp/verified-validation-candidate.json
 
           VERSION="$(jq -r '.version' /tmp/verified-validation-candidate.json)"
-          SOURCE_VERSION="$(sed -nE 's|^//[[:space:]]*@version[[:space:]]+(.+)$|\1|p' src/MissionChief_Map_Command_Toolkit.user.js | head -n 1 | xargs)"
-          [[ "$VERSION" == "$SOURCE_VERSION" ]]
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
           if gh release view "v${VERSION}" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "release_needed=false" >> "$GITHUB_OUTPUT"
             echo "Toolkit v${VERSION} is already published."
           else
             echo "release_needed=true" >> "$GITHUB_OUTPUT"
-            echo "Toolkit v${VERSION} is validated from exact commit ${VALIDATED_SHA} and will release automatically."
+            echo "Toolkit v${VERSION} will release from the explicit main fallback validation."
           fi
 
-      - name: Write candidate resolution summary
-        env:
-          RELEASE_NEEDED: ${{ steps.candidate.outputs.release_needed }}
-          VERSION: ${{ steps.candidate.outputs.version }}
-          VALIDATED_SHA: ${{ github.event.workflow_run.head_sha }}
-          VALIDATION_RUN_ID: ${{ github.event.workflow_run.id }}
-        shell: bash
-        run: |
-          {
-            echo "# Automatic release candidate resolution"
-            echo
-            echo "- Validation run: \`${VALIDATION_RUN_ID}\`"
-            echo "- Validated commit: \`${VALIDATED_SHA}\`"
-            echo "- Version: \`${VERSION:-stale}\`"
-            echo "- Release required: \`${RELEASE_NEEDED}\`"
-            echo "- Candidate authority: exact immutable validation artifact"
-            echo "- Dashboard candidate state used: no"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  production:
-    name: Run maximum-speed verified production release
-    needs: prepare
-    if: needs.prepare.outputs.release_needed == 'true'
+  production_fallback:
+    name: Release explicitly validated main fallback
+    needs: prepare_fallback
+    if: needs.prepare_fallback.outputs.release_needed == 'true'
     permissions:
       actions: write
       contents: write
     uses: ./.github/workflows/release-toolkit.yml
     with:
-      version: ${{ needs.prepare.outputs.version }}
+      version: ${{ needs.prepare_fallback.outputs.version }}
       confirmation: RELEASE
       validation_run_id: ${{ github.event.workflow_run.id }}
       validated_sha: ${{ github.event.workflow_run.head_sha }}

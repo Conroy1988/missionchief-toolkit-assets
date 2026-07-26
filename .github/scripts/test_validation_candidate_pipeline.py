@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static and executable contracts for artifact-only canonical validation."""
+"""Static and executable contracts for artifact-only validated-tree release authority."""
 from __future__ import annotations
 
 import json
@@ -44,6 +44,10 @@ def main() -> int:
         "permissions:\n  contents: read",
         "persist-credentials: false",
         "Write immutable validation candidate evidence",
+        'SOURCE_TREE="$(git rev-parse HEAD^{tree})"',
+        "sourceTree: $sourceTree",
+        "headCommit: $headCommit",
+        "pullRequest: $pullRequest",
         "missionchief-toolkit-validation-candidate-${{ github.sha }}",
         "publicMainChanged: false",
         "releaseDashboardChanged: false",
@@ -57,23 +61,30 @@ def main() -> int:
         "git push",
         "git pull --rebase",
         "github-actions[bot]",
+        "  push:\n",
     ], "Canonical validation workflow")
 
     require(automatic, [
-        "github.event.workflow_run.event == 'push'",
-        "github.event.workflow_run.head_sha",
-        "github.event.workflow_run.id",
-        "missionchief-toolkit-validation-candidate-${VALIDATED_SHA}",
-        "actions/runs/${VALIDATION_RUN_ID}/artifacts",
-        "verify_validation_candidate.py",
-        "CURRENT_MAIN=\"$(git rev-parse origin/main)\"",
-        "gh release view \"v${VERSION}\"",
-        "Dashboard candidate state used: no",
+        "types:\n      - closed",
+        "github.event.pull_request.merged == true",
+        "Consume exact successful PR validation tree",
+        "actions/workflows/validate-userscript.yml/runs",
+        "any(.pull_requests[]?; .number == $pr)",
+        'CURRENT_TREE="$(git rev-parse HEAD^{tree})"',
+        "Merged tree ${CURRENT_TREE} differs from validated PR tree ${CANDIDATE_TREE}",
+        "promoted_pull_request",
+        "Upload promoted merged-main candidate",
+        "validation_run_id: ${{ github.run_id }}",
+        "Post-merge userscript validation used: no",
+        "Post-merge release bundle rebuild used: no",
+        "gh workflow run validate-userscript.yml --ref main",
+        "github.event.workflow_run.event == 'workflow_dispatch'",
     ], "Automatic release workflow")
     forbid(automatic, [
         ".distributionCandidate",
         ".status.validation",
         "status/release-dashboard.json",
+        "github.event.workflow_run.event == 'push'",
     ], "Automatic release workflow")
 
     require(owner, [
@@ -107,7 +118,7 @@ def main() -> int:
         'sanitized.pop("releaseDryRun", None)',
         '"storage": "workflow-artifact"',
     ], "Dashboard stable-ledger sanitizer")
-    forbid(generator, ["data.get(\"distributionCandidate\"", "candidate.get("], "Dashboard generator")
+    forbid(generator, ['data.get("distributionCandidate"', "candidate.get("], "Dashboard generator")
     require(reconciler, [
         "Retired compatibility stub",
         "is retired; use the exact canonical-validation artifact instead",
@@ -124,7 +135,10 @@ def main() -> int:
     if result.returncode != 0:
         raise AssertionError("Validation candidate verifier self-tests failed")
 
-    print("Validation candidate pipeline passed: artifact authority, exact-run consumption and stable-only dist publication.")
+    print(
+        "Validation candidate pipeline passed: exact PR-tree promotion, no post-merge rebuild, "
+        "guarded current-main fallback and stable-only distribution publication."
+    )
     return 0
 
 

@@ -1,0 +1,111 @@
+name: Build Corrected Release Pipeline v4 Candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/build-release-pipeline-v4-candidate-v2.yml"
+      - ".github/development-packages/issue543_release_pipeline_v4.py"
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    if: github.head_ref == 'feature/release-pipeline-v4-fast-lane'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Materialise reviewed Pipeline v4 candidate
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/development-packages/issue543_release_pipeline_v4.py')
+          text = path.read_text(encoding='utf-8')
+          fixes = (
+              ('path.write_text(json.dumps(data,indent=2)+"\\n",encoding="utf-8")',
+               'path.write_text(json.dumps(data,indent=2)+"\\\\n",encoding="utf-8")'),
+              ('(root/"status/RELEASE_SPEED.md").write_text("\\n".join(lines),encoding="utf-8")',
+               '(root/"status/RELEASE_SPEED.md").write_text("\\\\n".join(lines),encoding="utf-8")'),
+          )
+          for old, new in fixes:
+              if text.count(old) != 1:
+                  raise SystemExit(f'Unexpected embedded escape token count: {old!r} -> {text.count(old)}')
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          python3 .github/development-packages/issue543_release_pipeline_v4.py
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/scripts/test_version_status_contract.py')
+          text = path.read_text(encoding='utf-8')
+          replacements = (
+              ('- name: Record successful release, manifest and announcement state',
+               '- name: Record successful release, manifest, announcement and speed state', 2),
+              ('- name: Publish GitHub Pages',
+               '- name: Dispatch GitHub Pages asynchronously', 2),
+              ('        \'gh run watch "$PAGES_RUN_ID" --exit-status\',\n', '', 1),
+              ('        "PAGES_RUN_ID: ${{ steps.pages.outputs.pages_run_id }}",\n',
+               '        "PAGES_DISPATCHED: ${{ steps.pages.outputs.dispatched }}",\n', 1),
+          )
+          for old, new, expected in replacements:
+              if text.count(old) != expected:
+                  raise SystemExit(f'Unexpected version-status token count for {old!r}: {text.count(old)}')
+              text = text.replace(old, new)
+          anchor = '        "manifest_run_id",\n'
+          if text.count(anchor) != 1:
+              raise SystemExit('Unexpected forbidden-marker anchor')
+          text = text.replace(anchor, anchor + '        \'gh run watch "$PAGES_RUN_ID" --exit-status\',\n', 1)
+          path.write_text(text, encoding='utf-8')
+          PY
+          rm -f .github/development-packages/issue543_release_pipeline_v4.py
+          rm -f .github/workflows/preflight-release-pipeline-v4.yml
+          rm -f .github/workflows/diagnose-release-pipeline-v4.yml
+          rm -f .github/workflows/build-release-pipeline-v4-candidate.yml
+          rm -f .github/workflows/diagnose-release-pipeline-v4-materialise.yml
+          rm -f .github/workflows/build-release-pipeline-v4-candidate-v2.yml
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+
+      - name: Run complete retained validation
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_release_pipeline_v4.py
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          bash .github/scripts/run_userscript_preflight.sh
+
+      - name: Build exact candidate package
+        run: |
+          set -euo pipefail
+          mkdir -p pipeline-v4-candidate
+          for file in \
+            .github/workflows/validate-userscript.yml \
+            .github/workflows/auto-release-after-validation.yml \
+            .github/workflows/release-toolkit.yml \
+            .github/scripts/run_userscript_preflight.sh \
+            .github/scripts/test_version_status_contract.py \
+            .github/scripts/record_release_speed.py \
+            .github/scripts/generate_release_speed_dashboard.py \
+            .github/scripts/test_release_pipeline_v4.py \
+            status/release-speed-history.json \
+            status/RELEASE_SPEED.md \
+            docs/RELEASE_PIPELINE_V4.md; do
+            mkdir -p "pipeline-v4-candidate/$(dirname "$file")"
+            cp "$file" "pipeline-v4-candidate/$file"
+          done
+          find pipeline-v4-candidate -type f -print0 | sort -z | xargs -0 sha256sum > pipeline-v4-candidate/SHA256SUMS.txt
+
+      - name: Upload exact validated candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-pipeline-v4-final-${{ github.sha }}
+          path: pipeline-v4-candidate/
+          if-no-files-found: error
+          retention-days: 14

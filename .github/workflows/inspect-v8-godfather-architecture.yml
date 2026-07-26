@@ -26,9 +26,7 @@ jobs:
       - name: Extract theme and payout architecture
         run: python3 .github/v8-godfather/inspect_architecture.py
 
-      - name: Materialise staged builder and supplied payout audio
-        id: materialise
-        continue-on-error: true
+      - name: Materialise supplied payout audio and audit abandoned builder transport
         shell: bash
         run: |
           set -euo pipefail
@@ -41,150 +39,69 @@ jobs:
           import gzip
           import hashlib
           import json
-          import traceback
           from pathlib import Path
 
           output = Path('v8-materialised')
-          debug: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
 
           def read_parts(directory: Path) -> tuple[list[Path], list[str]]:
               parts = sorted(directory.glob('part-*.b64'))
               if not parts:
-                  raise RuntimeError(f'No transport parts found in {directory}')
-              texts = [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
-              debug[str(directory)] = [
-                  {
-                      'name': path.name,
-                      'fileBytes': path.stat().st_size,
-                      'base64Chars': len(text),
-                      'mod4': len(text) % 4,
-                      'head': text[:16],
-                      'tail': text[-16:],
-                  }
-                  for path, text in zip(parts, texts, strict=True)
-              ]
-              return parts, texts
+                  raise SystemExit(f'No transport parts found in {directory}')
+              return parts, [''.join(path.read_text(encoding='utf-8').split()) for path in parts]
 
-          def decode_joined(texts: list[str]) -> bytes:
+          def decode_continuous(texts: list[str]) -> bytes:
               joined = ''.join(texts)
               joined += '=' * ((-len(joined)) % 4)
               return base64.b64decode(joined, validate=True)
 
-          def recover_gzip_payload(parts: list[Path], texts: list[str]) -> tuple[bytes, bytes, dict[str, object]]:
-              initial_error = None
-              try:
-                  transport = decode_joined(texts)
-                  return transport, gzip.decompress(transport), {'mode': 'exact'}
-              except Exception as error:
-                  initial_error = repr(error)
+          report: dict[str, object] = {'sourceCommit': '${{ github.sha }}'}
 
-              candidates = [index for index, text in enumerate(texts) if len(text) % 4 == 1]
-              if not candidates:
-                  candidates = list(range(len(texts)))
-
-              tested = 0
-              for part_index in candidates:
-                  text = texts[part_index]
-                  for char_index in range(len(text)):
-                      candidate_texts = texts.copy()
-                      candidate_texts[part_index] = text[:char_index] + text[char_index + 1:]
-                      if sum(map(len, candidate_texts)) % 4:
-                          continue
-                      tested += 1
-                      try:
-                          transport = decode_joined(candidate_texts)
-                          payload = gzip.decompress(transport)
-                      except Exception:
-                          continue
-                      return transport, payload, {
-                          'mode': 'removed-one-extra-base64-character',
-                          'part': parts[part_index].name,
-                          'index': char_index,
-                          'character': text[char_index],
-                          'testedCandidates': tested,
-                          'initialError': initial_error,
-                      }
-
-              raise RuntimeError(
-                  f'Builder transport was not recoverable after {tested} single-character candidates; '
-                  f'initial error={initial_error}'
-              )
-
-          def decode_audio(parts: list[Path], texts: list[str]) -> tuple[bytes, dict[str, object]]:
-              attempts: list[dict[str, object]] = []
-              try:
-                  payload = decode_joined(texts)
-                  attempts.append({'mode': 'continuous', 'ok': True, 'bytes': len(payload)})
-                  return payload, {'mode': 'continuous', 'attempts': attempts}
-              except Exception as error:
-                  attempts.append({'mode': 'continuous', 'ok': False, 'error': repr(error)})
-
-              decoded: list[bytes] = []
-              try:
-                  for text in texts:
-                      padded = text + ('=' * ((-len(text)) % 4))
-                      decoded.append(base64.b64decode(padded, validate=True))
-                  payload = b''.join(decoded)
-                  attempts.append({
-                      'mode': 'independent-padded',
-                      'ok': True,
-                      'bytes': len(payload),
-                      'partBytes': [len(item) for item in decoded],
-                  })
-                  return payload, {'mode': 'independent-padded', 'attempts': attempts}
-              except Exception as error:
-                  attempts.append({'mode': 'independent-padded', 'ok': False, 'error': repr(error)})
-                  raise RuntimeError(f'Audio transport decode failed: {attempts}') from error
-
-          failure: str | None = None
+          builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
+          report['builderParts'] = [
+              {'name': path.name, 'base64Chars': len(text), 'mod4': len(text) % 4}
+              for path, text in zip(builder_parts, builder_texts, strict=True)
+          ]
           try:
-              builder_parts, builder_texts = read_parts(Path('.github/v8-godfather/builder-parts'))
-              builder_transport, builder_payload, recovery = recover_gzip_payload(builder_parts, builder_texts)
-              builder = output / 'v8_godfather_builder.py'
-              builder.write_bytes(builder_payload)
-              debug['builderTransport'] = {
+              builder_transport = decode_continuous(builder_texts)
+              gzip.decompress(builder_transport)
+              report['builderTransport'] = {
+                  'status': 'unexpectedly-valid',
                   'bytes': len(builder_transport),
-                  'head': builder_transport[:16].hex(),
-                  'tail': builder_transport[-16:].hex(),
                   'sha256': hashlib.sha256(builder_transport).hexdigest(),
-                  'recovery': recovery,
               }
-              debug['builder'] = {
-                  'bytes': len(builder_payload),
-                  'sha256': hashlib.sha256(builder_payload).hexdigest(),
-              }
-
-              audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
-              audio_payload, audio_decode = decode_audio(audio_parts, audio_texts)
-              audio = output / 'godfather-flash-payout.mp3'
-              audio.write_bytes(audio_payload)
-              debug['audio'] = {
-                  'parts': [path.name for path in audio_parts],
-                  'bytes': len(audio_payload),
-                  'sha256': hashlib.sha256(audio_payload).hexdigest(),
-                  'head': audio_payload[:16].hex(),
-                  'tail': audio_payload[-16:].hex(),
-                  'decode': audio_decode,
-              }
-
-              if len(audio_payload) < 32_000:
-                  raise RuntimeError(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
-              if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
-                  raise RuntimeError('Godfather payout audio does not have an MP3 signature')
           except Exception as error:
-              failure = f'{type(error).__name__}: {error}'
-              debug['failure'] = failure
-              debug['traceback'] = traceback.format_exc()
-          finally:
-              (output / 'transport-debug.json').write_text(
-                  json.dumps(debug, indent=2) + '\n', encoding='utf-8'
-              )
+              report['builderTransport'] = {
+                  'status': 'abandoned-malformed-staging-payload',
+                  'error': repr(error),
+                  'decision': 'Replace with a clean-room deterministic builder based on the verified v7.1.6 source.',
+              }
 
-          if failure:
-              raise SystemExit(failure)
+          audio_parts, audio_texts = read_parts(Path('.github/v8-godfather/audio-parts'))
+          report['audioParts'] = [
+              {'name': path.name, 'base64Chars': len(text), 'mod4': len(text) % 4}
+              for path, text in zip(audio_parts, audio_texts, strict=True)
+          ]
+          audio_payload = decode_continuous(audio_texts)
+          audio = output / 'godfather-flash-payout.mp3'
+          audio.write_bytes(audio_payload)
+
+          if len(audio_payload) < 32_000:
+              raise SystemExit(f'Godfather payout audio is unexpectedly small: {len(audio_payload)} bytes')
+          if not (audio_payload.startswith(b'ID3') or audio_payload[:2] in {b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'}):
+              raise SystemExit('Godfather payout audio does not have an MP3 signature')
+
+          report['audio'] = {
+              'status': 'materialised',
+              'bytes': len(audio_payload),
+              'sha256': hashlib.sha256(audio_payload).hexdigest(),
+              'head': audio_payload[:16].hex(),
+              'tail': audio_payload[-16:].hex(),
+          }
+          (output / 'materialisation-report.json').write_text(
+              json.dumps(report, indent=2) + '\n', encoding='utf-8'
+          )
+          print(json.dumps(report, indent=2))
           PY
-
-          python3 -m py_compile v8-materialised/v8_godfather_builder.py
 
           if command -v ffprobe >/dev/null 2>&1; then
             ffprobe -v error \
@@ -196,11 +113,7 @@ jobs:
             printf '{"warning":"ffprobe unavailable"}\n' > v8-materialised/audio-probe.json
           fi
 
-          python3 v8-materialised/v8_godfather_builder.py --help \
-            > v8-materialised/builder-help.txt 2>&1 || true
-
       - name: Stage exact development inputs
-        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -214,8 +127,7 @@ jobs:
           cp .github/fixtures/main-style-source-headroom.json v8-inputs/.github/fixtures/
           cp -R themes/* v8-inputs/themes/
 
-      - name: Upload architecture, exact inputs and materialised payloads
-        if: always()
+      - name: Upload architecture, exact inputs and materialised audio
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: v8-godfather-materialised-${{ github.sha }}
@@ -223,11 +135,5 @@ jobs:
             v8-godfather-architecture.txt
             v8-inputs
             v8-materialised
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
-
-      - name: Enforce successful materialisation
-        if: steps.materialise.outcome != 'success'
-        run: |
-          cat v8-materialised/transport-debug.json || true
-          exit 1

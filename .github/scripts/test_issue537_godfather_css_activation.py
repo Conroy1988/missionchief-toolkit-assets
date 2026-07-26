@@ -5,7 +5,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
-EXPECTED_HASH = '773d6686fdcfe0af5901f54bdd58c58cf0ef8503bddaae354f32ed25879ac19b'
+EXPECTED_HASH = 'e8673da8a40db757f7a1b1165092e1a22f87581de84ebb9c2bc78ce5e4ceb101'
 
 def css_depth(text: str, stop: int) -> int:
     depth = 0
@@ -48,18 +48,18 @@ def css_depth(text: str, stop: int) -> int:
 
 source = SOURCE.read_text(encoding='utf-8')
 assert hashlib.sha256(source.encode()).hexdigest() == EXPECTED_HASH
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.3$', source)
+assert re.search(r'(?m)^//\s*@version\s+8\.0\.4$', source)
 install = source.index('function installMainStyles()')
 css_start = source.index('addStyle(`', install) + len('addStyle(`')
 metric = source.index("recordStartupMetric('stylesheetInstallMs'", css_start)
 css_end = source.rfind('`);', css_start, metric)
 css = source[css_start:css_end]
-godfather = css.index('/* v8.0.3 — The Godfather: complete original old-money command interface. */')
+godfather = css.index('/* v8.0.4 — The Godfather: complete original old-money command interface. */')
 responsive = css.index('html[data-mcms-mobile-active="true"],', godfather)
 assert css_depth(css, godfather) == 0, 'Godfather stylesheet starts inside another CSS rule'
 assert css_depth(css, responsive) == 0, 'responsive stylesheet starts inside the Godfather block'
 assert css_depth(css, len(css)) == 0, 'main stylesheet has unbalanced rule braces'
-assert 'display:none !important;\n        }\n        /* v8.0.3 — The Godfather' in css
+assert 'display:none !important;\n        }\n        /* v8.0.4 — The Godfather' in css
 assert '}html[data-mcms-mobile-active="true"],' not in css
 assert css.count('html[data-mcms-ui-theme="godfather"]') >= 100
 for path in (ROOT / 'dist/MissionChief_Map_Command_Toolkit.user.js', ROOT / 'dist/MissionChief_Map_Command_Toolkit.txt'):

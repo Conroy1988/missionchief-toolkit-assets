@@ -3,7 +3,7 @@
   "theme": "godfather",
   "displayName": "The Godfather",
   "packageVersion": "1.0.3",
-  "toolkitVersion": "8.0.3",
+  "toolkitVersion": "8.0.4",
   "generated": "2026-07-26",
   "assets": {
     "cashoutAudio": "audio/godfather-flash-payout.mp3",

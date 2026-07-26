@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.0.3
+// @version      8.0.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.0.3',
+        version: '8.0.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1002,7 +1002,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         }),
         godfatherOffer: Object.freeze({
         label: 'The Godfather Flash Payout',
-        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3?v=8.0.3'
+        url: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/themes/godfather/audio/godfather-flash-payout.mp3?v=8.0.4'
         })
     });
 
@@ -1120,6 +1120,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let cachedUserId = null;
     let cachedUserIdReadAt = 0;
     let personalBuildingIdsCache = { revision: -1, userId: null, createdAt: 0, values: new Set() };
+    let buildingRecordIndexCache = { revision: -1, userId: null, recordsById: new Map(), allianceRecords: [] };
     let missionIconMarkerCache = new WeakMap();
     let panelPositionTimer = null;
     let coverageRenderSignature = '';
@@ -1148,6 +1149,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const hiddenPersonalBuildingLayers = new Set();
     const personalBuildingLayerOpacity = new Map();
     let enforcingPersonalBuildingVisibility = false;
+    const hiddenNativeAllianceBuildingLayers = new Set();
+    const nativeAllianceBuildingLayerTargets = new WeakMap();
+    let enforcingNativeAllianceBuildingVisibility = false;
     const economyHiddenVehicleLayers = new Set();
     const economyHiddenBuildingLayers = new Set();
     const economyLeafletOptionSnapshots = new Map();
@@ -9010,7 +9014,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             animation:none !important;
             display:none !important;
         }
-        /* v8.0.3 — The Godfather: complete original old-money command interface. */
+        /* v8.0.4 — The Godfather: complete original old-money command interface. */
         #${SCRIPT.panelId} .mcms-ui-theme-preview-godfather {
             position:relative !important;
             overflow:hidden !important;
@@ -9510,7 +9514,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         #${SCRIPT.payoutFlashId}[data-template="hyruleQuest"] .mcms-payout-theme-fx-a { animation:none !important; }
         }
         
-        /* v8.0.3 — Godfather launcher, dock and payout placement hotfix. */
+        /* v8.0.4 — Godfather launcher, dock and payout placement hotfix. */
         html[data-mcms-ui-theme="godfather"] #${SCRIPT.controlId} .mcms-shell::before {
             width:22px !important;
             height:22px !important;
@@ -9688,9 +9692,11 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }
         if (scope === 'all' || scope === 'building') {
         markerRegistryCache.delete('building_markers');
+        markerRegistryCache.delete('building_markers_params_cache_per_id');
         markerRegistryCache.delete('building_markers_cache');
         buildingRegistryRevision += 1;
         personalBuildingIdsCache.createdAt = 0;
+        buildingRecordIndexCache.revision = -1;
         }
     }
 
@@ -13696,7 +13702,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         for (const layer of buildingLayers) {
             const personal = isPersonalBuildingLayer(layer, personalBuildingIds);
             const allowedByUser = !personal || state.visibility.buildings;
-            const visible = allowedByUser && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
+            const allowedByNativeFilter = nativeAllianceBuildingLayerAllowed(map, layer);
+            const visible = allowedByUser && allowedByNativeFilter && (economyLayerIsProtected(layer) || economyLayerInsideBounds(layer, bounds));
             setEconomyLayerPresence(map, layer, visible, economyHiddenBuildingLayers);
         }
         } catch (err) {
@@ -13735,6 +13742,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             economyHiddenBuildingLayers.delete(layer);
             if (!buildingSet.has(layer)) continue;
             if (isPersonalBuildingLayer(layer, personalBuildingIds) && !state.visibility.buildings) continue;
+            if (!nativeAllianceBuildingLayerAllowed(map, layer)) {
+                suppressLeakedAllianceBuildingLayer(map, layer);
+                continue;
+            }
             const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
             if (!onMap && typeof map.addLayer === 'function') map.addLayer(layer);
         }
@@ -13852,7 +13863,165 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function getBuildingMarkerCache() {
-        return getCachedRegistry('building_markers_cache', PERSONAL_BUILDING_ID_CACHE_MS);
+        const current = getCachedRegistry('building_markers_params_cache_per_id', PERSONAL_BUILDING_ID_CACHE_MS);
+        return current.length ? current : getCachedRegistry('building_markers_cache', PERSONAL_BUILDING_ID_CACHE_MS);
+    }
+
+    function getBuildingRecordIndex() {
+        const currentUserId = currentUserIdCached();
+        if (
+        buildingRecordIndexCache.revision === buildingRegistryRevision &&
+        buildingRecordIndexCache.userId === currentUserId
+        ) return buildingRecordIndexCache;
+
+        const recordsById = new Map();
+        const allianceRecords = [];
+        for (const record of getBuildingMarkerCache()) {
+        if (!record) continue;
+        const buildingId = record.id ?? record.building_id;
+        if (buildingId === undefined || buildingId === null) continue;
+        recordsById.set(String(buildingId), record);
+        if (
+            currentUserId !== null &&
+            record.user_id !== undefined && record.user_id !== null &&
+            String(record.user_id) !== currentUserId
+        ) allianceRecords.push(record);
+        }
+        buildingRecordIndexCache = { revision: buildingRegistryRevision, userId: currentUserId, recordsById, allianceRecords };
+        return buildingRecordIndexCache;
+    }
+
+    function getBuildingRecordForLayer(layer) {
+        const buildingId = getBuildingLayerId(layer);
+        if (buildingId === null) return null;
+        return getBuildingRecordIndex().recordsById.get(buildingId) || layer?.building || layer?.options?.building || null;
+    }
+
+    function isAllianceBuildingLayer(layer, record = getBuildingRecordForLayer(layer)) {
+        if (!layer || getBuildingLayerId(layer) === null) return false;
+        const currentUserId = currentUserIdCached();
+        if (currentUserId === null) return false;
+        const ownerId = record?.user_id ?? layer.user_id ?? layer.userId ?? layer.options?.user_id ?? layer.options?.userId;
+        return ownerId !== undefined && ownerId !== null && String(ownerId) !== currentUserId;
+    }
+
+    function resolveNativeBuildingFilterTarget(layer, record = getBuildingRecordForLayer(layer)) {
+        const service = pageWindow.map_filters_service;
+        if (!service || typeof service.getFilterLayerByBuildingParams !== 'function') return null;
+        const userId = record?.user_id ?? layer?.user_id ?? layer?.userId ?? layer?.options?.user_id ?? layer?.options?.userId;
+        const buildingType = record?.building_type ?? layer?.building_type ?? layer?.buildingType ?? layer?.options?.building_type ?? layer?.options?.buildingType;
+        if (userId === undefined || userId === null || buildingType === undefined || buildingType === null) return null;
+        try {
+        return service.getFilterLayerByBuildingParams({ user_id: userId, building_type: buildingType }) || null;
+        } catch (err) {
+        return null;
+        }
+    }
+
+    function nativeBuildingFilterTargetIsVisible(map, target) {
+        if (!map || !target || target === map) return true;
+        try {
+        if (typeof map.hasLayer === 'function') return map.hasLayer(target);
+        } catch (err) {}
+        return target._map === map;
+    }
+
+    function nativeAllianceBuildingLayerAllowed(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (!isAllianceBuildingLayer(layer, record)) return true;
+        const target = resolveNativeBuildingFilterTarget(layer, record);
+        if (!target || target === map) return true;
+        return nativeBuildingFilterTargetIsVisible(map, target);
+    }
+
+    function attachAllianceBuildingToNativeFilterTarget(layer, target) {
+        if (!layer || !target || typeof target.addLayer !== 'function') return;
+        try {
+        const attached = typeof target.hasLayer === 'function' ? target.hasLayer(layer) : false;
+        if (!attached) target.addLayer(layer);
+        } catch (err) {}
+    }
+
+    function suppressLeakedAllianceBuildingLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (!map || !isAllianceBuildingLayer(layer, record)) return false;
+        const target = resolveNativeBuildingFilterTarget(layer, record);
+        if (!target || target === map || nativeBuildingFilterTargetIsVisible(map, target)) return false;
+
+        nativeAllianceBuildingLayerTargets.set(layer, target);
+        attachAllianceBuildingToNativeFilterTarget(layer, target);
+        hiddenNativeAllianceBuildingLayers.add(layer);
+        try {
+        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+        if (onMap && typeof map.removeLayer === 'function') {
+            const previous = enforcingNativeAllianceBuildingVisibility;
+            enforcingNativeAllianceBuildingVisibility = true;
+            try { map.removeLayer(layer); }
+            finally { enforcingNativeAllianceBuildingVisibility = previous; }
+        }
+        } catch (err) {}
+        return true;
+    }
+
+    function restoreEligibleAllianceBuildingLayer(map, layer, record = getBuildingRecordForLayer(layer)) {
+        if (!map || !hiddenNativeAllianceBuildingLayers.has(layer)) return false;
+        const target = resolveNativeBuildingFilterTarget(layer, record) || nativeAllianceBuildingLayerTargets.get(layer) || null;
+        if (!target || target === map || !nativeBuildingFilterTargetIsVisible(map, target)) return false;
+        hiddenNativeAllianceBuildingLayers.delete(layer);
+        nativeAllianceBuildingLayerTargets.delete(layer);
+        attachAllianceBuildingToNativeFilterTarget(layer, target);
+        try {
+        const onMap = typeof map.hasLayer === 'function' ? map.hasLayer(layer) : Boolean(layer._map);
+        if (!onMap && typeof map.addLayer === 'function') {
+            const previous = enforcingNativeAllianceBuildingVisibility;
+            enforcingNativeAllianceBuildingVisibility = true;
+            try { map.addLayer(layer); }
+            finally { enforcingNativeAllianceBuildingVisibility = previous; }
+        }
+        } catch (err) {}
+        return true;
+    }
+
+    function nativeAllianceBuildingFilterMayNeedEnforcement(map = findLeafletMapInstance(false)) {
+        if (!map) return false;
+        if (hiddenNativeAllianceBuildingLayers.size) return true;
+        const seenTargets = new Set();
+        for (const record of getBuildingRecordIndex().allianceRecords) {
+        const probeLayer = { building_id: record.id ?? record.building_id, user_id: record.user_id, building_type: record.building_type };
+        const target = resolveNativeBuildingFilterTarget(probeLayer, record);
+        if (!target || target === map || seenTargets.has(target)) continue;
+        seenTargets.add(target);
+        if (!nativeBuildingFilterTargetIsVisible(map, target)) return true;
+        if (seenTargets.size >= 24) break;
+        }
+        return false;
+    }
+
+    function synchroniseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
+        if (!map || enforcingNativeAllianceBuildingVisibility) return;
+        const layers = getBuildingMarkerLayers().filter(Boolean);
+        const currentLayers = new Set(layers);
+        for (const layer of Array.from(hiddenNativeAllianceBuildingLayers)) {
+        if (currentLayers.has(layer)) continue;
+        hiddenNativeAllianceBuildingLayers.delete(layer);
+        nativeAllianceBuildingLayerTargets.delete(layer);
+        }
+        for (const layer of layers) {
+        const record = getBuildingRecordForLayer(layer);
+        if (!isAllianceBuildingLayer(layer, record)) continue;
+        if (nativeAllianceBuildingLayerAllowed(map, layer, record)) restoreEligibleAllianceBuildingLayer(map, layer, record);
+        else suppressLeakedAllianceBuildingLayer(map, layer, record);
+        }
+    }
+
+    function releaseNativeAllianceBuildingVisibility(map = findLeafletMapInstance(false)) {
+        if (!map) {
+        hiddenNativeAllianceBuildingLayers.clear();
+        return;
+        }
+        for (const layer of Array.from(hiddenNativeAllianceBuildingLayers)) {
+        restoreEligibleAllianceBuildingLayer(map, layer);
+        hiddenNativeAllianceBuildingLayers.delete(layer);
+        nativeAllianceBuildingLayerTargets.delete(layer);
+        }
     }
 
     function getPersonalBuildingIds() {
@@ -14110,6 +14279,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (runtime.destroyed || document.hidden) return;
         if (!state.visibility.vehicles || state.markerFocus) synchroniseVehicleMarkerClasses();
         if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+        if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
         };
         const id = runtimeSetTimeout(callback, Math.max(0, Number(delay) || 0));
         if (timerName === 'markerStateTrailingTimer') markerStateTrailingTimer = id;
@@ -14339,6 +14509,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (scope === 'building') {
             const isPersonalBuilding = markPersonalBuildingLayerIfOwned(layer);
             if (isPersonalBuilding && !state.visibility.buildings) hidePersonalBuildingLayer(map, layer);
+            if (!isPersonalBuilding) suppressLeakedAllianceBuildingLayer(map, layer);
         }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope === 'mission' || scope === 'vehicle' || scope === 'all', positionPanel: false });
         if (state.economyMode && (scope === 'vehicle' || scope === 'building')) scheduleEconomyLayerSync(80);
@@ -14346,7 +14517,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         const onLayerRemove = event => {
         const layer = event?.layer;
-        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || economyLayerEnforcement) return;
+        if (isToolkitLeafletLayer(layer) || enforcingPersonalBuildingVisibility || enforcingNativeAllianceBuildingVisibility || economyLayerEnforcement) return;
         const scope = inferScope(layer);
         invalidateMarkerRegistryCaches(scope);
         if (state.economyMode && economyMapMoving) {
@@ -14354,6 +14525,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return;
         }
         scheduleEnabledMapRefreshes({ includeSnapshots: scope !== 'building', positionPanel: false });
+        };
+
+        const onNativeOverlayChange = () => {
+        invalidateMarkerRegistryCaches('building');
+        scheduleMarkerStateSync(0, false);
+        scheduleMarkerStateSync(180, true);
         };
 
         const onMapMoveStart = () => {
@@ -14372,20 +14549,22 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             ensureUi();
         }
         if (state.economyMode) scheduleEconomyLayerSync(80);
-        if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings)) scheduleMarkerStateSync(0, false);
+        if (!state.visibility.vehicles || state.markerFocus || (!enforcingPersonalBuildingVisibility && !state.visibility.buildings) || nativeAllianceBuildingFilterMayNeedEnforcement(map)) scheduleMarkerStateSync(0, false);
         scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
         };
 
         try {
         map.on('layeradd', onLayerAdd);
         map.on('layerremove', onLayerRemove);
+        map.on('overlayadd overlayremove', onNativeOverlayChange);
         map.on('movestart zoomstart', onMapMoveStart);
-        map.on('moveend zoomend', onMapMove);
+        map.on('moveend zoomend viewreset', onMapMove);
         runtime.mapBindings.push(
             { map, types: 'layeradd', handler: onLayerAdd },
             { map, types: 'layerremove', handler: onLayerRemove },
+            { map, types: 'overlayadd overlayremove', handler: onNativeOverlayChange },
             { map, types: 'movestart zoomstart', handler: onMapMoveStart },
-            { map, types: 'moveend zoomend', handler: onMapMove }
+            { map, types: 'moveend zoomend viewreset', handler: onMapMove }
         );
         } catch (err) {}
     }
@@ -23944,6 +24123,7 @@ Create the private backup now?`);
         });
         runtimeRegisterTask('building-visibility', BUILDING_VISIBILITY_RECHECK_MS, () => {
             if (!state.visibility.buildings) synchronisePersonalBuildingVisibility();
+            if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
             if (state.economyMode) scheduleEconomyLayerSync(0);
         }, {
             intervalResolver: () => !state.visibility.buildings ? BUILDING_VISIBILITY_RECHECK_MS : 60 * 1000,
@@ -24000,7 +24180,7 @@ Create the private backup now?`);
             if (addedLeafletMarker) {
                 invalidateMarkerRegistryCaches('all');
                 scheduleMarkerStateSync(0, false);
-                if (!state.visibility.buildings) scheduleMarkerStateSync(180, true);
+                if (!state.visibility.buildings || nativeAllianceBuildingFilterMayNeedEnforcement()) scheduleMarkerStateSync(180, true);
             }
             if (layoutChanged) invalidateMapElementCache();
             if (document.hidden || dragState || (state.economyMode && economyMapMoving)) return;
@@ -24109,6 +24289,7 @@ Create the private backup now?`);
             refreshSuppression();
             if (vehicleDataNeeded()) refreshPersonalVehicleData(false);
             if (state.economyMode) scheduleEconomyLayerSync(0);
+            if (nativeAllianceBuildingFilterMayNeedEnforcement()) synchroniseNativeAllianceBuildingVisibility();
             scheduleEnabledMapRefreshes({ includeSnapshots: missionSnapshotsNeeded(), positionPanel: true });
             scheduleMajorIncidentFeedRender(80);
         });
@@ -24128,6 +24309,7 @@ Create the private backup now?`);
             if (document.body) document.body.style.userSelect = '';
             restoreEconomyLayers();
             restoreLeafletEconomyPolicy();
+            releaseNativeAllianceBuildingVisibility(cachedMap);
             disposeEconomyCanvasRenderer();
             runtimeClearTimeout(majorIncidentFeedLayoutTimer);
             majorIncidentFeedLayoutTimer = null;

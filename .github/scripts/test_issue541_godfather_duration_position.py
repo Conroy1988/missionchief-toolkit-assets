@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Owner-reviewed release contract for Issue #541 and Toolkit v8.0.3.
+# Owner-reviewed release contract for Issue #541 and Toolkit v8.0.4.
 from pathlib import Path
 import hashlib
 import re
@@ -7,8 +7,8 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_PATH = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
 SOURCE = SOURCE_PATH.read_text(encoding='utf-8')
-assert hashlib.sha256(SOURCE.encode()).hexdigest() == '773d6686fdcfe0af5901f54bdd58c58cf0ef8503bddaae354f32ed25879ac19b'
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.3$', SOURCE)
+assert hashlib.sha256(SOURCE.encode()).hexdigest() == 'e8673da8a40db757f7a1b1165092e1a22f87581de84ebb9c2bc78ce5e4ceb101'
+assert re.search(r'(?m)^//\s*@version\s+8\.0\.4$', SOURCE)
 for token in (
     'const PAYOUT_FLASH_STEP_MS = 1000;',
     "merged.uiTheme === 'godfather'",

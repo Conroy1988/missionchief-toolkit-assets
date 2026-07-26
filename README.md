@@ -13,7 +13,7 @@
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
-## **Current verified release: `v8.0.2` · Development candidate: `v8.0.3`**
+## **Current verified release: `v8.0.3` · Development candidate: `v8.0.4`**
 ### **Godfather duration and payout-position hotfix**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
@@ -24,7 +24,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v802) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v803) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
 
@@ -72,7 +72,7 @@ MissionChief distributes operational information across the map, opened incident
 | Control channel | State | Evidence |
 |---|:---:|---|
 | **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v8.0.2` published |
+| **Production release** | 🟢 | GitHub Release `v8.0.3` published |
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned recovery commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
@@ -273,13 +273,13 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 | Field | Verified value |
 |---|---|
-| **Version** | `8.0.2` |
-| **Release focus** | Godfather layout and payout-audio hotfix |
+| **Version** | `8.0.3` |
+| **Release focus** | Godfather seven-second duration and dock-clearance hotfix |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474` |
-| **GitHub Release** | [`v8.0.2`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.2) |
+| **Validated SHA-256** | `773d6686fdcfe0af5901f54bdd58c58cf0ef8503bddaae354f32ed25879ac19b` |
+| **GitHub Release** | [`v8.0.3`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.3) |
 | **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `071c56229fc9a680f9ccbf5cddb5f57b83935958` |
+| **Private backup** | `be6f8a187c4215053a5619acedce31b7f308577a` |
 | **Discord release delivery** | Posted |
 | **Hosted media audit** | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
 

@@ -173,6 +173,11 @@
       "workflow": ".github/workflows/prepare-release-rollback.yml",
       "target": "new recovery branch and owner-created pull request",
       "credential": "DEVELOPMENT_PR_TOKEN"
+    },
+    {
+      "workflow": ".github/workflows/apply-v8-godfather-package.yml",
+      "target": "existing owner-created feature/v8-godfather-an-offer-he-cant-refuse pull-request branch",
+      "credential": "DEVELOPMENT_PR_TOKEN"
     }
   ],
   "shadowBranchWriters": [

@@ -23,12 +23,33 @@ jobs:
           persist-credentials: false
 
       - name: Apply reviewed Pipeline v4 package locally
+        id: apply
+        shell: bash
         run: |
-          set -euo pipefail
-          python3 .github/development-packages/issue543_release_pipeline_v4.py
-          rm -f .github/development-packages/issue543_release_pipeline_v4.py
-          rm -f .github/workflows/preflight-release-pipeline-v4.yml
-          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+          set +e
+          python3 .github/development-packages/issue543_release_pipeline_v4.py > pipeline-v4-apply.log 2>&1
+          status=$?
+          cat pipeline-v4-apply.log
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          if [[ "$status" -eq 0 ]]; then
+            rm -f .github/development-packages/issue543_release_pipeline_v4.py
+            rm -f .github/workflows/preflight-release-pipeline-v4.yml
+            find .github/development-packages -type d -empty -delete 2>/dev/null || true
+          fi
+          exit 0
+
+      - name: Upload package diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-pipeline-v4-package-diagnostics-${{ github.sha }}
+          path: pipeline-v4-apply.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop on package failure
+        if: steps.apply.outputs.exit_code != '0'
+        run: exit 1
 
       - name: Validate Pipeline v4 and retained Toolkit contracts
         run: |

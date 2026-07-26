@@ -13,8 +13,8 @@
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
-## **Current verified release: `v7.1.6`**
-### **Native Discharge patient confirmation handling**
+## **Current verified release: `v8.0.0` · Development candidate: `v8.0.1`**
+### **Critical Godfather interface activation hotfix**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -24,17 +24,17 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v716) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v800) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
 
 ---
 
-# v8 development signal
+# v8.0.1 hotfix signal
 
-> **AN OFFER HE CAN’T REFUSE // DEVELOPMENT BRANCH ONLY**
+> **CRITICAL THEME ACTIVATION REPAIR // DEVELOPMENT BRANCH ONLY**
 
-The `feat/v8-godfather-an-offer-he-cant-refuse` branch introduces the eighth complete interface system, **The Godfather**. It uses original Toolkit-made marionette, wax-seal, rose, pinstripe, polished-wood and brass artwork; pairs a theme-scoped **The Godfather Offer** payout; and preserves the v7 native MissionChief product boundary. Production remains on the verified v7.1.6 release until the guarded v8 release pipeline completes.
+The verified production release is **v8.0.0 — An Offer He Can’t Refuse**. Candidate **v8.0.1** repairs the Godfather stylesheet boundary that left theme selection active while browsers discarded the complete visual rules. The repair closes the preceding Hyrule Economy Mode rule, removes the displaced trailing brace and adds a permanent top-level CSS-depth regression. Production remains on v8.0.0 until the guarded hotfix release completes.
 
 ---
 
@@ -72,7 +72,7 @@ MissionChief distributes operational information across the map, opened incident
 | Control channel | State | Evidence |
 |---|:---:|---|
 | **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v7.1.6` published |
+| **Production release** | 🟢 | GitHub Release `v8.0.0` published |
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned recovery commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
@@ -83,19 +83,16 @@ The [Release Control Panel](status/README.md) is machine-backed from the current
 
 ---
 
-# Current release signal — v7.1.6
+# Current release signal — v8.0.0
 
-> **CHANNEL UPDATE // NATIVE DISCHARGE PATIENT CONFIRMATION**
+> **CHANNEL UPDATE // THE GODFATHER INTERFACE**
 
-Version 7.1.6 handles MissionChief's intermittent **Discharge patient** confirmation only while a Patient Transport Sweep-owned discharge action is armed.
+Version 8.0.0 introduced the eighth complete interface system, **The Godfather**, with original family-command artwork, a theme-scoped Offer payout and full Desktop, Tablet/iPad and iOS/mobile presentation coverage.
 
-- The exact **Yes, discharge!** action is selected immediately and during the existing bounded release-evidence wait.
-- **Abort** and **discharge and disable confirmation** remain untouched, preserving the user's MissionChief confirmation preference.
-- Unrelated dialogs, manual discharges, inactive sweeps and mismatched release identities are ignored.
-- Idempotent confirmation ownership prevents repeated scans from double-clicking the dialog.
-- Static and executable regressions cover immediate, delayed, absent, unrelated and repeated confirmation scans.
-
-The release advances native transport handling without weakening ownership checks, user preferences, mission progress, skipped-patient accounting or verified release evidence.
+- The v7 native MissionChief boundary and all retained operational systems remain in force.
+- Original Godfather assets and payout audio are hosted through the verified Toolkit asset inventory.
+- Reduced-motion and Economy Mode retain information while suppressing non-essential effects.
+- Candidate v8.0.1 corrects a CSS boundary defect discovered after release; the release ledger remains authoritative until that hotfix is published.
 
 ---
 
@@ -277,13 +274,13 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 | Field | Verified value |
 |---|---|
-| **Version** | `7.1.6` |
-| **Release focus** | Native Discharge patient confirmation handling |
+| **Version** | `8.0.0` |
+| **Release focus** | The Godfather complete interface system |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `6358f5b25b6b278fac409a78d2b7b1c0bfd88bb808810dbf484dcd86f1f99386` |
-| **GitHub Release** | [`v7.1.6`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v7.1.6) |
+| **Validated SHA-256** | `049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b` |
+| **GitHub Release** | [`v8.0.0`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.0) |
 | **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `e4b2617762ca4a09c569966861660cab55712f32` |
+| **Private backup** | `cd0b94a59bdccb248dc7bdfe461f3e7419cc18bf` |
 | **Discord release delivery** | Posted |
 | **Hosted media audit** | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
 

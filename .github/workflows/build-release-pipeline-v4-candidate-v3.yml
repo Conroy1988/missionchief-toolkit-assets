@@ -71,32 +71,41 @@ jobs:
           text = text.replace(anchor, anchor + '        \'gh run watch "$PAGES_RUN_ID" --exit-status\',\n', 1)
           path.write_text(text, encoding='utf-8')
 
-          # Correct generated workflow-text defects and make them permanent tests.
+          # Correct generated workflow-text defects without embedding GitHub expressions.
           release_path = Path('.github/workflows/release-toolkit.yml')
           release = release_path.read_text(encoding='utf-8')
-          if release.count('\x01') != 1:
+          if release.count(chr(1)) != 1:
               raise SystemExit(f'Unexpected metadata-regex control-character count: {release.count(chr(1))}')
-          release = release.replace('\x01', r'\1', 1)
-          old = '''        env:\n          RELEASE_VERSION: ${{ inputs.version }}\n          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}\n        env:\n          RELEASE_STARTED_EPOCH: ${{ steps.release_start.outputs.started_epoch }}\n'''
-          new = '''        env:\n          RELEASE_VERSION: ${{ inputs.version }}\n          BACKUP_COMMIT: ${{ steps.external.outputs.backup_commit }}\n          RELEASE_STARTED_EPOCH: ${{ steps.release_start.outputs.started_epoch }}\n'''
-          if release.count(old) != 1:
-              raise SystemExit(f'Unexpected duplicate env block count: {release.count(old)}')
-          release = release.replace(old, new, 1)
-          old = '''            echo "- ✅ Greasy Fork verification and private backup ran concurrently\n            echo "- ✅ Greasy Fork version verified""\n'''
-          new = '''            echo "- ✅ Greasy Fork verification and private backup ran concurrently"\n            echo "- ✅ Greasy Fork version verified"\n'''
-          if release.count(old) != 1:
-              raise SystemExit(f'Unexpected malformed summary count: {release.count(old)}')
-          release = release.replace(old, new, 1)
-          old = '            echo "- ✅ GitHub Pages deployment completed: ${PAGES_RUN_ID}"\n'
-          new = '            echo "- ✅ GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}"\n'
-          if release.count(old) != 1:
-              raise SystemExit(f'Unexpected legacy Pages summary count: {release.count(old)}')
-          release = release.replace(old, new, 1)
+          release = release.replace(chr(1), r'\1', 1)
+          release_lines = release.splitlines(keepends=True)
+          step_indexes = [i for i, line in enumerate(release_lines) if 'Record successful release, manifest, announcement and speed state' in line]
+          if len(step_indexes) != 1:
+              raise SystemExit(f'Unexpected release-state step count: {len(step_indexes)}')
+          step_index = step_indexes[0]
+          shell_index = next(i for i in range(step_index + 1, len(release_lines)) if release_lines[i].strip() == 'shell: bash')
+          env_indexes = [i for i in range(step_index + 1, shell_index) if release_lines[i].strip() == 'env:']
+          if len(env_indexes) != 2:
+              raise SystemExit(f'Unexpected release-state env mapping count: {len(env_indexes)}')
+          del release_lines[env_indexes[1]]
+          for i, line in enumerate(release_lines):
+              if 'echo "- ✅ Greasy Fork verification and private backup ran concurrently' in line:
+                  release_lines[i] = '            echo "- ✅ Greasy Fork verification and private backup ran concurrently"\n'
+              elif 'echo "- ✅ Greasy Fork version verified' in line:
+                  release_lines[i] = '            echo "- ✅ Greasy Fork version verified"\n'
+              elif 'echo "- ✅ GitHub Pages deployment completed:' in line:
+                  release_lines[i] = '            echo "- ✅ GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}"\n'
+          release = ''.join(release_lines)
+          if release.count('echo "- ✅ Greasy Fork verification and private backup ran concurrently"') != 1:
+              raise SystemExit('Concurrent-publication summary was not normalised')
+          if release.count('echo "- ✅ Greasy Fork version verified"') != 1:
+              raise SystemExit('Greasy Fork verification summary was not normalised')
+          if release.count('GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}') != 1:
+              raise SystemExit('Asynchronous Pages summary was not normalised')
           release_path.write_text(release, encoding='utf-8')
 
           contract_path = Path('.github/scripts/test_release_pipeline_v4.py')
           contract = contract_path.read_text(encoding='utf-8')
-          addition = '''\nassert "\\x01" not in p\nassert p.count("      - name: Record successful release, manifest, announcement and speed state") == 1\nassert "Greasy Fork verification and private backup ran concurrently\\\"" in p\nassert "GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}" in p\n'''
+          addition = '''\nassert chr(1) not in p\nassert p.count("      - name: Record successful release, manifest, announcement and speed state") == 1\nassert 'echo "- ✅ Greasy Fork verification and private backup ran concurrently"' in p\nassert 'GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}' in p\n'''
           if addition.strip() not in contract:
               contract = contract.replace('print("Release Pipeline v4 contract passed.")', addition + '\nprint("Release Pipeline v4 contract passed.")', 1)
           contract_path.write_text(contract, encoding='utf-8')
@@ -108,7 +117,7 @@ jobs:
           rm -f .github/workflows/diagnose-release-pipeline-v4-materialise.yml
           rm -f .github/workflows/build-release-pipeline-v4-candidate-v2.yml
           rm -f .github/workflows/diagnose-release-pipeline-v4-contract-v2.yml
-          rm -f .github/workflows/diagnose-release-pipeline-v4-contract-v2.yml
+          rm -f .github/workflows/diagnose-release-pipeline-v4-final.yml
           rm -f .github/workflows/build-release-pipeline-v4-candidate-v3.yml
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 

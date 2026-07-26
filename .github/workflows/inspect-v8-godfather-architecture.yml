@@ -51,6 +51,24 @@ jobs:
       - name: Build and self-clean v8 interface
         run: python3 /tmp/build_v8_godfather.py --root . --clean-staging
 
+      - name: Remove temporary writer authorisation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('.github/actions-security-policy.json')
+          policy = json.loads(path.read_text(encoding='utf-8'))
+          removed = policy.get('allowedWritePermissions', {}).pop(
+              '.github/workflows/inspect-v8-godfather-architecture.yml', None
+          )
+          if removed != ['contents']:
+              raise SystemExit(f'Unexpected temporary writer policy: {removed!r}')
+          path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          PY
+
       - name: Validate generated JavaScript and theme package
         shell: bash
         run: |

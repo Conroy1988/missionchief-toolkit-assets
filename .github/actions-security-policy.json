@@ -29,7 +29,7 @@
     ".github/workflows/greasyfork-release-monitor.yml": [
       "contents"
     ],
-    ".github/workflows/run-v8-godfather-hotfix.yml": [
+    ".github/workflows/validate-userscript.yml": [
       "contents"
     ],
     ".github/workflows/owner-release-command.yml": [

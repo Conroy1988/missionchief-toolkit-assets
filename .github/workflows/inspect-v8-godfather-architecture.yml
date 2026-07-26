@@ -71,7 +71,7 @@ jobs:
           path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
           PY
 
-      - name: Record reviewed v8 source-headroom contract
+      - name: Record reviewed v8 source budgets
         shell: bash
         run: |
           set -euo pipefail
@@ -92,6 +92,7 @@ jobs:
               'templateSha256': '16cfb67472e02fb1c187144c078591b79553fe9deaa633067ae59fea1c1863ab',
               'canonicalCssSha256': '494b03f1a5b3571ba51105c009dbcde4f29f1458b15beeb6f2440b55db855f48',
               'maxSourceBytes': 1650000,
+              'maxSourceLines': 24500,
               'minTemplateBytes': 500000,
               'baseline': 'v7Candidate',
               'approvedGrowth': {
@@ -141,10 +142,45 @@ jobs:
           }
           assert all(actual[key] == candidate[key] for key in actual), (actual, candidate)
           assert actual['sourceBytes'] <= candidate['maxSourceBytes'], (actual, candidate)
+          assert actual['sourceLines'] <= candidate['maxSourceLines'], (actual, candidate)
           assert actual['templateBytes'] >= candidate['minTemplateBytes'], (actual, candidate)
           print('Main-style source-headroom contract passed for v8.')
           PY
           chmod +x .github/scripts/test_main_style_source_headroom.py
+          cat > .github/scripts/test_issue464_launcher_settings_contract.py <<'PY'
+          #!/usr/bin/env python3
+          import json
+          import re
+          from pathlib import Path
+
+          ROOT = Path(__file__).resolve().parents[2]
+          text = (ROOT / 'src' / 'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
+          fixture = json.loads((ROOT / '.github/fixtures/main-style-source-headroom.json').read_text(encoding='utf-8'))
+          line_limit = fixture['v8Candidate']['maxSourceLines']
+
+          def section(start, end):
+              first = text.index(start)
+              last = text.index(end, first)
+              return text[first:last]
+
+          control = section('    function createControl(', '    function createPanel(')
+          assert 'const primaryMap = toolkitPrimaryMapElement(mapEl, document);' in control
+          ensure = section('    function ensureUi()', '    function mutationBelongsToToolkit')
+          assert 'return Boolean(control || document.getElementById(SCRIPT.controlId));' in ensure
+          boot = section('    function boot()', '    function scheduleBoot()')
+          assert 'installMissionMarkerAddHook' in boot
+          assert 'installCustomVehicleBadges' in boot
+          assert 'installOperationalSuiteShell' not in boot
+          age = section('    function updateMissionAgeLabels()', '    function scheduleMissionAgeRefresh(')
+          assert 'missionAgeRefreshPlan' in age
+          metadata = re.search(r'^//\s*@version\s+([^\s]+)', text, re.M).group(1)
+          runtime = re.search(r"version:\s*'([^']+)'", text).group(1)
+          assert metadata == runtime
+          assert tuple(int(part) for part in metadata.split('.')[:3]) >= (8, 0, 0)
+          assert len(text.splitlines()) <= line_limit
+          print('v8 launcher, boot and Mission Age contract passed.')
+          PY
+          chmod +x .github/scripts/test_issue464_launcher_settings_contract.py
 
       - name: Validate generated JavaScript and Godfather contracts
         shell: bash

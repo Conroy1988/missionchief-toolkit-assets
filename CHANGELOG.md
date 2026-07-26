@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.0.4] - 2026-07-26
+
+### Alliance-building native filter persistence
+
+- Fixed alliance-building icons reappearing after map pan, zoom, marker hydration or clustering while MissionChief’s native building filter remained off.
+- Economy Mode now respects MissionChief’s native building filter layer before culling or restoring alliance markers.
+- Rehydrated alliance markers are returned to their native hidden layer instead of being attached directly to the map.
+- Key 4 remains scoped to personal buildings and is behaviourally unchanged.
+- Added bounded map-event reconciliation and permanent Issue #536 regression coverage without a new observer, polling loop or interval.
+
+
 ## [8.0.3] - 2026-07-26
 
 ### Godfather duration and payout-position hotfix

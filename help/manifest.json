@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.0.3",
-  "toolkitVersion": "8.0.3",
+  "guideVersion": "8.0.4",
+  "toolkitVersion": "8.0.4",
   "updated": "2026-07-26",
   "path": "help/index.html",
   "sections": 19,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.0.3 defaults the Godfather Offer flash to seven seconds when the normal default is active and raises/compacts the payout on short viewports so it remains clear of the command dock.",
+  "runtimeGuidePatch": "Toolkit v8.0.4 keeps MissionChief alliance-building markers inside the native filter layer across map pan, zoom, hydration and Economy Mode restoration while leaving Key 4 personal-building control unchanged.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

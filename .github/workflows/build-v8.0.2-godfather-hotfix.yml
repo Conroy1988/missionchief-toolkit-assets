@@ -35,6 +35,10 @@ jobs:
           set +e
           python3 .github/v8.0.2/reconstruct_and_build.py > v8-hotfix-build.log 2>&1
           status=$?
+          if [[ $status -eq 0 ]]; then
+            python3 .github/v8.0.2/postbuild_contracts.py >> v8-hotfix-build.log 2>&1
+            status=$?
+          fi
           cat v8-hotfix-build.log
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit 0

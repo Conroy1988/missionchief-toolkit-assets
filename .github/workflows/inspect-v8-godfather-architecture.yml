@@ -1,9 +1,9 @@
 name: Build v8 Godfather Interface
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/v8-godfather-an-offer-he-cant-refuse
+      - main
     paths:
       - ".github/workflows/inspect-v8-godfather-architecture.yml"
 
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.actor == 'Conroy1988' && github.ref_name == 'feat/v8-godfather-an-offer-he-cant-refuse'
+    if: github.actor == 'Conroy1988' && github.head_ref == 'feat/v8-godfather-an-offer-he-cant-refuse'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

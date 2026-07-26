@@ -13,8 +13,8 @@
 [![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
-## **Current verified release: `v8.0.0` · Development candidate: `v8.0.1`**
-### **Critical Godfather interface activation hotfix**
+## **Current verified release: `v8.0.1` · Development candidate: `v8.0.2`**
+### **Godfather layout and payout-audio hotfix**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -24,17 +24,17 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v800) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v801) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
 
 ---
 
-# v8.0.1 hotfix signal
+# v8.0.2 hotfix signal
 
-> **CRITICAL THEME ACTIVATION REPAIR // DEVELOPMENT BRANCH ONLY**
+> **CRITICAL GODFATHER LAYOUT AND AUDIO REPAIR // DEVELOPMENT BRANCH ONLY**
 
-The verified production release is **v8.0.0 — An Offer He Can’t Refuse**. Candidate **v8.0.1** repairs the Godfather stylesheet boundary that left theme selection active while browsers discarded the complete visual rules. The repair closes the preceding Hyrule Economy Mode rule, removes the displaced trailing brace and adds a permanent top-level CSS-depth regression. Production remains on v8.0.0 until the guarded hotfix release completes.
+The verified production release is **v8.0.1**. Candidate **v8.0.2** contains the decorative family seal, restores compact Tablet controls, raises the Offer payout above the command dock and replaces the payout audio byte-for-byte with the newly supplied stereo MP3. Production remains on v8.0.1 until the guarded hotfix release completes.
 
 ---
 
@@ -72,7 +72,7 @@ MissionChief distributes operational information across the map, opened incident
 | Control channel | State | Evidence |
 |---|:---:|---|
 | **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v8.0.0` published |
+| **Production release** | 🟢 | GitHub Release `v8.0.1` published |
 | **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
 | **Private recovery** | 🟢 | Versioned recovery commit retained |
 | **Discord release signal** | 🟢 | Verified release announcement posted |
@@ -83,16 +83,15 @@ The [Release Control Panel](status/README.md) is machine-backed from the current
 
 ---
 
-# Current release signal — v8.0.0
+# Current release signal — v8.0.1
 
-> **CHANNEL UPDATE // THE GODFATHER INTERFACE**
+> **CHANNEL UPDATE // GODFATHER STYLESHEET ACTIVATION**
 
-Version 8.0.0 introduced the eighth complete interface system, **The Godfather**, with original family-command artwork, a theme-scoped Offer payout and full Desktop, Tablet/iPad and iOS/mobile presentation coverage.
+Version 8.0.1 restored the complete Godfather stylesheet boundary and added permanent top-level CSS-depth validation.
 
-- The v7 native MissionChief boundary and all retained operational systems remain in force.
-- Original Godfather assets and payout audio are hosted through the verified Toolkit asset inventory.
-- Reduced-motion and Economy Mode retain information while suppressing non-essential effects.
-- Candidate v8.0.1 corrects a CSS boundary defect discovered after release; the release ledger remains authoritative until that hotfix is published.
+- The Godfather command system now activates as a complete interface.
+- The v7 native MissionChief boundary and every retained operational system remain in force.
+- Candidate v8.0.2 addresses the remaining Tablet layout, payout placement and replacement-audio defects.
 
 ---
 

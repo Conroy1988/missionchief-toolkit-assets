@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "theme": "godfather",
   "displayName": "The Godfather",
-  "packageVersion": "1.0.0",
-  "toolkitVersion": "8.0.1",
+  "packageVersion": "1.0.2",
+  "toolkitVersion": "8.0.2",
   "generated": "2026-07-26",
   "assets": {
     "cashoutAudio": "audio/godfather-flash-payout.mp3",
@@ -15,10 +15,12 @@
     "payoutSeal": "payout/offer-authorised-seal.svg"
   },
   "audio": {
-    "durationSeconds": 12.669388,
+    "durationSeconds": 8.515875,
     "sampleRateHz": 44100,
-    "channels": 1,
-    "sha256": "6ac631584e9df05ff821a6203ee24d1a6df7cf84d4f946713145a4b3f9502d45",
+    "channels": 2,
+    "bitRateBps": 128000,
+    "byteSize": 136254,
+    "sha256": "53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4",
     "loading": "Lazy; requested only when the Godfather Offer payout is played."
   },
   "compatibility": {
@@ -42,5 +44,16 @@
     "reducedMotion": "Static presentation; non-essential theme motion is disabled.",
     "economyMode": "No non-essential theme animation or backdrop filtering."
   },
-  "notes": "Original Toolkit-made old-money command system. v8.0.1 restores the complete stylesheet activation boundary. No film stills, actor likenesses, studio logos or copied franchise artwork."
+  "verification": {
+    "issue": 539,
+    "sourceSha256": "5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474",
+    "audioCacheVersion": "8.0.2",
+    "contracts": [
+      "launcher-decoration-contained",
+      "tablet-controls-44px",
+      "payout-clears-command-dock",
+      "exact-audio-digest"
+    ]
+  },
+  "notes": "Original Toolkit-made old-money command system. v8.0.2 contains the launcher decoration, restores compact Tablet control geometry, raises the payout clear of the command dock and uses the user-supplied payout MP3 without processing."
 }

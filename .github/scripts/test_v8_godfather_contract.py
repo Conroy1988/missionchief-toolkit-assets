@@ -11,8 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_PATH = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 SOURCE = SOURCE_PATH.read_text(encoding="utf-8")
-EXPECTED_SOURCE_SHA256 = "f64d180da6fabbbe775353e914529a7353427f6dafe3ee2da84cc96d5fc6f525"
-EXPECTED_AUDIO_SHA256 = "6ac631584e9df05ff821a6203ee24d1a6df7cf84d4f946713145a4b3f9502d45"
+EXPECTED_SOURCE_SHA256 = "5a33ed92ca3c3207d421654c8cd9370f95a6127a4ec759b4924412f19b36c474"
+EXPECTED_AUDIO_SHA256 = "53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4"
 
 
 def require(condition: bool, message: str) -> None:
@@ -22,8 +22,8 @@ def require(condition: bool, message: str) -> None:
 
 require(hashlib.sha256(SOURCE_PATH.read_bytes()).hexdigest() == EXPECTED_SOURCE_SHA256,
         "v8 userscript hash drifted from the reviewed deterministic build")
-require("// @version      8.0.1" in SOURCE, "userscript metadata version is not 8.0.1")
-require("version: '8.0.1'" in SOURCE, "runtime version is not 8.0.1")
+require("// @version      8.0.2" in SOURCE, "userscript metadata version is not 8.0.2")
+require("version: '8.0.2'" in SOURCE, "runtime version is not 8.0.2")
 require("godfather: Object.freeze({ label: 'The Godfather'" in SOURCE, "Godfather interface registry entry missing")
 require("'hyrule', 'godfather'" in SOURCE, "Godfather interface is not last in the eight-theme order")
 require("godfatherOffer: { label: 'The Godfather Offer'" in SOURCE, "Godfather payout registry entry missing")
@@ -38,7 +38,7 @@ require("document.createElement('audio')" in SOURCE, "payout audio is not create
 require("disposePayoutMediaAudio" in SOURCE and "payoutMediaAudio = null" in SOURCE,
         "deterministic hosted-audio disposal contract missing")
 
-start = SOURCE.index("/* v8.0.1 — The Godfather: complete original old-money command interface. */")
+start = SOURCE.index("/* v8.0.2 — The Godfather: complete original old-money command interface. */")
 end = SOURCE.index('html[data-mcms-mobile-active="true"],', start)
 theme_css = SOURCE[start:end]
 for selector in (
@@ -61,7 +61,7 @@ require(theme_css.count('data-template="godfatherOffer"') >= 20,
 manifest_path = ROOT / "themes/godfather/manifest.json"
 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 require(manifest["theme"] == "godfather", "theme manifest identity mismatch")
-require(manifest["toolkitVersion"] == "8.0.1", "theme manifest Toolkit version mismatch")
+require(manifest["toolkitVersion"] == "8.0.2", "theme manifest Toolkit version mismatch")
 require(manifest["audio"]["sha256"] == EXPECTED_AUDIO_SHA256, "manifest audio digest mismatch")
 require(manifest["audio"]["loading"].startswith("Lazy"), "manifest does not preserve lazy audio loading")
 require(manifest["compatibility"]["layouts"] == ["desktop", "ultrawide", "tablet", "ios-mobile", "mobile"],
@@ -81,8 +81,8 @@ audio = ROOT / "themes/godfather/audio/godfather-flash-payout.mp3"
 require(audio.is_file(), "Godfather payout MP3 missing")
 payload = audio.read_bytes()
 require(hashlib.sha256(payload).hexdigest() == EXPECTED_AUDIO_SHA256, "Godfather payout MP3 digest mismatch")
-require(len(payload) == 24903, "Godfather payout MP3 byte size mismatch")
-require(payload.startswith(b'ID3') or payload[:2] in (b'\\xff\\xfb', b'\\xff\\xf3', b'\\xff\\xf2'),
+require(len(payload) == 136254, "Godfather payout MP3 byte size mismatch")
+require(payload.startswith(b'ID3') or payload[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'),
         "Godfather payout MP3 signature invalid")
 
 alias_manifest = json.loads((ROOT / '.github/asset-compatibility-aliases.json').read_text(encoding='utf-8'))
@@ -94,12 +94,12 @@ require(sum(1 for item in site['themes'] if item.get('slug') == 'godfather') == 
         "website theme registry must contain exactly one Godfather entry")
 require('The Godfather Offer' in site['payoutThemes'], "website payout registry missing Godfather Offer")
 help_manifest = json.loads((ROOT / 'help/manifest.json').read_text(encoding='utf-8'))
-require(help_manifest['toolkitVersion'] == '8.0.1', "Help Centre version mismatch")
+require(help_manifest['toolkitVersion'] == '8.0.2', "Help Centre version mismatch")
 require(help_manifest['godfatherThemePackage'] == 'themes/godfather/manifest.json',
         "Help Centre theme package reference missing")
 require('id="godfather-interface"' in (ROOT / 'help/index.html').read_text(encoding='utf-8'),
         "Help Centre Godfather section missing")
-require('## [8.0.1] - 2026-07-26' in (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'),
+require('## [8.0.2] - 2026-07-26' in (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'),
         "v8 changelog entry missing")
 
 print(json.dumps({

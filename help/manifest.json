@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.0.1",
-  "toolkitVersion": "8.0.1",
+  "guideVersion": "8.0.2",
+  "toolkitVersion": "8.0.2",
   "updated": "2026-07-26",
   "path": "help/index.html",
   "sections": 19,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.0.1 restores the complete Godfather stylesheet boundary and adds a permanent activation regression while retaining the v7 native product boundary.",
+  "runtimeGuidePatch": "Toolkit v8.0.2 contains the Godfather launcher decoration, restores compact Tablet controls, raises the Offer payout above the command dock and replaces its audio byte-for-byte.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

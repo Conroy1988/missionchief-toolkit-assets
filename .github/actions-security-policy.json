@@ -19,6 +19,9 @@
       "actions",
       "contents"
     ],
+    ".github/workflows/build-release-pipeline-v4-candidate-v3.yml": [
+      "contents"
+    ],
     ".github/workflows/discord-release-preview.yml": [
       "issues"
     ],

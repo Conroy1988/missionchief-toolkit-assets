@@ -1,5 +1,14 @@
 # Changelog
 
+## [8.0.1] - 2026-07-26
+
+### Godfather interface activation hotfix
+
+- Closed the Hyrule Economy Mode payout rule before the Godfather stylesheet so browsers parse the complete eighth interface at top level.
+- Removed the displaced trailing brace that had silently contained and discarded the Godfather selectors.
+- Added a permanent stylesheet-boundary regression that verifies balanced CSS depth at the Godfather and responsive-layout boundaries.
+- Preserved all Godfather assets, payout audio, responsive behaviour, existing themes and the v7 native MissionChief boundary.
+
 ## [8.0.0] - 2026-07-26
 
 ### An Offer He Can’t Refuse

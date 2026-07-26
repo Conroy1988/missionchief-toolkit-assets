@@ -36,7 +36,9 @@ jobs:
           set -o pipefail
           python3 - <<'PY' 2>&1 | tee v8-hotfix-execution.log
           from pathlib import Path
-          import textwrap
+
+          def strip_block_indent(lines):
+              return '\n'.join(line[10:] if line.startswith('          ') else line for line in lines) + '\n'
 
           path = Path('.github/workflows/run-v8-godfather-hotfix-v2.yml')
           lines = path.read_text(encoding='utf-8').splitlines()
@@ -50,7 +52,7 @@ jobs:
                   while index < len(lines) and lines[index].strip() != 'PY':
                       body.append(lines[index])
                       index += 1
-                  python_blocks.append(textwrap.dedent('\n'.join(body)) + '\n')
+                  python_blocks.append(strip_block_indent(body))
               index += 1
           if len(python_blocks) != 2:
               raise SystemExit(f'Expected two direct Python blocks, found {len(python_blocks)}')
@@ -63,9 +65,8 @@ jobs:
           while index < len(lines) and lines[index].strip() != 'PY':
               body.append(lines[index])
               index += 1
-          regression = textwrap.dedent('\n'.join(body)) + '\n'
           target = Path('.github/scripts/test_issue537_godfather_css_activation.py')
-          target.write_text(regression, encoding='utf-8')
+          target.write_text(strip_block_indent(body), encoding='utf-8')
           target.chmod(0o755)
 
           exec(compile(python_blocks[1], 'v8-hotfix-cleanup', 'exec'), {})

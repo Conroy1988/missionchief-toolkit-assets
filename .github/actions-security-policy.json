@@ -29,6 +29,9 @@
     ".github/workflows/greasyfork-release-monitor.yml": [
       "contents"
     ],
+    ".github/workflows/reconcile-v8.0.1-readme.yml": [
+      "contents"
+    ],
     ".github/workflows/owner-release-command.yml": [
       "actions",
       "contents",

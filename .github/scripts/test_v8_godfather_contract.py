@@ -82,7 +82,7 @@ require(audio.is_file(), "Godfather payout MP3 missing")
 payload = audio.read_bytes()
 require(hashlib.sha256(payload).hexdigest() == EXPECTED_AUDIO_SHA256, "Godfather payout MP3 digest mismatch")
 require(len(payload) == 24903, "Godfather payout MP3 byte size mismatch")
-require(payload.startswith(b'ID3') or payload[:2] in (b'\\xff\\xfb', b'\\xff\\xf3', b'\\xff\\xf2'),
+require(payload.startswith(b'ID3') or payload[:2] in (b'\xff\xfb', b'\xff\xf3', b'\xff\xf2'),
         "Godfather payout MP3 signature invalid")
 
 alias_manifest = json.loads((ROOT / '.github/asset-compatibility-aliases.json').read_text(encoding='utf-8'))

@@ -23,3 +23,6 @@ assert 'echo "- ✅ Greasy Fork verification and private backup ran concurrently
 assert 'GitHub Pages deployment dispatched asynchronously: ${PAGES_DISPATCHED}' in p
 
 print("Release Pipeline v4 publication contract passed with v5 validated-tree promotion.")
+
+assert "name: Toolkit Hotfix Gate" in v
+assert "test_consolidated_pr_gate.py" in v

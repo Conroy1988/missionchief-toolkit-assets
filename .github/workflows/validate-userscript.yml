@@ -1,90 +1,150 @@
 name: Validate Canonical Userscript
 
+run-name: Toolkit Hotfix Gate · ${{ github.event_name }}
+
 on:
   pull_request:
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - "CHANGELOG.md"
-      - "README.md"
-      - "docs/site-data.json"
-      - "docs/media/readme-hero.svg"
-      - "help/index.html"
-      - "documentation-drift-report.json"
-      - "documentation-drift-report.md"
-      - ".github/scripts/validate_userscript.py"
-      - ".github/scripts/verify_validation_candidate.py"
-      - ".github/scripts/test_documentation_consistency.py"
-      - ".github/scripts/test_validation_candidate_pipeline.py"
-      - ".github/scripts/test_version_status_contract.py"
-      - ".github/workflows/auto-release-after-validation.yml"
-      - ".github/workflows/owner-release-command.yml"
-      - ".github/workflows/publish-update-manifest.yml"
-      - ".github/workflows/release-toolkit.yml"
-      - ".github/workflows/validate-userscript.yml"
-      - "status/source-baseline.json"
-      - "status/update-manifest.json"
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
-  group: canonical-userscript-validation-${{ github.ref }}
-  cancel-in-progress: false
+  group: toolkit-hotfix-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Validate and package immutable candidate evidence
+  runtime:
+    name: Runtime lane
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 12
     steps:
       - name: Check out exact repository state
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
           persist-credentials: false
+          show-progress: false
+
+      - name: Run deterministic runtime contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/scripts/run_userscript_preflight.sh --contracts \
+            2>&1 | tee runtime-lane.log
+
+      - name: Upload runtime diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-hotfix-runtime-${{ github.sha }}
+          path: runtime-lane.log
+          if-no-files-found: error
+          retention-days: 14
+
+  integrity:
+    name: Integrity lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
 
       - name: Validate candidate-verifier self-tests
         run: python3 .github/scripts/verify_validation_candidate.py --self-test
 
       - name: Validate userscript and build candidate distribution
-        id: validate
         shell: bash
         run: |
-          set +e
-          python3 .github/scripts/validate_userscript.py > validation.log 2>&1
-          status=$?
-          cat validation.log
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit 0
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py 2>&1 | tee validation.log
+          python3 .github/scripts/test_documentation_consistency.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent \
+            dist/MissionChief_Map_Command_Toolkit.user.js \
+            dist/MissionChief_Map_Command_Toolkit.txt
 
-      - name: Upload validation diagnostics
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: missionchief-toolkit-validation-diagnostics-${{ github.sha }}
-          path: validation.log
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Stop on validation failure
-        if: steps.validate.outputs.exit_code != '0'
+      - name: Run structural and code-integrity audits
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
         run: |
-          echo "Userscript validation failed. See the diagnostics artifact."
-          exit 1
+          set -euo pipefail
+          python3 .github/scripts/audit_userscript_structure.py --self-test
+          python3 .github/scripts/audit_userscript_structure.py \
+            --json-output userscript-audit.json \
+            --markdown-output userscript-audit.md
+          python3 .github/scripts/test_code_integrity.py
+          ARGS=(
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js
+            --policy .github/code-integrity-policy.json
+            --json-output code-integrity-report.json
+            --markdown-output code-integrity-report.md
+          )
+          if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
+            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/code-integrity-base.user.js
+            ARGS+=(--base /tmp/code-integrity-base.user.js)
+          fi
+          python3 .github/scripts/check_code_integrity.py "${ARGS[@]}"
 
-      - name: Validate documentation consistency
-        run: python3 .github/scripts/test_documentation_consistency.py
+      - name: Run full static userscript audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/full_userscript_audit.py \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --dist dist/MissionChief_Map_Command_Toolkit.user.js \
+            --json-output full-userscript-audit-raw.json \
+            --markdown-output full-userscript-audit-raw.md
+          python3 .github/scripts/refine_full_userscript_audit.py \
+            --raw full-userscript-audit-raw.json \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --json-output full-userscript-audit.json \
+            --markdown-output full-userscript-audit.md
 
-      - name: Check JavaScript syntax
-        run: node --check src/MissionChief_Map_Command_Toolkit.user.js
+      - name: Restore ESLint package cache
+        id: eslint-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-eslint-${{ runner.os }}-9.32.0
 
-      - name: Verify distribution files are identical
-        run: cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+      - name: Install exact ESLint audit engine
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund eslint@9.32.0
+
+      - name: Save ESLint package cache
+        if: steps.eslint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-eslint-${{ runner.os }}-9.32.0
+
+      - name: Run AST-backed ESLint audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./node_modules/.bin/eslint \
+            --config .github/eslint-userscript.config.mjs \
+            --no-ignore \
+            --format json \
+            src/MissionChief_Map_Command_Toolkit.user.js \
+            > eslint-userscript-raw.json
+          python3 .github/scripts/summarise_eslint_audit.py \
+            --input eslint-userscript-raw.json \
+            --json-output eslint-userscript-audit.json \
+            --markdown-output eslint-userscript-audit.md
+          python3 .github/scripts/extract_userscript_audit_evidence.py \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --eslint-json eslint-userscript-raw.json \
+            --output eslint-userscript-evidence.txt
 
       - name: Prepare immutable release-ready bundle
-        id: release_bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -96,7 +156,6 @@ jobs:
           cmp --silent "$USER_FILE" "$TXT_FILE"
           test "$(jq -r '.version' "$MANIFEST")" = "$VERSION"
           test "$(sha256sum "$USER_FILE" | awk '{print $1}')" = "$(jq -r '.sha256' "$MANIFEST")"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Write immutable validation candidate evidence
         env:
@@ -114,10 +173,8 @@ jobs:
           SOURCE_TREE="$(git rev-parse HEAD^{tree})"
           CHECKOUT_COMMIT="$(git rev-parse HEAD)"
           [[ "$HASH" == "$SOURCE_HASH" && "$HASH" == "$USER_HASH" && "$HASH" == "$TEXT_HASH" ]]
-
           PR_JSON=null
           if [[ -n "$PR_NUMBER" ]]; then PR_JSON="$PR_NUMBER"; fi
-
           jq -n \
             --arg workflow "Validate Canonical Userscript" \
             --arg commit "$CHECKOUT_COMMIT" \
@@ -154,7 +211,6 @@ jobs:
                 releaseDashboardChanged: false
               }
             }' > validation-candidate/validation-candidate.json
-
           python3 .github/scripts/verify_validation_candidate.py \
             --evidence validation-candidate/validation-candidate.json \
             --source src/MissionChief_Map_Command_Toolkit.user.js \
@@ -177,23 +233,266 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Write validation summary
+      - name: Upload integrity diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-hotfix-integrity-${{ github.sha }}
+          path: |
+            validation.log
+            userscript-audit.json
+            userscript-audit.md
+            code-integrity-report.json
+            code-integrity-report.md
+            full-userscript-audit-raw.json
+            full-userscript-audit-raw.md
+            full-userscript-audit.json
+            full-userscript-audit.md
+            eslint-userscript-raw.json
+            eslint-userscript-audit.json
+            eslint-userscript-audit.md
+            eslint-userscript-evidence.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  performance:
+    name: Performance lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Run performance budget fixtures
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_performance_budget.py
+          python3 .github/scripts/test_runtime_optimisations.py
+          node --check tools/mcms-performance-profiler.user.js
+          node .github/scripts/test_performance_profiler.js
+
+      - name: Run performance budget
+        shell: bash
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --candidate src/MissionChief_Map_Command_Toolkit.user.js
+            --policy .github/performance-budget.json
+            --json-output performance-budget-report.json
+            --markdown-output performance-budget-report.md
+          )
+          if [[ -n "$PR_BASE_SHA" ]] && git cat-file -e "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" 2>/dev/null; then
+            git show "${PR_BASE_SHA}:src/MissionChief_Map_Command_Toolkit.user.js" > /tmp/performance-base.user.js
+            ARGS+=(--base /tmp/performance-base.user.js)
+          fi
+          python3 .github/scripts/check_performance_budget.py "${ARGS[@]}"
+
+      - name: Restore Acorn package cache
+        id: acorn-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
+
+      - name: Install exact JavaScript parser
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Save Acorn package cache
+        if: steps.acorn-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: toolkit-deep-audit-${{ runner.os }}-acorn-8.15.0
+
+      - name: Run deep performance audit
         shell: bash
         run: |
-          VERSION="$(jq -r '.version' validation-candidate/validation-candidate.json)"
-          HASH="$(jq -r '.sha256' validation-candidate/validation-candidate.json)"
-          TREE="$(jq -r '.sourceTree' validation-candidate/validation-candidate.json)"
-          {
-            echo "# Toolkit v${VERSION} canonical validation"
-            echo
-            echo "- ✅ Canonical source validated"
-            echo "- ✅ JavaScript syntax checked"
-            echo "- ✅ Distribution files are byte-identical"
-            echo "- ✅ Complete release bundle prepared once and retained with the candidate"
-            echo "- ✅ Candidate SHA-256: \`${HASH}\`"
-            echo "- ✅ Validated repository tree: \`${TREE}\`"
-            echo "- ✅ Exact validation commit: \`${GITHUB_SHA}\`"
-            echo "- 📦 Candidate retained as an immutable workflow artifact"
-            echo "- ⛔ Public main changed: no"
-            echo "- ⛔ Release dashboard changed: no"
-          } >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          node --check .github/scripts/deep_performance_audit.mjs
+          node --check .github/scripts/reconcile_deep_performance_audit.mjs
+          node --check .github/scripts/extract_deep_performance_evidence.mjs
+          node .github/scripts/test_deep_performance_audit.mjs
+          node .github/scripts/test_reconcile_deep_performance_audit.mjs
+          node .github/scripts/deep_performance_audit.mjs \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --json-output deep-performance-audit.json \
+            --markdown-output deep-performance-audit.md
+          node .github/scripts/reconcile_deep_performance_audit.mjs \
+            deep-performance-audit.json \
+            deep-performance-audit.md
+          node .github/scripts/extract_deep_performance_evidence.mjs \
+            src/MissionChief_Map_Command_Toolkit.user.js \
+            deep-performance-source-evidence.md \
+            updateUI applyRootAttributes triggerPayoutFlash \
+            stopPayoutFlashAnimation createMissionLockOnReticle \
+            toggleCommandBar connectMainMutationObserver boot
+
+      - name: Upload performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-hotfix-performance-${{ github.sha }}
+          path: |
+            performance-budget-report.json
+            performance-budget-report.md
+            deep-performance-audit.json
+            deep-performance-audit.md
+            deep-performance-source-evidence.md
+          if-no-files-found: warn
+          retention-days: 30
+
+  repository:
+    name: Repository lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Run workflow and release-policy contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/audit_actions_security.py
+          python3 .github/scripts/test_development_package_workflow.py
+          python3 .github/scripts/test_automation_record_hygiene.py
+          python3 .github/scripts/test_branch_write_inventory.py
+          python3 .github/scripts/test_validation_candidate_pipeline.py
+          python3 .github/scripts/test_greasyfork_parity_pipeline.py
+          python3 .github/scripts/test_release_announcement_state_pipeline.py
+          python3 .github/scripts/test_release_state_monitor_pipeline.py
+          python3 .github/scripts/test_release_recovery_state_pipeline.py
+          python3 .github/scripts/test_shadow_branch_parity.py
+          python3 .github/scripts/test_shadow_sync_writer.py
+          python3 .github/scripts/test_update_manifest_pipeline.py
+          python3 .github/scripts/test_consolidated_pr_gate.py
+
+      - name: Run documentation and Pages contracts
+        shell: bash
+        env:
+          ALLOW_RELEASE_CANDIDATE: "1"
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            .github/scripts/check_documentation_drift.py \
+            .github/scripts/test_documentation_version_states.py \
+            .github/scripts/build_pages_site.py \
+            .github/scripts/test_pages_release_deploy_contract.py
+          python3 .github/scripts/test_documentation_version_states.py
+          python3 .github/scripts/check_documentation_drift.py --allow-release-candidate
+          python3 .github/scripts/test_pages_release_deploy_contract.py
+          node --check docs/site-assets/site.js
+          python3 -m json.tool docs/site-data.json > /dev/null
+          python3 .github/scripts/build_pages_site.py \
+            --output _site \
+            --base-path /missionchief-toolkit-assets/ \
+            > pages-build-report.json
+
+      - name: Run static asset and update-manifest checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_asset_health.py
+          python3 .github/scripts/check_distribution_body_parity.py --self-test
+          python3 .github/scripts/check_asset_health.py \
+            --mode static \
+            --json-output asset-health-report.json \
+            --markdown-output asset-health-report.md
+          python3 .github/scripts/build_stable_update_manifest.py --self-test
+          python3 .github/scripts/build_stable_update_manifest.py \
+            --check \
+            --evidence-json update-manifest-verification.json \
+            --evidence-markdown update-manifest-verification.md
+
+      - name: Verify live Greasy Fork canonical parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/audit_greasyfork_canonical_parity.py --self-test
+          mkdir -p greasyfork-parity
+          URL="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"
+          curl --fail --silent --show-error --location --compressed \
+            --max-time 60 --retry 3 --retry-delay 5 \
+            --header "Cache-Control: no-cache" \
+            "${URL}?cache_bust=$(date +%s%N)" \
+            --output greasyfork-parity/live.user.js
+          python3 .github/scripts/audit_greasyfork_canonical_parity.py \
+            --live greasyfork-parity/live.user.js \
+            --source-url "$URL" \
+            --source-commit "$GITHUB_SHA" \
+            --json-output greasyfork-parity/report.json \
+            --markdown-output greasyfork-parity/report.md
+
+      - name: Prepare advisory release plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/pulls?state=closed&sort=updated&direction=desc&per_page=100" \
+            | jq 'add' > merged-pull-requests.json
+          python3 .github/scripts/prepare_release_plan.py \
+            --pull-requests merged-pull-requests.json \
+            --release-level auto
+
+      - name: Upload repository diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-hotfix-repository-${{ github.sha }}
+          path: |
+            actions-security-report.json
+            actions-security-report.md
+            documentation-drift-report.json
+            documentation-drift-report.md
+            pages-build-report.json
+            _site/
+            asset-health-report.json
+            asset-health-report.md
+            update-manifest-verification.json
+            update-manifest-verification.md
+            greasyfork-parity/
+            release-plan.json
+            release-plan.md
+            merged-pull-requests.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  gate:
+    name: Toolkit Hotfix Gate
+    if: always()
+    needs:
+      - runtime
+      - integrity
+      - performance
+      - repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce all four lanes
+        env:
+          RUNTIME_RESULT: ${{ needs.runtime.result }}
+          INTEGRITY_RESULT: ${{ needs.integrity.result }}
+          PERFORMANCE_RESULT: ${{ needs.performance.result }}
+          REPOSITORY_RESULT: ${{ needs.repository.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Runtime: %s\nIntegrity: %s\nPerformance: %s\nRepository: %s\n' \
+            "$RUNTIME_RESULT" "$INTEGRITY_RESULT" \
+            "$PERFORMANCE_RESULT" "$REPOSITORY_RESULT" \
+            >> "$GITHUB_STEP_SUMMARY"
+          [[ "$RUNTIME_RESULT" == "success" ]]
+          [[ "$INTEGRITY_RESULT" == "success" ]]
+          [[ "$PERFORMANCE_RESULT" == "success" ]]
+          [[ "$REPOSITORY_RESULT" == "success" ]]

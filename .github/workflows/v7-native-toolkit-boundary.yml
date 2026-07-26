@@ -1,12 +1,5 @@
 name: Validate v7 Native Toolkit Boundary
 on:
-  pull_request:
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/scripts/test_v7_retirement.py"
-      - ".github/scripts/test_mission_age_retention.py"
-      - ".github/scripts/test_transport_sweep_native_contract.py"
-      - ".github/workflows/v7-native-toolkit-boundary.yml"
   workflow_dispatch:
 permissions:
   contents: read

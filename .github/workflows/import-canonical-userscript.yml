@@ -4,16 +4,6 @@ on:
   schedule:
     - cron: "17 5 * * *"
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "src/MissionChief_Map_Command_Toolkit.user.js"
-      - ".github/workflows/import-canonical-userscript.yml"
-      - ".github/scripts/audit_greasyfork_canonical_parity.py"
-      - ".github/actions-security-policy.json"
-      - ".github/branch-write-inventory.json"
-      - "docs/BRANCH_PROTECTION_MIGRATION.md"
-      - "docs/BRANCH_WRITE_INVENTORY.md"
-      - "status/source-baseline.json"
   push:
     branches:
       - main

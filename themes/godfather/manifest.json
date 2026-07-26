@@ -3,7 +3,7 @@
   "theme": "godfather",
   "displayName": "The Godfather",
   "packageVersion": "1.0.0",
-  "toolkitVersion": "8.0.0",
+  "toolkitVersion": "8.0.1",
   "generated": "2026-07-26",
   "assets": {
     "cashoutAudio": "audio/godfather-flash-payout.mp3",
@@ -42,5 +42,5 @@
     "reducedMotion": "Static presentation; non-essential theme motion is disabled.",
     "economyMode": "No non-essential theme animation or backdrop filtering."
   },
-  "notes": "Original Toolkit-made old-money command system. No film stills, actor likenesses, studio logos or copied franchise artwork."
+  "notes": "Original Toolkit-made old-money command system. v8.0.1 restores the complete stylesheet activation boundary. No film stills, actor likenesses, studio logos or copied franchise artwork."
 }

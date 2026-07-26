@@ -32,6 +32,9 @@
     ".github/workflows/hotfix-v8-godfather-css.yml": [
       "contents"
     ],
+    ".github/workflows/run-v8-godfather-hotfix.yml": [
+      "contents"
+    ],
     ".github/workflows/owner-release-command.yml": [
       "actions",
       "contents",

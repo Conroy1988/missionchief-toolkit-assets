@@ -1,0 +1,106 @@
+name: Reconcile v8.0.1 README
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/reconcile-v8.0.1-readme.yml"
+      - ".github/actions-security-policy.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v8-0-1-readme-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.actor == 'Conroy1988' && github.head_ref == 'hotfix/v8.0.1-godfather-css-activation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact hotfix branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: hotfix/v8.0.1-godfather-css-activation
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Reconcile release and hotfix signals
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('README.md')
+          text = path.read_text(encoding='utf-8')
+          old_banner = '## **Current verified release: `v7.1.6`**\n### **Native Discharge patient confirmation handling**'
+          new_banner = '## **Current verified release: `v8.0.0` · Development candidate: `v8.0.1`**\n### **Critical Godfather interface activation hotfix**'
+          assert text.count(old_banner) == 1
+          text = text.replace(old_banner, new_banner)
+          text = text.replace('#current-release-signal--v716', '#current-release-signal--v800')
+          text = text.replace('GitHub Release `v7.1.6` published', 'GitHub Release `v8.0.0` published')
+
+          dev_start = text.index('# v8 development signal')
+          dev_end = text.index('\n---\n', dev_start)
+          hotfix_section = '''# v8.0.1 hotfix signal
+
+> **CRITICAL THEME ACTIVATION REPAIR // DEVELOPMENT BRANCH ONLY**
+
+The verified production release is **v8.0.0 — An Offer He Can’t Refuse**. Candidate **v8.0.1** repairs the Godfather stylesheet boundary that left theme selection active while browsers discarded the complete visual rules. The repair closes the preceding Hyrule Economy Mode rule, removes the displaced trailing brace and adds a permanent top-level CSS-depth regression. Production remains on v8.0.0 until the guarded hotfix release completes.
+'''
+          text = text[:dev_start] + hotfix_section + text[dev_end:]
+
+          release_start = text.index('# Current release signal — v7.1.6')
+          release_end = text.index('\n---\n', release_start)
+          release_section = '''# Current release signal — v8.0.0
+
+> **CHANNEL UPDATE // THE GODFATHER INTERFACE**
+
+Version 8.0.0 introduced the eighth complete interface system, **The Godfather**, with original family-command artwork, a theme-scoped Offer payout and full Desktop, Tablet/iPad and iOS/mobile presentation coverage.
+
+- The v7 native MissionChief boundary and all retained operational systems remain in force.
+- Original Godfather assets and payout audio are hosted through the verified Toolkit asset inventory.
+- Reduced-motion and Economy Mode retain information while suppressing non-essential effects.
+- Candidate v8.0.1 corrects a CSS boundary defect discovered after release; the release ledger remains authoritative until that hotfix is published.
+'''
+          text = text[:release_start] + release_section + text[release_end:]
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Remove temporary workflow and permission
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          policy_path = Path('.github/actions-security-policy.json')
+          policy = json.loads(policy_path.read_text(encoding='utf-8'))
+          removed = policy['allowedWritePermissions'].pop('.github/workflows/reconcile-v8.0.1-readme.yml', None)
+          assert removed == ['contents'], removed
+          policy_path.write_text(json.dumps(policy, indent=2) + '\n', encoding='utf-8')
+          Path('.github/workflows/reconcile-v8.0.1-readme.yml').unlink()
+          PY
+
+      - name: Validate documentation and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/test_documentation_consistency.py
+          python3 .github/scripts/check_documentation_drift.py --root . --allow-release-candidate --json-output /tmp/docs.json --markdown-output /tmp/docs.md
+          python3 .github/scripts/test_issue537_godfather_css_activation.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          test ! -e .github/workflows/reconcile-v8.0.1-readme.yml
+
+      - name: Commit README reconciliation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'Conroy1988'
+          git config user.email '27301455+Conroy1988@users.noreply.github.com'
+          git add -A
+          git commit -m 'Reconcile README for v8.0.1 hotfix'
+          git push origin HEAD:hotfix/v8.0.1-godfather-css-activation

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">Command wax seal</title><desc id="desc">Original oxblood wax seal stamped with a brass command star.</desc>
+<defs><radialGradient id="w" cx="35%" cy="28%" r="76%"><stop stop-color="#9b3342"/><stop offset=".5" stop-color="#681824"/><stop offset="1" stop-color="#2d0810"/></radialGradient><linearGradient id="b" x2="0" y2="1"><stop stop-color="#f2dc9d"/><stop offset=".5" stop-color="#c69b48"/><stop offset="1" stop-color="#6f4b1f"/></linearGradient></defs>
+<path fill="url(#w)" d="M128 15l20 11 23-2 14 18 22 7 4 23 17 15-6 22 8 21-15 17-1 23-22 8-13 19-23-1-19 13-20-11-23 3-14-19-22-7-4-23-17-15 6-22-8-21 15-17 1-23 22-8 13-19 23 1z"/>
+<circle cx="128" cy="128" r="78" fill="none" stroke="url(#b)" stroke-width="7"/><circle cx="128" cy="128" r="63" fill="none" stroke="#e4c779" stroke-opacity=".55" stroke-width="2"/>
+<path fill="url(#b)" d="M128 71l13 36 38 1-30 23 11 37-32-21-32 21 11-37-30-23 38-1z"/>
+<circle cx="128" cy="128" r="12" fill="#5a121e" stroke="#efd995" stroke-width="4"/>
+</svg>

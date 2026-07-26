@@ -98,5 +98,27 @@
       "call-list-engine",
       "transport-request-engine"
     ]
+  },
+  "v8Candidate": {
+    "issue": 533,
+    "version": "8.0.0",
+    "sourceBytes": 1600028,
+    "sourceLines": 24100,
+    "sourceSha256": "049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b",
+    "templateBytes": 679313,
+    "templateLines": 7769,
+    "templateSha256": "16cfb67472e02fb1c187144c078591b79553fe9deaa633067ae59fea1c1863ab",
+    "canonicalCssSha256": "494b03f1a5b3571ba51105c009dbcde4f29f1458b15beeb6f2440b55db855f48",
+    "maxSourceBytes": 1650000,
+    "maxSourceLines": 24500,
+    "minTemplateBytes": 500000,
+    "baseline": "v7Candidate",
+    "approvedGrowth": {
+      "sourceBytes": 35131,
+      "sourceLines": 517,
+      "templateBytes": 32470,
+      "templateLines": 489
+    },
+    "scope": "Issue #533 complete eighth interface system, original theme assets and theme-scoped payout integration"
   }
 }

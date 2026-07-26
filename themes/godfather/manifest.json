@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "theme": "godfather",
+  "displayName": "The Godfather",
+  "packageVersion": "1.0.0",
+  "toolkitVersion": "8.0.0",
+  "generated": "2026-07-26",
+  "assets": {
+    "cashoutAudio": "audio/godfather-flash-payout.mp3",
+    "familyCommandSeal": "ui/family-command-seal.svg",
+    "waxSeal": "ui/wax-seal.svg",
+    "velvetRose": "ui/velvet-rose.svg",
+    "pinstripePanel": "ui/pinstripe-panel.svg",
+    "polishedWood": "ui/polished-wood.svg",
+    "payoutSeal": "payout/offer-authorised-seal.svg"
+  },
+  "audio": {
+    "durationSeconds": 12.669388,
+    "sampleRateHz": 44100,
+    "channels": 1,
+    "sha256": "6ac631584e9df05ff821a6203ee24d1a6df7cf84d4f946713145a4b3f9502d45",
+    "loading": "Lazy; requested only when the Godfather Offer payout is played."
+  },
+  "compatibility": {
+    "settingIds": [
+      "godfather",
+      "godfatherOffer"
+    ],
+    "payoutTemplateIds": [
+      "godfatherOffer"
+    ],
+    "layouts": [
+      "desktop",
+      "ultrawide",
+      "tablet",
+      "ios-mobile",
+      "mobile"
+    ]
+  },
+  "accessibility": {
+    "minimumTouchTargetPx": 44,
+    "reducedMotion": "Static presentation; non-essential theme motion is disabled.",
+    "economyMode": "No non-essential theme animation or backdrop filtering."
+  },
+  "notes": "Original Toolkit-made old-money command system. No film stills, actor likenesses, studio logos or copied franchise artwork."
+}

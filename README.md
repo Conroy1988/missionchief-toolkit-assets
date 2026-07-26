@@ -10,7 +10,7 @@
 
 [![Install now](https://img.shields.io/badge/INSTALL_NOW-GREASY_FORK-8B0000?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)
 [![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-126782?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
-[![Explore interfaces](https://img.shields.io/badge/EXPLORE-7_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
+[![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
 [![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
 
 ## **Current verified release: `v7.1.6`**
@@ -24,9 +24,17 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v716) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#seven-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v716) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
 
 </div>
+
+---
+
+# v8 development signal
+
+> **AN OFFER HE CAN’T REFUSE // DEVELOPMENT BRANCH ONLY**
+
+The `feat/v8-godfather-an-offer-he-cant-refuse` branch introduces the eighth complete interface system, **The Godfather**. It uses original Toolkit-made marionette, wax-seal, rose, pinstripe, polished-wood and brass artwork; pairs a theme-scoped **The Godfather Offer** payout; and preserves the v7 native MissionChief product boundary. Production remains on the verified v7.1.6 release until the guarded v8 release pipeline completes.
 
 ---
 
@@ -102,7 +110,7 @@ The Incident Command Wire provides persistent situational awareness without beco
 - the fixed **Incident Command** identity remains separate from moving incident data;
 - one expanded queue control supports deliberate incident selection;
 - direct click-to-zoom navigation opens the relevant map position;
-- the complete incident row remains centred across all seven interfaces and supported layouts; and
+- the complete incident row remains centred across all eight interfaces and supported layouts; and
 - reduced-motion, hidden-tab and Economy Mode conditions suppress non-essential movement.
 
 Permanent source and executable contracts protect loop ownership, dynamic speed, seeking and accessibility.
@@ -192,7 +200,7 @@ The target is not the largest possible feature list. It is the strongest useful 
 
 ---
 
-# Seven complete interface systems
+# Eight complete interface systems
 
 > **INTERFACE NETWORK // SAME OPERATIONAL CONTRACT, SEVEN COMMAND LANGUAGES**
 
@@ -208,7 +216,7 @@ Every interface presents the same retained capability and stored configuration. 
 | **007 Intelligence** | Classified dossiers, restrained black surfaces and champagne-gold controls |
 | **Hyrule Command** | Royal cartography, luminous energy and ancient command motifs |
 
-Inactive interfaces do not run theme-specific effects. [Explore all seven interfaces](https://conroy1988.github.io/missionchief-toolkit-assets/themes/).
+Inactive interfaces do not run theme-specific effects. [Explore all eight interfaces](https://conroy1988.github.io/missionchief-toolkit-assets/themes/).
 
 ---
 

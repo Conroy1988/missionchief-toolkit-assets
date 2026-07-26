@@ -78,7 +78,7 @@
           "details": [
             "Bounded card-by-card rotation",
             "Previous, pause, next and expanded queue controls",
-            "Seven theme-aware presentations",
+            "Eight theme-aware presentations",
             "Static reduced-motion and Economy Mode fallback"
           ],
           "visual": "feed",
@@ -425,6 +425,18 @@
         "#3de7e5",
         "#50ec8c"
       ]
+    },
+    {
+      "name": "The Godfather",
+      "slug": "godfather",
+      "description": "Old-money crime-family command styling with original wax, rose, brass, pinstripe and polished-wood artwork.",
+      "palette": [
+        "#080706",
+        "#4b2f1b",
+        "#641722",
+        "#c9a354",
+        "#f0e2bd"
+      ]
     }
   ],
   "payoutThemes": [
@@ -442,7 +454,8 @@
     "Dark Fantasy Inspired",
     "Underworld Inspired",
     "Pixel Arcade Inspired",
-    "Hyrule Quest Reward"
+    "Hyrule Quest Reward",
+    "The Godfather Offer"
   ],
   "shortcuts": [
     {

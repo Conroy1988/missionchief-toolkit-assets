@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.0.0] - 2026-07-26
+
+### An Offer He Can’t Refuse
+
+- Added the eighth complete interface system, **The Godfather**, across the launcher, command shell, settings, cards, inputs, Vehicle Code Status, Incident Command Wire, finance, Patient Transport Sweep, Help Centre, map labels and payout presentation.
+- Added original Toolkit-made family-command, wax-seal, velvet-rose, tailored-pinstripe, polished-wood and Offer-authorised artwork; no film stills, actor likenesses, studio logos or copied franchise artwork are used.
+- Added **The Godfather Offer** payout template with a theme-scoped 12.67-second MP3 cue, lazy media creation, browser-autoplay fallback and deterministic audio disposal.
+- Paired The Godfather interface with its payout while preserving all existing interface and payout selections.
+- Added Desktop, ultrawide, Tablet/iPad, iPhone/iPad Safari, reduced-motion and Economy Mode presentation contracts.
+- Preserved the v7 native-product boundary, user settings, operational status colours, lifecycle-managed runtime and zero recurring work for inactive themes.
+
 All notable changes to the MissionChief Map Command Toolkit will be documented in this file.
 
 The format is based on Keep a Changelog, and releases use semantic version numbers.

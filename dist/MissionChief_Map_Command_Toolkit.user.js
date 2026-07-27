@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.0.4
+// @version      8.1.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.0.4',
+        version: '8.1.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -24374,4 +24374,633 @@ Create the private backup now?`);
     } else {
         scheduleBoot();
     }
+
+    // <mcms-alliance-member-manager>
+    // Toolkit v8.1.0: native, opt-in Alliance Member Manager.
+    const ALLIANCE_MEMBER_MANAGER = Object.freeze({
+        storageKey: 'mcms_alliance_member_manager_enabled_v1',
+        panelId: 'mcms-alliance-member-manager',
+        styleId: 'mcms-alliance-member-manager-style',
+        menuAttribute: 'data-mcms-alliance-member-manager-toggle',
+        operationsAttribute: 'data-mcms-alliance-operations',
+        noRole: '__mcms_no_role__',
+    });
+    let allianceMemberManagerPage = null;
+    let allianceMemberManagerMenuQueued = false;
+
+    function allianceMemberManagerEnabled() {
+        try {
+            return localStorage.getItem(ALLIANCE_MEMBER_MANAGER.storageKey) === 'true';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function setAllianceMemberManagerEnabled(enabled) {
+        try {
+            localStorage.setItem(ALLIANCE_MEMBER_MANAGER.storageKey, enabled ? 'true' : 'false');
+        } catch (error) {}
+        updateAllianceMemberManagerMenuControl();
+        reconcileAllianceMemberManager();
+    }
+
+    function isAllianceMemberManagerRoute(pathname = location.pathname) {
+        const path = decodedPathname(pathname);
+        return /\/(?:alliance\/members|verband\/mitglieder)(?:\/\d+)?\/?$/iu.test(path);
+    }
+
+    function allianceMemberManagerOtherOwnerPresent() {
+        return Boolean(document.querySelector(
+            '#allianceMemberList-controls, [id*="allianceMemberList"][id$="-controls"]'
+        ));
+    }
+
+    function allianceMemberManagerTable(doc = document) {
+        return Array.from(doc.querySelectorAll('table')).find(table =>
+            table.querySelector('tbody a[href^="/profile/"]')
+        ) || null;
+    }
+
+    function allianceMemberManagerBody(table) {
+        return table ? Array.from(table.tBodies).at(-1) || null : null;
+    }
+
+    function allianceMemberManagerCurrentPage(url = new URL(location.href)) {
+        const queryPage = Number.parseInt(url.searchParams.get('page') || '', 10);
+        if (Number.isFinite(queryPage) && queryPage > 0) return queryPage;
+        const pathPage = Number.parseInt(
+            decodedPathname(url.pathname).match(/\/(?<page>\d+)\/?$/u)?.groups?.page || '',
+            10
+        );
+        return Number.isFinite(pathPage) && pathPage > 0 ? pathPage : 1;
+    }
+
+    function allianceMemberManagerTotalPages(doc = document) {
+        const values = Array.from(doc.querySelectorAll('.pagination a, .pagination li'))
+            .map(node => Number.parseInt(node.textContent?.trim() || '', 10))
+            .filter(value => Number.isFinite(value) && value > 0);
+        return Math.max(1, ...values);
+    }
+
+    function allianceMemberManagerActivity(row) {
+        const icon = row.querySelector('img.online_icon');
+        const source = icon?.getAttribute('src') || '';
+        const match = source.match(/user_(?<state>blue|gray|green|red|yellow)\.png/iu);
+        return match?.groups?.state?.toLowerCase() || 'unknown';
+    }
+
+    function allianceMemberManagerRoles(row) {
+        return (row.cells.item(1)?.querySelector('small')?.textContent || '')
+            .split(',')
+            .map(role => role.trim())
+            .filter(Boolean);
+    }
+
+    function allianceMemberManagerParseRow(row, page, index) {
+        const profile = row.querySelector('a[href^="/profile/"]');
+        if (!profile) return null;
+        const name = profile.textContent?.trim() || '';
+        if (!name) return null;
+        const pathname = profile.getAttribute('href') || '';
+        const id = pathname.match(/^\/profile\/(?<id>\d+)/u)?.groups?.id || pathname || name;
+        return {
+            activity: allianceMemberManagerActivity(row),
+            id,
+            name,
+            order: page * 100000 + index,
+            roles: allianceMemberManagerRoles(row),
+            row,
+        };
+    }
+
+    function allianceMemberManagerOption(value, text) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        return option;
+    }
+
+    function allianceMemberManagerStyle() {
+        let style = document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.styleId}`);
+        if (style) return style;
+        style = document.createElement('style');
+        style.id = ALLIANCE_MEMBER_MANAGER.styleId;
+        style.textContent = `
+            #${ALLIANCE_MEMBER_MANAGER.panelId} {
+                margin: 0 0 12px !important;
+                border: 1px solid rgba(25,118,210,.35) !important;
+                border-radius: 10px !important;
+                background: rgba(12,20,31,.96) !important;
+                color: #eef4ff !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,.22) !important;
+                overflow: hidden !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-head {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 10px !important;
+                padding: 10px 12px !important;
+                border-bottom: 1px solid rgba(255,255,255,.10) !important;
+                background: rgba(25,118,210,.18) !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-head strong {
+                font-size: 14px !important;
+                line-height: 1.2 !important;
+                color: #fff !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-head span {
+                font-size: 11px !important;
+                color: rgba(238,244,255,.72) !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-body {
+                padding: 10px 12px 12px !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-controls {
+                display: grid !important;
+                grid-template-columns: repeat(3, minmax(130px,1fr)) auto !important;
+                gap: 8px !important;
+                align-items: end !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} label {
+                display: grid !important;
+                gap: 4px !important;
+                margin: 0 !important;
+                color: rgba(238,244,255,.78) !important;
+                font-size: 11px !important;
+                font-weight: 800 !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} select,
+            #${ALLIANCE_MEMBER_MANAGER.panelId} button {
+                min-height: 38px !important;
+                border: 1px solid rgba(255,255,255,.18) !important;
+                border-radius: 8px !important;
+                background: rgba(255,255,255,.08) !important;
+                color: #fff !important;
+                font: 800 12px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} select {
+                width: 100% !important;
+                padding: 0 9px !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} select option {
+                color: #111 !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} button {
+                padding: 7px 11px !important;
+                cursor: pointer !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} button:hover,
+            #${ALLIANCE_MEMBER_MANAGER.panelId} button:focus-visible {
+                background: rgba(25,118,210,.34) !important;
+                border-color: rgba(120,190,255,.82) !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} button:disabled {
+                cursor: wait !important;
+                opacity: .58 !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-actions {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+                margin-top: 9px !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-primary {
+                background: rgba(25,118,210,.48) !important;
+                border-color: rgba(120,190,255,.72) !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-progress,
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-summary {
+                margin: 8px 0 0 !important;
+                color: rgba(238,244,255,.74) !important;
+                font-size: 11px !important;
+                line-height: 1.35 !important;
+            }
+            #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-progress:empty {
+                display: none !important;
+            }
+            @media (max-width: 720px) {
+                #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-head {
+                    align-items: flex-start !important;
+                    flex-direction: column !important;
+                }
+                #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-controls {
+                    grid-template-columns: minmax(0,1fr) !important;
+                }
+                #${ALLIANCE_MEMBER_MANAGER.panelId} select,
+                #${ALLIANCE_MEMBER_MANAGER.panelId} button {
+                    min-height: 44px !important;
+                    font-size: 16px !important;
+                }
+                #${ALLIANCE_MEMBER_MANAGER.panelId} .mcms-amm-actions {
+                    display: grid !important;
+                    grid-template-columns: minmax(0,1fr) !important;
+                }
+            }
+        `;
+        (document.head || document.documentElement).append(style);
+        return style;
+    }
+
+    function allianceMemberManagerRefreshRoleOptions(context) {
+        const selected = context.roleSelect.value;
+        const roles = Array.from(new Set(
+            Array.from(context.members.values()).flatMap(member => member.roles)
+        )).sort((left, right) => context.collator.compare(left, right));
+        context.roleSelect.replaceChildren(
+            allianceMemberManagerOption('', 'All roles'),
+            allianceMemberManagerOption(ALLIANCE_MEMBER_MANAGER.noRole, 'No role'),
+            ...roles.map(role => allianceMemberManagerOption(role, role))
+        );
+        if (Array.from(context.roleSelect.options).some(option => option.value === selected)) {
+            context.roleSelect.value = selected;
+        }
+    }
+
+    function allianceMemberManagerApply(context) {
+        if (allianceMemberManagerPage !== context) return;
+        const activityRank = {
+            green: 0,
+            yellow: 1,
+            blue: 2,
+            gray: 3,
+            red: 4,
+            unknown: 5,
+        };
+        const selectedRole = context.roleSelect.value;
+        const selectedActivity = context.activitySelect.value;
+        const sort = context.sortSelect.value;
+        const modifier = context.descending ? -1 : 1;
+        const ordered = Array.from(context.members.values()).sort((left, right) => {
+            let result = 0;
+            if (sort === 'name') {
+                result = context.collator.compare(left.name, right.name);
+            } else if (sort === 'role') {
+                result = context.collator.compare(
+                    left.roles.join(', ') || '\uffff',
+                    right.roles.join(', ') || '\uffff'
+                );
+            } else if (sort === 'activity') {
+                result = activityRank[left.activity] - activityRank[right.activity];
+            } else {
+                result = left.order - right.order;
+            }
+            if (!result) result = context.collator.compare(left.name, right.name);
+            return result * modifier;
+        });
+        let visible = 0;
+        ordered.forEach(member => {
+            const roleMatches = !selectedRole || (
+                selectedRole === ALLIANCE_MEMBER_MANAGER.noRole
+                    ? !member.roles.length
+                    : member.roles.includes(selectedRole)
+            );
+            const activityMatches = !selectedActivity || (
+                selectedActivity === 'online'
+                    ? member.activity === 'green'
+                    : member.activity !== 'green' && member.activity !== 'unknown'
+            );
+            member.row.hidden = !(roleMatches && activityMatches);
+            if (!member.row.hidden) visible += 1;
+            context.tbody.append(member.row);
+        });
+        context.summary.textContent =
+            `Showing ${visible} of ${context.members.size} members · ` +
+            `${context.loadedPages.size} of ${context.totalPages} pages loaded`;
+    }
+
+    function allianceMemberManagerAddPage(context, doc, page) {
+        const table = allianceMemberManagerTable(doc);
+        const body = allianceMemberManagerBody(table);
+        if (!body) throw new Error(`Member table missing on page ${page}`);
+        Array.from(body.rows).forEach((row, index) => {
+            const imported = document.importNode(row, true);
+            const member = allianceMemberManagerParseRow(imported, page, index);
+            if (!member || context.members.has(member.id)) return;
+            context.members.set(member.id, member);
+            context.importedRows.add(imported);
+            context.tbody.append(imported);
+        });
+        context.loadedPages.add(page);
+        allianceMemberManagerRefreshRoleOptions(context);
+        allianceMemberManagerApply(context);
+    }
+
+    function allianceMemberManagerPageUrl(page) {
+        const url = new URL(location.href);
+        url.searchParams.set('page', String(page));
+        url.hash = '';
+        return url.href;
+    }
+
+    async function allianceMemberManagerLoadAll(context) {
+        if (context.loading || allianceMemberManagerPage !== context) return;
+        context.loading = true;
+        context.abortController = new AbortController();
+        context.loadAllButton.disabled = true;
+        try {
+            for (let page = 1; page <= context.totalPages; page += 1) {
+                if (context.loadedPages.has(page)) continue;
+                context.progress.textContent =
+                    `Loading member page ${page} of ${context.totalPages}…`;
+                const response = await fetch(allianceMemberManagerPageUrl(page), {
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    signal: context.abortController.signal,
+                });
+                if (!response.ok) throw new Error(`Page ${page} returned HTTP ${response.status}`);
+                const html = await response.text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                if (allianceMemberManagerPage !== context) return;
+                allianceMemberManagerAddPage(context, doc, page);
+            }
+            context.progress.textContent = 'All member pages loaded.';
+            context.loadAllButton.textContent = 'All Member Pages Loaded';
+        } catch (error) {
+            if (error?.name !== 'AbortError' && allianceMemberManagerPage === context) {
+                context.progress.textContent =
+                    `Could not load every member page: ${error?.message || error}`;
+            }
+        } finally {
+            if (allianceMemberManagerPage === context) {
+                context.loading = false;
+                context.abortController = null;
+                context.loadAllButton.disabled =
+                    context.loadedPages.size >= context.totalPages;
+            }
+        }
+    }
+
+    function allianceMemberManagerReset(context) {
+        context.roleSelect.value = '';
+        context.activitySelect.value = '';
+        context.sortSelect.value = 'default';
+        context.descending = false;
+        context.directionButton.textContent = '↑';
+        context.directionButton.setAttribute('aria-pressed', 'false');
+        allianceMemberManagerApply(context);
+    }
+
+    function installAllianceMemberManager() {
+        if (
+            allianceMemberManagerPage ||
+            !allianceMemberManagerEnabled() ||
+            !isAllianceMemberManagerRoute() ||
+            allianceMemberManagerOtherOwnerPresent()
+        ) return;
+        const table = allianceMemberManagerTable(document);
+        const tbody = allianceMemberManagerBody(table);
+        if (!table || !tbody) return;
+        const currentPage = allianceMemberManagerCurrentPage();
+        const totalPages = allianceMemberManagerTotalPages();
+        const members = new Map();
+        const originalRows = Array.from(tbody.rows);
+        originalRows.forEach((row, index) => {
+            const member = allianceMemberManagerParseRow(row, currentPage, index);
+            if (member) members.set(member.id, member);
+        });
+        if (!members.size) return;
+
+        allianceMemberManagerStyle();
+        const panel = document.createElement('section');
+        panel.id = ALLIANCE_MEMBER_MANAGER.panelId;
+        panel.setAttribute('aria-label', 'Alliance Member Manager');
+
+        const head = document.createElement('div');
+        head.className = 'mcms-amm-head';
+        const title = document.createElement('strong');
+        title.textContent = 'Alliance Member Manager';
+        const subtitle = document.createElement('span');
+        subtitle.textContent = 'Filter and sort the current alliance member list';
+        head.append(title, subtitle);
+
+        const body = document.createElement('div');
+        body.className = 'mcms-amm-body';
+        const controls = document.createElement('div');
+        controls.className = 'mcms-amm-controls';
+
+        const createSelect = (labelText, options) => {
+            const label = document.createElement('label');
+            label.append(document.createTextNode(labelText));
+            const select = document.createElement('select');
+            options.forEach(([value, text]) =>
+                select.append(allianceMemberManagerOption(value, text))
+            );
+            label.append(select);
+            controls.append(label);
+            return select;
+        };
+
+        const roleSelect = createSelect('Role', [['', 'All roles']]);
+        const activitySelect = createSelect('Activity', [
+            ['', 'All members'],
+            ['online', 'Online'],
+            ['offline', 'Offline'],
+        ]);
+        const sortSelect = createSelect('Sort by', [
+            ['default', 'Original order'],
+            ['name', 'Member name'],
+            ['role', 'Alliance role'],
+            ['activity', 'Activity'],
+        ]);
+        const directionButton = document.createElement('button');
+        directionButton.type = 'button';
+        directionButton.textContent = '↑';
+        directionButton.title = 'Sort direction';
+        directionButton.setAttribute('aria-label', 'Sort direction');
+        directionButton.setAttribute('aria-pressed', 'false');
+        controls.append(directionButton);
+
+        const actions = document.createElement('div');
+        actions.className = 'mcms-amm-actions';
+        const loadAllButton = document.createElement('button');
+        loadAllButton.type = 'button';
+        loadAllButton.className = 'mcms-amm-primary';
+        loadAllButton.textContent =
+            totalPages > 1 ? 'Load All Member Pages' : 'All Member Pages Loaded';
+        loadAllButton.disabled = totalPages <= 1;
+        const resetButton = document.createElement('button');
+        resetButton.type = 'button';
+        resetButton.textContent = 'Reset';
+        actions.append(loadAllButton, resetButton);
+
+        const progress = document.createElement('p');
+        progress.className = 'mcms-amm-progress';
+        progress.setAttribute('aria-live', 'polite');
+        const summary = document.createElement('p');
+        summary.className = 'mcms-amm-summary';
+        summary.setAttribute('aria-live', 'polite');
+        body.append(controls, actions, progress, summary);
+        panel.append(head, body);
+        table.before(panel);
+
+        const context = {
+            abortController: null,
+            activitySelect,
+            collator: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }),
+            currentPage,
+            descending: false,
+            directionButton,
+            importedRows: new Set(),
+            loadedPages: new Set([currentPage]),
+            loading: false,
+            loadAllButton,
+            members,
+            originalRows,
+            panel,
+            progress,
+            resetButton,
+            roleSelect,
+            sortSelect,
+            summary,
+            table,
+            tbody,
+            totalPages,
+        };
+        allianceMemberManagerPage = context;
+        allianceMemberManagerRefreshRoleOptions(context);
+        allianceMemberManagerApply(context);
+
+        roleSelect.addEventListener('change', () => allianceMemberManagerApply(context));
+        activitySelect.addEventListener('change', () => allianceMemberManagerApply(context));
+        sortSelect.addEventListener('change', () => allianceMemberManagerApply(context));
+        directionButton.addEventListener('click', () => {
+            context.descending = !context.descending;
+            directionButton.textContent = context.descending ? '↓' : '↑';
+            directionButton.setAttribute('aria-pressed', String(context.descending));
+            allianceMemberManagerApply(context);
+        });
+        loadAllButton.addEventListener('click', () => {
+            void allianceMemberManagerLoadAll(context);
+        });
+        resetButton.addEventListener('click', () => allianceMemberManagerReset(context));
+    }
+
+    function disposeAllianceMemberManager() {
+        const context = allianceMemberManagerPage;
+        if (!context) {
+            document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.panelId}`)?.remove();
+            document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.styleId}`)?.remove();
+            return;
+        }
+        context.abortController?.abort();
+        context.importedRows.forEach(row => row.remove());
+        context.originalRows.forEach(row => {
+            row.hidden = false;
+            context.tbody.append(row);
+        });
+        context.panel.remove();
+        document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.styleId}`)?.remove();
+        allianceMemberManagerPage = null;
+    }
+
+    function reconcileAllianceMemberManager() {
+        if (
+            !allianceMemberManagerEnabled() ||
+            !isAllianceMemberManagerRoute() ||
+            allianceMemberManagerOtherOwnerPresent()
+        ) {
+            disposeAllianceMemberManager();
+            return;
+        }
+        installAllianceMemberManager();
+    }
+
+    function allianceMemberManagerMapBlockerButton(panel) {
+        return panel.querySelector(
+            '[data-feature="allianceBuildingsMapBlocker"], ' +
+            '[data-toggle-feature="allianceBuildingsMapBlocker"], ' +
+            '[data-mcms-feature="allianceBuildingsMapBlocker"]'
+        );
+    }
+
+    function updateAllianceMemberManagerMenuControl() {
+        const panel = document.querySelector(`#${SCRIPT.panelId}`);
+        const button = panel?.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
+        if (!button) return;
+        const enabled = allianceMemberManagerEnabled();
+        button.classList.toggle('mcms-on', enabled);
+        button.setAttribute('aria-pressed', String(enabled));
+        const pill = button.querySelector('.mcms-pill');
+        if (pill) pill.textContent = enabled ? 'ON' : 'OFF';
+    }
+
+    function ensureAllianceMemberManagerMenuControl() {
+        allianceMemberManagerMenuQueued = false;
+        const panel = document.querySelector(`#${SCRIPT.panelId}`);
+        if (!panel) return;
+        const blocker = allianceMemberManagerMapBlockerButton(panel);
+        if (!blocker) return;
+
+        let group = panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.operationsAttribute}]`);
+        if (!group) {
+            const originalGrid = blocker.closest('.mcms-grid-2');
+            const label = document.createElement('div');
+            label.className = 'mcms-section-label';
+            label.textContent = 'Alliance Operations';
+            label.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'label');
+            group = document.createElement('div');
+            group.className = 'mcms-grid-2';
+            group.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'controls');
+            if (originalGrid) originalGrid.before(label, group);
+            else blocker.before(label, group);
+        }
+        if (blocker.parentElement !== group) group.append(blocker);
+
+        let button = group.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
+        if (!button) {
+            button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'mcms-toggle-btn';
+            button.setAttribute(ALLIANCE_MEMBER_MANAGER.menuAttribute, 'true');
+            button.setAttribute('aria-pressed', 'false');
+
+            const icon = document.createElement('span');
+            icon.className = 'mcms-iconbox';
+            icon.textContent = 'AM';
+            const text = document.createElement('span');
+            text.className = 'mcms-text';
+            const label = document.createElement('span');
+            label.className = 'mcms-label';
+            label.textContent = 'Alliance Member Manager';
+            const pill = document.createElement('span');
+            pill.className = 'mcms-pill';
+            text.append(label, pill);
+            button.append(icon, text);
+            group.append(button);
+        }
+        updateAllianceMemberManagerMenuControl();
+    }
+
+    function queueAllianceMemberManagerMenuControl() {
+        if (allianceMemberManagerMenuQueued) return;
+        allianceMemberManagerMenuQueued = true;
+        queueMicrotask(ensureAllianceMemberManagerMenuControl);
+    }
+
+    document.addEventListener('click', event => {
+        const target = event.target instanceof Element ? event.target : null;
+        const toggle = target?.closest(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
+        if (toggle) {
+            event.preventDefault();
+            event.stopPropagation();
+            setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
+            queueAllianceMemberManagerMenuControl();
+            return;
+        }
+        if (target?.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}`)) {
+            queueAllianceMemberManagerMenuControl();
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            queueAllianceMemberManagerMenuControl();
+            reconcileAllianceMemberManager();
+        }, { once: true });
+    } else {
+        queueAllianceMemberManagerMenuControl();
+        reconcileAllianceMemberManager();
+    }
+    // </mcms-alliance-member-manager>
 })();

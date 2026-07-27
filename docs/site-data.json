@@ -212,6 +212,30 @@
       ]
     },
     {
+      "name": "Alliance operations",
+      "description": "Manage alliance-member visibility and ordering without losing native MissionChief controls.",
+      "features": [
+        {
+          "name": "Alliance Member Manager",
+          "summary": "Filters and sorts alliance members by role and current activity, with explicit sequential loading of additional pages.",
+          "details": [
+            "Role and current online/offline filters",
+            "Name, role, activity and original-order sorting",
+            "Load all pages only on request",
+            "Sequential requests with de-duplication",
+            "Desktop, Tablet/iPad and iOS support"
+          ],
+          "visual": "alliance-member-manager",
+          "tags": [
+            "alliance",
+            "members",
+            "roles",
+            "activity"
+          ]
+        }
+      ]
+    },
+    {
       "name": "Finance and presentation",
       "description": "Make alliance income, mission completion and payout events easy to understand.",
       "features": [

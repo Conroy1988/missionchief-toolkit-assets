@@ -1,15 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-26-issue-533-v8-theme-transition",
-  "rationale": "Issue #533 reviewed major-version transition: permit the exact 236-rule complete Godfather interface expansion while retaining the existing warning threshold, all absolute ceilings, and zero-growth limits for observers, timers, listeners, selectors, DOM writes and network sites. Reset the relative CSS-rule failure delta after v8 becomes the stable baseline.",
+  "revision": "2026-07-27-issue-553-alliance-member-manager-restoration",
+  "rationale": "Issue #553 restores the owner-confirmed Alliance Member Manager after the v8.1.1 scope-error rollback and preserves its single explicit same-origin member-page fetch site while adding no observer, timer or automatic network activity.",
   "transitionApproval": {
-    "issue": 533,
-    "version": "8.0.0",
-    "candidateSha256": "049a0a0003dc28a1acabbb3a39958c01081deaa4032b48cedae97e9fc90d4d5b",
-    "baseCssRuleBlocks": 5193,
-    "candidateCssRuleBlocks": 5429,
-    "approvedDelta": 236,
-    "scope": "Complete eighth interface system; no added observer, timer, listener, selector, DOM-write or network call sites"
+    "issue": 553,
+    "version": "8.1.2",
+    "approvedNetworkRequestDelta": 1,
+    "scope": "Restore Alliance Member Manager and repair its Tools-menu discovery; one sequential same-origin fetch site remains user-triggered only."
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -40,7 +37,7 @@
     "document_wide_subtree_observers": 3,
     "get_element_by_id_calls": 113,
     "inner_html_writes": 22,
-    "network_request_calls": 4
+    "network_request_calls": 5
   },
   "absoluteReviewPercent": {
     "lines": 95,
@@ -151,8 +148,8 @@
       "failDelta": 0
     },
     "network_request_calls": {
-      "warnDelta": 0,
-      "failDelta": 0
+      "warnDelta": 1,
+      "failDelta": 1
     }
   }
 }

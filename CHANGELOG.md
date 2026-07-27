@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.1.2] - 2026-07-27
+
+### Alliance Member Manager restoration and menu hotfix
+
+- Restored the complete Alliance Member Manager after the v8.1.1 cross-project scope rollback.
+- Restored **Tools → Alliance Operations → Alliance Member Manager** while preserving the existing Alliance Map Blocker.
+- Added an exact rendered-label fallback for the live Alliance Map Blocker card when feature-specific `data-*` attributes are absent.
+- Added executable regression coverage for the production menu shape, attribute precedence, whitespace handling and false-match rejection.
+- Preserved the v8.1.1 rollback entry below for auditability.
+
 ## [8.1.1] - 2026-07-27
 
 ### Rollback

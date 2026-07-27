@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "routes": [
+    {
+      "path": "/verband/mitglieder/123",
+      "expected": true
+    },
+    {
+      "path": "/verband/mitglieder/123/",
+      "expected": true
+    },
+    {
+      "path": "/alliance/123/members",
+      "expected": true
+    },
+    {
+      "path": "/alliances/123/members",
+      "expected": true
+    },
+    {
+      "path": "/alliance_members/123",
+      "expected": true
+    },
+    {
+      "path": "/verband/gebauede/123",
+      "expected": false
+    }
+  ],
+  "summary": "Show 40 players of 1 (11,012,323,195) to 2 (624,070,751) of 568 pages",
+  "expectedPages": 568,
+  "activitySource": "/images/user_green.png",
+  "expectedActivity": "green",
+  "retrySuccessAttempt": 3
+}

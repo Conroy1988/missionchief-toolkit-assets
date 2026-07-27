@@ -101,10 +101,10 @@
   },
   "v8Candidate": {
     "issue": 553,
-    "version": "8.1.3",
-    "sourceBytes": 1639133,
-    "sourceLines": 24945,
-    "sourceSha256": "5524d0f2181d9d7a0d0affa401546b729862c06aa81c2f596b59f11d5d706c95",
+    "version": "8.1.4",
+    "sourceBytes": 1644544,
+    "sourceLines": 25043,
+    "sourceSha256": "f77ecd3503419feeeb6df8c079b5cb804b4b7aec956e7d89ad3b8a381fb494a3",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
@@ -112,13 +112,13 @@
     "maxSourceBytes": 1660000,
     "maxSourceLines": 25250,
     "minTemplateBytes": 500000,
-    "baseline": "8.1.2",
+    "baseline": "8.1.3",
     "approvedGrowth": {
-      "sourceBytes": -2790,
-      "sourceLines": -67,
+      "sourceBytes": 5411,
+      "sourceLines": 98,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #553 canonical createPanel Alliance Member Manager control, panel-owned action routing and normal updateUI state reconciliation"
+    "scope": "Issue #553 bounded external redesigned member-page mount recovery, activity and total-page parsing, stable Vue-external placement and equivalent-manager-only suppression"
   }
 }

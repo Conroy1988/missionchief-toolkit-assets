@@ -15,4 +15,5 @@ node .github/scripts/test_issue530_transport_sweep_discharge_confirmation_runtim
 node .github/scripts/test_issue515_launcher_runtime.js
 node .github/scripts/test_issue517_incident_command_wire_runtime.js
 node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
+node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
 echo "[preflight] Complete"

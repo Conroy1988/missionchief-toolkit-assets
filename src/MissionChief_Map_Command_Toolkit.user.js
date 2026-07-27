@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.1.2
+// @version      8.1.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.1.2',
+        version: '8.1.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -24387,6 +24387,9 @@ Create the private backup now?`);
     });
     let allianceMemberManagerPage = null;
     let allianceMemberManagerMenuQueued = false;
+    let allianceMemberManagerMenuObserver = null;
+    let allianceMemberManagerMenuPanel = null;
+    let allianceMemberManagerMenuFrame = 0;
 
     function allianceMemberManagerEnabled() {
         try {
@@ -24906,6 +24909,10 @@ Create the private backup now?`);
         installAllianceMemberManager();
     }
 
+    function allianceMemberManagerRenderedLabel(node) {
+        return String(node?.textContent || '').replace(/\s+/gu, ' ').trim();
+    }
+
     function allianceMemberManagerMapBlockerButton(panel) {
         const attributed = panel.querySelector(
             '[data-feature="allianceBuildingsMapBlocker"], ' +
@@ -24913,9 +24920,12 @@ Create the private backup now?`);
             '[data-mcms-feature="allianceBuildingsMapBlocker"]'
         );
         if (attributed) return attributed;
-        return Array.from(panel.querySelectorAll('.mcms-toggle-btn')).find(button =>
-            button.querySelector('.mcms-label')?.textContent?.trim() === 'Alliance Map Blocker'
-        ) || null;
+        const renderedLabel = Array.from(panel.querySelectorAll('.mcms-label')).find(label =>
+            allianceMemberManagerRenderedLabel(label) === 'Alliance Map Blocker'
+        );
+        return renderedLabel?.closest?.('button, a, [role="button"], [tabindex]')
+            || renderedLabel?.parentElement?.parentElement
+            || null;
     }
 
     function updateAllianceMemberManagerMenuControl() {
@@ -24924,62 +24934,116 @@ Create the private backup now?`);
         if (!button) return;
         const enabled = allianceMemberManagerEnabled();
         button.classList.toggle('mcms-on', enabled);
-        button.setAttribute('aria-pressed', String(enabled));
+        if (button.getAttribute('aria-pressed') !== String(enabled)) {
+            button.setAttribute('aria-pressed', String(enabled));
+        }
         const pill = button.querySelector('.mcms-pill');
-        if (pill) pill.textContent = enabled ? 'ON' : 'OFF';
+        const nextPill = enabled ? 'ON' : 'OFF';
+        if (pill && pill.textContent !== nextPill) pill.textContent = nextPill;
+    }
+
+    function bindAllianceMemberManagerMenuObserver(panel) {
+        if (allianceMemberManagerMenuPanel === panel && allianceMemberManagerMenuObserver) return;
+        allianceMemberManagerMenuObserver?.disconnect();
+        allianceMemberManagerMenuObserver = null;
+        allianceMemberManagerMenuPanel = panel;
+        if (typeof MutationObserver !== 'function') return;
+        allianceMemberManagerMenuObserver = new MutationObserver(() => {
+            if (!panel.isConnected) return;
+            if (
+                !panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`) &&
+                allianceMemberManagerMapBlockerButton(panel)
+            ) {
+                queueAllianceMemberManagerMenuControl();
+            }
+        });
+        allianceMemberManagerMenuObserver.observe(panel, { childList: true, subtree: true });
     }
 
     function ensureAllianceMemberManagerMenuControl() {
         allianceMemberManagerMenuQueued = false;
         const panel = document.querySelector(`#${SCRIPT.panelId}`);
-        if (!panel) return;
+        if (!panel) return false;
+        bindAllianceMemberManagerMenuObserver(panel);
         const blocker = allianceMemberManagerMapBlockerButton(panel);
-        if (!blocker) return;
+        if (!blocker) return false;
 
-        let group = panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.operationsAttribute}]`);
+        let group = panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.operationsAttribute}="controls"]`);
         if (!group) {
-            const originalGrid = blocker.closest('.mcms-grid-2');
-            const label = document.createElement('div');
-            label.className = 'mcms-section-label';
-            label.textContent = 'Alliance Operations';
-            label.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'label');
-            group = document.createElement('div');
-            group.className = 'mcms-grid-2';
+            group = blocker.parentElement;
+            if (!group) return false;
             group.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'controls');
-            if (originalGrid) originalGrid.before(label, group);
-            else blocker.before(label, group);
         }
-        if (blocker.parentElement !== group) group.append(blocker);
+
+        const sectionLabels = Array.from(panel.querySelectorAll('.mcms-section-label'));
+        const sectionLabel = sectionLabels.find(label => label.nextElementSibling === group)
+            || sectionLabels.find(label =>
+                allianceMemberManagerRenderedLabel(label).toUpperCase() === 'MAP PERFORMANCE'
+            );
+        if (sectionLabel) {
+            if (allianceMemberManagerRenderedLabel(sectionLabel) !== 'Alliance Operations') {
+                sectionLabel.textContent = 'Alliance Operations';
+            }
+            sectionLabel.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'label');
+        }
 
         let button = group.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
         if (!button) {
-            button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'mcms-toggle-btn';
+            button = blocker.cloneNode(true);
+            for (const attribute of Array.from(button.getAttributeNames?.() || [])) {
+                if (
+                    attribute === 'id' ||
+                    attribute === 'name' ||
+                    attribute === 'value' ||
+                    attribute === 'onclick' ||
+                    attribute.startsWith('data-')
+                ) {
+                    button.removeAttribute(attribute);
+                }
+            }
+            button.querySelectorAll?.('[id]').forEach(node => node.removeAttribute('id'));
+            if ('type' in button) button.type = 'button';
             button.setAttribute(ALLIANCE_MEMBER_MANAGER.menuAttribute, 'true');
             button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', 'Alliance Member Manager');
+            button.title = 'Alliance Member Manager';
+            button.classList?.remove('mcms-on');
 
-            const icon = document.createElement('span');
-            icon.className = 'mcms-iconbox';
-            icon.textContent = 'AM';
-            const text = document.createElement('span');
-            text.className = 'mcms-text';
-            const label = document.createElement('span');
-            label.className = 'mcms-label';
-            label.textContent = 'Alliance Member Manager';
-            const pill = document.createElement('span');
-            pill.className = 'mcms-pill';
-            text.append(label, pill);
-            button.append(icon, text);
+            const icon = button.querySelector('.mcms-iconbox');
+            if (icon) icon.textContent = 'AM';
+            const label = button.querySelector('.mcms-label');
+            if (label) label.textContent = 'Alliance Member Manager';
+            const pill = button.querySelector('.mcms-pill');
+            if (pill) pill.textContent = 'OFF';
             group.append(button);
         }
         updateAllianceMemberManagerMenuControl();
+        return true;
     }
 
     function queueAllianceMemberManagerMenuControl() {
         if (allianceMemberManagerMenuQueued) return;
         allianceMemberManagerMenuQueued = true;
-        queueMicrotask(ensureAllianceMemberManagerMenuControl);
+        const reconcile = () => {
+            const panel = document.querySelector(`#${SCRIPT.panelId}`);
+            if (panel) {
+                bindAllianceMemberManagerMenuObserver(panel);
+                ensureAllianceMemberManagerMenuControl();
+            }
+        };
+        queueMicrotask(() => {
+            allianceMemberManagerMenuQueued = false;
+            reconcile();
+            if (typeof requestAnimationFrame !== 'function') return;
+            if (allianceMemberManagerMenuFrame) cancelAnimationFrame(allianceMemberManagerMenuFrame);
+            allianceMemberManagerMenuFrame = requestAnimationFrame(() => {
+                reconcile();
+                allianceMemberManagerMenuFrame = requestAnimationFrame(() => {
+                    allianceMemberManagerMenuFrame = 0;
+                    reconcile();
+                });
+            });
+        });
     }
 
     if (typeof document.addEventListener === 'function') {

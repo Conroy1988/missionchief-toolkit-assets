@@ -24,8 +24,8 @@ def main() -> int:
     end = source.index(end_marker, start) + len(end_marker)
     block = source[start:end]
 
-    assert re.search(r"^// @version\s+8\.1\.2$", source, re.MULTILINE)
-    assert "version: '8.1.2'" in source
+    assert re.search(r"^// @version\s+8\.1\.3$", source, re.MULTILINE)
+    assert "version: '8.1.3'" in source
     for marker in [
         "mcms_alliance_member_manager_enabled_v1",
         "Alliance Operations",
@@ -45,8 +45,13 @@ def main() -> int:
         "Alliance role",
         "Showing ${visible} of ${context.members.size} members",
         "allianceBuildingsMapBlocker",
-        "panel.querySelectorAll('.mcms-toggle-btn')",
-        "button.querySelector('.mcms-label')?.textContent?.trim() === 'Alliance Map Blocker'",
+        "panel.querySelectorAll('.mcms-label')",
+        "allianceMemberManagerRenderedLabel(label) === 'Alliance Map Blocker'",
+        "button = blocker.cloneNode(true)",
+        "attribute.startsWith('data-')",
+        "Alliance Operations",
+        "allianceMemberManagerMenuObserver.observe(panel, { childList: true, subtree: true })",
+        "requestAnimationFrame",
         "data-mcms-alliance-member-manager-toggle",
         "data-mcms-alliance-operations",
         r"alliance\/members|verband\/mitglieder",
@@ -71,7 +76,6 @@ def main() -> int:
 
     for forbidden in [
         "setInterval(",
-        "new MutationObserver(",
         "GM_xmlhttpRequest",
         "last seen",
         "lastSeen",
@@ -82,12 +86,16 @@ def main() -> int:
     assert block.index("for (let page = 1;") < block.index("await fetch(")
     assert block.count("await fetch(") == 1
     assert block.count("new AbortController()") == 1
+    assert block.count("new MutationObserver(") == 1
+    assert ".mcms-toggle-btn" not in block
+    assert "setInterval(" not in block
     assert block.count("data-mcms-alliance-member-manager-toggle") == 1
     assert block.count("Alliance Operations") == 1
 
     changelog = CHANGELOG.read_text(encoding="utf-8")
+    assert "## [8.1.3] - 2026-07-27" in changelog
+    assert "### Native Alliance Member Manager Tools rendering" in changelog
     assert "## [8.1.2] - 2026-07-27" in changelog
-    assert "### Alliance Member Manager restoration and menu hotfix" in changelog
     assert "## [8.1.1] - 2026-07-27" in changelog
     assert "## [8.1.0] - 2026-07-27" in changelog
 
@@ -106,9 +114,9 @@ def main() -> int:
     assert "test_issue554_alliance_member_manager_rollback.py" not in preflight
 
     performance = json.loads(PERFORMANCE.read_text(encoding="utf-8"))
-    assert performance["revision"] == "2026-07-27-issue-553-alliance-member-manager-restoration"
+    assert performance["revision"] == "2026-07-27-issue-553-native-menu-render"
     assert performance["transitionApproval"]["issue"] == 553
-    assert performance["transitionApproval"]["version"] == "8.1.2"
+    assert performance["transitionApproval"]["version"] == "8.1.3"
     assert performance["transitionApproval"]["approvedNetworkRequestDelta"] == 1
     assert performance["absoluteLimits"]["network_request_calls"] == 5
     assert performance["relativeLimits"]["network_request_calls"]["warnDelta"] == 1
@@ -116,7 +124,7 @@ def main() -> int:
 
     print(
         "Alliance Member Manager contract passed: English controls, explicit sequential loading, "
-        "current-state filtering, deterministic teardown, responsive UI and no recurring work."
+        "current-state filtering, cloned native Tools control, panel-scoped render reconciliation and deterministic teardown."
     )
     return 0
 

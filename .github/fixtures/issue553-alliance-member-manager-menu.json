@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 1,
-  "description": "Issue #553 live Tools-menu shapes for Alliance Map Blocker discovery.",
+  "schemaVersion": 2,
+  "description": "Issue #553 production menu labels independent of rendered card CSS classes.",
   "cases": [
     {
-      "name": "live rendered card without feature attributes",
+      "name": "live rendered card with unrelated class",
       "attributeIndex": null,
       "labels": [
         "Clean",
@@ -22,10 +22,10 @@
       "expectedIndex": 0
     },
     {
-      "name": "trimmed rendered label is accepted",
+      "name": "rendered whitespace is normalized",
       "attributeIndex": null,
       "labels": [
-        "  Alliance Map Blocker  "
+        "  Alliance   Map\nBlocker  "
       ],
       "expectedIndex": 0
     },

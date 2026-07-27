@@ -102,9 +102,9 @@
   "v8Candidate": {
     "issue": 551,
     "version": "8.1.0",
-    "sourceBytes": 1641511,
-    "sourceLines": 25006,
-    "sourceSha256": "549ad43f6c5c0b1aaaf2d7794bca0ccb0e689b69357ea6ca52e3deb400bfbf85",
+    "sourceBytes": 1641668,
+    "sourceLines": 25008,
+    "sourceSha256": "5ddacf52e574037c50a608f23dc9e381f9927db710c5f40448f541a6f749382e",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
@@ -114,11 +114,11 @@
     "minTemplateBytes": 500000,
     "baseline": "8.0.4",
     "approvedGrowth": {
-      "sourceBytes": 26981,
-      "sourceLines": 629,
+      "sourceBytes": 27138,
+      "sourceLines": 631,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #551 native Alliance Member Manager with opt-in English role/activity controls, explicit sequential member-page loading and deterministic teardown"
+    "scope": "Issue #551 native Alliance Member Manager with opt-in English role/activity controls, explicit sequential member-page loading, deterministic teardown, boot-tail-safe startup and minimal-document listener capability guarding"
   }
 }

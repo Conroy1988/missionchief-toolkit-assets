@@ -24978,29 +24978,31 @@ Create the private backup now?`);
         queueMicrotask(ensureAllianceMemberManagerMenuControl);
     }
 
-    document.addEventListener('click', event => {
-        const target = event.target instanceof Element ? event.target : null;
-        const toggle = target?.closest(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
-        if (toggle) {
-            event.preventDefault();
-            event.stopPropagation();
-            setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
-            queueAllianceMemberManagerMenuControl();
-            return;
-        }
-        if (target?.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}`)) {
-            queueAllianceMemberManagerMenuControl();
-        }
-    });
+    if (typeof document.addEventListener === 'function') {
+        document.addEventListener('click', event => {
+            const target = event.target instanceof Element ? event.target : null;
+            const toggle = target?.closest(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
+            if (toggle) {
+                event.preventDefault();
+                event.stopPropagation();
+                setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
+                queueAllianceMemberManagerMenuControl();
+                return;
+            }
+            if (target?.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}`)) {
+                queueAllianceMemberManagerMenuControl();
+            }
+        });
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
+        if (document.readyState !== 'loading') {
             queueAllianceMemberManagerMenuControl();
             reconcileAllianceMemberManager();
-        }, { once: true });
-    } else {
-        queueAllianceMemberManagerMenuControl();
-        reconcileAllianceMemberManager();
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                queueAllianceMemberManagerMenuControl();
+                reconcileAllianceMemberManager();
+            }, { once: true });
+        }
     }
     // </mcms-alliance-member-manager>
 })();

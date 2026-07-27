@@ -47,6 +47,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
@@ -68,6 +69,18 @@ jobs:
             sleep 2
           done
           [[ "$(git rev-parse HEAD)" == "$MERGE_SHA" ]]
+
+          echo "Classify merged pull-request paths"
+          git diff --name-only --diff-filter=ACDMRTUXB "$PR_BASE_SHA" "$MERGE_SHA" > /tmp/merged-pr-paths.txt
+          python3 .github/scripts/classify_pr_paths.py \
+            --paths-from /tmp/merged-pr-paths.txt \
+            --json-output /tmp/merged-pr-path-classification.json
+          RELEASE_CANDIDATE="$(jq -r '.releaseCandidate' /tmp/merged-pr-path-classification.json)"
+          if [[ "$RELEASE_CANDIDATE" != "true" ]]; then
+            echo "No release-critical path changed; exact candidate promotion is intentionally skipped."
+            exit 0
+          fi
+          echo "Path-aware release candidate required; resolving exact successful PR validation artifact."
 
           gh api --method GET \
             "repos/${GITHUB_REPOSITORY}/actions/workflows/validate-userscript.yml/runs" \
@@ -213,6 +226,7 @@ jobs:
             echo "- Merged main commit: \`${VALIDATED_SHA}\`"
             echo "- Version: \`${VERSION:-fallback}\`"
             echo "- Release required: \`${RELEASE_NEEDED}\`"
+            echo "- Path-aware release selection: enabled"
             echo "- Authority: exact validated PR repository tree"
             echo "- Post-merge userscript validation used: no"
             echo "- Post-merge release bundle rebuild used: no"

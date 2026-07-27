@@ -26,7 +26,9 @@ for forbidden in (
 ):
     assert forbidden not in source, forbidden
 
-assert "## [8.1.1] - 2026-07-27" in CHANGELOG.read_text(encoding="utf-8")
+changelog = CHANGELOG.read_text(encoding="utf-8")
+assert "## [8.1.1] - 2026-07-27" in changelog
+assert "## [8.1.0] - 2026-07-27" in changelog
 assert "Alliance Member Manager" not in HELP.read_text(encoding="utf-8")
 site = json.loads(SITE_DATA.read_text(encoding="utf-8"))
 assert not any(item.get("name") == "Alliance operations" for item in site.get("featureCategories", []))

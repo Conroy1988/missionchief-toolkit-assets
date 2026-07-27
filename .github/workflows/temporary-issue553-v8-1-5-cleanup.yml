@@ -1,0 +1,52 @@
+name: Temporary Issue 553 v8.1.5 Cleanup
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  clean:
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.pull_request.number == 563 &&
+      github.event.pull_request.head.ref == 'fix/ui-mount-hardening-v8-1-5'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require owner branch token
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || { echo 'DEVELOPMENT_PR_TOKEN is required.' >&2; exit 1; }
+
+      - name: Check out exact candidate head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+
+      - name: Remove temporary dependency tree and publish clean candidate
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          BRANCH: fix/ui-mount-hardening-v8-1-5
+          CLEANUP: .github/workflows/temporary-issue553-v8-1-5-cleanup.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf node_modules
+          grep -qxF 'node_modules/' .gitignore || printf '\n# Local JavaScript dependency trees\nnode_modules/\n' >> .gitignore
+          rm -f "$CLEANUP"
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          test -z "$(git ls-files node_modules)"
+          git diff --cached --quiet && { echo 'Cleanup produced no changes.' >&2; exit 1; }
+          git commit -m "Remove temporary UI integration dependencies"
+          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"

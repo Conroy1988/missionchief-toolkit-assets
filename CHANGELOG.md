@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.1.0] - 2026-07-27
+
+### Alliance Member Manager
+
+- Added an opt-in English Alliance Member Manager under **Tools → Alliance Operations**, beside Alliance Map Blocker.
+- Added role and current online/offline filters plus original-order, member-name, alliance-role and activity sorting.
+- Added explicit **Load All Member Pages** handling with sequential same-origin requests, page de-duplication and visible progress.
+- Preserved native profile links and alliance-administration controls while restoring the original current-page order during teardown.
+- Added Desktop, Tablet/iPad and iOS Mobile/Safari layouts, compatible-manager duplicate suppression and permanent lifecycle/performance regression coverage.
+- Added no polling loop, recurring interval or persistent page observer; disabled mode performs no member-page work or network traffic.
+
 ## [8.0.4] - 2026-07-26
 
 ### Alliance-building native filter persistence

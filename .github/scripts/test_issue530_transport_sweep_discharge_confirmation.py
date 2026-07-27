@@ -14,12 +14,20 @@ def section(text: str, start: str, end: str) -> str:
     return text[left:right]
 
 
+def version_tuple(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', value)
+    assert match, value
+    return tuple(map(int, match.groups()))
+
+
 def main() -> int:
     source = SOURCE.read_text(encoding='utf-8')
     metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
     assert metadata and runtime
-    assert metadata.group(1) == runtime.group(1) == '8.0.4'
+    current_version = metadata.group(1)
+    assert current_version == runtime.group(1)
+    assert version_tuple(current_version) >= (8, 0, 4)
 
     for marker in [
         'confirmedDischargeDialogKeys: new Set()',
@@ -61,7 +69,7 @@ def main() -> int:
     assert "pendingDischargeKey = '';" in source
     assert 'MutationObserver' not in helper
     assert 'setInterval' not in helper
-    print('Issue #530 discharge confirmation static contract passed for v8.')
+    print(f'Issue #530 discharge confirmation static contract passed for Toolkit {current_version}.')
     return 0
 
 

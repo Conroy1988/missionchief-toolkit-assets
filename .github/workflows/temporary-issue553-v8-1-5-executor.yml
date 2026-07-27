@@ -46,6 +46,7 @@ jobs:
           POLICY_FIX: .github/development-packages/issue553_ui_mount_policy_selfmatch_fix.py
           TASK_FIX: .github/development-packages/issue553_ui_mount_task_flush_fix.py
           JSDOM_FIX: .github/development-packages/issue553_ui_mount_jsdom_fix.py
+          INSTALLER_FIX: .github/development-packages/issue553_ui_mount_installer_gate_fix.py
           EXECUTOR: .github/workflows/temporary-issue553-v8-1-5-executor.yml
         shell: bash
         run: |
@@ -60,6 +61,7 @@ jobs:
           test -f "$POLICY_FIX"
           test -f "$TASK_FIX"
           test -f "$JSDOM_FIX"
+          test -f "$INSTALLER_FIX"
           test -f "$EXECUTOR"
 
           echo stage=apply-package
@@ -67,7 +69,8 @@ jobs:
           python3 "$POLICY_FIX"
           python3 "$TASK_FIX"
           python3 "$JSDOM_FIX"
-          rm -f "$PACKAGE" "$POLICY_FIX" "$TASK_FIX" "$JSDOM_FIX" "$EXECUTOR"
+          python3 "$INSTALLER_FIX"
+          rm -f "$PACKAGE" "$POLICY_FIX" "$TASK_FIX" "$JSDOM_FIX" "$INSTALLER_FIX" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
           echo stage=install-dom-runtime

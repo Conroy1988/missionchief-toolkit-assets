@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-27-issue-553-external-page-mount",
-  "rationale": "Issue #553 mounts Alliance Member Manager after external redesigned Redesign's asynchronous member-table render using one bounded enabled-route timeout site, no observer or interval, and zero recurring disabled work.",
+  "revision": "2026-07-27-issue-553-ui-mount-hardening",
+  "rationale": "Issue #553 corrects a concealed lifecycle symbol failure and adds one enabled-only, child-list-only, coalesced observer so externally rendered member views mount without depending on the top-level route.",
   "transitionApproval": {
     "issue": 553,
-    "version": "8.1.4",
+    "version": "8.1.5",
     "approvedNetworkRequestDelta": 1,
-    "scope": "Recognise and stably mount on the live external redesigned alliance-members view; the existing explicit same-origin Load All Member Pages fetch site is unchanged."
+    "scope": "Hardened Alliance Member Manager UI mount observation, structured receipts, visible mount states and full rendered integration gate.",
+    "approvedMutationObserverDelta": 1
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -19,7 +20,7 @@
     "css_rule_blocks": 7000,
     "set_interval_calls": 4,
     "set_timeout_calls": 25,
-    "mutation_observers": 8,
+    "mutation_observers": 9,
     "resize_observers": 4,
     "request_animation_frame_calls": 20,
     "event_listener_calls": 120,
@@ -31,10 +32,10 @@
     "runtime_listener_calls": 31,
     "runtime_observer_track_calls": 15,
     "runtime_idle_calls": 3,
-    "mutation_observer_constructions": 12,
+    "mutation_observer_constructions": 13,
     "resize_observer_constructions": 4,
-    "broad_subtree_observers": 10,
-    "document_wide_subtree_observers": 3,
+    "broad_subtree_observers": 11,
+    "document_wide_subtree_observers": 4,
     "get_element_by_id_calls": 113,
     "inner_html_writes": 22,
     "network_request_calls": 5
@@ -81,7 +82,7 @@
     },
     "mutation_observers": {
       "warnDelta": 1,
-      "failDelta": 3
+      "failDelta": 1
     },
     "resize_observers": {
       "warnDelta": 1,
@@ -124,20 +125,20 @@
       "failDelta": 0
     },
     "mutation_observer_constructions": {
-      "warnDelta": 0,
-      "failDelta": 0
+      "warnDelta": 1,
+      "failDelta": 1
     },
     "resize_observer_constructions": {
       "warnDelta": 0,
       "failDelta": 0
     },
     "broad_subtree_observers": {
-      "warnDelta": 0,
-      "failDelta": 0
+      "warnDelta": 1,
+      "failDelta": 1
     },
     "document_wide_subtree_observers": {
-      "warnDelta": 0,
-      "failDelta": 0
+      "warnDelta": 1,
+      "failDelta": 1
     },
     "get_element_by_id_calls": {
       "warnDelta": 0,

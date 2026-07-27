@@ -1,15 +1,29 @@
 {
-  "schemaVersion": 3,
-  "description": "Canonical Tools control and persisted state cases for Issue #553.",
+  "schemaVersion": 4,
+  "description": "Canonical Tools control, persisted setting and observable page-mount state cases for Issue #553.",
   "states": [
     {
       "enabled": false,
+      "mountState": "disabled",
       "pill": "OFF",
       "pressed": "false"
     },
     {
       "enabled": true,
+      "mountState": "watching",
+      "pill": "WAIT",
+      "pressed": "true"
+    },
+    {
+      "enabled": true,
+      "mountState": "mounted",
       "pill": "ON",
+      "pressed": "true"
+    },
+    {
+      "enabled": true,
+      "mountState": "error",
+      "pill": "ERR",
       "pressed": "true"
     }
   ]

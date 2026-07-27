@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.1.5] - 2026-07-27
+
+### Hardened UI mounting and live member-page recovery
+
+- Corrected the undefined Alliance Member Manager teardown lifecycle call that stopped redesigned member views before installation.
+- Replaced route-only retries with one enabled-only, child-list-only, coalesced mount observer that recognises delayed external page content.
+- Mirrored the opt-in setting through userscript and local storage for supported-origin continuity.
+- Added structured mount receipts plus `WAIT` and `ERR` control states so page UI can no longer fail silently while the menu claims success.
+- Added exception recovery, framework-rerender rebinding and deterministic observer teardown.
+- Added a permanent rendered-DOM integration gate that executes the real installer for direct, delayed neutral-route and rerender scenarios; mocked installer or lifecycle substitutes are prohibited.
+
 ## [8.1.4] - 2026-07-27
 
 ### Live external redesigned alliance-members page mounting

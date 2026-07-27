@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "description": "Issue #553 live Tools-menu shapes for Alliance Map Blocker discovery.",
+  "cases": [
+    {
+      "name": "live rendered card without feature attributes",
+      "attributeIndex": null,
+      "labels": [
+        "Clean",
+        "Alliance Map Blocker",
+        "Personal Missions"
+      ],
+      "expectedIndex": 1
+    },
+    {
+      "name": "feature attribute remains authoritative",
+      "attributeIndex": 0,
+      "labels": [
+        "Legacy attributed blocker",
+        "Alliance Map Blocker"
+      ],
+      "expectedIndex": 0
+    },
+    {
+      "name": "trimmed rendered label is accepted",
+      "attributeIndex": null,
+      "labels": [
+        "  Alliance Map Blocker  "
+      ],
+      "expectedIndex": 0
+    },
+    {
+      "name": "similar labels do not false-match",
+      "attributeIndex": null,
+      "labels": [
+        "Alliance Map Block",
+        "Alliance Member Manager"
+      ],
+      "expectedIndex": null
+    }
+  ]
+}

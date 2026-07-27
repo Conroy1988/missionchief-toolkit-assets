@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 554,
-    "version": "8.1.1",
-    "sourceBytes": 1614530,
-    "sourceLines": 24377,
-    "sourceSha256": "e3574b80e4d89b14b0a8ce07f82d605fcdb8cd5ea77059fee9a1ca4ed85ec750",
+    "issue": 553,
+    "version": "8.1.2",
+    "sourceBytes": 1641923,
+    "sourceLines": 25012,
+    "sourceSha256": "212651f02a055c636fe97fe1f22a90a4248a6a716c18f3c24182245f6fc12921",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1650000,
-    "maxSourceLines": 24500,
+    "maxSourceBytes": 1660000,
+    "maxSourceLines": 25250,
     "minTemplateBytes": 500000,
-    "baseline": "8.0.4",
+    "baseline": "8.1.1",
     "approvedGrowth": {
-      "sourceBytes": 49633,
-      "sourceLines": 794,
-      "templateBytes": 36715,
-      "templateLines": 578
+      "sourceBytes": 27393,
+      "sourceLines": 635,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #554 rollback of the mistakenly added Alliance Member Manager; restore the pre-feature Toolkit source with v8.1.1 release metadata"
+    "scope": "Issue #553 restoration of the owner-confirmed Alliance Member Manager after v8.1.1, with attribute-first and exact rendered-label menu discovery fixtures"
   }
 }

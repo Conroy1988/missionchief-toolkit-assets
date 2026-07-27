@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove self-matching mock phrases from the generated UI mount policy tests."""
+"""Correct generated UI mount policy assertions without changing runtime scope."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +32,10 @@ policy = policy.replace(
     'assert "\\nfunction installAllianceMemberManager() {" not in legacy\n'
     'assert "\\nfunction teardownAllianceMemberManager() {}" not in legacy\n',
 )
+policy = policy.replace(
+    'assert "window.__MCMS_UI_MOUNTS__" in source\n',
+    'assert "pageWindow.__MCMS_UI_MOUNTS__" in source\n',
+)
 POLICY.write_text(policy, encoding="utf-8")
 
-print("UI mount policy self-match removed.")
+print("UI mount policy generated assertions corrected.")

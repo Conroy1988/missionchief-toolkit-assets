@@ -9,86 +9,10 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
-
-concurrency:
-  group: temporary-issue553-v8-1-4
-  cancel-in-progress: false
 
 jobs:
-  execute:
-    if: >-
-      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
-      github.event.pull_request.number == 561 &&
-      github.event.pull_request.head.ref == 'fix/alliance-member-manager-lssm-page-v8-1-4'
+  paused:
+    if: false
     runs-on: ubuntu-latest
-    timeout-minutes: 25
     steps:
-      - name: Require owner branch token
-        env:
-          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ -n "$OWNER_TOKEN" ]] || { echo 'DEVELOPMENT_PR_TOKEN is required.' >&2; exit 1; }
-
-      - name: Check out exact pull-request head
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
-
-      - name: Execute or persist exact diagnostic
-        env:
-          EXPECTED_PACKAGE_COMMIT: 48d4fe1f16de51f863e561e36e37da761485564e
-          EXPECTED_MAIN: 2ab810c1ec99d7e25a1ff46854de23947394dbe1
-          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
-          BRANCH: fix/alliance-member-manager-lssm-page-v8-1-4
-          PACKAGE: .github/development-packages/issue553_alliance_member_manager_lssm_page_v8_1_4.py
-          EXECUTOR: .github/workflows/temporary-issue553-v8-1-4-executor.yml
-          DIAGNOSTIC: .github/fixtures/issue553-v8-1-4-package-diagnostic.txt
-        shell: bash
-        run: |
-          set -uo pipefail
-          log="$RUNNER_TEMP/issue553-v8-1-4.log"
-          stage=verify
-          status=0
-
-          git merge-base --is-ancestor "$EXPECTED_PACKAGE_COMMIT" HEAD >"$log" 2>&1 || status=$?
-          git fetch --no-tags origin main >>"$log" 2>&1 || status=$?
-          if [[ "$status" -eq 0 ]]; then test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN" >>"$log" 2>&1 || status=$?; fi
-          if [[ "$status" -eq 0 ]]; then test -f "$PACKAGE" >>"$log" 2>&1 || status=$?; fi
-
-          if [[ "$status" -eq 0 ]]; then
-            stage=package
-            python3 "$PACKAGE" >>"$log" 2>&1 || status=$?
-          fi
-          if [[ "$status" -eq 0 ]]; then
-            stage=full-preflight
-            bash .github/scripts/run_userscript_preflight.sh >>"$log" 2>&1 || status=$?
-          fi
-
-          git config user.name "Conroy1988"
-          git config user.email "27301455+Conroy1988@users.noreply.github.com"
-
-          if [[ "$status" -ne 0 ]]; then
-            git reset --hard "$EXPECTED_HEAD"
-            {
-              echo "stage=$stage"
-              echo "exit_code=$status"
-              echo
-              tail -n 220 "$log"
-            } > "$DIAGNOSTIC"
-            git add "$DIAGNOSTIC"
-            git commit -m "Record v8.1.4 package diagnostic"
-            git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
-            exit 0
-          fi
-
-          rm -f "$PACKAGE" "$EXECUTOR" "$DIAGNOSTIC"
-          find .github/development-packages -type d -empty -delete 2>/dev/null || true
-          git add -A
-          git diff --cached --quiet && { echo 'No candidate changes produced.' >&2; exit 1; }
-          git commit -m "v8.1.4: Mount Alliance Member Manager on live LSSM page"
-          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
+      - run: echo paused

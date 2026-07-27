@@ -2,7 +2,7 @@
 
 > Automatically generated from [`release-dashboard.json`](release-dashboard.json). Do not edit this page manually.
 
-## Current version: `8.1.2`
+## Current version: `8.1.3`
 
 | System | Health | State |
 |---|:---:|---|
@@ -17,10 +17,10 @@
 
 ## Release state
 
-- **Latest recorded version:** `8.1.2`
+- **Latest recorded version:** `8.1.3`
 - **State:** Verified public release
 - **Canonical path:** `src/MissionChief_Map_Command_Toolkit.user.js`
-- **Validated SHA-256:** `212651f02a055c636fe97fe1f22a90a4248a6a716c18f3c24182245f6fc12921`
+- **Validated SHA-256:** `5524d0f2181d9d7a0d0affa401546b729862c06aa81c2f596b59f11d5d706c95`
 - **Candidate validation evidence:** immutable GitHub Actions artifact tied to the exact source commit
 
 ## Repository health
@@ -28,7 +28,7 @@
 - **Discovered media files:** 37
 - **Referenced hosted paths:** 33
 - **Missing referenced paths:** 0
-- **Last release-state update:** `2026-07-27T21:03:24Z`
+- **Last release-state update:** `2026-07-27T22:08:49Z`
 
 ## Release channels
 

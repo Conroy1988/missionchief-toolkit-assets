@@ -22,6 +22,7 @@
 
 | Version | Pipeline | Class | PR → verified | Merge → GitHub | Merge → verified | Greasy Fork | Backup |
 |---|---:|---|---:|---:|---:|---:|---:|
+| 8.1.3 | v4 | normal | — | — | — | 28s | 6s |
 | 8.1.2 | v4 | normal | — | — | — | 11s | 6s |
 | 8.1.1 | v4 | normal | — | — | — | 17s | 4s |
 | 8.1.0 | v4 | normal | — | — | — | 11s | 5s |

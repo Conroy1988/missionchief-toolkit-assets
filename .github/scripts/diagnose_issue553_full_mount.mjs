@@ -37,7 +37,7 @@ assert.notEqual(start, -1, "manager block start missing");
 assert.notEqual(end, -1, "manager block end missing");
 const managerBlock = source.slice(start, end + "    // </mcms-alliance-member-manager>".length);
 
-const html = `<!doctype html><html><head></head><body>
+const memberComponent = `
   <main id="external-member-root">
     <h1>Members<br><small>Show 20 players of 1 (11,012,323,195) to 1 (1,267,484,428) of 568 pages</small></h1>
     <button>load previous page</button><button>load next page</button>
@@ -52,114 +52,141 @@ const html = `<!doctype html><html><head></head><body>
         </tbody>
       </table>
     </section>
-  </main>
-</body></html>`;
+  </main>`;
 
-const { window } = parseHTML(html);
-
-// Linkedom intentionally implements a compact DOM. Add the browser table
-// collection properties used by the released installer so this diagnostic
-// exercises product logic rather than library omissions.
-for (const table of window.document.querySelectorAll("table")) {
-  Object.defineProperty(table, "tBodies", {
-    configurable: true,
-    value: Array.from(table.querySelectorAll("tbody")),
-  });
-  for (const body of table.tBodies) {
-    Object.defineProperty(body, "rows", {
+function polyfillTables(document) {
+  for (const table of document.querySelectorAll("table")) {
+    if (!table.tBodies) Object.defineProperty(table, "tBodies", {
       configurable: true,
-      value: Array.from(body.querySelectorAll(":scope > tr")),
+      value: Array.from(table.querySelectorAll("tbody")),
     });
-    for (const row of body.rows) {
-      const cells = Array.from(row.querySelectorAll(":scope > th, :scope > td"));
-      cells.item = index => cells[index] || null;
-      Object.defineProperty(row, "cells", { configurable: true, value: cells });
+    for (const body of table.tBodies) {
+      if (!body.rows) Object.defineProperty(body, "rows", {
+        configurable: true,
+        value: Array.from(body.querySelectorAll(":scope > tr")),
+      });
+      for (const row of body.rows) {
+        if (row.cells) continue;
+        const cells = Array.from(row.querySelectorAll(":scope > th, :scope > td"));
+        cells.item = index => cells[index] || null;
+        Object.defineProperty(row, "cells", { configurable: true, value: cells });
+      }
     }
   }
 }
 
-const storage = new Map([["mcms_alliance_member_manager_enabled_v1", "true"]]);
-const localStorage = {
-  getItem(key) { return storage.has(key) ? storage.get(key) : null; },
-  setItem(key, value) { storage.set(key, String(value)); },
-  removeItem(key) { storage.delete(key); },
-};
+function createScenario({ pathname, initialMemberDom, gmEnabled, localEnabled }) {
+  const html = `<!doctype html><html><head></head><body>${initialMemberDom ? memberComponent : '<main id="map-root"></main>'}</body></html>`;
+  const { window } = parseHTML(html);
+  polyfillTables(window.document);
 
-const timers = new Map();
-let timerId = 0;
-function schedule(callback) {
-  const id = ++timerId;
-  timers.set(id, callback);
-  queueMicrotask(() => {
-    const pending = timers.get(id);
-    if (!pending) return;
-    timers.delete(id);
-    pending();
-  });
-  return id;
-}
-function clearScheduled(id) { timers.delete(id); }
-window.setTimeout = schedule;
-window.clearTimeout = clearScheduled;
+  const storage = new Map();
+  if (localEnabled !== null) storage.set("mcms_alliance_member_manager_enabled_v1", String(localEnabled));
+  const localStorage = {
+    getItem(key) { return storage.has(key) ? storage.get(key) : null; },
+    setItem(key, value) { storage.set(key, String(value)); },
+    removeItem(key) { storage.delete(key); },
+  };
 
-const sandbox = {
-  console,
-  window,
-  document: window.document,
-  Element: window.Element,
-  Event: window.Event,
-  DOMParser: window.DOMParser,
-  URL,
-  AbortController,
-  queueMicrotask,
-  pageWindow: window,
-  localStorage,
-  location: {
-    pathname: "/verband/mitglieder/123",
-    href: "https://www.missionchief.co.uk/verband/mitglieder/123",
-    origin: "https://www.missionchief.co.uk",
-  },
-  SCRIPT: { panelId: "mc-map-command-toolkit-panel", version: "8.1.4" },
-  GM_getValue: (_key, fallback) => fallback,
-  GM_setValue: () => undefined,
-  fetch: async () => { throw new Error("fetch must not run during initial mount"); },
-  showToast: () => undefined,
-};
-vm.createContext(sandbox);
+  const timers = new Map();
+  let timerId = 0;
+  function schedule(callback) {
+    const id = ++timerId;
+    timers.set(id, callback);
+    queueMicrotask(() => {
+      const pending = timers.get(id);
+      if (!pending) return;
+      timers.delete(id);
+      pending();
+    });
+    return id;
+  }
+  function clearScheduled(id) { timers.delete(id); }
+  window.setTimeout = schedule;
+  window.clearTimeout = clearScheduled;
 
-const bootstrap = `${extractFunction("decodedPathname")}\n${managerBlock}\nthis.__managerProbe = {
-  enabled: allianceMemberManagerEnabled,
-  route: isAllianceMemberManagerRoute,
-  table: allianceMemberManagerTable,
-  reconcile: reconcileAllianceMemberManager,
-  install: installAllianceMemberManager,
-  page: () => allianceMemberManagerPage,
-};`;
-
-try {
+  const sandbox = {
+    console,
+    window,
+    document: window.document,
+    Element: window.Element,
+    Event: window.Event,
+    MutationObserver: window.MutationObserver,
+    DOMParser: window.DOMParser,
+    URL,
+    AbortController,
+    queueMicrotask,
+    pageWindow: window,
+    localStorage,
+    location: {
+      pathname,
+      href: `https://www.missionchief.co.uk${pathname}`,
+      origin: "https://www.missionchief.co.uk",
+    },
+    SCRIPT: { panelId: "mc-map-command-toolkit-panel", version: "8.1.4" },
+    GM_getValue: (_key, fallback) => gmEnabled ?? fallback,
+    GM_setValue: () => undefined,
+    fetch: async () => { throw new Error("fetch must not run during initial mount"); },
+    showToast: () => undefined,
+  };
+  vm.createContext(sandbox);
+  const bootstrap = `${extractFunction("decodedPathname")}\n${managerBlock}\nthis.__managerProbe = {
+    enabled: allianceMemberManagerEnabled,
+    route: isAllianceMemberManagerRoute,
+    table: allianceMemberManagerTable,
+    reconcile: reconcileAllianceMemberManager,
+    page: () => allianceMemberManagerPage,
+  };`;
   vm.runInContext(bootstrap, sandbox, { filename: "alliance-member-manager-v8.1.4.js" });
   window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
-  for (let i = 0; i < 40; i += 1) await Promise.resolve();
+  return { window, sandbox };
+}
 
-  const probe = sandbox.__managerProbe;
-  const table = probe.table(window.document);
-  const panel = window.document.querySelector("#mcms-alliance-member-manager");
+async function flush(rounds = 50) {
+  for (let index = 0; index < rounds; index += 1) await Promise.resolve();
+}
+
+function assertMounted(label, scenario) {
+  const panel = scenario.window.document.querySelector("#mcms-alliance-member-manager");
+  const table = scenario.sandbox.__managerProbe.table(scenario.window.document);
   const report = {
-    enabled: probe.enabled(),
-    route: probe.route(),
+    label,
+    enabled: scenario.sandbox.__managerProbe.enabled(),
+    route: scenario.sandbox.__managerProbe.route(),
     tableFound: Boolean(table),
     panelFound: Boolean(panel),
-    pageContext: Boolean(probe.page()),
-    bodyHtml: window.document.body.innerHTML.slice(0, 2000),
+    pageContext: Boolean(scenario.sandbox.__managerProbe.page()),
   };
-  console.log(JSON.stringify(report, null, 2));
-  assert.ok(table, "released installer did not discover the realistic member table");
-  assert.ok(panel, "released installer did not render the Alliance Member Manager panel");
-  assert.ok(panel.querySelector("select"), "manager panel rendered without filter controls");
-  assert.match(panel.textContent, /Load All Member Pages/u);
+  console.log(JSON.stringify(report));
+  assert.ok(table, `${label}: member table not discovered`);
+  assert.ok(panel, `${label}: manager panel not rendered`);
+  assert.ok(panel.querySelector("select"), `${label}: manager controls missing`);
+  assert.match(panel.textContent, /Load All Member Pages/u, `${label}: load-all control missing`);
+}
+
+try {
+  const direct = createScenario({
+    pathname: "/verband/mitglieder/123",
+    initialMemberDom: true,
+    gmEnabled: null,
+    localEnabled: true,
+  });
+  await flush();
+  assertMounted("direct-route-static-dom", direct);
+
+  const delayed = createScenario({
+    pathname: "/",
+    initialMemberDom: false,
+    gmEnabled: true,
+    localEnabled: null,
+  });
+  await flush();
+  delayed.window.document.body.insertAdjacentHTML("beforeend", memberComponent);
+  polyfillTables(delayed.window.document);
+  await flush(100);
+  assertMounted("neutral-route-delayed-dom", delayed);
 } catch (error) {
   console.error("FULL_MOUNT_DIAGNOSTIC_FAILURE");
   console.error(error?.stack || error);
-  console.error(window.document.body.innerHTML.slice(0, 4000));
   process.exitCode = 1;
 }

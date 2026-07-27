@@ -88,12 +88,25 @@ jobs:
           persist-credentials: false
           show-progress: false
 
+      - name: Install isolated UI integration runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
+
+      - name: Run full rendered UI mount integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .github/scripts/test_ui_mount_integration.mjs 2>&1 | tee ui-mount-integration.log
+
       - name: Run deterministic runtime contracts
         shell: bash
         run: |
           set -euo pipefail
           bash .github/scripts/run_userscript_preflight.sh --contracts \
-            2>&1 | tee runtime-lane.log
+            2>&1 | tee runtime-contracts.log
+          cat ui-mount-integration.log runtime-contracts.log > runtime-lane.log
 
       - name: Upload runtime diagnostics
         if: always()

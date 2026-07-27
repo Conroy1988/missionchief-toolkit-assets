@@ -59,41 +59,78 @@ for (const marker of [
   "setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled())",
 ]) assert.ok(source.includes(marker), marker);
 
+const receiptText = extractFunction("allianceMemberManagerMountReceipt");
 const updateText = extractFunction("updateAllianceMemberManagerMenuControl");
-const buttonState = { on: false, pressed: "false", pill: "OFF" };
-const pill = { get textContent() { return buttonState.pill; }, set textContent(value) { buttonState.pill = value; } };
-const button = {
-  classList: { toggle(name, value) { assert.equal(name, "mcms-on"); buttonState.on = value; } },
-  setAttribute(name, value) { if (name === "aria-pressed") buttonState.pressed = value; },
-  querySelector(selector) { assert.equal(selector, ".mcms-pill"); return pill; },
+const buttonState = { on: false, pressed: "false", pill: "OFF", mountState: "idle", label: "" };
+const pill = {
+  get textContent() { return buttonState.pill; },
+  set textContent(value) { buttonState.pill = value; },
 };
-const panel = { querySelector(selector) { assert.equal(selector, "[data-mcms-alliance-member-manager-toggle]"); return button; } };
+const button = {
+  title: "",
+  classList: {
+    toggle(name, value) {
+      assert.equal(name, "mcms-on");
+      buttonState.on = value;
+    },
+  },
+  setAttribute(name, value) {
+    if (name === "aria-pressed") buttonState.pressed = value;
+    if (name === "data-mcms-mount-state") buttonState.mountState = value;
+    if (name === "aria-label") buttonState.label = value;
+  },
+  querySelector(selector) {
+    assert.equal(selector, ".mcms-pill");
+    return pill;
+  },
+};
+const panel = {
+  querySelector(selector) {
+    assert.equal(selector, "[data-mcms-alliance-member-manager-toggle]");
+    return button;
+  },
+};
 const sandbox = {
   SCRIPT: { panelId: "toolkit-panel" },
   ALLIANCE_MEMBER_MANAGER: { menuAttribute: "data-mcms-alliance-member-manager-toggle" },
-  document: { querySelector(selector) { assert.equal(selector, "#toolkit-panel"); return panel; } },
+  document: {
+    querySelector(selector) {
+      assert.equal(selector, "#toolkit-panel");
+      return panel;
+    },
+  },
+  pageWindow: { __MCMS_UI_MOUNTS__: {} },
+  allianceMemberManagerLastMountState: "idle",
   enabled: false,
 };
 sandbox.allianceMemberManagerEnabled = () => sandbox.enabled;
-vm.runInNewContext(`${updateText}\nthis.updateManagerButton = updateAllianceMemberManagerMenuControl;`, sandbox);
+vm.runInNewContext(
+  `${receiptText}\n${updateText}\nthis.updateManagerButton = updateAllianceMemberManagerMenuControl;`,
+  sandbox
+);
 for (const item of fixture.states) {
   sandbox.enabled = item.enabled;
+  sandbox.pageWindow.__MCMS_UI_MOUNTS__.allianceMemberManager = { state: item.mountState };
   sandbox.updateManagerButton();
   assert.equal(buttonState.on, item.enabled);
   assert.equal(buttonState.pressed, item.pressed);
   assert.equal(buttonState.pill, item.pill);
+  assert.equal(buttonState.mountState, item.mountState);
+  assert.match(buttonState.label, /Alliance Member Manager/u);
 }
 
 const managerStart = source.indexOf("    // <mcms-alliance-member-manager>");
 const managerEnd = source.indexOf("    // </mcms-alliance-member-manager>", managerStart);
 const manager = source.slice(managerStart, managerEnd);
 for (const forbidden of [
-  "new MutationObserver(",
   "requestAnimationFrame(",
   "allianceMemberManagerMapBlockerButton",
   "ensureAllianceMemberManagerMenuControl",
   "queueAllianceMemberManagerMenuControl",
   "allianceMemberManagerMenuObserver",
+  "teardownAllianceMemberManager",
 ]) assert.ok(!manager.includes(forbidden), forbidden);
+assert.ok(manager.includes("allianceMemberManagerEnsureMountObserver"));
+assert.ok(manager.includes("pageWindow.__MCMS_UI_MOUNTS__"));
 
-console.log(`Issue #553 canonical Tools runtime passed: ${fixture.states.length} persisted states and zero post-render injection.`);
+console.log(`Issue #553 canonical Tools runtime passed: ${fixture.states.length} persisted/mount states including OFF, WAIT, ON and ERR.`);

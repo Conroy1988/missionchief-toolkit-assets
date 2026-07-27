@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.1.4
+// @version      8.1.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.1.4',
+        version: '8.1.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -24404,13 +24404,18 @@ Create the private backup now?`);
         noRole: '__mcms_no_role__',
     });
     let allianceMemberManagerPage = null;
-    let allianceMemberManagerInstallTimer = 0;
-    let allianceMemberManagerInstallAttempt = 0;
-    const ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS = Object.freeze([
-        0, 60, 140, 300, 600, 1000, 1600, 2400, 3600, 5200,
-    ]);
+    let allianceMemberManagerMountObserver = null;
+    let allianceMemberManagerMountRoot = null;
+    let allianceMemberManagerReconcileQueued = false;
+    let allianceMemberManagerLastMountState = 'idle';
 
     function allianceMemberManagerEnabled() {
+        try {
+            if (typeof GM_getValue === 'function') {
+                const value = GM_getValue(ALLIANCE_MEMBER_MANAGER.storageKey, null);
+                if (typeof value === 'boolean') return value;
+            }
+        } catch (error) {}
         try {
             return localStorage.getItem(ALLIANCE_MEMBER_MANAGER.storageKey) === 'true';
         } catch (error) {
@@ -24419,11 +24424,15 @@ Create the private backup now?`);
     }
 
     function setAllianceMemberManagerEnabled(enabled) {
+        const next = Boolean(enabled);
         try {
-            localStorage.setItem(ALLIANCE_MEMBER_MANAGER.storageKey, enabled ? 'true' : 'false');
+            if (typeof GM_setValue === 'function') GM_setValue(ALLIANCE_MEMBER_MANAGER.storageKey, next);
+        } catch (error) {}
+        try {
+            localStorage.setItem(ALLIANCE_MEMBER_MANAGER.storageKey, next ? 'true' : 'false');
         } catch (error) {}
         updateAllianceMemberManagerMenuControl();
-        reconcileAllianceMemberManager();
+        reconcileAllianceMemberManager('setting-change');
     }
 
     function isAllianceMemberManagerRoute(pathname = location.pathname) {
@@ -24555,28 +24564,94 @@ Create the private backup now?`);
         return externalEnhancedTable && memberComponentRoot ? memberComponentRoot : table;
     }
 
-    function allianceMemberManagerCancelInstallRetry(resetAttempt = true) {
-        if (allianceMemberManagerInstallTimer) {
-            pageWindow.clearTimeout(allianceMemberManagerInstallTimer);
-            allianceMemberManagerInstallTimer = 0;
-        }
-        if (resetAttempt) allianceMemberManagerInstallAttempt = 0;
+    function allianceMemberManagerMountReceipt() {
+        const registry = pageWindow.__MCMS_UI_MOUNTS__ ||= {};
+        return registry.allianceMemberManager || null;
     }
 
-    function allianceMemberManagerScheduleInstallRetry() {
-        if (
-            allianceMemberManagerInstallTimer
-            || allianceMemberManagerPage
-            || !allianceMemberManagerEnabled()
-            || !isAllianceMemberManagerRoute()
-            || allianceMemberManagerInstallAttempt >= ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS.length
-        ) return;
-        const delay = ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS[allianceMemberManagerInstallAttempt];
-        allianceMemberManagerInstallAttempt += 1;
-        allianceMemberManagerInstallTimer = pageWindow.setTimeout(() => {
-            allianceMemberManagerInstallTimer = 0;
-            reconcileAllianceMemberManager();
-        }, delay);
+    function allianceMemberManagerRecordMountState(state, detail = '') {
+        const nextState = String(state || 'unknown');
+        const registry = pageWindow.__MCMS_UI_MOUNTS__ ||= {};
+        const previous = registry.allianceMemberManager;
+        if (!previous || previous.state !== nextState || previous.detail !== detail) {
+            registry.allianceMemberManager = Object.freeze({
+                state: nextState,
+                detail: String(detail || ''),
+                path: String(location.pathname || ''),
+                version: SCRIPT.version,
+                updatedAt: Date.now(),
+            });
+        }
+        allianceMemberManagerLastMountState = nextState;
+        document.documentElement?.setAttribute('data-mcms-alliance-member-manager-mount', nextState);
+        updateAllianceMemberManagerMenuControl();
+    }
+
+    function allianceMemberManagerMutationRelevant(records) {
+        const ownedSelector = '[data-mcms-ui-owned="alliance-member-manager"]';
+        return records.some(record => Array.from(record.addedNodes || [])
+            .concat(Array.from(record.removedNodes || []))
+            .some(node => {
+                if (!node || ![1, 11].includes(node.nodeType)) return false;
+                if (node.nodeType === 1 && (node.matches?.(ownedSelector) || node.closest?.(ownedSelector))) return false;
+                if (node.nodeType === 1 && node.matches?.('table, h1, h2, [data-member-page-summary], #mcms-alliance-member-manager')) return true;
+                return Boolean(node.querySelector?.(
+                    'table, h1, h2, a[href^="/profile/"], a[href*="/profile/"], #mcms-alliance-member-manager'
+                ));
+            }));
+    }
+
+    function allianceMemberManagerQueueReconcile(reason = 'dom-change') {
+        if (allianceMemberManagerReconcileQueued) return;
+        allianceMemberManagerReconcileQueued = true;
+        queueMicrotask(() => {
+            allianceMemberManagerReconcileQueued = false;
+            reconcileAllianceMemberManager(reason);
+        });
+    }
+
+    function allianceMemberManagerDisconnectMountObserver() {
+        allianceMemberManagerMountObserver?.disconnect();
+        allianceMemberManagerMountObserver = null;
+        allianceMemberManagerMountRoot = null;
+        allianceMemberManagerReconcileQueued = false;
+    }
+
+    function allianceMemberManagerEnsureMountObserver() {
+        const root = document.body || document.documentElement;
+        if (!root) return false;
+        if (allianceMemberManagerMountObserver && allianceMemberManagerMountRoot === root) return true;
+        allianceMemberManagerDisconnectMountObserver();
+        const Observer = pageWindow.MutationObserver
+            || (typeof MutationObserver === 'function' ? MutationObserver : null);
+        if (typeof Observer !== 'function') return false;
+        allianceMemberManagerMountRoot = root;
+        allianceMemberManagerMountObserver = new Observer(records => {
+            if (allianceMemberManagerMutationRelevant(records)) {
+                allianceMemberManagerQueueReconcile('member-dom-mutation');
+            }
+        });
+        allianceMemberManagerMountObserver.observe(root, { childList: true, subtree: true });
+        return true;
+    }
+
+    function allianceMemberManagerClearMountNotice() {
+        document.querySelector('[data-mcms-ui-owned="alliance-member-manager"]')?.remove();
+    }
+
+    function allianceMemberManagerShowMountNotice(error) {
+        const table = allianceMemberManagerTable();
+        const target = allianceMemberManagerMountTarget(table);
+        if (!target?.parentElement) return;
+        let notice = document.querySelector('[data-mcms-ui-owned="alliance-member-manager"]');
+        if (!notice) {
+            notice = document.createElement('div');
+            notice.setAttribute('data-mcms-ui-owned', 'alliance-member-manager');
+            notice.className = 'alert alert-danger';
+            target.before(notice);
+        }
+        notice.textContent = 'Alliance Member Manager could not attach. The Toolkit retained a diagnostic mount receipt and will retry when the member view changes.';
+        notice.title = String(error?.message || error || 'Unknown mount error');
     }
 
     function allianceMemberManagerRelocatePanel() {
@@ -24854,7 +24929,7 @@ Create the private backup now?`);
         if (
             allianceMemberManagerPage ||
             !allianceMemberManagerEnabled() ||
-            !isAllianceMemberManagerRoute() ||
+            !(isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext()) ||
             allianceMemberManagerOtherOwnerPresent()
         ) return;
         const table = allianceMemberManagerTable(document);
@@ -25003,22 +25078,64 @@ Create the private backup now?`);
         allianceMemberManagerPage = null;
     }
 
-    function reconcileAllianceMemberManager() {
-        const eligible = allianceMemberManagerEnabled()
-            && (isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext())
-            && !allianceMemberManagerOtherOwnerPresent();
-        if (!eligible) {
-            allianceMemberManagerCancelInstallRetry();
-            teardownAllianceMemberManager();
+    function reconcileAllianceMemberManager(reason = 'reconcile') {
+        const enabled = allianceMemberManagerEnabled();
+        if (!enabled) {
+            allianceMemberManagerDisconnectMountObserver();
+            allianceMemberManagerClearMountNotice();
+            disposeAllianceMemberManager();
+            allianceMemberManagerRecordMountState('disabled', reason);
             return;
         }
-        installAllianceMemberManager();
-        if (allianceMemberManagerPage) {
+
+        const observing = allianceMemberManagerEnsureMountObserver();
+        const routeMatch = isAllianceMemberManagerRoute();
+        const domMatch = allianceMemberManagerHasDomContext();
+        if (!routeMatch && !domMatch) {
+            allianceMemberManagerClearMountNotice();
+            disposeAllianceMemberManager();
+            allianceMemberManagerRecordMountState(
+                observing ? 'watching' : 'waiting',
+                'Enabled; waiting for an alliance member view'
+            );
+            return;
+        }
+        if (allianceMemberManagerOtherOwnerPresent()) {
+            allianceMemberManagerClearMountNotice();
+            disposeAllianceMemberManager();
+            allianceMemberManagerRecordMountState('suppressed', 'Equivalent manager already owns this view');
+            return;
+        }
+
+        const table = allianceMemberManagerTable();
+        const panel = document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.panelId}`);
+        const panelConnected = Boolean(panel && panel.isConnected !== false);
+        if (
+            allianceMemberManagerPage
+            && (!panelConnected || (table && allianceMemberManagerPage.table && allianceMemberManagerPage.table !== table))
+        ) {
+            disposeAllianceMemberManager();
+        }
+        if (!table) {
+            allianceMemberManagerRecordMountState('waiting', 'Member view found; waiting for its table');
+            return;
+        }
+
+        try {
+            installAllianceMemberManager();
+            if (!allianceMemberManagerPage) {
+                allianceMemberManagerRecordMountState('waiting', 'Member table found; installer has not claimed it yet');
+                return;
+            }
             allianceMemberManagerRelocatePanel();
-            allianceMemberManagerCancelInstallRetry();
-            return;
+            allianceMemberManagerClearMountNotice();
+            allianceMemberManagerRecordMountState('mounted', `Connected to ${allianceMemberManagerPage.members?.size || 0} members`);
+        } catch (error) {
+            try { disposeAllianceMemberManager(); } catch (disposeError) {}
+            allianceMemberManagerRecordMountState('error', String(error?.message || error || 'Unknown mount error'));
+            allianceMemberManagerShowMountNotice(error);
+            console.error('[Toolkit] Alliance Member Manager mount failed', error);
         }
-        allianceMemberManagerScheduleInstallRetry();
     }
 
     function updateAllianceMemberManagerMenuControl() {
@@ -25026,10 +25143,23 @@ Create the private backup now?`);
         const button = panel?.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
         if (!button) return;
         const enabled = allianceMemberManagerEnabled();
+        const mountState = allianceMemberManagerMountReceipt()?.state || allianceMemberManagerLastMountState;
+        const mounted = mountState === 'mounted';
+        const failed = mountState === 'error';
         button.classList.toggle('mcms-on', enabled);
         button.setAttribute('aria-pressed', String(enabled));
+        button.setAttribute('data-mcms-mount-state', mountState || 'idle');
         const pill = button.querySelector('.mcms-pill');
-        if (pill) pill.textContent = enabled ? 'ON' : 'OFF';
+        if (pill) pill.textContent = !enabled ? 'OFF' : failed ? 'ERR' : mounted ? 'ON' : 'WAIT';
+        const stateText = !enabled
+            ? 'disabled'
+            : failed
+                ? 'enabled, page controls failed to mount'
+                : mounted
+                    ? 'enabled and mounted'
+                    : 'enabled, waiting for a compatible member view';
+        button.title = `Alliance Member Manager: ${stateText}`;
+        button.setAttribute('aria-label', `Alliance Member Manager ${stateText}`);
     }
 
     if (typeof document.addEventListener === 'function') {

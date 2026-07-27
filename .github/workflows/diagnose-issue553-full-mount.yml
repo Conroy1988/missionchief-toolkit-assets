@@ -1,0 +1,42 @@
+name: Diagnose Issue 553 Full Mount
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.ref == 'diagnostic/alliance-member-ui-mount'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Check out exact diagnostic head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Install isolated DOM runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts linkedom@0.18.12
+
+      - name: Execute released installer against realistic member page
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .github/scripts/diagnose_issue553_full_mount.mjs 2>&1 | tee issue553-full-mount.log
+
+      - name: Upload diagnostic
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue553-full-mount-${{ github.sha }}
+          path: issue553-full-mount.log
+          if-no-files-found: error
+          retention-days: 14

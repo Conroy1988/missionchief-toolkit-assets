@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-07-27",
-  "reviewedMainCommit": "251c2125311e86d6d207e1c20b32d9f7cb33dba4",
+  "reviewedAt": "2026-07-24",
+  "reviewedMainCommit": "e51a44431c1769dcdab292f1d5f3b570b4c1f867",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -173,13 +173,6 @@
       "workflow": ".github/workflows/prepare-release-rollback.yml",
       "target": "new recovery branch and owner-created pull request",
       "credential": "DEVELOPMENT_PR_TOKEN"
-    },
-    {
-      "workflow": ".github/workflows/discord-commit-notifications.yml",
-      "target": "feature/alliance-member-manager only",
-      "credential": "DEVELOPMENT_PR_TOKEN",
-      "purpose": "Apply the reviewed Issue #551 v8.1.0 package to its existing feature branch without public-main mutation.",
-      "mainMutationAllowed": false
     }
   ],
   "shadowBranchWriters": [

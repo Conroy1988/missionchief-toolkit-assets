@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.1.4] - 2026-07-27
+
+### Live external redesigned alliance-members page mounting
+
+- Mounted the enabled Alliance Member Manager after external redesigned Redesign asynchronously creates the UK member table.
+- Recognised external redesigned activity icons without the native `online_icon` class and parsed summary text such as `of 568 pages`.
+- Mounted outside the Vue-controlled enhanced-table subtree so sorting and page loading do not erase the Toolkit controls.
+- Narrowed duplicate suppression to genuinely equivalent role/activity/load-all managers rather than generic member-list search controls.
+- Added bounded delayed-install retries only while enabled on the member route, with no observer, interval or recurring disabled work.
+- Added executable route, delayed mount, activity, page-count, stable-mount and duplicate-suppression regressions.
+
 ## [8.1.3] - 2026-07-27
 
 ### Canonical Alliance Member Manager Tools rendering

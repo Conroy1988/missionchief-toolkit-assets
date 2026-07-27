@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.1.3
+// @version      8.1.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.1.3',
+        version: '8.1.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -24404,6 +24404,11 @@ Create the private backup now?`);
         noRole: '__mcms_no_role__',
     });
     let allianceMemberManagerPage = null;
+    let allianceMemberManagerInstallTimer = 0;
+    let allianceMemberManagerInstallAttempt = 0;
+    const ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS = Object.freeze([
+        0, 60, 140, 300, 600, 1000, 1600, 2400, 3600, 5200,
+    ]);
 
     function allianceMemberManagerEnabled() {
         try {
@@ -24423,19 +24428,41 @@ Create the private backup now?`);
 
     function isAllianceMemberManagerRoute(pathname = location.pathname) {
         const path = decodedPathname(pathname);
-        return /\/(?:alliance\/members|verband\/mitglieder)(?:\/\d+)?\/?$/iu.test(path);
+        return /\/verband\/mitglieder(?:\/\d+)?\/?$/iu.test(path)
+            || /\/alliances?\/(?:\d+\/)?members(?:\/\d+)?\/?$/iu.test(path)
+            || /\/alliance_members(?:\/\d+)?\/?$/iu.test(path);
     }
 
     function allianceMemberManagerOtherOwnerPresent() {
-        return Boolean(document.querySelector(
-            '#allianceMemberList-controls, [id*="allianceMemberList"][id$="-controls"]'
-        ));
+        const candidates = document.querySelectorAll(
+            '#allianceMemberList-controls, [id*="allianceMemberList"][id$="-controls"], ' +
+            '[data-alliance-member-manager], [data-external-alliance-member-manager]'
+        );
+        return Array.from(candidates).some(candidate => {
+            if (candidate.closest?.(`#${ALLIANCE_MEMBER_MANAGER.panelId}`)) return false;
+            const text = String(candidate.textContent || '').replace(/\s+/gu, ' ').trim();
+            const hasRole = /\brole(?:s)?\b/iu.test(text)
+                || Boolean(candidate.querySelector?.('[name*="role" i], [data-filter*="role" i]'));
+            const hasActivity = /\bactivity\b|\bonline\b.*\boffline\b/iu.test(text)
+                || Boolean(candidate.querySelector?.('[name*="activity" i], [data-filter*="activity" i]'));
+            const hasLoadAll = /\bload all member pages\b/iu.test(text)
+                || Boolean(candidate.querySelector?.('[data-action*="load-all" i]'));
+            return hasRole && hasActivity && hasLoadAll;
+        });
     }
 
     function allianceMemberManagerTable(doc = document) {
-        return Array.from(doc.querySelectorAll('table')).find(table =>
-            table.querySelector('tbody a[href^="/profile/"]')
-        ) || null;
+        return Array.from(doc.querySelectorAll('table')).find(table => {
+            const profileLinks = table.querySelectorAll(
+                'tbody a[href^="/profile/"], tbody a[href*="/profile/"]'
+            );
+            if (!profileLinks.length) return false;
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(header => String(header.textContent || '').replace(/\s+/gu, ' ').trim().toLowerCase());
+            return !headers.length
+                || headers.some(header => /^(?:player|member|name)$/iu.test(header))
+                || profileLinks.length >= 2;
+        }) || null;
     }
 
     function allianceMemberManagerBody(table) {
@@ -24454,15 +24481,26 @@ Create the private backup now?`);
 
     function allianceMemberManagerTotalPages(doc = document) {
         const values = Array.from(doc.querySelectorAll('.pagination a, .pagination li'))
-            .map(node => Number.parseInt(node.textContent?.trim() || '', 10))
+            .map(node => Number.parseInt(String(node.textContent || '').replace(/[^0-9]/gu, ''), 10))
             .filter(value => Number.isFinite(value) && value > 0);
+        const summaryNodes = Array.from(doc.querySelectorAll('h1 small, h2 small, .head, [data-member-page-summary]'));
+        const table = allianceMemberManagerTable(doc);
+        const renderedRoot = table?.parentElement?.parentElement || null;
+        if (renderedRoot && !summaryNodes.includes(renderedRoot)) summaryNodes.push(renderedRoot);
+        summaryNodes.forEach(node => {
+            const text = String(node.textContent || '');
+            for (const match of text.matchAll(/\b(?:of|von)\s+(?<pages>[\d,.]+)\s+(?:pages?|seiten)\b/giu)) {
+                const value = Number.parseInt(match.groups?.pages?.replace(/[^0-9]/gu, '') || '', 10);
+                if (Number.isFinite(value) && value > 0) values.push(value);
+            }
+        });
         return Math.max(1, ...values);
     }
 
     function allianceMemberManagerActivity(row) {
-        const icon = row.querySelector('img.online_icon');
+        const icon = row.querySelector('img.online_icon, img[src*="user_"]');
         const source = icon?.getAttribute('src') || '';
-        const match = source.match(/user_(?<state>blue|gray|green|red|yellow)\.png/iu);
+        const match = source.match(/user_(?<state>blue|gray|green|red|yellow)(?:\.[a-z0-9]+)?/iu);
         return match?.groups?.state?.toLowerCase() || 'unknown';
     }
 
@@ -24495,6 +24533,60 @@ Create the private backup now?`);
         option.value = value;
         option.textContent = text;
         return option;
+    }
+
+    function allianceMemberManagerHasDomContext(doc = document) {
+        const table = allianceMemberManagerTable(doc);
+        if (!table) return false;
+        const heading = Array.from(doc.querySelectorAll('h1, h2'))
+            .map(node => String(node.textContent || '').replace(/\s+/gu, ' ').trim())
+            .join(' ');
+        return /\bmembers?\b|\bmitglieder\b/iu.test(heading)
+            || Boolean(doc.querySelector('a[href^="/verband/mitglieder/"]'));
+    }
+
+    function allianceMemberManagerMountTarget(table) {
+        const enhancedTableRoot = table?.parentElement || null;
+        const memberComponentRoot = enhancedTableRoot?.parentElement || null;
+        const externalEnhancedTable = Boolean(
+            enhancedTableRoot?.querySelector?.('.head input.search_input_field')
+            || (enhancedTableRoot?.querySelector?.('.head') && memberComponentRoot?.querySelector?.('h1'))
+        );
+        return externalEnhancedTable && memberComponentRoot ? memberComponentRoot : table;
+    }
+
+    function allianceMemberManagerCancelInstallRetry(resetAttempt = true) {
+        if (allianceMemberManagerInstallTimer) {
+            pageWindow.clearTimeout(allianceMemberManagerInstallTimer);
+            allianceMemberManagerInstallTimer = 0;
+        }
+        if (resetAttempt) allianceMemberManagerInstallAttempt = 0;
+    }
+
+    function allianceMemberManagerScheduleInstallRetry() {
+        if (
+            allianceMemberManagerInstallTimer
+            || allianceMemberManagerPage
+            || !allianceMemberManagerEnabled()
+            || !isAllianceMemberManagerRoute()
+            || allianceMemberManagerInstallAttempt >= ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS.length
+        ) return;
+        const delay = ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS[allianceMemberManagerInstallAttempt];
+        allianceMemberManagerInstallAttempt += 1;
+        allianceMemberManagerInstallTimer = pageWindow.setTimeout(() => {
+            allianceMemberManagerInstallTimer = 0;
+            reconcileAllianceMemberManager();
+        }, delay);
+    }
+
+    function allianceMemberManagerRelocatePanel() {
+        if (!allianceMemberManagerPage) return;
+        const panel = document.querySelector(`#${ALLIANCE_MEMBER_MANAGER.panelId}`);
+        const table = allianceMemberManagerTable();
+        const mountTarget = allianceMemberManagerMountTarget(table);
+        if (panel && mountTarget && panel.nextElementSibling !== mountTarget) {
+            mountTarget.before(panel);
+        }
     }
 
     function allianceMemberManagerStyle() {
@@ -24912,15 +25004,21 @@ Create the private backup now?`);
     }
 
     function reconcileAllianceMemberManager() {
-        if (
-            !allianceMemberManagerEnabled() ||
-            !isAllianceMemberManagerRoute() ||
-            allianceMemberManagerOtherOwnerPresent()
-        ) {
-            disposeAllianceMemberManager();
+        const eligible = allianceMemberManagerEnabled()
+            && (isAllianceMemberManagerRoute() || allianceMemberManagerHasDomContext())
+            && !allianceMemberManagerOtherOwnerPresent();
+        if (!eligible) {
+            allianceMemberManagerCancelInstallRetry();
+            teardownAllianceMemberManager();
             return;
         }
         installAllianceMemberManager();
+        if (allianceMemberManagerPage) {
+            allianceMemberManagerRelocatePanel();
+            allianceMemberManagerCancelInstallRetry();
+            return;
+        }
+        allianceMemberManagerScheduleInstallRetry();
     }
 
     function updateAllianceMemberManagerMenuControl() {

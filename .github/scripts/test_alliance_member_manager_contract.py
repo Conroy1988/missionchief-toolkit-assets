@@ -24,8 +24,8 @@ def main() -> int:
     end = source.index(end_marker, start) + len(end_marker)
     block = source[start:end]
 
-    assert re.search(r"^// @version\s+8\.1\.3$", source, re.MULTILINE)
-    assert "version: '8.1.3'" in source
+    assert re.search(r"^// @version\s+8\.1\.4$", source, re.MULTILINE)
+    assert "version: '8.1.4'" in source
     for marker in [
         "mcms_alliance_member_manager_enabled_v1",
         "Alliance Member Manager",
@@ -43,8 +43,15 @@ def main() -> int:
         "Member name",
         "Alliance role",
         "Showing ${visible} of ${context.members.size} members",
-        r"alliance\/members|verband\/mitglieder",
-        "img.online_icon",
+        r"verband\/mitglieder",
+        r"alliances?\/",
+        "alliance_members",
+        "img.online_icon, img[src*=\"user_\"]",
+        "ALLIANCE_MEMBER_MANAGER_INSTALL_DELAYS",
+        "allianceMemberManagerScheduleInstallRetry()",
+        "allianceMemberManagerMountTarget(table)",
+        "of|von",
+        "pages?|seiten",
         "user_(?<state>blue|gray|green|red|yellow)",
         "new AbortController()",
         "context.abortController?.abort()",
@@ -60,6 +67,7 @@ def main() -> int:
         "{ once: true }",
         "allianceMemberManagerOtherOwnerPresent()",
         "#allianceMemberList-controls",
+        "hasRole && hasActivity && hasLoadAll",
     ]:
         assert marker in block, marker
 
@@ -95,13 +103,16 @@ def main() -> int:
     assert block.count("await fetch(") == 1
     assert block.count("new AbortController()") == 1
     assert block.count("new MutationObserver(") == 0
+    assert block.count("setTimeout(") == 1
+    assert block.count("setInterval(") == 0
     assert block.count("data-mcms-alliance-member-manager-toggle") == 1
     assert source.count("${makeAllianceMemberManagerToggleButton()}") == 1
     assert source.count('data-action="toggle-alliance-member-manager"') == 1
 
     changelog = CHANGELOG.read_text(encoding="utf-8")
+    assert "## [8.1.4] - 2026-07-27" in changelog
+    assert "### Live external redesigned alliance-members page mounting" in changelog
     assert "## [8.1.3] - 2026-07-27" in changelog
-    assert "### Canonical Alliance Member Manager Tools rendering" in changelog
     assert "## [8.1.2] - 2026-07-27" in changelog
     assert "## [8.1.1] - 2026-07-27" in changelog
     assert "## [8.1.0] - 2026-07-27" in changelog
@@ -117,18 +128,19 @@ def main() -> int:
     preflight = PREFLIGHT.read_text(encoding="utf-8")
     assert ".github/scripts/test_alliance_member_manager_contract.py" in preflight
     assert "test_issue553_alliance_member_manager_menu_runtime.js" in preflight
+    assert "test_issue553_alliance_member_manager_page_runtime.js" in preflight
     assert "test_issue554_alliance_member_manager_rollback.py" not in preflight
 
     performance = json.loads(PERFORMANCE.read_text(encoding="utf-8"))
-    assert performance["revision"] == "2026-07-27-issue-553-canonical-menu-render"
+    assert performance["revision"] == "2026-07-27-issue-553-external-page-mount"
     assert performance["transitionApproval"]["issue"] == 553
-    assert performance["transitionApproval"]["version"] == "8.1.3"
+    assert performance["transitionApproval"]["version"] == "8.1.4"
     assert performance["transitionApproval"]["approvedNetworkRequestDelta"] == 1
     assert performance["absoluteLimits"]["network_request_calls"] == 5
 
     print(
         "Alliance Member Manager contract passed: canonical Tools markup, panel-owned action routing, "
-        "persisted state reconciliation, responsive member controls and zero added observers."
+        "persisted state reconciliation, delayed external redesigned mounting, responsive member controls and zero added observers."
     )
     return 0
 

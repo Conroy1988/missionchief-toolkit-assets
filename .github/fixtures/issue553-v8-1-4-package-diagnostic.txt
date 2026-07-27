@@ -1,17 +1,98 @@
-stage=package
+stage=full-preflight
 exit_code=1
 
 From https://github.com/Conroy1988/missionchief-toolkit-assets
  * branch            main       -> FETCH_HEAD
+Toolkit v8.1.4 external redesigned member-page package applied.
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 49 endpoints, 40 local media files, 0 failures, 0 warnings
+Audio alias contract: 10 canonical, 0 aliases, 0 failures
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed for v8.
+v7 retirement contract passed.
+Mission Age map timers retained under v7.
+Native Patient Transport Sweep contract passed.
+Core menu boot remains fail-open after v7 retirement.
+Core launcher bootstrap contract passed after v7 retirement.
+v7 preboot hydration contract passed.
+v8 launcher, boot and Mission Age contract passed.
+Code integrity passed: 188 selectors.
+{
+  "version": "8.1.4",
+  "sha256": "f77ecd3503419feeeb6df8c079b5cb804b4b7aec956e7d89ad3b8a381fb494a3",
+  "bytes": 1644544,
+  "lines": 25044,
+  "baselineHashMatch": null,
+  "metadataWarnings": [],
+  "codeIntegrity": "passed",
+  "staticAssetIntegrity": "passed"
+}
+{
+  "failures": 0,
+  "warnings": 0,
+  "result": "passed"
+}
+Asset health (static): 49 endpoints, 40 local media files, 0 failures, 0 warnings
+Audio alias contract: 10 canonical, 0 aliases, 0 failures
+Version status runtime fixtures passed
+Version status contract passed
+Financial overview contract fixtures passed.
+Main-style source-headroom contract passed for v8.
+v7 retirement contract passed.
+Mission Age map timers retained under v7.
+Native Patient Transport Sweep contract passed.
+Core menu boot remains fail-open after v7 retirement.
+Core launcher bootstrap contract passed after v7 retirement.
+v7 preboot hydration contract passed.
+v8 launcher, boot and Mission Age contract passed.
+Code integrity passed: 188 selectors.
+{
+  "version": "8.1.4",
+  "sha256": "f77ecd3503419feeeb6df8c079b5cb804b4b7aec956e7d89ad3b8a381fb494a3",
+  "bytes": 1644544,
+  "lines": 25044,
+  "baselineHashMatch": null,
+  "metadataWarnings": [],
+  "codeIntegrity": "passed",
+  "staticAssetIntegrity": "passed"
+}
+Financial ledger contract passed: parser, retry, 5 scan scenarios and summary/Discord inputs.
+Financial overview contract fixtures passed.
+Financial Discord image layout contract passed: 5 audit states, all snapshot rows and 2 stress rows.
+Mission marker ingestion contract passed: candidate resolution, direct normalization, payload capture, partial updates, ownership, events, inline scripts, coordinates and cache invalidation.
+Boot lifecycle contract passed: extracted boot integration, immediate coordinator attempt, bounded map fallback, maintenance-task registration, runtime ownership, document-start, hidden-tab resume, retry cancellation and teardown.
+Settings/UI contract passed for v7.
+Root attribute write-suppression runtime fixtures passed
+Root attribute write-suppression contract passed
+iOS/Safari usability contract passed
+Main-style source-headroom contract passed for v8.
+Desktop operational-workspace contract passed: 6 bounds and 4 saved-position cases.
+Section-navigation contract passed: 8 sections, 8 canonical controls and 5 narrow-label cases.
+Mission Value formatting, route, responsive presentation and native host ownership contracts passed.
+Mission Value toolbar contract passed: 10 responsive presentations, canonical spacer hosting and cross-document deduplication.
+Issue #515 launcher restoration static contract passed.
+Issue #519 continuous Incident Command Wire reel contract passed.
+v7 retirement contract passed.
+Mission Age map timers retained under v7.
+Native Patient Transport Sweep contract passed.
+Issue #523 Transport Sweep mission-progress static contract passed.
+Issue #527 skipped-patient static contract passed.
+Issue #530 discharge confirmation static contract passed for Toolkit 8.1.4.
+Issue #537 Godfather stylesheet activation contract passed for Toolkit 8.1.4.
+Issue #539 Godfather layout and replacement-audio contract passed for Toolkit 8.1.4.
+Issue #541 Godfather duration and payout-position contract passed for Toolkit 8.1.4.
+Issue #536 alliance-building native-filter persistence contract passed for Toolkit 8.1.4.
 Traceback (most recent call last):
-  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/development-packages/issue553_alliance_member_manager_external_page_v8_1_4.py", line 50, in <module>
-    runpy.run_path(str(TEMP), run_name="__main__")
-  File "<frozen runpy>", line 286, in run_path
-  File "<frozen runpy>", line 98, in _run_module_code
-  File "<frozen runpy>", line 88, in _run_code
-  File "/tmp/issue553_v8_1_4_corrected.py", line 10, in <module>
-    ROOT = Path(__file__).resolve().parents[2]
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
-  File "/usr/lib/python3.12/pathlib.py", line 281, in __getitem__
-    raise IndexError(idx)
-IndexError: 2
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_alliance_member_manager_contract.py", line 147, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/runner/work/missionchief-toolkit-assets/missionchief-toolkit-assets/.github/scripts/test_alliance_member_manager_contract.py", line 70, in main
+    assert marker in block, marker
+           ^^^^^^^^^^^^^^^
+AssertionError: alliances?\/(?:\d+\/)?members|alliance_members|verband\/mitglieder

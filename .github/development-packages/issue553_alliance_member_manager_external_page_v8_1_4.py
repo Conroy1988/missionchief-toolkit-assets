@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ORIGINAL = ROOT / ".github/development-packages/issue553_alliance_member_manager_lssm_page_v8_1_4.py"
+CONTRACT = ROOT / ".github/scripts/test_alliance_member_manager_contract.py"
 
 text = ORIGINAL.read_text(encoding="utf-8")
 text = text.replace("LSSM", "external redesigned")
@@ -51,3 +52,19 @@ namespace = {
     "__cached__": None,
 }
 exec(code, namespace)
+
+contract = CONTRACT.read_text(encoding="utf-8")
+combined_route_marker = (
+    '        r"alliances?\\/(?:\\d+\\/)?members|alliance_members|verband\\/mitglieder",\n'
+)
+independent_route_markers = (
+    '        r"verband\\/mitglieder",\n'
+    '        r"alliances?\\/",\n'
+    '        "alliance_members",\n'
+)
+if contract.count(combined_route_marker) != 1:
+    raise RuntimeError("Unable to replace combined route contract marker")
+CONTRACT.write_text(
+    contract.replace(combined_route_marker, independent_route_markers, 1),
+    encoding="utf-8",
+)

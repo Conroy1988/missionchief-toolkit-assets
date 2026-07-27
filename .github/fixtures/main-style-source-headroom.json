@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 551,
-    "version": "8.1.0",
-    "sourceBytes": 1641668,
-    "sourceLines": 25008,
-    "sourceSha256": "5ddacf52e574037c50a608f23dc9e381f9927db710c5f40448f541a6f749382e",
+    "issue": 554,
+    "version": "8.1.1",
+    "sourceBytes": 1614530,
+    "sourceLines": 24377,
+    "sourceSha256": "e3574b80e4d89b14b0a8ce07f82d605fcdb8cd5ea77059fee9a1ca4ed85ec750",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1660000,
-    "maxSourceLines": 25250,
+    "maxSourceBytes": 1650000,
+    "maxSourceLines": 24500,
     "minTemplateBytes": 500000,
     "baseline": "8.0.4",
     "approvedGrowth": {
-      "sourceBytes": 27138,
-      "sourceLines": 631,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 49633,
+      "sourceLines": 794,
+      "templateBytes": 36715,
+      "templateLines": 578
     },
-    "scope": "Issue #551 native Alliance Member Manager with opt-in English role/activity controls, explicit sequential member-page loading, deterministic teardown, boot-tail-safe startup and minimal-document listener capability guarding"
+    "scope": "Issue #554 rollback of the mistakenly added Alliance Member Manager; restore the pre-feature Toolkit source with v8.1.1 release metadata"
   }
 }

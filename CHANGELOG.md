@@ -1,5 +1,13 @@
 # Changelog
 
+## [8.1.1] - 2026-07-27
+
+### Rollback
+
+- Removed the Alliance Member Manager runtime, Toolkit-menu toggle, alliance-member-page controls and related documentation introduced in v8.1.0.
+- Restored the exact pre-feature Toolkit behaviour while retaining Pipeline v5.2 and the generic release-forward regression hardening.
+- Preserved the published v8.1.0 release record for auditability; v8.1.1 is the supported replacement release.
+
 ## [8.1.0] - 2026-07-27
 
 ### Alliance Member Manager

@@ -177,3 +177,5 @@ jobs:
           git push origin HEAD:feature/alliance-member-manager || fail_with_report "$?"
 
           gh pr comment 552 --body "Reviewed v8.1.0 bootstrap-tail fix applied and locally validated. Corrected candidate commit: \`$(git rev-parse HEAD)\`. Temporary carrier cleanup is next."
+
+# Exact retry after competing package cleanup.

@@ -7,16 +7,11 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "../..");
-const source = fs.readFileSync(
-  path.join(root, "src/MissionChief_Map_Command_Toolkit.user.js"),
+const source = fs.readFileSync(path.join(root, "src/MissionChief_Map_Command_Toolkit.user.js"), "utf8");
+const fixture = JSON.parse(fs.readFileSync(
+  path.join(root, ".github/fixtures/issue553-alliance-member-manager-menu.json"),
   "utf8"
-);
-const fixture = JSON.parse(
-  fs.readFileSync(
-    path.join(root, ".github/fixtures/issue553-alliance-member-manager-menu.json"),
-    "utf8"
-  )
-);
+));
 
 function extractFunction(name) {
   const marker = `    function ${name}(`;
@@ -34,20 +29,17 @@ function extractFunction(name) {
       else if (char === quote) quote = "";
       continue;
     }
-    if (char === "'" || char === '"' || char === "`") {
-      quote = char;
-      continue;
-    }
+    if (char === "'" || char === '"' || char === "`") { quote = char; continue; }
     if (char === "{") depth += 1;
-    if (char === "}") {
-      depth -= 1;
-      if (depth === 0) return source.slice(start, index + 1);
-    }
+    if (char === "}" && --depth === 0) return source.slice(start, index + 1);
   }
   throw new Error(`Unable to extract ${name}`);
 }
 
-const functionText = extractFunction("allianceMemberManagerMapBlockerButton");
+const functionText = [
+  extractFunction("allianceMemberManagerRenderedLabel"),
+  extractFunction("allianceMemberManagerMapBlockerButton"),
+].join("\n");
 const sandbox = {};
 vm.runInNewContext(
   `${functionText}\nthis.resolveBlocker = allianceMemberManagerMapBlockerButton;`,
@@ -55,27 +47,42 @@ vm.runInNewContext(
 );
 
 for (const item of fixture.cases) {
-  const buttons = item.labels.map(labelText => ({
-    querySelector(selector) {
-      assert.equal(selector, ".mcms-label");
-      return { textContent: labelText };
+  const cards = item.labels.map((textContent, index) => ({ index, kind: "canonical-live-card" }));
+  const labels = item.labels.map((textContent, index) => ({
+    textContent,
+    closest(selector) {
+      assert.equal(selector, 'button, a, [role="button"], [tabindex]');
+      return cards[index];
     },
+    parentElement: null,
   }));
   const panel = {
     querySelector(selector) {
       assert.match(selector, /allianceBuildingsMapBlocker/);
-      return item.attributeIndex === null ? null : buttons[item.attributeIndex];
+      return item.attributeIndex === null ? null : cards[item.attributeIndex];
     },
     querySelectorAll(selector) {
-      assert.equal(selector, ".mcms-toggle-btn");
-      return buttons;
+      assert.equal(selector, ".mcms-label");
+      return labels;
     },
   };
   const result = sandbox.resolveBlocker(panel);
   if (item.expectedIndex === null) assert.equal(result, null, item.name);
-  else assert.equal(result, buttons[item.expectedIndex], item.name);
+  else assert.equal(result, cards[item.expectedIndex], item.name);
 }
 
-console.log(
-  `Issue #553 menu runtime passed: ${fixture.cases.length} rendered-menu discovery cases.`
-);
+const managerStart = source.indexOf("    // <mcms-alliance-member-manager>");
+const managerEnd = source.indexOf("    // </mcms-alliance-member-manager>", managerStart);
+const manager = source.slice(managerStart, managerEnd);
+for (const marker of [
+  "button = blocker.cloneNode(true)",
+  "attribute.startsWith('data-')",
+  "sectionLabel.textContent = 'Alliance Operations'",
+  "allianceMemberManagerMenuObserver.observe(panel, { childList: true, subtree: true })",
+  "requestAnimationFrame",
+  "group.append(button)",
+]) assert.ok(manager.includes(marker), marker);
+assert.equal((manager.match(/new MutationObserver\(/g) || []).length, 1);
+assert.ok(!manager.includes("panel.querySelectorAll('.mcms-toggle-btn')"));
+
+console.log(`Issue #553 native menu runtime passed: ${fixture.cases.length} class-independent cases plus clone and re-render ownership.`);

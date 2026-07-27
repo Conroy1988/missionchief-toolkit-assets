@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-27-issue-553-alliance-member-manager-restoration",
-  "rationale": "Issue #553 restores the owner-confirmed Alliance Member Manager after the v8.1.1 scope-error rollback and preserves its single explicit same-origin member-page fetch site while adding no observer, timer or automatic network activity.",
+  "revision": "2026-07-27-issue-553-native-menu-render",
+  "rationale": "Issue #553 renders the Alliance Member Manager from the canonical live Tools card and adds one panel-scoped child-list observer with coalesced bounded frame reconciliation; the member-page network and runtime budgets remain unchanged.",
   "transitionApproval": {
     "issue": 553,
-    "version": "8.1.2",
+    "version": "8.1.3",
     "approvedNetworkRequestDelta": 1,
-    "scope": "Restore Alliance Member Manager and repair its Tools-menu discovery; one sequential same-origin fetch site remains user-triggered only."
+    "scope": "Native Alliance Member Manager Tools rendering with one panel-scoped observer, no timer loop and unchanged user-triggered sequential fetch ownership."
   },
   "requiredSourceFragments": [
     "@run-at       document-start",

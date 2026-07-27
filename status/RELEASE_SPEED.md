@@ -22,6 +22,7 @@
 
 | Version | Pipeline | Class | PR → verified | Merge → GitHub | Merge → verified | Greasy Fork | Backup |
 |---|---:|---|---:|---:|---:|---:|---:|
+| 8.1.0 | v4 | normal | — | — | — | 11s | 5s |
 | 8.0.4 | v4 | normal | 20m 31s | 50s | 58s | 8s | 6s |
 | 8.0.3 | v3 | normal | 31m 02s | — | 1m 53s | — | — |
 | 8.0.2 | v3 | binary-transfer-exception | 213m 16s | — | 1m 25s | — | — |

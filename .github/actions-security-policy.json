@@ -19,9 +19,6 @@
       "actions",
       "contents"
     ],
-    ".github/workflows/discord-commit-notifications.yml": [
-      "contents"
-    ],
     ".github/workflows/discord-release-preview.yml": [
       "issues"
     ],

@@ -47,30 +47,47 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$EXPECTED_PACKAGE_COMMIT"
+          exec > >(tee "$RUNNER_TEMP/v815-executor.log") 2>&1
+          echo stage=verify-carrier
+          git merge-base --is-ancestor "$EXPECTED_PACKAGE_COMMIT" HEAD
           git fetch --no-tags origin main
           test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
           git merge-base --is-ancestor origin/main HEAD
           test -f "$PACKAGE"
           test -f "$EXECUTOR"
 
+          echo stage=apply-package
           python3 "$PACKAGE"
           rm -f "$PACKAGE" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
+          echo stage=install-dom-runtime
           npm install --no-save --package-lock=false --ignore-scripts linkedom@0.18.12
+          echo stage=canonical-validation
           python3 .github/scripts/validate_userscript.py
           node --check src/MissionChief_Map_Command_Toolkit.user.js
           cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          echo stage=ui-contracts
           python3 .github/scripts/test_alliance_member_manager_contract.py
           python3 .github/scripts/test_ui_mount_policy.py
           node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
           node .github/scripts/test_ui_mount_integration.mjs
+          echo stage=full-preflight
           bash .github/scripts/run_userscript_preflight.sh
 
+          echo stage=publish-candidate
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git add -A
           git diff --cached --quiet && { echo 'No candidate changes produced.' >&2; exit 1; }
           git commit -m "v8.1.5: Harden Toolkit UI mounting"
           git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
+
+      - name: Upload executor diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue553-v8-1-5-executor-${{ github.sha }}
+          path: ${{ runner.temp }}/v815-executor.log
+          if-no-files-found: warn
+          retention-days: 14

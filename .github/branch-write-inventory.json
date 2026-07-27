@@ -177,8 +177,7 @@
     {
       "workflow": ".github/workflows/discord-commit-notifications.yml",
       "target": "feature/alliance-member-manager only",
-      "credential": "github.token",
-      "workflowPermission": "contents: write",
+      "credential": "DEVELOPMENT_PR_TOKEN",
       "purpose": "Apply the reviewed Issue #551 v8.1.0 package to its existing feature branch without public-main mutation.",
       "mainMutationAllowed": false
     }
@@ -202,7 +201,6 @@
   ],
   "contentsWriteAuthority": [
     ".github/workflows/auto-release-after-validation.yml",
-    ".github/workflows/discord-commit-notifications.yml",
     ".github/workflows/greasyfork-release-monitor.yml",
     ".github/workflows/owner-release-command.yml",
     ".github/workflows/release-recovery.yml",

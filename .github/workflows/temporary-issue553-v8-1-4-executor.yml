@@ -1,0 +1,77 @@
+name: Temporary Issue 553 v8.1.4 Executor
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: temporary-issue553-v8-1-4
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.pull_request.number == 561 &&
+      github.event.pull_request.head.ref == 'fix/alliance-member-manager-lssm-page-v8-1-4'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Require owner branch token
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || { echo 'DEVELOPMENT_PR_TOKEN is required.' >&2; exit 1; }
+
+      - name: Check out exact pull-request head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+
+      - name: Apply, validate and publish clean candidate
+        env:
+          EXPECTED_PACKAGE_COMMIT: 48d4fe1f16de51f863e561e36e37da761485564e
+          EXPECTED_MAIN: 2ab810c1ec99d7e25a1ff46854de23947394dbe1
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          BRANCH: fix/alliance-member-manager-lssm-page-v8-1-4
+          PACKAGE: .github/development-packages/issue553_alliance_member_manager_lssm_page_v8_1_4.py
+          EXECUTOR: .github/workflows/temporary-issue553-v8-1-4-executor.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$EXPECTED_PACKAGE_COMMIT"
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
+          git merge-base --is-ancestor origin/main HEAD
+          test -f "$PACKAGE"
+          test -f "$EXECUTOR"
+
+          python3 "$PACKAGE"
+          rm -f "$PACKAGE" "$EXECUTOR"
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          python3 .github/scripts/test_alliance_member_manager_contract.py
+          node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
+          node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
+          bash .github/scripts/run_userscript_preflight.sh
+
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo 'No candidate changes produced.' >&2; exit 1; }
+          git commit -m "v8.1.4: Mount Alliance Member Manager on live LSSM page"
+          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"

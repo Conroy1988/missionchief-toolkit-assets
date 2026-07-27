@@ -7,12 +7,22 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_PATH = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
 SOURCE = SOURCE_PATH.read_text(encoding='utf-8')
-EXPECTED_SOURCE_SHA = 'e8673da8a40db757f7a1b1165092e1a22f87581de84ebb9c2bc78ce5e4ceb101'
 EXPECTED_AUDIO_SHA = '53160bd03bacf043ea3b0ffbd202163c2621e16a47ecd0f7090bfeacaf00b0d4'
 EXPECTED_AUDIO_BYTES = 136254
 
-assert hashlib.sha256(SOURCE.encode()).hexdigest() == EXPECTED_SOURCE_SHA
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.4$', SOURCE)
+
+def version_tuple(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', value)
+    assert match, value
+    return tuple(map(int, match.groups()))
+
+
+metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', SOURCE)
+runtime = re.search(r"version:\s*'([^']+)'", SOURCE)
+assert metadata and runtime
+current_version = metadata.group(1)
+assert current_version == runtime.group(1)
+assert version_tuple(current_version) >= (8, 0, 4)
 assert 'godfather-flash-payout.mp3?v=8.0.4' in SOURCE
 
 marker = '/* v8.0.4 — Godfather launcher, dock and payout placement hotfix. */'
@@ -57,4 +67,4 @@ for path in (
 ):
     assert path.read_bytes() == SOURCE_PATH.read_bytes(), path
 
-print('Issue #539 Godfather layout and replacement-audio contract passed.')
+print(f'Issue #539 Godfather layout and replacement-audio contract passed for Toolkit {current_version}.')

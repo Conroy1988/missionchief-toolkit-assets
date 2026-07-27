@@ -1,0 +1,75 @@
+name: One-shot Restore Alliance Member Manager v8.1.2
+
+on:
+  push:
+    branches:
+      - fix/restore-alliance-member-manager-v8-1-2
+    paths:
+      - .github/workflows/one-shot-restore-alliance-member-manager-v8-1-2.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-shot-restore-alliance-member-manager-v8-1-2
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    name: Apply reviewed v8.1.2 restoration
+    if: contains(github.event.head_commit.message, '[execute reviewed package]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact restoration branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: fix/restore-alliance-member-manager-v8-1-2
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact carrier and published base
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "fix/restore-alliance-member-manager-v8-1-2"
+          test "$(git rev-parse HEAD^)" = "458b106db05a7ffd7da88295c4655d430687b7e1"
+          test "$(git diff --name-only HEAD^ HEAD)" = ".github/workflows/one-shot-restore-alliance-member-manager-v8-1-2.yml"
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "1a757d2426b2fc14aca87c86234011e50aff8348"
+          git merge-base --is-ancestor origin/main HEAD
+          test -f .github/development-packages/issue553_restore_alliance_member_manager_v8_1_2.py
+
+      - name: Apply reviewed restoration package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/development-packages/issue553_restore_alliance_member_manager_v8_1_2.py
+          rm .github/development-packages/issue553_restore_alliance_member_manager_v8_1_2.py
+          rm .github/workflows/one-shot-restore-alliance-member-manager-v8-1-2.yml
+
+      - name: Validate exact release-ready candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/scripts/run_userscript_preflight.sh --all
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          python3 .github/scripts/test_alliance_member_manager_contract.py
+          node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
+          test ! -e .github/scripts/test_issue554_alliance_member_manager_rollback.py
+          test ! -e .github/development-packages/issue553_restore_alliance_member_manager_v8_1_2.py
+          test ! -e .github/workflows/one-shot-restore-alliance-member-manager-v8-1-2.yml
+          grep -Eq '^//[[:space:]]*@version[[:space:]]+8\.1\.2[[:space:]]*$' src/MissionChief_Map_Command_Toolkit.user.js
+          grep -Fq 'Alliance Member Manager' src/MissionChief_Map_Command_Toolkit.user.js
+
+      - name: Commit validated candidate to restoration branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No restoration changes were produced." >&2; exit 1; }
+          git commit -m "Restore Alliance Member Manager and fix Tools menu"
+          git push origin HEAD:fix/restore-alliance-member-manager-v8-1-2

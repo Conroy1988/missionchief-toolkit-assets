@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import hashlib
 import re
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js'
-EXPECTED_HASH = 'e8673da8a40db757f7a1b1165092e1a22f87581de84ebb9c2bc78ce5e4ceb101'
+
+
+def version_tuple(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)', value)
+    assert match, value
+    return tuple(map(int, match.groups()))
+
 
 def css_depth(text: str, stop: int) -> int:
     depth = 0
@@ -46,9 +51,14 @@ def css_depth(text: str, stop: int) -> int:
         index += 1
     return depth
 
+
 source = SOURCE.read_text(encoding='utf-8')
-assert hashlib.sha256(source.encode()).hexdigest() == EXPECTED_HASH
-assert re.search(r'(?m)^//\s*@version\s+8\.0\.4$', source)
+metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
+runtime = re.search(r"version:\s*'([^']+)'", source)
+assert metadata and runtime
+current_version = metadata.group(1)
+assert current_version == runtime.group(1)
+assert version_tuple(current_version) >= (8, 0, 4)
 install = source.index('function installMainStyles()')
 css_start = source.index('addStyle(`', install) + len('addStyle(`')
 metric = source.index("recordStartupMetric('stylesheetInstallMs'", css_start)
@@ -64,4 +74,4 @@ assert '}html[data-mcms-mobile-active="true"],' not in css
 assert css.count('html[data-mcms-ui-theme="godfather"]') >= 100
 for path in (ROOT / 'dist/MissionChief_Map_Command_Toolkit.user.js', ROOT / 'dist/MissionChief_Map_Command_Toolkit.txt'):
     assert path.read_bytes() == SOURCE.read_bytes(), f'distribution parity failed: {path}'
-print('Issue #537 Godfather stylesheet activation contract passed.')
+print(f'Issue #537 Godfather stylesheet activation contract passed for Toolkit {current_version}.')

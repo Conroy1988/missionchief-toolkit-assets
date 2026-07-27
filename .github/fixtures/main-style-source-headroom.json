@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 536,
-    "version": "8.0.4",
-    "sourceBytes": 1614530,
-    "sourceLines": 24377,
-    "sourceSha256": "e8673da8a40db757f7a1b1165092e1a22f87581de84ebb9c2bc78ce5e4ceb101",
+    "issue": 551,
+    "version": "8.1.0",
+    "sourceBytes": 1641511,
+    "sourceLines": 25006,
+    "sourceSha256": "549ad43f6c5c0b1aaaf2d7794bca0ccb0e689b69357ea6ca52e3deb400bfbf85",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1650000,
-    "maxSourceLines": 24500,
+    "maxSourceBytes": 1660000,
+    "maxSourceLines": 25250,
     "minTemplateBytes": 500000,
-    "baseline": "v7Candidate",
+    "baseline": "8.0.4",
     "approvedGrowth": {
-      "sourceBytes": 49633,
-      "sourceLines": 794,
-      "templateBytes": 36715,
-      "templateLines": 578
+      "sourceBytes": 26981,
+      "sourceLines": 629,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #536 native MissionChief alliance-building filter enforcement across marker hydration and Economy Mode restoration"
+    "scope": "Issue #551 native Alliance Member Manager with opt-in English role/activity controls, explicit sequential member-page loading and deterministic teardown"
   }
 }

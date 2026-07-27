@@ -16,7 +16,7 @@ on:
       - "chore/**"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: discord-development-${{ github.ref }}
@@ -120,47 +120,59 @@ jobs:
       contains(github.event.head_commit.message, '[execute reviewed package]')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
 
     steps:
-      - name: Check out exact feature branch
+      - name: Check out exact feature branch with reviewed credential
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: feature/alliance-member-manager
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
 
-      - name: Verify exact branch package
+      - name: Apply, validate and publish reviewed package
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          LOG="$RUNNER_TEMP/alliance-member-manager-executor.log"
+          exec > >(tee "$LOG") 2>&1
+
+          fail_with_report() {
+            local code="$1"
+            {
+              echo "The reviewed v8.1.0 Alliance Member Manager executor failed."
+              echo
+              echo '```text'
+              tail -n 80 "$LOG" || true
+              echo '```'
+              echo
+              echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            } > "$RUNNER_TEMP/alliance-member-manager-failure.md"
+            gh pr comment 552 --body-file "$RUNNER_TEMP/alliance-member-manager-failure.md" || true
+            exit "$code"
+          }
+
+          set -e
           test "$(git branch --show-current)" = "feature/alliance-member-manager"
           git fetch --no-tags origin main
           git merge-base --is-ancestor origin/main HEAD
           test -f .github/development-packages/v8_1_alliance_member_manager.py
 
-      - name: Apply reviewed package
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/development-packages/v8_1_alliance_member_manager.py
+          python3 .github/development-packages/v8_1_alliance_member_manager.py || fail_with_report "$?"
           rm .github/development-packages/v8_1_alliance_member_manager.py
 
-      - name: Validate release-ready candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/validate_userscript.py
-          node --check src/MissionChief_Map_Command_Toolkit.user.js
-          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
-          python3 .github/scripts/test_alliance_member_manager_contract.py
+          python3 .github/scripts/validate_userscript.py || fail_with_report "$?"
+          node --check src/MissionChief_Map_Command_Toolkit.user.js || fail_with_report "$?"
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt || fail_with_report "$?"
+          python3 .github/scripts/test_alliance_member_manager_contract.py || fail_with_report "$?"
 
-      - name: Publish validated product changes to feature branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet && { echo "No package changes were produced." >&2; exit 1; }
+          git diff --cached --quiet && fail_with_report 1
           git commit -m "Implement v8.1.0 Alliance Member Manager"
-          git push origin HEAD:feature/alliance-member-manager
+          git push origin HEAD:feature/alliance-member-manager || fail_with_report "$?"
+
+          gh pr comment 552 --body "Reviewed v8.1.0 package applied and locally validated. Product candidate commit: \`$(git rev-parse HEAD)\`. Temporary branch carrier cleanup is next."

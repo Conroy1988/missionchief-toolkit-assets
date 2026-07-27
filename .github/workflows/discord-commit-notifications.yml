@@ -112,3 +112,69 @@ jobs:
 
           echo
           echo "Development notification posted to Discord."
+
+  apply-reviewed-alliance-manager-rollback:
+    name: Apply reviewed v8.1.1 rollback
+    if: >-
+      github.ref_name == 'fix/remove-alliance-member-manager' &&
+      contains(github.event.head_commit.message, '[execute rollback package]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+
+    steps:
+      - name: Check out exact rollback branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: fix/remove-alliance-member-manager
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+
+      - name: Apply, validate and publish rollback
+        shell: bash
+        run: |
+          set -uo pipefail
+          LOG="$RUNNER_TEMP/v8.1.1-alliance-manager-rollback.log"
+          exec > >(tee "$LOG") 2>&1
+
+          fail_with_report() {
+            local code="$1"
+            {
+              echo "The reviewed v8.1.1 Alliance Member Manager rollback stopped."
+              echo
+              echo '```text'
+              tail -n 100 "$LOG" || true
+              echo '```'
+              echo
+              echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            } > "$RUNNER_TEMP/v8.1.1-rollback-failure.md"
+            gh pr comment 557 --body-file "$RUNNER_TEMP/v8.1.1-rollback-failure.md" || true
+            exit "$code"
+          }
+
+          set -e
+          test "$(git branch --show-current)" = "fix/remove-alliance-member-manager"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor origin/main HEAD
+          test -f .github/development-packages/v8_1_1_remove_alliance_member_manager.py
+
+          python3 .github/development-packages/v8_1_1_remove_alliance_member_manager.py || fail_with_report "$?"
+          rm .github/development-packages/v8_1_1_remove_alliance_member_manager.py
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+
+          python3 .github/scripts/validate_userscript.py || fail_with_report "$?"
+          node --check src/MissionChief_Map_Command_Toolkit.user.js || fail_with_report "$?"
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt || fail_with_report "$?"
+          python3 .github/scripts/test_issue554_alliance_member_manager_rollback.py || fail_with_report "$?"
+          python3 .github/scripts/test_boot_lifecycle_contract.py || fail_with_report "$?"
+
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && fail_with_report 1
+          git commit -m "Remove Alliance Member Manager for v8.1.1"
+          git push origin HEAD:fix/remove-alliance-member-manager || fail_with_report "$?"
+
+          gh pr comment 557 --body "Reviewed v8.1.1 rollback package applied and locally validated. Candidate commit: \`$(git rev-parse HEAD)\`. Temporary branch executor cleanup is next."

@@ -2,13 +2,13 @@
 
 ## [8.1.3] - 2026-07-27
 
-### Native Alliance Member Manager Tools rendering
+### Canonical Alliance Member Manager Tools rendering
 
-- Replaced the brittle `.mcms-toggle-btn` lookup with class-independent discovery of the exact rendered **Alliance Map Blocker** label.
-- Built the Alliance Member Manager control by cloning the real live Toolkit card, stripping inherited action ownership and assigning the manager toggle explicitly.
-- Reused the existing Map Performance row as **Alliance Operations**, keeping both alliance controls together in the canonical two-card layout.
-- Added panel-scoped child-list reconciliation and two bounded animation-frame retries so normal Tools re-renders cannot erase the control.
-- Added executable coverage for the production card shape, cloned ownership, whitespace normalization, false-match rejection and re-render recovery markers.
+- Added Alliance Member Manager directly to the canonical `createPanel()` Tools markup beside Alliance Map Blocker under **Alliance Operations**.
+- Routed the control through the panel's existing action dispatcher, so click handling cannot be blocked by panel event containment.
+- Reconciled ON/OFF state through the normal `updateUI()` path using the existing persisted Alliance Member Manager setting.
+- Removed the complete post-render lookup, cloning, observer, microtask and animation-frame injection subsystem.
+- Added executable coverage for canonical button markup, panel-owned action routing, persisted state rendering and zero added observers.
 
 ## [8.1.2] - 2026-07-27
 

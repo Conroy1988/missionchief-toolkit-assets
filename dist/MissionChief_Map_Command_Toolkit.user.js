@@ -22427,6 +22427,18 @@ Create the private backup now?`);
         `;
     }
 
+    function makeAllianceMemberManagerToggleButton() {
+        return `
+            <button class="mcms-toggle-btn" type="button" data-action="toggle-alliance-member-manager" data-mcms-alliance-member-manager-toggle="true" title="Enable or disable Alliance Member Manager" aria-label="Alliance Member Manager" aria-pressed="false">
+                <span class="mcms-iconbox">AM</span>
+                <span class="mcms-text">
+                    <span class="mcms-label">Alliance Member Manager</span>
+                    <span class="mcms-pill">OFF</span>
+                </span>
+            </button>
+        `;
+    }
+
     function makeFloatButton(key, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel) {
         return `
             <button class="mcms-float-btn" type="button" data-toggle="${key}" title="${escapeHtml(title)}" aria-pressed="false">
@@ -22690,11 +22702,12 @@ Create the private backup now?`);
                         <option value="5">5 miles</option><option value="10">10 miles</option><option value="25">25 miles</option><option value="50">50 miles</option>
                     </select>
                 </div>
-                <div class="mcms-section-label">Map performance</div>
-                <div class="mcms-grid-2">
+                <div class="mcms-section-label" data-mcms-alliance-operations="label">Alliance Operations</div>
+                <div class="mcms-grid-2" data-mcms-alliance-operations="controls">
                     ${makeToggleButton('allianceBuildingsMapBlocker', '▦', 'Alliance Map Blocker', 'Blocks the heavy map in the Alliance Buildings/Courses menu. ON means blocked. Reload required.')}
+                    ${makeAllianceMemberManagerToggleButton()}
                 </div>
-                <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map, expands the courses list and prevents its heavy marker layer attaching.</div>
+                <div class="mcms-status"><strong>Map Blocker ON</strong> removes the Alliance Buildings map and its heavy marker layer. <strong>Alliance Member Manager</strong> adds role, activity and sorting controls on alliance member-list pages.</div>
                 <div class="mcms-section-label">Map visibility · shortcuts 1–9 · dashboards V/W</div>
                 <div class="mcms-grid-2">
                     ${makeToggleButton('myMissions', '1', 'Personal Missions', 'Show/hide confidently detected personal missions. Shortcut: 1')}
@@ -23024,6 +23037,10 @@ Create the private backup now?`);
 
     function handleAction(button) {
         const action = button.dataset.action;
+        if (action === 'toggle-alliance-member-manager') {
+            setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
+            return;
+        }
         if (action === 'place-go') {
             const place = QUICK_PLACES.find(item => item.id === button.dataset.place);
             if (place && setMapView(place.lat, place.lng, place.zoom)) showToast(place.name);
@@ -23376,6 +23393,7 @@ Create the private backup now?`);
             const pill = btn.querySelector('.mcms-pill');
             if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
         });
+        updateAllianceMemberManagerMenuControl();
         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
         if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
         const radius = panel.querySelector('[data-setting="coverage-radius"]');
@@ -24386,10 +24404,6 @@ Create the private backup now?`);
         noRole: '__mcms_no_role__',
     });
     let allianceMemberManagerPage = null;
-    let allianceMemberManagerMenuQueued = false;
-    let allianceMemberManagerMenuObserver = null;
-    let allianceMemberManagerMenuPanel = null;
-    let allianceMemberManagerMenuFrame = 0;
 
     function allianceMemberManagerEnabled() {
         try {
@@ -24909,167 +24923,22 @@ Create the private backup now?`);
         installAllianceMemberManager();
     }
 
-    function allianceMemberManagerRenderedLabel(node) {
-        return String(node?.textContent || '').replace(/\s+/gu, ' ').trim();
-    }
-
-    function allianceMemberManagerMapBlockerButton(panel) {
-        const attributed = panel.querySelector(
-            '[data-feature="allianceBuildingsMapBlocker"], ' +
-            '[data-toggle-feature="allianceBuildingsMapBlocker"], ' +
-            '[data-mcms-feature="allianceBuildingsMapBlocker"]'
-        );
-        if (attributed) return attributed;
-        const renderedLabel = Array.from(panel.querySelectorAll('.mcms-label')).find(label =>
-            allianceMemberManagerRenderedLabel(label) === 'Alliance Map Blocker'
-        );
-        return renderedLabel?.closest?.('button, a, [role="button"], [tabindex]')
-            || renderedLabel?.parentElement?.parentElement
-            || null;
-    }
-
     function updateAllianceMemberManagerMenuControl() {
         const panel = document.querySelector(`#${SCRIPT.panelId}`);
         const button = panel?.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
         if (!button) return;
         const enabled = allianceMemberManagerEnabled();
         button.classList.toggle('mcms-on', enabled);
-        if (button.getAttribute('aria-pressed') !== String(enabled)) {
-            button.setAttribute('aria-pressed', String(enabled));
-        }
+        button.setAttribute('aria-pressed', String(enabled));
         const pill = button.querySelector('.mcms-pill');
-        const nextPill = enabled ? 'ON' : 'OFF';
-        if (pill && pill.textContent !== nextPill) pill.textContent = nextPill;
-    }
-
-    function bindAllianceMemberManagerMenuObserver(panel) {
-        if (allianceMemberManagerMenuPanel === panel && allianceMemberManagerMenuObserver) return;
-        allianceMemberManagerMenuObserver?.disconnect();
-        allianceMemberManagerMenuObserver = null;
-        allianceMemberManagerMenuPanel = panel;
-        if (typeof MutationObserver !== 'function') return;
-        allianceMemberManagerMenuObserver = new MutationObserver(() => {
-            if (!panel.isConnected) return;
-            if (
-                !panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`) &&
-                allianceMemberManagerMapBlockerButton(panel)
-            ) {
-                queueAllianceMemberManagerMenuControl();
-            }
-        });
-        allianceMemberManagerMenuObserver.observe(panel, { childList: true, subtree: true });
-    }
-
-    function ensureAllianceMemberManagerMenuControl() {
-        allianceMemberManagerMenuQueued = false;
-        const panel = document.querySelector(`#${SCRIPT.panelId}`);
-        if (!panel) return false;
-        bindAllianceMemberManagerMenuObserver(panel);
-        const blocker = allianceMemberManagerMapBlockerButton(panel);
-        if (!blocker) return false;
-
-        let group = panel.querySelector(`[${ALLIANCE_MEMBER_MANAGER.operationsAttribute}="controls"]`);
-        if (!group) {
-            group = blocker.parentElement;
-            if (!group) return false;
-            group.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'controls');
-        }
-
-        const sectionLabels = Array.from(panel.querySelectorAll('.mcms-section-label'));
-        const sectionLabel = sectionLabels.find(label => label.nextElementSibling === group)
-            || sectionLabels.find(label =>
-                allianceMemberManagerRenderedLabel(label).toUpperCase() === 'MAP PERFORMANCE'
-            );
-        if (sectionLabel) {
-            if (allianceMemberManagerRenderedLabel(sectionLabel) !== 'Alliance Operations') {
-                sectionLabel.textContent = 'Alliance Operations';
-            }
-            sectionLabel.setAttribute(ALLIANCE_MEMBER_MANAGER.operationsAttribute, 'label');
-        }
-
-        let button = group.querySelector(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
-        if (!button) {
-            button = blocker.cloneNode(true);
-            for (const attribute of Array.from(button.getAttributeNames?.() || [])) {
-                if (
-                    attribute === 'id' ||
-                    attribute === 'name' ||
-                    attribute === 'value' ||
-                    attribute === 'onclick' ||
-                    attribute.startsWith('data-')
-                ) {
-                    button.removeAttribute(attribute);
-                }
-            }
-            button.querySelectorAll?.('[id]').forEach(node => node.removeAttribute('id'));
-            if ('type' in button) button.type = 'button';
-            button.setAttribute(ALLIANCE_MEMBER_MANAGER.menuAttribute, 'true');
-            button.setAttribute('aria-pressed', 'false');
-            button.setAttribute('aria-label', 'Alliance Member Manager');
-            button.title = 'Alliance Member Manager';
-            button.classList?.remove('mcms-on');
-
-            const icon = button.querySelector('.mcms-iconbox');
-            if (icon) icon.textContent = 'AM';
-            const label = button.querySelector('.mcms-label');
-            if (label) label.textContent = 'Alliance Member Manager';
-            const pill = button.querySelector('.mcms-pill');
-            if (pill) pill.textContent = 'OFF';
-            group.append(button);
-        }
-        updateAllianceMemberManagerMenuControl();
-        return true;
-    }
-
-    function queueAllianceMemberManagerMenuControl() {
-        if (allianceMemberManagerMenuQueued) return;
-        allianceMemberManagerMenuQueued = true;
-        const reconcile = () => {
-            const panel = document.querySelector(`#${SCRIPT.panelId}`);
-            if (panel) {
-                bindAllianceMemberManagerMenuObserver(panel);
-                ensureAllianceMemberManagerMenuControl();
-            }
-        };
-        queueMicrotask(() => {
-            allianceMemberManagerMenuQueued = false;
-            reconcile();
-            if (typeof requestAnimationFrame !== 'function') return;
-            if (allianceMemberManagerMenuFrame) cancelAnimationFrame(allianceMemberManagerMenuFrame);
-            allianceMemberManagerMenuFrame = requestAnimationFrame(() => {
-                reconcile();
-                allianceMemberManagerMenuFrame = requestAnimationFrame(() => {
-                    allianceMemberManagerMenuFrame = 0;
-                    reconcile();
-                });
-            });
-        });
+        if (pill) pill.textContent = enabled ? 'ON' : 'OFF';
     }
 
     if (typeof document.addEventListener === 'function') {
-        document.addEventListener('click', event => {
-            const target = event.target instanceof Element ? event.target : null;
-            const toggle = target?.closest(`[${ALLIANCE_MEMBER_MANAGER.menuAttribute}]`);
-            if (toggle) {
-                event.preventDefault();
-                event.stopPropagation();
-                setAllianceMemberManagerEnabled(!allianceMemberManagerEnabled());
-                queueAllianceMemberManagerMenuControl();
-                return;
-            }
-            if (target?.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}`)) {
-                queueAllianceMemberManagerMenuControl();
-            }
-        });
-
         if (document.readyState !== 'loading') {
-            queueAllianceMemberManagerMenuControl();
             reconcileAllianceMemberManager();
         } else {
-            document.addEventListener('DOMContentLoaded', () => {
-                queueAllianceMemberManagerMenuControl();
-                reconcileAllianceMemberManager();
-            }, { once: true });
+            document.addEventListener('DOMContentLoaded', reconcileAllianceMemberManager, { once: true });
         }
     }
     // </mcms-alliance-member-manager>

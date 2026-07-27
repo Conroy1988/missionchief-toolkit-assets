@@ -36,6 +36,11 @@ def fetch(url: str, timeout: int) -> tuple[int, str, bytes, str]:
         )
 
 
+def expand_required_text(value: Any, version: str) -> str:
+    """Resolve policy tokens against the verified release dashboard."""
+    return str(value).replace("{version}", version)
+
+
 def audit(root: Path) -> dict[str, Any]:
     policy = load_json(root / ".github/pages-monitor-policy.json")
     dashboard = load_json(root / "status/release-dashboard.json")
@@ -44,6 +49,9 @@ def audit(root: Path) -> dict[str, Any]:
     timeout = int(policy.get("timeoutSeconds", 25))
     failures: list[str] = []
     checks: list[dict[str, Any]] = []
+
+    if not version:
+        failures.append("Release dashboard does not expose a verified Toolkit version")
 
     for route in policy.get("routes", []):
         path = str(route.get("path", ""))
@@ -69,8 +77,9 @@ def audit(root: Path) -> dict[str, Any]:
             if len(body) < minimum:
                 failures.append(f"{path or '/'} returned only {len(body)} bytes; expected at least {minimum}")
             for required in route.get("requiredText", []):
-                if str(required) not in text:
-                    failures.append(f"{path or '/'} is missing required text: {required}")
+                required_text = expand_required_text(required, version)
+                if required_text not in text:
+                    failures.append(f"{path or '/'} is missing required text: {required_text}")
             if path == "" and version and version not in text:
                 failures.append(f"Home page does not expose current Toolkit version {version}")
             if not any(item.startswith(path or "/") for item in failures):

@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CHECKER_PATH = ROOT / ".github" / "scripts" / "check_pages_live.py"
 FIXTURE_PATH = ROOT / ".github" / "fixtures" / "pages-monitor-version-contract.json"
+POLICY_PATH = ROOT / ".github" / "pages-monitor-policy.json"
 WORKFLOW_PATH = ROOT / ".github" / "workflows" / "pages-production-monitor.yml"
 RELEASE_DASHBOARD_PATH = '      - "status/release-dashboard.json"'
 
@@ -53,20 +54,32 @@ def assert_workflow_trigger_contract() -> None:
     )
 
 
+def assert_dynamic_policy_contract(checker) -> None:
+    policy = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+    routes = {item["path"]: item for item in policy["routes"]}
+    assert "Version {version}" in routes["changelog/"]["requiredText"]
+    assert "Current version {version}" in routes["status/"]["requiredText"]
+    assert "7.0.0" not in json.dumps(policy)
+    assert checker.expand_required_text("Current version {version}", "8.0.4") == "Current version 8.0.4"
+
+
 def run_case(checker, item: dict) -> None:
     with tempfile.TemporaryDirectory(prefix="mcms-pages-monitor-") as temp:
         root = Path(temp)
         (root / ".github").mkdir(parents=True)
         (root / "status").mkdir(parents=True)
         policy = {
-            "schemaVersion": 1,
+            "schemaVersion": 3,
             "baseUrl": "https://example.invalid/toolkit/",
             "timeoutSeconds": 1,
             "routes": [
                 {
                     "path": "",
                     "contentType": "text/html",
-                    "requiredText": ["MissionChief Map Command Toolkit"],
+                    "requiredText": [
+                        "MissionChief Map Command Toolkit",
+                        "Version {version}",
+                    ],
                 }
             ],
         }
@@ -95,12 +108,13 @@ def run_case(checker, item: dict) -> None:
 def main() -> int:
     assert_workflow_trigger_contract()
     checker = load_checker()
+    assert_dynamic_policy_contract(checker)
     fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     for item in fixture["cases"]:
         run_case(checker, item)
     print(
         "Pages monitor version contract passed: "
-        f"dashboard push trigger plus {len(fixture['cases'])} published/candidate transition cases."
+        f"dynamic dashboard tokens plus {len(fixture['cases'])} published/candidate transition cases."
     )
     return 0
 

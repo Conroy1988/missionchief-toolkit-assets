@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "baseUrl": "https://conroy1988.github.io/missionchief-toolkit-assets/",
   "timeoutSeconds": 25,
   "routes": [
@@ -7,8 +7,8 @@
     {"path": "features/", "contentType": "text/html", "requiredText": ["Features", "Mission Age map timers", "Patient Transport Sweep", "Mission Value"]},
     {"path": "themes/", "contentType": "text/html", "requiredText": ["Themes", "Cyberpunk", "Factorio", "Hyrule Command"]},
     {"path": "docs/", "contentType": "text/html", "requiredText": ["Documentation", "The One We Knew Before", "Installation"]},
-    {"path": "changelog/", "contentType": "text/html", "requiredText": ["Changelog", "Version 7.0.0"]},
-    {"path": "status/", "contentType": "text/html", "requiredText": ["Status", "Current version 7.0.0"]},
+    {"path": "changelog/", "contentType": "text/html", "requiredText": ["Changelog", "Version {version}"]},
+    {"path": "status/", "contentType": "text/html", "requiredText": ["Status", "Current version {version}"]},
     {"path": "assets/site.css", "contentType": "text/css", "minimumBytes": 1000},
     {"path": "assets/site.js", "contentType": "javascript", "minimumBytes": 500}
   ]

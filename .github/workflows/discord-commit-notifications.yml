@@ -16,7 +16,7 @@ on:
       - "chore/**"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: discord-development-${{ github.ref }}
@@ -112,3 +112,55 @@ jobs:
 
           echo
           echo "Development notification posted to Discord."
+
+  apply-reviewed-alliance-member-manager:
+    name: Apply reviewed v8.1.0 package
+    if: >-
+      github.ref_name == 'feature/alliance-member-manager' &&
+      contains(github.event.head_commit.message, '[execute reviewed package]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out exact feature branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: feature/alliance-member-manager
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact branch package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git branch --show-current)" = "feature/alliance-member-manager"
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor origin/main HEAD
+          test -f .github/development-packages/v8_1_alliance_member_manager.py
+
+      - name: Apply reviewed package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/development-packages/v8_1_alliance_member_manager.py
+          rm .github/development-packages/v8_1_alliance_member_manager.py
+
+      - name: Validate release-ready candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          python3 .github/scripts/test_alliance_member_manager_contract.py
+
+      - name: Publish validated product changes to feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No package changes were produced." >&2; exit 1; }
+          git commit -m "Implement v8.1.0 Alliance Member Manager"
+          git push origin HEAD:feature/alliance-member-manager

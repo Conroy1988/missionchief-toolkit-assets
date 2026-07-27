@@ -2,12 +2,10 @@
 """Execute the reviewed v8.1.4 package without retaining retired integration terminology."""
 from __future__ import annotations
 
-import runpy
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ORIGINAL = ROOT / ".github/development-packages/issue553_alliance_member_manager_lssm_page_v8_1_4.py"
-TEMP = Path("/tmp/issue553_v8_1_4_corrected.py")
 
 text = ORIGINAL.read_text(encoding="utf-8")
 text = text.replace("LSSM", "external redesigned")
@@ -45,6 +43,11 @@ if text.count(source_marker) != 1:
     raise RuntimeError("Unable to insert corrected documentation write")
 text = text.replace(source_marker, doc_write + source_marker, 1)
 
-compile(text, str(TEMP), "exec")
-TEMP.write_text(text, encoding="utf-8")
-runpy.run_path(str(TEMP), run_name="__main__")
+code = compile(text, str(ORIGINAL), "exec")
+namespace = {
+    "__name__": "__main__",
+    "__file__": str(ORIGINAL),
+    "__package__": None,
+    "__cached__": None,
+}
+exec(code, namespace)

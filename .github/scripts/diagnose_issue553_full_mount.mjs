@@ -56,6 +56,28 @@ const html = `<!doctype html><html><head></head><body>
 </body></html>`;
 
 const { window } = parseHTML(html);
+
+// Linkedom intentionally implements a compact DOM. Add the browser table
+// collection properties used by the released installer so this diagnostic
+// exercises product logic rather than library omissions.
+for (const table of window.document.querySelectorAll("table")) {
+  Object.defineProperty(table, "tBodies", {
+    configurable: true,
+    value: Array.from(table.querySelectorAll("tbody")),
+  });
+  for (const body of table.tBodies) {
+    Object.defineProperty(body, "rows", {
+      configurable: true,
+      value: Array.from(body.querySelectorAll(":scope > tr")),
+    });
+    for (const row of body.rows) {
+      const cells = Array.from(row.querySelectorAll(":scope > th, :scope > td"));
+      cells.item = index => cells[index] || null;
+      Object.defineProperty(row, "cells", { configurable: true, value: cells });
+    }
+  }
+}
+
 const storage = new Map([["mcms_alliance_member_manager_enabled_v1", "true"]]);
 const localStorage = {
   getItem(key) { return storage.has(key) ? storage.get(key) : null; },
@@ -117,7 +139,7 @@ const bootstrap = `${extractFunction("decodedPathname")}\n${managerBlock}\nthis.
 try {
   vm.runInContext(bootstrap, sandbox, { filename: "alliance-member-manager-v8.1.4.js" });
   window.document.dispatchEvent(new window.Event("DOMContentLoaded"));
-  for (let i = 0; i < 20; i += 1) await Promise.resolve();
+  for (let i = 0; i < 40; i += 1) await Promise.resolve();
 
   const probe = sandbox.__managerProbe;
   const table = probe.table(window.document);

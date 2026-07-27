@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.1.3] - 2026-07-27
+
+### Canonical Alliance Member Manager Tools rendering
+
+- Added Alliance Member Manager directly to the canonical `createPanel()` Tools markup beside Alliance Map Blocker under **Alliance Operations**.
+- Routed the control through the panel's existing action dispatcher, so click handling cannot be blocked by panel event containment.
+- Reconciled ON/OFF state through the normal `updateUI()` path using the existing persisted Alliance Member Manager setting.
+- Removed the complete post-render lookup, cloning, observer, microtask and animation-frame injection subsystem.
+- Added executable coverage for canonical button markup, panel-owned action routing, persisted state rendering and zero added observers.
+
 ## [8.1.2] - 2026-07-27
 
 ### Alliance Member Manager restoration and menu hotfix

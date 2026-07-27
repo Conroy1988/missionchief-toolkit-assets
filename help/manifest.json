@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.1.2",
-  "toolkitVersion": "8.1.2",
+  "guideVersion": "8.1.3",
+  "toolkitVersion": "8.1.3",
   "updated": "2026-07-27",
   "path": "help/index.html",
   "sections": 20,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.1.2 restores the complete Alliance Member Manager and its missing Alliance Operations toggle by supporting the live rendered Alliance Map Blocker card while preserving explicit sequential loading and deterministic teardown.",
+  "runtimeGuidePatch": "Toolkit v8.1.3 renders Alliance Member Manager directly in the canonical Tools panel beside Alliance Map Blocker under Alliance Operations, with panel-owned clicks and normal persisted ON/OFF state reconciliation.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

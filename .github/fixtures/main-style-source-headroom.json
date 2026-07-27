@@ -101,10 +101,10 @@
   },
   "v8Candidate": {
     "issue": 553,
-    "version": "8.1.2",
-    "sourceBytes": 1641923,
-    "sourceLines": 25012,
-    "sourceSha256": "212651f02a055c636fe97fe1f22a90a4248a6a716c18f3c24182245f6fc12921",
+    "version": "8.1.3",
+    "sourceBytes": 1639133,
+    "sourceLines": 24945,
+    "sourceSha256": "5524d0f2181d9d7a0d0affa401546b729862c06aa81c2f596b59f11d5d706c95",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
@@ -112,13 +112,13 @@
     "maxSourceBytes": 1660000,
     "maxSourceLines": 25250,
     "minTemplateBytes": 500000,
-    "baseline": "8.1.1",
+    "baseline": "8.1.2",
     "approvedGrowth": {
-      "sourceBytes": 27393,
-      "sourceLines": 635,
+      "sourceBytes": -2790,
+      "sourceLines": -67,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #553 restoration of the owner-confirmed Alliance Member Manager after v8.1.1, with attribute-first and exact rendered-label menu discovery fixtures"
+    "scope": "Issue #553 canonical createPanel Alliance Member Manager control, panel-owned action routing and normal updateUI state reconciliation"
   }
 }

@@ -66,14 +66,13 @@ def main() -> int:
     HEADROOM.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
 
     contract = CONTRACT.read_text(encoding="utf-8")
-    marker = '        "document.addEventListener(\\\'DOMContentLoaded\\\'",\n'
-    replacement = (
-        '        "document.readyState !== \\\'loading\\\'",\n'
-        + marker
-    )
-    if contract.count(marker) != 1:
-        raise SystemExit("Alliance Member Manager contract bootstrap marker changed")
-    CONTRACT.write_text(contract.replace(marker, replacement, 1), encoding="utf-8")
+    marker = "        \"document.addEventListener('DOMContentLoaded'\",\n"
+    readiness = "        \"document.readyState !== 'loading'\",\n"
+    if readiness not in contract:
+        if contract.count(marker) != 1:
+            raise SystemExit("Alliance Member Manager contract bootstrap marker changed")
+        contract = contract.replace(marker, readiness + marker, 1)
+        CONTRACT.write_text(contract, encoding="utf-8")
 
     print(
         "Applied v8.1.0 bootstrap-tail compatibility fix: equivalent document-ready startup, "

@@ -176,3 +176,5 @@ jobs:
           git push origin HEAD:feature/alliance-member-manager || fail_with_report "$?"
 
           gh pr comment 552 --body "Reviewed v8.1.0 package applied and locally validated. Product candidate commit: \`$(git rev-parse HEAD)\`. Temporary branch carrier cleanup is next."
+
+# Retry after reviewed v8.1.0 source-headroom update.

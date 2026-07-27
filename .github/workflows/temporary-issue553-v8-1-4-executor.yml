@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
 
-      - name: Apply, validate and publish clean candidate
+      - name: Execute or persist exact diagnostic
         env:
           EXPECTED_PACKAGE_COMMIT: 48d4fe1f16de51f863e561e36e37da761485564e
           EXPECTED_MAIN: 2ab810c1ec99d7e25a1ff46854de23947394dbe1
@@ -47,30 +47,47 @@ jobs:
           BRANCH: fix/alliance-member-manager-lssm-page-v8-1-4
           PACKAGE: .github/development-packages/issue553_alliance_member_manager_lssm_page_v8_1_4.py
           EXECUTOR: .github/workflows/temporary-issue553-v8-1-4-executor.yml
+          DIAGNOSTIC: .github/fixtures/issue553-v8-1-4-package-diagnostic.txt
         shell: bash
         run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD^)" = "$EXPECTED_PACKAGE_COMMIT"
-          git fetch --no-tags origin main
-          test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
-          git merge-base --is-ancestor origin/main HEAD
-          test -f "$PACKAGE"
-          test -f "$EXECUTOR"
+          set -uo pipefail
+          log="$RUNNER_TEMP/issue553-v8-1-4.log"
+          stage=verify
+          status=0
 
-          python3 "$PACKAGE"
-          rm -f "$PACKAGE" "$EXECUTOR"
-          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+          git merge-base --is-ancestor "$EXPECTED_PACKAGE_COMMIT" HEAD >"$log" 2>&1 || status=$?
+          git fetch --no-tags origin main >>"$log" 2>&1 || status=$?
+          if [[ "$status" -eq 0 ]]; then test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN" >>"$log" 2>&1 || status=$?; fi
+          if [[ "$status" -eq 0 ]]; then test -f "$PACKAGE" >>"$log" 2>&1 || status=$?; fi
 
-          python3 .github/scripts/validate_userscript.py
-          node --check src/MissionChief_Map_Command_Toolkit.user.js
-          cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
-          python3 .github/scripts/test_alliance_member_manager_contract.py
-          node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
-          node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
-          bash .github/scripts/run_userscript_preflight.sh
+          if [[ "$status" -eq 0 ]]; then
+            stage=package
+            python3 "$PACKAGE" >>"$log" 2>&1 || status=$?
+          fi
+          if [[ "$status" -eq 0 ]]; then
+            stage=full-preflight
+            bash .github/scripts/run_userscript_preflight.sh >>"$log" 2>&1 || status=$?
+          fi
 
           git config user.name "Conroy1988"
           git config user.email "27301455+Conroy1988@users.noreply.github.com"
+
+          if [[ "$status" -ne 0 ]]; then
+            git reset --hard "$EXPECTED_HEAD"
+            {
+              echo "stage=$stage"
+              echo "exit_code=$status"
+              echo
+              tail -n 220 "$log"
+            } > "$DIAGNOSTIC"
+            git add "$DIAGNOSTIC"
+            git commit -m "Record v8.1.4 package diagnostic"
+            git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
+            exit 0
+          fi
+
+          rm -f "$PACKAGE" "$EXECUTOR" "$DIAGNOSTIC"
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
           git add -A
           git diff --cached --quiet && { echo 'No candidate changes produced.' >&2; exit 1; }
           git commit -m "v8.1.4: Mount Alliance Member Manager on live LSSM page"

@@ -46,6 +46,7 @@ jobs:
           PACKAGE: .github/development-packages/issue565_transport_sweep_no_reward_v8_2_0.py
           SCOPE_MARKER_FIX: .github/development-packages/issue565_scope_marker_fix.py
           SCOPE_FIX: .github/development-packages/issue565_verified_vehicle_scope_fix.py
+          NATIVE_CONTRACT_FIX: .github/development-packages/issue565_native_contract_scope_fix.py
           FINALIZE: .github/development-packages/issue565_finalize_v8_2_0.py
           EXECUTOR: .github/workflows/temporary-issue565-v8-2-0-executor.yml
         shell: bash
@@ -61,6 +62,7 @@ jobs:
           test -f "$PACKAGE"
           test -f "$SCOPE_MARKER_FIX"
           test -f "$SCOPE_FIX"
+          test -f "$NATIVE_CONTRACT_FIX"
           test -f "$FINALIZE"
           test -f "$EXECUTOR"
 
@@ -69,8 +71,9 @@ jobs:
           python3 "$SCOPE_MARKER_FIX"
           python3 "$PACKAGE"
           python3 "$SCOPE_FIX"
+          python3 "$NATIVE_CONTRACT_FIX"
           python3 "$FINALIZE"
-          rm -f "$MARKER_FIX" "$PACKAGE" "$SCOPE_MARKER_FIX" "$SCOPE_FIX" "$FINALIZE" "$EXECUTOR"
+          rm -f "$MARKER_FIX" "$PACKAGE" "$SCOPE_MARKER_FIX" "$SCOPE_FIX" "$NATIVE_CONTRACT_FIX" "$FINALIZE" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
           echo stage=dependencies

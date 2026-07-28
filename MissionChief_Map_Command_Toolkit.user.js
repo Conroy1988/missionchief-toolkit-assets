@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.3
+// @version      8.2.4
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.3',
+        version: '8.2.4',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12902,8 +12902,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS = 6000;
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS = 12000;
 
-    function transportSweepOptionalReleasePatientCount(control) {
-        const row = control?.closest?.('tr') || null;
+    function transportSweepOptionalReleasePatientCountFromRow(row) {
         const vehicleCell = row?.querySelector?.('td:first-child') || row;
         const text = String(vehicleCell?.textContent || '').replace(/\s+/gu, ' ').trim();
         const match = text.match(/\bpatients?\s*:\s*(.+)$/iu);
@@ -12915,7 +12914,45 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return names.length || null;
     }
 
-    function transportSweepOptionalReleaseDetails(control) {
+    function transportSweepOptionalReleaseRowVehicleId(row) {
+        if (!row) return null;
+        const rowId = String(row.id || '');
+        const rowMatch = rowId.match(/(?:vehicle(?:_row)?_?)(\d+)$/iu);
+        if (rowMatch?.[1]) return rowMatch[1];
+        let anchors = [];
+        try { anchors = Array.from(row.querySelectorAll?.('a[href*="/vehicles/"]') || []); } catch (error) {}
+        for (const anchor of anchors) {
+            const vehicleId = transportSweepVehicleIdFromHref(anchor.getAttribute?.('href'));
+            if (vehicleId) return String(vehicleId);
+        }
+        return null;
+    }
+
+    function transportSweepOptionalReleasePatientRows() {
+        const rows = new Map();
+        const ownVehicleIds = transportSweepOwnVehicleIdSet();
+        const inspect = root => {
+            if (!root) return;
+            let matches = [];
+            try {
+                if (root.matches?.('#mission_vehicle_at_mission tbody tr')) matches.push(root);
+                matches.push(...Array.from(root.querySelectorAll?.('#mission_vehicle_at_mission tbody tr') || []));
+            } catch (error) {}
+            for (const row of matches) {
+                const vehicleId = transportSweepOptionalReleaseRowVehicleId(row);
+                if (!vehicleId || rows.has(vehicleId) || ownVehicleIds.has(String(vehicleId))) continue;
+                if (!row.querySelector?.('.building_list_fms_5')) continue;
+                const patientCount = transportSweepOptionalReleasePatientCountFromRow(row);
+                if (!Number.isFinite(patientCount) || patientCount <= 0) continue;
+                rows.set(String(vehicleId), { vehicleId: String(vehicleId), row, patientCount });
+            }
+        };
+        transportSweepVisibleWindowRoots().forEach(inspect);
+        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
+        return rows;
+    }
+
+    function transportSweepOptionalReleaseDetails(control, patientRows = null) {
         if (!control || !transportSweepElementVisible(control)) return null;
         if (normaliseTransportSweepReleaseText(control.textContent) !== TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT) return null;
         const rawHref = String(control.getAttribute?.('href') || control.href || '').trim();
@@ -12931,12 +12968,24 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         if (currentOrigin && url.origin !== currentOrigin) return null;
         const match = url.pathname.match(TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH);
         if (!match?.groups?.vehicleId) return null;
+        const vehicleId = String(match.groups.vehicleId);
+        const directRow = control.closest?.('#mission_vehicle_at_mission tbody tr') || null;
+        const directVehicleId = transportSweepOptionalReleaseRowVehicleId(directRow);
+        const authoritative = directVehicleId === vehicleId
+            ? {
+                vehicleId,
+                row: directRow,
+                patientCount: transportSweepOptionalReleasePatientCountFromRow(directRow),
+            }
+            : patientRows?.get?.(vehicleId) || null;
         return {
             control,
             href: url.href,
             path: url.pathname,
-            vehicleId: match.groups.vehicleId,
-            patientCount: transportSweepOptionalReleasePatientCount(control),
+            vehicleId,
+            patientCount: authoritative?.patientCount ?? null,
+            row: authoritative?.row || null,
+            directRow: Boolean(authoritative?.row && authoritative.row === directRow),
         };
     }
 
@@ -12978,19 +13027,23 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function transportSweepOptionalReleaseState(missionId) {
-        const candidates = collectTransportSweepVehicleCandidates();
-        const eligibleVehicleIds = new Set(
-            Array.from(candidates)
-                .map(candidate => String(candidate?.vehicleId || '').trim())
-                .filter(Boolean)
-        );
-        const releases = transportSweepOptionalReleaseControls()
-            .map(transportSweepOptionalReleaseDetails)
-            .filter(details => details && eligibleVehicleIds.has(details.vehicleId));
+        const patientRows = transportSweepOptionalReleasePatientRows();
+        const eligibleVehicleIds = new Set(patientRows.keys());
+        const releaseByVehicle = new Map();
+        for (const control of transportSweepOptionalReleaseControls()) {
+            const details = transportSweepOptionalReleaseDetails(control, patientRows);
+            if (!details || !eligibleVehicleIds.has(details.vehicleId)) continue;
+            const existing = releaseByVehicle.get(details.vehicleId);
+            const score = (Number.isFinite(details.patientCount) ? 100 : 0) + (details.directRow ? 10 : 0);
+            const existingScore = existing
+                ? (Number.isFinite(existing.patientCount) ? 100 : 0) + (existing.directRow ? 10 : 0)
+                : -1;
+            if (!existing || score > existingScore) releaseByVehicle.set(details.vehicleId, details);
+        }
         return {
-            candidates: Array.from(candidates),
+            candidates: Array.from(patientRows.values()),
             eligibleVehicleIds,
-            releases,
+            releases: Array.from(releaseByVehicle.values()),
             missionReady: transportSweepOptionalReleaseMissionReady(),
         };
     }

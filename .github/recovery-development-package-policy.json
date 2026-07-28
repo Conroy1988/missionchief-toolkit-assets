@@ -1,7 +1,19 @@
 {
   "schemaVersion": 1,
   "workflow": ".github/workflows/recover-development-package.yml",
-  "trigger": "manual owner workflow_dispatch",
+  "triggers": [
+    "manual owner workflow_dispatch",
+    "connector-authenticated push command"
+  ],
+  "commandTransport": {
+    "branch": "automation/development-packages",
+    "path": ".github/automation-commands/recover-development-package.json",
+    "actor": "Conroy1988",
+    "changedFiles": 1,
+    "exactMainHead": true,
+    "exactPullRequestHead": true,
+    "nonceRequired": true
+  },
   "acceptedPullRequest": {
     "state": "open",
     "base": "main",

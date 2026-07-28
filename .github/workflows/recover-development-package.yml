@@ -1,6 +1,6 @@
 name: Recover Reviewed Development Package
 
-run-name: Recover development package for PR #${{ inputs.pr_number }}
+run-name: Recover reviewed development package
 
 on:
   workflow_dispatch:
@@ -9,12 +9,17 @@ on:
         description: "Existing owner-created package-only pull request number"
         required: true
         type: string
+  push:
+    branches:
+      - automation/development-packages
+    paths:
+      - .github/automation-commands/recover-development-package.json
 
 permissions:
   contents: read
 
 concurrency:
-  group: recover-development-package-pr-${{ inputs.pr_number }}
+  group: recover-development-package-${{ github.event_name }}-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -29,10 +34,43 @@ jobs:
         id: resolve
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+          COMMAND_PATH: .github/automation-commands/recover-development-package.json
         shell: bash
         run: |
           set -euo pipefail
+          PR_NUMBER="$INPUT_PR_NUMBER"
+          COMMAND_EXPECTED_MAIN=""
+          COMMAND_EXPECTED_HEAD=""
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            [[ "$EVENT_REF" == "refs/heads/automation/development-packages" ]] || {
+              echo "::error::Connector recovery commands are accepted only from automation/development-packages."
+              exit 1
+            }
+            mapfile -t command_files < <(gh api "repos/${GITHUB_REPOSITORY}/commits/${EVENT_SHA}" --jq '.files[].filename')
+            [[ "${#command_files[@]}" -eq 1 && "${command_files[0]}" == "$COMMAND_PATH" ]] || {
+              echo "::error::A connector recovery command commit must change only ${COMMAND_PATH}."
+              exit 1
+            }
+            gh api "repos/${GITHUB_REPOSITORY}/contents/${COMMAND_PATH}?ref=${EVENT_SHA}" \
+              --jq '.content' | tr -d '\n' | base64 --decode > /tmp/recover-command.json
+            jq -e '
+              .schemaVersion == 1 and
+              .command == "recover-development-package" and
+              (.prNumber | type == "number" and . > 0 and floor == .) and
+              (.expectedMain | type == "string" and test("^[0-9a-f]{40}$")) and
+              (.expectedHead | type == "string" and test("^[0-9a-f]{40}$")) and
+              (.nonce | type == "string" and test("^[A-Za-z0-9._-]{8,80}$"))
+            ' /tmp/recover-command.json >/dev/null
+            PR_NUMBER="$(jq -r '.prNumber' /tmp/recover-command.json)"
+            COMMAND_EXPECTED_MAIN="$(jq -r '.expectedMain' /tmp/recover-command.json)"
+            COMMAND_EXPECTED_HEAD="$(jq -r '.expectedHead' /tmp/recover-command.json)"
+          fi
+
           [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "::error::Pull request number must be numeric."; exit 1; }
           data="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
           state="$(jq -r '.state' <<< "$data")"
@@ -52,6 +90,13 @@ jobs:
           package="${files[0]}"
           [[ "$package" =~ ^\.github/development-packages/[A-Za-z0-9._/-]+\.py$ ]] || { echo "::error::The sole changed file is not a reviewed development package."; exit 1; }
           main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/branches/main" --jq '.commit.sha')"
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            [[ "$main_sha" == "$COMMAND_EXPECTED_MAIN" ]] || { echo "::error::Command main head is stale."; exit 1; }
+            [[ "$head_sha" == "$COMMAND_EXPECTED_HEAD" ]] || { echo "::error::Command pull-request head is stale."; exit 1; }
+          fi
+
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
           echo "branch=$head_ref" >> "$GITHUB_OUTPUT"
           echo "expected_head=$head_sha" >> "$GITHUB_OUTPUT"
           echo "main_sha=$main_sha" >> "$GITHUB_OUTPUT"
@@ -75,7 +120,7 @@ jobs:
       - name: Reconfirm immutable refs
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           BRANCH: ${{ steps.resolve.outputs.branch }}
           EXPECTED_HEAD: ${{ steps.resolve.outputs.expected_head }}
           MAIN_SHA: ${{ steps.resolve.outputs.main_sha }}
@@ -84,7 +129,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin "refs/heads/main:refs/remotes/origin/main" "refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}"
-          [[ "$(git rev-parse origin/main)" == "$MAIN_SHA" ]] || { echo "::error::Main moved; dispatch recovery again."; exit 1; }
+          [[ "$(git rev-parse origin/main)" == "$MAIN_SHA" ]] || { echo "::error::Main moved; submit a new recovery command."; exit 1; }
           [[ "$(git rev-parse origin/${BRANCH})" == "$EXPECTED_HEAD" ]] || { echo "::error::Package branch moved."; exit 1; }
           [[ "$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')" == "$EXPECTED_HEAD" ]] || { echo "::error::Pull request head moved."; exit 1; }
           [[ -f "$PACKAGE_PATH" && ! -L "$PACKAGE_PATH" ]] || { echo "::error::Reviewed package is missing or symbolic."; exit 1; }
@@ -131,7 +176,7 @@ jobs:
       - name: Record recovery success
         env:
           GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
           RESULT_SHA: ${{ steps.publish.outputs.sha }}
         shell: bash
         run: |
@@ -142,8 +187,10 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}
         shell: bash
         run: |
           set -euo pipefail
-          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Reviewed development-package recovery failed safely. No validation gate was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" || true
+          if [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Reviewed development-package recovery failed safely. No validation gate was bypassed. Diagnostics: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" || true
+          fi

@@ -44,6 +44,7 @@ jobs:
           PACKAGE: .github/development-packages/issue565_transport_sweep_release_v8_2_1.py
           NORMALIZER: .github/development-packages/issue565_v821_source_indent_fix.py
           NATIVE_FIX: .github/development-packages/issue565_v821_native_contract_fix.py
+          PERFORMANCE_FIX: .github/development-packages/issue565_v821_performance_history_fix.py
           EXECUTOR: .github/workflows/temporary-issue565-v8-2-1-executor.yml
         shell: bash
         run: |
@@ -55,12 +56,14 @@ jobs:
           test -f "$PACKAGE"
           test -f "$NORMALIZER"
           test -f "$NATIVE_FIX"
+          test -f "$PERFORMANCE_FIX"
           test -f "$EXECUTOR"
 
           echo stage=apply-package
           python3 "$PACKAGE"
           python3 "$NORMALIZER"
           python3 "$NATIVE_FIX"
+          python3 "$PERFORMANCE_FIX"
 
           echo stage=install-browser-runtime
           npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
@@ -80,7 +83,7 @@ jobs:
 
           echo stage=clean-carrier
           rm -rf node_modules
-          rm -f "$PACKAGE" "$NORMALIZER" "$NATIVE_FIX" "$EXECUTOR"
+          rm -f "$PACKAGE" "$NORMALIZER" "$NATIVE_FIX" "$PERFORMANCE_FIX" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
           test -z "$(git ls-files node_modules)"
 

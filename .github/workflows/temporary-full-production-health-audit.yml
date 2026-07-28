@@ -1,13 +1,17 @@
-# Synchronization marker: register this branch-only audit workflow after PR creation.
 name: Temporary Full Production Health Audit
 
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
+  push:
+    branches:
+      - audit/full-production-health-v8-2-0
 
 permissions:
   contents: read
-  pull-requests: read
+
+env:
+  AUDIT_BRANCH: audit/full-production-health-v8-2-0
+  AUDIT_WORKFLOW: .github/workflows/temporary-full-production-health-audit.yml
+  EXPECTED_BASE: 0eea1140d2588e9b2aec3884da4bc87f564904f1
 
 concurrency:
   group: temporary-full-production-health-audit
@@ -17,20 +21,42 @@ jobs:
   audit:
     if: >-
       github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
-      github.event.pull_request.head.ref == 'audit/full-production-health-v8-2-0'
+      github.ref == 'refs/heads/audit/full-production-health-v8-2-0'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       MCMS_AUDIT_OUTPUT: ${{ runner.temp }}/audit-output
       MCMS_AUDIT_REPEATS: '8'
       PYTHONDONTWRITEBYTECODE: '1'
+      EXPECTED_HEAD: ${{ github.sha }}
     steps:
+      - name: Require owner branch token
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || { echo 'DEVELOPMENT_PR_TOKEN is required.' >&2; exit 1; }
+
       - name: Check out exact audit head
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
           show-progress: false
+
+      - name: Verify exact audit authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "$EXPECTED_BASE"
+          git merge-base --is-ancestor origin/main HEAD
+          test -f "$AUDIT_WORKFLOW"
+          test -f .github/scripts/audit_full_production_health.py
+          test -f .github/scripts/audit_runtime_stress.mjs
 
       - name: Install isolated runtime dependencies
         shell: bash
@@ -38,7 +64,7 @@ jobs:
           set -euo pipefail
           npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
 
-      - name: Run complete production-health audit
+      - name: Run, record and publish complete audit
         shell: bash
         run: |
           set -uo pipefail
@@ -77,12 +103,28 @@ jobs:
           rm -rf node_modules
           git status --short > "$MCMS_AUDIT_OUTPUT/git-status-after.txt"
           if [[ -s "$MCMS_AUDIT_OUTPUT/git-status-after.txt" ]]; then
-            echo 'Repository working tree changed during the audit:'
+            echo 'Repository working tree changed during the read-only audit:'
             cat "$MCMS_AUDIT_OUTPUT/git-status-after.txt"
             status=1
           fi
 
           echo "audit_status=$status" | tee "$MCMS_AUDIT_OUTPUT/final-status.txt"
+          mkdir -p docs/audits/issue-567
+          cp "$MCMS_AUDIT_OUTPUT/full-production-health.json" docs/audits/issue-567/full-production-health.json 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/full-production-health.md" docs/audits/issue-567/full-production-health.md 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/runtime-stress.json" docs/audits/issue-567/runtime-stress.json 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/runtime-stress.md" docs/audits/issue-567/runtime-stress.md 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/preflight-time.txt" docs/audits/issue-567/preflight-time.txt 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/preflight-repeat-time.txt" docs/audits/issue-567/preflight-repeat-time.txt 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/runtime-stress-time.txt" docs/audits/issue-567/runtime-stress-time.txt 2>/dev/null || true
+          cp "$MCMS_AUDIT_OUTPUT/final-status.txt" docs/audits/issue-567/final-status.txt
+
+          rm -f "$AUDIT_WORKFLOW"
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git commit -m "Record Issue #567 full production-health audit evidence"
+          git push --force-with-lease="refs/heads/${AUDIT_BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${AUDIT_BRANCH}"
           exit "$status"
 
       - name: Upload complete audit evidence

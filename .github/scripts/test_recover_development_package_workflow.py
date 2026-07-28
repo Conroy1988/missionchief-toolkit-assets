@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contract for the owner-dispatched reviewed-package recovery lane."""
+"""Contract for the owner-dispatched and connector-triggered reviewed-package recovery lane."""
 from pathlib import Path
 import json
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,12 +10,22 @@ def main() -> int:
     source = WORKFLOW.read_text(encoding="utf-8")
     for marker in [
         "workflow_dispatch:",
+        "push:",
+        "automation/development-packages",
+        ".github/automation-commands/recover-development-package.json",
         "github.actor == 'Conroy1988'",
+        'COMMAND_EXPECTED_MAIN=""',
+        'COMMAND_EXPECTED_HEAD=""',
+        '.command == "recover-development-package"',
+        "Command main head is stale.",
+        "Command pull-request head is stale.",
+        'echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"',
         "Pull request must target main.",
         "Pull request must be owned by Conroy1988.",
         "Recovery accepts exactly one staged package file",
         ".github/development-packages/",
         "DEVELOPMENT_PR_TOKEN",
+        'PR_NUMBER: ${{ steps.resolve.outputs.pr_number }}',
         "git rebase \"$MAIN_SHA\"",
         "python3 \"$PACKAGE_PATH\"",
         "python3 .github/scripts/validate_userscript.py",
@@ -28,7 +38,7 @@ def main() -> int:
     ]:
         assert marker in source, marker
     assert "git diff --cached --quiet &&" not in source
-    for forbidden in ["contents: write", "HEAD:main", "HEAD:refs/heads/main", "pull_request_target"]:
+    for forbidden in ["contents: write", "HEAD:main", "HEAD:refs/heads/main", "pull_request_target", "secrets: inherit"]:
         assert forbidden not in source, forbidden
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
     entries = {entry["workflow"]: entry for entry in inventory["reviewBranchWriters"]}

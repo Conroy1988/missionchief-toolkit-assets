@@ -21,11 +21,14 @@ def section(text: str, start: str, end: str) -> str:
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    assert re.search(r"(?m)^//\s*@version\s+8\.2\.1$", source)
-    assert "version: '8.2.1'" in source
+    assert re.search(r"(?m)^//\s*@version\s+8\.2\.2$", source)
+    assert "version: '8.2.2'" in source
     for marker in [
         "function transportSweepOptionalReleasePatientCount(control)",
+        "function transportSweepOptionalReleaseMissionReady()",
         "function transportSweepOptionalReleaseState(missionId)",
+        "missionReady: transportSweepOptionalReleaseMissionReady()",
+        "TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS = 6000",
         "async function waitForTransportSweepOptionalReleaseState(missionId, options = {})",
         "function transportSweepOptionalReleaseKey(missionId, vehicleId, sequence)",
         "async function requestTransportSweepOptionalRelease(release)",
@@ -52,6 +55,8 @@ def main() -> int:
     assert "runtimeClearTimeout(" not in helper
     assert "pageWindow?.fetch" in helper
     assert "after.patientCount < before.patientCount" in helper
+    assert "latest.eligibleVehicleIds.size === 0" not in helper
+    assert "latest.missionReady" in helper
     assert "no-reward:${ordinal}" in helper
 
     processor = re.search(
@@ -68,14 +73,13 @@ def main() -> int:
     preflight = PREFLIGHT.read_text(encoding="utf-8")
     assert ".github/scripts/test_issue565_transport_sweep_no_reward.py" in preflight
     assert ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs" in preflight
-    assert "## [8.2.1] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
+    assert "## [8.2.2] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
     assert "same vehicle" in HELP.read_text(encoding="utf-8").lower()
 
     performance = PERFORMANCE.read_text(encoding="utf-8")
-    assert '"version": "8.2.1"' in performance
     assert '"approvedNetworkRequestDelta": 1' in performance
     assert '"network_request_calls": 6' in performance
-    print("Issue #565 v8.2.1 completion-aware Transport Sweep contract passed.")
+    print("Issue #565 v8.2.2 mission-readiness Transport Sweep contract passed.")
     return 0
 
 

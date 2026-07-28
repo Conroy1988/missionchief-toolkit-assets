@@ -49,6 +49,8 @@ function createHarness(pageCounts, options = {}) {
   });
   let generation = 0;
   let poll = 0;
+  let missionRowsReady = options.deferMissionRows !== true;
+  const fetchPolls = [];
   let closes = 0;
   let opens = 0;
   const fetches = [];
@@ -74,8 +76,12 @@ function createHarness(pageCounts, options = {}) {
   function render(includeButton = false) {
     const count = countForGeneration();
     const mission = dom.window.document.querySelector("#mission");
+    if (!missionRowsReady) {
+      mission.innerHTML = "";
+      return;
+    }
     if (!count) {
-      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody></tbody></table>';
+      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111"><td>ILB (ILB)</td><td>Station</td><td>Owner</td><td class="actions"></td></tr></tbody></table>';
       return;
     }
     const names = Array.from({ length: count }, (_, index) => `Patient ${index + 1}`).join(" , ");
@@ -125,9 +131,13 @@ function createHarness(pageCounts, options = {}) {
       }));
     },
     async transportSweepWaitFor(predicate) {
-      for (let index = 0; index < 100; index += 1) {
+      for (let index = 0; index < 140; index += 1) {
         poll += 1;
-        if (countForGeneration() > 0 && poll >= (options.injectAfterPolls ?? 3)) injectDeferredControl();
+        if (!missionRowsReady && poll >= (options.rowsAfterPolls ?? 4)) {
+          missionRowsReady = true;
+          render(false);
+        }
+        if (missionRowsReady && countForGeneration() > 0 && poll >= (options.injectAfterPolls ?? 3)) injectDeferredControl();
         const value = predicate();
         if (value) return value;
         await Promise.resolve();
@@ -144,6 +154,7 @@ function createHarness(pageCounts, options = {}) {
       if (options.failOpen) return false;
       generation += 1;
       poll = 0;
+      missionRowsReady = options.deferMissionRowsOnReopen === true ? false : true;
       render(false);
       return true;
     },
@@ -154,6 +165,7 @@ function createHarness(pageCounts, options = {}) {
   dom.window.fetch = async href => {
     order.push("fetch-start");
     fetches.push(String(href));
+    fetchPolls.push(poll);
     if (options.failFetch) throw new Error("network failed");
     await new Promise(resolve => dom.window.setTimeout(resolve, options.fetchDelayMs ?? 10));
     order.push("fetch-complete");
@@ -176,6 +188,7 @@ function createHarness(pageCounts, options = {}) {
   return {
     runtime,
     fetches,
+    fetchPolls,
     order,
     logs,
     get opens() { return opens; },
@@ -187,7 +200,13 @@ function createHarness(pageCounts, options = {}) {
 }
 
 {
-  const harness = createHarness([3, 2, 1, 0], { injectAfterPolls: 4, fetchDelayMs: 12 });
+  const harness = createHarness([3, 2, 1, 0], {
+    deferMissionRows: true,
+    deferMissionRowsOnReopen: true,
+    rowsAfterPolls: 4,
+    injectAfterPolls: 9,
+    fetchDelayMs: 12,
+  });
   const outcome = await harness.run();
   assert.deepEqual(JSON.parse(JSON.stringify(outcome)), { cleared: 3, missionAvailable: true });
   assert.equal(harness.fetches.length, 3);
@@ -195,6 +214,7 @@ function createHarness(pageCounts, options = {}) {
   assert.equal(harness.runtime.cleared, 3);
   assert.equal(harness.runtime.processed, 3);
   assert.equal(harness.runtime.errors, 0);
+  assert.ok(harness.fetchPolls.every(value => value >= 9), "release request must wait for delayed rows and controls");
   assert.equal(harness.opens, 3);
   assert.equal(harness.closes, 3);
   for (let index = 0; index < harness.order.length; index += 1) {
@@ -242,4 +262,4 @@ function createHarness(pageCounts, options = {}) {
   assert.equal(harness.closes, 0);
 }
 
-console.log("Issue #565 v8.2.1 live release runtime passed: deferred controls, completed requests, same-vehicle 3→2→1→0, allowance, failure, no-control and cancellation.");
+console.log("Issue #565 v8.2.2 mission-readiness runtime passed: deferred controls, completed requests, same-vehicle 3→2→1→0, allowance, failure, no-control and cancellation.");

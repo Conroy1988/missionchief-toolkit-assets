@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.1
+// @version      8.2.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.1',
+        version: '8.2.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12898,7 +12898,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT = 'release patient (no reward)';
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH = /^\/vehicles\/(?<vehicleId>\d+)\/patient\/-1\/?$/u;
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT = 100;
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS = 2500;
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS = 6000;
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS = 6000;
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS = 12000;
 
@@ -12961,6 +12961,22 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return controls;
     }
 
+    function transportSweepOptionalReleaseMissionReady() {
+        let ready = false;
+        const inspect = root => {
+            if (!root || ready) return;
+            try {
+                const table = root.matches?.('#mission_vehicle_at_mission')
+                    ? root
+                    : root.querySelector?.('#mission_vehicle_at_mission');
+                if (table?.querySelector?.('tbody tr')) ready = true;
+            } catch (error) {}
+        };
+        transportSweepVisibleWindowRoots().forEach(inspect);
+        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
+        return ready;
+    }
+
     function transportSweepOptionalReleaseState(missionId) {
         const candidates = collectTransportSweepVehicleCandidatesForMission(missionId) || [];
         const eligibleVehicleIds = new Set(
@@ -12971,26 +12987,34 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const releases = transportSweepOptionalReleaseControls()
             .map(transportSweepOptionalReleaseDetails)
             .filter(details => details && eligibleVehicleIds.has(details.vehicleId));
-        return { candidates: Array.from(candidates), eligibleVehicleIds, releases };
+        return {
+            candidates: Array.from(candidates),
+            eligibleVehicleIds,
+            releases,
+            missionReady: transportSweepOptionalReleaseMissionReady(),
+        };
     }
 
     async function waitForTransportSweepOptionalReleaseState(missionId, options = {}) {
         const vehicleId = String(options.vehicleId || '').trim();
         const timeoutMs = Math.max(0, Number(options.timeoutMs) || TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS);
         let latest = transportSweepOptionalReleaseState(missionId);
-        const immediatelySettled = vehicleId
-            ? latest.releases.some(release => release.vehicleId === vehicleId) || !latest.eligibleVehicleIds.has(vehicleId)
-            : latest.releases.length > 0 || latest.eligibleVehicleIds.size === 0;
-        if (immediatelySettled) return { ...latest, settled: true, timedOut: false };
+        const releaseVisible = () => vehicleId
+            ? latest.releases.some(release => release.vehicleId === vehicleId)
+            : latest.releases.length > 0;
+        const vehicleConfirmedAbsent = () => Boolean(
+            vehicleId
+            && latest.missionReady
+            && !latest.eligibleVehicleIds.has(vehicleId)
+        );
+        if (releaseVisible() || vehicleConfirmedAbsent()) {
+            return { ...latest, settled: true, timedOut: false };
+        }
 
         const waited = await transportSweepWaitFor(() => {
             latest = transportSweepOptionalReleaseState(missionId);
-            if (vehicleId) {
-                if (latest.releases.some(release => release.vehicleId === vehicleId)) return latest;
-                if (!latest.eligibleVehicleIds.has(vehicleId)) return latest;
-                return null;
-            }
-            return latest.releases.length ? latest : null;
+            if (releaseVisible() || vehicleConfirmedAbsent()) return latest;
+            return null;
         }, timeoutMs, 70);
         return waited
             ? { ...waited, settled: true, timedOut: false }

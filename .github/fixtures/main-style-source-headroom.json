@@ -101,24 +101,24 @@
   },
   "v8Candidate": {
     "issue": 565,
-    "version": "8.2.1",
-    "sourceBytes": 1662519,
-    "sourceLines": 25413,
-    "sourceSha256": "f8191e122cc2958ffcc0a57a3c9c7d6b1342df963d16c458ed572a4a151a1dae",
+    "version": "8.2.2",
+    "sourceBytes": 1663214,
+    "sourceLines": 25437,
+    "sourceSha256": "444f8a67c91a0f347535c78cf868a37d77f3015d6f4e5f83c2407e3216ab86c7",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1682753,
-    "maxSourceLines": 25668,
+    "maxSourceBytes": 1683214,
+    "maxSourceLines": 25687,
     "minTemplateBytes": 500000,
-    "baseline": "8.2.0",
+    "baseline": "8.2.1",
     "approvedGrowth": {
-      "sourceBytes": 17975,
-      "sourceLines": 370,
+      "sourceBytes": 18670,
+      "sourceLines": 394,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #565 completion-aware same-origin no-reward release, deferred-control wait, same-vehicle patient-count verification and browser-faithful regression"
+    "scope": "Issue #565 authoritative mission-row readiness and delayed optional-control discovery before Patient Transport Sweep fallback or cleanup"
   }
 }

@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.2.4",
-  "toolkitVersion": "8.2.4",
+  "guideVersion": "8.2.5",
+  "toolkitVersion": "8.2.5",
   "updated": "2026-07-28",
   "path": "help/index.html",
   "sections": 21,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.2.4 processes every non-owned FMS 5 patient-bearing vehicle row with the exact no-reward control, including ILBs, and deduplicates cloned controls by vehicle ID.",
+  "runtimeGuidePatch": "Toolkit v8.2.5 recognises MissionChief's real multi-cell FMS 5 patient rows and preserves BR boundaries so Ambulance followed by Patient text is parsed correctly.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

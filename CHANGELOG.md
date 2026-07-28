@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.2.5] - 2026-07-28
+
+### Patient Transport Sweep — real MissionChief FMS 5 row layout
+
+- Fixed v8.2.4 rejecting every real FMS 5 patient row because it searched only the first table cell, which contains the FMS badge rather than the patient text.
+- Locates the authoritative table cell containing `Patient:` anywhere within the vehicle row, preserving `<br>` as a text boundary while retaining the row-wide fallback.
+- Supports the real multi-cell MissionChief layout, owner-profile markup, ambulances, ILBs and several comma-separated patients.
+- Preserves verified own-vehicle exclusion, exact no-reward control validation, duplicate-control resolution, delayed readiness, completed requests and native fallback.
+- Replaced the one-cell synthetic regression fixture with the supplied browser-faithful multi-cell structure.
+
 ## [8.2.4] - 2026-07-28
 
 ### Patient Transport Sweep — all patient-bearing alliance vehicle rows

@@ -127,7 +127,7 @@ insert_marker = '''{
   const harness = createHarness([[]]);
 '''
 verified_case = '''{
-  const harness = createHarness([["111", "999"], []]);
+  const harness = createHarness([["111", "999"], ["999"]]);
   const outcome = await harness.run(Number.POSITIVE_INFINITY, ["111"]);
   assert.equal(outcome.cleared, 1);
   assert.deepEqual(harness.clicks, ["111"]);

@@ -27,15 +27,16 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def patch_static_audit_package_allowance() -> None:
+def patch_static_audit_package_allowance() -> str:
     text = STATIC_AUDIT.read_text(encoding="utf-8")
     if PACKAGE_PATH in text:
-        return
+        return text
     marker = '        ".github/workflows/temporary-full-production-health-audit.yml",\n'
     if marker not in text:
         raise RuntimeError("Static audit expected-file marker changed")
     replacement = marker + f'        "{PACKAGE_PATH}",\n'
     STATIC_AUDIT.write_text(text.replace(marker, replacement, 1), encoding="utf-8")
+    return text
 
 
 def run(label: str, command: list[str], log_name: str, time_name: str | None = None) -> dict:
@@ -81,7 +82,7 @@ def main() -> int:
     if not STATIC_AUDIT.is_file() or not STRESS_AUDIT.is_file():
         raise RuntimeError("Issue #567 audit probes are missing")
 
-    patch_static_audit_package_allowance()
+    original_static_audit = patch_static_audit_package_allowance()
     source_before = sha256(SOURCE)
     results: list[dict] = []
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -194,14 +195,15 @@ def main() -> int:
         print(json.dumps(execution, indent=2, sort_keys=True))
         return 0
     finally:
+        STATIC_AUDIT.write_text(original_static_audit, encoding="utf-8")
         shutil.rmtree(ROOT / "node_modules", ignore_errors=True)
         package_lock = ROOT / "package-lock.json"
-        if package_lock.exists() and not subprocess.run(
+        if package_lock.exists() and subprocess.run(
             ["git", "ls-files", "--error-unmatch", "package-lock.json"],
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-        ).returncode == 0:
+        ).returncode != 0:
             package_lock.unlink()
         shutil.rmtree(WORK, ignore_errors=True)
 

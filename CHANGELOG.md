@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.2.4] - 2026-07-28
+
+### Patient Transport Sweep — all patient-bearing alliance vehicle rows
+
+- Replaced the native ambulance-name classifier in the no-reward path with authoritative rendered patient-row eligibility.
+- Processes patient-carrying ILBs and other non-ambulance vehicle types when the exact release control is present.
+- Preserves FMS 5 and own-vehicle exclusions.
+- Deduplicates row and top-alert control clones by vehicle ID and prefers the row control with a finite patient count.
+- Retains delayed readiness, completion-aware requests, same-vehicle multi-patient verification and native fallback.
+
 ## [8.2.3] - 2026-07-28
 
 ### Patient Transport Sweep — synchronous live eligibility

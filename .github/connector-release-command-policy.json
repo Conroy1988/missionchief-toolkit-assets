@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "workflow": ".github/workflows/owner-release-command.yml",
+  "supportedTransports": [
+    "owner issue comment",
+    "connector-authenticated push command"
+  ],
+  "commandTransport": {
+    "branch": "automation/releases",
+    "path": ".github/automation-commands/release-toolkit.json",
+    "actor": "Conroy1988",
+    "changedFiles": 1,
+    "directChildOfExpectedMain": true,
+    "exactCurrentMain": true,
+    "nonceRequired": true,
+    "confirmation": "RELEASE"
+  },
+  "requiredValidation": [
+    "exact authorized main checkout",
+    "fresh canonical userscript validation",
+    "JavaScript syntax",
+    "source and distribution parity",
+    "mandatory release readiness",
+    "guarded production release"
+  ],
+  "prohibited": [
+    "arbitrary command paths",
+    "arbitrary shell payloads",
+    "stale main heads",
+    "multi-file command commits",
+    "release bypass",
+    "replay after GitHub Release creation"
+  ]
+}

@@ -41,19 +41,18 @@ const helperStart = source.indexOf("    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_T
 const helperEnd = source.indexOf("    function transportSweepVisibleDischargeButtons()", helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, "Optional release helper block missing");
 const helperSource = source.slice(helperStart, helperEnd);
-const releaseHelpers = [
-  "transportSweepReleaseKey",
-  "recordTransportSweepConfirmedRelease",
-].map(extractFunction).join("\n\n");
+const releaseHelpers = ["recordTransportSweepConfirmedRelease"].map(extractFunction).join("\n\n");
 
-function createHarness(pages, options = {}) {
+function createHarness(pageCounts, options = {}) {
   const dom = new JSDOM("<!doctype html><html><body><main id=mission></main></body></html>", {
     url: "https://www.missionchief.co.uk/missions/9001",
   });
   let generation = 0;
-  let opens = 0;
+  let poll = 0;
   let closes = 0;
-  const clicks = [];
+  let opens = 0;
+  const fetches = [];
+  const order = [];
   const logs = [];
   const runtime = {
     running: true,
@@ -62,28 +61,38 @@ function createHarness(pages, options = {}) {
     processed: 0,
     errors: 0,
     confirmedReleaseKeys: new Set(),
-    missionIndex: 7,
-    missionTotal: 11,
-    completedMissionCount: 6,
   };
 
-  function render() {
-    const ids = pages[Math.min(generation, pages.length - 1)] || [];
-    dom.window.document.querySelector("#mission").innerHTML = ids.map(id =>
-      `<a class="btn btn-default btn-xs" href="/vehicles/${id}/patient/-1">Release patient (No reward)</a>`
-    ).join("");
+  function countForGeneration() {
+    return pageCounts[Math.min(generation, pageCounts.length - 1)] ?? 0;
   }
-  render();
 
-  dom.window.document.addEventListener("click", event => {
-    const anchor = event.target.closest?.('a[href*="/patient/-1"]');
-    if (!anchor) return;
-    event.preventDefault();
-    const id = anchor.getAttribute("href").match(/\/vehicles\/(\d+)\//)?.[1] || "";
-    clicks.push(id);
-    anchor.remove();
-    if (options.stopOnClick) runtime.stopRequested = true;
-  });
+  function releaseLink(vehicleId) {
+    return `<a class="btn btn-default btn-xs" href="/vehicles/${vehicleId}/patient/-1">Release patient (No reward)</a>`;
+  }
+
+  function render(includeButton = false) {
+    const count = countForGeneration();
+    const mission = dom.window.document.querySelector("#mission");
+    if (!count) {
+      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody></tbody></table>';
+      return;
+    }
+    const names = Array.from({ length: count }, (_, index) => `Patient ${index + 1}`).join(" , ");
+    mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111" data-eligible="true"><td>ILB (ILB)<br>Patient: ${names}</td><td>Station</td><td>Owner</td><td class="actions">${includeButton ? releaseLink("111") : ""}</td></tr></tbody></table>`;
+    const control = mission.querySelector('a[href="/vehicles/111/patient/-1"]');
+    if (control) control.click = () => { throw new Error("production must not use anchor.click()"); };
+  }
+
+  function injectDeferredControl() {
+    const row = dom.window.document.querySelector('tr[data-eligible="true"]');
+    const actions = row?.querySelector(".actions");
+    if (!actions || actions.querySelector('a[href*="/patient/-1"]')) return;
+    actions.innerHTML = releaseLink("111");
+    actions.querySelector("a").click = () => { throw new Error("production must not use anchor.click()"); };
+  }
+
+  render(options.immediateButton === true);
 
   const sandbox = {
     console,
@@ -98,6 +107,7 @@ function createHarness(pages, options = {}) {
     URL: dom.window.URL,
     location: dom.window.location,
     document: dom.window.document,
+    pageWindow: dom.window,
     transportSweepRuntime: runtime,
     normaliseMissionId(value) {
       const text = String(value ?? "").trim();
@@ -109,115 +119,127 @@ function createHarness(pages, options = {}) {
     transportSweepElementVisible(element) { return Boolean(element?.isConnected); },
     transportSweepVisibleWindowRoots() { return [dom.window.document.body]; },
     transportSweepDocumentContexts() { return [{ doc: dom.window.document, label: "top" }]; },
+    collectTransportSweepVehicleCandidatesForMission() {
+      return Array.from(dom.window.document.querySelectorAll('tr[data-eligible="true"]')).map(row => ({
+        vehicleId: row.id.match(/\d+$/u)?.[0] || "",
+      }));
+    },
     async transportSweepWaitFor(predicate) {
-      for (let index = 0; index < 5; index += 1) {
+      for (let index = 0; index < 100; index += 1) {
+        poll += 1;
+        if (countForGeneration() > 0 && poll >= (options.injectAfterPolls ?? 3)) injectDeferredControl();
         const value = predicate();
         if (value) return value;
         await Promise.resolve();
       }
       return false;
     },
-    async closeTransportSweepWindows() { closes += 1; },
+    runtimeSetTimeout(callback) { return dom.window.setTimeout(callback, 5000); },
+    runtimeClearTimeout(handle) { dom.window.clearTimeout(handle); },
+    async closeTransportSweepWindows() { order.push("close"); closes += 1; },
     async openTransportSweepPath(pathname) {
       assert.equal(pathname, "/missions/9001");
+      order.push("reopen");
       opens += 1;
       if (options.failOpen) return false;
       generation += 1;
-      render();
+      poll = 0;
+      render(false);
       return true;
     },
     transportSweepLog(message, level = "info") { logs.push({ message, level }); },
     renderTransportSweepPanel() {},
-    renderTransportSweepHud() {},
   };
+
+  dom.window.fetch = async href => {
+    order.push("fetch-start");
+    fetches.push(String(href));
+    if (options.failFetch) throw new Error("network failed");
+    await new Promise(resolve => dom.window.setTimeout(resolve, options.fetchDelayMs ?? 10));
+    order.push("fetch-complete");
+    if (options.stopAfterFetch) runtime.stopRequested = true;
+    return {
+      ok: true,
+      status: 200,
+      url: String(href),
+      async text() { return "released"; },
+    };
+  };
+
   vm.createContext(sandbox);
   vm.runInContext(
     `${releaseHelpers}\n${helperSource}\nthis.runOptionalRelease = processTransportSweepOptionalReleaseControls;`,
     sandbox,
-    { filename: "issue565-optional-release.js" },
+    { filename: "issue565-live-release.js" },
   );
+
   return {
-    dom,
     runtime,
-    clicks,
+    fetches,
+    order,
     logs,
     get opens() { return opens; },
     get closes() { return closes; },
-    run(allowance = Number.POSITIVE_INFINITY, eligible = pages.flat()) {
-      return sandbox.runOptionalRelease(
-        { caption: "Multi-patient mission" },
-        "9001",
-        allowance,
-        new Set(eligible.map(String)),
-      );
+    run(allowance = Number.POSITIVE_INFINITY) {
+      return sandbox.runOptionalRelease({ caption: "Multi-patient mission" }, "9001", allowance);
     },
   };
 }
 
 {
-  const harness = createHarness([["111"], ["222"], []]);
+  const harness = createHarness([3, 2, 1, 0], { injectAfterPolls: 4, fetchDelayMs: 12 });
   const outcome = await harness.run();
-  assert.deepEqual(JSON.parse(JSON.stringify(outcome)), { cleared: 2, missionAvailable: true });
-  assert.deepEqual(harness.clicks, ["111", "222"]);
-  assert.equal(harness.opens, 2);
-  assert.equal(harness.closes, 2);
-  assert.equal(harness.runtime.cleared, 2);
-  assert.equal(harness.runtime.processed, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(outcome)), { cleared: 3, missionAvailable: true });
+  assert.equal(harness.fetches.length, 3);
+  assert.ok(harness.fetches.every(url => url.endsWith("/vehicles/111/patient/-1")));
+  assert.equal(harness.runtime.cleared, 3);
+  assert.equal(harness.runtime.processed, 3);
   assert.equal(harness.runtime.errors, 0);
-  assert.equal(harness.runtime.missionIndex, 7);
-  assert.equal(harness.runtime.completedMissionCount, 6);
+  assert.equal(harness.opens, 3);
+  assert.equal(harness.closes, 3);
+  for (let index = 0; index < harness.order.length; index += 1) {
+    if (harness.order[index] === "close") assert.equal(harness.order[index - 1], "fetch-complete");
+  }
 }
 
 {
-  const harness = createHarness([["111", "999"], ["999"]]);
-  const outcome = await harness.run(Number.POSITIVE_INFINITY, ["111"]);
+  const harness = createHarness([3, 2], { immediateButton: true });
+  const outcome = await harness.run(1);
   assert.equal(outcome.cleared, 1);
-  assert.deepEqual(harness.clicks, ["111"]);
-  assert.ok(harness.dom.window.document.querySelector('a[href="/vehicles/999/patient/-1"]'));
+  assert.equal(harness.fetches.length, 1);
 }
 
 {
-  const harness = createHarness([[]]);
+  const harness = createHarness([2, 2], { immediateButton: true });
+  const outcome = await harness.run();
+  assert.equal(outcome.cleared, 0);
+  assert.equal(harness.fetches.length, 1, "unchanged patient count must stop repeated requests");
+  assert.equal(harness.runtime.errors, 1);
+  assert.match(harness.logs.at(-1).message, /did not reduce the patient count/u);
+}
+
+{
+  const harness = createHarness([1], { immediateButton: true, failFetch: true });
   const outcome = await harness.run();
   assert.equal(outcome.cleared, 0);
   assert.equal(outcome.missionAvailable, true);
-  assert.equal(harness.opens, 0);
-  assert.equal(harness.clicks.length, 0);
-}
-
-{
-  const harness = createHarness([["111"], ["111"]]);
-  const outcome = await harness.run();
-  assert.equal(outcome.cleared, 0);
-  assert.equal(harness.clicks.length, 1, "A persistent release link must not be clicked repeatedly");
-  assert.equal(harness.opens, 1);
   assert.equal(harness.runtime.errors, 1);
-  assert.match(harness.logs.at(-1).message, /stopped repeated clicking/u);
+  assert.equal(harness.closes, 0, "failed request must not close the mission before fallback");
 }
 
 {
-  const harness = createHarness([["111"], ["222"]]);
-  const outcome = await harness.run(1);
-  assert.equal(outcome.cleared, 1);
-  assert.deepEqual(harness.clicks, ["111"]);
-  assert.equal(harness.opens, 1);
-  assert.ok(harness.dom.window.document.querySelector('a[href="/vehicles/222/patient/-1"]'));
-}
-
-{
-  const harness = createHarness([["111"], ["222"]], { stopOnClick: true });
+  const harness = createHarness([1], { injectAfterPolls: 1000 });
   const outcome = await harness.run();
   assert.equal(outcome.cleared, 0);
-  assert.equal(harness.opens, 0);
-  assert.equal(harness.runtime.cleared, 0);
+  assert.equal(harness.fetches.length, 0);
+  assert.equal(outcome.missionAvailable, true);
 }
 
 {
-  const harness = createHarness([["111"]], { failOpen: true });
+  const harness = createHarness([1, 0], { immediateButton: true, stopAfterFetch: true });
   const outcome = await harness.run();
   assert.equal(outcome.cleared, 0);
-  assert.equal(outcome.missionAvailable, false);
-  assert.equal(harness.runtime.errors, 1);
+  assert.equal(harness.closes, 0);
 }
 
-console.log("Issue #565 optional no-reward Transport Sweep runtime passed: sequential reopening, persistence guard, allowance, fallback and cancellation.");
+console.log("Issue #565 v8.2.1 live release runtime passed: deferred controls, completed requests, same-vehicle 3→2→1→0, allowance, failure, no-control and cancellation.");

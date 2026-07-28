@@ -1,5 +1,18 @@
 # Changelog
 
+## [8.2.1] - 2026-07-28
+
+### Critical Patient Transport Sweep release correction
+
+- Waits boundedly for asynchronously inserted **Release patient (No reward)** controls before selecting native fallback.
+- Replaces abort-prone anchor clicking with one completed same-origin request to the exact verified button href.
+- Closes and reopens mission windows only after the release request has completed.
+- Verifies patient-count reduction in the vehicle row before counting a release.
+- Supports several patients on the same vehicle through unique per-patient confirmation identities.
+- Stops safely on unchanged patient count, failed request, cancellation or mission reopen failure while retaining the native discharge fallback.
+- Replaces the synchronous fake-click regression with delayed-control, delayed-request and same-vehicle `3 → 2 → 1 → 0` browser coverage.
+
+
 ## [8.2.0] - 2026-07-28
 
 ### Patient Transport Sweep — sequential no-reward releases

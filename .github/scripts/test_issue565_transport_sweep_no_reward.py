@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Issue #565 contract for sequential optional no-reward releases."""
+"""Issue #565 contract for completion-aware sequential optional releases."""
 from __future__ import annotations
 
 import re
@@ -10,6 +10,7 @@ SOURCE = ROOT / "src/MissionChief_Map_Command_Toolkit.user.js"
 PREFLIGHT = ROOT / ".github/scripts/run_userscript_preflight.sh"
 CHANGELOG = ROOT / "CHANGELOG.md"
 HELP = ROOT / "help/index.html"
+PERFORMANCE = ROOT / ".github/performance-budget.json"
 
 
 def section(text: str, start: str, end: str) -> str:
@@ -20,20 +21,20 @@ def section(text: str, start: str, end: str) -> str:
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    assert re.search(r"(?m)^//\s*@version\s+8\.2\.0$", source)
-    assert "version: '8.2.0'" in source
+    assert re.search(r"(?m)^//\s*@version\s+8\.2\.1$", source)
+    assert "version: '8.2.1'" in source
     for marker in [
-        "TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT = 'release patient (no reward)'",
-        "TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH",
-        "function transportSweepOptionalReleaseDetails(control)",
-        "function transportSweepOptionalReleaseControls()",
-        "function transportSweepOptionalReleaseControlForVehicle(vehicleId)",
-        "function findTransportSweepOptionalReleaseControl(missionId, eligibleVehicleIds, excludedReleaseKeys = null)",
-        "async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance, eligibleVehicleIds)",
-        "Release patient (No reward) remained available",
-        "await closeTransportSweepWindows('reopening mission after no-reward patient release')",
-        "await openTransportSweepPath(`/missions/${missionId}`, 'mission')",
-        "recordTransportSweepConfirmedRelease(",
+        "function transportSweepOptionalReleasePatientCount(control)",
+        "function transportSweepOptionalReleaseState(missionId)",
+        "async function waitForTransportSweepOptionalReleaseState(missionId, options = {})",
+        "function transportSweepOptionalReleaseKey(missionId, vehicleId, sequence)",
+        "async function requestTransportSweepOptionalRelease(release)",
+        "function transportSweepOptionalReleaseProgressed(before, afterState)",
+        "async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance)",
+        "credentials: 'same-origin'",
+        "await response.text()",
+        "did not reduce the patient count",
+        "completed no-reward patient release",
     ]:
         assert marker in source, marker
 
@@ -42,44 +43,37 @@ def main() -> int:
         "    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT",
         "    function transportSweepVisibleDischargeButtons()",
     )
-    assert r"^\/vehicles\/(?<vehicleId>\d+)\/patient\/-1" in helper
-    for forbidden in [
-        "GM_xmlhttpRequest",
-        "fetch(",
-        "setInterval(",
-        "setTimeout(",
-        "MutationObserver",
-        "missionIndex",
-        "setTransportSweepMissionProgress",
-        "completeTransportSweepMissionProgress",
-        "finaliseTransportSweepMissionProgress",
-    ]:
-        assert forbidden not in helper, forbidden
+    assert "release.control.click()" not in helper
+    assert ".click();" not in helper
+    assert "MutationObserver" not in helper
+    assert "setInterval(" not in helper
+    assert "runtimeSetTimeout(" in helper and "runtimeClearTimeout(" in helper
+    assert "pageWindow?.fetch" in helper
+    assert "after.patientCount < before.patientCount" in helper
+    assert "no-reward:${ordinal}" in helper
 
-    processor_match = re.search(
+    processor = re.search(
         r"async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep",
         source,
     )
-    assert processor_match
-    processor = processor_match.group(1)
-    assert "processTransportSweepOptionalReleaseControls(" in processor
-    assert "collectTransportSweepVehicleCandidatesForMission(missionId)" in processor
-    first_collection = processor.index("let candidates = collectTransportSweepVehicleCandidatesForMission(missionId)")
-    fast_path = processor.index("processTransportSweepOptionalReleaseControls(")
-    second_collection = processor.index("candidates = collectTransportSweepVehicleCandidatesForMission(missionId)", fast_path + 1)
-    assert first_collection < fast_path < second_collection
-    assert "optionalEligibleVehicleIds" in processor
-    assert "clearedHere += optionalReleaseResult.cleared" in processor
-    assert "eligibleVehicleIds.has(details.vehicleId)" in helper
-    assert "!optionalReleaseResult.missionAvailable" in processor
-    assert "openTransportSweepVehicle(candidate)" in processor
+    assert processor
+    body = processor.group(1)
+    assert "processTransportSweepOptionalReleaseControls(" in body
+    assert "optionalEligibleVehicleIds" not in body
+    assert body.index("processTransportSweepOptionalReleaseControls(") < body.index("collectTransportSweepVehicleCandidatesForMission(missionId)")
+    assert "openTransportSweepVehicle(candidate)" in body
 
     preflight = PREFLIGHT.read_text(encoding="utf-8")
     assert ".github/scripts/test_issue565_transport_sweep_no_reward.py" in preflight
     assert ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs" in preflight
-    assert "## [8.2.0] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
-    assert "Release patient (No reward)" in HELP.read_text(encoding="utf-8")
-    print("Issue #565 optional no-reward Transport Sweep contract passed.")
+    assert "## [8.2.1] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
+    assert "same vehicle" in HELP.read_text(encoding="utf-8").lower()
+
+    performance = PERFORMANCE.read_text(encoding="utf-8")
+    assert '"version": "8.2.1"' in performance
+    assert '"approvedNetworkRequestDelta": 1' in performance
+    assert '"network_request_calls": 6' in performance
+    print("Issue #565 v8.2.1 completion-aware Transport Sweep contract passed.")
     return 0
 
 

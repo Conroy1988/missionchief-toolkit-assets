@@ -1,0 +1,75 @@
+{
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "install",
+        "--no-save",
+        "--package-lock=false",
+        "--ignore-scripts",
+        "jsdom@26.1.0"
+      ],
+      "label": "Install isolated jsdom runtime",
+      "log": "npm-install.log",
+      "returnCode": 0,
+      "time": "npm-install-time.txt"
+    },
+    {
+      "command": [
+        "bash",
+        ".github/scripts/run_userscript_preflight.sh",
+        "--all"
+      ],
+      "label": "Complete retained preflight \u2014 pass 1",
+      "log": "preflight.log",
+      "returnCode": 0,
+      "time": "preflight-time.txt"
+    },
+    {
+      "command": [
+        "python3",
+        "-X",
+        "dev",
+        ".github/scripts/audit_full_production_health.py"
+      ],
+      "label": "Lifecycle, recurring-work and teardown inventory",
+      "log": "full-production-health.log",
+      "returnCode": 0,
+      "time": "full-production-health-time.txt"
+    },
+    {
+      "command": [
+        "node",
+        ".github/scripts/audit_runtime_stress.mjs"
+      ],
+      "label": "Repeated runtime and memory stress",
+      "log": "runtime-stress.log",
+      "returnCode": 0,
+      "time": "runtime-stress-time.txt"
+    },
+    {
+      "command": [
+        "bash",
+        ".github/scripts/run_userscript_preflight.sh",
+        "--all"
+      ],
+      "label": "Complete retained preflight \u2014 deterministic pass 2",
+      "log": "preflight-repeat.log",
+      "returnCode": 0,
+      "time": "preflight-repeat-time.txt"
+    }
+  ],
+  "issue": 567,
+  "repeatedRuntimeExecutions": 88,
+  "runtimeStressSeconds": 14.112551373,
+  "runtimeStressStatus": "passed",
+  "schemaVersion": 1,
+  "sourceSha256After": "865598afd3546b8a5604a223408f1618f59b11c460a0858ac9e2c45b906df91a",
+  "sourceSha256Before": "865598afd3546b8a5604a223408f1618f59b11c460a0858ac9e2c45b906df91a",
+  "staticAuditStatus": "passed-with-warnings",
+  "staticWarnings": [
+    "Raw event-listener additions materially exceed visible removals and managed ownership."
+  ],
+  "status": "passed",
+  "version": "8.2.0"
+}

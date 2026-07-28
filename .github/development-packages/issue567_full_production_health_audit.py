@@ -58,7 +58,8 @@ def run(label: str, command: list[str], log_name: str, time_name: str | None = N
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
-    log_path.write_text(started.stdout or "", encoding="utf-8")
+    output = started.stdout or ""
+    log_path.write_text(output, encoding="utf-8")
     result = {
         "label": label,
         "command": command,
@@ -67,7 +68,10 @@ def run(label: str, command: list[str], log_name: str, time_name: str | None = N
         "time": time_name,
     }
     if started.returncode != 0:
-        tail = "\n".join((started.stdout or "").splitlines()[-80:])
+        print(f"--- complete failed output: {label} ---")
+        print(output)
+        print(f"--- end failed output: {label} ---")
+        tail = "\n".join(output.splitlines()[-80:])
         raise RuntimeError(f"{label} failed with exit {started.returncode}:\n{tail}")
     return result
 

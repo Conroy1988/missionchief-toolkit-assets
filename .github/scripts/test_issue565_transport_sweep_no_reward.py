@@ -47,7 +47,9 @@ def main() -> int:
     assert ".click();" not in helper
     assert "MutationObserver" not in helper
     assert "setInterval(" not in helper
-    assert "runtimeSetTimeout(" in helper and "runtimeClearTimeout(" in helper
+    assert "AbortSignalCtor.timeout" in helper
+    assert "runtimeSetTimeout(" not in helper
+    assert "runtimeClearTimeout(" not in helper
     assert "pageWindow?.fetch" in helper
     assert "after.patientCount < before.patientCount" in helper
     assert "no-reward:${ordinal}" in helper

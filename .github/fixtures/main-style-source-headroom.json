@@ -102,9 +102,9 @@
   "v8Candidate": {
     "issue": 565,
     "version": "8.2.1",
-    "sourceBytes": 1662753,
-    "sourceLines": 25418,
-    "sourceSha256": "71953aedd5408612bb4f2ae42f7896d01ee48ce2ab732c12d5617485d4bf0511",
+    "sourceBytes": 1662519,
+    "sourceLines": 25413,
+    "sourceSha256": "f8191e122cc2958ffcc0a57a3c9c7d6b1342df963d16c458ed572a4a151a1dae",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
@@ -114,8 +114,8 @@
     "minTemplateBytes": 500000,
     "baseline": "8.2.0",
     "approvedGrowth": {
-      "sourceBytes": 18209,
-      "sourceLines": 375,
+      "sourceBytes": 17975,
+      "sourceLines": 370,
       "templateBytes": 0,
       "templateLines": 0
     },

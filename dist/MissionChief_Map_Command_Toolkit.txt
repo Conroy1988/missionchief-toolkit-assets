@@ -13024,25 +13024,20 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const ownerWindow = release?.control?.ownerDocument?.defaultView || pageWindow;
         const fetcher = ownerWindow?.fetch || pageWindow?.fetch;
         if (typeof fetcher !== 'function') throw new Error('same-origin request API is unavailable');
-        const Controller = ownerWindow?.AbortController || pageWindow?.AbortController;
-        const controller = typeof Controller === 'function' ? new Controller() : null;
-        const timeoutHandle = controller
-            ? runtimeSetTimeout(() => controller.abort(), TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS)
-            : null;
-        try {
-            const response = await fetcher.call(ownerWindow, release.href, {
-                method: 'GET',
-                credentials: 'same-origin',
-                redirect: 'follow',
-                cache: 'no-store',
-                signal: controller?.signal,
-            });
-            if (!response?.ok) throw new Error(`request returned HTTP ${response?.status || 'unknown'}`);
-            await response.text();
-            return { status: response.status, url: String(response.url || release.href) };
-        } finally {
-            if (timeoutHandle !== null) runtimeClearTimeout(timeoutHandle);
-        }
+        const AbortSignalCtor = ownerWindow?.AbortSignal || pageWindow?.AbortSignal;
+        const timeoutSignal = typeof AbortSignalCtor?.timeout === 'function'
+            ? AbortSignalCtor.timeout(TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS)
+            : undefined;
+        const response = await fetcher.call(ownerWindow, release.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            cache: 'no-store',
+            signal: timeoutSignal,
+        });
+        if (!response?.ok) throw new Error(`request returned HTTP ${response?.status || 'unknown'}`);
+        await response.text();
+        return { status: response.status, url: String(response.url || release.href) };
     }
 
     function transportSweepOptionalReleaseProgressed(before, afterState) {

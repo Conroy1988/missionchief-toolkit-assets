@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.2.2",
-  "toolkitVersion": "8.2.2",
+  "guideVersion": "8.2.3",
+  "toolkitVersion": "8.2.3",
   "updated": "2026-07-28",
   "path": "help/index.html",
   "sections": 21,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.2.2 keeps the mission open until authoritative vehicle rows and delayed no-reward controls are discoverable, preventing premature fallback and window cleanup.",
+  "runtimeGuidePatch": "Toolkit v8.2.3 uses synchronous live mission-window eligibility while waiting for delayed no-reward controls, preventing Promise-derived empty candidate sets from rejecting visible buttons.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

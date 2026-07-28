@@ -21,10 +21,13 @@ def main() -> int:
         "python3 .github/scripts/validate_userscript.py",
         "node --check src/MissionChief_Map_Command_Toolkit.user.js",
         "cmp --silent dist/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt",
+        "if git diff --cached --quiet; then",
+        "Package produced no repository changes.",
         "--force-with-lease=\"refs/heads/${BRANCH}:${EXPECTED_HEAD}\"",
         "HEAD:${BRANCH}",
     ]:
         assert marker in source, marker
+    assert "git diff --cached --quiet &&" not in source
     for forbidden in ["contents: write", "HEAD:main", "HEAD:refs/heads/main", "pull_request_target"]:
         assert forbidden not in source, forbidden
     inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))

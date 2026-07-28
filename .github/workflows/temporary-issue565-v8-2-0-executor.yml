@@ -44,6 +44,7 @@ jobs:
           BRANCH: feature/transport-sweep-no-reward-release-v8-2-0
           MARKER_FIX: .github/development-packages/issue565_package_marker_fix.py
           PACKAGE: .github/development-packages/issue565_transport_sweep_no_reward_v8_2_0.py
+          SCOPE_MARKER_FIX: .github/development-packages/issue565_scope_marker_fix.py
           SCOPE_FIX: .github/development-packages/issue565_verified_vehicle_scope_fix.py
           FINALIZE: .github/development-packages/issue565_finalize_v8_2_0.py
           EXECUTOR: .github/workflows/temporary-issue565-v8-2-0-executor.yml
@@ -58,16 +59,18 @@ jobs:
           git merge-base --is-ancestor origin/main HEAD
           test -f "$MARKER_FIX"
           test -f "$PACKAGE"
+          test -f "$SCOPE_MARKER_FIX"
           test -f "$SCOPE_FIX"
           test -f "$FINALIZE"
           test -f "$EXECUTOR"
 
           echo stage=apply
           python3 "$MARKER_FIX"
+          python3 "$SCOPE_MARKER_FIX"
           python3 "$PACKAGE"
           python3 "$SCOPE_FIX"
           python3 "$FINALIZE"
-          rm -f "$MARKER_FIX" "$PACKAGE" "$SCOPE_FIX" "$FINALIZE" "$EXECUTOR"
+          rm -f "$MARKER_FIX" "$PACKAGE" "$SCOPE_MARKER_FIX" "$SCOPE_FIX" "$FINALIZE" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
 
           echo stage=dependencies

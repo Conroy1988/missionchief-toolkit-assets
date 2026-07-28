@@ -42,6 +42,7 @@ jobs:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
           BRANCH: fix/transport-sweep-all-patient-rows-v8-2-4
           PACKAGE: .github/development-packages/issue565_transport_sweep_all_rows_v8_2_4.py
+          RUNTIME_FIX: .github/development-packages/issue565_v824_runtime_quote_fix.py
           EXECUTOR: .github/workflows/temporary-issue565-v8-2-4-executor.yml
         shell: bash
         run: |
@@ -51,10 +52,12 @@ jobs:
           git fetch --no-tags origin main
           test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
           test -f "$PACKAGE"
+          test -f "$RUNTIME_FIX"
           test -f "$EXECUTOR"
 
           echo stage=apply-package
           python3 "$PACKAGE"
+          python3 "$RUNTIME_FIX"
 
           echo stage=install-browser-runtime
           npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
@@ -83,7 +86,7 @@ jobs:
 
           echo stage=clean-carrier
           rm -rf node_modules
-          rm -f "$PACKAGE" "$EXECUTOR"
+          rm -f "$PACKAGE" "$RUNTIME_FIX" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
           test -z "$(git ls-files node_modules)"
 

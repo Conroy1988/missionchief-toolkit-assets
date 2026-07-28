@@ -1,3 +1,4 @@
+# Synchronization marker: register this branch-only audit workflow after PR creation.
 name: Temporary Full Production Health Audit
 
 on:

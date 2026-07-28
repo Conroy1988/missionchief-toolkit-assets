@@ -1,0 +1,94 @@
+name: Temporary Full Production Health Audit
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: temporary-full-production-health-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.pull_request.head.ref == 'audit/full-production-health-v8-2-0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      MCMS_AUDIT_OUTPUT: ${{ runner.temp }}/audit-output
+      MCMS_AUDIT_REPEATS: '8'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Check out exact audit head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Install isolated runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
+
+      - name: Run complete production-health audit
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p "$MCMS_AUDIT_OUTPUT"
+          sha256sum src/MissionChief_Map_Command_Toolkit.user.js > "$MCMS_AUDIT_OUTPUT/source-before.sha256"
+          git status --short > "$MCMS_AUDIT_OUTPUT/git-status-before.txt"
+          status=0
+
+          echo '[audit] canonical validation and complete retained preflight'
+          /usr/bin/time -v -o "$MCMS_AUDIT_OUTPUT/preflight-time.txt" \
+            bash .github/scripts/run_userscript_preflight.sh --all \
+            > >(tee "$MCMS_AUDIT_OUTPUT/preflight.log") 2>&1 || status=1
+
+          echo '[audit] lifecycle, recurring-work and teardown inventory'
+          python3 -X dev .github/scripts/audit_full_production_health.py \
+            > >(tee "$MCMS_AUDIT_OUTPUT/full-production-health.log") 2>&1 || status=1
+
+          echo '[audit] repeated runtime, lifecycle and memory stress'
+          /usr/bin/time -v -o "$MCMS_AUDIT_OUTPUT/runtime-stress-time.txt" \
+            node .github/scripts/audit_runtime_stress.mjs \
+            > >(tee "$MCMS_AUDIT_OUTPUT/runtime-stress.log") 2>&1 || status=1
+
+          echo '[audit] deterministic second retained preflight'
+          /usr/bin/time -v -o "$MCMS_AUDIT_OUTPUT/preflight-repeat-time.txt" \
+            bash .github/scripts/run_userscript_preflight.sh --all \
+            > >(tee "$MCMS_AUDIT_OUTPUT/preflight-repeat.log") 2>&1 || status=1
+
+          sha256sum src/MissionChief_Map_Command_Toolkit.user.js > "$MCMS_AUDIT_OUTPUT/source-after.sha256"
+          cmp --silent "$MCMS_AUDIT_OUTPUT/source-before.sha256" "$MCMS_AUDIT_OUTPUT/source-after.sha256" || {
+            echo 'Canonical source changed during the audit.' | tee "$MCMS_AUDIT_OUTPUT/source-mutation.txt"
+            status=1
+          }
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js || status=1
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt || status=1
+
+          rm -rf node_modules
+          git status --short > "$MCMS_AUDIT_OUTPUT/git-status-after.txt"
+          if [[ -s "$MCMS_AUDIT_OUTPUT/git-status-after.txt" ]]; then
+            echo 'Repository working tree changed during the audit:'
+            cat "$MCMS_AUDIT_OUTPUT/git-status-after.txt"
+            status=1
+          fi
+
+          echo "audit_status=$status" | tee "$MCMS_AUDIT_OUTPUT/final-status.txt"
+          exit "$status"
+
+      - name: Upload complete audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolkit-v8-2-0-full-production-health-${{ github.sha }}
+          path: ${{ runner.temp }}/audit-output
+          if-no-files-found: error
+          retention-days: 90

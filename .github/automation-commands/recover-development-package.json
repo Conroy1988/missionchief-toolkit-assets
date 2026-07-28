@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "command": "recover-development-package",
+  "prNumber": 580,
+  "expectedMain": "ebfbbd483601a18f48b9f751e251e243f02007dc",
+  "expectedHead": "c54cdcd1c916608a032e0d8f367d4f734e41c0a7",
+  "nonce": "issue565-v826-c54cdcd1-20260729a"
+}

@@ -39,9 +39,17 @@ changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 assert "## [8.1.5] - 2026-07-27" in changelog
 assert "### Hardened UI mounting and live member-page recovery" in changelog
 performance = json.loads((ROOT / ".github/performance-budget.json").read_text(encoding="utf-8"))
-assert performance["revision"] == "2026-07-27-issue-553-ui-mount-hardening"
-assert performance["transitionApproval"]["version"] == "8.1.5"
-assert performance["transitionApproval"]["approvedMutationObserverDelta"] == 1
+ui_mount_approval = next(
+    (
+        approval
+        for approval in performance.get("approvalHistory", [])
+        if approval.get("issue") == 553 and approval.get("version") == "8.1.5"
+    ),
+    None,
+)
+assert ui_mount_approval
+assert ui_mount_approval["approvedMutationObserverDelta"] == 1
+assert performance["absoluteLimits"]["mutation_observer_constructions"] >= 13
 preflight = (ROOT / ".github/scripts/run_userscript_preflight.sh").read_text(encoding="utf-8")
 assert "test_ui_mount_policy.py" in preflight
 workflow = (ROOT / ".github/workflows/validate-userscript.yml").read_text(encoding="utf-8")

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-27-issue-553-ui-mount-hardening",
-  "rationale": "Issue #553 corrects a concealed lifecycle symbol failure and adds one enabled-only, child-list-only, coalesced observer so externally rendered member views mount without depending on the top-level route.",
+  "revision": "2026-07-28-issue-565-transport-release-completion",
+  "rationale": "Issue #565 replaces abort-prone anchor clicking with one bounded same-origin request that must complete before mission cleanup, while adding no observer, interval or disabled-state work.",
   "transitionApproval": {
-    "issue": 553,
-    "version": "8.1.5",
+    "issue": 565,
+    "version": "8.2.1",
     "approvedNetworkRequestDelta": 1,
-    "scope": "Hardened Alliance Member Manager UI mount observation, structured receipts, visible mount states and full rendered integration gate.",
-    "approvedMutationObserverDelta": 1
+    "scope": "Completion-aware optional patient release using the exact verified same-origin href, deferred-control waiting and same-vehicle patient-count verification.",
+    "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -38,7 +38,7 @@
     "document_wide_subtree_observers": 4,
     "get_element_by_id_calls": 113,
     "inner_html_writes": 22,
-    "network_request_calls": 5
+    "network_request_calls": 6
   },
   "absoluteReviewPercent": {
     "lines": 95,
@@ -152,5 +152,21 @@
       "warnDelta": 1,
       "failDelta": 1
     }
-  }
+  },
+  "approvalHistory": [
+    {
+      "issue": 553,
+      "version": "8.1.5",
+      "approvedNetworkRequestDelta": 1,
+      "scope": "Hardened Alliance Member Manager UI mount observation, structured receipts, visible mount states and full rendered integration gate.",
+      "approvedMutationObserverDelta": 1
+    },
+    {
+      "issue": 565,
+      "version": "8.2.1",
+      "approvedNetworkRequestDelta": 1,
+      "scope": "Completion-aware optional patient release using the exact verified same-origin href, deferred-control waiting and same-vehicle patient-count verification.",
+      "approvedMutationObserverDelta": 0
+    }
+  ]
 }

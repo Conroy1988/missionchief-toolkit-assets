@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.0
+// @version      8.2.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.0',
+        version: '8.2.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12898,6 +12898,22 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT = 'release patient (no reward)';
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH = /^\/vehicles\/(?<vehicleId>\d+)\/patient\/-1\/?$/u;
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT = 100;
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS = 2500;
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS = 6000;
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS = 12000;
+
+    function transportSweepOptionalReleasePatientCount(control) {
+        const row = control?.closest?.('tr') || null;
+        const vehicleCell = row?.querySelector?.('td:first-child') || row;
+        const text = String(vehicleCell?.textContent || '').replace(/\s+/gu, ' ').trim();
+        const match = text.match(/\bpatients?\s*:\s*(.+)$/iu);
+        if (!match?.[1]) return null;
+        const names = match[1]
+            .split(/\s*,\s*/u)
+            .map(value => value.trim())
+            .filter(Boolean);
+        return names.length || null;
+    }
 
     function transportSweepOptionalReleaseDetails(control) {
         if (!control || !transportSweepElementVisible(control)) return null;
@@ -12917,8 +12933,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         if (!match?.groups?.vehicleId) return null;
         return {
             control,
+            href: url.href,
             path: url.pathname,
             vehicleId: match.groups.vehicleId,
+            patientCount: transportSweepOptionalReleasePatientCount(control),
         };
     }
 
@@ -12943,27 +12961,57 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         return controls;
     }
 
-    function transportSweepOptionalReleaseControlForVehicle(vehicleId) {
-        const expected = String(vehicleId || '').trim();
-        if (!expected) return null;
-        for (const control of transportSweepOptionalReleaseControls()) {
-            const details = transportSweepOptionalReleaseDetails(control);
-            if (details?.vehicleId === expected) return details;
+    function transportSweepOptionalReleaseState(missionId) {
+        const candidates = collectTransportSweepVehicleCandidatesForMission(missionId) || [];
+        const eligibleVehicleIds = new Set(
+            Array.from(candidates)
+                .map(candidate => String(candidate?.vehicleId || '').trim())
+                .filter(Boolean)
+        );
+        const releases = transportSweepOptionalReleaseControls()
+            .map(transportSweepOptionalReleaseDetails)
+            .filter(details => details && eligibleVehicleIds.has(details.vehicleId));
+        return { candidates: Array.from(candidates), eligibleVehicleIds, releases };
+    }
+
+    async function waitForTransportSweepOptionalReleaseState(missionId, options = {}) {
+        const vehicleId = String(options.vehicleId || '').trim();
+        const timeoutMs = Math.max(0, Number(options.timeoutMs) || TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS);
+        let latest = transportSweepOptionalReleaseState(missionId);
+        const immediatelySettled = vehicleId
+            ? latest.releases.some(release => release.vehicleId === vehicleId) || !latest.eligibleVehicleIds.has(vehicleId)
+            : latest.releases.length > 0 || latest.eligibleVehicleIds.size === 0;
+        if (immediatelySettled) return { ...latest, settled: true, timedOut: false };
+
+        const waited = await transportSweepWaitFor(() => {
+            latest = transportSweepOptionalReleaseState(missionId);
+            if (vehicleId) {
+                if (latest.releases.some(release => release.vehicleId === vehicleId)) return latest;
+                if (!latest.eligibleVehicleIds.has(vehicleId)) return latest;
+                return null;
+            }
+            return latest.releases.length ? latest : null;
+        }, timeoutMs, 70);
+        return waited
+            ? { ...waited, settled: true, timedOut: false }
+            : { ...latest, settled: false, timedOut: true };
+    }
+
+    function findTransportSweepOptionalReleaseControl(state, attemptedSignatures = null) {
+        const attempted = attemptedSignatures instanceof Set ? attemptedSignatures : new Set();
+        for (const release of state?.releases || []) {
+            const signature = `${release.vehicleId}:${release.patientCount ?? 'unknown'}`;
+            if (attempted.has(signature)) continue;
+            return { ...release, signature };
         }
         return null;
     }
 
-    function findTransportSweepOptionalReleaseControl(missionId, eligibleVehicleIds, excludedReleaseKeys = null) {
-        const excluded = excludedReleaseKeys instanceof Set ? excludedReleaseKeys : new Set();
-        for (const control of transportSweepOptionalReleaseControls()) {
-            const details = transportSweepOptionalReleaseDetails(control);
-            if (!details) continue;
-            if (!(eligibleVehicleIds instanceof Set) || !eligibleVehicleIds.has(details.vehicleId)) continue;
-            const releaseKey = transportSweepReleaseKey(missionId, details.vehicleId);
-            if (!releaseKey || excluded.has(releaseKey) || transportSweepRuntime.confirmedReleaseKeys.has(releaseKey)) continue;
-            return { ...details, releaseKey };
-        }
-        return null;
+    function transportSweepOptionalReleaseKey(missionId, vehicleId, sequence) {
+        const mission = normaliseMissionId(missionId);
+        const vehicle = normaliseMissionId(vehicleId);
+        const ordinal = Math.max(1, Number(sequence) || 1);
+        return mission && vehicle ? `${mission}:${vehicle}:no-reward:${ordinal}` : '';
     }
 
     function recordTransportSweepOptionalReleaseError(message) {
@@ -12972,40 +13020,69 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         renderTransportSweepPanel();
     }
 
-    async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance, eligibleVehicleIds) {
+    async function requestTransportSweepOptionalRelease(release) {
+        const ownerWindow = release?.control?.ownerDocument?.defaultView || pageWindow;
+        const fetcher = ownerWindow?.fetch || pageWindow?.fetch;
+        if (typeof fetcher !== 'function') throw new Error('same-origin request API is unavailable');
+        const AbortSignalCtor = ownerWindow?.AbortSignal || pageWindow?.AbortSignal;
+        const timeoutSignal = typeof AbortSignalCtor?.timeout === 'function'
+            ? AbortSignalCtor.timeout(TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS)
+            : undefined;
+        const response = await fetcher.call(ownerWindow, release.href, {
+            method: 'GET',
+            credentials: 'same-origin',
+            redirect: 'follow',
+            cache: 'no-store',
+            signal: timeoutSignal,
+        });
+        if (!response?.ok) throw new Error(`request returned HTTP ${response?.status || 'unknown'}`);
+        await response.text();
+        return { status: response.status, url: String(response.url || release.href) };
+    }
+
+    function transportSweepOptionalReleaseProgressed(before, afterState) {
+        const after = (afterState?.releases || []).find(release => release.vehicleId === before.vehicleId) || null;
+        if (!afterState?.settled) return { progressed: false, after };
+        if (!after) return { progressed: !afterState.eligibleVehicleIds.has(before.vehicleId), after };
+        if (Number.isFinite(before.patientCount) && Number.isFinite(after.patientCount)) {
+            return { progressed: after.patientCount < before.patientCount, after };
+        }
+        return { progressed: false, after };
+    }
+
+    async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance) {
         const outcome = { cleared: 0, missionAvailable: true };
         const allowance = Number.isFinite(remainingAllowance)
             ? Math.max(0, Math.floor(remainingAllowance))
             : TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT;
         const maximum = Math.min(allowance, TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT);
-        const attemptedReleaseKeys = new Set();
+        const attemptedSignatures = new Set();
+        let sequence = 0;
+        let releaseState = await waitForTransportSweepOptionalReleaseState(missionId);
 
         while (
             transportSweepRuntime.running
             && !transportSweepRuntime.stopRequested
             && outcome.cleared < maximum
         ) {
-            const release = findTransportSweepOptionalReleaseControl(missionId, eligibleVehicleIds, attemptedReleaseKeys);
+            const release = findTransportSweepOptionalReleaseControl(releaseState, attemptedSignatures);
             if (!release) break;
-            attemptedReleaseKeys.add(release.releaseKey);
-            transportSweepLog(`Using Release patient (No reward) for vehicle ${release.vehicleId} at ${item.caption}`);
+            attemptedSignatures.add(release.signature);
+            transportSweepLog(
+                `Requesting Release patient (No reward) for vehicle ${release.vehicleId} at ${item.caption}`
+            );
 
             try {
-                release.control.click();
-                await transportSweepWaitFor(() => {
-                    if (transportSweepRuntime.stopRequested) return true;
-                    if (!release.control.isConnected || !transportSweepElementVisible(release.control)) return true;
-                    return transportSweepOptionalReleaseControlForVehicle(release.vehicleId) ? null : true;
-                }, 5000, 70);
+                await requestTransportSweepOptionalRelease(release);
             } catch (error) {
                 recordTransportSweepOptionalReleaseError(
-                    `Could not activate Release patient (No reward) for vehicle ${release.vehicleId}: ${error?.message || error}`
+                    `Could not complete Release patient (No reward) for vehicle ${release.vehicleId}: ${error?.message || error}`
                 );
                 break;
             }
 
             if (transportSweepRuntime.stopRequested) break;
-            await closeTransportSweepWindows('reopening mission after no-reward patient release');
+            await closeTransportSweepWindows('reopening mission after completed no-reward patient release');
             if (transportSweepRuntime.stopRequested) break;
 
             const reopened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
@@ -13017,19 +13094,27 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                 break;
             }
 
-            if (transportSweepOptionalReleaseControlForVehicle(release.vehicleId)) {
+            const afterState = await waitForTransportSweepOptionalReleaseState(missionId, {
+                vehicleId: release.vehicleId,
+                timeoutMs: TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS,
+            });
+            const verification = transportSweepOptionalReleaseProgressed(release, afterState);
+            if (!verification.progressed) {
                 recordTransportSweepOptionalReleaseError(
-                    `Release patient (No reward) remained available for vehicle ${release.vehicleId}; stopped repeated clicking`
+                    `Release patient (No reward) did not reduce the patient count for vehicle ${release.vehicleId}; native fallback retained`
                 );
                 break;
             }
 
+            sequence += 1;
+            const releaseKey = transportSweepOptionalReleaseKey(missionId, release.vehicleId, sequence);
             if (recordTransportSweepConfirmedRelease(
-                release.releaseKey,
-                `Cleared vehicle ${release.vehicleId} at ${item.caption} with Release patient (No reward)`
+                releaseKey,
+                `Cleared patient ${sequence} from vehicle ${release.vehicleId} at ${item.caption} with Release patient (No reward)`
             )) {
                 outcome.cleared += 1;
             }
+            releaseState = afterState;
         }
         return outcome;
     }
@@ -13305,17 +13390,10 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         }
 
         while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-        let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
-        const optionalEligibleVehicleIds = new Set(
-            candidates
-                .map(candidate => String(candidate?.vehicleId || '').trim())
-                .filter(Boolean)
-        );
         const optionalReleaseResult = await processTransportSweepOptionalReleaseControls(
             item,
             missionId,
-            Math.max(0, remainingAllowance - clearedHere),
-            optionalEligibleVehicleIds
+            Math.max(0, remainingAllowance - clearedHere)
         );
         clearedHere += optionalReleaseResult.cleared;
         if (
@@ -13327,7 +13405,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             return clearedHere;
         }
 
-        candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
+        let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "workflow": ".github/workflows/recover-development-package.yml",
+  "trigger": "manual owner workflow_dispatch",
+  "acceptedPullRequest": {
+    "state": "open",
+    "base": "main",
+    "owner": "Conroy1988",
+    "sameRepository": true,
+    "changedFiles": 1,
+    "pathPattern": ".github/development-packages/*.py"
+  },
+  "publication": {
+    "target": "existing pull-request branch",
+    "credential": "DEVELOPMENT_PR_TOKEN",
+    "exactHeadLease": true,
+    "publicMainAllowed": false
+  },
+  "requiredValidation": [
+    "canonical userscript validation",
+    "JavaScript syntax",
+    "source and distribution parity"
+  ]
+}

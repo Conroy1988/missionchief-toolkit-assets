@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.2.3] - 2026-07-28
+
+### Patient Transport Sweep — synchronous live eligibility
+
+- Fixed the optional release path consuming the asynchronous mission-candidate collector without awaiting it.
+- Uses the live synchronous mission-window candidate collector while waiting for the delayed release control.
+- Prevents visible verified release buttons from being filtered out by an empty Promise-derived eligibility set.
+- Replaces the concealed synchronous test double with the real async boundary and fails if the optional path touches it.
+- Adds no observer, interval, request site or Toolkit-managed timer.
+
 ## [8.2.2] - 2026-07-28
 
 ### Patient Transport Sweep — authoritative mission readiness

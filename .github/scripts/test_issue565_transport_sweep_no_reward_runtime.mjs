@@ -125,10 +125,13 @@ function createHarness(pageCounts, options = {}) {
     transportSweepElementVisible(element) { return Boolean(element?.isConnected); },
     transportSweepVisibleWindowRoots() { return [dom.window.document.body]; },
     transportSweepDocumentContexts() { return [{ doc: dom.window.document, label: "top" }]; },
-    collectTransportSweepVehicleCandidatesForMission() {
+    collectTransportSweepVehicleCandidates() {
       return Array.from(dom.window.document.querySelectorAll('tr[data-eligible="true"]')).map(row => ({
         vehicleId: row.id.match(/\d+$/u)?.[0] || "",
       }));
+    },
+    async collectTransportSweepVehicleCandidatesForMission() {
+      throw new Error("optional release state must not consume an async candidate Promise");
     },
     async transportSweepWaitFor(predicate) {
       for (let index = 0; index < 140; index += 1) {
@@ -262,4 +265,4 @@ function createHarness(pageCounts, options = {}) {
   assert.equal(harness.closes, 0);
 }
 
-console.log("Issue #565 v8.2.2 mission-readiness runtime passed: deferred controls, completed requests, same-vehicle 3→2→1→0, allowance, failure, no-control and cancellation.");
+console.log("Issue #565 v8.2.3 async-candidate runtime passed: real synchronous DOM eligibility, deferred controls, completed requests and same-vehicle 3→2→1→0.");

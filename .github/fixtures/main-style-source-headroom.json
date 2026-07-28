@@ -101,10 +101,10 @@
   },
   "v8Candidate": {
     "issue": 565,
-    "version": "8.2.2",
-    "sourceBytes": 1663214,
+    "version": "8.2.3",
+    "sourceBytes": 1663189,
     "sourceLines": 25437,
-    "sourceSha256": "444f8a67c91a0f347535c78cf868a37d77f3015d6f4e5f83c2407e3216ab86c7",
+    "sourceSha256": "21e788a7e213f013429bb855485fdbba3aea376e2684c72137bed77c904e6a80",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
@@ -112,13 +112,13 @@
     "maxSourceBytes": 1683214,
     "maxSourceLines": 25687,
     "minTemplateBytes": 500000,
-    "baseline": "8.2.1",
+    "baseline": "8.2.2",
     "approvedGrowth": {
-      "sourceBytes": 18670,
+      "sourceBytes": 18645,
       "sourceLines": 394,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #565 authoritative mission-row readiness and delayed optional-control discovery before Patient Transport Sweep fallback or cleanup"
+    "scope": "Issue #565 synchronous live mission-window eligibility for delayed no-reward release controls"
   }
 }

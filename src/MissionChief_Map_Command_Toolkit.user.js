@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.2
+// @version      8.2.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.2',
+        version: '8.2.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12978,7 +12978,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     function transportSweepOptionalReleaseState(missionId) {
-        const candidates = collectTransportSweepVehicleCandidatesForMission(missionId) || [];
+        const candidates = collectTransportSweepVehicleCandidates();
         const eligibleVehicleIds = new Set(
             Array.from(candidates)
                 .map(candidate => String(candidate?.vehicleId || '').trim())

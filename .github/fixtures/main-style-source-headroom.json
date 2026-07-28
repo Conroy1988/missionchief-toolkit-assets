@@ -101,24 +101,24 @@
   },
   "v8Candidate": {
     "issue": 565,
-    "version": "8.2.3",
-    "sourceBytes": 1663189,
-    "sourceLines": 25437,
-    "sourceSha256": "21e788a7e213f013429bb855485fdbba3aea376e2684c72137bed77c904e6a80",
+    "version": "8.2.4",
+    "sourceBytes": 1666134,
+    "sourceLines": 25490,
+    "sourceSha256": "832715e343b0d54db6743c44154f84f280dbfe3cf1f3af5af2351c6be6824886",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1683214,
-    "maxSourceLines": 25687,
+    "maxSourceBytes": 1686134,
+    "maxSourceLines": 25740,
     "minTemplateBytes": 500000,
-    "baseline": "8.2.2",
+    "baseline": "8.2.3",
     "approvedGrowth": {
-      "sourceBytes": 18645,
-      "sourceLines": 394,
+      "sourceBytes": 21590,
+      "sourceLines": 447,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #565 synchronous live mission-window eligibility for delayed no-reward release controls"
+    "scope": "Issue #565 authoritative FMS 5 patient-row eligibility, ILB support and duplicate no-reward control resolution"
   }
 }

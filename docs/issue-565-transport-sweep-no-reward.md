@@ -7,3 +7,5 @@ The sweep now treats the opened mission as asynchronous. An empty mission DOM is
 Verified vehicles, sequential same-vehicle patient reduction, allowance, cancellation, request failure and the native MissionChief discharge fallback remain preserved. No persistent observer, interval, additional request site or Toolkit-managed timer is added.
 
 Toolkit v8.2.3 additionally corrects the eligibility boundary: optional release discovery now uses the synchronous live mission-window candidate collector. The asynchronous HTML recovery collector is reserved for the later native fallback and is never converted into an empty eligibility set.
+
+Toolkit v8.2.4 makes the rendered patient row authoritative for optional-release eligibility. Patient-carrying ILBs and other non-ambulance vehicle types are included when they have FMS 5, patient names and the exact release control; own vehicles remain excluded. Duplicate top-alert clones are resolved back to the vehicle row and the finite row patient count is preferred.

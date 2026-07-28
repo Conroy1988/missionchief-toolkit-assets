@@ -44,7 +44,7 @@ const helperSource = source.slice(helperStart, helperEnd);
 const releaseHelpers = ["recordTransportSweepConfirmedRelease"].map(extractFunction).join("\n\n");
 
 function createHarness(pageCounts, options = {}) {
-  const dom = new JSDOM("<!doctype html><html><body><main id=mission></main></body></html>", {
+  const dom = new JSDOM('<!doctype html><html><body><div id="top-alert"></div><main id="mission"></main></body></html>', {
     url: "https://www.missionchief.co.uk/missions/9001",
   });
   let generation = 0;
@@ -81,11 +81,11 @@ function createHarness(pageCounts, options = {}) {
       return;
     }
     if (!count) {
-      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111"><td>ILB (ILB)</td><td>Station</td><td>Owner</td><td class="actions"></td></tr></tbody></table>';
+      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111"><td><span class="building_list_fms building_list_fms_5">5</span><a href="/vehicles/111">ILB (ILB)</a></td><td>Station</td><td>Owner</td><td class="actions"></td></tr></tbody></table>';
       return;
     }
     const names = Array.from({ length: count }, (_, index) => `Patient ${index + 1}`).join(" , ");
-    mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111" data-eligible="true"><td>ILB (ILB)<br>Patient: ${names}</td><td>Station</td><td>Owner</td><td class="actions">${includeButton ? releaseLink("111") : ""}</td></tr></tbody></table>`;
+    mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111" data-eligible="true"><td><span class="building_list_fms building_list_fms_5">5</span><a href="/vehicles/111">ILB (ILB)</a><br>Patient: ${names}</td><td>Station</td><td>Owner</td><td class="actions">${includeButton ? releaseLink("111") : ""}</td></tr></tbody></table>`;
     const control = mission.querySelector('a[href="/vehicles/111/patient/-1"]');
     if (control) control.click = () => { throw new Error("production must not use anchor.click()"); };
   }
@@ -94,6 +94,9 @@ function createHarness(pageCounts, options = {}) {
     const row = dom.window.document.querySelector('tr[data-eligible="true"]');
     const actions = row?.querySelector(".actions");
     if (!actions || actions.querySelector('a[href*="/patient/-1"]')) return;
+    const topAlert = dom.window.document.querySelector("#top-alert");
+    topAlert.innerHTML = releaseLink("111");
+    topAlert.querySelector("a").click = () => { throw new Error("production must not use anchor.click()"); };
     actions.innerHTML = releaseLink("111");
     actions.querySelector("a").click = () => { throw new Error("production must not use anchor.click()"); };
   }
@@ -125,13 +128,17 @@ function createHarness(pageCounts, options = {}) {
     transportSweepElementVisible(element) { return Boolean(element?.isConnected); },
     transportSweepVisibleWindowRoots() { return [dom.window.document.body]; },
     transportSweepDocumentContexts() { return [{ doc: dom.window.document, label: "top" }]; },
+    transportSweepVehicleIdFromHref(value) {
+      return String(value || "").match(/\/vehicles\/(\d+)/u)?.[1] || null;
+    },
+    transportSweepOwnVehicleIdSet() {
+      return new Set((options.ownVehicleIds || []).map(String));
+    },
     collectTransportSweepVehicleCandidates() {
-      return Array.from(dom.window.document.querySelectorAll('tr[data-eligible="true"]')).map(row => ({
-        vehicleId: row.id.match(/\d+$/u)?.[0] || "",
-      }));
+      throw new Error("optional release state must not consume the native ambulance-name classifier");
     },
     async collectTransportSweepVehicleCandidatesForMission() {
-      throw new Error("optional release state must not consume an async candidate Promise");
+      throw new Error("optional release state must not consume async mission HTML recovery");
     },
     async transportSweepWaitFor(predicate) {
       for (let index = 0; index < 140; index += 1) {
@@ -157,6 +164,7 @@ function createHarness(pageCounts, options = {}) {
       if (options.failOpen) return false;
       generation += 1;
       poll = 0;
+      dom.window.document.querySelector("#top-alert").innerHTML = "";
       missionRowsReady = options.deferMissionRowsOnReopen === true ? false : true;
       render(false);
       return true;
@@ -265,4 +273,12 @@ function createHarness(pageCounts, options = {}) {
   assert.equal(harness.closes, 0);
 }
 
-console.log("Issue #565 v8.2.3 async-candidate runtime passed: real synchronous DOM eligibility, deferred controls, completed requests and same-vehicle 3→2→1→0.");
+
+{
+  const harness = createHarness([1], { immediateButton: true, ownVehicleIds: ["111"] });
+  const outcome = await harness.run();
+  assert.equal(outcome.cleared, 0);
+  assert.equal(harness.fetches.length, 0, "own patient vehicle must remain excluded");
+}
+
+console.log("Issue #565 v8.2.4 patient-row runtime passed: ILB eligibility, duplicate clone preference, own exclusion, delayed controls and same-vehicle 3→2→1→0.");

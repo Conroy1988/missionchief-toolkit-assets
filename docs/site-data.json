@@ -126,11 +126,12 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Manually releases verified eligible alliance ambulances through MissionChief's native vehicle window while excluding the signed-in player's own vehicles.",
+          "summary": "Releases eligible alliance patients through an exact no-reward mission control when available, then falls back to MissionChief's native vehicle discharge workflow.",
           "details": [
-            "MissionChief native Discharge patient control",
-            "One verified vehicle at a time",
-            "Ambiguous ownership is skipped",
+            "Optional no-reward mission-control fast path",
+            "Reopens each mission and verifies every release",
+            "Processes multiple patients sequentially",
+            "MissionChief native Discharge patient fallback",
             "Bounded retries and confirmation evidence"
           ],
           "visual": "transport-sweep",

@@ -8,8 +8,11 @@ source = (ROOT / "src/MissionChief_Map_Command_Toolkit.user.js").read_text(encod
 start = source.index("    // <mcms-alliance-member-manager>")
 end = source.index("    // </mcms-alliance-member-manager>", start)
 block = source[start:end]
-assert re.search(r"^// @version\s+8\.1\.5$", source, re.MULTILINE)
-assert "version: '8.1.5'" in source
+metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
+runtime = re.search(r"version:\s*'([^']+)'", source)
+assert metadata and runtime and metadata.group(1) == runtime.group(1)
+current_version = tuple(int(part) for part in metadata.group(1).split('.'))
+assert current_version >= (8, 1, 5)
 for marker in [
     "disposeAllianceMemberManager();",
     "allianceMemberManagerEnsureMountObserver",

@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 553,
-    "version": "8.1.5",
-    "sourceBytes": 1651174,
-    "sourceLines": 25173,
-    "sourceSha256": "81a716382c29c926967fabe080083fee8c284d5b5f572416bf2b4ae011821b30",
+    "issue": 565,
+    "version": "8.2.0",
+    "sourceBytes": 1658510,
+    "sourceLines": 25335,
+    "sourceSha256": "865598afd3546b8a5604a223408f1618f59b11c460a0858ac9e2c45b906df91a",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1671174,
-    "maxSourceLines": 25423,
+    "maxSourceBytes": 1678510,
+    "maxSourceLines": 25585,
     "minTemplateBytes": 500000,
-    "baseline": "8.1.4",
+    "baseline": "8.1.5",
     "approvedGrowth": {
-      "sourceBytes": 6630,
-      "sourceLines": 130,
+      "sourceBytes": 13966,
+      "sourceLines": 292,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #553 lifecycle and installer DOM-context correction, enabled-only UI mount observer, cross-origin setting continuity, mount receipts and full rendered integration gate"
+    "scope": "Issue #565 verified-vehicle no-reward patient release path with same-mission reopening, per-patient verification, repeated-click protection and native discharge fallback"
   }
 }

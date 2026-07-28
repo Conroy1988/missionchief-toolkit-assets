@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Make the Issue #565 package locate a split candidate declaration safely."""
+"""Make the Issue #565 package locate the processor candidate declaration safely."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -9,15 +9,19 @@ old = '''candidate_line = "        const candidates = collectTransportSweepVehic
 if source.count(candidate_line) != 1:
     raise RuntimeError("Transport Sweep candidate collection marker changed")
 fast_path = '''
-new = '''candidate_call = "collectTransportSweepVehicleCandidatesForMission(missionId)"
-candidate_call_index = source.find(candidate_call)
-if candidate_call_index < 0 or source.find(candidate_call, candidate_call_index + 1) >= 0:
-    raise RuntimeError("Expected one Transport Sweep candidate collection call")
-candidate_declaration_index = source.rfind("const candidates", 0, candidate_call_index)
+new = '''processor_start = source.find("    async function processTransportSweepMission(item, remainingAllowance) {")
+processor_end = source.find("\\n    async function startTransportSweep", processor_start)
+if processor_start < 0 or processor_end <= processor_start:
+    raise RuntimeError("Transport Sweep processor boundary missing")
+candidate_call = "collectTransportSweepVehicleCandidatesForMission(missionId)"
+candidate_call_index = source.find(candidate_call, processor_start, processor_end)
+if candidate_call_index < 0 or source.find(candidate_call, candidate_call_index + 1, processor_end) >= 0:
+    raise RuntimeError("Expected one Transport Sweep candidate collection call inside processor")
+candidate_declaration_index = source.rfind("const candidates", processor_start, candidate_call_index)
 if candidate_declaration_index < 0:
     raise RuntimeError("Transport Sweep candidate declaration missing")
-candidate_statement_start = source.rfind("\\n", 0, candidate_declaration_index) + 1
-candidate_statement_end = source.find(";", candidate_call_index)
+candidate_statement_start = source.rfind("\\n", processor_start, candidate_declaration_index) + 1
+candidate_statement_end = source.find(";", candidate_call_index, processor_end)
 if candidate_statement_end < 0:
     raise RuntimeError("Transport Sweep candidate declaration terminator missing")
 candidate_statement_end += 1
@@ -39,4 +43,4 @@ SOURCE.write_text(source, encoding="utf-8")
 if text.count(old) != 1:
     raise RuntimeError("Unable to locate package candidate replacement")
 PACKAGE.write_text(text.replace(old, new, 1), encoding="utf-8")
-print("Issue #565 package locates split candidate declaration by source offsets.")
+print("Issue #565 package scopes candidate insertion to processTransportSweepMission.")

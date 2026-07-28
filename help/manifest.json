@@ -1,7 +1,7 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.2.1",
-  "toolkitVersion": "8.2.1",
+  "guideVersion": "8.2.2",
+  "toolkitVersion": "8.2.2",
   "updated": "2026-07-28",
   "path": "help/index.html",
   "sections": 21,
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.2.1 waits for deferred no-reward controls, completes the exact same-origin request before cleanup and verifies same-vehicle patient-count reduction for repeated releases.",
+  "runtimeGuidePatch": "Toolkit v8.2.2 keeps the mission open until authoritative vehicle rows and delayed no-reward controls are discoverable, preventing premature fallback and window cleanup.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

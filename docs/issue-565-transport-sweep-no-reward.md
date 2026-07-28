@@ -1,7 +1,7 @@
 # Issue #565 — Patient Transport Sweep no-reward release path
 
-Toolkit v8.2.1 recognises only the exact visible `Release patient (No reward)` control whose same-origin path matches `/vehicles/{vehicleId}/patient/-1` and whose vehicle is already verified by the existing sweep candidate collector.
+Toolkit v8.2.2 recognises only the exact visible same-origin `Release patient (No reward)` control whose path matches `/vehicles/{vehicleId}/patient/-1`.
 
-The control may be inserted after mission render, so the sweep waits boundedly before selecting native fallback. It then completes one same-origin GET using the exact inspected href, waits for the response body, reopens the mission and verifies the patient count in that vehicle row has decreased. A vehicle carrying several patients may therefore be released repeatedly (`3 → 2 → 1 → 0`) with a unique confirmation identity for every patient.
+The sweep now treats the opened mission as asynchronous. An empty mission DOM is never considered a completed scan. It waits boundedly for an authoritative `#mission_vehicle_at_mission` row and the delayed optional control before falling back. After each completed request and mission reopen, vehicle absence can confirm the final patient only after the authoritative row surface exists. This prevents the mission window from being closed while rows and controls are still loading.
 
-A failed request, unchanged patient count, cancellation or failed mission reopen stops the optional path safely. The established MissionChief-native vehicle-window discharge process remains the fallback. The correction adds one user-invoked network-request site and no observer, interval or disabled-state work.
+Verified vehicles, sequential same-vehicle patient reduction, allowance, cancellation, request failure and the native MissionChief discharge fallback remain preserved. No persistent observer, interval, additional request site or Toolkit-managed timer is added.

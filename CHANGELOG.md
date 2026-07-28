@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.2.2] - 2026-07-28
+
+### Patient Transport Sweep — authoritative mission readiness
+
+- Fixed the sweep treating an empty pre-render mission DOM as a completed no-control state.
+- Keeps the mission window open for a bounded six-second discovery period while Vehicles on Scene rows and optional release controls mount asynchronously.
+- Requires an authoritative mission vehicle row before post-release vehicle absence can confirm the final patient has cleared.
+- Adds browser-faithful delayed-row and delayed-button regression coverage matching the supplied production video.
+- Adds no observer, interval, network request or Toolkit-managed timer.
+
 ## [8.2.1] - 2026-07-28
 
 ### Critical Patient Transport Sweep release correction

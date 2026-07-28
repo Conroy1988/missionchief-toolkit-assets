@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.5
+// @version      8.2.6
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.5',
+        version: '8.2.6',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12895,337 +12895,6 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     
 
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT = 'release patient (no reward)';
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH = /^\/vehicles\/(?<vehicleId>\d+)\/patient\/-1\/?$/u;
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT = 100;
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS = 6000;
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS = 6000;
-    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS = 12000;
-
-    function transportSweepOptionalReleaseTextWithBreaks(node) {
-        if (!node) return '';
-        const parts = [];
-        const walk = current => {
-            if (!current) return;
-            if (current.nodeType === 3) {
-                parts.push(String(current.nodeValue || ''));
-                return;
-            }
-            if (String(current.nodeName || '').toUpperCase() === 'BR') {
-                parts.push(' ');
-                return;
-            }
-            let children = [];
-            try { children = Array.from(current.childNodes || []); } catch (error) {}
-            children.forEach(walk);
-        };
-        walk(node);
-        return parts.join('').replace(/\s+/gu, ' ').trim();
-    }
-
-    function transportSweepOptionalReleasePatientCountFromRow(row) {
-        if (!row) return null;
-        let patientCells = [];
-        try { patientCells = Array.from(row.querySelectorAll?.('td') || []); } catch (error) {}
-        const patientTextSource = patientCells.find(cell =>
-            /\bpatients?\s*:/iu.test(transportSweepOptionalReleaseTextWithBreaks(cell))
-        ) || row;
-        const text = transportSweepOptionalReleaseTextWithBreaks(patientTextSource);
-        const match = text.match(/\bpatients?\s*:\s*(.+)$/iu);
-        if (!match?.[1]) return null;
-        const patientText = match[1]
-            .replace(/\s+Release patient \(No reward\).*$/iu, '')
-            .replace(/\s*\([^()]*\)\s*$/u, '')
-            .trim();
-        const names = patientText
-            .split(/\s*,\s*/u)
-            .map(value => value.trim())
-            .filter(Boolean);
-        return names.length || null;
-    }
-
-    function transportSweepOptionalReleaseRowVehicleId(row) {
-        if (!row) return null;
-        const rowId = String(row.id || '');
-        const rowMatch = rowId.match(/(?:vehicle(?:_row)?_?)(\d+)$/iu);
-        if (rowMatch?.[1]) return rowMatch[1];
-        let anchors = [];
-        try { anchors = Array.from(row.querySelectorAll?.('a[href*="/vehicles/"]') || []); } catch (error) {}
-        for (const anchor of anchors) {
-            const vehicleId = transportSweepVehicleIdFromHref(anchor.getAttribute?.('href'));
-            if (vehicleId) return String(vehicleId);
-        }
-        return null;
-    }
-
-    function transportSweepOptionalReleasePatientRows() {
-        const rows = new Map();
-        const ownVehicleIds = transportSweepOwnVehicleIdSet();
-        const inspect = root => {
-            if (!root) return;
-            let matches = [];
-            try {
-                if (root.matches?.('#mission_vehicle_at_mission tbody tr')) matches.push(root);
-                matches.push(...Array.from(root.querySelectorAll?.('#mission_vehicle_at_mission tbody tr') || []));
-            } catch (error) {}
-            for (const row of matches) {
-                const vehicleId = transportSweepOptionalReleaseRowVehicleId(row);
-                if (!vehicleId || rows.has(vehicleId) || ownVehicleIds.has(String(vehicleId))) continue;
-                if (!row.querySelector?.('.building_list_fms_5')) continue;
-                const patientCount = transportSweepOptionalReleasePatientCountFromRow(row);
-                if (!Number.isFinite(patientCount) || patientCount <= 0) continue;
-                rows.set(String(vehicleId), { vehicleId: String(vehicleId), row, patientCount });
-            }
-        };
-        transportSweepVisibleWindowRoots().forEach(inspect);
-        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
-        return rows;
-    }
-
-    function transportSweepOptionalReleaseDetails(control, patientRows = null) {
-        if (!control || !transportSweepElementVisible(control)) return null;
-        if (normaliseTransportSweepReleaseText(control.textContent) !== TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT) return null;
-        const rawHref = String(control.getAttribute?.('href') || control.href || '').trim();
-        if (!rawHref) return null;
-        let url;
-        try {
-            url = new URL(rawHref, location.href);
-        } catch (error) {
-            return null;
-        }
-        let currentOrigin = '';
-        try { currentOrigin = new URL(location.href).origin; } catch (error) {}
-        if (currentOrigin && url.origin !== currentOrigin) return null;
-        const match = url.pathname.match(TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH);
-        if (!match?.groups?.vehicleId) return null;
-        const vehicleId = String(match.groups.vehicleId);
-        const directRow = control.closest?.('#mission_vehicle_at_mission tbody tr') || null;
-        const directVehicleId = transportSweepOptionalReleaseRowVehicleId(directRow);
-        const authoritative = directVehicleId === vehicleId
-            ? {
-                vehicleId,
-                row: directRow,
-                patientCount: transportSweepOptionalReleasePatientCountFromRow(directRow),
-            }
-            : patientRows?.get?.(vehicleId) || null;
-        return {
-            control,
-            href: url.href,
-            path: url.pathname,
-            vehicleId,
-            patientCount: authoritative?.patientCount ?? null,
-            row: authoritative?.row || null,
-            directRow: Boolean(authoritative?.row && authoritative.row === directRow),
-        };
-    }
-
-    function transportSweepOptionalReleaseControls() {
-        const controls = [];
-        const seen = new Set();
-        const selector = 'a[href*="/vehicles/"][href*="/patient/-1"]';
-        const addControl = control => {
-            if (!control || seen.has(control)) return;
-            seen.add(control);
-            if (transportSweepOptionalReleaseDetails(control)) controls.push(control);
-        };
-        const inspect = root => {
-            if (!root) return;
-            try {
-                if (root.matches?.(selector)) addControl(root);
-                Array.from(root.querySelectorAll?.(selector) || []).forEach(addControl);
-            } catch (error) {}
-        };
-        transportSweepVisibleWindowRoots().forEach(inspect);
-        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
-        return controls;
-    }
-
-    function transportSweepOptionalReleaseMissionReady() {
-        let ready = false;
-        const inspect = root => {
-            if (!root || ready) return;
-            try {
-                const table = root.matches?.('#mission_vehicle_at_mission')
-                    ? root
-                    : root.querySelector?.('#mission_vehicle_at_mission');
-                if (table?.querySelector?.('tbody tr')) ready = true;
-            } catch (error) {}
-        };
-        transportSweepVisibleWindowRoots().forEach(inspect);
-        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
-        return ready;
-    }
-
-    function transportSweepOptionalReleaseState(missionId) {
-        const patientRows = transportSweepOptionalReleasePatientRows();
-        const eligibleVehicleIds = new Set(patientRows.keys());
-        const releaseByVehicle = new Map();
-        for (const control of transportSweepOptionalReleaseControls()) {
-            const details = transportSweepOptionalReleaseDetails(control, patientRows);
-            if (!details || !eligibleVehicleIds.has(details.vehicleId)) continue;
-            const existing = releaseByVehicle.get(details.vehicleId);
-            const score = (Number.isFinite(details.patientCount) ? 100 : 0) + (details.directRow ? 10 : 0);
-            const existingScore = existing
-                ? (Number.isFinite(existing.patientCount) ? 100 : 0) + (existing.directRow ? 10 : 0)
-                : -1;
-            if (!existing || score > existingScore) releaseByVehicle.set(details.vehicleId, details);
-        }
-        return {
-            candidates: Array.from(patientRows.values()),
-            eligibleVehicleIds,
-            releases: Array.from(releaseByVehicle.values()),
-            missionReady: transportSweepOptionalReleaseMissionReady(),
-        };
-    }
-
-    async function waitForTransportSweepOptionalReleaseState(missionId, options = {}) {
-        const vehicleId = String(options.vehicleId || '').trim();
-        const timeoutMs = Math.max(0, Number(options.timeoutMs) || TRANSPORT_SWEEP_OPTIONAL_RELEASE_INITIAL_WAIT_MS);
-        let latest = transportSweepOptionalReleaseState(missionId);
-        const releaseVisible = () => vehicleId
-            ? latest.releases.some(release => release.vehicleId === vehicleId)
-            : latest.releases.length > 0;
-        const vehicleConfirmedAbsent = () => Boolean(
-            vehicleId
-            && latest.missionReady
-            && !latest.eligibleVehicleIds.has(vehicleId)
-        );
-        if (releaseVisible() || vehicleConfirmedAbsent()) {
-            return { ...latest, settled: true, timedOut: false };
-        }
-
-        const waited = await transportSweepWaitFor(() => {
-            latest = transportSweepOptionalReleaseState(missionId);
-            if (releaseVisible() || vehicleConfirmedAbsent()) return latest;
-            return null;
-        }, timeoutMs, 70);
-        return waited
-            ? { ...waited, settled: true, timedOut: false }
-            : { ...latest, settled: false, timedOut: true };
-    }
-
-    function findTransportSweepOptionalReleaseControl(state, attemptedSignatures = null) {
-        const attempted = attemptedSignatures instanceof Set ? attemptedSignatures : new Set();
-        for (const release of state?.releases || []) {
-            const signature = `${release.vehicleId}:${release.patientCount ?? 'unknown'}`;
-            if (attempted.has(signature)) continue;
-            return { ...release, signature };
-        }
-        return null;
-    }
-
-    function transportSweepOptionalReleaseKey(missionId, vehicleId, sequence) {
-        const mission = normaliseMissionId(missionId);
-        const vehicle = normaliseMissionId(vehicleId);
-        const ordinal = Math.max(1, Number(sequence) || 1);
-        return mission && vehicle ? `${mission}:${vehicle}:no-reward:${ordinal}` : '';
-    }
-
-    function recordTransportSweepOptionalReleaseError(message) {
-        transportSweepRuntime.errors += 1;
-        transportSweepLog(message, 'error');
-        renderTransportSweepPanel();
-    }
-
-    async function requestTransportSweepOptionalRelease(release) {
-        const ownerWindow = release?.control?.ownerDocument?.defaultView || pageWindow;
-        const fetcher = ownerWindow?.fetch || pageWindow?.fetch;
-        if (typeof fetcher !== 'function') throw new Error('same-origin request API is unavailable');
-        const AbortSignalCtor = ownerWindow?.AbortSignal || pageWindow?.AbortSignal;
-        const timeoutSignal = typeof AbortSignalCtor?.timeout === 'function'
-            ? AbortSignalCtor.timeout(TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS)
-            : undefined;
-        const response = await fetcher.call(ownerWindow, release.href, {
-            method: 'GET',
-            credentials: 'same-origin',
-            redirect: 'follow',
-            cache: 'no-store',
-            signal: timeoutSignal,
-        });
-        if (!response?.ok) throw new Error(`request returned HTTP ${response?.status || 'unknown'}`);
-        await response.text();
-        return { status: response.status, url: String(response.url || release.href) };
-    }
-
-    function transportSweepOptionalReleaseProgressed(before, afterState) {
-        const after = (afterState?.releases || []).find(release => release.vehicleId === before.vehicleId) || null;
-        if (!afterState?.settled) return { progressed: false, after };
-        if (!after) return { progressed: !afterState.eligibleVehicleIds.has(before.vehicleId), after };
-        if (Number.isFinite(before.patientCount) && Number.isFinite(after.patientCount)) {
-            return { progressed: after.patientCount < before.patientCount, after };
-        }
-        return { progressed: false, after };
-    }
-
-    async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance) {
-        const outcome = { cleared: 0, missionAvailable: true };
-        const allowance = Number.isFinite(remainingAllowance)
-            ? Math.max(0, Math.floor(remainingAllowance))
-            : TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT;
-        const maximum = Math.min(allowance, TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT);
-        const attemptedSignatures = new Set();
-        let sequence = 0;
-        let releaseState = await waitForTransportSweepOptionalReleaseState(missionId);
-
-        while (
-            transportSweepRuntime.running
-            && !transportSweepRuntime.stopRequested
-            && outcome.cleared < maximum
-        ) {
-            const release = findTransportSweepOptionalReleaseControl(releaseState, attemptedSignatures);
-            if (!release) break;
-            attemptedSignatures.add(release.signature);
-            transportSweepLog(
-                `Requesting Release patient (No reward) for vehicle ${release.vehicleId} at ${item.caption}`
-            );
-
-            try {
-                await requestTransportSweepOptionalRelease(release);
-            } catch (error) {
-                recordTransportSweepOptionalReleaseError(
-                    `Could not complete Release patient (No reward) for vehicle ${release.vehicleId}: ${error?.message || error}`
-                );
-                break;
-            }
-
-            if (transportSweepRuntime.stopRequested) break;
-            await closeTransportSweepWindows('reopening mission after completed no-reward patient release');
-            if (transportSweepRuntime.stopRequested) break;
-
-            const reopened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
-            if (!reopened) {
-                outcome.missionAvailable = false;
-                recordTransportSweepOptionalReleaseError(
-                    `Could not reopen ${item.caption} after releasing vehicle ${release.vehicleId}`
-                );
-                break;
-            }
-
-            const afterState = await waitForTransportSweepOptionalReleaseState(missionId, {
-                vehicleId: release.vehicleId,
-                timeoutMs: TRANSPORT_SWEEP_OPTIONAL_RELEASE_SETTLE_MS,
-            });
-            const verification = transportSweepOptionalReleaseProgressed(release, afterState);
-            if (!verification.progressed) {
-                recordTransportSweepOptionalReleaseError(
-                    `Release patient (No reward) did not reduce the patient count for vehicle ${release.vehicleId}; native fallback retained`
-                );
-                break;
-            }
-
-            sequence += 1;
-            const releaseKey = transportSweepOptionalReleaseKey(missionId, release.vehicleId, sequence);
-            if (recordTransportSweepConfirmedRelease(
-                releaseKey,
-                `Cleared patient ${sequence} from vehicle ${release.vehicleId} at ${item.caption} with Release patient (No reward)`
-            )) {
-                outcome.cleared += 1;
-            }
-            releaseState = afterState;
-        }
-        return outcome;
-    }
-
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
         const seen = new Set();
@@ -13497,22 +13166,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         }
 
         while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-        const optionalReleaseResult = await processTransportSweepOptionalReleaseControls(
-            item,
-            missionId,
-            Math.max(0, remainingAllowance - clearedHere)
-        );
-        clearedHere += optionalReleaseResult.cleared;
-        if (
-            transportSweepRuntime.stopRequested
-            || !optionalReleaseResult.missionAvailable
-            || clearedHere >= remainingAllowance
-        ) {
-            await closeTransportSweepWindows('ending no-reward patient release fast path');
-            return clearedHere;
-        }
-
-        let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
+            const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';
@@ -13589,7 +13243,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                     if (confirmedThisAttempt) transportSweepLog(`Cleared ${candidate.label}, but could not reopen ${item.caption}; continuing with the confirmed patient result`, 'warn');
                     else {
                         transportSweepRuntime.errors += 1;
-                        transportSweepLog(`Could not return to ${item.caption} during fallback processing`, 'error');
+                        transportSweepLog(`Could not return to ${item.caption} during native processing`, 'error');
                     }
                     break;
                 }

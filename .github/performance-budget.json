@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-28-issue-565-transport-release-completion",
-  "rationale": "Issue #565 replaces abort-prone anchor clicking with one bounded same-origin request that must complete before mission cleanup, while adding no observer, interval or disabled-state work.",
+  "revision": "2026-07-29-issue-565-native-vehicle-restore",
+  "rationale": "Remove the unsuccessful direct no-reward request detour and restore the original MissionChief FMS 5 vehicle-window Discharge patient workflow.",
   "transitionApproval": {
     "issue": 565,
-    "version": "8.2.1",
-    "approvedNetworkRequestDelta": 1,
-    "scope": "Completion-aware optional patient release using the exact verified same-origin href, deferred-control waiting and same-vehicle patient-count verification.",
+    "version": "8.2.6",
+    "approvedNetworkRequestDelta": -1,
+    "scope": "Restore the awaited native vehicle discharge sequence.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -38,7 +38,7 @@
     "document_wide_subtree_observers": 4,
     "get_element_by_id_calls": 113,
     "inner_html_writes": 22,
-    "network_request_calls": 6
+    "network_request_calls": 5
   },
   "absoluteReviewPercent": {
     "lines": 95,
@@ -166,6 +166,13 @@
       "version": "8.2.1",
       "approvedNetworkRequestDelta": 1,
       "scope": "Completion-aware optional patient release using the exact verified same-origin href, deferred-control waiting and same-vehicle patient-count verification.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 565,
+      "version": "8.2.6",
+      "approvedNetworkRequestDelta": -1,
+      "scope": "Restore the awaited native vehicle discharge sequence.",
       "approvedMutationObserverDelta": 0
     }
   ]

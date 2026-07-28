@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 import re
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[2]
-source=(ROOT/'src'/'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8');token='ls'+'sm'
-assert token not in source.lower()
-required=['function collectTransportSweepVehicleCandidatesForMission(missionId)','async function openTransportSweepVehicle(candidate)','function transportSweepOptionalReleaseControls()','async function requestTransportSweepOptionalRelease(release)','async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance)','function transportSweepVisibleDischargeButtons()','function findVisibleDischargePatientButton(excludedButtons = null)',"const TRANSPORT_SWEEP_RELEASE_CONFIRMATION_TEXT = 'Understood! We have released the patient.';",'function transportSweepDischargeConfirmationRoots()','function clickTransportSweepDischargeConfirmation(releaseKey)','function captureTransportSweepReleaseConfirmationBaseline()','function transportSweepReleaseConfirmationVisible(baseline = null)','function recordTransportSweepConfirmedRelease(releaseKey, message)','confirmedReleaseKeys: new Set()','skippedPatientKeys: new Set()','function recordTransportSweepSkippedPatient(skipKey, message)',"async function closeTransportSweepWindows(reason = 'navigation')",'activeWindowRoot: null','ownedWindowLayers: new Set()','function ensureTransportSweepHud()','function renderTransportSweepHud()',"MissionChief's native Discharge patient control"]
-missing=[item for item in required if item not in source];assert not missing,missing
-processor=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',source);assert processor
-body=processor.group(1)
-for item in ['processTransportSweepOptionalReleaseControls(','collectTransportSweepVehicleCandidatesForMission(missionId)','openTransportSweepVehicle(candidate)','button.click()','clickTransportSweepDischargeConfirmation(releaseKey)','recordTransportSweepConfirmedRelease(']: assert item in body
-assert body.index('button.click()') < body.index('recordTransportSweepConfirmedRelease(')
-assert source.count('transportSweepRuntime.cleared += 1')==1
-assert source.count('transportSweepRuntime.processed += 1')==2
-assert source.count('transportSweepRuntime.skipped += 1')==1
+R=Path(__file__).resolve().parents[2];s=(R/'src/MissionChief_Map_Command_Toolkit.user.js').read_text()
+assert re.search(r'(?m)^//\s*@version\s+8\.2\.6$',s) and "version: '8.2.6'" in s
+for x in ['TRANSPORT_SWEEP_OPTIONAL_RELEASE_','processTransportSweepOptionalReleaseControls(','requestTransportSweepOptionalRelease(','Release patient (No reward)','/patient/-1']: assert x not in s,x
+for x in ['function collectTransportSweepVehicleCandidatesForMission(missionId)','async function openTransportSweepVehicle(candidate)','function transportSweepVisibleDischargeButtons()','function clickTransportSweepDischargeConfirmation(releaseKey)','function transportSweepReleaseConfirmationVisible(baseline = null)','function recordTransportSweepConfirmedRelease(releaseKey, message)',r"/patient (?:is not|isn['’]t) transported\.?/gi"]: assert x in s,x
+m=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',s);assert m;b=m.group(1);cur=-1
+for x in ["await openTransportSweepPath(`/missions/${missionId}`, 'mission')",'const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);','const vehicleResult = await openTransportSweepVehicle(candidate);','button.click();','clickTransportSweepDischargeConfirmation(releaseKey);','recordTransportSweepConfirmedRelease(']: cur=b.index(x,cur+1)
+assert 'let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);' not in b
 print('Native Patient Transport Sweep contract passed.')

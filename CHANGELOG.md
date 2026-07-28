@@ -1,5 +1,15 @@
 # Changelog
 
+## [8.2.6] - 2026-07-29
+
+### Patient Transport Sweep — restore the proven native workflow
+
+- Removed the v8.2.0 direct `Release patient (No reward)` request path that displaced the original working sequence.
+- Restored the exact native flow: open mission, await alliance FMS 5 vehicle discovery, open the flashing vehicle, click **Discharge patient**, confirm **Yes, discharge!**, recognise **Patient isn’t transported**, then continue to the next patient and mission.
+- Restored the missing `await` on `collectTransportSweepVehicleCandidatesForMission()`, which had left the native path holding a Promise instead of a vehicle list.
+- Preserves own-vehicle exclusion, bounded waits, progress, cancellation, duplicate protection and sequential processing.
+- Removes one network-request site and adds no observer, interval or Toolkit-managed timer.
+
 ## [8.2.5] - 2026-07-28
 
 ### Patient Transport Sweep — real MissionChief FMS 5 row layout

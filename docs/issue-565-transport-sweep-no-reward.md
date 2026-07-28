@@ -1,9 +1,5 @@
-# Issue #565 — Patient Transport Sweep no-reward release path
+# Issue #565 — native Patient Transport Sweep restoration
 
-Toolkit v8.2.5 recognises the real MissionChief multi-cell FMS 5 vehicle-row structure.
+Toolkit v8.2.6 restores the original MissionChief-native workflow: open each mission, await the alliance-owned FMS 5 vehicle list, open the flashing vehicle, click **Discharge patient**, confirm **Yes, discharge!**, recognise **Patient isn’t transported**, then continue to the next patient and mission.
 
-The FMS badge can occupy its own first table cell while the vehicle link and `Patient:` text are rendered in another cell. MissionChief separates the vehicle caption and patient label with `<br>`, but DOM `textContent` concatenates them (for example, `AmbulancePatient:`). Patient discovery therefore preserves `<br>` as a text boundary before matching the authoritative `Patient:` label.
-
-The exact visible same-origin `Release patient (No reward)` control remains required. Own vehicles remain excluded from the verified personal vehicle set. Row and top-alert control clones are deduplicated by vehicle ID, with the authoritative row control preferred when patient-count context is available.
-
-Delayed mission rows, delayed controls, completed requests, repeated same-vehicle releases, cancellation, allowance, failed-request handling and the native MissionChief discharge fallback remain preserved. No persistent observer, interval, additional request site or Toolkit-managed timer is added.
+The v8.2.0 direct `Release patient (No reward)` detour and its request site are removed. Verified personal vehicle IDs, bounded waits, cancellation, progress, duplicate protection and sweep-owned window cleanup remain preserved.

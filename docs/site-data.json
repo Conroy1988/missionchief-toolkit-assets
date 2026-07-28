@@ -126,13 +126,14 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Releases eligible alliance patients through an exact no-reward mission control when available, then falls back to MissionChief's native vehicle discharge workflow.",
+          "summary": "Opens each mission and alliance-owned FMS 5 patient vehicle, then completes MissionChief's native discharge and confirmation sequence.",
           "details": [
-            "Optional no-reward mission-control fast path",
-            "Reopens each mission and verifies every release",
-            "Processes multiple patients sequentially",
-            "MissionChief native Discharge patient fallback",
-            "Bounded retries and confirmation evidence"
+            "Mission-by-mission FMS 5 vehicle discovery",
+            "Native Discharge patient control",
+            "Yes, discharge! confirmation",
+            "Patient isn’t transported verification",
+            "Sequential patients and missions",
+            "Verified personal vehicle exclusion"
           ],
           "visual": "transport-sweep",
           "tags": [

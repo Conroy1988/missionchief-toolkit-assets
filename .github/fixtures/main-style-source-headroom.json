@@ -101,24 +101,24 @@
   },
   "v8Candidate": {
     "issue": 565,
-    "version": "8.2.4",
-    "sourceBytes": 1666134,
-    "sourceLines": 25490,
-    "sourceSha256": "832715e343b0d54db6743c44154f84f280dbfe3cf1f3af5af2351c6be6824886",
+    "version": "8.2.5",
+    "sourceBytes": 1666545,
+    "sourceLines": 25499,
+    "sourceSha256": "7b2c97f2be3152efcc221dc9b3a538f7bbaba52e970bf45fcf22dc82b7662b1e",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1686134,
-    "maxSourceLines": 25740,
+    "maxSourceBytes": 1686545,
+    "maxSourceLines": 25749,
     "minTemplateBytes": 500000,
-    "baseline": "8.2.3",
+    "baseline": "8.2.4",
     "approvedGrowth": {
-      "sourceBytes": 21590,
-      "sourceLines": 447,
+      "sourceBytes": 22001,
+      "sourceLines": 456,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #565 authoritative FMS 5 patient-row eligibility, ILB support and duplicate no-reward control resolution"
+    "scope": "Issue #565 real MissionChief multi-cell FMS 5 patient-row parsing and browser-faithful regression"
   }
 }

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.4
+// @version      8.2.5
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.4',
+        version: '8.2.5',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12903,11 +12903,20 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     const TRANSPORT_SWEEP_OPTIONAL_RELEASE_REQUEST_TIMEOUT_MS = 12000;
 
     function transportSweepOptionalReleasePatientCountFromRow(row) {
-        const vehicleCell = row?.querySelector?.('td:first-child') || row;
-        const text = String(vehicleCell?.textContent || '').replace(/\s+/gu, ' ').trim();
+        if (!row) return null;
+        let patientCells = [];
+        try { patientCells = Array.from(row.querySelectorAll?.('td') || []); } catch (error) {}
+        const patientTextSource = patientCells.find(cell =>
+            /\bpatients?\s*:/iu.test(String(cell?.textContent || ''))
+        ) || row;
+        const text = String(patientTextSource?.textContent || '').replace(/\s+/gu, ' ').trim();
         const match = text.match(/\bpatients?\s*:\s*(.+)$/iu);
         if (!match?.[1]) return null;
-        const names = match[1]
+        const patientText = match[1]
+            .replace(/\s+Release patient \(No reward\).*$/iu, '')
+            .replace(/\s*\([^()]*\)\s*$/u, '')
+            .trim();
+        const names = patientText
             .split(/\s*,\s*/u)
             .map(value => value.trim())
             .filter(Boolean);

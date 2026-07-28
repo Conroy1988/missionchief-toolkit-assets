@@ -81,11 +81,16 @@ function createHarness(pageCounts, options = {}) {
       return;
     }
     if (!count) {
-      mission.innerHTML = '<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111"><td><span class="building_list_fms building_list_fms_5">5</span><a href="/vehicles/111">ILB (ILB)</a></td><td>Station</td><td>Owner</td><td class="actions"></td></tr></tbody></table>';
+      const vehicleLabel = options.vehicleLabel || "ILB (ILB)";
+      mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_row_111"><td><span class="building_list_fms building_list_fms_5">5</span></td><td><a href="/vehicles/111" vehicle_type_id="5">${vehicleLabel}</a></td><td>Station</td><td>Owner</td><td class="actions"></td></tr></tbody></table>`;
       return;
     }
     const names = Array.from({ length: count }, (_, index) => `Patient ${index + 1}`).join(" , ");
-    mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_111" data-eligible="true"><td><span class="building_list_fms building_list_fms_5">5</span><a href="/vehicles/111">ILB (ILB)</a><br>Patient: ${names}</td><td>Station</td><td>Owner</td><td class="actions">${includeButton ? releaseLink("111") : ""}</td></tr></tbody></table>`;
+    const vehicleLabel = options.vehicleLabel || "ILB (ILB)";
+    mission.innerHTML = `<table id="mission_vehicle_at_mission"><tbody><tr id="vehicle_row_111" data-eligible="true"><td><span class="building_list_fms building_list_fms_5">5</span></td><td><a href="/vehicles/111" vehicle_type_id="5">${vehicleLabel}</a><br>Patient: ${names}<small class="visible-xs"> (<a href="/profile/485821">CHESHIREFRS</a>)</small></td><td>Station</td><td>Owner</td><td class="actions">${includeButton ? releaseLink("111") : ""}</td></tr></tbody></table>`;
+    const renderedRow = mission.querySelector("#vehicle_row_111");
+    assert.doesNotMatch(String(renderedRow?.querySelector("td:first-child")?.textContent || ""), /Patient:/u, "FMS badge cell must not contain patient text");
+    assert.match(String(renderedRow?.textContent || ""), /Patient:/u, "authoritative row must contain patient text outside the first cell");
     const control = mission.querySelector('a[href="/vehicles/111/patient/-1"]');
     if (control) control.click = () => { throw new Error("production must not use anchor.click()"); };
   }
@@ -275,10 +280,17 @@ function createHarness(pageCounts, options = {}) {
 
 
 {
+  const harness = createHarness([1, 0], { immediateButton: true, vehicleLabel: "Ambulance" });
+  const outcome = await harness.run();
+  assert.equal(outcome.cleared, 1, "real multi-cell ambulance row must release its patient");
+  assert.equal(harness.fetches.length, 1);
+}
+
+{
   const harness = createHarness([1], { immediateButton: true, ownVehicleIds: ["111"] });
   const outcome = await harness.run();
   assert.equal(outcome.cleared, 0);
   assert.equal(harness.fetches.length, 0, "own patient vehicle must remain excluded");
 }
 
-console.log("Issue #565 v8.2.4 patient-row runtime passed: ILB eligibility, duplicate clone preference, own exclusion, delayed controls and same-vehicle 3→2→1→0.");
+console.log("Issue #565 v8.2.5 real-row runtime passed: multi-cell FMS badge separation, ILB and ambulance eligibility, owner markup, duplicate clone preference, own exclusion, delayed controls and same-vehicle 3→2→1→0.");

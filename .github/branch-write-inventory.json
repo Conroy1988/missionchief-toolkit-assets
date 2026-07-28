@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "reviewedAt": "2026-07-24",
-  "reviewedMainCommit": "e51a44431c1769dcdab292f1d5f3b570b4c1f867",
+  "reviewedAt": "2026-07-28",
+  "reviewedMainCommit": "ffc6acc9e26899b8eed230cdc7c60f80350443b2",
   "strictProtectionEnabled": false,
   "directMainWriters": [
     {
@@ -172,6 +172,11 @@
     {
       "workflow": ".github/workflows/prepare-release-rollback.yml",
       "target": "new recovery branch and owner-created pull request",
+      "credential": "DEVELOPMENT_PR_TOKEN"
+    },
+    {
+      "workflow": ".github/workflows/recover-development-package.yml",
+      "target": "existing owner-created package-only pull-request branch after exact manual dispatch",
       "credential": "DEVELOPMENT_PR_TOKEN"
     }
   ],

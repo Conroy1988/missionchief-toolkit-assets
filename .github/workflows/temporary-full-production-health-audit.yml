@@ -1,0 +1,102 @@
+name: Temporary Issue 567 Full Production Health Audit Executor
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: temporary-issue567-full-production-health-audit
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    if: >-
+      github.repository == 'Conroy1988/missionchief-toolkit-assets' &&
+      github.event.pull_request.number == 569 &&
+      github.event.pull_request.head.ref == 'chore/full-production-health-audit-v8-2-0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Require owner branch token
+        env:
+          OWNER_TOKEN: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$OWNER_TOKEN" ]] || { echo 'DEVELOPMENT_PR_TOKEN is required.' >&2; exit 1; }
+
+      - name: Check out exact pull-request head
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          token: ${{ secrets.DEVELOPMENT_PR_TOKEN }}
+          show-progress: false
+
+      - name: Execute, clean, validate and publish audit evidence
+        env:
+          EXPECTED_BASE: 0eea1140d2588e9b2aec3884da4bc87f564904f1
+          EXPECTED_PACKAGE_COMMIT: 2f4f1b1409818563805abb4d99be74898eb208bc
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          BRANCH: chore/full-production-health-audit-v8-2-0
+          PACKAGE: .github/development-packages/issue567_full_production_health_audit.py
+          EXECUTOR: .github/workflows/temporary-full-production-health-audit.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/issue567-full-audit-executor.log") 2>&1
+
+          echo stage=verify
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git merge-base --is-ancestor "$EXPECTED_PACKAGE_COMMIT" HEAD
+          git fetch --no-tags origin main
+          test "$(git rev-parse origin/main)" = "$EXPECTED_BASE"
+          git merge-base --is-ancestor origin/main HEAD
+          test -f "$PACKAGE"
+          test -f "$EXECUTOR"
+          test -f .github/scripts/audit_full_production_health.py
+          test -f .github/scripts/audit_runtime_stress.mjs
+
+          echo stage=audit
+          python3 "$PACKAGE"
+
+          echo stage=clean
+          rm -f "$PACKAGE" "$EXECUTOR"
+          find .github/development-packages -type d -empty -delete 2>/dev/null || true
+          rm -rf node_modules
+          if [[ -f package-lock.json ]] && ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            rm -f package-lock.json
+          fi
+          test -z "$(git ls-files node_modules)"
+
+          echo stage=final-validation
+          python3 .github/scripts/validate_userscript.py
+          node --check src/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          test -f docs/audits/issue-567/audit-execution.json
+          test -f docs/audits/issue-567/full-production-health.json
+          test -f docs/audits/issue-567/runtime-stress.json
+          test "$(python3 -c 'import json; print(json.load(open("docs/audits/issue-567/audit-execution.json"))["status"])')" = passed
+          test "$(python3 -c 'import json; print(json.load(open("docs/audits/issue-567/runtime-stress.json"))["status"])')" = passed
+
+          echo stage=publish
+          git config user.name "Conroy1988"
+          git config user.email "27301455+Conroy1988@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo 'No audit evidence changes produced.' >&2; exit 1; }
+          git commit -m "Record Issue #567 full production-health audit evidence"
+          git push --force-with-lease="refs/heads/${BRANCH}:${EXPECTED_HEAD}" origin "HEAD:${BRANCH}"
+
+      - name: Upload executor diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: issue567-full-production-health-executor-${{ github.sha }}
+          path: ${{ runner.temp }}/issue567-full-audit-executor.log
+          if-no-files-found: warn
+          retention-days: 30

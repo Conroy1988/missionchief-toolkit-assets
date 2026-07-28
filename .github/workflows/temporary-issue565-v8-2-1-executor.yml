@@ -42,6 +42,7 @@ jobs:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
           BRANCH: fix/transport-sweep-release-navigation-v8-2-1
           PACKAGE: .github/development-packages/issue565_transport_sweep_release_v8_2_1.py
+          NORMALIZER: .github/development-packages/issue565_v821_source_indent_fix.py
           EXECUTOR: .github/workflows/temporary-issue565-v8-2-1-executor.yml
         shell: bash
         run: |
@@ -51,10 +52,12 @@ jobs:
           git fetch --no-tags origin main
           test "$(git rev-parse origin/main)" = "$EXPECTED_MAIN"
           test -f "$PACKAGE"
+          test -f "$NORMALIZER"
           test -f "$EXECUTOR"
 
           echo stage=apply-package
           python3 "$PACKAGE"
+          python3 "$NORMALIZER"
 
           echo stage=install-browser-runtime
           npm install --no-save --package-lock=false --ignore-scripts jsdom@26.1.0
@@ -74,7 +77,7 @@ jobs:
 
           echo stage=clean-carrier
           rm -rf node_modules
-          rm -f "$PACKAGE" "$EXECUTOR"
+          rm -f "$PACKAGE" "$NORMALIZER" "$EXECUTOR"
           find .github/development-packages -type d -empty -delete 2>/dev/null || true
           test -z "$(git ls-files node_modules)"
 

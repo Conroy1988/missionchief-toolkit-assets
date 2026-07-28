@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.2.0] - 2026-07-28
+
+### Patient Transport Sweep — sequential no-reward releases
+
+- Added an automatic fast path for the exact optional **Release patient (No reward)** mission control.
+- Reopens the same mission after every release and verifies the released vehicle/patient control has disappeared before counting success.
+- Repeats one patient at a time for multi-patient missions until no matching control remains or the sweep allowance is reached.
+- Stops repeated clicking when the same control survives a mission reopen and records a visible sweep error.
+- Preserves the existing MissionChief-native **Discharge patient** vehicle-window process as the complete fallback when the optional control is unavailable.
+- Adds no observer, recurring interval or additional network-request call site.
+
 ## [8.1.5] - 2026-07-27
 
 ### Hardened UI mounting and live member-page recovery

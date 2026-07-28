@@ -1,10 +1,10 @@
 {
   "project": "MissionChief Map Command Toolkit",
-  "guideVersion": "8.1.5",
-  "toolkitVersion": "8.1.5",
-  "updated": "2026-07-27",
+  "guideVersion": "8.2.0",
+  "toolkitVersion": "8.2.0",
+  "updated": "2026-07-28",
   "path": "help/index.html",
-  "sections": 20,
+  "sections": 21,
   "searchEnabled": true,
   "standalone": true,
   "viewerMode": "Fetched by the userscript and rendered in a sandboxed srcdoc iframe",
@@ -15,6 +15,6 @@
   "financialIntelligenceRules": "financial-intelligence/v1/classification-rules.json",
   "financialAuditPolicy": "financial-intelligence/v2/audit-policy.json",
   "financialArchitectureManifest": "financial-intelligence/v2/manifest.json",
-  "runtimeGuidePatch": "Toolkit v8.1.5 hardens page-level UI mounting with real rendered-DOM integration tests, enabled-only observation, mount receipts and visible waiting/error states.",
+  "runtimeGuidePatch": "Toolkit v8.2.0 adds sequential verified Release patient (No reward) handling with same-mission reopening, multi-patient processing, repeated-click protection and the existing native discharge fallback.",
   "godfatherThemePackage": "themes/godfather/manifest.json"
 }

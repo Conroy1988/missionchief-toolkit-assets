@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.1.5
+// @version      8.2.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.1.5',
+        version: '8.2.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12894,6 +12894,146 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
     }
 
     
+
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT = 'release patient (no reward)';
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH = /^\/vehicles\/(?<vehicleId>\d+)\/patient\/-1\/?$/u;
+    const TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT = 100;
+
+    function transportSweepOptionalReleaseDetails(control) {
+        if (!control || !transportSweepElementVisible(control)) return null;
+        if (normaliseTransportSweepReleaseText(control.textContent) !== TRANSPORT_SWEEP_OPTIONAL_RELEASE_TEXT) return null;
+        const rawHref = String(control.getAttribute?.('href') || control.href || '').trim();
+        if (!rawHref) return null;
+        let url;
+        try {
+            url = new URL(rawHref, location.href);
+        } catch (error) {
+            return null;
+        }
+        let currentOrigin = '';
+        try { currentOrigin = new URL(location.href).origin; } catch (error) {}
+        if (currentOrigin && url.origin !== currentOrigin) return null;
+        const match = url.pathname.match(TRANSPORT_SWEEP_OPTIONAL_RELEASE_PATH);
+        if (!match?.groups?.vehicleId) return null;
+        return {
+            control,
+            path: url.pathname,
+            vehicleId: match.groups.vehicleId,
+        };
+    }
+
+    function transportSweepOptionalReleaseControls() {
+        const controls = [];
+        const seen = new Set();
+        const selector = 'a[href*="/vehicles/"][href*="/patient/-1"]';
+        const addControl = control => {
+            if (!control || seen.has(control)) return;
+            seen.add(control);
+            if (transportSweepOptionalReleaseDetails(control)) controls.push(control);
+        };
+        const inspect = root => {
+            if (!root) return;
+            try {
+                if (root.matches?.(selector)) addControl(root);
+                Array.from(root.querySelectorAll?.(selector) || []).forEach(addControl);
+            } catch (error) {}
+        };
+        transportSweepVisibleWindowRoots().forEach(inspect);
+        transportSweepDocumentContexts().forEach(context => inspect(context.doc));
+        return controls;
+    }
+
+    function transportSweepOptionalReleaseControlForVehicle(vehicleId) {
+        const expected = String(vehicleId || '').trim();
+        if (!expected) return null;
+        for (const control of transportSweepOptionalReleaseControls()) {
+            const details = transportSweepOptionalReleaseDetails(control);
+            if (details?.vehicleId === expected) return details;
+        }
+        return null;
+    }
+
+    function findTransportSweepOptionalReleaseControl(missionId, eligibleVehicleIds, excludedReleaseKeys = null) {
+        const excluded = excludedReleaseKeys instanceof Set ? excludedReleaseKeys : new Set();
+        for (const control of transportSweepOptionalReleaseControls()) {
+            const details = transportSweepOptionalReleaseDetails(control);
+            if (!details) continue;
+            if (!(eligibleVehicleIds instanceof Set) || !eligibleVehicleIds.has(details.vehicleId)) continue;
+            const releaseKey = transportSweepReleaseKey(missionId, details.vehicleId);
+            if (!releaseKey || excluded.has(releaseKey) || transportSweepRuntime.confirmedReleaseKeys.has(releaseKey)) continue;
+            return { ...details, releaseKey };
+        }
+        return null;
+    }
+
+    function recordTransportSweepOptionalReleaseError(message) {
+        transportSweepRuntime.errors += 1;
+        transportSweepLog(message, 'error');
+        renderTransportSweepPanel();
+    }
+
+    async function processTransportSweepOptionalReleaseControls(item, missionId, remainingAllowance, eligibleVehicleIds) {
+        const outcome = { cleared: 0, missionAvailable: true };
+        const allowance = Number.isFinite(remainingAllowance)
+            ? Math.max(0, Math.floor(remainingAllowance))
+            : TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT;
+        const maximum = Math.min(allowance, TRANSPORT_SWEEP_OPTIONAL_RELEASE_LIMIT);
+        const attemptedReleaseKeys = new Set();
+
+        while (
+            transportSweepRuntime.running
+            && !transportSweepRuntime.stopRequested
+            && outcome.cleared < maximum
+        ) {
+            const release = findTransportSweepOptionalReleaseControl(missionId, eligibleVehicleIds, attemptedReleaseKeys);
+            if (!release) break;
+            attemptedReleaseKeys.add(release.releaseKey);
+            transportSweepLog(`Using Release patient (No reward) for vehicle ${release.vehicleId} at ${item.caption}`);
+
+            try {
+                release.control.click();
+                await transportSweepWaitFor(() => {
+                    if (transportSweepRuntime.stopRequested) return true;
+                    if (!release.control.isConnected || !transportSweepElementVisible(release.control)) return true;
+                    return transportSweepOptionalReleaseControlForVehicle(release.vehicleId) ? null : true;
+                }, 5000, 70);
+            } catch (error) {
+                recordTransportSweepOptionalReleaseError(
+                    `Could not activate Release patient (No reward) for vehicle ${release.vehicleId}: ${error?.message || error}`
+                );
+                break;
+            }
+
+            if (transportSweepRuntime.stopRequested) break;
+            await closeTransportSweepWindows('reopening mission after no-reward patient release');
+            if (transportSweepRuntime.stopRequested) break;
+
+            const reopened = await openTransportSweepPath(`/missions/${missionId}`, 'mission');
+            if (!reopened) {
+                outcome.missionAvailable = false;
+                recordTransportSweepOptionalReleaseError(
+                    `Could not reopen ${item.caption} after releasing vehicle ${release.vehicleId}`
+                );
+                break;
+            }
+
+            if (transportSweepOptionalReleaseControlForVehicle(release.vehicleId)) {
+                recordTransportSweepOptionalReleaseError(
+                    `Release patient (No reward) remained available for vehicle ${release.vehicleId}; stopped repeated clicking`
+                );
+                break;
+            }
+
+            if (recordTransportSweepConfirmedRelease(
+                release.releaseKey,
+                `Cleared vehicle ${release.vehicleId} at ${item.caption} with Release patient (No reward)`
+            )) {
+                outcome.cleared += 1;
+            }
+        }
+        return outcome;
+    }
+
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
         const seen = new Set();
@@ -13165,7 +13305,29 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         }
 
         while (!transportSweepRuntime.stopRequested && clearedHere < remainingAllowance && transportSweepRuntime.cleared < state.transportSweep.maxPerRun) {
-            const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);
+        let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
+        const optionalEligibleVehicleIds = new Set(
+            candidates
+                .map(candidate => String(candidate?.vehicleId || '').trim())
+                .filter(Boolean)
+        );
+        const optionalReleaseResult = await processTransportSweepOptionalReleaseControls(
+            item,
+            missionId,
+            Math.max(0, remainingAllowance - clearedHere),
+            optionalEligibleVehicleIds
+        );
+        clearedHere += optionalReleaseResult.cleared;
+        if (
+            transportSweepRuntime.stopRequested
+            || !optionalReleaseResult.missionAvailable
+            || clearedHere >= remainingAllowance
+        ) {
+            await closeTransportSweepWindows('ending no-reward patient release fast path');
+            return clearedHere;
+        }
+
+        candidates = collectTransportSweepVehicleCandidatesForMission(missionId);
             const candidateStats = transportSweepRuntime.lastCandidateStats || {};
             if (!initialScanLogged) {
                 const source = candidateStats.source ? ` · ${candidateStats.source}` : '';

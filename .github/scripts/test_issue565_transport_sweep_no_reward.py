@@ -21,8 +21,8 @@ def section(text: str, start: str, end: str) -> str:
 
 def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
-    assert re.search(r"(?m)^//\s*@version\s+8\.2\.4$", source)
-    assert "version: '8.2.4'" in source
+    assert re.search(r"(?m)^//\s*@version\s+8\.2\.5$", source)
+    assert "version: '8.2.5'" in source
     for marker in [
         "function transportSweepOptionalReleasePatientCountFromRow(row)",
         "function transportSweepOptionalReleasePatientRows()",
@@ -60,6 +60,11 @@ def main() -> int:
     assert "latest.eligibleVehicleIds.size === 0" not in helper
     assert "latest.missionReady" in helper
     assert "const patientRows = transportSweepOptionalReleasePatientRows();" in helper
+    assert "td:first-child" not in helper
+    assert "patientCells.find" in helper
+    assert "patientTextSource" in helper
+    assert "transportSweepOptionalReleaseTextWithBreaks" in helper
+    assert "nodeName || '').toUpperCase() === 'BR'" in helper
     assert "collectTransportSweepVehicleCandidates()" not in helper
     assert "collectTransportSweepVehicleCandidatesForMission(missionId)" not in helper
     assert "releaseByVehicle" in helper
@@ -80,13 +85,13 @@ def main() -> int:
     preflight = PREFLIGHT.read_text(encoding="utf-8")
     assert ".github/scripts/test_issue565_transport_sweep_no_reward.py" in preflight
     assert ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs" in preflight
-    assert "## [8.2.4] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
+    assert "## [8.2.5] - 2026-07-28" in CHANGELOG.read_text(encoding="utf-8")
     assert "same vehicle" in HELP.read_text(encoding="utf-8").lower()
 
     performance = PERFORMANCE.read_text(encoding="utf-8")
     assert '"approvedNetworkRequestDelta": 1' in performance
     assert '"network_request_calls": 6' in performance
-    print("Issue #565 v8.2.4 authoritative patient-row eligibility contract passed.")
+    print("Issue #565 v8.2.5 real multi-cell patient-row contract passed.")
     return 0
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the reviewed Issue #543 package with its release-env anchor narrowed."""
+"""Execute the immutable reviewed Issue #543 package with one anchor narrowed."""
 from __future__ import annotations
 
 import subprocess
@@ -8,8 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ".github/development-packages/apply_issue543_release_telemetry.py"
+REVIEWED_PACKAGE_COMMIT = "642665cfe912496ac388f909904d7cb4d4b99b4a"
 previous = subprocess.check_output(
-    ["git", "show", f"HEAD^:{PACKAGE}"],
+    ["git", "show", f"{REVIEWED_PACKAGE_COMMIT}:{PACKAGE}"],
     cwd=ROOT,
     text=True,
 )

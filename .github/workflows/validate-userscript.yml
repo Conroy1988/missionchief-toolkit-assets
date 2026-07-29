@@ -358,6 +358,7 @@ jobs:
           python3 .github/scripts/test_runtime_optimisations.py
           node --check tools/mcms-performance-profiler.user.js
           node .github/scripts/test_performance_profiler.js
+          node .github/scripts/test_runtime_stress_discovery.mjs
 
       - name: Run performance budget
         shell: bash

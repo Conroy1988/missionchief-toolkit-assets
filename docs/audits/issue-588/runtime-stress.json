@@ -1,0 +1,877 @@
+{
+  "schemaVersion": 2,
+  "audit": "runtime-stress",
+  "status": "passed",
+  "source": {
+    "version": "8.3.1",
+    "sha256": "363c6fa8f742840d71a65187c4b2f5b60fcffda519d63f2416c488cd86ca8089"
+  },
+  "discovery": {
+    "authority": ".github/scripts/run_userscript_preflight.sh",
+    "authoritySha256": "87f64c9b00fe0d76261be9b4de6c686eaa5f6d4ab72ed45ce603a0c0fd3a310f",
+    "canonicalRuntimeContracts": [
+      ".github/scripts/test_transport_sweep_runtime.js",
+      ".github/scripts/test_issue523_transport_sweep_progress_runtime.js",
+      ".github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js",
+      ".github/scripts/test_issue530_transport_sweep_discharge_confirmation_runtime.js",
+      ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs",
+      ".github/scripts/test_issue515_launcher_runtime.js",
+      ".github/scripts/test_issue517_incident_command_wire_runtime.js",
+      ".github/scripts/test_issue564_incident_feed_attended_runtime.js",
+      ".github/scripts/test_issue553_alliance_member_manager_menu_runtime.js",
+      ".github/scripts/test_issue553_alliance_member_manager_page_runtime.js"
+    ],
+    "explicitRuntimeContracts": [
+      ".github/scripts/test_ui_mount_integration.mjs"
+    ],
+    "plannedContracts": [
+      {
+        "test": ".github/scripts/test_transport_sweep_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue523_transport_sweep_progress_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue530_transport_sweep_discharge_confirmation_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue515_launcher_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue517_incident_command_wire_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue564_incident_feed_attended_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue553_alliance_member_manager_menu_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_issue553_alliance_member_manager_page_runtime.js",
+        "repeats": 8
+      },
+      {
+        "test": ".github/scripts/test_ui_mount_integration.mjs",
+        "repeats": 16
+      }
+    ]
+  },
+  "repeatedExecutions": 96,
+  "totalSeconds": 15.978462251,
+  "ceilings": {
+    "perRunSecondsCeiling": 45,
+    "peakRssKbCeiling": 700000,
+    "totalSecondsCeiling": 900
+  },
+  "failures": [],
+  "results": [
+    {
+      "test": ".github/scripts/test_transport_sweep_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49334,
+      "maximumPeakRssKb": 49772,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49328
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49332
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49772
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49204
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49332
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue523_transport_sweep_progress_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49268,
+      "maximumPeakRssKb": 49340,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49224
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49268
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49268
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49300
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49340
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49228
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49216
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49292,
+      "maximumPeakRssKb": 49332,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49292
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49292
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49324
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49292
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49328
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49260
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49272
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49332
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue530_transport_sweep_discharge_confirmation_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49288,
+      "maximumPeakRssKb": 49336,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49288
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49228
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49232
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49232
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49296
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49288
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.42,
+      "maximumElapsedSeconds": 0.45,
+      "medianPeakRssKb": 116214,
+      "maximumPeakRssKb": 116680,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.44,
+          "peakRssKb": 116200
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.44,
+          "peakRssKb": 113644
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.45,
+          "peakRssKb": 116228
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.41,
+          "peakRssKb": 116060
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.42,
+          "peakRssKb": 116680
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.42,
+          "peakRssKb": 116228
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.42,
+          "peakRssKb": 116092
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.41,
+          "peakRssKb": 116528
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue515_launcher_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49318,
+      "maximumPeakRssKb": 49408,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49276
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49300
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49372
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49300
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49408
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49276
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue517_incident_command_wire_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49330,
+      "maximumPeakRssKb": 49340,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49304
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49340
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49300
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49332
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49336
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49232
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49328
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue564_incident_feed_attended_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.04,
+      "maximumElapsedSeconds": 0.04,
+      "medianPeakRssKb": 51268,
+      "maximumPeakRssKb": 51324,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51324
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51264
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51236
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51236
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51324
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51236
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51324
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.04,
+          "peakRssKb": 51272
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue553_alliance_member_manager_menu_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49262,
+      "maximumPeakRssKb": 49340,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49220
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49260
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49296
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49232
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49256
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49340
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49304
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49264
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_issue553_alliance_member_manager_page_runtime.js",
+      "repeats": 8,
+      "passed": true,
+      "medianElapsedSeconds": 0.03,
+      "maximumElapsedSeconds": 0.03,
+      "medianPeakRssKb": 49302,
+      "maximumPeakRssKb": 49736,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49192
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.02,
+          "peakRssKb": 49296
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49308
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49308
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49180
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49300
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49304
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.03,
+          "peakRssKb": 49736
+        }
+      ]
+    },
+    {
+      "test": ".github/scripts/test_ui_mount_integration.mjs",
+      "repeats": 16,
+      "passed": true,
+      "medianElapsedSeconds": 0.61,
+      "maximumElapsedSeconds": 0.61,
+      "medianPeakRssKb": 127652,
+      "maximumPeakRssKb": 129288,
+      "samples": [
+        {
+          "iteration": 1,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 128064
+        },
+        {
+          "iteration": 2,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 125000
+        },
+        {
+          "iteration": 3,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 127204
+        },
+        {
+          "iteration": 4,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 128172
+        },
+        {
+          "iteration": 5,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 127684
+        },
+        {
+          "iteration": 6,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 125068
+        },
+        {
+          "iteration": 7,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 127180
+        },
+        {
+          "iteration": 8,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 124600
+        },
+        {
+          "iteration": 9,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 127620
+        },
+        {
+          "iteration": 10,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 127972
+        },
+        {
+          "iteration": 11,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 127768
+        },
+        {
+          "iteration": 12,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 129288
+        },
+        {
+          "iteration": 13,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 128064
+        },
+        {
+          "iteration": 14,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 126488
+        },
+        {
+          "iteration": 15,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.6,
+          "peakRssKb": 126564
+        },
+        {
+          "iteration": 16,
+          "status": 0,
+          "signal": null,
+          "elapsedSeconds": 0.61,
+          "peakRssKb": 127768
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "issue": 588,
+  "parentIssue": 247,
+  "measurementOnly": true,
+  "toolkitVersion": "8.3.1",
+  "auditedMain": "4247b7caa7dad78007010e8bf0e33c352f3d45e3",
+  "sourceSha256": "363c6fa8f742840d71a65187c4b2f5b60fcffda519d63f2416c488cd86ca8089",
+  "sourceBytes": 1654208,
+  "sourceLines": 25228,
+  "sourceDistributionParity": true,
+  "generatedAt": "2026-07-29T20:34:10.476528Z",
+  "runtimeStress": {
+    "status": "passed",
+    "canonicalContracts": 10,
+    "explicitContracts": 1,
+    "repeatedExecutions": 96,
+    "totalSeconds": 15.978462251,
+    "maximumPeakRssKb": 129288
+  },
+  "deepPerformance": {
+    "functionsAndCallbacks": 1450,
+    "rankedFunctions": 1449,
+    "largeTemplates": 18,
+    "mutationObserverConstructions": 11,
+    "resizeObserverConstructions": 4,
+    "observerConstructions": 15,
+    "observerRegistrations": 15,
+    "broadSubtreeObservers": 9,
+    "schedulerCalls": 100,
+    "repeatedSelectors": 54,
+    "resolvedBroadSubtreeObservers": 7,
+    "unresolvedBroadSubtreeObservers": 2
+  },
+  "performanceBudgetStatus": "unknown",
+  "safetyBoundary": "Static and CI stress evidence only; authenticated MissionChief browser evidence remains required before CSS modularisation or broad render-path optimisation."
+}

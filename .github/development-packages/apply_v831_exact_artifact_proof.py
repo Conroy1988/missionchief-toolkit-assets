@@ -16,7 +16,7 @@ reviewed = subprocess.check_output(
 )
 segment_start = reviewed.index('candidate_path = ".github/scripts/test_validation_candidate_pipeline.py"')
 segment_end = reviewed.index('write(candidate_path, candidate)', segment_start) + len('write(candidate_path, candidate)')
-replacement = r'''candidate_path = ".github/scripts/test_validation_candidate_pipeline.py"
+replacement = r"""candidate_path = ".github/scripts/test_validation_candidate_pipeline.py"
 candidate = read(candidate_path)
 candidate = replace_once(
     candidate,
@@ -36,7 +36,7 @@ candidate = replace_once(
 ''',
     "candidate stale trigger prohibition",
 )
-write(candidate_path, candidate)'''
+write(candidate_path, candidate)"""
 corrected = reviewed[:segment_start] + replacement + reviewed[segment_end:]
 runtime = ROOT / ".github/development-packages/.apply_v831_exact_artifact_runtime.py"
 runtime.write_text(corrected, encoding="utf-8")

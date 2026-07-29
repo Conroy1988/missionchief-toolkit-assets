@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.3.0] - 2026-07-29
+
+### Incident Command Wire — hide missions already attended by you
+
+- Qualifying missions now leave the compact wire and expanded queue as soon as one of the signed-in player's own vehicles reaches MissionChief's authoritative FMS 4 on-scene state.
+- Selected and responding vehicles remain visible; alliance-member attendance alone does not suppress a mission.
+- A mission may re-enter once the last personal on-scene vehicle leaves and it still satisfies the normal major-incident rules.
+- Removing the currently displayed incident advances to the next valid card, preserves Pause/Play and expanded state, keeps the counter synchronized and wraps safely at the end of the queue.
+- Reuses the existing personal vehicle commitment index, radio-message hook, mission snapshot cache and coalesced refresh timer.
+- Adds no network request, observer, interval, broad DOM scan or Toolkit-managed timer.
+
 ## [8.2.7] - 2026-07-29
 
 ### Patient Transport Sweep — click the real Cancel Transport control

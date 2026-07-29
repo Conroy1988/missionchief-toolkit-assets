@@ -74,12 +74,14 @@
         },
         {
           "name": "Incident Command Wire",
-          "summary": "Presents priority-ordered major incidents one complete card at a time with manual navigation and an expandable queue.",
+          "summary": "Presents priority-ordered major incidents that still require the signed-in player's initial attendance.",
           "details": [
-            "Bounded card-by-card rotation",
-            "Previous, pause, next and expanded queue controls",
-            "Eight theme-aware presentations",
-            "Static reduced-motion and Economy Mode fallback"
+            "Personal FMS 4 on-scene exclusion",
+            "Responding and alliance-only attendance remain visible",
+            "Dynamic re-entry after the final personal on-scene unit leaves",
+            "Stable current-card advancement and synchronized queue",
+            "Pause/Play and expanded-state preservation",
+            "No additional polling or observer"
           ],
           "visual": "feed",
           "tags": [

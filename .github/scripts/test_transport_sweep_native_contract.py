@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 R=Path(__file__).resolve().parents[2]
 s=(R/'src'/'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
-assert re.search(r'(?m)^//\s*@version\s+8\.2\.7$',s)
+version_match=re.search(r'(?m)^//\s*@version\s+([^\s]+)$',s);assert version_match and tuple(int(part) for part in version_match.group(1).split('.')) >= (8,2,7)
 for marker in [
  "TRANSPORT_SWEEP_NATIVE_RELEASE_LABELS = new Set(['discharge patient', 'cancel transport'])",
  'function transportSweepNativeReleaseControlText(control)',

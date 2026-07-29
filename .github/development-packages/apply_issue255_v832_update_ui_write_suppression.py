@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the reviewed v8.3.2 Issue #255 package after correcting its generated help-copy newline."""
+"""Execute the reviewed v8.3.2 Issue #255 package with two narrow package-generation corrections."""
 from __future__ import annotations
 
 import subprocess
@@ -15,12 +15,24 @@ payload = subprocess.check_output(
     text=True,
 )
 
-broken = '''if notice_count != 1: raise RuntimeError(f"help notice matches: {notice_count}
+broken_help = '''if notice_count != 1: raise RuntimeError(f"help notice matches: {notice_count}
 ")'''
-fixed = 'if notice_count != 1: raise RuntimeError(f"help notice matches: {notice_count}")'
-if payload.count(broken) != 1:
-    raise RuntimeError(f"reviewed help-copy newline defect count: {payload.count(broken)}")
-payload = payload.replace(broken, fixed, 1)
+fixed_help = 'if notice_count != 1: raise RuntimeError(f"help notice matches: {notice_count}")'
+if payload.count(broken_help) != 1:
+    raise RuntimeError(f"reviewed help-copy newline defect count: {payload.count(broken_help)}")
+payload = payload.replace(broken_help, fixed_help, 1)
+
+broken_toggle = '''block = replace_count(block, "                btn.classList.toggle('mcms-on', on);", "                updateUiToggleClass(btn, 'mcms-on', on);", 2, "toggle button class writes")'''
+fixed_toggle = '''block, toggle_class_count = re.subn(
+    r"(?m)^(\\s+)btn\\.classList\\.toggle\\('mcms-on', on\\);$",
+    lambda match: f"{match.group(1)}updateUiToggleClass(btn, 'mcms-on', on);",
+    block,
+)
+if toggle_class_count != 2:
+    raise RuntimeError(f"toggle button class writes: expected 2 matches, found {toggle_class_count}")'''
+if payload.count(broken_toggle) != 1:
+    raise RuntimeError(f"reviewed toggle-replacement defect count: {payload.count(broken_toggle)}")
+payload = payload.replace(broken_toggle, fixed_toggle, 1)
 
 runtime_path = ROOT / ".github/development-packages/.issue255-v832-runtime.py"
 runtime_path.write_text(payload, encoding="utf-8")

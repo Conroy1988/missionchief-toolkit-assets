@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "issue": 255,
+  "parentIssue": 247,
+  "measurementOnly": true,
+  "toolkitVersion": "8.3.1",
+  "sourceSha256": "363c6fa8f742840d71a65187c4b2f5b60fcffda519d63f2416c488cd86ca8089",
+  "sourceDistributionParity": true,
+  "scenarios": [
+    "idle-panel-closed",
+    "settings-open",
+    "resources-open",
+    "operations-open"
+  ],
+  "repeatsPerScenario": 25,
+  "selectorReads": 6700,
+  "writeAttempts": 14500,
+  "provenUnchangedWriteAttempts": 14500,
+  "actualMutationRecords": 7100,
+  "sameValueAttributeRecords": 4300,
+  "productionOptimisationAuthorised": false,
+  "nextGate": "Isolated before/after suppression helper with identical rendered state and lifecycle invalidation coverage."
+}

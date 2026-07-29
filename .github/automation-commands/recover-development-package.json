@@ -3,6 +3,6 @@
   "command": "recover-development-package",
   "prNumber": 587,
   "expectedMain": "d911ba01171029f1d84417816508195fa2ab00e4",
-  "expectedHead": "1b0ee8a4e95559557366aae651835fb67238002a",
-  "nonce": "v831-exact-artifact-production-proof-20260729c"
+  "expectedHead": "00b3c2bcce3dbd9f9ab42735ac5694516817d242",
+  "nonce": "v831-exact-artifact-production-proof-20260729d"
 }

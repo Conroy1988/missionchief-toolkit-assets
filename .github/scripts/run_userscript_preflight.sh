@@ -9,6 +9,7 @@ python3 .github/scripts/test_release_pipeline_v4.py
 python3 .github/scripts/test_consolidated_pr_gate.py
 python3 .github/scripts/test_path_aware_blocking.py
 python3 .github/scripts/test_issue588_v831_performance_baseline.py
+python3 .github/scripts/test_issue255_unchanged_update_ui.py
 node .github/scripts/test_transport_sweep_runtime.js
 node .github/scripts/test_issue523_transport_sweep_progress_runtime.js
 node .github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js

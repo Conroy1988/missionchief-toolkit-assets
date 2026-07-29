@@ -23,12 +23,12 @@ const sandbox={console,Set,Array,String,
  transportSweepElementVisible:element=>Boolean(element?.isConnected)};
 vm.createContext(sandbox);
 vm.runInContext(`${source.slice(start,end)}\nthis.controls=transportSweepVisibleDischargeButtons;this.find=findVisibleDischargePatientButton;this.label=transportSweepNativeReleaseControlText;`,sandbox);
-assert.deepEqual(sandbox.controls().map(control=>control.id),["cancel","discharge","input-cancel"]);
+assert.deepEqual(Array.from(sandbox.controls(),control=>control.id),["cancel","discharge","input-cancel"]);
 const cancel=dom.window.document.querySelector("#cancel");
 assert.equal(sandbox.label(cancel),"cancel transport");
 assert.equal(sandbox.find(new Set([cancel])).id,"discharge");
 cancel.setAttribute("aria-disabled","true");
-assert.deepEqual(sandbox.controls().map(control=>control.id),["discharge","input-cancel"]);
+assert.deepEqual(Array.from(sandbox.controls(),control=>control.id),["discharge","input-cancel"]);
 const a=source.indexOf("    async function processTransportSweepMission(item, remainingAllowance) {");
 const z=source.indexOf("    async function startTransportSweep()",a);
 const body=source.slice(a,z);

@@ -76,7 +76,12 @@ def main() -> int:
         "github.event.pull_request.merged == true",
         "Consume exact successful PR validation tree",
         "actions/workflows/validate-userscript.yml/runs",
-        "any(.pull_requests[]?; .number == $pr)",
+        '--arg head "$PR_HEAD_SHA"',
+        "select(.head_sha == $head)",
+        'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"',
+        "select(.name == $name)",
+        "implementation_ready_at",
+        "validation_completed_at",
         'CURRENT_TREE="$(git rev-parse HEAD^{tree})"',
         "Merged tree ${CURRENT_TREE} differs from validated PR tree ${CANDIDATE_TREE}",
         "promoted_pull_request",
@@ -94,6 +99,8 @@ def main() -> int:
         ".status.validation",
         "status/release-dashboard.json",
         "github.event.workflow_run.event == 'push'",
+        "pull_requests[]",
+        '-f branch="$PR_HEAD_REF"',
     ], "Automatic release workflow")
 
     require(owner, [
@@ -102,6 +109,7 @@ def main() -> int:
         "persist-credentials: false",
         "gh release view \"v${VERSION}\"",
         "dist/release-manifest.json",
+        "validated_sha: ${{ needs.authorize.outputs.expected_main }}",
     ], "Owner release workflow")
     forbid(owner, [
         ".distributionCandidate",
@@ -118,6 +126,9 @@ def main() -> int:
         "run: bash .github/scripts/sync_greasyfork_root_mirror.sh",
         "Record successful release, manifest, announcement and speed state",
         "python3 .github/scripts/build_stable_update_manifest.py",
+        "source_sha=$(git rev-parse HEAD)",
+        "IMPLEMENTATION_TO_GREEN",
+        "GREEN_TO_MERGE",
     ], "Production release workflow")
 
     if "distributionCandidate" in dashboard or "releaseDryRun" in dashboard:
@@ -145,8 +156,8 @@ def main() -> int:
         raise AssertionError("Validation candidate verifier self-tests failed")
 
     print(
-        "Validation candidate pipeline passed: exact PR-tree promotion, no post-merge rebuild, "
-        "guarded current-main fallback and stable-only distribution publication."
+        "Validation candidate pipeline passed: exact-head/exact-artifact PR-tree promotion, "
+        "no post-merge rebuild, guarded current-main fallback and stable-only publication."
     )
     return 0
 

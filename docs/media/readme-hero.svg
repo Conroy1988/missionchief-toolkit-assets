@@ -1,313 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="760" viewBox="0 0 1600 760" role="img" aria-labelledby="title desc">
-<title id="title">MissionChief Map Command Toolkit — UK emergency response command scene</title>
-<desc id="desc">A cinematic night-time United Kingdom emergency response scene with a fire appliance, ambulance, police car and coastguard helicopter linked by a digital incident command overlay.</desc>
+<title id="title">MissionChief Map Command Toolkit United Kingdom emergency command network</title>
+<desc id="desc">A realistic night-time UK multi-agency response scene built around the MissionChief Map Command Toolkit name, with ambulance, fire and rescue, police and coastguard assets.</desc>
 <defs>
-  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#020713"/>
-    <stop offset=".55" stop-color="#07172a"/>
-    <stop offset="1" stop-color="#14222b"/>
-  </linearGradient>
-  <radialGradient id="horizon" cx=".56" cy=".52" r=".62">
-    <stop offset="0" stop-color="#29435a" stop-opacity=".75"/>
-    <stop offset=".5" stop-color="#0a1b2c" stop-opacity=".22"/>
-    <stop offset="1" stop-color="#020713" stop-opacity="0"/>
-  </radialGradient>
-  <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#1e2930"/>
-    <stop offset=".45" stop-color="#0c1115"/>
-    <stop offset="1" stop-color="#020405"/>
-  </linearGradient>
-  <linearGradient id="wet" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#071d2d"/>
-    <stop offset=".28" stop-color="#1b2631"/>
-    <stop offset=".5" stop-color="#101418"/>
-    <stop offset=".72" stop-color="#261412"/>
-    <stop offset="1" stop-color="#07131d"/>
-  </linearGradient>
-  <linearGradient id="fireBody" x1="0" y1="0" x2="1" y2=".7">
-    <stop offset="0" stop-color="#ff3949"/>
-    <stop offset=".25" stop-color="#b30e1e"/>
-    <stop offset=".62" stop-color="#64050e"/>
-    <stop offset="1" stop-color="#250207"/>
-  </linearGradient>
-  <linearGradient id="fireSide" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#b70d1d"/>
-    <stop offset=".6" stop-color="#6d0610"/>
-    <stop offset="1" stop-color="#2a0307"/>
-  </linearGradient>
-  <linearGradient id="ambulanceBody" x1="0" y1="0" x2="1" y2=".8">
-    <stop offset="0" stop-color="#fffef0"/>
-    <stop offset=".34" stop-color="#e6eadf"/>
-    <stop offset=".7" stop-color="#aeb7b0"/>
-    <stop offset="1" stop-color="#626b68"/>
-  </linearGradient>
-  <linearGradient id="policeBody" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#ffffff"/>
-    <stop offset=".42" stop-color="#c8d2d8"/>
-    <stop offset=".72" stop-color="#768590"/>
-    <stop offset="1" stop-color="#2c3942"/>
-  </linearGradient>
-  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#8dd7ff" stop-opacity=".9"/>
-    <stop offset=".28" stop-color="#1d4a64" stop-opacity=".82"/>
-    <stop offset=".65" stop-color="#071822" stop-opacity=".96"/>
-    <stop offset="1" stop-color="#02070b"/>
-  </linearGradient>
-  <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#f8fbff"/>
-    <stop offset=".22" stop-color="#778791"/>
-    <stop offset=".48" stop-color="#172128"/>
-    <stop offset=".73" stop-color="#a6b0b4"/>
-    <stop offset="1" stop-color="#222a2e"/>
-  </linearGradient>
-  <linearGradient id="blueLamp" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#c9f4ff"/>
-    <stop offset=".28" stop-color="#2ac6ff"/>
-    <stop offset=".72" stop-color="#0069df"/>
-    <stop offset="1" stop-color="#022057"/>
-  </linearGradient>
-  <linearGradient id="yellow" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#f9ff44"/>
-    <stop offset=".55" stop-color="#d8e800"/>
-    <stop offset="1" stop-color="#7e8c00"/>
-  </linearGradient>
-  <linearGradient id="greenBat" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#1dcc49"/>
-    <stop offset=".55" stop-color="#078427"/>
-    <stop offset="1" stop-color="#024411"/>
-  </linearGradient>
-  <linearGradient id="blueBat" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#2ea2ff"/>
-    <stop offset=".55" stop-color="#075ebd"/>
-    <stop offset="1" stop-color="#032f6d"/>
-  </linearGradient>
-  <linearGradient id="hud" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#07111a" stop-opacity=".96"/>
-    <stop offset=".65" stop-color="#0a1720" stop-opacity=".84"/>
-    <stop offset="1" stop-color="#13070b" stop-opacity=".9"/>
-  </linearGradient>
-  <pattern id="rain" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
-    <path d="M2 0v15" stroke="#b9e9ff" stroke-opacity=".16" stroke-width="1.2"/>
-    <path d="M18 10v12" stroke="#b9e9ff" stroke-opacity=".08" stroke-width="1"/>
-  </pattern>
-  <pattern id="screenGrid" width="34" height="34" patternUnits="userSpaceOnUse">
-    <path d="M34 0H0V34" fill="none" stroke="#4dd0ff" stroke-opacity=".06"/>
-  </pattern>
-  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
-    <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#000" flood-opacity=".88"/>
-  </filter>
-  <filter id="vehicleShadow" x="-50%" y="-50%" width="200%" height="220%">
-    <feDropShadow dx="0" dy="20" stdDeviation="12" flood-color="#000" flood-opacity=".85"/>
-  </filter>
-  <filter id="blueGlow" x="-250%" y="-250%" width="600%" height="600%">
-    <feGaussianBlur stdDeviation="11" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="redGlow" x="-250%" y="-250%" width="600%" height="600%">
-    <feGaussianBlur stdDeviation="12" result="g"/>
-    <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-  </filter>
-  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-    <feGaussianBlur stdDeviation="3"/>
-  </filter>
-  <filter id="grain" x="-20%" y="-20%" width="140%" height="140%">
-    <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="2" seed="17" result="n"/>
-    <feColorMatrix in="n" type="saturate" values="0"/>
-    <feComponentTransfer><feFuncA type="table" tableValues="0 0 .055"/></feComponentTransfer>
-    <feBlend in="SourceGraphic" mode="screen"/>
-  </filter>
-  <clipPath id="frameClip"><rect x="18" y="18" width="1564" height="724" rx="30"/></clipPath>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#02060b"/><stop offset=".58" stop-color="#0b1c2b"/><stop offset="1" stop-color="#18242b"/></linearGradient>
+  <linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#202a2f"/><stop offset=".55" stop-color="#0d1216"/><stop offset="1" stop-color="#020405"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#80c9e8" stop-opacity=".58"/><stop offset=".45" stop-color="#193d51" stop-opacity=".8"/><stop offset="1" stop-color="#06131e" stop-opacity=".94"/></linearGradient>
+  <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#53636d"/><stop offset=".15" stop-color="#151d22"/><stop offset=".7" stop-color="#06090b"/><stop offset="1" stop-color="#252f35"/></linearGradient>
+  <linearGradient id="redBody" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ef2f31"/><stop offset=".55" stop-color="#9b111b"/><stop offset="1" stop-color="#41070b"/></linearGradient>
+  <linearGradient id="yellowBody" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff36a"/><stop offset=".58" stop-color="#e8ce24"/><stop offset="1" stop-color="#7c6500"/></linearGradient>
+  <linearGradient id="policeBody" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f4f7f8"/><stop offset=".6" stop-color="#bfcbd1"/><stop offset="1" stop-color="#59656b"/></linearGradient>
+  <linearGradient id="titleFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#dce8ee"/><stop offset="1" stop-color="#9fb1bb"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff2a7"/><stop offset=".45" stop-color="#f0bd3f"/><stop offset="1" stop-color="#9d5b08"/></linearGradient>
+  <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#1bbcff"/><stop offset=".48" stop-color="#7ae2ff"/><stop offset=".52" stop-color="#ff9a57"/><stop offset="1" stop-color="#e92531"/></linearGradient>
+  <radialGradient id="blueGlow"><stop stop-color="#77e5ff" stop-opacity=".95"/><stop offset=".25" stop-color="#1fa8ff" stop-opacity=".62"/><stop offset="1" stop-color="#0a6dff" stop-opacity="0"/></radialGradient>
+  <radialGradient id="redGlow"><stop stop-color="#ff8b71" stop-opacity=".9"/><stop offset=".25" stop-color="#ef3342" stop-opacity=".55"/><stop offset="1" stop-color="#d4081d" stop-opacity="0"/></radialGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="15" stdDeviation="16" flood-color="#000" flood-opacity=".72"/></filter>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12"/></filter>
+  <filter id="smallGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="rain" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(17)"><path d="M0 0v12" stroke="#d6f1ff" stroke-opacity=".08" stroke-width="1.2"/></pattern>
+  <clipPath id="roadClip"><path d="M0 470 L1600 430 L1600 760 L0 760 Z"/></clipPath>
 </defs>
-
-<g clip-path="url(#frameClip)">
-  <rect width="1600" height="760" fill="url(#sky)"/>
-  <rect width="1600" height="760" fill="url(#horizon)"/>
-
-  <g opacity=".55" filter="url(#soft)">
-    <path d="M-70 180C60 90 200 115 288 170c85-88 246-86 345 2 99-56 235-33 292 41 111-79 273-63 348 34 124-37 270 12 350 110v93H-70z" fill="#203443"/>
-    <path d="M-60 103c151-85 281-65 386 14 104-55 249-48 331 25 98-48 245-29 322 51 121-65 265-34 354 51 83-21 185 12 267 79V0H-60z" fill="#101c29"/>
-  </g>
-
-  <g opacity=".95">
-    <rect y="345" width="1600" height="110" fill="#050b10"/>
-    <g fill="#0a1117">
-      <path d="M0 345h115v-92h40v92h80v-138h42v138h74v-82h32v82h68v-125h49v125h75v-179h34v179h48v-91h34v91h76v-140h42v140h66v-103h34v103h87v-158h42v158h73v-118h34v118h58v-88h44v88h63v-165h31v165h72v-118h46v118h72v-72h41v72h116V455H0z"/>
-    </g>
-    <g fill="#101820">
-      <path d="M1060 346v-190h18v190zm-14-192h46l-8-22h-30z"/>
-      <circle cx="1069" cy="119" r="7" fill="#18232c"/>
-      <path d="M1210 346v-130h20v130zm-22-130h64l-10-18h-44z"/>
-      <path d="M1305 346v-94h26v94zm-11-94h48l-7-14h-34z"/>
-    </g>
-    <g fill="#e8c56a" opacity=".75">
-      <rect x="86" y="296" width="5" height="8"/><rect x="201" y="250" width="6" height="8"/>
-      <rect x="464" y="269" width="6" height="8"/><rect x="616" y="224" width="6" height="8"/>
-      <rect x="838" y="281" width="6" height="8"/><rect x="1098" y="260" width="6" height="8"/>
-      <rect x="1358" y="225" width="6" height="8"/><rect x="1490" y="292" width="6" height="8"/>
-    </g>
-  </g>
-
-  <path d="M0 430H1600v330H0z" fill="url(#road)"/>
-  <path d="M0 495c305-25 588-18 867 4 271 22 497 19 733-12v273H0z" fill="url(#wet)" opacity=".84"/>
-  <path d="M0 532c290-25 592-13 862 9 268 22 515 19 738-17" fill="none" stroke="#9db1ba" stroke-opacity=".25" stroke-width="3"/>
-  <path d="M0 668h1600" stroke="#d9e2e6" stroke-opacity=".18" stroke-width="3"/>
-  <g opacity=".44" filter="url(#soft)">
-    <path d="M130 563l145 0-63 197H83z" fill="#ff2038"/>
-    <path d="M526 560h178l69 200H461z" fill="#c8ff38"/>
-    <path d="M1030 574h210l157 186H946z" fill="#148cff"/>
-  </g>
-  <g stroke="#f5f2d6" stroke-width="9" stroke-linecap="round" opacity=".72">
-    <path d="M27 641h110"/><path d="M208 641h110"/><path d="M389 641h110"/>
-    <path d="M1281 641h105"/><path d="M1454 641h105"/>
-  </g>
-
-  <g transform="translate(1160 118) rotate(-4)" filter="url(#vehicleShadow)">
-    <ellipse cx="112" cy="151" rx="125" ry="22" fill="#000" opacity=".4"/>
-    <path d="M31 104c18-36 60-56 118-49 54 7 95 33 119 67l-15 30-62 14-116-3-58-24z" fill="#f4f3eb" stroke="#8c969c" stroke-width="3"/>
-    <path d="M64 95c23-25 54-34 90-29 34 4 57 19 77 44l-56 8-93-4z" fill="url(#glass)"/>
-    <path d="M20 134h222l-11 29H77z" fill="#d21c25"/>
-    <path d="M218 112l110-23 8 9-93 39z" fill="#e8e8e2" stroke="#78848b" stroke-width="3"/>
-    <path d="M318 88l44-34 10 6-31 41z" fill="#d11e28"/>
-    <path d="M328 91l62 22-3 9-69-15z" fill="#f3f1ea"/>
-    <path d="M106 63l22-37 15 2-4 38z" fill="#bfc7ca"/>
-    <path d="M54 163h154" stroke="#222c31" stroke-width="5"/>
-    <path d="M72 169h116" stroke="#11181c" stroke-width="7"/>
-    <circle cx="18" cy="127" r="5" fill="#258dff" filter="url(#blueGlow)"/>
-    <circle cx="237" cy="139" r="5" fill="#258dff" filter="url(#blueGlow)"/>
-    <text x="128" y="147" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="18" font-weight="900" letter-spacing="2">HM COASTGUARD</text>
-    <path d="M130 28H8M120 22l-96-26M124 20 37 48M130 23l88-35" stroke="#b8c1c5" stroke-width="5" stroke-linecap="round"/>
-  </g>
-
-  <g transform="translate(55 382)" filter="url(#vehicleShadow)">
-    <ellipse cx="303" cy="260" rx="300" ry="40" fill="#000" opacity=".75"/>
-    <path d="M28 97 84 28h287l70 63 105 26 38 115-44 30H37L0 230z" fill="url(#fireBody)" stroke="#340208" stroke-width="5"/>
-    <path d="M82 32h280l64 60H42z" fill="url(#fireSide)"/>
-    <path d="M325 42h66l45 53h-103z" fill="url(#glass)" stroke="#17242b" stroke-width="4"/>
-    <path d="M97 43h209v57H51z" fill="#211417" stroke="#5f1d24" stroke-width="4"/>
-    <path d="M50 105h485v21H41z" fill="url(#yellow)"/>
-    <path d="M49 130h486v13H43z" fill="#17367d"/>
-    <g fill="#8a0c18" stroke="#d72b36" stroke-width="2">
-      <rect x="65" y="153" width="74" height="62" rx="4"/>
-      <rect x="148" y="153" width="74" height="62" rx="4"/>
-      <rect x="231" y="153" width="74" height="62" rx="4"/>
-    </g>
-    <g stroke="#ed5a63" stroke-width="3" opacity=".65">
-      <path d="M73 163h58M73 174h58M73 185h58M73 196h58"/>
-      <path d="M156 163h58M156 174h58M156 185h58M156 196h58"/>
-      <path d="M239 163h58M239 174h58M239 185h58M239 196h58"/>
-    </g>
-    <path d="M326 116h206v114H306z" fill="#850913" stroke="#e2424c" stroke-width="3"/>
-    <path d="M331 124h186v22H325z" fill="#efe8d5"/>
-    <text x="423" y="141" text-anchor="middle" fill="#b20b18" font-family="Arial,sans-serif" font-size="15" font-weight="900" letter-spacing="2">FIRE &amp; RESCUE</text>
-    <path d="M345 154h161v52H332z" fill="#1b2125"/>
-    <g fill="#8e989e"><rect x="350" y="165" width="145" height="8"/><rect x="350" y="181" width="145" height="8"/></g>
-    <path d="M36 222h526l-24 32H44z" fill="#181d20"/>
-    <path d="M413 208h138l16 22-29 19H405z" fill="url(#chrome)"/>
-    <circle cx="113" cy="235" r="49" fill="#06090b" stroke="#273239" stroke-width="8"/>
-    <circle cx="113" cy="235" r="26" fill="url(#chrome)"/>
-    <circle cx="430" cy="235" r="49" fill="#06090b" stroke="#273239" stroke-width="8"/>
-    <circle cx="430" cy="235" r="26" fill="url(#chrome)"/>
-    <path d="M306 25h92l11 14H295z" fill="#222b30"/>
-    <rect x="309" y="14" width="97" height="16" rx="5" fill="url(#blueLamp)" stroke="#80dfff"/>
-    <rect x="18" y="192" width="20" height="20" rx="3" fill="#fff59b"/>
-    <rect x="534" y="192" width="24" height="20" rx="3" fill="#ffb7a3"/>
-    <circle cx="326" cy="22" r="8" fill="#24a9ff" filter="url(#blueGlow)"/>
-    <circle cx="388" cy="22" r="8" fill="#24a9ff" filter="url(#blueGlow)"/>
-  </g>
-
-  <g transform="translate(505 425)" filter="url(#vehicleShadow)">
-    <ellipse cx="300" cy="224" rx="285" ry="35" fill="#000" opacity=".72"/>
-    <path d="M30 74 78 25h327l94 53 60 83-25 55H39L0 180z" fill="url(#ambulanceBody)" stroke="#4d5757" stroke-width="5"/>
-    <path d="M80 28h319l84 49H43z" fill="#e8eee5"/>
-    <path d="M378 40h37l61 38h-88z" fill="url(#glass)" stroke="#43545b" stroke-width="4"/>
-    <path d="M290 38h77v48h-80z" fill="url(#glass)" stroke="#43545b" stroke-width="4"/>
-    <path d="M52 89h455v30H38z" fill="url(#yellow)"/>
-    <path d="M52 119h455v29H38z" fill="url(#greenBat)"/>
-    <g fill="url(#yellow)">
-      <path d="M67 152h52l-22 56H45z"/><path d="M121 152h52l-22 56H99z"/>
-      <path d="M175 152h52l-22 56H153z"/><path d="M229 152h52l-22 56H207z"/>
-    </g>
-    <g fill="url(#greenBat)">
-      <path d="M94 152h52l-22 56H72z"/><path d="M148 152h52l-22 56H126z"/>
-      <path d="M202 152h52l-22 56H180z"/><path d="M256 152h52l-22 56H234z"/>
-    </g>
-    <rect x="72" y="50" width="178" height="32" rx="4" fill="#f7faf4" stroke="#838d89"/>
-    <text x="161" y="73" text-anchor="middle" fill="#0c5a2d" font-family="Arial,sans-serif" font-size="21" font-weight="900" letter-spacing="2">AMBULANCE</text>
-    <path d="M322 108h154v82H310z" fill="#dae1dc" stroke="#7d8784" stroke-width="3"/>
-    <path d="M342 122h117v43" fill="none" stroke="#0e7c38" stroke-width="7"/>
-    <path d="M400 112v62M368 143h64" stroke="#0e7c38" stroke-width="7"/>
-    <path d="M32 188h510l-20 27H41z" fill="#313a3d"/>
-    <circle cx="111" cy="200" r="44" fill="#070a0c" stroke="#313d41" stroke-width="7"/>
-    <circle cx="111" cy="200" r="23" fill="url(#chrome)"/>
-    <circle cx="430" cy="200" r="44" fill="#070a0c" stroke="#313d41" stroke-width="7"/>
-    <circle cx="430" cy="200" r="23" fill="url(#chrome)"/>
-    <rect x="78" y="13" width="326" height="14" rx="6" fill="#27353a"/>
-    <rect x="96" y="6" width="82" height="16" rx="5" fill="url(#blueLamp)" stroke="#8fe4ff"/>
-    <rect x="320" y="6" width="82" height="16" rx="5" fill="url(#blueLamp)" stroke="#8fe4ff"/>
-    <circle cx="120" cy="14" r="8" fill="#28afff" filter="url(#blueGlow)"/>
-    <circle cx="375" cy="14" r="8" fill="#28afff" filter="url(#blueGlow)"/>
-  </g>
-
-  <g transform="translate(1030 482)" filter="url(#vehicleShadow)">
-    <ellipse cx="244" cy="165" rx="235" ry="29" fill="#000" opacity=".7"/>
-    <path d="M23 95 92 43h213l93 48 59 50-16 34H34L0 147z" fill="url(#policeBody)" stroke="#37464f" stroke-width="5"/>
-    <path d="M105 50h183l84 42H58z" fill="#dce6e9"/>
-    <path d="M112 56h76v38H79zM195 56h85l70 38H196z" fill="url(#glass)" stroke="#314851" stroke-width="3"/>
-    <path d="M44 101h362v25H31z" fill="url(#yellow)"/>
-    <path d="M44 126h362v25H31z" fill="url(#blueBat)"/>
-    <g fill="#f4f22e"><path d="M64 100h45l-18 50H46z"/><path d="M154 100h45l-18 50H136z"/><path d="M244 100h45l-18 50H226z"/><path d="M334 100h45l-18 50H316z"/></g>
-    <g fill="#126dd8"><path d="M109 100h45l-18 50H91z"/><path d="M199 100h45l-18 50H181z"/><path d="M289 100h45l-18 50H271z"/></g>
-    <rect x="197" y="103" width="88" height="27" rx="4" fill="#f5f8f9" stroke="#5f6c73"/>
-    <text x="241" y="123" text-anchor="middle" fill="#124d89" font-family="Arial,sans-serif" font-size="16" font-weight="900" letter-spacing="2">POLICE</text>
-    <path d="M31 151h407l-15 23H39z" fill="#1b2429"/>
-    <circle cx="101" cy="161" r="38" fill="#05080a" stroke="#2c373d" stroke-width="7"/>
-    <circle cx="101" cy="161" r="20" fill="url(#chrome)"/>
-    <circle cx="357" cy="161" r="38" fill="#05080a" stroke="#2c373d" stroke-width="7"/>
-    <circle cx="357" cy="161" r="20" fill="url(#chrome)"/>
-    <rect x="164" y="35" width="126" height="14" rx="5" fill="url(#blueLamp)" stroke="#8be2ff"/>
-    <circle cx="190" cy="42" r="7" fill="#29b7ff" filter="url(#blueGlow)"/>
-    <circle cx="264" cy="42" r="7" fill="#29b7ff" filter="url(#blueGlow)"/>
-    <path d="M407 102h35l14 18-38 7z" fill="#f8fbff"/>
-  </g>
-
-  <g opacity=".55" filter="url(#soft)">
-    <path d="M92 405l215 0 85 355H0z" fill="#ff1631" opacity=".14"/>
-    <path d="M602 431h267l104 329H488z" fill="#16a7ff" opacity=".16"/>
-    <path d="M1110 480h272l218 280H965z" fill="#087aff" opacity=".15"/>
-  </g>
-  <rect width="1600" height="760" fill="url(#rain)"/>
-
-  <g transform="translate(46 38)" filter="url(#shadow)">
-    <path d="M0 0h1005l26 26v270l-26 26H0l-26-26V26z" fill="url(#hud)" stroke="#5c7683" stroke-width="2"/>
-    <path d="M0 0h1005l26 26H-26l26-26z" fill="#102331"/>
-    <path d="M-11 17h730" stroke="#36c8ff" stroke-width="3"/>
-    <g transform="translate(16 24)">
-      <rect width="104" height="56" rx="5" fill="#081119" stroke="#5c6d77"/>
-      <path d="M0 0 104 56M104 0 0 56" stroke="#fff" stroke-width="15" opacity=".93"/>
-      <path d="M0 0 104 56M104 0 0 56" stroke="#c51f31" stroke-width="6"/>
-      <path d="M52 0v56M0 28h104" stroke="#fff" stroke-width="17"/>
-      <path d="M52 0v56M0 28h104" stroke="#c51f31" stroke-width="8"/>
-    </g>
-    <text x="142" y="50" fill="#6fd7ff" font-family="Arial,sans-serif" font-size="14" font-weight="800" letter-spacing="4">UNITED KINGDOM OPERATIONAL COMMAND</text>
-    <text x="18" y="147" fill="#ffffff" font-family="Arial Black,Arial,sans-serif" font-size="71" font-weight="900" letter-spacing="1">MISSIONCHIEF</text>
-    <text x="18" y="215" fill="#ffd24e" font-family="Arial Black,Arial,sans-serif" font-size="47" font-weight="900" letter-spacing="3">MAP COMMAND TOOLKIT</text>
-    <path d="M19 235h930" stroke="#25baff" stroke-width="4"/>
-    <text x="20" y="273" fill="#d7e7ed" font-family="Arial,sans-serif" font-size="19" font-weight="700" letter-spacing="2">INCIDENT INTELLIGENCE · FLEET CONTROL · TRANSPORT · MAP · FINANCE</text>
-  </g>
-
-  <g transform="translate(48 684)" filter="url(#shadow)">
-    <path d="M0 0h1504l16 16-16 40H0l-16-40z" fill="#050b10" fill-opacity=".94" stroke="#425864"/>
-    <g font-family="Arial,sans-serif" font-weight="900" font-size="14" letter-spacing="1.5">
-      <circle cx="28" cy="28" r="7" fill="#2fd274"/><text x="47" y="33" fill="#dfffea">NATIVE MISSIONCHIEF CONTROL</text>
-      <circle cx="355" cy="28" r="7" fill="#22b8ff"/><text x="374" y="33" fill="#e1f7ff">DESKTOP · TABLET · iOS</text>
-      <circle cx="681" cy="28" r="7" fill="#ffd348"/><text x="700" y="33" fill="#fff3bd">SEVEN COMPLETE INTERFACES</text>
-      <circle cx="1066" cy="28" r="7" fill="#ff4a55"/><text x="1085" y="33" fill="#ffe4e6">BOUNDED · RECOVERABLE · FAIL-SAFE</text>
-    </g>
-  </g>
-
-  <rect width="1600" height="760" fill="url(#screenGrid)" opacity=".24"/>
-  <rect width="1600" height="760" fill="none" stroke="#70838d" stroke-width="3"/>
-  <rect x="12" y="12" width="1576" height="736" rx="30" fill="none" stroke="#17242b" stroke-width="20"/>
-  <rect x="22" y="22" width="1556" height="716" rx="24" fill="none" stroke="#5b707b" stroke-opacity=".58" stroke-width="2"/>
-</g>
+<rect width="1600" height="760" rx="28" fill="url(#sky)"/>
+<rect width="1600" height="760" rx="28" fill="url(#rain)"/>
+<g opacity=".72"><path d="M0 430V310h90v120M110 430V250h105v180M235 430V325h72v105M330 430V215h130v215M480 430V290h92v140M595 430V245h120v185M742 430V320h78v110M845 430V235h105v195M980 430V300h88v130M1095 430V220h120v210M1240 430V280h92v150M1355 430V205h120v225M1495 430V310h105" fill="#071018"/><g fill="#f4d57b" opacity=".34"><rect x="38" y="340" width="10" height="22"/><rect x="64" y="338" width="10" height="22"/><rect x="145" y="285" width="12" height="28"/><rect x="180" y="285" width="12" height="28"/><rect x="368" y="260" width="12" height="28"/><rect x="410" y="260" width="12" height="28"/><rect x="625" y="280" width="12" height="28"/><rect x="672" y="280" width="12" height="28"/><rect x="875" y="270" width="12" height="28"/><rect x="920" y="270" width="12" height="28"/><rect x="1125" y="255" width="12" height="28"/><rect x="1170" y="255" width="12" height="28"/><rect x="1390" y="245" width="12" height="28"/><rect x="1435" y="245" width="12" height="28"/></g></g>
+<path d="M0 470 L1600 430 L1600 760 L0 760 Z" fill="url(#road)"/>
+<g clip-path="url(#roadClip)" opacity=".5" filter="url(#soft)"><path d="M245 480 L320 760" stroke="#1aaeff" stroke-width="44"/><path d="M530 455 L620 760" stroke="#eb2332" stroke-width="54"/><path d="M780 450 L830 760" stroke="#1baeff" stroke-width="36"/><path d="M1080 450 L1010 760" stroke="#f1c833" stroke-width="40"/><path d="M1320 440 L1210 760" stroke="#1baeff" stroke-width="34"/></g>
+<path d="M140 620h1320" stroke="#e7eef1" stroke-opacity=".11" stroke-width="2"/><path d="M720 470 670 760M910 465 960 760" stroke="#e4e7e8" stroke-opacity=".25" stroke-width="8" stroke-dasharray="34 28"/>
+<g transform="translate(48 34)"><rect width="1504" height="54" rx="10" fill="#03070b" fill-opacity=".88" stroke="#5a6972" stroke-opacity=".65"/><g transform="translate(14 9)"><rect width="58" height="36" rx="3" fill="#183c78"/><path d="M0 0 58 36M58 0 0 36" stroke="#fff" stroke-width="8"/><path d="M0 0 58 36M58 0 0 36" stroke="#c8102e" stroke-width="3"/><path d="M29 0v36M0 18h58" stroke="#fff" stroke-width="11"/><path d="M29 0v36M0 18h58" stroke="#c8102e" stroke-width="6"/></g><text x="92" y="34" fill="#80ddff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="800" letter-spacing="2.8">UNITED KINGDOM EMERGENCY COMMAND NETWORK</text><g transform="translate(1128 11)"><circle cx="15" cy="15" r="8" fill="#42e27b" filter="url(#smallGlow)"/><text x="35" y="21" fill="#e9f4f7" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="800" letter-spacing="2">SYSTEM OPERATIONAL</text></g></g>
+<g filter="url(#shadow)"><rect x="140" y="112" width="1040" height="260" rx="24" fill="#02070b" fill-opacity=".72" stroke="#6fcfff" stroke-opacity=".28"/><path d="M172 132h405M742 132h406" stroke="url(#edge)" stroke-width="3"/><text x="660" y="206" text-anchor="middle" fill="url(#titleFill)" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="88" font-weight="900" letter-spacing="5">MISSIONCHIEF</text><text x="660" y="286" text-anchor="middle" fill="url(#gold)" font-family="Arial Black,Arial,Helvetica,sans-serif" font-size="56" font-weight="900" letter-spacing="4">MAP COMMAND TOOLKIT</text><text x="660" y="330" text-anchor="middle" fill="#8bdfff" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="800" letter-spacing="4.2">INCIDENTS · FLEET · TRANSPORT · MAP · FINANCE</text></g>
+<g transform="translate(1220 108)" filter="url(#shadow)"><path d="M44 68c42-33 113-36 175-6l66 31-32 28-71-10c-39 29-98 28-132 5l-36-6 10-26z" fill="#e9edf0" stroke="#303a40" stroke-width="3"/><path d="M108 61h79l35 24-119 6z" fill="#d32a32"/><path d="M217 86 316 40l8 9-83 63z" fill="#d8dde0" stroke="#303a40" stroke-width="3"/><path d="M315 45h94" stroke="#cfd8dc" stroke-width="8"/><path d="M360 18v54M335 45h50" stroke="#dce5e8" stroke-width="5"/><path d="M85 101h105" stroke="#d52c35" stroke-width="11"/><path d="M129 46v-27M52 22h151" stroke="#ccd5d8" stroke-width="5"/><ellipse cx="127" cy="18" rx="104" ry="4" fill="#9fb0b8"/><circle cx="82" cy="117" r="10" fill="#0d1519"/><circle cx="214" cy="113" r="10" fill="#0d1519"/><text x="147" y="103" text-anchor="middle" fill="#1d2a30" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="900">HM COASTGUARD</text><circle cx="61" cy="79" r="29" fill="url(#blueGlow)"/><circle cx="63" cy="78" r="6" fill="#b9f2ff"/></g>
+<g transform="translate(72 445)" filter="url(#shadow)"><path d="M20 54 65 13h228l50 53v108H18z" fill="url(#yellowBody)" stroke="#27343a" stroke-width="4"/><path d="M66 18h128v71H32z" fill="url(#glass)" stroke="#1b2d36" stroke-width="3"/><path d="M205 18h81l45 50h-126z" fill="url(#glass)" stroke="#1b2d36" stroke-width="3"/><path d="M24 97h314v54H24z" fill="#2e7a36"/><path d="M24 97 65 151l42-54 42 54 42-54 42 54 42-54 42 54 21-28v28H24z" fill="#e8d72f"/><rect x="88" y="109" width="158" height="27" rx="5" fill="#f4efb7" fill-opacity=".9"/><text x="167" y="129" text-anchor="middle" fill="#1c6e35" font-family="Arial Black,Arial,sans-serif" font-size="20" letter-spacing="2">AMBULANCE</text><rect x="84" y="4" width="130" height="12" rx="5" fill="#0b2639"/><g fill="#5ddcff" filter="url(#smallGlow)"><rect x="92" y="6" width="28" height="7" rx="3"/><rect x="178" y="6" width="28" height="7" rx="3"/></g><rect x="41" y="151" width="276" height="24" fill="#151d21"/><circle cx="83" cy="176" r="31" fill="#090c0e" stroke="#45545b" stroke-width="7"/><circle cx="83" cy="176" r="12" fill="#87959c"/><circle cx="281" cy="176" r="31" fill="#090c0e" stroke="#45545b" stroke-width="7"/><circle cx="281" cy="176" r="12" fill="#87959c"/><circle cx="34" cy="137" r="31" fill="url(#blueGlow)"/><circle cx="33" cy="137" r="6" fill="#d8f9ff"/><text x="178" y="218" text-anchor="middle" fill="#e4eff2" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="900" letter-spacing="3">AMBULANCE RESPONSE</text></g>
+<g transform="translate(424 406)" filter="url(#shadow)"><path d="M18 51 94 10h324l56 57v137H15z" fill="url(#redBody)" stroke="#2b3439" stroke-width="4"/><path d="M94 16h116v75H48z" fill="url(#glass)" stroke="#1a2b34" stroke-width="3"/><path d="M219 16h178l54 53H219z" fill="url(#glass)" stroke="#1a2b34" stroke-width="3"/><rect x="33" y="104" width="420" height="56" rx="4" fill="#e8d821"/><path d="M34 105 76 159l42-54 42 54 42-54 42 54 42-54 42 54 42-54 42 54 41-54v54H34z" fill="#d82a2d"/><rect x="110" y="112" width="253" height="36" rx="6" fill="#3e0b0e" fill-opacity=".9"/><text x="237" y="138" text-anchor="middle" fill="#fff7cf" font-family="Arial Black,Arial,sans-serif" font-size="25" letter-spacing="2">FIRE &amp; RESCUE</text><path d="M77 3h300" stroke="#cad6da" stroke-width="7"/><path d="M110 -7h240" stroke="#8d9ca3" stroke-width="5"/><rect x="115" y="-1" width="86" height="13" rx="5" fill="#0b2639"/><rect x="290" y="-1" width="86" height="13" rx="5" fill="#0b2639"/><g fill="#63ddff" filter="url(#smallGlow)"><rect x="124" y="2" width="28" height="7" rx="3"/><rect x="338" y="2" width="28" height="7" rx="3"/></g><rect x="38" y="160" width="414" height="43" fill="#161d21"/><circle cx="100" cy="202" r="39" fill="#090c0e" stroke="#4e5d64" stroke-width="8"/><circle cx="100" cy="202" r="15" fill="#89979d"/><circle cx="376" cy="202" r="39" fill="#090c0e" stroke="#4e5d64" stroke-width="8"/><circle cx="376" cy="202" r="15" fill="#89979d"/><circle cx="32" cy="147" r="36" fill="url(#redGlow)"/><circle cx="31" cy="147" r="7" fill="#ffb6a9"/><text x="244" y="253" text-anchor="middle" fill="#e4eff2" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="900" letter-spacing="3">FIRE &amp; RESCUE COMMAND</text></g>
+<g transform="translate(958 480)" filter="url(#shadow)"><path d="M24 80 78 31h211l73 60v78H12z" fill="url(#policeBody)" stroke="#26343b" stroke-width="4"/><path d="M95 34h88v56H53z" fill="url(#glass)" stroke="#1a2b34" stroke-width="3"/><path d="M193 34h78l64 56H193z" fill="url(#glass)" stroke="#1a2b34" stroke-width="3"/><path d="M19 100h333v46H19z" fill="#166dcc"/><path d="M19 101 55 145l36-44 36 44 36-44 36 44 36-44 36 44 36-44 29 35v9H19z" fill="#d9ee31"/><rect x="119" y="107" width="142" height="28" rx="5" fill="#eef5f8" fill-opacity=".94"/><text x="190" y="128" text-anchor="middle" fill="#1763aa" font-family="Arial Black,Arial,sans-serif" font-size="20" letter-spacing="2">POLICE</text><rect x="139" y="23" width="88" height="10" rx="5" fill="#0c2738"/><g fill="#62dfff" filter="url(#smallGlow)"><rect x="145" y="25" width="25" height="6" rx="3"/><rect x="196" y="25" width="25" height="6" rx="3"/></g><rect x="24" y="145" width="326" height="25" fill="#151d21"/><circle cx="78" cy="170" r="31" fill="#090c0e" stroke="#4b5960" stroke-width="7"/><circle cx="78" cy="170" r="12" fill="#87959c"/><circle cx="297" cy="170" r="31" fill="#090c0e" stroke="#4b5960" stroke-width="7"/><circle cx="297" cy="170" r="12" fill="#87959c"/><circle cx="342" cy="127" r="30" fill="url(#blueGlow)"/><circle cx="343" cy="127" r="6" fill="#dcfaff"/><text x="187" y="211" text-anchor="middle" fill="#e4eff2" font-family="Arial,Helvetica,sans-serif" font-size="14" font-weight="900" letter-spacing="3">POLICE RESPONSE</text></g>
+<g transform="translate(1324 402)" font-family="Arial,Helvetica,sans-serif"><rect width="228" height="270" rx="18" fill="#02070b" fill-opacity=".9" stroke="#60727b"/><text x="22" y="34" fill="#81dcff" font-size="12" font-weight="900" letter-spacing="2.4">COMMAND CHANNELS</text><g transform="translate(20 55)"><rect width="188" height="36" rx="7" fill="#0c2737" stroke="#1baee8"/><circle cx="20" cy="18" r="6" fill="#2cc9ff"/><text x="38" y="23" fill="#f0fbff" font-size="12" font-weight="800">INCIDENT COMMAND</text><g transform="translate(0 47)"><rect width="188" height="36" rx="7" fill="#2b0b0e" stroke="#dc3039"/><circle cx="20" cy="18" r="6" fill="#f3474e"/><text x="38" y="23" fill="#fff5f4" font-size="12" font-weight="800">FLEET &amp; TRANSPORT</text></g><g transform="translate(0 94)"><rect width="188" height="36" rx="7" fill="#172507" stroke="#a8c930"/><circle cx="20" cy="18" r="6" fill="#cbe64e"/><text x="38" y="23" fill="#f8ffe1" font-size="12" font-weight="800">MAP &amp; PLACES</text></g><g transform="translate(0 141)"><rect width="188" height="36" rx="7" fill="#281b06" stroke="#d9a72f"/><circle cx="20" cy="18" r="6" fill="#f2c34d"/><text x="38" y="23" fill="#fff4d1" font-size="12" font-weight="800">FINANCE &amp; RECOVERY</text></g></g><text x="114" y="254" text-anchor="middle" fill="#7f939d" font-size="10" font-weight="800" letter-spacing="1.5">DESKTOP · TABLET · iOS</text></g>
+<rect x="12" y="12" width="1576" height="736" rx="22" fill="none" stroke="#71838c" stroke-opacity=".55" stroke-width="2"/>
 </svg>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the immutable reviewed Issue #543 package with one anchor narrowed."""
+"""Execute the immutable reviewed Issue #543 package with narrow corrections."""
 from __future__ import annotations
 
 import subprocess
@@ -9,12 +9,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE = ".github/development-packages/apply_issue543_release_telemetry.py"
 REVIEWED_PACKAGE_COMMIT = "642665cfe912496ac388f909904d7cb4d4b99b4a"
-previous = subprocess.check_output(
+reviewed = subprocess.check_output(
     ["git", "show", f"{REVIEWED_PACKAGE_COMMIT}:{PACKAGE}"],
     cwd=ROOT,
     text=True,
 )
-old = """release = replace_once(
+
+anchor_old = """release = replace_once(
     release,
     '''          VALIDATED_SHA: ${{ inputs.validated_sha }}
           GH_TOKEN: ${{ github.token }}
@@ -31,7 +32,7 @@ old = """release = replace_once(
     "release telemetry environment",
 )
 """
-new = """release = replace_once(
+anchor_new = """release = replace_once(
     release,
     '''          DISCORD_AT: ${{ steps.discord.outputs.posted_at }}
           VALIDATED_SHA: ${{ inputs.validated_sha }}
@@ -50,9 +51,22 @@ new = """release = replace_once(
     "release telemetry environment",
 )
 """
-if previous.count(old) != 1:
-    raise RuntimeError(f"reviewed package anchor count changed: {previous.count(old)}")
-corrected = previous.replace(old, new, 1)
+if reviewed.count(anchor_old) != 1:
+    raise RuntimeError(f"reviewed release-env anchor count changed: {reviewed.count(anchor_old)}")
+corrected = reviewed.replace(anchor_old, anchor_new, 1)
+
+record_old = 'path.write_text(json.dumps(data,indent=2)+"\\n",encoding="utf-8")'
+record_new = 'path.write_text(json.dumps(data,indent=2)+"\\\\n",encoding="utf-8")'
+dashboard_old = '(root/"status/RELEASE_SPEED.md").write_text("\\n".join(lines),encoding="utf-8")'
+dashboard_new = '(root/"status/RELEASE_SPEED.md").write_text("\\\\n".join(lines),encoding="utf-8")'
+for label, old, new in (
+    ("generated recorder newline", record_old, record_new),
+    ("generated dashboard newline", dashboard_old, dashboard_new),
+):
+    if corrected.count(old) != 1:
+        raise RuntimeError(f"{label} count changed: {corrected.count(old)}")
+    corrected = corrected.replace(old, new, 1)
+
 runtime = ROOT / ".github/development-packages/.apply_issue543_release_telemetry_runtime.py"
 runtime.write_text(corrected, encoding="utf-8")
 try:

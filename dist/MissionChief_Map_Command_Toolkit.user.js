@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.7
+// @version      8.3.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.7',
+        version: '8.3.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -11614,7 +11614,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             resourceGapVehicleContextCache.key = '';
             if (!startupDataPassActive) {
                 if (state.unitCommitment) scheduleUnitCommitmentRefresh(280);
-                scheduleMissionSnapshotRefresh(650);
+                scheduleMissionSnapshotRefresh(state.majorIncidentFeed.enabled ? 90 : 650);
                 if (state.resourceGap.enabled) scheduleResourceGapRefresh(520);
                 if (operationalUiIsVisible()) scheduleOperationalPanelsRender(750);
             }
@@ -11655,7 +11655,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         resourceGapAnalysisCache.clear();
         resourceGapVehicleContextCache.key = '';
         if (state.unitCommitment) scheduleUnitCommitmentRefresh(500);
-        scheduleMissionSnapshotRefresh(850);
+        scheduleMissionSnapshotRefresh(state.majorIncidentFeed.enabled ? 90 : 850);
         if (state.resourceGap.enabled) scheduleResourceGapRefresh(900);
         if (operationalUiIsVisible()) scheduleOperationalPanelsRender(1000);
     }
@@ -15007,6 +15007,42 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return { key: 'major', label: 'AWAITING RESPONSE' };
     }
 
+    function majorIncidentFeedMissionAttended(snapshot) {
+        return Math.max(0, Number(snapshot?.units?.onScene) || 0) > 0;
+    }
+
+    function majorIncidentFeedResolvedIndex(feed, count = majorIncidentFeedEntryCount(feed)) {
+        const total = Math.max(0, Number(count) || 0);
+        if (total <= 0) return 0;
+        const animation = majorIncidentFeedAnimation(feed);
+        const duration = Number(animation?.effect?.getTiming?.().duration) || 0;
+        if (duration > 0) {
+            const currentTime = ((Number(animation?.currentTime) || 0) % duration + duration) % duration;
+            return Math.min(total - 1, Math.floor(currentTime / (duration / total)));
+        }
+        return ((Number(majorIncidentFeedCurrentIndex) || 0) % total + total) % total;
+    }
+
+    function majorIncidentFeedCurrentMissionId(feed, index = majorIncidentFeedResolvedIndex(feed)) {
+        const items = Array.from(feed?.querySelectorAll?.(
+            '.mcms-incident-feed-group[data-mcms-reel-copy="primary"] [data-mcms-major-mission-id]'
+        ) || []);
+        if (!items.length) return '';
+        const normalised = ((Number(index) || 0) % items.length + items.length) % items.length;
+        return String(items[normalised]?.dataset?.mcmsMajorMissionId || '');
+    }
+
+    function majorIncidentFeedRetainedIndex(entries, previousMissionId, previousIndex = 0) {
+        const list = Array.isArray(entries) ? entries : [];
+        if (!list.length) return 0;
+        const missionId = String(previousMissionId || '');
+        if (missionId) {
+            const retained = list.findIndex(entry => String(entry?.snapshot?.missionId ?? '') === missionId);
+            if (retained >= 0) return retained;
+        }
+        return ((Number(previousIndex) || 0) % list.length + list.length) % list.length;
+    }
+
     function majorIncidentFeedEntries(now = Date.now()) {
         const minimumCredits = Math.max(0, Number(state.majorIncidentFeed?.minimumCredits) || 25000);
         const entries = [];
@@ -15014,6 +15050,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!snapshot || !Number.isFinite(Number(snapshot.lat)) || !Number.isFinite(Number(snapshot.lng))) continue;
         if (snapshot.source === 'personal' && !state.visibility.myMissions) continue;
         if (snapshot.source === 'alliance' && !state.visibility.allianceMissions) continue;
+        if (majorIncidentFeedMissionAttended(snapshot)) continue;
 
         const credits = Number(snapshot.averageCredits);
         const createdAt = Number(snapshot.createdAt);
@@ -15351,9 +15388,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             track.style.setProperty('animation', 'none', 'important');
             void track.offsetWidth;
             track.style.removeProperty('animation');
-            majorIncidentFeedCurrentIndex = 0;
         }
-        majorIncidentFeedSyncControls(feed);
+        if (count > 0) majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
+        else majorIncidentFeedSyncControls(feed);
         majorIncidentFeedSyncReelState(feed);
         return count > 1;
     }
@@ -15550,6 +15587,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         const feed = ensureMajorIncidentFeed();
         if (!feed) return;
+        const previousCount = majorIncidentFeedEntryCount(feed);
+        const previousIndex = majorIncidentFeedResolvedIndex(feed, previousCount);
+        const previousMissionId = majorIncidentFeedCurrentMissionId(feed, previousIndex);
         const entries = state.economyMode ? majorIncidentFeedEntries().slice(0, 1) : majorIncidentFeedEntries();
         const signature = JSON.stringify({
             theme: state.uiTheme,
@@ -15573,8 +15613,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         feed.classList.toggle('mcms-feed-static', entries.length <= 1 || state.economyMode);
         feed.dataset.mcmsEntryCount = String(entries.length);
         if (!entries.length) {
-            track.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-empty">No qualifying major incidents currently active</div>'));
-            list.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-list-empty">No major incidents currently meet the configured threshold.</div>'));
+            track.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-empty">No unattended qualifying major incidents currently active</div>'));
+            list.replaceChildren(document.createRange().createContextualFragment('<div class="mcms-incident-feed-list-empty">No unattended major incidents currently meet the configured threshold.</div>'));
             majorIncidentFeedCurrentIndex = 0;
             majorIncidentFeedSetExpanded(feed, false);
             majorIncidentFeedSyncControls(feed);
@@ -15583,7 +15623,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const duplicate = entries.map(entry => majorIncidentFeedItemHtml(entry, 'wire', true)).join('');
             track.replaceChildren(document.createRange().createContextualFragment(`<div class="mcms-incident-feed-group" data-mcms-reel-copy="primary">${primary}</div><div class="mcms-incident-feed-group" data-mcms-reel-copy="duplicate" aria-hidden="true">${duplicate}</div>`));
             list.replaceChildren(document.createRange().createContextualFragment(entries.map(entry => majorIncidentFeedItemHtml(entry, 'list', false)).join('')));
-            majorIncidentFeedCurrentIndex = 0;
+            majorIncidentFeedCurrentIndex = majorIncidentFeedRetainedIndex(entries, previousMissionId, previousIndex);
             majorIncidentFeedSyncControls(feed);
             scheduleMajorIncidentFeedMotion(feed, true, 70);
         }

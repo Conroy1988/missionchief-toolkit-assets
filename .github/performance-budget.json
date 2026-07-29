@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-29-issue-565-cancel-transport-control",
-  "rationale": "Recognise MissionChief's real Cancel Transport link/button without adding requests, observers, intervals or Toolkit-managed timers.",
+  "revision": "2026-07-29-issue-564-incident-feed-personal-on-scene",
+  "rationale": "Exclude missions from Incident Command Wire using the existing personal mission commitment index and coalesced snapshot refresh path.",
   "transitionApproval": {
-    "issue": 565,
-    "version": "8.2.7",
+    "issue": 564,
+    "version": "8.3.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Discover and click the real Cancel Transport native vehicle control and verify its post-click transition.",
+    "scope": "Mission-scoped personal FMS 4 exclusion, stable current-card advancement and dynamic re-entry.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -180,6 +180,13 @@
       "version": "8.2.7",
       "approvedNetworkRequestDelta": 0,
       "scope": "Discover and click the real Cancel Transport native vehicle control and verify its post-click transition.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 564,
+      "version": "8.3.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Mission-scoped personal FMS 4 exclusion, stable current-card advancement and dynamic re-entry.",
       "approvedMutationObserverDelta": 0
     }
   ]

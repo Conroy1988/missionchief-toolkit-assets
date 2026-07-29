@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 586,
-  "expectedMain": "f86dab5d1582645b2c34a0aab6d125551d247b99",
-  "expectedHead": "d76d412985962e4b12185011f97ad34e46e9278e",
-  "nonce": "issue543-exact-run-artifact-resolver-20260729a"
+  "prNumber": 587,
+  "expectedMain": "d911ba01171029f1d84417816508195fa2ab00e4",
+  "expectedHead": "d7e4fe9671c0885407a248d0df38758169beffec",
+  "nonce": "v831-exact-artifact-production-proof-20260729a"
 }

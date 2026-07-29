@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 585,
-  "expectedMain": "175a64eb4e370acccfbc7feb29590a3d5bb1fb6f",
-  "expectedHead": "1f810bf8dc50401fa3ceaca9f5f95d1d4150ee8b",
-  "nonce": "issue564-incident-feed-v830-20260729b"
+  "prNumber": 586,
+  "expectedMain": "f86dab5d1582645b2c34a0aab6d125551d247b99",
+  "expectedHead": "d76d412985962e4b12185011f97ad34e46e9278e",
+  "nonce": "issue543-exact-run-artifact-resolver-20260729a"
 }

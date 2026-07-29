@@ -78,8 +78,11 @@ def main() -> int:
         "actions/workflows/validate-userscript.yml/runs",
         '--arg head "$PR_HEAD_SHA"',
         "select(.head_sha == $head)",
-        'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"',
-        "select(.name == $name)",
+        "CANDIDATE_ARTIFACT_COUNT",
+        'startswith("missionchief-toolkit-validation-candidate-")',
+        "Expected exactly one non-expired validation candidate artifact in exact run",
+        '[[ "$EVIDENCE_HEAD" == "$PR_HEAD_SHA" ]]',
+        '[[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]',
         "implementation_ready_at",
         "validation_completed_at",
         'CURRENT_TREE="$(git rev-parse HEAD^{tree})"',
@@ -101,6 +104,7 @@ def main() -> int:
         "github.event.workflow_run.event == 'push'",
         "pull_requests[]",
         '-f branch="$PR_HEAD_REF"',
+        'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"',
     ], "Automatic release workflow")
 
     require(owner, [
@@ -156,7 +160,7 @@ def main() -> int:
         raise AssertionError("Validation candidate verifier self-tests failed")
 
     print(
-        "Validation candidate pipeline passed: exact-head/exact-artifact PR-tree promotion, "
+        "Validation candidate pipeline passed: exact-head/exact-run candidate-evidence PR-tree promotion, "
         "no post-merge rebuild, guarded current-main fallback and stable-only publication."
     )
     return 0

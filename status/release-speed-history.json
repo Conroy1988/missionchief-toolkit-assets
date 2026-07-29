@@ -414,6 +414,34 @@
       "implementationReadyAt": "2026-07-29T00:09:27Z",
       "validationCompletedAt": "2026-07-29T00:10:24Z",
       "telemetryAttribution": "backfilled-from-exact-github-commit-gate-pr-and-release-evidence"
+    },
+    {
+      "version": "8.3.1",
+      "pipelineVersion": 4,
+      "benchmarkClass": "normal",
+      "includeInHotfixBaseline": true,
+      "candidateCommit": "ad2d6d7e1e78c220c89b35bb55cd6123fe3ca4c3",
+      "pullRequest": 587,
+      "prCreatedAt": "2026-07-29T18:25:03Z",
+      "mergedAt": "2026-07-29T18:41:59Z",
+      "implementationReadyAt": "2026-07-29T18:40:06Z",
+      "validationCompletedAt": "2026-07-29T18:41:21Z",
+      "releaseStartedAt": "2026-07-29T18:42:24Z",
+      "githubReleaseAt": "2026-07-29T18:42:33Z",
+      "discordPostedAt": "2026-07-29T18:42:54Z",
+      "verifiedAt": "2026-07-29T18:42:54Z",
+      "durationsSeconds": {
+        "implementationToGreen": 75,
+        "greenToMerge": 38,
+        "prToVerified": 1071,
+        "mergeToGitHubRelease": 34,
+        "mergeToVerified": 55,
+        "releaseWorkflow": 30,
+        "greasyForkPropagation": 20,
+        "privateBackup": 6,
+        "discordAfterGitHubRelease": 21
+      },
+      "greasyForkAttempts": 10
     }
   ]
 }

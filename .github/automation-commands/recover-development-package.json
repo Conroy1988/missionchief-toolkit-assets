@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 582,
-  "expectedMain": "edd5e1c24851085925690e40c21582b134ad3010",
-  "expectedHead": "63a5dc886608e079f0f871324ec24d8262b2ea08",
-  "nonce": "issue565-v827-cancel-transport-20260729b"
+  "prNumber": 584,
+  "expectedMain": "c8d015da402b1a2caa02bfd7b4c2f4b913267291",
+  "expectedHead": "642665cfe912496ac388f909904d7cb4d4b99b4a",
+  "nonce": "issue543-release-telemetry-20260729a"
 }

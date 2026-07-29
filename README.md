@@ -1,185 +1,141 @@
 <div align="center">
 
-<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit realistic UK multi-agency emergency response scene" width="100%">
+<img src="docs/media/readme-hero.svg" alt="MissionChief Map Command Toolkit United Kingdom emergency command network" width="100%">
 
 # MissionChief Map Command Toolkit
 
-### **A realistic UK emergency-command network for the MissionChief map**
+### **The operational command layer for the MissionChief map**
 
-**Incident command · Mission intelligence · Fleet identity · Native transport · Geographic control · Financial reconciliation**
+**See the incident · Read the fleet · Control the map · Reconcile the operation**
 
-[![Install now](https://img.shields.io/badge/INSTALL_NOW-GREASY_FORK-8B0000?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)
-[![Open documentation](https://img.shields.io/badge/OPEN-DOCUMENTATION-126782?style=for-the-badge&logo=readthedocs&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/)
-[![Explore interfaces](https://img.shields.io/badge/EXPLORE-8_COMMAND_INTERFACES-D49B24?style=for-the-badge&logo=palette&logoColor=white)](https://conroy1988.github.io/missionchief-toolkit-assets/themes/)
-[![Release control](https://img.shields.io/badge/OPEN-RELEASE_CONTROL-22272E?style=for-the-badge&logo=githubactions&logoColor=white)](status/README.md)
+<table>
+<tr>
+<td width="25%" align="center"><a href="https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js"><strong>⬇ INSTALL / UPDATE</strong><br><sub>Greasy Fork stable channel</sub></a></td>
+<td width="25%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/"><strong>📘 OPEN THE GUIDE</strong><br><sub>Features, setup and operation</sub></a></td>
+<td width="25%" align="center"><a href="https://conroy1988.github.io/missionchief-toolkit-assets/themes/"><strong>🎛 EXPLORE INTERFACES</strong><br><sub>Eight complete command systems</sub></a></td>
+<td width="25%" align="center"><a href="status/README.md"><strong>✓ RELEASE CONTROL</strong><br><sub>Verified production state</sub></a></td>
+</tr>
+</table>
 
-## **Current verified release: `v8.0.3` · Development candidate: `v8.0.4`**
-### **Godfather duration and payout-position hotfix**
+## **Verified production release: `v8.2.7`**
+
+### **Patient Transport Sweep — native Cancel Transport control correction**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
 [![Installs](https://img.shields.io/greasyfork/dt/586018?label=INSTALLS&color=0f766e)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
-[![Stars](https://img.shields.io/github/stars/Conroy1988/missionchief-toolkit-assets?style=flat&color=ca8a04)](https://github.com/Conroy1988/missionchief-toolkit-assets/stargazers)
-[![Viewed](https://komarev.com/ghpvc/?username=Conroy1988-missionchief-toolkit-assets&label=VIEWED&color=7b6cf6&style=flat)](https://github.com/Conroy1988/missionchief-toolkit-assets)
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command briefing**](#command-network-briefing) · [**Current release**](#current-release-signal--v803) · [**Incident Wire**](#incident-command-wire) · [**Systems**](#native-command-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#deployment-channel) · [**Release control**](#release--recovery-control)
+[**Command brief**](#command-brief) · [**Current release**](#current-release--v827) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
 ---
 
-# v8.0.3 hotfix signal
+## Command brief
 
-> **CRITICAL GODFATHER DURATION AND PAYOUT-POSITION REPAIR // DEVELOPMENT BRANCH ONLY**
+MissionChief spreads operational information across the map, mission windows, vehicle tables, alliance pages, transport requests and finance views.
 
-The verified production release is **v8.0.2**. Candidate **v8.0.3** defaults the Godfather Offer flash to seven seconds when the normal four-second default is still active, preserves non-default user choices, and raises/compacts the payout on short-height layouts so the complete banner clears the command dock. Production remains on v8.0.2 until the guarded hotfix release completes.
-
----
-
-# Command network briefing
-
-> **UK EMERGENCY COMMAND NETWORK // SYSTEM STATUS: OPERATIONAL**
-
-MissionChief distributes operational information across the map, opened incidents, vehicle tables, transport requests, alliance pages, finance views and separate navigation surfaces.
-
-**MissionChief Map Command Toolkit converts those native signals into one configurable command network.** It helps the player see urgent work, read fleet capability, command geographic context, operate selected transport workflows and reconcile performance—without replacing MissionChief's own mission windows or dispatch controls.
+**MissionChief Map Command Toolkit converts those native signals into one configurable command layer.** It improves situational awareness, fleet readability, map context, selected transport workflows and financial reconciliation without replacing MissionChief’s own mission windows or dispatch controls.
 
 <table>
 <tr>
-<td width="25%" align="center"><strong>🚨 INCIDENT</strong><br><sub>Broadcast priority work through one bounded command wire.</sub></td>
-<td width="25%" align="center"><strong>🚒 FLEET</strong><br><sub>Read response codes, custom identity and nearby capability.</sub></td>
-<td width="25%" align="center"><strong>🗺️ MAP</strong><br><sub>Turn range, location and saved places into command context.</sub></td>
-<td width="25%" align="center"><strong>📟 CONTROL</strong><br><sub>Keep every feature bounded, restorable and device-aware.</sub></td>
+<td width="25%" align="center"><strong>🚨 INCIDENT</strong><br><sub>Priority awareness through one bounded Incident Command Wire.</sub></td>
+<td width="25%" align="center"><strong>🚒 FLEET</strong><br><sub>Response codes, custom identity and nearby resource context.</sub></td>
+<td width="25%" align="center"><strong>🗺 MAP</strong><br><sub>Coverage, saved places and mission geography made operational.</sub></td>
+<td width="25%" align="center"><strong>📊 CONTROL</strong><br><sub>Financial intelligence, recovery evidence and device-aware layouts.</sub></td>
 </tr>
 </table>
 
-> **CONTROL-ROOM DOCTRINE:** see the signal, understand the source, act through the correct native control, and leave the page recoverable.
+> **Command doctrine:** expose the signal, preserve the source, act through the correct native control, and leave the page recoverable.
 
 <div align="center">
 
-<img src="docs/media/readme-command-board.svg" alt="MissionChief Toolkit realistic United Kingdom multi-agency operational picture" width="100%">
+<img src="docs/media/readme-command-board.svg" alt="MissionChief Map Command Toolkit operational divisions surrounding the central product identity" width="100%">
 
 </div>
 
 ---
 
-# Live dispatch status
+## Current release — v8.2.7
 
-> **CHANNEL STATUS // VERIFIED PRODUCTION SIGNALS**
+### Patient Transport Sweep — click the real Cancel Transport control
 
-| Control channel | State | Evidence |
-|---|:---:|---|
-| **Canonical source** | 🟢 | Validated `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Production release** | 🟢 | GitHub Release `v8.0.3` published |
-| **Public distribution** | 🟢 | Greasy Fork version and metadata verified |
-| **Private recovery** | 🟢 | Versioned recovery commit retained |
-| **Discord release signal** | 🟢 | Verified release announcement posted |
-| **Hosted media** | 🟢 | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
-| **Responsive command** | 🟢 | Desktop · Tablet/iPad · iPhone/iPad Safari |
+Version `8.2.7` corrects the native Patient Transport Sweep workflow when MissionChief opens the vehicle window but does not automatically activate the visible release control.
 
-The [Release Control Panel](status/README.md) is machine-backed from the current release ledger rather than manually asserted.
+- Discovers native release controls rendered as links, buttons or submit inputs.
+- Accepts both current MissionChief labels: **Cancel Transport** and **Discharge patient**.
+- Captures the original label before clicking so an unchanged label cannot be mistaken for completion.
+- Still requires **Patient isn’t transported**, control removal, control disablement or a genuine post-click transition before success is recorded.
+- Adds no request, observer, interval or Toolkit-managed timer.
+- Preserves own-vehicle exclusion, bounded waits, sequential processing, cancellation and duplicate protection.
 
----
-
-# Current release signal — v8.0.2
-
-> **CHANNEL UPDATE // GODFATHER LAYOUT AND PAYOUT AUDIO**
-
-Version 8.0.2 contained the decorative family seal, restored compact Tablet controls, raised the Offer payout and replaced its audio byte-for-byte with the verified stereo MP3.
-
-- The exact replacement audio remains protected by digest, byte-size, channel and bitrate contracts.
-- The v7 native MissionChief boundary and every retained operational system remain in force.
-- Candidate v8.0.3 adds the seven-second Godfather default and short-height dock-clearance repair.
+The verified release state, SHA-256 identity, public distribution and private recovery evidence are recorded in the [Release Control Panel](status/README.md).
 
 ---
 
-# Incident Command Wire
+## Operational divisions
 
-> **CHANNEL 01 // LIVE INCIDENT BROADCAST**
-
-The Incident Command Wire provides persistent situational awareness without becoming a second mission list.
-
-- priority incidents move continuously from right to left at a constant broadcast speed;
-- an accessibility-safe duplicate sequence removes empty gaps and visible loop jumps;
-- the fixed **Incident Command** identity remains separate from moving incident data;
-- one expanded queue control supports deliberate incident selection;
-- direct click-to-zoom navigation opens the relevant map position;
-- the complete incident row remains centred across all eight interfaces and supported layouts; and
-- reduced-motion, hidden-tab and Economy Mode conditions suppress non-essential movement.
-
-Permanent source and executable contracts protect loop ownership, dynamic speed, seeking and accessibility.
-
----
-
-# Native command divisions
-
-## 🔵 Channel 02 — Mission control
+### Mission command
 
 | Capability | Operational purpose |
 |---|---|
-| **Incident Command Wire** | Broadcasts the highest-priority incident sequence with an expanded queue and direct navigation |
+| **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |
 | **Unit Commitment** | Presents committed response context without replacing native dispatch controls |
 | **Transport Watcher** | Identifies patient and prisoner transport demand |
 
-## 🟢 Channel 03 — Fleet and transport control
+### Fleet and transport command
 
 | Capability | Operational purpose |
 |---|---|
 | **Vehicle Code Status** | Summarises the live fleet by response code, description and count |
 | **Custom Vehicle Badges** | Shows Own Vehicle Categories beside native vehicle types without replacing native identity |
-| **Auto-load all vehicles** | Uses MissionChief's native hidden-vehicle batch control |
-| **Patient Transport Sweep** | Processes eligible alliance ambulances through MissionChief's native vehicle window and discharge control |
+| **Auto-load all vehicles** | Uses MissionChief’s native hidden-vehicle batch control |
+| **Patient Transport Sweep** | Processes eligible alliance patient vehicles through MissionChief’s native vehicle and release controls |
 | **Resource Gap** | Compares active demand with nearby personal vehicle availability |
 
-Patient Transport Sweep remains deliberately bounded. It preserves ownership checks, confirmation evidence, idempotent counters and native discharge controls. It is not a generic click engine and does not create arbitrary vehicle actions.
+Patient Transport Sweep remains deliberately bounded. It uses MissionChief-owned windows and controls, verifies the native result, and stops safely when authoritative evidence does not change.
 
-## 🟡 Channel 04 — Map and place control
+### Map and place command
 
 | Capability | Operational purpose |
 |---|---|
-| **Coverage rings** | Adds readable range context around selected locations |
+| **Coverage rings** | Adds readable response-range context around selected locations |
 | **Smart Bookmark Labels** | Creates compact place labels, pins and touch previews |
-| **Profiles and layouts** | Preserves distinct command presentations without changing MissionChief's underlying data |
-| **Responsive modes** | Reflows the command surface for desktop, tablet/iPad and iOS Mobile Mode |
+| **Profiles and layouts** | Preserves distinct command presentations without changing MissionChief data |
+| **Responsive modes** | Reflows the command surface for Desktop, Tablet and iOS Mobile Mode |
 
-## 🔴 Channel 05 — Financial control
+### Finance and recovery command
 
 | Capability | Operational purpose |
 |---|---|
-| **Alliance Credits** | Adds mission value and eligibility-aware alliance filtering |
-| **Income and spending analysis** | Builds daily, weekly, monthly and custom-period performance context |
+| **Alliance Credits** | Adds mission-value and eligibility-aware alliance filtering |
+| **Financial intelligence** | Builds daily, weekly, monthly and custom-period performance context |
 | **Reconciliation checkpoints** | Anchors complete periods to MissionChief revenue, spending and sum evidence |
 | **Variance preservation** | Keeps unexplained differences visible instead of inventing classifications |
 | **Payout presentations** | Provides optional visual and audio payout feedback with reduced-motion controls |
-| **Discord reporting** | Sends the reconciled model through the saved Discord webhook configured by the user |
+| **Discord reporting** | Sends the reconciled model only through the saved Discord webhook configured by the user |
 
 ---
 
-# The One We Knew Before
+## The One We Knew Before
 
-> **PRODUCT BOUNDARY // MISSIONCHIEF REMAINS AUTHORITATIVE**
+Version 7 restored the Toolkit’s product boundary, and the v8 line continues it:
 
-Version 7 restored a clear product boundary. The Toolkit no longer owns a copied global mission-window stack. That retired code, its settings, stored state, observers, timers, listeners, schedulers, DOM transforms, compatibility hooks and teardown paths were removed rather than hidden.
-
-| v7 decision | Operational result |
+| Boundary | Operational result |
 |---|---|
-| **MissionChief remains authoritative** | Native mission windows, mission lists and dispatch controls stay in charge |
-| **Retired lifecycle ownership was deleted** | Less recurring work and a smaller failure surface |
-| **Independent Toolkit systems were protected** | Mission, fleet, transport, map, finance, interfaces and responsive modes remain independently useful |
-| **Retirement contracts were added** | Validation fails if the removed integration is accidentally reintroduced |
-| **The product identity was restored** | Toolkit remains a focused map-command and operational-intelligence layer |
-
-The v7.1 line advances that native boundary through Incident Command Wire and guarded transport progress rather than rebuilding a competing global interface.
+| **MissionChief remains authoritative** | Native mission windows, lists and dispatch controls stay in charge |
+| **Retired lifecycle ownership stays deleted** | Removed observers, timers, listeners, settings and DOM transforms do not return |
+| **Independent Toolkit systems remain protected** | Mission, fleet, transport, map, finance, interfaces and responsive modes remain independently useful |
+| **Retirement contracts remain executable** | Validation fails if removed integration code is accidentally reintroduced |
+| **The product identity stays focused** | The Toolkit remains a map-command and operational-intelligence layer |
 
 ---
 
-# Runtime command discipline
-
-> **PERFORMANCE CONTROL // FAST SIGNALS, BOUNDED OWNERSHIP, DETERMINISTIC TEARDOWN**
+## Runtime command discipline
 
 A command tool that slows the incident map is not a command tool.
 
@@ -189,23 +145,18 @@ A command tool that slows the incident map is not a command tool.
 - Map, command and responsive state use deterministic teardown and restoration.
 - **Economy Mode** suppresses non-essential work while retaining core information.
 - Reduced-motion preferences remove presentation overhead without hiding operational facts.
-- Incident Command motion has explicit ownership and pause conditions.
 - Source contracts protect observer, timer, listener, selector and retired-feature budgets.
-
-The target is not the largest possible feature list. It is the strongest useful command surface at a controlled runtime cost.
 
 ---
 
-# Eight complete interface systems
-
-> **INTERFACE NETWORK // SAME OPERATIONAL CONTRACT, EIGHT COMMAND LANGUAGES**
+## Eight complete interface systems
 
 Every interface presents the same retained capability and stored configuration. The visual language changes; the operational contract does not.
 
 | Interface | Command-room character |
 |---|---|
 | **Map Command** | Clean cyan telemetry and modern dispatch-console readability |
-| **Cyberpunk** | Neon incident signalling, angular telemetry and high-contrast warnings |
+| **Cyberpunk** | Neon incident signalling and angular high-contrast controls |
 | **Fallout 4** | Green phosphor terminals and industrial emergency-survival controls |
 | **Umbrella** | Clinical containment, black surfaces and red-alert discipline |
 | **Factorio** | Machinery panels, amber controls and production-line logic |
@@ -217,9 +168,7 @@ Inactive interfaces do not run theme-specific effects. [Explore all eight interf
 
 ---
 
-# Field terminal coverage
-
-> **FIELD TERMINALS // DESKTOP · TABLET · iOS**
+## Field terminal coverage
 
 | Mode | Designed behaviour |
 |---|---|
@@ -230,19 +179,17 @@ Inactive interfaces do not run theme-specific effects. [Explore all eight interf
 | **iPad Safari** | Split-view resilience, desktop-site awareness, visual-viewport fitting and orientation recovery |
 | **Economy / reduced motion** | Complete command information with non-essential movement removed |
 
-Responsive behaviour is part of the feature contract—not a cosmetic patch applied after desktop development.
+Responsive behaviour is part of the feature contract—not a cosmetic patch added after desktop development.
 
 ---
 
-# Deployment channel
+## Install and update
 
-> **GREASY FORK STABLE // INSTALL IN UNDER A MINUTE**
-
-1. Install **Tampermonkey** or a compatible userscript manager.
-2. Open the verified public installer: **[Install MissionChief Map Command Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)**.
+1. Install **Tampermonkey** or another compatible userscript manager.
+2. Open the verified installer: **[Install MissionChief Map Command Toolkit](https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js)**.
 3. Confirm installation and reload MissionChief.
 4. Open the Toolkit command button on the map.
-5. Enable only the command systems useful to the current account, device and workflow.
+5. Enable only the systems useful to the current account, device and workflow.
 
 > [!IMPORTANT]
 > **Greasy Fork is the supported installation and automatic-update channel.** GitHub is the canonical source, validation authority, documentation host and immutable release archive.
@@ -259,105 +206,60 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch appl
 
 ---
 
-# Release & recovery control
-
-> **RELEASE NETWORK // GOVERNED SOURCE · VERIFIED RELEASE · RECOVERABLE DELIVERY**
+## Release and recovery control
 
 <div align="center">
 
-<img src="docs/media/readme-release-control.svg" alt="MissionChief Toolkit realistic UK release and recovery operations centre" width="100%">
+<img src="docs/media/readme-release-control.svg" alt="MissionChief Map Command Toolkit verified release and recovery control room" width="100%">
 
 </div>
 
-## Current verified identity
+### Current verified identity
 
 | Field | Verified value |
 |---|---|
-| **Version** | `8.0.3` |
-| **Release focus** | Godfather seven-second duration and dock-clearance hotfix |
+| **Version** | `8.2.7` |
+| **Release focus** | Native Cancel Transport and Discharge patient control activation |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `773d6686fdcfe0af5901f54bdd58c58cf0ef8503bddaae354f32ed25879ac19b` |
-| **GitHub Release** | [`v8.0.3`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.0.3) |
+| **Validated SHA-256** | `f686888356d3a8498782a1e656c855db7ce445f38a11a4c68909b0163e5adc38` |
+| **GitHub Release** | [`v8.2.7`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.2.7) |
 | **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `be6f8a187c4215053a5619acedce31b7f308577a` |
+| **Private backup** | `ee93565fb4ae0aef9c4a82308c392379ea1b598c` |
 | **Discord release delivery** | Posted |
-| **Hosted media audit** | Current release snapshot: 37 discovered · 33 referenced · 0 missing |
-
-## Governed release topology
+| **Hosted media audit** | 37 discovered · 33 referenced · 0 missing |
 
 ```text
-Issue-scoped development on main
-              ↓
-Pull request and executable contracts
-              ↓
-Exact-source validation artefact
-              ↓
-Governed release-state ledger
-              ↓
-Stable distribution publication
-              ↓
-GitHub Release + Greasy Fork verification
-              ↓
+Canonical source
+      ↓
+Exact-head validation
+      ↓
+Immutable GitHub Release
+      ↓
+Greasy Fork source verification
+      ↓
 Private recovery backup
-              ↓
+      ↓
 Discord release confirmation
 ```
 
-| Boundary | Responsibility |
-|---|---|
-| **`main`** | Canonical development source, documentation and reviewed product state |
-| **`release-state`** | Governed release ledger, recovery identity and operational records |
-| **`distribution`** | Stable public distribution source derived from verified release state |
-| **Actions artefacts** | Immutable validation candidates, audits, dry runs and diagnostics |
-| **Private recovery repository** | Versioned, checksum-backed disaster recovery |
-
 GitHub remains authoritative. Greasy Fork is verified as the public distribution channel rather than imported back into canonical source.
 
-Validation covers userscript syntax and metadata, source/distribution parity, retained feature ownership, v7 retirement boundaries, Incident Command Wire behaviour, Transport Sweep progress, runtime budgets, device modes, hosted media, documentation consistency, release channels, recovery evidence and sensitive-value guards.
-
 ---
 
-# Security channel
+## Security and engineering
 
-> **LOCAL CONFIGURATION // EXPLICIT REPORTING // NO REMOTE PLAYER DATABASE**
-
-The Toolkit runs in the browser against the signed-in MissionChief page. It does not operate a separate player-account service.
-
-- Most configuration remains local to the browser.
-- Hosted interface media loads only when required by the active interface.
-- Financial reporting can use only the saved Discord webhook configured by the user.
-- Settings exports can contain that webhook and must be treated as private operational material.
-- No exported settings file containing a live webhook should be published.
-- The Toolkit does not require a remote account, remote telemetry service or separate player database.
-
----
-
-# Engineering control
-
-> **ISSUE-SCOPED · VALIDATED · RECOVERABLE**
-
+- Configuration remains local to the browser unless the user explicitly uses a supported reporting feature.
+- Settings exports can contain the saved Discord webhook and must be treated as private operational material.
+- The Toolkit does not require a remote player account, remote telemetry service or separate player database.
 - `main` is canonical.
 - Confirmed work is tracked through GitHub Issues.
-- Scoped implementation uses owner-created branches and pull requests.
 - Production releases are derived from freshly validated canonical source.
-- Documentation, changelog, release notes, status records and distribution copy must describe the same live implementation.
+- Documentation, release notes, status records and distribution copy must describe the same implementation.
 - Desktop, Tablet/iPad and iOS Mobile/Safari remain mandatory release concerns.
-- Performance, teardown, disabled-module cost and recovery evidence are release requirements.
-
-| Resource | Purpose |
-|---|---|
-| [Documentation](https://conroy1988.github.io/missionchief-toolkit-assets/) | User guidance and system explanations |
-| [Interface gallery](https://conroy1988.github.io/missionchief-toolkit-assets/themes/) | Eight visual command systems |
-| [Release Control Panel](status/README.md) | Current verified release identity and channel health |
-| [Issues](https://github.com/Conroy1988/missionchief-toolkit-assets/issues) | Bugs, enhancements and roadmap work |
-| [Releases](https://github.com/Conroy1988/missionchief-toolkit-assets/releases) | Immutable release history and verified assets |
-| [Changelog](CHANGELOG.md) | Human-readable production history |
-| [Security](SECURITY.md) | Sensitive material and reporting policy |
-| [Contributing](CONTRIBUTING.md) | Contribution expectations |
 
 ---
 
-# Licence and attribution
+## Licence and attribution
 
 The Toolkit source is released under the [MIT Licence](LICENSE).
 
@@ -366,6 +268,8 @@ MissionChief Map Command Toolkit is an independent community userscript created 
 MissionChief, Leitstellenspiel, Cyberpunk 2077, Fallout, Resident Evil / Umbrella, Factorio, James Bond / 007, The Legend of Zelda and associated names or assets remain the property of their respective owners. Their mention does not imply sponsorship, affiliation or endorsement.
 
 <div align="center">
+
+---
 
 ## **SEE THE MISSION · READ THE FLEET · COMMAND THE MAP · RECONCILE THE OPERATION**
 

@@ -172,6 +172,7 @@ jobs:
     with:
       version: ${{ needs.authorize.outputs.version }}
       confirmation: RELEASE
+      validated_sha: ${{ needs.authorize.outputs.expected_main }}
     secrets:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
       MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}

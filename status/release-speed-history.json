@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "targets": {
     "normalHotfixPrToVerifiedMedianSeconds": 240,
     "normalHotfixPrToVerifiedP90Seconds": 420,
@@ -54,7 +54,6 @@
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "2c5954c1df043a49421795b65322341447c87978",
       "pullRequest": 545,
       "prCreatedAt": "2026-07-26T19:27:04Z",
       "mergedAt": "2026-07-26T19:46:37Z",
@@ -71,14 +70,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 8
       },
-      "greasyForkAttempts": 5
+      "greasyForkAttempts": 5,
+      "recordedCommit": "2c5954c1df043a49421795b65322341447c87978"
     },
     {
       "version": "8.1.0",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "93d3fde2b390283a8430f10e6f6387855be04e60",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -95,14 +94,14 @@
         "privateBackup": 5,
         "discordAfterGitHubRelease": 11
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "93d3fde2b390283a8430f10e6f6387855be04e60"
     },
     {
       "version": "8.1.1",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "982d306b7158d9dcf8bc56e33571b12011eb7663",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -119,14 +118,14 @@
         "privateBackup": 4,
         "discordAfterGitHubRelease": 17
       },
-      "greasyForkAttempts": 9
+      "greasyForkAttempts": 9,
+      "recordedCommit": "982d306b7158d9dcf8bc56e33571b12011eb7663"
     },
     {
       "version": "8.1.2",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "f7bc3902c3337c603dcfb893ae5b95e26240c2b5",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -143,14 +142,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 12
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "f7bc3902c3337c603dcfb893ae5b95e26240c2b5"
     },
     {
       "version": "8.1.3",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "f0ba87b10445f259699ee4a3d94d63589ce09edc",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -167,14 +166,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 29
       },
-      "greasyForkAttempts": 15
+      "greasyForkAttempts": 15,
+      "recordedCommit": "f0ba87b10445f259699ee4a3d94d63589ce09edc"
     },
     {
       "version": "8.1.4",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "7c77941831cd1bfcdb0182d27f7ed9ed186b1532",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -191,14 +190,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 11
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "7c77941831cd1bfcdb0182d27f7ed9ed186b1532"
     },
     {
       "version": "8.1.5",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "e82c4cc806cf6e8b29ba304e62f7f6eb5ad94a7b",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -215,14 +214,14 @@
         "privateBackup": 5,
         "discordAfterGitHubRelease": 16
       },
-      "greasyForkAttempts": 8
+      "greasyForkAttempts": 8,
+      "recordedCommit": "e82c4cc806cf6e8b29ba304e62f7f6eb5ad94a7b"
     },
     {
       "version": "8.2.0",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "4b23f6c42e0eb725d70bbeb90d62b3884c2fb0aa",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -239,14 +238,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 14
       },
-      "greasyForkAttempts": 7
+      "greasyForkAttempts": 7,
+      "recordedCommit": "4b23f6c42e0eb725d70bbeb90d62b3884c2fb0aa"
     },
     {
       "version": "8.2.1",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "aa9dcddc18e07876884a12abe413fb6247e5fbad",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -263,14 +262,14 @@
         "privateBackup": 7,
         "discordAfterGitHubRelease": 14
       },
-      "greasyForkAttempts": 7
+      "greasyForkAttempts": 7,
+      "recordedCommit": "aa9dcddc18e07876884a12abe413fb6247e5fbad"
     },
     {
       "version": "8.2.2",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "5c1b6bf2099739e7ecbcb4900bcfbad034a865ea",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -287,14 +286,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 11
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "5c1b6bf2099739e7ecbcb4900bcfbad034a865ea"
     },
     {
       "version": "8.2.3",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "4ab5869bf41b70cebc00b4b4d74cc8ef65f8f06e",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -311,14 +310,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 12
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "4ab5869bf41b70cebc00b4b4d74cc8ef65f8f06e"
     },
     {
       "version": "8.2.4",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "de222c89efef41739e2e12dac3951b1989b640f5",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -335,14 +334,14 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 11
       },
-      "greasyForkAttempts": 6
+      "greasyForkAttempts": 6,
+      "recordedCommit": "de222c89efef41739e2e12dac3951b1989b640f5"
     },
     {
       "version": "8.2.5",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "18f74f064ec09b78c47eb3def827dba6aa52b257",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -359,14 +358,14 @@
         "privateBackup": 5,
         "discordAfterGitHubRelease": 9
       },
-      "greasyForkAttempts": 5
+      "greasyForkAttempts": 5,
+      "recordedCommit": "18f74f064ec09b78c47eb3def827dba6aa52b257"
     },
     {
       "version": "8.2.6",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "48f88ef6cecde0eccf5a0a813cb5fa9fa6e82f50",
       "pullRequest": null,
       "prCreatedAt": null,
       "mergedAt": null,
@@ -383,31 +382,38 @@
         "privateBackup": 6,
         "discordAfterGitHubRelease": 13
       },
-      "greasyForkAttempts": 7
+      "greasyForkAttempts": 7,
+      "recordedCommit": "48f88ef6cecde0eccf5a0a813cb5fa9fa6e82f50"
     },
     {
       "version": "8.2.7",
       "pipelineVersion": 4,
       "benchmarkClass": "normal",
       "includeInHotfixBaseline": true,
-      "sourceSha256": "fb7cc67c3e853e71e95f50c8cd9498751fbb9d8c",
-      "pullRequest": null,
-      "prCreatedAt": null,
-      "mergedAt": null,
+      "pullRequest": 582,
+      "prCreatedAt": "2026-07-28T23:58:13Z",
+      "mergedAt": "2026-07-29T00:11:09Z",
       "releaseStartedAt": "2026-07-29T00:13:15Z",
       "githubReleaseAt": "2026-07-29T00:13:27Z",
       "discordPostedAt": "2026-07-29T00:13:40Z",
       "verifiedAt": "2026-07-29T00:13:40Z",
       "durationsSeconds": {
-        "prToVerified": null,
-        "mergeToGitHubRelease": null,
-        "mergeToVerified": null,
+        "prToVerified": 927,
+        "mergeToGitHubRelease": 138,
+        "mergeToVerified": 151,
         "releaseWorkflow": 25,
         "greasyForkPropagation": 13,
         "privateBackup": 6,
-        "discordAfterGitHubRelease": 13
+        "discordAfterGitHubRelease": 13,
+        "implementationToGreen": 57,
+        "greenToMerge": 45
       },
-      "greasyForkAttempts": 7
+      "greasyForkAttempts": 7,
+      "recordedCommit": "fb7cc67c3e853e71e95f50c8cd9498751fbb9d8c",
+      "candidateCommit": "fba7b31a9425e43cdb034c15321364e82f7dcfd0",
+      "implementationReadyAt": "2026-07-29T00:09:27Z",
+      "validationCompletedAt": "2026-07-29T00:10:24Z",
+      "telemetryAttribution": "backfilled-from-exact-github-commit-gate-pr-and-release-evidence"
     }
   ]
 }

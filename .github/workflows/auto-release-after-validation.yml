@@ -34,6 +34,8 @@ jobs:
       release_needed: ${{ steps.candidate.outputs.release_needed }}
       version: ${{ steps.candidate.outputs.version }}
       validated_sha: ${{ steps.candidate.outputs.validated_sha }}
+      implementation_ready_at: ${{ steps.candidate.outputs.implementation_ready_at }}
+      validation_completed_at: ${{ steps.candidate.outputs.validation_completed_at }}
     steps:
       - name: Check out exact merged main commit
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -49,7 +51,6 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
         shell: bash
         run: |
@@ -57,6 +58,8 @@ jobs:
           echo "release_needed=false" >> "$GITHUB_OUTPUT"
           echo "version=" >> "$GITHUB_OUTPUT"
           echo "validated_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
+          echo "implementation_ready_at=" >> "$GITHUB_OUTPUT"
+          echo "validation_completed_at=" >> "$GITHUB_OUTPUT"
 
           for attempt in $(seq 1 15); do
             git fetch origin main --prune
@@ -86,17 +89,14 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/actions/workflows/validate-userscript.yml/runs" \
             -f event=pull_request \
             -f status=completed \
-            -f branch="$PR_HEAD_REF" \
             -f per_page=100 \
             > /tmp/validation-runs.json
 
           VALIDATION_RUN_ID="$(jq -r \
             --arg head "$PR_HEAD_SHA" \
-            --argjson pr "$PR_NUMBER" \
             '[.workflow_runs[]
               | select(.conclusion == "success")
-              | select(.head_sha == $head)
-              | select(any(.pull_requests[]?; .number == $pr))]
+              | select(.head_sha == $head)]
              | sort_by(.updated_at)
              | last
              | .id // empty' \
@@ -108,11 +108,21 @@ jobs:
             exit 0
           fi
 
+          VALIDATION_COMPLETED_AT="$(jq -r --argjson id "$VALIDATION_RUN_ID" '.workflow_runs[] | select(.id == $id) | .updated_at // empty' /tmp/validation-runs.json)"
+          IMPLEMENTATION_READY_AT="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${PR_HEAD_SHA}" --jq '.commit.committer.date // .commit.author.date // empty')"
+          [[ -n "$VALIDATION_COMPLETED_AT" && -n "$IMPLEMENTATION_READY_AT" ]] || {
+            echo "::error::Exact implementation-ready and validation-completion timestamps were not resolved."
+            exit 1
+          }
+          echo "implementation_ready_at=$IMPLEMENTATION_READY_AT" >> "$GITHUB_OUTPUT"
+          echo "validation_completed_at=$VALIDATION_COMPLETED_AT" >> "$GITHUB_OUTPUT"
+
           gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
-          ARTIFACT_ID="$(jq -r \
+          ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"
+          ARTIFACT_ID="$(jq -r --arg name "$ARTIFACT_NAME" \
             '[.artifacts[]
               | select(.expired == false)
-              | select(.name | startswith("missionchief-toolkit-validation-candidate-"))]
+              | select(.name == $name)]
              | sort_by(.created_at)
              | last
              | .id // empty' \
@@ -245,6 +255,11 @@ jobs:
       confirmation: RELEASE
       validation_run_id: ${{ github.run_id }}
       validated_sha: ${{ needs.prepare_pr.outputs.validated_sha }}
+      pull_request_number: ${{ format('{0}', github.event.pull_request.number) }}
+      pr_created_at: ${{ github.event.pull_request.created_at }}
+      pr_merged_at: ${{ github.event.pull_request.merged_at }}
+      implementation_ready_at: ${{ needs.prepare_pr.outputs.implementation_ready_at }}
+      validation_completed_at: ${{ needs.prepare_pr.outputs.validation_completed_at }}
     secrets:
       DISCORD_RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
       MIGRATION_REPO_TOKEN: ${{ secrets.MIGRATION_REPO_TOKEN }}

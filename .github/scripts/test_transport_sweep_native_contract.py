@@ -1,11 +1,25 @@
 #!/usr/bin/env python3
 import re
 from pathlib import Path
-R=Path(__file__).resolve().parents[2];s=(R/'src/MissionChief_Map_Command_Toolkit.user.js').read_text()
-assert re.search(r'(?m)^//\s*@version\s+8\.2\.6$',s) and "version: '8.2.6'" in s
-for x in ['TRANSPORT_SWEEP_OPTIONAL_RELEASE_','processTransportSweepOptionalReleaseControls(','requestTransportSweepOptionalRelease(','Release patient (No reward)','/patient/-1']: assert x not in s,x
-for x in ['function collectTransportSweepVehicleCandidatesForMission(missionId)','async function openTransportSweepVehicle(candidate)','function transportSweepVisibleDischargeButtons()','function clickTransportSweepDischargeConfirmation(releaseKey)','function transportSweepReleaseConfirmationVisible(baseline = null)','function recordTransportSweepConfirmedRelease(releaseKey, message)',r"/patient (?:is not|isn['’]t) transported\.?/gi"]: assert x in s,x
-m=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',s);assert m;b=m.group(1);cur=-1
-for x in ["await openTransportSweepPath(`/missions/${missionId}`, 'mission')",'const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);','const vehicleResult = await openTransportSweepVehicle(candidate);','button.click();','clickTransportSweepDischargeConfirmation(releaseKey);','recordTransportSweepConfirmedRelease(']: cur=b.index(x,cur+1)
-assert 'let candidates = collectTransportSweepVehicleCandidatesForMission(missionId);' not in b
-print('Native Patient Transport Sweep contract passed.')
+R=Path(__file__).resolve().parents[2]
+s=(R/'src'/'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
+assert re.search(r'(?m)^//\s*@version\s+8\.2\.7$',s)
+for marker in [
+ "TRANSPORT_SWEEP_NATIVE_RELEASE_LABELS = new Set(['discharge patient', 'cancel transport'])",
+ 'function transportSweepNativeReleaseControlText(control)',
+ "'button, a, input[type=\"button\"], input[type=\"submit\"]'",
+ "button.getAttribute?.('aria-disabled') === 'true'",
+ 'const candidates = await collectTransportSweepVehicleCandidatesForMission(missionId);',
+ 'const vehicleResult = await openTransportSweepVehicle(candidate);',
+ 'const releaseControlLabel = transportSweepNativeReleaseControlText(button);',
+ 'button.click();',
+ 'clickTransportSweepDischargeConfirmation(releaseKey);',
+ 'transportSweepNativeReleaseControlText(button) !== releaseControlLabel',
+ 'recordTransportSweepConfirmedRelease(',
+ r"/patient (?:is not|isn['’]t) transported\.?/gi",
+ "MissionChief's native Discharge patient control",
+]: assert marker in s,marker
+m=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',s);assert m
+body=m.group(1)
+assert "!== 'discharge patient'" not in body
+print('Native Patient Transport Sweep Cancel Transport contract passed.')

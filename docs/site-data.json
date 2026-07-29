@@ -126,11 +126,11 @@
         },
         {
           "name": "Patient Transport Sweep",
-          "summary": "Opens each mission and alliance-owned FMS 5 patient vehicle, then completes MissionChief's native discharge and confirmation sequence.",
+          "summary": "Opens each mission and alliance-owned FMS 5 patient vehicle, clicks MissionChief's real Cancel Transport control and verifies the native result.",
           "details": [
-            "Mission-by-mission FMS 5 vehicle discovery",
-            "Native Discharge patient control",
-            "Yes, discharge! confirmation",
+            "Mission-by-mission FMS 5 discovery",
+            "Cancel Transport link/button/input support",
+            "Discharge patient compatibility",
             "Patient isn’t transported verification",
             "Sequential patients and missions",
             "Verified personal vehicle exclusion"

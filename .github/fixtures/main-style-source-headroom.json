@@ -101,24 +101,24 @@
   },
   "v8Candidate": {
     "issue": 565,
-    "version": "8.2.6",
-    "sourceBytes": 1651173,
-    "sourceLines": 25174,
-    "sourceSha256": "f287e5694c0f617f1152d964f8084eae0c82a8bebe5d39bc5392339b364e3553",
+    "version": "8.2.7",
+    "sourceBytes": 1651867,
+    "sourceLines": 25188,
+    "sourceSha256": "f686888356d3a8498782a1e656c855db7ce445f38a11a4c68909b0163e5adc38",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1671173,
-    "maxSourceLines": 25424,
+    "maxSourceBytes": 1671867,
+    "maxSourceLines": 25438,
     "minTemplateBytes": 500000,
-    "baseline": "8.2.5",
+    "baseline": "8.2.6",
     "approvedGrowth": {
-      "sourceBytes": 6629,
-      "sourceLines": 131,
+      "sourceBytes": 7323,
+      "sourceLines": 145,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #565 restoration of the original awaited native FMS 5 vehicle discharge workflow"
+    "scope": "Issue #565 real Cancel Transport link/button discovery, click and post-click verification"
   }
 }

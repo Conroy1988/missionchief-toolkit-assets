@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-29-issue-565-native-vehicle-restore",
-  "rationale": "Remove the unsuccessful direct no-reward request detour and restore the original MissionChief FMS 5 vehicle-window Discharge patient workflow.",
+  "revision": "2026-07-29-issue-565-cancel-transport-control",
+  "rationale": "Recognise MissionChief's real Cancel Transport link/button without adding requests, observers, intervals or Toolkit-managed timers.",
   "transitionApproval": {
     "issue": 565,
-    "version": "8.2.6",
-    "approvedNetworkRequestDelta": -1,
-    "scope": "Restore the awaited native vehicle discharge sequence.",
+    "version": "8.2.7",
+    "approvedNetworkRequestDelta": 0,
+    "scope": "Discover and click the real Cancel Transport native vehicle control and verify its post-click transition.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -173,6 +173,13 @@
       "version": "8.2.6",
       "approvedNetworkRequestDelta": -1,
       "scope": "Restore the awaited native vehicle discharge sequence.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 565,
+      "version": "8.2.7",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Discover and click the real Cancel Transport native vehicle control and verify its post-click transition.",
       "approvedMutationObserverDelta": 0
     }
   ]

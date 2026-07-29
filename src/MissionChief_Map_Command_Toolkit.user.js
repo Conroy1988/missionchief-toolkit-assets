@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.2.6
+// @version      8.2.7
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.2.6',
+        version: '8.2.7',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12895,15 +12895,28 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
 
     
 
+    const TRANSPORT_SWEEP_NATIVE_RELEASE_LABELS = new Set(['discharge patient', 'cancel transport']);
+
+    function transportSweepNativeReleaseControlText(control) {
+        return normaliseTransportSweepReleaseText(
+            control?.value || control?.textContent || control?.getAttribute?.('aria-label') || control?.title || ''
+        );
+    }
+
     function transportSweepVisibleDischargeButtons() {
         const buttons = [];
         const seen = new Set();
         for (const context of transportSweepDocumentContexts()) {
             let matches = [];
-            try { matches = Array.from(context.doc.querySelectorAll('button')); } catch (err) {}
+            try {
+                matches = Array.from(context.doc.querySelectorAll(
+                    'button, a, input[type="button"], input[type="submit"]'
+                ));
+            } catch (err) {}
             for (const button of matches) {
                 if (seen.has(button) || !transportSweepElementVisible(button) || button.disabled) continue;
-                if (String(button.textContent || '').trim().toLowerCase() !== 'discharge patient') continue;
+                if (button.getAttribute?.('aria-disabled') === 'true') continue;
+                if (!TRANSPORT_SWEEP_NATIVE_RELEASE_LABELS.has(transportSweepNativeReleaseControlText(button))) continue;
                 seen.add(button);
                 buttons.push(button);
             }
@@ -13203,12 +13216,13 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
             if (!button) {
                 recordTransportSweepSkippedPatient(
                     transportSweepReleaseKey(missionId, candidate.vehicleId),
-                    `Skipped ${candidate.label} at ${item.caption}: no usable Discharge patient control was available`
+                    `Skipped ${candidate.label} at ${item.caption}: no usable Cancel Transport or Discharge patient control was available`
                 );
             } else {
                 try {
                     const releaseKey = transportSweepReleaseKey(missionId, candidate.vehicleId);
                     const confirmationBaseline = captureTransportSweepReleaseConfirmationBaseline();
+                    const releaseControlLabel = transportSweepNativeReleaseControlText(button);
                     transportSweepRuntime.pendingDischargeKey = releaseKey;
                     button.click();
                     clickTransportSweepDischargeConfirmation(releaseKey);
@@ -13218,7 +13232,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
                             clickTransportSweepDischargeConfirmation(releaseKey);
                             if (transportSweepReleaseConfirmationVisible(confirmationBaseline)) return true;
                             if (!button.isConnected || !transportSweepElementVisible(button) || button.disabled) return true;
-                            return normaliseTransportSweepReleaseText(button.textContent) !== 'discharge patient' ? true : null;
+                            return transportSweepNativeReleaseControlText(button) !== releaseControlLabel ? true : null;
                         }, 5000, 70);
                     } finally {
                         if (transportSweepRuntime.pendingDischargeKey === releaseKey) transportSweepRuntime.pendingDischargeKey = '';
@@ -13273,7 +13287,7 @@ ${CUSTOM_VEHICLE_BADGE_SELECTOR}[data-mcms-theme="godfather"]{border-color:rgba(
         const planned = Math.min(totalRequests, state.transportSweep.maxPerRun);
         const confirmed = pageWindow.confirm(`Transport Sweep will attempt up to ${planned} alliance-member patient releases across ${queue.length} alliance mission${queue.length === 1 ? '' : 's'}.
 
-The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control. Your own verified vehicle IDs are always excluded. Continue?`);
+The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionChief's native Discharge patient control or Cancel Transport control. Your own verified vehicle IDs are always excluded. Continue?`);
         if (!confirmed) return;
         transportSweepRuntime.running = true;
         transportSweepRuntime.stopRequested = false;

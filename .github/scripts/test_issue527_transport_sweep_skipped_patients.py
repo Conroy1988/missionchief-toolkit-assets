@@ -14,7 +14,7 @@ def main():
  assert version >= (7,1,5)
  for marker in ['skippedPatientKeys: new Set()','function recordTransportSweepSkippedPatient(skipKey, message)','transportSweepRuntime.skippedPatientKeys = new Set();']:
   assert marker in source,marker
- helper=section(source,'    function recordTransportSweepSkippedPatient(','    function transportSweepVisibleDischargeButtons(')
+ helper=section(source,'    function recordTransportSweepSkippedPatient(','    const TRANSPORT_SWEEP_NATIVE_RELEASE_LABELS')
  processor=re.search(r'async function processTransportSweepMission\(item, remainingAllowance\) \{([\s\S]*?)\n    \}\n\n    async function startTransportSweep',source);assert processor
  body=processor.group(1)
  assert source.count('transportSweepRuntime.skipped += 1')==1
@@ -23,7 +23,7 @@ def main():
  assert 'renderTransportSweepPanel();' in helper and "transportSweepLog(message, 'warn');" in helper
  assert 'recordTransportSweepSkippedPatient(' in body
  assert 'transportSweepReleaseKey(missionId, candidate.vehicleId)' in body
- assert 'no usable Discharge patient control was available' in body
+ assert 'no usable Cancel Transport or Discharge patient control was available' in body
  assert 'transportSweepRuntime.skipped += 1' not in body
  assert 'clearedHere === 0' not in body
  assert 'no patient skip was recorded' in body

@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.2.7] - 2026-07-29
+
+### Patient Transport Sweep — click the real Cancel Transport control
+
+- Fixed the vehicle window opening correctly but the sweep not clicking the visible **Cancel Transport** control.
+- Discovers MissionChief native release controls rendered as links, buttons or submit inputs.
+- Accepts both real labels: **Cancel Transport** and **Discharge patient**.
+- Captures the original control label before clicking so an unchanged label cannot be mistaken for completion.
+- Continues to require **Patient isn’t transported**, control removal/disablement or a genuine post-click transition.
+- Adds no request, observer, interval or Toolkit-managed timer.
+
 ## [8.2.6] - 2026-07-29
 
 ### Patient Transport Sweep — restore the proven native workflow

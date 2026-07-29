@@ -1,5 +1,5 @@
 # Issue #565 — native Patient Transport Sweep restoration
 
-Toolkit v8.2.6 restores the original MissionChief-native workflow: open each mission, await the alliance-owned FMS 5 vehicle list, open the flashing vehicle, click **Discharge patient**, confirm **Yes, discharge!**, recognise **Patient isn’t transported**, then continue to the next patient and mission.
+Toolkit v8.2.7 follows the observed MissionChief UK flow: open the mission, open the flashing alliance-owned FMS 5 vehicle, click the visible **Cancel Transport** control, recognise **Patient isn’t transported**, then continue to the next patient and mission.
 
-The v8.2.0 direct `Release patient (No reward)` detour and its request site are removed. Verified personal vehicle IDs, bounded waits, cancellation, progress, duplicate protection and sweep-owned window cleanup remain preserved.
+The control detector accepts links, buttons and submit inputs and supports both **Cancel Transport** and **Discharge patient**. It records the original label before clicking so an unchanged Cancel Transport label cannot be treated as successful completion.

@@ -9,6 +9,8 @@ o=(r/".github/workflows/owner-release-command.yml").read_text()
 rec=(r/".github/scripts/record_release_speed.py").read_text()
 assert "Prepare immutable release-ready bundle" in v and "release-bundle/" in v
 assert "release-readiness-check.yml" not in a and "validation_run_id:" in a and "validated_sha:" in a
+assert "workflows:\n      - Toolkit Hotfix Gate" in a
+assert "workflows:\n      - Validate Canonical Userscript" not in a
 assert "Consume exact successful PR validation tree" in a
 assert "Upload promoted merged-main candidate" in a
 assert "Post-merge userscript validation used: no" in a

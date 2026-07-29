@@ -9,7 +9,7 @@ on:
       - closed
   workflow_run:
     workflows:
-      - Validate Canonical Userscript
+      - Toolkit Hotfix Gate
     types:
       - completed
 

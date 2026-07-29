@@ -19,3 +19,6 @@ The live history records implementation-ready → green, green → merge, PR →
 
 
 The candidate artifact filename may use GitHub's pull-request test-merge SHA. Filename suffixes are therefore not release authority; the exact successful workflow run and the candidate's embedded head/PR/tree evidence are authoritative. Zero or multiple candidate artifacts fail closed to the guarded current-`main` validation path.
+
+
+The workflow-run fallback listens to the live `Toolkit Hotfix Gate` workflow name. v8.3.1 is the controlled genuine-release proof for exact-run artifact promotion and complete telemetry attribution.

@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.3.1] - 2026-07-29
+
+### Incident Command Wire production reconciliation
+
+- Publishes the fully validated v8.3.0 unattended Incident Command Wire behaviour as the production v8.3.1 release.
+- Missions leave the feed only when one of your own vehicles reaches authoritative FMS 4, while responding and alliance-only attendance remain visible.
+- Dynamic re-entry, current-card advancement, Pause/Play preservation and compact/expanded queue synchronization are unchanged from the validated v8.3.0 candidate.
+- Corrects the automatic fallback trigger to the live **Toolkit Hotfix Gate** workflow name.
+- Uses the exact successful head run, its sole candidate artifact and embedded PR/head/tree evidence; no post-merge userscript rebuild or duplicate readiness phase is required.
+- Adds no request, observer, interval or Toolkit-managed timer.
+
 ## [8.3.0] - 2026-07-29
 
 ### Incident Command Wire — hide missions already attended by you

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-29-issue-564-incident-feed-personal-on-scene",
-  "rationale": "Exclude missions from Incident Command Wire using the existing personal mission commitment index and coalesced snapshot refresh path.",
+  "revision": "2026-07-29-v831-exact-artifact-production-proof",
+  "rationale": "Publish the already validated Issue #564 Incident Command Wire behaviour through the corrected exact-run candidate-artifact pipeline.",
   "transitionApproval": {
     "issue": 564,
-    "version": "8.3.0",
+    "version": "8.3.1",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Mission-scoped personal FMS 4 exclusion, stable current-card advancement and dynamic re-entry.",
+    "scope": "Production reconciliation of the v8.3.0 personal FMS 4 Incident Command Wire exclusion with corrected release triggers.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -187,6 +187,13 @@
       "version": "8.3.0",
       "approvedNetworkRequestDelta": 0,
       "scope": "Mission-scoped personal FMS 4 exclusion, stable current-card advancement and dynamic re-entry.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 564,
+      "version": "8.3.1",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Production reconciliation of the v8.3.0 personal FMS 4 Incident Command Wire exclusion with corrected release triggers.",
       "approvedMutationObserverDelta": 0
     }
   ]

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "command": "recover-development-package",
-  "prNumber": 591,
-  "expectedMain": "52999920ac91727876c45e251f23f1a13b62b42c",
-  "expectedHead": "301e76e3cc761c5c8ed4234bf584d2938e6a12f1",
-  "nonce": "issue255-v831-unchanged-update-ui-20260729a"
+  "prNumber": 592,
+  "expectedMain": "6d5b156dbb5c9a8f88147177f4806eb11a0e202e",
+  "expectedHead": "e2a7668a0775bd7994a5da4ea9b38d0847683708",
+  "nonce": "issue255-v832-update-ui-write-suppression-20260730a"
 }

@@ -20,7 +20,7 @@ def main():
  assert '@keyframes mcmsIncidentWireReel' in source
  assert 'animation:mcmsIncidentWireReel var(--mcms-incident-feed-duration,90s) linear infinite!important' in source
  assert 'transition:none!important' in source
- assert source.count('data-mcms-reel-copy=')==2
+ assert render.count('data-mcms-reel-copy=')==2
  assert 'data-mcms-reel-copy="primary"' in render and 'data-mcms-reel-copy="duplicate"' in render
  assert 'aria-hidden="true" tabindex="-1"' in source
  assert 'groupWidth / 85' in motion and "--mcms-incident-feed-duration" in motion

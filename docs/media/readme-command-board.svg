@@ -1,191 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-<title id="title">MissionChief Toolkit United Kingdom operational picture</title>
-<desc id="desc">A realistic multi-agency UK command board showing fire, ambulance, police and coastguard response around a live operational map with mission, fleet, transport, map and finance intelligence.</desc>
+<title id="title">MissionChief Map Command Toolkit operational picture</title>
+<desc id="desc">A balanced UK emergency command-board composition with four operational divisions arranged safely around the MissionChief Map Command Toolkit identity.</desc>
 <defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#03070c"/><stop offset=".48" stop-color="#071724"/><stop offset="1" stop-color="#16070b"/>
-  </linearGradient>
-  <radialGradient id="mapGlow" cx=".5" cy=".45" r=".6">
-    <stop offset="0" stop-color="#1a789d" stop-opacity=".32"/><stop offset=".6" stop-color="#072336" stop-opacity=".1"/><stop offset="1" stop-color="#02070c" stop-opacity="0"/>
-  </radialGradient>
-  <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#17242c" stop-opacity=".97"/><stop offset=".45" stop-color="#071018" stop-opacity=".96"/><stop offset="1" stop-color="#03070b" stop-opacity=".98"/>
-  </linearGradient>
-  <linearGradient id="redVehicle" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f22a3a"/><stop offset=".45" stop-color="#8e0713"/><stop offset="1" stop-color="#2a0206"/></linearGradient>
-  <linearGradient id="whiteVehicle" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#c6cfce"/><stop offset="1" stop-color="#59666a"/></linearGradient>
-  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8fdbff"/><stop offset=".35" stop-color="#22516a"/><stop offset="1" stop-color="#03090d"/></linearGradient>
-  <linearGradient id="yellow" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#fbff4a"/><stop offset=".6" stop-color="#d4e600"/><stop offset="1" stop-color="#737e00"/></linearGradient>
-  <linearGradient id="green" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#31da59"/><stop offset=".55" stop-color="#07852d"/><stop offset="1" stop-color="#013f12"/></linearGradient>
-  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#31afff"/><stop offset=".55" stop-color="#126ac8"/><stop offset="1" stop-color="#032e66"/></linearGradient>
-  <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#657985"/><stop offset=".12" stop-color="#17232a"/><stop offset=".7" stop-color="#070b0e"/><stop offset="1" stop-color="#25333b"/></linearGradient>
-  <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#62d1ff" stroke-opacity=".055"/></pattern>
-  <pattern id="scan" width="5" height="5" patternUnits="userSpaceOnUse"><rect width="5" height="1" fill="#fff" opacity=".02"/></pattern>
-  <filter id="shadow" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="18" stdDeviation="15" flood-color="#000" flood-opacity=".82"/></filter>
-  <filter id="glow" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="9" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="grain" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="11"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 0 .05"/></feComponentTransfer><feBlend in="SourceGraphic" mode="screen"/></filter>
-  <clipPath id="clip"><rect x="18" y="18" width="1564" height="864" rx="28"/></clipPath>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#02060a"/><stop offset=".45" stop-color="#071723"/><stop offset="1" stop-color="#16070b"/></linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1a2932"/><stop offset=".45" stop-color="#071018"/><stop offset="1" stop-color="#030609"/></linearGradient>
+  <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1c6c91" stop-opacity=".68"/><stop offset=".55" stop-color="#082334" stop-opacity=".88"/><stop offset="1" stop-color="#02090e"/></linearGradient>
+  <linearGradient id="titleFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset=".6" stop-color="#d8e6eb"/><stop offset="1" stop-color="#8ca0aa"/></linearGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff2a1"/><stop offset=".5" stop-color="#e7b43b"/><stop offset="1" stop-color="#8d5208"/></linearGradient>
+  <radialGradient id="glow"><stop stop-color="#60dfff" stop-opacity=".42"/><stop offset="1" stop-color="#0a80ba" stop-opacity="0"/></radialGradient>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000" flood-opacity=".72"/></filter>
+  <filter id="smallGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#61d1ff" stroke-opacity=".045"/></pattern>
 </defs>
-<g clip-path="url(#clip)">
-  <rect width="1600" height="900" fill="url(#bg)"/>
-  <rect width="1600" height="900" fill="url(#grid)"/>
-  <rect width="1600" height="900" fill="url(#scan)"/>
-  <rect width="1600" height="900" fill="url(#mapGlow)"/>
-
-  <!-- Header -->
-  <g transform="translate(38 34)" filter="url(#shadow)">
-    <path d="M0 0h1524l18 18v94l-18 18H0l-18-18V18z" fill="url(#panel)" stroke="#657b86" stroke-width="2"/>
-    <g transform="translate(18 18)">
-      <rect width="78" height="48" rx="4" fill="#080e12" stroke="#697b84"/>
-      <path d="M0 0 78 48M78 0 0 48" stroke="#fff" stroke-width="12"/><path d="M0 0 78 48M78 0 0 48" stroke="#c71f31" stroke-width="5"/>
-      <path d="M39 0v48M0 24h78" stroke="#fff" stroke-width="14"/><path d="M39 0v48M0 24h78" stroke="#c71f31" stroke-width="7"/>
-    </g>
-    <text x="120" y="49" fill="#6cd8ff" font-family="Arial,sans-serif" font-size="15" font-weight="900" letter-spacing="4">MISSIONCHIEF TOOLKIT // UK MULTI-AGENCY COMMAND</text>
-    <text x="120" y="91" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-size="40" font-weight="900" letter-spacing="1.5">UNITED KINGDOM OPERATIONAL PICTURE</text>
-    <g transform="translate(1172 22)" font-family="Arial,sans-serif">
-      <text x="0" y="15" fill="#81939d" font-size="11" font-weight="800" letter-spacing="2">COMMAND STATE</text>
-      <circle cx="21" cy="52" r="8" fill="#36dc7b" filter="url(#glow)"/>
-      <text x="43" y="59" fill="#dffff0" font-size="19" font-weight="900" letter-spacing="2">OPERATIONAL</text>
-      <text x="0" y="91" fill="#8fa0aa" font-size="11" letter-spacing="1.6">DESKTOP · TABLET · iOS</text>
-    </g>
-  </g>
-
-  <!-- Central UK map -->
-  <g transform="translate(535 178)" filter="url(#shadow)">
-    <path d="M0 0h530l18 18v590l-18 18H0l-18-18V18z" fill="#03090e" stroke="#4f6774" stroke-width="2"/>
-    <rect x="12" y="12" width="506" height="602" rx="10" fill="#06121b" stroke="#172d39"/>
-    <text x="28" y="44" fill="#6ed8ff" font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="3">LIVE INCIDENT MAP // NATIVE MISSION CONTEXT</text>
-    <path d="M28 58h472" stroke="#1c94c7" stroke-opacity=".65"/>
-
-    <!-- stylised GB landmass -->
-    <g transform="translate(72 68)">
-      <path d="M196 0l-30 24-14 46-37 26-8 46-35 35 5 41-22 38 12 35-18 43 12 54 39 13 22 43 45-5 31 34 45-6 26-38 43-9 18-46 42-28-8-52 24-43-8-45-34-26-7-38-37-20 10-39-27-32-37 11-27-37z" fill="#0a2635" stroke="#50c9ff" stroke-width="4"/>
-      <path d="M76 176l60-68 64-32 57 31 48 67 29 93-26 91-64 67-78 8-63-44-31-104z" fill="none" stroke="#2ea7d8" stroke-opacity=".35" stroke-width="2"/>
-      <g fill="none" stroke="#2cc0ef" stroke-opacity=".24" stroke-width="2">
-        <path d="M103 150l178 247M127 99l212 212M63 257l282 36M108 375l212-196M150 70l82 359"/>
-      </g>
-      <g filter="url(#glow)">
-        <circle cx="165" cy="110" r="8" fill="#ff3f4a"/><circle cx="133" cy="196" r="7" fill="#ffbd34"/>
-        <circle cx="196" cy="252" r="9" fill="#26b9ff"/><circle cx="154" cy="327" r="7" fill="#ff3f4a"/>
-        <circle cx="224" cy="375" r="8" fill="#22d271"/><circle cx="272" cy="297" r="7" fill="#ffbd34"/>
-        <circle cx="301" cy="205" r="8" fill="#27baff"/>
-      </g>
-      <g fill="#dff7ff" font-family="Arial,sans-serif" font-size="11" font-weight="800">
-        <text x="178" y="101">EDINBURGH</text><text x="71" y="194">BELFAST</text><text x="210" y="246">MANCHESTER</text>
-        <text x="87" y="326">CARDIFF</text><text x="240" y="372">LONDON</text><text x="314" y="202">NORTH SEA</text>
-      </g>
-      <path d="M27 212l-17 24 6 35 23 8 15-22-5-33z" fill="#0a2635" stroke="#50c9ff" stroke-width="3"/>
-    </g>
-
-    <g transform="translate(28 526)" font-family="Arial,sans-serif">
-      <rect width="472" height="62" rx="8" fill="#07141c" stroke="#1c4b61"/>
-      <circle cx="22" cy="31" r="6" fill="#ff414b"/><text x="39" y="35" fill="#fff" font-size="12" font-weight="800">PRIORITY</text>
-      <circle cx="128" cy="31" r="6" fill="#ffbc36"/><text x="145" y="35" fill="#fff" font-size="12" font-weight="800">WATCH</text>
-      <circle cx="227" cy="31" r="6" fill="#25b9ff"/><text x="244" y="35" fill="#fff" font-size="12" font-weight="800">RESOURCE</text>
-      <circle cx="349" cy="31" r="6" fill="#29d273"/><text x="366" y="35" fill="#fff" font-size="12" font-weight="800">VERIFIED</text>
-    </g>
-  </g>
-
-  <!-- Fire panel -->
-  <g transform="translate(40 178)" filter="url(#shadow)">
-    <path d="M0 0h455l16 16v270l-16 16H0l-16-16V16z" fill="url(#panel)" stroke="#a72d36" stroke-width="2"/>
-    <text x="25" y="40" fill="#ff5963" font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="3">FIRE &amp; RESCUE // RESPONSE CHANNEL</text>
-    <path d="M25 53h402" stroke="#9f2b34" stroke-opacity=".72"/>
-    <g transform="translate(30 74)">
-      <ellipse cx="196" cy="176" rx="190" ry="25" fill="#000" opacity=".64"/>
-      <path d="M12 70 58 24h239l62 44 53 28 31 65-25 22H24L0 154z" fill="url(#redVehicle)" stroke="#48050b" stroke-width="4"/>
-      <path d="M56 29h235l56 42H24z" fill="#7d0711"/>
-      <path d="M274 35h32l43 34h-70z" fill="url(#glass)" stroke="#283943" stroke-width="3"/>
-      <path d="M33 79h367v17H25z" fill="url(#yellow)"/><path d="M33 98h367v9H25z" fill="#173783"/>
-      <g fill="#9b0b17" stroke="#dc414b"><rect x="47" y="119" width="64" height="39"/><rect x="117" y="119" width="64" height="39"/><rect x="187" y="119" width="64" height="39"/></g>
-      <rect x="278" y="112" width="118" height="48" fill="#20282c" stroke="#a9222d"/>
-      <text x="337" y="141" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="14" font-weight="900">FIRE &amp; RESCUE</text>
-      <circle cx="89" cy="166" r="34" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="89" cy="166" r="16" fill="#8c989e"/>
-      <circle cx="334" cy="166" r="34" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="334" cy="166" r="16" fill="#8c989e"/>
-      <rect x="252" y="14" width="88" height="12" rx="5" fill="#168cff" stroke="#8bdeff"/><circle cx="274" cy="20" r="6" fill="#29b8ff" filter="url(#glow)"/>
-    </g>
-    <text x="28" y="284" fill="#cbd9df" font-family="Arial,sans-serif" font-size="12">Mission age · value · commitment · incident wire</text>
-  </g>
-
-  <!-- Ambulance panel -->
-  <g transform="translate(40 505)" filter="url(#shadow)">
-    <path d="M0 0h455l16 16v270l-16 16H0l-16-16V16z" fill="url(#panel)" stroke="#2b9e4c" stroke-width="2"/>
-    <text x="25" y="40" fill="#55db78" font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="3">AMBULANCE // PATIENT TRANSPORT CHANNEL</text>
-    <path d="M25 53h402" stroke="#2b9e4c" stroke-opacity=".68"/>
-    <g transform="translate(28 73)">
-      <ellipse cx="200" cy="177" rx="191" ry="25" fill="#000" opacity=".64"/>
-      <path d="M13 70 61 24h248l73 43 45 65-14 50H24L0 156z" fill="url(#whiteVehicle)" stroke="#4b5659" stroke-width="4"/>
-      <path d="M61 29h240l64 40H27z" fill="#e9eee9"/>
-      <path d="M299 36h35l36 32h-69z" fill="url(#glass)" stroke="#394b52" stroke-width="3"/>
-      <path d="M34 78h373v20H25z" fill="url(#yellow)"/><path d="M34 99h373v21H25z" fill="url(#green)"/>
-      <text x="168" y="61" text-anchor="middle" fill="#0d6d32" font-family="Arial,sans-serif" font-size="17" font-weight="900" letter-spacing="2">AMBULANCE</text>
-      <path d="M41 123h50l-17 49H24zM93 123h50l-17 49H76zM145 123h50l-17 49H128zM197 123h50l-17 49H180z" fill="#e9f12c"/>
-      <path d="M67 123h50l-17 49H50zM119 123h50l-17 49H102zM171 123h50l-17 49H154zM223 123h50l-17 49H206z" fill="#087e30"/>
-      <path d="M313 107h86v56h-86z" fill="#d6dfda" stroke="#73807d"/><path d="M356 114v42M335 135h42" stroke="#0a8337" stroke-width="6"/>
-      <circle cx="91" cy="168" r="34" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="91" cy="168" r="16" fill="#8c989e"/>
-      <circle cx="340" cy="168" r="34" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="340" cy="168" r="16" fill="#8c989e"/>
-      <rect x="72" y="12" width="82" height="12" rx="5" fill="#168cff"/><rect x="286" y="12" width="82" height="12" rx="5" fill="#168cff"/>
-      <circle cx="95" cy="18" r="6" fill="#29b8ff" filter="url(#glow)"/><circle cx="342" cy="18" r="6" fill="#29b8ff" filter="url(#glow)"/>
-    </g>
-    <text x="28" y="284" fill="#cbd9df" font-family="Arial,sans-serif" font-size="12">Transport watcher · native discharge · progress integrity</text>
-  </g>
-
-  <!-- Police panel -->
-  <g transform="translate(1105 178)" filter="url(#shadow)">
-    <path d="M0 0h455l16 16v270l-16 16H0l-16-16V16z" fill="url(#panel)" stroke="#257fc5" stroke-width="2"/>
-    <text x="25" y="40" fill="#4cbaff" font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="3">POLICE // INCIDENT CONTROL CHANNEL</text>
-    <path d="M25 53h402" stroke="#257fc5" stroke-opacity=".68"/>
-    <g transform="translate(26 82)">
-      <ellipse cx="199" cy="149" rx="190" ry="24" fill="#000" opacity=".64"/>
-      <path d="M13 83 71 39h176l86 38 58 43-14 41H28L0 139z" fill="url(#whiteVehicle)" stroke="#3e4d55" stroke-width="4"/>
-      <path d="M85 44h148l76 34H48z" fill="#dce6e9"/>
-      <path d="M91 49h65v31H63zM163 49h67l61 31H164z" fill="url(#glass)" stroke="#334851" stroke-width="3"/>
-      <path d="M35 89h326v20H27z" fill="url(#yellow)"/><path d="M35 110h326v20H27z" fill="url(#blue)"/>
-      <g fill="#eef32c"><path d="M55 88h43l-16 42H39z"/><path d="M141 88h43l-16 42H125z"/><path d="M227 88h43l-16 42H211z"/><path d="M313 88h43l-16 42H297z"/></g>
-      <g fill="#116cc8"><path d="M98 88h43l-16 42H82z"/><path d="M184 88h43l-16 42H168z"/><path d="M270 88h43l-16 42H254z"/></g>
-      <rect x="162" y="90" width="76" height="23" rx="4" fill="#f6f9fa"/><text x="200" y="107" text-anchor="middle" fill="#145694" font-family="Arial,sans-serif" font-size="14" font-weight="900">POLICE</text>
-      <circle cx="86" cy="146" r="31" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="86" cy="146" r="14" fill="#8c989e"/>
-      <circle cx="306" cy="146" r="31" fill="#06090b" stroke="#303a3f" stroke-width="6"/><circle cx="306" cy="146" r="14" fill="#8c989e"/>
-      <rect x="139" y="29" width="103" height="12" rx="5" fill="#168cff"/><circle cx="164" cy="35" r="6" fill="#29b8ff" filter="url(#glow)"/><circle cx="218" cy="35" r="6" fill="#29b8ff" filter="url(#glow)"/>
-    </g>
-    <text x="28" y="284" fill="#cbd9df" font-family="Arial,sans-serif" font-size="12">Priority incidents · direct navigation · native dispatch context</text>
-  </g>
-
-  <!-- Coastguard panel -->
-  <g transform="translate(1105 505)" filter="url(#shadow)">
-    <path d="M0 0h455l16 16v270l-16 16H0l-16-16V16z" fill="url(#panel)" stroke="#d05533" stroke-width="2"/>
-    <text x="25" y="40" fill="#ff7b53" font-family="Arial,sans-serif" font-size="13" font-weight="900" letter-spacing="3">HM COASTGUARD // SEARCH &amp; RESCUE CHANNEL</text>
-    <path d="M25 53h402" stroke="#d05533" stroke-opacity=".68"/>
-    <g transform="translate(35 73) rotate(-2)">
-      <ellipse cx="191" cy="177" rx="165" ry="22" fill="#000" opacity=".55"/>
-      <path d="M30 91c22-38 70-57 127-48 55 8 92 35 111 68l-18 32-72 13-105-7-54-27z" fill="#f4f2e8" stroke="#7d8a90" stroke-width="4"/>
-      <path d="M67 82c24-25 57-32 89-27 31 4 58 20 76 44l-58 8-88-5z" fill="url(#glass)"/>
-      <path d="M20 120h224l-12 29H73z" fill="#d31f2a"/>
-      <path d="M221 100l112-24 8 10-95 38z" fill="#ecebe4" stroke="#78848a" stroke-width="3"/>
-      <path d="M325 76l45-33 9 7-30 39z" fill="#d31f2a"/>
-      <path d="M115 51l20-35 14 3-4 35z" fill="#b8c2c6"/>
-      <path d="M62 151h155" stroke="#222a2e" stroke-width="5"/>
-      <text x="133" y="137" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="15" font-weight="900" letter-spacing="1.5">HM COASTGUARD</text>
-      <path d="M136 18H14M132 14l-100-26M135 13l-92 30M141 16l90-35" stroke="#b4bdc1" stroke-width="5" stroke-linecap="round"/>
-      <circle cx="29" cy="119" r="6" fill="#29b8ff" filter="url(#glow)"/><circle cx="241" cy="133" r="6" fill="#29b8ff" filter="url(#glow)"/>
-    </g>
-    <text x="28" y="284" fill="#cbd9df" font-family="Arial,sans-serif" font-size="12">Coverage rings · location intelligence · responsive field control</text>
-  </g>
-
-  <!-- Command domains footer -->
-  <g transform="translate(40 830)" filter="url(#shadow)" font-family="Arial,sans-serif">
-    <path d="M0 0h1520l16 16-16 42H0l-16-42z" fill="#040a0e" stroke="#4d626d"/>
-    <g font-weight="900" font-size="13" letter-spacing="1.5">
-      <circle cx="28" cy="29" r="6" fill="#ff4854"/><text x="44" y="34" fill="#fff">MISSION INTELLIGENCE</text>
-      <circle cx="323" cy="29" r="6" fill="#26b9ff"/><text x="339" y="34" fill="#fff">FLEET IDENTITY</text>
-      <circle cx="556" cy="29" r="6" fill="#2ed274"/><text x="572" y="34" fill="#fff">NATIVE TRANSPORT</text>
-      <circle cx="844" cy="29" r="6" fill="#ffd145"/><text x="860" y="34" fill="#fff">GEOGRAPHIC CONTROL</text>
-      <circle cx="1162" cy="29" r="6" fill="#ba7cff"/><text x="1178" y="34" fill="#fff">FINANCIAL RECONCILIATION</text>
-    </g>
-  </g>
-
-  <rect width="1600" height="900" fill="none" stroke="#748a95" stroke-width="3"/>
-  <rect x="12" y="12" width="1576" height="876" rx="30" fill="none" stroke="url(#steel)" stroke-width="20"/>
-  <rect x="24" y="24" width="1552" height="852" rx="22" fill="none" stroke="#6f828b" stroke-opacity=".55" stroke-width="2"/>
-  <rect width="1600" height="900" fill="none" filter="url(#grain)"/>
-</g>
+<rect width="1600" height="900" rx="28" fill="url(#bg)"/><rect width="1600" height="900" rx="28" fill="url(#grid)"/><circle cx="800" cy="470" r="520" fill="url(#glow)"/>
+<g transform="translate(38 30)"><rect width="1524" height="70" rx="12" fill="#02070b" fill-opacity=".92" stroke="#63747d"/><text x="28" y="29" fill="#70d7ff" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="900" letter-spacing="3">UNITED KINGDOM OPERATIONAL PICTURE</text><text x="28" y="53" fill="#f1f7f9" font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="900" letter-spacing="1.6">MISSIONCHIEF MAP COMMAND TOOLKIT</text><g transform="translate(1240 17)"><circle cx="15" cy="18" r="8" fill="#3de17a" filter="url(#smallGlow)"/><text x="35" y="23" fill="#e7f3f6" font-family="Arial,Helvetica,sans-serif" font-size="13" font-weight="900" letter-spacing="2">LIVE &amp; VERIFIED</text></g></g>
+<g filter="url(#shadow)"><rect x="452" y="278" width="696" height="344" rx="36" fill="#02070b" fill-opacity=".96" stroke="#64ceff" stroke-opacity=".6" stroke-width="3"/><rect x="470" y="296" width="660" height="308" rx="28" fill="url(#glass)" stroke="#89dcff" stroke-opacity=".28"/><path d="M500 330h205M895 330h205" stroke="#48c9ff" stroke-width="3"/><text x="800" y="395" text-anchor="middle" fill="url(#titleFill)" font-family="Arial Black,Arial,sans-serif" font-size="58" font-weight="900" letter-spacing="3">MISSIONCHIEF</text><text x="800" y="460" text-anchor="middle" fill="url(#gold)" font-family="Arial Black,Arial,sans-serif" font-size="40" font-weight="900" letter-spacing="2.5">MAP COMMAND TOOLKIT</text><text x="800" y="505" text-anchor="middle" fill="#9de6ff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="900" letter-spacing="3.4">ONE MAP · ONE COMMAND LAYER · NATIVE CONTROLS</text><g transform="translate(520 535)" font-family="Arial,Helvetica,sans-serif" font-size="12" font-weight="900"><g><rect width="130" height="38" rx="8" fill="#0b2b40" stroke="#28b9f0"/><text x="65" y="24" text-anchor="middle" fill="#e9f9ff">INCIDENTS</text></g><g transform="translate(145)"><rect width="130" height="38" rx="8" fill="#321014" stroke="#dd3942"/><text x="65" y="24" text-anchor="middle" fill="#fff0ef">FLEET</text></g><g transform="translate(290)"><rect width="130" height="38" rx="8" fill="#233008" stroke="#b4d143"/><text x="65" y="24" text-anchor="middle" fill="#f8ffe3">MAP</text></g><g transform="translate(435)"><rect width="130" height="38" rx="8" fill="#332309" stroke="#dfa936"/><text x="65" y="24" text-anchor="middle" fill="#fff5d7">FINANCE</text></g></g></g>
+<g fill="none" stroke-width="4"><path d="M452 355H394Q370 355 354 330L332 297" stroke="#2cbef5"/><path d="M1148 355h58q24 0 40-25l22-33" stroke="#ef4248"/><path d="M452 548h-58q-24 0-40 25l-22 33" stroke="#b5d248"/><path d="M1148 548h58q24 0 40 25l22 33" stroke="#e3af3c"/></g>
+<g transform="translate(40 132)" filter="url(#shadow)" font-family="Arial,Helvetica,sans-serif"><rect width="352" height="250" rx="22" fill="url(#panel)" stroke="#2ebef2" stroke-width="2"/><text x="24" y="34" fill="#63d7ff" font-size="13" font-weight="900" letter-spacing="2.4">CHANNEL 01</text><text x="24" y="68" fill="#fff" font-size="27" font-weight="900">MISSION CONTROL</text><rect x="22" y="88" width="308" height="100" rx="10" fill="#041019" stroke="#1f6e91"/><path d="M40 145c36-43 73 31 111-6s73 29 111-15 44 0 50-11" fill="none" stroke="#34c9ff" stroke-width="4"/><g fill="#ee3e45" filter="url(#smallGlow)"><circle cx="82" cy="128" r="6"/><circle cx="167" cy="142" r="6"/><circle cx="248" cy="123" r="6"/></g><text x="40" y="210" fill="#c7d8df" font-size="12" font-weight="800">Incident Command Wire · Mission Age</text><text x="40" y="231" fill="#8da2ac" font-size="11">Mission Value · Unit Commitment · Transport Watcher</text></g>
+<g transform="translate(1208 132)" filter="url(#shadow)" font-family="Arial,Helvetica,sans-serif"><rect width="352" height="250" rx="22" fill="url(#panel)" stroke="#ef4148" stroke-width="2"/><text x="24" y="34" fill="#ff6669" font-size="13" font-weight="900" letter-spacing="2.4">CHANNEL 02</text><text x="24" y="68" fill="#fff" font-size="27" font-weight="900">FLEET &amp; TRANSPORT</text><g transform="translate(24 90)"><path d="M5 38 35 12h80l23 29v54H4z" fill="#e5cd29" stroke="#1c2b31" stroke-width="2"/><path d="M8 55h127v25H8z" fill="#25733a"/><path d="M12 57 27 79l15-22 15 22 15-22 15 22 15-22 15 22 15-22v22H12z" fill="#e8dd3a"/><circle cx="31" cy="96" r="14" fill="#070a0c"/><circle cx="111" cy="96" r="14" fill="#070a0c"/><g transform="translate(92 2)"><path d="M4 38 38 5h106l26 34v56H2z" fill="#bd1822" stroke="#1c2b31" stroke-width="2"/><path d="M6 54h160v27H6z" fill="#ebd925"/><path d="M8 55 25 79l17-24 17 24 17-24 17 24 17-24 17 24 17-24 17 24v3H8z" fill="#c91e28"/><circle cx="38" cy="96" r="15" fill="#070a0c"/><circle cx="139" cy="96" r="15" fill="#070a0c"/></g><g transform="translate(206 29)"><path d="M4 29 30 6h75l35 28v43H2z" fill="#dfe5e8" stroke="#1c2b31" stroke-width="2"/><path d="M5 43h131v22H5z" fill="#146dcc"/><path d="M7 44 20 64l13-20 13 20 13-20 13 20 13-20 13 20 13-20 13 20v1H7z" fill="#d9ef35"/><circle cx="29" cy="78" r="13" fill="#070a0c"/><circle cx="112" cy="78" r="13" fill="#070a0c"/></g></g><text x="24" y="210" fill="#d7dfe2" font-size="12" font-weight="800">Vehicle Code Status · Custom Vehicle Badges</text><text x="24" y="231" fill="#9eaaaf" font-size="11">Patient Transport Sweep · Auto-load · Resource Gap</text></g>
+<g transform="translate(40 570)" filter="url(#shadow)" font-family="Arial,Helvetica,sans-serif"><rect width="352" height="250" rx="22" fill="url(#panel)" stroke="#b8d248" stroke-width="2"/><text x="24" y="34" fill="#d8ee6b" font-size="13" font-weight="900" letter-spacing="2.4">CHANNEL 03</text><text x="24" y="68" fill="#fff" font-size="27" font-weight="900">MAP &amp; PLACES</text><path d="M155 91l-27 12-9 30-24 13-8 33-22 17 7 25 23 6 12 20 31-2 18-21 22-4 11-27 24-16-5-31 15-23-13-25-24-6-11-19-20 6z" fill="#071a24" stroke="#44caff" stroke-width="3"/><g fill="#ff4b4f" filter="url(#smallGlow)"><circle cx="128" cy="133" r="5"/><circle cx="163" cy="167" r="6"/><circle cx="188" cy="206" r="5"/></g><g fill="#d8ed50"><circle cx="142" cy="188" r="5"/><circle cx="100" cy="214" r="5"/></g><path d="M128 133 163 167 142 188 188 206" fill="none" stroke="#5ad8ff" stroke-width="2" stroke-dasharray="5 5"/><text x="219" y="116" fill="#d7e3e7" font-size="12" font-weight="800">Coverage rings</text><text x="219" y="147" fill="#d7e3e7" font-size="12" font-weight="800">Smart Bookmark Labels</text><text x="219" y="178" fill="#d7e3e7" font-size="12" font-weight="800">Saved profiles</text><text x="219" y="209" fill="#d7e3e7" font-size="12" font-weight="800">Responsive layouts</text></g>
+<g transform="translate(1208 570)" filter="url(#shadow)" font-family="Arial,Helvetica,sans-serif"><rect width="352" height="250" rx="22" fill="url(#panel)" stroke="#e2ad3b" stroke-width="2"/><text x="24" y="34" fill="#f2c557" font-size="13" font-weight="900" letter-spacing="2.4">CHANNEL 04</text><text x="24" y="68" fill="#fff" font-size="27" font-weight="900">FINANCE &amp; RECOVERY</text><rect x="24" y="90" width="304" height="95" rx="10" fill="#090e12" stroke="#6f5722"/><path d="M43 161 82 145l39 7 39-35 39 16 39-25 70 34" fill="none" stroke="#f0bc42" stroke-width="4"/><path d="M43 169h265M43 142h265M43 115h265" stroke="#8e7432" stroke-opacity=".3"/><circle cx="160" cy="117" r="6" fill="#47dc77" filter="url(#smallGlow)"/><text x="40" y="210" fill="#d7dfe2" font-size="12" font-weight="800">Alliance Credits · Financial intelligence</text><text x="40" y="231" fill="#9eaaaf" font-size="11">Payout presentations · Discord · Verified recovery</text></g>
+<g transform="translate(426 664)" font-family="Arial,Helvetica,sans-serif"><rect width="748" height="156" rx="20" fill="#02070b" fill-opacity=".94" stroke="#5d6d75"/><text x="374" y="31" text-anchor="middle" fill="#8edfff" font-size="12" font-weight="900" letter-spacing="2.6">EIGHT COMPLETE INTERFACE SYSTEMS</text><g transform="translate(26 50)" font-size="11" font-weight="900"><g><rect width="160" height="36" rx="7" fill="#0c2738" stroke="#29bff5"/><text x="80" y="23" text-anchor="middle" fill="#e9f9ff">MAP COMMAND</text></g><g transform="translate(172)"><rect width="160" height="36" rx="7" fill="#270a2e" stroke="#e23dff"/><text x="80" y="23" text-anchor="middle" fill="#fff0ff">CYBERPUNK</text></g><g transform="translate(344)"><rect width="160" height="36" rx="7" fill="#12200d" stroke="#8cbf54"/><text x="80" y="23" text-anchor="middle" fill="#f3ffe9">FALLOUT 4</text></g><g transform="translate(516)"><rect width="160" height="36" rx="7" fill="#29090c" stroke="#d4313a"/><text x="80" y="23" text-anchor="middle" fill="#fff0ef">UMBRELLA</text></g><g transform="translate(0 48)"><rect width="160" height="36" rx="7" fill="#2a2208" stroke="#d7a828"/><text x="80" y="23" text-anchor="middle" fill="#fff5d0">FACTORIO</text></g><g transform="translate(172 48)"><rect width="160" height="36" rx="7" fill="#181410" stroke="#d4b46e"/><text x="80" y="23" text-anchor="middle" fill="#fff7e4">007 INTELLIGENCE</text></g><g transform="translate(344 48)"><rect width="160" height="36" rx="7" fill="#10231c" stroke="#55d5a4"/><text x="80" y="23" text-anchor="middle" fill="#ecfff8">HYRULE COMMAND</text></g><g transform="translate(516 48)"><rect width="160" height="36" rx="7" fill="#2c0a0b" stroke="#c39a4a"/><text x="80" y="23" text-anchor="middle" fill="#fff1d4">THE GODFATHER</text></g></g></g>
+<rect x="12" y="12" width="1576" height="876" rx="22" fill="none" stroke="#71838c" stroke-opacity=".55" stroke-width="2"/>
 </svg>

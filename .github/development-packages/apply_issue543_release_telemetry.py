@@ -55,14 +55,24 @@ if reviewed.count(anchor_old) != 1:
     raise RuntimeError(f"reviewed release-env anchor count changed: {reviewed.count(anchor_old)}")
 corrected = reviewed.replace(anchor_old, anchor_new, 1)
 
-record_old = 'path.write_text(json.dumps(data,indent=2)+"\\n",encoding="utf-8")'
-record_new = 'path.write_text(json.dumps(data,indent=2)+"\\\\n",encoding="utf-8")'
-dashboard_old = '(root/"status/RELEASE_SPEED.md").write_text("\\n".join(lines),encoding="utf-8")'
-dashboard_new = '(root/"status/RELEASE_SPEED.md").write_text("\\\\n".join(lines),encoding="utf-8")'
-for label, old, new in (
-    ("generated recorder newline", record_old, record_new),
-    ("generated dashboard newline", dashboard_old, dashboard_new),
-):
+corrections = (
+    (
+        "generated recorder newline",
+        'path.write_text(json.dumps(data,indent=2)+"\\n",encoding="utf-8")',
+        'path.write_text(json.dumps(data,indent=2)+"\\\\n",encoding="utf-8")',
+    ),
+    (
+        "generated dashboard newline",
+        '(root/"status/RELEASE_SPEED.md").write_text("\\n".join(lines),encoding="utf-8")',
+        '(root/"status/RELEASE_SPEED.md").write_text("\\\\n".join(lines),encoding="utf-8")',
+    ),
+    (
+        "recorder migration contract",
+        """assert '"candidateCommit":a.source' in rec and "sourceSha256" not in rec""",
+        """assert '"candidateCommit":a.source' in rec and 'previous["recordedCommit"]=previous.pop("sourceSha256")' in rec""",
+    ),
+)
+for label, old, new in corrections:
     if corrected.count(old) != 1:
         raise RuntimeError(f"{label} count changed: {corrected.count(old)}")
     corrected = corrected.replace(old, new, 1)

@@ -13,7 +13,7 @@ previous = subprocess.check_output(
     cwd=ROOT,
     text=True,
 )
-old = '''release = replace_once(
+old = """release = replace_once(
     release,
     '''          VALIDATED_SHA: ${{ inputs.validated_sha }}
           GH_TOKEN: ${{ github.token }}
@@ -29,8 +29,8 @@ old = '''release = replace_once(
 ''',
     "release telemetry environment",
 )
-'''
-new = '''release = replace_once(
+"""
+new = """release = replace_once(
     release,
     '''          DISCORD_AT: ${{ steps.discord.outputs.posted_at }}
           VALIDATED_SHA: ${{ inputs.validated_sha }}
@@ -48,7 +48,7 @@ new = '''release = replace_once(
 ''',
     "release telemetry environment",
 )
-'''
+"""
 if previous.count(old) != 1:
     raise RuntimeError(f"reviewed package anchor count changed: {previous.count(old)}")
 corrected = previous.replace(old, new, 1)

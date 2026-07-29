@@ -16,8 +16,12 @@ assert "No release-critical path changed; exact candidate promotion is intention
 assert "Path-aware release candidate required" in a
 assert '-f branch="$PR_HEAD_REF"' not in a
 assert "pull_requests[]" not in a
-assert 'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"' in a
-assert 'select(.name == $name)' in a
+assert 'CANDIDATE_ARTIFACT_COUNT' in a
+assert 'startswith("missionchief-toolkit-validation-candidate-")' in a
+assert 'Expected exactly one non-expired validation candidate artifact in exact run' in a
+assert '[[ "$EVIDENCE_HEAD" == "$PR_HEAD_SHA" ]]' in a
+assert '[[ "$EVIDENCE_PR" == "$PR_NUMBER" ]]' in a
+assert 'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"' not in a
 for token in ("implementation_ready_at","validation_completed_at","pull_request_number","pr_created_at","pr_merged_at"):
     assert token in a, token
 for token in ("Resolve exact immutable release candidate","Verify Greasy Fork and back up concurrently","BACKUP_PID=$!","GF_PID=$!","sleep 2","sleep 5","sleep 15","Dispatch GitHub Pages asynchronously","status/release-speed-history.json","status/RELEASE_SPEED.md","source_sha=$(git rev-parse HEAD)","IMPLEMENTATION_TO_GREEN","GREEN_TO_MERGE"):

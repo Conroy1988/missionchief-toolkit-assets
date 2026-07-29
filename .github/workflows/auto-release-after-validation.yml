@@ -118,21 +118,31 @@ jobs:
           echo "validation_completed_at=$VALIDATION_COMPLETED_AT" >> "$GITHUB_OUTPUT"
 
           gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${VALIDATION_RUN_ID}/artifacts" > /tmp/validation-artifacts.json
-          ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"
-          ARTIFACT_ID="$(jq -r --arg name "$ARTIFACT_NAME" \
-            '[.artifacts[]
+          CANDIDATE_ARTIFACT_COUNT="$(jq -r '
+            [.artifacts[]
               | select(.expired == false)
-              | select(.name == $name)]
-             | sort_by(.created_at)
-             | last
-             | .id // empty' \
-            /tmp/validation-artifacts.json)"
-
-          if [[ -z "$ARTIFACT_ID" ]]; then
-            echo "Exact PR validation artifact is unavailable; dispatching guarded main fallback."
+              | select(.name | startswith("missionchief-toolkit-validation-candidate-"))]
+            | length' /tmp/validation-artifacts.json)"
+          if [[ "$CANDIDATE_ARTIFACT_COUNT" != "1" ]]; then
+            echo "Expected exactly one non-expired validation candidate artifact in exact run ${VALIDATION_RUN_ID}; found ${CANDIDATE_ARTIFACT_COUNT}. Dispatching guarded main fallback."
             gh workflow run validate-userscript.yml --ref main
             exit 0
           fi
+          ARTIFACT_ID="$(jq -r '
+            [.artifacts[]
+              | select(.expired == false)
+              | select(.name | startswith("missionchief-toolkit-validation-candidate-"))]
+            | .[0].id' /tmp/validation-artifacts.json)"
+          ARTIFACT_NAME="$(jq -r '
+            [.artifacts[]
+              | select(.expired == false)
+              | select(.name | startswith("missionchief-toolkit-validation-candidate-"))]
+            | .[0].name' /tmp/validation-artifacts.json)"
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ && "$ARTIFACT_NAME" == missionchief-toolkit-validation-candidate-* ]] || {
+            echo "::error::Exact-run candidate artifact metadata is invalid."
+            exit 1
+          }
+          echo "Resolved ${ARTIFACT_NAME} from exact successful run ${VALIDATION_RUN_ID}; embedded evidence will authorize PR head, PR number and repository tree."
 
           rm -rf /tmp/validation-candidate
           mkdir -p /tmp/validation-candidate

@@ -9,7 +9,9 @@ def section(text,start,end):
 def main():
     source=SOURCE.read_text(encoding='utf-8')
     metadata=re.search(r'(?m)^//\s*@version\s+([^\s]+)$',source);runtime=re.search(r"version:\s*'([^']+)'",source)
-    assert metadata and runtime and metadata.group(1)==runtime.group(1)=='8.3.0'
+    assert metadata and runtime and metadata.group(1)==runtime.group(1)
+    version=tuple(int(part) for part in metadata.group(1).split('.'))
+    assert version >= (8,3,0)
     for name in ['majorIncidentFeedMissionAttended','majorIncidentFeedResolvedIndex','majorIncidentFeedCurrentMissionId','majorIncidentFeedRetainedIndex']:
         assert source.count(f'function {name}(')==1,name
     entries=section(source,'    function majorIncidentFeedEntries(','    function findLocationSearchInput(')

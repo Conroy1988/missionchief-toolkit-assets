@@ -73,6 +73,7 @@ def main() -> int:
 
     require(automatic, [
         "types:\n      - closed",
+        "workflows:\n      - Toolkit Hotfix Gate",
         "github.event.pull_request.merged == true",
         "Consume exact successful PR validation tree",
         "actions/workflows/validate-userscript.yml/runs",
@@ -105,6 +106,7 @@ def main() -> int:
         "pull_requests[]",
         '-f branch="$PR_HEAD_REF"',
         'ARTIFACT_NAME="missionchief-toolkit-validation-candidate-${PR_HEAD_SHA}"',
+        "workflows:\n      - Validate Canonical Userscript",
     ], "Automatic release workflow")
 
     require(owner, [

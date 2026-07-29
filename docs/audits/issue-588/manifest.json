@@ -32,6 +32,6 @@
     "resolvedBroadSubtreeObservers": 7,
     "unresolvedBroadSubtreeObservers": 2
   },
-  "performanceBudgetStatus": "unknown",
+  "performanceBudgetStatus": "success",
   "safetyBoundary": "Static and CI stress evidence only; authenticated MissionChief browser evidence remains required before CSS modularisation or broad render-path optimisation."
 }

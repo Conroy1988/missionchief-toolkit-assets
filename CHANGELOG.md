@@ -1,5 +1,18 @@
 # Changelog
 
+## [9.1.2] - 2026-07-30
+
+### Pressure Board vehicle classification and location evidence
+
+- Fixes the Operational Pressure Board reporting zero recognised capacity despite correctly finding available FMS 1/2 personal vehicles.
+- Resolves UK requirements against MissionChief numeric vehicle type IDs before considering own-vehicle classification evidence, so custom callsigns no longer hide Fire, Police, Ambulance, ARV, DSU, specialist or combined capabilities.
+- Keeps the embedded userscript mapping executable offline and verifies it exactly against the canonical `src/data/mission-requirements-en_GB.json` catalogue.
+- Adds current `Armed Response Vehicle (ARV)` and spaced `Police helicopter` aliases to the UK catalogue.
+- Separates recognised fleet capacity, confirmed in-radius capacity, location-unverified capacity and confirmed outside-radius capacity.
+- Prevents missing mission or vehicle coordinates from being presented as zero fleet availability; these slots remain explicitly partial and are not claimed as confirmed coverage.
+- Retains global one-vehicle/one-allocation behaviour, FMS 1/2 and unassigned eligibility, read-only actions and the manual mention-safe Operational SITREP.
+- Adds fixture-backed custom-callsign, numeric type, combined capability, unknown-location, outside-radius and global-allocation regressions for Issue #606.
+
 ## [9.1.1] - 2026-07-30
 
 ### Settings persistence and Tablet control recovery

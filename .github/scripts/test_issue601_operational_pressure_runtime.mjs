@@ -17,6 +17,7 @@ function extractFunctions(names) {
     const candidates = [
       source.indexOf("\n    function ", start + marker.length),
       source.indexOf("\n    async function ", start + marker.length),
+      source.indexOf("\n    const ", start + marker.length),
     ].filter(index => index >= 0);
     const end = Math.min(...candidates);
     assert.ok(Number.isFinite(end), `Unable to find the end of ${name}`);
@@ -44,6 +45,11 @@ const functionNames = [
   "buildOperationalSitrepPayload",
 ];
 
+const catalogueStart = source.indexOf("    const UK_VEHICLE_REQUIREMENT_CATALOGUE");
+const catalogueEnd = source.indexOf("\n    function resourceSearchToken", catalogueStart);
+assert.ok(catalogueStart >= 0 && catalogueEnd > catalogueStart, "embedded UK vehicle catalogue is missing");
+const catalogueBlock = source.slice(catalogueStart, catalogueEnd).trim();
+
 const sandbox = {
   console,
   pageWindow: { location: { origin: "https://www.missionchief.co.uk" } },
@@ -51,7 +57,10 @@ const sandbox = {
   DISCORD_MAX_FIELD_LENGTH: 1024,
 };
 vm.createContext(sandbox);
-vm.runInContext(`${extractFunctions(functionNames).join("\n")}
+const extracted = extractFunctions(functionNames);
+vm.runInContext(`${extracted[0]}
+${catalogueBlock}
+${extracted.slice(1).join("\n")}
 this.__probe = {
   token: resourceSearchToken,
   model: calculateOperationalPressureModel,
@@ -63,8 +72,11 @@ const available = fixture.availableVehicles.map(vehicle => {
   const signal = sandbox.__probe.token(vehicle.signal);
   return {
     id: vehicle.id,
+    typeId: vehicle.typeId,
     signal,
     tokens: new Set(vehicle.signal.split(/\s+/u).map(sandbox.__probe.token).filter(Boolean)),
+    classificationSignal: "",
+    classificationTokens: new Set(),
     point: { lat: vehicle.lat, lng: vehicle.lng },
   };
 });
@@ -92,7 +104,7 @@ assert.equal(model.severity, expected.severity);
 assert.equal(model.complete, true);
 assert.equal(model.locationEvidenceMissing, false);
 
-const arv = model.resourcePressure.groups.find(group => group.key === "arv");
+const arv = model.resourcePressure.groups.find(group => group.key === "armed-response");
 assert.ok(arv, "ARV pressure group is missing");
 assert.equal(arv.demand, 2);
 assert.equal(arv.available, 1);
@@ -100,7 +112,7 @@ assert.equal(arv.assigned, 1);
 assert.equal(arv.shortfall, 1);
 assert.equal(arv.conflict, true, "shared ARV demand was not detected as a fleet conflict");
 
-const dsu = model.resourcePressure.groups.find(group => group.key === "dsu");
+const dsu = model.resourcePressure.groups.find(group => group.key === "dog-support-unit");
 assert.ok(dsu, "DSU pressure group is missing");
 assert.equal(dsu.available, 0);
 assert.equal(dsu.shortfall, 1);

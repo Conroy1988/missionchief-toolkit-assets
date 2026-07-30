@@ -30,7 +30,7 @@ assert.match(result.bundle, /@version\s+8\.3\.2-capture\.1/u);
 assert.doesNotMatch(result.bundle, /^\/\/\s*@(downloadURL|updateURL)\s+/mu);
 assert.match(result.bundle, /captureSourceSha256/u);
 assert.match(result.bundle, /Finish and export report/u);
-assert.match(result.bundle, /Disable the normal MissionChief Map Command Toolkit userscript/u);
+assert.match(result.bundle, /keep the normal Toolkit userscript disabled/u);
 assert.match(result.bundle, /beginRender\?\.\("updateUI"\)/u);
 assert.match(result.bundle, /beginRender\?\.\("renderOperationalPanels"\)/u);
 assert.equal(fs.readFileSync(sourcePath, "utf8"), sourceBefore, "canonical source must remain byte-identical");

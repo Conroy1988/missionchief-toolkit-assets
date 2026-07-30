@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "9.1.0";
-const EXPECTED_SHA = "c5d554330e01bbfd7386c6cc12ea73689b27cc39a998432f06fb28bd5db10b08";
+const EXPECTED_VERSION = "9.1.1";
+const EXPECTED_SHA = "631f016542f6cb0fa072fb201b826a99b5517a509a810dae762c0dca8db3c53f";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
@@ -43,7 +43,7 @@ function extractFunctions(source, names) {
 }
 
 function fixtureHtml() {
-  const controlToggles = ["allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
+  const controlToggles = ["allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment", "stuckDetector"];
   const panelToggles = ["clean", "markerFocus", "missionPulse", "roadPriority", "coverage", "shortcuts", "autoLoadAllVehicles", "allianceBuildingsMapBlocker", "majorIncidentFeed", "missionLockAudio", "payoutFlash", "payoutSound", "missionValue", "customVehicleBadges", "stuckDetector", "missionSpawn", "resourceGap", "allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
   const settings = ["major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
   return `<!doctype html><html><body>

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.1.0
+// @version      9.1.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -49,6 +49,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const ALLIANCE_BUILDINGS_PATH_PATTERN = /\/(?:verband\/(?:gebauede|gebaeude|gebäude)|alliance(?:\/|_)(?:buildings|buildings_list))(?:\/|$)/iu;
     const ALLIANCE_BUILDINGS_STORAGE_KEY = 'mc_map_command_toolkit_state_v150';
+    const ALLIANCE_BUILDINGS_SETTINGS_VAULT_KEY = 'mc_map_command_toolkit_settings_v1';
     const ALLIANCE_BUILDINGS_EARLY_STYLE_ID = 'mcms-alliance-buildings-map-early-style';
     const ALLIANCE_BUILDINGS_SUPPRESSED_LAYER = Symbol('mcmsAllianceBuildingsSuppressedLayer');
     const ALLIANCE_BUILDINGS_SUPPRESSED_MAP = Symbol('mcmsAllianceBuildingsSuppressedMap');
@@ -121,14 +122,24 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         return buildingLinks >= 3 && trainingActions >= 1;
     }
     function readAllianceBuildingsMapPreferenceEarly() {
+        const candidates = [];
+        try { candidates.push(localStorage.getItem(ALLIANCE_BUILDINGS_STORAGE_KEY)); } catch (err) {}
         try {
-        const raw = localStorage.getItem(ALLIANCE_BUILDINGS_STORAGE_KEY);
-        if (!raw) return true;
-        const parsed = JSON.parse(raw);
-        return parsed?.allianceBuildingsMap !== false;
-        } catch (err) {
-        return true;
+        if (typeof GM_getValue === 'function') candidates.push(GM_getValue(ALLIANCE_BUILDINGS_SETTINGS_VAULT_KEY, null));
+        } catch (err) {}
+        for (const raw of candidates) {
+        if (!raw) continue;
+        try {
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            const settings = Number(parsed?.schema) === 1 && parsed?.state && typeof parsed.state === 'object'
+            ? parsed.state
+            : parsed;
+            if (Object.prototype.hasOwnProperty.call(settings || {}, 'allianceBuildingsMap')) {
+            return settings.allianceBuildingsMap !== false;
+            }
+        } catch (err) {}
         }
+        return true;
     }
     function installAllianceBuildingsEarlyStyle() {
         if (document.getElementById(ALLIANCE_BUILDINGS_EARLY_STYLE_ID)) return;
@@ -453,7 +464,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.1.0',
+        version: '9.1.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -470,6 +481,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         oldControlId: 'mc-map-command-skins-control',
         oldGeoLabelLayerId: 'mcms-persistent-label-layer',
         storageState: 'mc_map_command_toolkit_state_v150',
+        settingsVaultState: 'mc_map_command_toolkit_settings_v1',
+        settingsRecoveryState: 'mc_map_command_toolkit_settings_recovery_v1',
         payoutHistoryState: 'mc_map_command_toolkit_payout_history_v200',
         sessionPerformanceState: 'mc_map_command_toolkit_session_v200',
         missionProgressState: 'mc_map_command_toolkit_mission_progress_v250',
@@ -1120,7 +1133,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         '.fancybox-overlay', '#fancybox-wrap'
     ];
 
-    let state = loadState();
+    let settingsPersistenceMeta = { revision: 0, savedAt: 0, source: 'defaults' };
+    let state;
     let cachedMap = null;
     let cachedMapElement = null;
     let cachedMapElementCheckedAt = 0;
@@ -1354,6 +1368,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     });
     let commandSearchOpen = false;
     let commandSearchQuery = '';
+    state = loadState();
 
     function defaultState() {
         return {
@@ -1509,36 +1524,149 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.panelPosition = { left: Number(merged.panelPosition.left), top: Number(merged.panelPosition.top) };
         }
 
+        delete merged.__mcmsPersistence;
         delete merged.requiresAttention;
         return merged;
     }
 
-    function loadState() {
-        const base = defaultState();
-        const raw = localStorage.getItem(SCRIPT.storageState) || SCRIPT.oldStorageKeys.map(key => localStorage.getItem(key)).find(Boolean);
-        if (!raw) return base;
-
+    function settingsLocalStorageGet(key) {
         try {
-        return normaliseLoadedState(JSON.parse(raw), base);
+        return (pageWindow.localStorage || localStorage).getItem(key);
         } catch (err) {
-        return base;
+        return null;
         }
     }
 
-    function saveState() {
+    function settingsLocalStorageSet(key, value) {
         try {
-        localStorage.setItem(SCRIPT.storageState, JSON.stringify(state));
-        localStorage.setItem(SCRIPT.legacyTheme, state.theme);
-        localStorage.setItem(SCRIPT.legacyPosition, state.position);
+        (pageWindow.localStorage || localStorage).setItem(key, value);
+        return true;
+        } catch (err) {
+        return false;
+        }
+    }
+
+    function settingsLocalStorageRemove(key) {
+        try {
+        (pageWindow.localStorage || localStorage).removeItem(key);
+        return true;
+        } catch (err) {
+        return false;
+        }
+    }
+
+    function parseSettingsPersistenceCandidate(raw, source, priority = 0) {
+        if (raw === null || raw === undefined || raw === '') return null;
+        try {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+        const envelope = Number(parsed.schema) === 1 && parsed.state && typeof parsed.state === 'object' && !Array.isArray(parsed.state);
+        const candidateState = envelope ? parsed.state : parsed;
+        if (!looksLikeToolkitState(candidateState)) return null;
+        const metadata = envelope ? parsed : candidateState.__mcmsPersistence;
+        return {
+            source,
+            priority,
+            raw,
+            state: candidateState,
+            revision: Math.max(0, Number(metadata?.revision) || 0),
+            savedAt: Math.max(0, Number(metadata?.savedAt) || 0)
+        };
+        } catch (err) {
+        return null;
+        }
+    }
+
+    function settingsPersistenceCandidates() {
+        const candidates = [
+        parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.settingsVaultState, null), 'tampermonkey-primary', 60),
+        parseSettingsPersistenceCandidate(settingsLocalStorageGet(SCRIPT.storageState), 'page-primary', 50),
+        parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.settingsRecoveryState, null), 'tampermonkey-recovery', 40),
+        parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.storageState, null), 'tampermonkey-legacy-primary', 30),
+        ...SCRIPT.oldStorageKeys.flatMap((key, index) => [
+            parseSettingsPersistenceCandidate(settingsLocalStorageGet(key), `page-legacy-${key}`, 20 - index),
+            parseSettingsPersistenceCandidate(gmGetValueSafe(key, null), `tampermonkey-legacy-${key}`, 10 - index)
+        ])
+        ].filter(Boolean);
+        return candidates.sort((left, right) =>
+        right.revision - left.revision ||
+        right.savedAt - left.savedAt ||
+        right.priority - left.priority
+        );
+    }
+
+    function persistSettingsState(value, { requireWrite = false, preserveRecovery = true } = {}) {
+        const stateCopy = JSON.parse(JSON.stringify(value));
+        delete stateCopy.__mcmsPersistence;
+        const previousPrimaryRaw = gmGetValueSafe(SCRIPT.settingsVaultState, null);
+        const previousPrimary = parseSettingsPersistenceCandidate(previousPrimaryRaw, 'tampermonkey-primary', 60);
+        const previousLocal = parseSettingsPersistenceCandidate(settingsLocalStorageGet(SCRIPT.storageState), 'page-primary', 50);
+        const revision = Math.max(
+        Number(settingsPersistenceMeta.revision) || 0,
+        Number(previousPrimary?.revision) || 0,
+        Number(previousLocal?.revision) || 0
+        ) + 1;
+        const savedAt = Date.now();
+        const envelope = {
+        schema: 1,
+        revision,
+        savedAt,
+        version: SCRIPT.version,
+        state: stateCopy
+        };
+        if (preserveRecovery && previousPrimary) {
+        gmSetValueSafe(SCRIPT.settingsRecoveryState, typeof previousPrimaryRaw === 'string' ? previousPrimaryRaw : JSON.stringify(previousPrimaryRaw));
+        }
+        const durableSaved = gmSetValueSafe(SCRIPT.settingsVaultState, JSON.stringify(envelope));
+        const pageCopy = {
+        ...stateCopy,
+        __mcmsPersistence: { schema: 1, revision, savedAt, version: SCRIPT.version }
+        };
+        const pageSaved = settingsLocalStorageSet(SCRIPT.storageState, JSON.stringify(pageCopy));
+        if (requireWrite && !durableSaved && !pageSaved) throw new Error('Toolkit settings storage is unavailable.');
+        if (durableSaved || pageSaved) settingsPersistenceMeta = { revision, savedAt, source: durableSaved ? 'tampermonkey-primary' : 'page-primary' };
+        return durableSaved || pageSaved;
+    }
+
+    function loadState() {
+        const base = defaultState();
+        const candidates = settingsPersistenceCandidates();
+        for (const candidate of candidates) {
+        try {
+            const loaded = normaliseLoadedState(candidate.state, base);
+            settingsPersistenceMeta = {
+            revision: candidate.revision,
+            savedAt: candidate.savedAt,
+            source: candidate.source
+            };
+            const durable = parseSettingsPersistenceCandidate(gmGetValueSafe(SCRIPT.settingsVaultState, null), 'tampermonkey-primary', 60);
+            const page = parseSettingsPersistenceCandidate(settingsLocalStorageGet(SCRIPT.storageState), 'page-primary', 50);
+            const needsRepair = candidate.source !== 'tampermonkey-primary' ||
+            !page ||
+            page.revision !== candidate.revision ||
+            page.savedAt !== candidate.savedAt ||
+            !durable;
+            if (needsRepair) persistSettingsState(loaded, { preserveRecovery: Boolean(durable) });
+            return loaded;
         } catch (err) {}
+        }
+        settingsPersistenceMeta = { revision: 0, savedAt: 0, source: 'defaults' };
+        return base;
+    }
+
+    function saveState(options = {}) {
+        const saved = persistSettingsState(state, options);
+        settingsLocalStorageSet(SCRIPT.legacyTheme, state.theme);
+        settingsLocalStorageSet(SCRIPT.legacyPosition, state.position);
+        return saved;
     }
 
     function getLegacyTheme() {
-        return normaliseTheme(localStorage.getItem(SCRIPT.legacyTheme) || 'default');
+        return normaliseTheme(settingsLocalStorageGet(SCRIPT.legacyTheme) || 'default');
     }
 
     function getLegacyPosition() {
-        const saved = localStorage.getItem(SCRIPT.legacyPosition);
+        const saved = settingsLocalStorageGet(SCRIPT.legacyPosition);
         return POSITIONS[saved] ? saved : 'bl';
     }
 
@@ -10537,8 +10665,26 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             display:grid !important;
             grid-template-rows:auto minmax(0,1fr) auto !important;
         }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-drag-handle {
+            min-height:44px !important;
+            cursor:grab !important;
+            touch-action:none !important;
+        }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-header-grip {
+            flex:0 0 44px !important;
+            display:grid !important;
+            place-items:center !important;
+            width:44px !important;
+            height:44px !important;
+            border:1px solid rgba(255,255,255,.4) !important;
+            border-radius:8px !important;
+            background:rgba(0,0,0,.22) !important;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.14) !important;
+            font-size:24px !important;
+            line-height:1 !important;
+        }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-command-layout {
-            grid-template-columns:116px minmax(0,1fr) !important;
+            grid-template-columns:160px minmax(0,1fr) !important;
         }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tabs {
             grid-template-columns:1fr !important;
@@ -10557,6 +10703,13 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             height:28px !important;
         }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-copy small { display:none !important; }
+        html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-copy strong {
+            font-size:11px !important;
+            white-space:normal !important;
+            overflow:visible !important;
+            text-overflow:clip !important;
+            overflow-wrap:normal !important;
+        }
         html[data-mcms-tablet-active="true"][data-mcms-ui-theme] body #${SCRIPT.panelId} .mcms-tab-panel {
             padding:10px !important;
         }
@@ -10945,7 +11098,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     function setRootStylePropertyIfChanged(root,name,value){if(!root?.style||root.style.getPropertyValue(name)===value)return false;root.style.setProperty(name,value);return true;}
     function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
     for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
-    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))applyTabletPanelPosition();scheduleMajorIncidentFeedLayout();}
+    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))positionPanelOverlay(true);scheduleMajorIncidentFeedLayout();}
     function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
     function hasCoarsePointer() {
         try {
@@ -11084,6 +11237,24 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return {
         left: Math.round(Math.max(safeBounds.left, Math.min(desiredLeft, safeBounds.right - width))),
         top: Math.round(Math.max(safeBounds.top, Math.min(desiredTop, safeBounds.bottom - height)))
+        };
+    }
+
+    function clampTabletPanelPoint(left, top, panelWidth, panelHeight, viewport, margin = 10) {
+        const safeMargin = Math.max(0, Number(margin) || 0);
+        const viewportLeft = Number(viewport?.offsetLeft) || 0;
+        const viewportTop = Number(viewport?.offsetTop) || 0;
+        const viewportWidth = Math.max(1, Number(viewport?.width) || 1);
+        const viewportHeight = Math.max(1, Number(viewport?.height) || 1);
+        const width = Math.min(Math.max(1, Number(panelWidth) || 700), Math.max(1, viewportWidth - (safeMargin * 2)));
+        const height = Math.min(Math.max(1, Number(panelHeight) || 500), Math.max(1, viewportHeight - (safeMargin * 2)));
+        const minimumLeft = viewportLeft + safeMargin;
+        const minimumTop = viewportTop + safeMargin;
+        const maximumLeft = Math.max(minimumLeft, viewportLeft + viewportWidth - safeMargin - width);
+        const maximumTop = Math.max(minimumTop, viewportTop + viewportHeight - safeMargin - height);
+        return {
+            left: Math.round(clamp(left, minimumLeft, maximumLeft, minimumLeft)),
+            top: Math.round(clamp(top, minimumTop, maximumTop, minimumTop))
         };
     }
 
@@ -11251,8 +11422,9 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const status = panel.querySelector('[data-device-layout-status], [data-tablet-status]');
         if (status) status.textContent = tabletModeStatusText();
         const dragHandle = panel.querySelector('.mcms-drag-handle');
-        const touchLayout = isTouchLayoutActive();
-        if (dragHandle) dragHandle.title = touchLayout ? `${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel` : 'Hold left-click and drag this header to move the menu';
+        if (dragHandle) dragHandle.title = mobileModeActive
+        ? 'Mobile Mode uses a fixed responsive panel'
+        : 'Hold and drag this header to move the menu';
         updateCommandInterfaceHeader(panel);
     }
 
@@ -11426,7 +11598,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return true;
     }
 
-    function applyTabletPanelPosition() {
+    function applyTabletPanelPosition({ sizeOnly = false } = {}) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open') || !isTouchLayoutActive()) return false;
         clearDesktopPanelSizing(panel);
@@ -11443,19 +11615,19 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         ? (viewport.orientation === 'landscape' ? 0.94 : 0.88)
         : (viewport.orientation === 'landscape' ? 0.88 : 0.82);
         const maxHeight = Math.min(availableHeight, Math.max(mobile ? 220 : 260, viewport.height * heightRatio));
-        const left = Math.round(viewport.offsetLeft + Math.max(margin, (viewport.width - desiredWidth) / 2));
-
         panel.style.setProperty('position', 'fixed', 'important');
         panel.style.setProperty('width', `${Math.round(desiredWidth)}px`, 'important');
         panel.style.setProperty('max-width', `${Math.round(desiredWidth)}px`, 'important');
         panel.style.setProperty('max-height', `${Math.round(maxHeight)}px`, 'important');
+        panel.style.setProperty('transform', 'none', 'important');
+        if (sizeOnly) return true;
+        const left = Math.round(viewport.offsetLeft + Math.max(margin, (viewport.width - desiredWidth) / 2));
         const layoutViewportHeight = Math.max(viewport.height, Number(pageWindow.innerHeight) || Number(document.documentElement.clientHeight) || viewport.height);
         const bottomOffset = Math.round(Math.max(0, layoutViewportHeight - (viewport.offsetTop + viewport.height)) + margin);
         panel.style.setProperty('left', `${left}px`, 'important');
         panel.style.setProperty('right', 'auto', 'important');
         panel.style.setProperty('top', 'auto', 'important');
         panel.style.setProperty('bottom', `${bottomOffset}px`, 'important');
-        panel.style.setProperty('transform', 'none', 'important');
         return true;
     }
 
@@ -19392,15 +19564,17 @@ Create the private backup now?`);
         const normalisedWebhook = importedWebhook.present ? normaliseDiscordWebhookUrl(importedWebhook.value) : '';
         const normalisedCredential = importedCredential.present ? normaliseImportedFinanceVaultCredential(importedCredential.value) : null;
         const normalisedVaultStore = importedStore.present ? normaliseImportedFinanceVaultStore(importedStore.value) : null;
-        const previousStateRaw = localStorage.getItem(SCRIPT.storageState);
+        const previousState = clonePlainData(state);
+        const previousStateRaw = settingsLocalStorageGet(SCRIPT.storageState);
+        const previousSettingsVaultRaw = gmGetValueSafe(SCRIPT.settingsVaultState, null);
+        const previousSettingsRecoveryRaw = gmGetValueSafe(SCRIPT.settingsRecoveryState, null);
         const previousWebhook = getDiscordWebhookUrl();
         const previousCredentialRaw = gmGetValueSafe(SCRIPT.financeVaultCredentialState, null);
         const previousVaultRaw = gmGetValueSafe(SCRIPT.financeVaultState, null);
 
         try {
-            localStorage.setItem(SCRIPT.storageState, JSON.stringify(importedState));
-            state = loadState();
-            saveState();
+            state = normaliseLoadedState(importedState, defaultState());
+            saveState({ requireWrite: true });
             if (importedWebhook.present) saveDiscordWebhookUrl(normalisedWebhook);
             if (normalisedCredential) saveFinanceVaultCredential(normalisedCredential);
             if (normalisedVaultStore) saveFinanceVaultStore(normalisedVaultStore);
@@ -19410,9 +19584,20 @@ Create the private backup now?`);
             applyLoadedConfiguration();
         } catch (err) {
             try {
-                if (previousStateRaw === null) localStorage.removeItem(SCRIPT.storageState);
-                else localStorage.setItem(SCRIPT.storageState, previousStateRaw);
-                state = loadState();
+                if (previousStateRaw === null) settingsLocalStorageRemove(SCRIPT.storageState);
+                else settingsLocalStorageSet(SCRIPT.storageState, previousStateRaw);
+                if (previousSettingsVaultRaw === null) gmDeleteValueSafe(SCRIPT.settingsVaultState);
+                else gmSetValueSafe(SCRIPT.settingsVaultState, previousSettingsVaultRaw);
+                if (previousSettingsRecoveryRaw === null) gmDeleteValueSafe(SCRIPT.settingsRecoveryState);
+                else gmSetValueSafe(SCRIPT.settingsRecoveryState, previousSettingsRecoveryRaw);
+                state = normaliseLoadedState(previousState, defaultState());
+                settingsPersistenceMeta = {
+                    revision: parseSettingsPersistenceCandidate(previousSettingsVaultRaw, 'tampermonkey-primary', 60)?.revision || 0,
+                    savedAt: parseSettingsPersistenceCandidate(previousSettingsVaultRaw, 'tampermonkey-primary', 60)?.savedAt || 0,
+                    source: previousSettingsVaultRaw === null ? 'page-primary' : 'tampermonkey-primary'
+                };
+                settingsLocalStorageSet(SCRIPT.legacyTheme, state.theme);
+                settingsLocalStorageSet(SCRIPT.legacyPosition, state.position);
                 saveDiscordWebhookUrl(previousWebhook);
                 if (previousCredentialRaw === null) gmDeleteValueSafe(SCRIPT.financeVaultCredentialState);
                 else gmSetValueSafe(SCRIPT.financeVaultCredentialState, previousCredentialRaw);
@@ -19463,7 +19648,7 @@ Create the private backup now?`);
     function resetToolkitConfiguration() {
         if (!pageWindow.confirm('Reset all toolkit settings and saved map profiles? Payout history will be kept.')) return;
         state = defaultState();
-        saveState();
+        saveState({ requireWrite: true });
         applyLoadedConfiguration();
         showToast('Toolkit settings reset');
     }
@@ -23952,8 +24137,9 @@ Create the private backup now?`);
     function setPanelCssPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
-        if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
-        clearTabletPanelSizing(panel);
+        if (mobileModeActive) { applyTabletPanelPosition(); return; }
+        if (tabletModeActive) applyTabletPanelPosition({ sizeOnly: true });
+        else clearTabletPanelSizing(panel);
         panel.style.setProperty('position', 'fixed', 'important');
         panel.style.setProperty('left', `${Math.round(left)}px`, 'important');
         panel.style.setProperty('top', `${Math.round(top)}px`, 'important');
@@ -23964,6 +24150,14 @@ Create the private backup now?`);
     function clampPanelPosition(left, top) {
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return { left: 12, top: 12 };
+        if (tabletModeActive) {
+            applyTabletPanelPosition({ sizeOnly: true });
+            const viewport = getViewportMetrics();
+            const margin = viewport.width < 700 ? 6 : 10;
+            const panelWidth = Math.min(panel.offsetWidth || 700, Math.max(1, viewport.width - (margin * 2)));
+            const panelHeight = Math.min(panel.offsetHeight || 500, Math.max(1, viewport.height - (margin * 2)));
+            return clampTabletPanelPoint(left, top, panelWidth, panelHeight, viewport, margin);
+        }
         const mapEl = getLargestLeafletMap();
         const bounds = applyDesktopPanelSizing(panel, mapEl) || resolveDesktopPanelBounds(null);
         const panelWidth = Math.min(panel.offsetWidth || 318, Math.max(1, bounds.right - bounds.left));
@@ -23989,8 +24183,15 @@ Create the private backup now?`);
         if (dragState) return;
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel || !panel.classList.contains('mcms-open')) return;
-        if (isTouchLayoutActive()) { applyTabletPanelPosition(); return; }
-        clearTabletPanelSizing(panel);
+        if (mobileModeActive) { applyTabletPanelPosition(); return; }
+        if (tabletModeActive) {
+            applyTabletPanelPosition({ sizeOnly: true });
+            if (!(useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top)))) {
+                applyTabletPanelPosition();
+                return;
+            }
+        }
+        if (!tabletModeActive) clearTabletPanelSizing(panel);
         let left;
         let top;
         if (useSavedPosition && state.panelPosition && Number.isFinite(Number(state.panelPosition.left)) && Number.isFinite(Number(state.panelPosition.top))) {
@@ -24006,15 +24207,16 @@ Create the private backup now?`);
     }
 
     function resetPanelPosition() {
-        if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+        if (mobileModeActive) { showToast('Mobile Mode uses a fixed responsive panel'); return; }
         state.panelPosition = null;
         saveState();
-        positionPanelOverlay(false);
+        if (tabletModeActive) applyTabletPanelPosition();
+        else positionPanelOverlay(false);
         showToast('Menu position reset');
     }
 
     function nudgePanel(dx, dy) {
-        if (isTouchLayoutActive()) { showToast(`${mobileModeActive ? 'Mobile' : 'Tablet'} Mode uses a fixed responsive panel`); return; }
+        if (mobileModeActive) { showToast('Mobile Mode uses a fixed responsive panel'); return; }
         const panel = document.getElementById(SCRIPT.panelId);
         if (!panel) return;
         const rect = panel.getBoundingClientRect();
@@ -24026,7 +24228,7 @@ Create the private backup now?`);
     }
 
     function startPanelDrag(event) {
-        if (isTouchLayoutActive()) return;
+        if (mobileModeActive) return;
         const isMouse = event.type === 'mousedown';
         const isTouch = event.type === 'touchstart';
         if (isMouse && event.button !== 0) return;
@@ -24491,15 +24693,19 @@ Create the private backup now?`);
         missionAge: '◷',
         transportWatcher: '↗',
         unitCommitment: '#',
+        stuckDetector: '!',
         vehicleStatus: '▤',
         pressureBoard: '▲',
         economyMode: '♻',
     });
 
     function makeFloatButton(key, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel) {
+        const keyboardShortcut = String(shortcut || '').trim();
+        const shortcutAttribute = keyboardShortcut ? ` aria-keyshortcuts="${escapeHtml(keyboardShortcut)}"` : '';
+        const keyLabel = keyboardShortcut || MAP_CONTROL_ICONS[key] || '•';
         return `
-            <button class="mcms-float-btn" type="button" data-toggle="${key}" title="${escapeHtml(title)}" aria-label="${escapeHtml(label)}: off. ${escapeHtml(title)}" aria-keyshortcuts="${escapeHtml(shortcut)}" aria-pressed="false">
-                <span class="mcms-float-key">${escapeHtml(shortcut)}</span>
+            <button class="mcms-float-btn" type="button" data-toggle="${key}" title="${escapeHtml(title)}" aria-label="${escapeHtml(label)}: off. ${escapeHtml(title)}"${shortcutAttribute} aria-pressed="false">
+                <span class="mcms-float-key"${keyboardShortcut ? '' : ' aria-hidden="true"'}>${escapeHtml(keyLabel)}</span>
                 <span class="mcms-float-icon" aria-hidden="true">${MAP_CONTROL_ICONS[key] || '•'}</span>
                 <span class="mcms-float-copy">
                     <span class="mcms-float-label mcms-float-label-desktop">${escapeHtml(label)}</span>
@@ -24635,6 +24841,7 @@ Create the private backup now?`);
                     ${makeFloatButton('missionAge', '6', 'Mission Age', 'Show personal mission age with progressive 8H amber, 16H orange and 24H red severity. Shortcut: 6', 'Mission Age', 'Age')}
                     ${makeFloatButton('transportWatcher', '7', 'Transport', 'Show/hide amber transport-required watchers beside missions. Shortcut: 7', 'Transport', 'Trans')}
                     ${makeFloatButton('unitCommitment', '8', 'Unit Count', 'Show your committed units beside missions. Shortcut: 8', 'Unit Count', 'Count')}
+                    ${makeFloatButton('stuckDetector', '', 'Stuck', 'Show/hide Stuck mission labels when no meaningful progress is detected.', 'Stuck', 'Stuck')}
                 </div>
                 <div class="mcms-control-group" data-control-group="dashboard" aria-label="Dashboard controls">
                     <span class="mcms-control-group-label">Dashboard</span>
@@ -25633,6 +25840,7 @@ Create the private backup now?`);
                 missionAge: state.missionAge,
                 transportWatcher: state.transportWatcher,
                 unitCommitment: state.unitCommitment,
+                stuckDetector: state.stuckDetector.enabled,
             };
             control.querySelectorAll('[data-toggle]').forEach(btn => {
                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);

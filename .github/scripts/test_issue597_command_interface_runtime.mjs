@@ -35,7 +35,7 @@ function extractFunction(name) {
 }
 
 const constantsStart = source.indexOf("    const COMMAND_SECTION_ORDER");
-const constantsEnd = source.indexOf("\n\n    function defaultState()", constantsStart);
+const constantsEnd = source.indexOf("\n    state = loadState();", constantsStart);
 assert.notEqual(constantsStart, -1);
 assert.notEqual(constantsEnd, -1);
 const commandConstants = source.slice(constantsStart, constantsEnd);

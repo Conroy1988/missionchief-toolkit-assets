@@ -1,5 +1,16 @@
 # Changelog
 
+## [8.3.2] - 2026-07-29
+
+### Proven unchanged-state UI write suppression
+
+- Adds live-value guards to the central `updateUI()` control synchronisation path so identical classes, attributes, styles, text, input values, visibility and tab state are not written again.
+- Preserves fresh DOM discovery on every update; no MissionChief element is cached across framework replacement.
+- The exact rendered fixture reduces 100 warmed unchanged calls from 14,500 write attempts and 7,100 mutation records to zero.
+- First state transitions and complete command-bar/panel replacement still apply the full current state; their immediate stable repeats return to zero writes and zero mutations.
+- Adds no request, observer, interval, listener, scheduler or Toolkit-managed timer.
+- Synchronous jsdom timings remain diagnostic only; this release does not claim a live browser frame-rate increase without authenticated browser traces.
+
 ## [8.3.1] - 2026-07-29
 
 ### Incident Command Wire production reconciliation

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-29-v831-exact-artifact-production-proof",
-  "rationale": "Publish the already validated Issue #564 Incident Command Wire behaviour through the corrected exact-run candidate-artifact pipeline.",
+  "revision": "2026-07-29-issue-255-update-ui-write-suppression",
+  "rationale": "Suppress only proven same-value writes in updateUI while preserving live element discovery and framework replacement recovery.",
   "transitionApproval": {
-    "issue": 564,
-    "version": "8.3.1",
+    "issue": 255,
+    "version": "8.3.2",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Production reconciliation of the v8.3.0 personal FMS 4 Incident Command Wire exclusion with corrected release triggers.",
+    "scope": "Live-value guards for central updateUI classes, attributes, styles, text and form properties with state-transition and DOM-replacement proof.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -194,6 +194,13 @@
       "version": "8.3.1",
       "approvedNetworkRequestDelta": 0,
       "scope": "Production reconciliation of the v8.3.0 personal FMS 4 Incident Command Wire exclusion with corrected release triggers.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 255,
+      "version": "8.3.2",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Live-value guards for central updateUI classes, attributes, styles, text and form properties with state-transition and DOM-replacement proof.",
       "approvedMutationObserverDelta": 0
     }
   ]

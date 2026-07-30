@@ -314,12 +314,13 @@
         },
         {
           "name": "Economy Mode",
-          "summary": "Suppresses non-essential presentation overhead while retaining operational controls and state.",
+          "summary": "Suppresses non-essential effects and avoids repeated same-state UI writes while retaining live MissionChief lifecycle recovery.",
           "details": [
             "Reduced animation",
             "Static presentation where possible",
             "Reduced-motion compatibility",
-            "No operational feature removal"
+            "No operational feature removal",
+            "Same-value UI write suppression"
           ],
           "visual": "economy-mode",
           "tags": [

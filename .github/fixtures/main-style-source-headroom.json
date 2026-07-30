@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 564,
-    "version": "8.3.1",
-    "sourceBytes": 1654208,
-    "sourceLines": 25228,
-    "sourceSha256": "363c6fa8f742840d71a65187c4b2f5b60fcffda519d63f2416c488cd86ca8089",
+    "issue": 255,
+    "version": "8.3.2",
+    "sourceBytes": 1656814,
+    "sourceLines": 25272,
+    "sourceSha256": "e719dd7f26686895cd1ba9e31dd006c775134af86000eb7d32800feea6843cfa",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1674208,
-    "maxSourceLines": 25478,
+    "maxSourceBytes": 1676814,
+    "maxSourceLines": 25522,
     "minTemplateBytes": 500000,
-    "baseline": "8.3.0",
+    "baseline": "8.3.1",
     "approvedGrowth": {
-      "sourceBytes": 9664,
-      "sourceLines": 185,
+      "sourceBytes": 12270,
+      "sourceLines": 229,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "v8.3.1 production publication of Issue #564 through the corrected exact-run artifact release pipeline"
+    "scope": "Issue #255 same-value updateUI write suppression with rendered state-transition and framework-replacement proof"
   }
 }

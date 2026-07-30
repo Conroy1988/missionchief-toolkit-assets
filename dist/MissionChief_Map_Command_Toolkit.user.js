@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.3.1
+// @version      8.3.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.3.1',
+        version: '8.3.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -23335,6 +23335,50 @@ Create the private backup now?`);
         }
         if (setting === 'payout-test-amount') return;
     }
+    function updateUiToggleClass(element, className, enabled) {
+        if (!element?.classList) return false;
+        const next = Boolean(enabled);
+        if (element.classList.contains(className) === next) return false;
+        element.classList.toggle(className, next);
+        return true;
+    }
+
+    function updateUiSetStyleProperty(style, name, value, priority = '') {
+        if (!style || typeof style.getPropertyValue !== 'function' || typeof style.setProperty !== 'function') return false;
+        const nextValue = String(value);
+        const nextPriority = String(priority || '');
+        if (style.getPropertyValue(name) === nextValue && style.getPropertyPriority(name) === nextPriority) return false;
+        style.setProperty(name, nextValue, nextPriority);
+        return true;
+    }
+
+    function updateUiSetAttribute(element, name, value) {
+        if (!element || typeof element.getAttribute !== 'function' || typeof element.setAttribute !== 'function') return false;
+        const next = String(value);
+        if (element.getAttribute(name) === next) return false;
+        element.setAttribute(name, next);
+        return true;
+    }
+
+    function updateUiSetDataset(element, key, value) {
+        if (!element?.dataset) return false;
+        const next = String(value);
+        if (element.dataset[key] === next) return false;
+        element.dataset[key] = next;
+        return true;
+    }
+
+    function updateUiSetProperty(element, property, value) {
+        if (!element) return false;
+        if (Object.is(element[property], value)) return false;
+        element[property] = value;
+        return true;
+    }
+
+    function updateUiSetText(element, value) {
+        return updateUiSetProperty(element, 'textContent', String(value));
+    }
+
     function updateUI() {
         applyRootAttributes();
         if (state.majorIncidentFeed.enabled && operationalStartupComplete) scheduleMajorIncidentFeedRender(40);
@@ -23342,9 +23386,9 @@ Create the private backup now?`);
         const control = document.getElementById(SCRIPT.controlId);
         const panel = document.getElementById(SCRIPT.panelId);
         if (control) {
-            for (const pos of Object.keys(POSITIONS)) control.classList.toggle(`mcms-pos-${pos}`, state.position === pos);
-            control.style.setProperty('--mcms-nudge-x', `${state.nudge.x}px`);
-            control.style.setProperty('--mcms-nudge-y', `${state.nudge.y}px`);
+            for (const pos of Object.keys(POSITIONS)) updateUiToggleClass(control, `mcms-pos-${pos}`, state.position === pos);
+            updateUiSetStyleProperty(control.style, '--mcms-nudge-x', `${state.nudge.x}px`);
+            updateUiSetStyleProperty(control.style, '--mcms-nudge-y', `${state.nudge.y}px`);
             toolkitApplyCommandBarState(control);
             const controlToggleValues = {
                 allianceMissions: state.visibility.allianceMissions,
@@ -23358,62 +23402,62 @@ Create the private backup now?`);
             };
             control.querySelectorAll('[data-toggle]').forEach(btn => {
                 const on = Boolean(controlToggleValues[btn.dataset.toggle]);
-                btn.classList.toggle('mcms-on', on);
-                btn.setAttribute('aria-pressed', String(on));
-                btn.dataset.mcmsState = on ? 'on' : 'off';
+                updateUiToggleClass(btn, 'mcms-on', on);
+                updateUiSetAttribute(btn, 'aria-pressed', String(on));
+                updateUiSetDataset(btn, 'mcmsState', on ? 'on' : 'off');
             });
             const vehicleStatusButton = control.querySelector('[data-action="open-vehicle-status"]');
             if (vehicleStatusButton) {
                 const open = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
-                vehicleStatusButton.classList.toggle('mcms-on', open);
-                vehicleStatusButton.setAttribute('aria-pressed', String(open));
-                vehicleStatusButton.dataset.mcmsState = open ? 'on' : 'off';
+                updateUiToggleClass(vehicleStatusButton, 'mcms-on', open);
+                updateUiSetAttribute(vehicleStatusButton, 'aria-pressed', String(open));
+                updateUiSetDataset(vehicleStatusButton, 'mcmsState', open ? 'on' : 'off');
             }
             const economyButton = control.querySelector('.mcms-economy-btn');
             if (economyButton) {
                 const on = Boolean(state.economyMode);
                 const label = on ? 'Disable Economy Mode' : 'Enable Economy Mode';
-                economyButton.classList.toggle('mcms-on', on);
-                economyButton.setAttribute('aria-pressed', String(on));
-                economyButton.setAttribute('aria-label', label);
-                economyButton.title = label;
-                economyButton.dataset.mcmsState = on ? 'on' : 'off';
+                updateUiToggleClass(economyButton, 'mcms-on', on);
+                updateUiSetAttribute(economyButton, 'aria-pressed', String(on));
+                updateUiSetAttribute(economyButton, 'aria-label', label);
+                updateUiSetProperty(economyButton, 'title', label);
+                updateUiSetDataset(economyButton, 'mcmsState', on ? 'on' : 'off');
             }
             const dockToggleButton = control.querySelector('.mcms-dock-toggle-btn');
             if (dockToggleButton) {
                 const open = state.commandBarOpen !== false;
                 const label = open ? 'Collapse command bar' : 'Expand command bar';
-                dockToggleButton.classList.toggle('mcms-open', open);
-                dockToggleButton.setAttribute('aria-expanded', String(open));
-                dockToggleButton.setAttribute('aria-label', label);
-                dockToggleButton.title = label;
+                updateUiToggleClass(dockToggleButton, 'mcms-open', open);
+                updateUiSetAttribute(dockToggleButton, 'aria-expanded', String(open));
+                updateUiSetAttribute(dockToggleButton, 'aria-label', label);
+                updateUiSetProperty(dockToggleButton, 'title', label);
                 const icon = dockToggleButton.querySelector('.mcms-dock-toggle-icon');
-                if (icon) icon.textContent = open ? '▴' : '▾';
+                updateUiSetText(icon, open ? '▴' : '▾');
             }
         }
         if (!panel) return;
         refreshTabletModeUi(panel);
         panel.querySelectorAll('.mcms-tab-btn').forEach(btn => {
             const active = btn.dataset.tab === state.activeTab;
-            btn.classList.toggle('mcms-active', active);
-            btn.setAttribute('aria-selected', String(active));
-            btn.tabIndex = active ? 0 : -1;
+            updateUiToggleClass(btn, 'mcms-active', active);
+            updateUiSetAttribute(btn, 'aria-selected', String(active));
+            updateUiSetProperty(btn, 'tabIndex', active ? 0 : -1);
         });
         panel.querySelectorAll('.mcms-tab-panel').forEach(tabPanel => {
             const active = tabPanel.dataset.panel === state.activeTab;
-            tabPanel.classList.toggle('mcms-active', active);
-            tabPanel.hidden = !active;
+            updateUiToggleClass(tabPanel, 'mcms-active', active);
+            updateUiSetProperty(tabPanel, 'hidden', !active);
         });
         const panelOpen = panel.classList.contains('mcms-open');
-        panel.setAttribute('aria-hidden', String(!panelOpen));
-        control?.querySelector('.mcms-menu-btn')?.setAttribute('aria-expanded', String(panelOpen));
+        updateUiSetAttribute(panel, 'aria-hidden', String(!panelOpen));
+        updateUiSetAttribute(control?.querySelector('.mcms-menu-btn'), 'aria-expanded', String(panelOpen));
         panel.querySelectorAll('.mcms-ui-theme-btn').forEach(btn => {
             const active = btn.dataset.uiTheme === state.uiTheme;
-            btn.classList.toggle('mcms-active', active);
-            btn.setAttribute('aria-pressed', String(active));
+            updateUiToggleClass(btn, 'mcms-active', active);
+            updateUiSetAttribute(btn, 'aria-pressed', String(active));
         });
-        panel.querySelectorAll('.mcms-theme-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.theme === state.theme));
-        panel.querySelectorAll('.mcms-position-btn').forEach(btn => btn.classList.toggle('mcms-active', btn.dataset.position === state.position));
+        panel.querySelectorAll('.mcms-theme-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.theme === state.theme));
+        panel.querySelectorAll('.mcms-position-btn').forEach(btn => updateUiToggleClass(btn, 'mcms-active', btn.dataset.position === state.position));
         const toggleValues = {
             clean: state.cleanMode,
             markerFocus: state.markerFocus,
@@ -23444,69 +23488,69 @@ Create the private backup now?`);
         panel.querySelectorAll('[data-toggle]').forEach(btn => {
             const key = btn.dataset.toggle;
             const on = Boolean(toggleValues[key]);
-            btn.classList.toggle('mcms-on', on);
+            updateUiToggleClass(btn, 'mcms-on', on);
             const pill = btn.querySelector('.mcms-pill');
-            if (pill) pill.textContent = key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF');
+            updateUiSetText(pill, key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
         });
         updateAllianceMemberManagerMenuControl();
         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
-        if (majorIncidentMinimum) majorIncidentMinimum.value = String(state.majorIncidentFeed.minimumCredits);
+        if (majorIncidentMinimum) updateUiSetProperty(majorIncidentMinimum, 'value', String(state.majorIncidentFeed.minimumCredits));
         const radius = panel.querySelector('[data-setting="coverage-radius"]');
-        if (radius) radius.value = String(state.coverage.radiusMi);
+        if (radius) updateUiSetProperty(radius, 'value', String(state.coverage.radiusMi));
         const allianceCreditMinimum = panel.querySelector('[data-setting="alliance-credit-minimum"]');
-        if (allianceCreditMinimum) allianceCreditMinimum.value = String(state.allianceCreditMinimum);
+        if (allianceCreditMinimum) updateUiSetProperty(allianceCreditMinimum, 'value', String(state.allianceCreditMinimum));
         const transportSweepDelay = panel.querySelector('[data-setting="transport-sweep-delay"]');
-        if (transportSweepDelay) transportSweepDelay.value = String(state.transportSweep.delayMs);
+        if (transportSweepDelay) updateUiSetProperty(transportSweepDelay, 'value', String(state.transportSweep.delayMs));
         const transportSweepMax = panel.querySelector('[data-setting="transport-sweep-max"]');
-        if (transportSweepMax) transportSweepMax.value = String(state.transportSweep.maxPerRun);
+        if (transportSweepMax) updateUiSetProperty(transportSweepMax, 'value', String(state.transportSweep.maxPerRun));
         if (panel.classList.contains('mcms-open') && state.activeTab === 'resources') renderTransportSweepPanel();
         const payoutTemplate = panel.querySelector('[data-setting="payout-template"]');
-        if (payoutTemplate) payoutTemplate.value = state.payoutFlash.template;
-        const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) resourceGapRadius.value = String(state.resourceGap.radiusMi);
+        if (payoutTemplate) updateUiSetProperty(payoutTemplate, 'value', state.payoutFlash.template);
+        const resourceGapRadius = panel.querySelector('[data-setting="resource-gap-radius"]'); if (resourceGapRadius) updateUiSetProperty(resourceGapRadius, 'value', String(state.resourceGap.radiusMi));
         const stuckThreshold = panel.querySelector('[data-setting="stuck-threshold"]');
-        if (stuckThreshold) stuckThreshold.value = String(state.stuckDetector.thresholdMin);
+        if (stuckThreshold) updateUiSetProperty(stuckThreshold, 'value', String(state.stuckDetector.thresholdMin));
         const payoutThreshold = panel.querySelector('[data-setting="payout-threshold"]');
-        if (payoutThreshold) payoutThreshold.value = String(state.payoutFlash.threshold);
+        if (payoutThreshold) updateUiSetProperty(payoutThreshold, 'value', String(state.payoutFlash.threshold));
         const payoutDuration = panel.querySelector('[data-setting="payout-duration"]');
-        if (payoutDuration) payoutDuration.value = String(state.payoutFlash.durationMs / 1000);
+        if (payoutDuration) updateUiSetProperty(payoutDuration, 'value', String(state.payoutFlash.durationMs / 1000));
         const payoutVolume = panel.querySelector('[data-setting="payout-volume"]');
-        if (payoutVolume) payoutVolume.value = String(state.payoutFlash.soundVolume);
+        if (payoutVolume) updateUiSetProperty(payoutVolume, 'value', String(state.payoutFlash.soundVolume));
         const discordWebhook = panel.querySelector('[data-setting="discord-webhook"]');
-        if (discordWebhook && document.activeElement !== discordWebhook) discordWebhook.value = getDiscordWebhookUrl();
+        if (discordWebhook && document.activeElement !== discordWebhook) updateUiSetProperty(discordWebhook, 'value', getDiscordWebhookUrl());
         const discordName = panel.querySelector('[data-setting="discord-name"]');
-        if (discordName && document.activeElement !== discordName) discordName.value = state.discordReport.webhookName;
+        if (discordName && document.activeElement !== discordName) updateUiSetProperty(discordName, 'value', state.discordReport.webhookName);
         const discordTopCategories = panel.querySelector('[data-setting="discord-top-categories"]');
-        if (discordTopCategories) discordTopCategories.value = String(state.discordReport.topCategories);
+        if (discordTopCategories) updateUiSetProperty(discordTopCategories, 'value', String(state.discordReport.topCategories));
         const discordPeriod = panel.querySelector('[data-setting="discord-period"]');
-        if (discordPeriod) discordPeriod.value = state.discordReport.period;
+        if (discordPeriod) updateUiSetProperty(discordPeriod, 'value', state.discordReport.period);
         const discordCustomStart = panel.querySelector('[data-setting="discord-custom-start"]');
-        if (discordCustomStart && document.activeElement !== discordCustomStart) discordCustomStart.value = state.discordReport.customStart;
+        if (discordCustomStart && document.activeElement !== discordCustomStart) updateUiSetProperty(discordCustomStart, 'value', state.discordReport.customStart);
         const discordCustomEnd = panel.querySelector('[data-setting="discord-custom-end"]');
-        if (discordCustomEnd && document.activeElement !== discordCustomEnd) discordCustomEnd.value = state.discordReport.customEnd;
+        if (discordCustomEnd && document.activeElement !== discordCustomEnd) updateUiSetProperty(discordCustomEnd, 'value', state.discordReport.customEnd);
         const discordComparison = panel.querySelector('[data-setting="discord-comparison"]');
-        if (discordComparison) discordComparison.value = String(state.discordReport.includeComparison);
+        if (discordComparison) updateUiSetProperty(discordComparison, 'value', String(state.discordReport.includeComparison));
         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
-        if (discordChart) discordChart.value = String(state.discordReport.includeChart);
+        if (discordChart) updateUiSetProperty(discordChart, 'value', String(state.discordReport.includeChart));
         const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
-        if (discordReportMode) discordReportMode.value = state.discordReport.reportMode;
+        if (discordReportMode) updateUiSetProperty(discordReportMode, 'value', state.discordReport.reportMode);
         const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
-        if (discordRisk) discordRisk.value = String(state.discordReport.includeRisk);
+        if (discordRisk) updateUiSetProperty(discordRisk, 'value', String(state.discordReport.includeRisk));
         const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');
-        if (discordForecast) discordForecast.value = String(state.discordReport.includeForecast);
+        if (discordForecast) updateUiSetProperty(discordForecast, 'value', String(state.discordReport.includeForecast));
         const financeVaultEnabled = panel.querySelector('[data-setting="finance-vault-enabled"]');
-        if (financeVaultEnabled) financeVaultEnabled.value = String(state.financialVault.enabled);
+        if (financeVaultEnabled) updateUiSetProperty(financeVaultEnabled, 'value', String(state.financialVault.enabled));
         const financeVaultRetention = panel.querySelector('[data-setting="finance-vault-retention"]');
-        if (financeVaultRetention) financeVaultRetention.value = String(state.financialVault.retentionDays);
+        if (financeVaultRetention) updateUiSetProperty(financeVaultRetention, 'value', String(state.financialVault.retentionDays));
         const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
-        if (financeRuleFeed) financeRuleFeed.value = String(state.financialVault.ruleFeedEnabled);
+        if (financeRuleFeed) updateUiSetProperty(financeRuleFeed, 'value', String(state.financialVault.ruleFeedEnabled));
         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
         if (panel.classList.contains('mcms-open') && state.activeTab === 'discord') renderFinanceVaultStatus();
         const economyStatus = panel.querySelector('.mcms-economy-status');
-        if (economyStatus) economyStatus.textContent = state.economyMode
+        updateUiSetText(economyStatus, state.economyMode
             ? 'Economy Mode is ON: static visual effects, adaptive refresh intervals and off-screen vehicle/building layer culling are active.'
-            : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.';
+            : 'Economy Mode is OFF. Use the leaf button beside the map-menu opener to reduce CPU, GPU and marker workload.');
         const nudge = panel.querySelector('.mcms-nudge-value');
-        if (nudge) nudge.textContent = `X ${state.nudge.x} / Y ${state.nudge.y}`;
+        updateUiSetText(nudge, `X ${state.nudge.x} / Y ${state.nudge.y}`);
         if (panel.classList.contains('mcms-open') && state.activeTab === 'settings') renderProfiles();
         if ((panel.classList.contains('mcms-open') && state.activeTab === 'ops') || operationalUiIsVisible()) renderOperationalPanels();
     }

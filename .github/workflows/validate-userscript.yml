@@ -99,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           node .github/scripts/test_ui_mount_integration.mjs 2>&1 | tee ui-mount-integration.log
-          node .github/scripts/measure_issue255_unchanged_update_ui.mjs 2>&1 | tee issue255-update-ui-measurement.log
+          node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs 2>&1 | tee issue255-update-ui-measurement.log
 
       - name: Run deterministic runtime contracts
         shell: bash

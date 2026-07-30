@@ -10,6 +10,7 @@ python3 .github/scripts/test_consolidated_pr_gate.py
 python3 .github/scripts/test_path_aware_blocking.py
 python3 .github/scripts/test_issue588_v831_performance_baseline.py
 python3 .github/scripts/test_issue255_unchanged_update_ui.py
+python3 .github/scripts/test_issue255_update_ui_write_suppression.py
 node .github/scripts/test_transport_sweep_runtime.js
 node .github/scripts/test_issue523_transport_sweep_progress_runtime.js
 node .github/scripts/test_issue527_transport_sweep_skipped_patients_runtime.js
@@ -18,6 +19,7 @@ node .github/scripts/test_issue565_transport_sweep_no_reward_runtime.mjs
 node .github/scripts/test_issue515_launcher_runtime.js
 node .github/scripts/test_issue517_incident_command_wire_runtime.js
 node .github/scripts/test_issue564_incident_feed_attended_runtime.js
+node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs
 node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
 node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
 echo "[preflight] Complete"

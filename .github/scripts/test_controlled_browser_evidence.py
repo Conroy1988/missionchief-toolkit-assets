@@ -64,7 +64,8 @@ result = {
 }
 markdown = module.render_markdown(result)
 assert '# Controlled Chrome evidence — Toolkit v8.3.2' in markdown
-assert 'not authenticated MissionChief runtime evidence' in markdown
+assert 'authenticated MissionChief runtime evidence' in markdown
+assert 'does not justify CSS modularisation' in markdown
 assert '| desktop | 1440×900 | 1.0000 ms | 2.0000 ms | 3.0000 ms | 4.0000 ms | 0 | 0.000000 | 0 |' in markdown
 
 for malformed in [source.replace('// @version      8.3.2\n', ''), source.replace(attributes[-1], attributes[-2])]:

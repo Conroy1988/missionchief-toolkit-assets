@@ -3,6 +3,6 @@
   "command": "recover-development-package",
   "prNumber": 592,
   "expectedMain": "6d5b156dbb5c9a8f88147177f4806eb11a0e202e",
-  "expectedHead": "27a0a6a57e32cc82d99740befe7e4f4cfdee6b7b",
-  "nonce": "issue255-v832-update-ui-write-suppression-20260730c"
+  "expectedHead": "ac3d975b3d78f8f2ec9923c9dcd808e7aa9699c3",
+  "nonce": "issue255-v832-update-ui-write-suppression-20260730d"
 }

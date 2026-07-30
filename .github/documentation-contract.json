@@ -49,6 +49,10 @@
     {
       "key": "V",
       "action": "Open or close Vehicle Code Status"
+    },
+    {
+      "key": "B",
+      "action": "Open or close Operational Pressure Board"
     }
   ],
   "requiredSourceTokens": [
@@ -71,6 +75,8 @@
     "Patient Transport Sweep",
     "Mission Value",
     "Resource Gap",
+    "Operational Pressure Board",
+    "Operational SITREP",
     "Economy Mode"
   ],
   "installUrls": [
@@ -82,6 +88,7 @@
     "Mission Value",
     "Patient Transport Sweep",
     "Resource Gap",
+    "Operational Pressure Board",
     "Auto-load all vehicles",
     "Vehicle Code Status",
     "Smart Bookmark Labels",
@@ -97,6 +104,8 @@
       "Patient Transport Sweep",
       "Mission Value",
       "Resource Gap",
+      "Operational Pressure Board",
+      "Operational SITREP",
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",
@@ -120,6 +129,8 @@
       "Patient Transport Sweep",
       "Mission Value",
       "Resource Gap",
+      "Operational Pressure Board",
+      "Operational SITREP",
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",
@@ -143,6 +154,8 @@
       "Patient Transport Sweep",
       "Mission Value",
       "Resource Gap",
+      "Operational Pressure Board",
+      "Operational SITREP",
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",

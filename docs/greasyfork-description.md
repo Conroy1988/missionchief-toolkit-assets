@@ -1,10 +1,10 @@
 # MissionChief Map Command Toolkit
 
-## v8.0.0 candidate — An Offer He Can’t Refuse
+## v9.1.0 candidate — Operational Pressure Board
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 8 adds The Godfather as the eighth complete interface system while preserving The One We Knew Before: the v7 native MissionChief product boundary, retained Toolkit systems and deterministic teardown. Production remains on verified v7.1.6 until the guarded v8 release pipeline completes.
+Version 9.1 adds a map-native Operational Pressure Board and a matching manual Discord SITREP while preserving The One We Knew Before: MissionChief remains authoritative, navigation actions stay read-only and every retained Toolkit system keeps deterministic teardown.
 
 ### Retained native systems
 
@@ -14,6 +14,9 @@ Version 8 adds The Godfather as the eighth complete interface system while prese
 - Transport Watcher
 - Unit Commitment
 - Resource Gap
+- Operational Pressure Board with shortcut `B`
+- Evidence-ordered Top Actions, Fleet Conflicts, reserve risk and transport pressure
+- Manual mention-safe Operational SITREP through the saved Discord webhook
 - Incident Command Wire
 - Vehicle Code Status
 - Custom Vehicle Badges
@@ -24,9 +27,9 @@ Version 8 adds The Godfather as the eighth complete interface system while prese
 - Eight complete interface systems, including The Godfather
 - Desktop, Tablet and iOS Mobile Mode
 
-The Godfather uses original Toolkit-made marionette, wax-seal, rose, pinstripe, polished-wood and brass artwork. Its paired The Godfather Offer MP3 is lazy, theme-scoped and falls back safely when playback is unavailable.
+The Pressure Board allocates each available personal vehicle at most once across current personal and joined alliance mission demand. Focus, Open and Pin do not select or dispatch vehicles. The SITREP is posted only after the user selects Generate & Post.
 
-Most settings stay local to the browser. Financial reports can be sent through the saved Discord webhook configured by the user, with Simple, Informative and The Wolf complexity levels. Settings exports can contain that webhook and should be treated as private.
+Most settings stay local to the browser. Financial and operational reports use the saved Discord webhook configured by the user. Settings exports can contain that webhook and should be treated as private.
 
-Install stable v7: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
+Install stable: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 Source and releases: https://github.com/Conroy1988/missionchief-toolkit-assets

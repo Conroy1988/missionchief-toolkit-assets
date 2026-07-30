@@ -25,6 +25,7 @@ node .github/scripts/test_issue601_operational_pressure_runtime.mjs
 node .github/scripts/test_issue606_pressure_vehicle_classification_runtime.mjs
 node .github/scripts/test_issue603_settings_persistence_runtime.mjs
 node .github/scripts/test_issue604_tablet_controls_runtime.mjs
+node .github/scripts/test_issue608_pressure_board_tablet_geometry.mjs
 node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
 node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
 echo "[preflight] Complete"

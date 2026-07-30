@@ -23,7 +23,8 @@ def main() -> int:
     fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.1.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1)
+    assert tuple(int(part) for part in metadata.group(1).split(".")[:3]) >= (9, 1, 2)
     assert catalogue["schemaVersion"] == 1 and catalogue["locale"] == "en_GB"
     assert fixture["schemaVersion"] == 1
 

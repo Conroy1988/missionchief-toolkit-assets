@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.1.3] - 2026-07-30
+
+### Tablet Pressure Board header clearance
+
+- Fixes the Operational Pressure Board title and action row rendering underneath MissionChief's fixed red navigation bar in Tablet mode.
+- Resolves the board's top edge from the live map workspace and visual viewport instead of overriding the normal desktop clearance with an absolute `10px` offset.
+- Recalculates the Tablet bound when the board opens, the visual viewport changes, the page resizes or the device rotates.
+- Reduces the board's maximum height by the resolved top clearance and bottom safe area so content scrolls inside the visible viewport.
+- Preserves Desktop floating geometry, iOS/Mobile bottom-sheet geometry, all eight interface themes and existing 44×44 Tablet actions.
+- Adds an executable 730×1200 reproduction plus landscape, visual-viewport, mode-switch and lifecycle regressions for Issue #608.
+
 ## [9.1.2] - 2026-07-30
 
 ### Pressure Board vehicle classification and location evidence

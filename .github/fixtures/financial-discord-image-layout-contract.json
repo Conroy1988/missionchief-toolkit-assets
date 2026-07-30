@@ -47,6 +47,41 @@
       "expectedValue": "Unavailable"
     }
   ],
+  "complexityRows": [
+    {
+      "complexity": "simple",
+      "expectedLabels": [
+        "Opening balance",
+        "Closing balance",
+        "Mission rewards",
+        "Average reward",
+        "Entries counted",
+        "Data check"
+      ]
+    },
+    {
+      "complexity": "informative",
+      "expectedLabels": [
+        "Before investment",
+        "Running costs",
+        "Investment",
+        "Mission rewards",
+        "Average reward",
+        "Income vs previous"
+      ]
+    },
+    {
+      "complexity": "wolf",
+      "expectedLabels": [
+        "Operating result",
+        "Capital deployed",
+        "Active-hour income",
+        "Classification",
+        "Condition score",
+        "Checkpoint audit"
+      ]
+    }
+  ],
   "stressRows": [
     {
       "label": "Checkpoint variance",

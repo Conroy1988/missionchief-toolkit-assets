@@ -60,12 +60,12 @@
     "coverage-radius",
     "discord-chart",
     "discord-comparison",
+    "discord-complexity",
     "discord-custom-end",
     "discord-custom-start",
     "discord-forecast",
     "discord-name",
     "discord-period",
-    "discord-report-mode",
     "discord-risk",
     "discord-top-categories",
     "discord-webhook",
@@ -247,18 +247,18 @@
     },
     "discordReport": {
       "period": "last30",
-      "reportMode": "executive"
+      "complexity": "informative"
     }
   },
   "extractedSettingRoutes": [
     "discord-chart",
     "discord-comparison",
+    "discord-complexity",
     "discord-custom-end",
     "discord-custom-start",
     "discord-forecast",
     "discord-name",
     "discord-period",
-    "discord-report-mode",
     "discord-risk",
     "discord-top-categories",
     "discord-webhook",

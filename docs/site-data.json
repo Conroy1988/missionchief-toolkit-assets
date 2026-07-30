@@ -260,12 +260,12 @@
         },
         {
           "name": "Financial intelligence",
-          "summary": "Reconciles income, spending, net position and variance with Discord-ready reporting.",
+          "summary": "Reconciles income, spending, net position and variance with Simple, Informative or The Wolf Discord reporting.",
           "details": [
             "Daily, weekly, monthly and custom periods",
             "Overview reconciliation",
             "Unexplained variance preservation",
-            "Discord summaries"
+            "Simple, Informative and The Wolf Discord reports"
           ],
           "visual": "finance",
           "tags": [
@@ -615,7 +615,7 @@
         },
         {
           "heading": "Financial intelligence",
-          "body": "Reconciles income, spending and variance and can send configured summaries to a saved Discord webhook."
+          "body": "Reconciles income, spending and variance and can send Simple, Informative or The Wolf reports to a saved Discord webhook."
         }
       ]
     },

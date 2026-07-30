@@ -200,9 +200,9 @@ def assert_static_contract(source: str) -> None:
         "overviewIncomeVariance: overviewAudit.incomeVariance",
         "overviewSpendingVariance: overviewAudit.spendingVariance",
         "overviewNetVariance: overviewAudit.netVariance",
-        "Daily aggregate audit:",
+        "buildDiscordDataCheckField(report",
         "Overview vs ledger: income",
-        "drawFinancialMetricCard(context, 412, 148, 337, 98, 'Net movement', formatSignedCompactCredits(report.net)",
+        "drawFinancialMetricCard(context, 54 + 2 * (metricWidth + metricGap), 148, metricWidth, 98, 'Net change', formatSignedCompactCredits(report.net)",
         "report.overviewRowsUsed ? `${report.overviewRowsUsed.toLocaleString('en-GB')} overview day",
     ]
     missing = [snippet for snippet in required if snippet not in source]

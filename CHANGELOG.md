@@ -1,5 +1,18 @@
 # Changelog
 
+## [8.4.0] - 2026-07-30
+
+### Discord finance reporting — Simple, Informative and The Wolf
+
+- Replaces the ambiguous Executive / Full Audit format switch with a clear **Report Complexity** selector.
+- Adds a one-card **Simple** report led by money in, money out, net change, opening balance and closing balance.
+- Adds an **Informative** report with plain-language spending context, activity, leading categories, previous-period comparison and important alerts.
+- Reorganises the complete two-part audit as **The Wolf**, keeping vital totals first while retaining scorecard, risk, forecast, drawdown, classifications, payouts and archive evidence.
+- Rebuilds the attached Discord image around four equal-priority metrics: Money In, Money Out, Net Change and Closing Balance, with supporting rows adapted to each complexity.
+- Migrates saved `Executive Brief Only` settings to **Informative** and `Executive + Full Audit` settings to **The Wolf**.
+- Keeps the private webhook, manual **Generate & Post Report** action, `wait=true` delivery, attachment fallback and green/red/amber result status unchanged.
+- Adds fixture-backed migration, payload-budget, content, privacy and image-layout contracts for all three report levels.
+
 ## [8.3.2] - 2026-07-29
 
 ### Proven unchanged-state UI write suppression

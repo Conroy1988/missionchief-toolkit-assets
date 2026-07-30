@@ -1,5 +1,20 @@
 # Changelog
 
+## [9.0.0] - 2026-07-30
+
+### Unified Command Interface
+
+- Replaces the accumulated eight-tab menu with six task-led sections: **Map**, **Missions**, **Finance**, **Locations**, **Appearance** and **Settings**.
+- Migrates every saved legacy tab to its new section without losing settings, shortcuts or operational controls.
+- Introduces a product-led header with the active command area, live feature count, current-section search, Help and Close controls.
+- Organises each section into clear command cards while preserving MissionChief-native workflows and existing feature behavior.
+- Rebuilds the desktop panel as a wider two-column command workspace, the tablet panel as a compact navigation rail, and iPhone Safari as a full-width bottom sheet with all six sections visible.
+- Standardises the geometry of all eight interface themes while retaining each theme's colour, typography, texture, artwork and animation.
+- Reorganises the map command bar into **Visibility**, **Intelligence**, **Dashboard** and **Performance** groups with icons, visible shortcut badges and explicit `ON`, `OFF` or `ACTIVE` states.
+- Removes the separate arrow launcher control; the single Toolkit button remains the sole menu opener, while command-bar visibility moves into Settings.
+- Adds touch long-press explanations, 44px touch targets, vertical and horizontal keyboard navigation, no-results search feedback and a dedicated reduced-motion geometry layer.
+- Adds Issue #597 fixture and rendered-DOM contracts for six-section migration, card grouping, search, idempotence, device layouts and launcher ownership.
+
 ## [8.4.0] - 2026-07-30
 
 ### Discord finance reporting — Simple, Informative and The Wolf

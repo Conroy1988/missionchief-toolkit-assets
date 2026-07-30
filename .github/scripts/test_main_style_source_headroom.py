@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 text = (ROOT / 'src' / 'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
 fixture = json.loads((ROOT / '.github/fixtures/main-style-source-headroom.json').read_text(encoding='utf-8'))
-candidate = fixture['v8Candidate']
+candidate = fixture['v9Candidate']
 start = text.index('function installMainStyles()')
 template_start = text.index('addStyle(`', start) + len('addStyle(`')
 metric = text.index("recordStartupMetric('stylesheetInstallMs'", template_start)
@@ -36,4 +36,4 @@ assert all(actual[key] == candidate[key] for key in actual), (actual, candidate)
 assert actual['sourceBytes'] <= candidate['maxSourceBytes'], (actual, candidate)
 assert actual['sourceLines'] <= candidate['maxSourceLines'], (actual, candidate)
 assert actual['templateBytes'] >= candidate['minTemplateBytes'], (actual, candidate)
-print('Main-style source-headroom contract passed for v8.')
+print('Main-style source-headroom contract passed for v9.')

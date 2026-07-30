@@ -15,10 +15,10 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "8.4.0";
-const EXPECTED_SHA = "c87c4156744d8803fd6a5e6952ad466740e1f304dd13e6521d9950d8b04485c9";
+const EXPECTED_VERSION = "9.0.0";
+const EXPECTED_SHA = "9e12bc323e3c0390e068727df0b54ed144392f8d9a23effa98da071a2ea868a6";
 const REPEATS = 25;
-const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText"];
+const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
 function walk(node, visit) {
   if (!node || typeof node !== "object") return;
@@ -48,16 +48,20 @@ function fixtureHtml() {
   const settings = ["major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
   return `<!doctype html><html><body>
     <div id="mc-map-command-toolkit-control">
-      ${controlToggles.map(key => `<button data-toggle="${key}"></button>`).join("")}
-      <button data-action="open-vehicle-status"></button><button class="mcms-economy-btn"></button>
-      <button class="mcms-dock-toggle-btn"><span class="mcms-dock-toggle-icon"></span></button><button class="mcms-menu-btn"></button>
+      ${controlToggles.map(key => `<button data-toggle="${key}"><span class="mcms-float-label-desktop">${key}</span><span class="mcms-control-state"></span></button>`).join("")}
+      <button data-action="open-vehicle-status"><span class="mcms-control-state"></span></button><button class="mcms-economy-btn"><span class="mcms-control-state"></span></button>
+      <button class="mcms-menu-btn"></button>
     </div>
     <div id="mc-map-command-toolkit-panel">
-      ${["map", "settings", "resources", "ops", "discord"].map(key => `<button class="mcms-tab-btn" data-tab="${key}"></button><section class="mcms-tab-panel" data-panel="${key}"></section>`).join("")}
+      <div class="mcms-title"></div><div class="mcms-subtitle"></div><input data-command-search><div class="mcms-command-search-empty" hidden></div>
+      <div class="mcms-tabs">${["map", "missions", "finance", "locations", "appearance", "settings"].map(key => `<button class="mcms-tab-btn" data-tab="${key}"></button>`).join("")}</div>
+      ${["map", "missions", "finance", "locations", "appearance", "settings"].map(key => `<section class="mcms-tab-panel" data-panel="${key}"><article class="mcms-command-card" data-command-search="${key}">${key}</article></section>`).join("")}
       <button class="mcms-ui-theme-btn" data-ui-theme="mapCommand"></button><button class="mcms-ui-theme-btn" data-ui-theme="cyberpunk"></button>
       <button class="mcms-theme-btn" data-theme="classic"></button><button class="mcms-theme-btn" data-theme="dark"></button>
       <button class="mcms-position-btn" data-position="bottomRight"></button><button class="mcms-position-btn" data-position="topLeft"></button>
       ${panelToggles.map(key => `<button data-toggle="${key}"><span class="mcms-pill"></span></button>`).join("")}
+      <button class="mcms-action-toggle mcms-command-bar-setting"><span class="mcms-pill"></span></button>
+      <button class="mcms-action-toggle mcms-economy-setting"><span class="mcms-pill"></span></button>
       ${settings.map(key => `<input data-setting="${key}">`).join("")}
       <div data-discord-complexity-help></div>
       <div data-discord-min-complexity="informative"></div><div data-discord-min-complexity="wolf"></div>
@@ -173,16 +177,18 @@ export async function measureWriteSuppression() {
   const nestedCalls = {}; const countNested = name => { nestedCalls[name] = (nestedCalls[name] || 0) + 1; };
   const state = baseState();
   const sandbox = { console, globalThis: null, document: window.document, state, operationalStartupComplete: true,
-    SCRIPT: { controlId: "mc-map-command-toolkit-control", panelId: "mc-map-command-toolkit-panel", vehicleStatusId: "mc-map-command-toolkit-vehicle-status" }, POSITIONS: { topLeft: {}, topRight: {}, bottomLeft: {}, bottomRight: {} },
+    SCRIPT: { name: "MissionChief Map Command Toolkit", controlId: "mc-map-command-toolkit-control", panelId: "mc-map-command-toolkit-panel", vehicleStatusId: "mc-map-command-toolkit-vehicle-status" }, POSITIONS: { topLeft: {}, topRight: {}, bottomLeft: {}, bottomRight: {} },
     FINANCE_REPORT_COMPLEXITIES: Object.freeze(["simple", "informative", "wolf"]), FINANCE_REPORT_COMPLEXITY_RANK: Object.freeze({ simple: 0, informative: 1, wolf: 2 }), FINANCE_REPORT_COMPLEXITY_COPY: Object.freeze({ simple: "simple", informative: "informative", wolf: "wolf" }),
+    COMMAND_SECTION_META: Object.freeze({ map: { label: "Map", title: "Map Controls" }, missions: { label: "Missions", title: "Mission Operations" }, finance: { label: "Finance", title: "Finance Command" }, locations: { label: "Locations", title: "Saved Locations" }, appearance: { label: "Appearance", title: "Appearance" }, settings: { label: "Settings", title: "Toolkit Settings" } }),
+    commandSearchQuery: "", mobileModeActive: false,
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };
-  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v8.4.0.js" });
+  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v9.0.0.js" });
   const panel = window.document.getElementById(sandbox.SCRIPT.panelId);
   async function resetEvidence() { await flush(window); mutationRecords.length = 0; observer.takeRecords(); counters.reset(); profiler.begins = 0; profiler.ends = 0; for (const key of Object.keys(nestedCalls)) delete nestedCalls[key]; }
   async function capture(call) { const started = performance.now(); call(); const elapsed = performance.now() - started; await flush(window); mutationRecords.push(...observer.takeRecords()); return { counters: counters.snapshot(), mutations: summariseMutations(mutationRecords), elapsed }; }
   const scenarios = [
     { name: "idle-panel-closed", open: false, tab: "map", operational: false }, { name: "settings-open", open: true, tab: "settings", operational: false },
-    { name: "resources-open", open: true, tab: "resources", operational: false }, { name: "operations-open", open: true, tab: "ops", operational: true },
+    { name: "missions-open", open: true, tab: "missions", operational: true }, { name: "finance-open", open: true, tab: "finance", operational: false },
   ];
   const unchanged = [];
   for (const scenario of scenarios) {
@@ -195,7 +201,7 @@ export async function measureWriteSuppression() {
   }
 
   panel.classList.add("mcms-open"); state.activeTab = "settings"; state.economyMode = false; state.nudge = { x: 0, y: 0 }; sandbox.operationalVisible = false; sandbox.__api.updateUI(); await resetEvidence();
-  state.activeTab = "resources"; state.economyMode = true; state.nudge = { x: 3, y: -2 };
+  state.activeTab = "missions"; state.economyMode = true; state.nudge = { x: 3, y: -2 };
   const transitionChanged = await capture(() => sandbox.__api.updateUI()); verifyState(window, state);
   assert.ok(transitionChanged.counters.changedWriteAttempts > 0); assert.ok(transitionChanged.mutations.records > 0);
   await resetEvidence(); const transitionStable = await capture(() => sandbox.__api.updateUI());

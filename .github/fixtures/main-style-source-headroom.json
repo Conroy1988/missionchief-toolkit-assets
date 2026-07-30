@@ -120,5 +120,27 @@
       "templateLines": 0
     },
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
+  },
+  "v9Candidate": {
+    "issue": 597,
+    "version": "9.0.0",
+    "sourceBytes": 1717361,
+    "sourceLines": 26404,
+    "sourceSha256": "9e12bc323e3c0390e068727df0b54ed144392f8d9a23effa98da071a2ea868a6",
+    "templateBytes": 718887,
+    "templateLines": 8581,
+    "templateSha256": "3f679350ac76c455f318deff0c2c7cd3acb3cbe26c2804f10200feaa603c5378",
+    "canonicalCssSha256": "de66b6fa0c62911406eb4e7a6c79bbdee0a781bdefd7ed065c4f7cfa9c581294",
+    "maxSourceBytes": 1737361,
+    "maxSourceLines": 26654,
+    "minTemplateBytes": 500000,
+    "baseline": "8.4.0",
+    "approvedGrowth": {
+      "sourceBytes": 49711,
+      "sourceLines": 980,
+      "templateBytes": 35329,
+      "templateLines": 723
+    },
+    "scope": "Issue #597 six-section Command Interface, grouped map controls, shared theme geometry and responsive Desktop/Tablet/iOS layouts"
   }
 }

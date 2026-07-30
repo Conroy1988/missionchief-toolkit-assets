@@ -17,9 +17,9 @@
 </tr>
 </table>
 
-## **Verified production release: `v8.2.7`**
+## **Verified production release**
 
-### **Patient Transport Sweep — native Cancel Transport control correction**
+### **Live version and distribution authority: [Release Control](status/README.md)**
 
 [![GitHub release](https://img.shields.io/github/v/release/Conroy1988/missionchief-toolkit-assets?display_name=release&label=RELEASE&color=2563eb)](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest)
 [![Greasy Fork](https://img.shields.io/greasyfork/v/586018?label=GREASY%20FORK&color=670000)](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit)
@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current release**](#current-release--v827) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v900) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,20 +58,20 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current release — v8.2.7
+## Current interface — v9.0.0
 
-### Patient Transport Sweep — click the real Cancel Transport control
+### One command system across desktop, tablet and iPhone
 
-Version `8.2.7` corrects the native Patient Transport Sweep workflow when MissionChief opens the vehicle window but does not automatically activate the visible release control.
+Version `9.0.0` rebuilds the Toolkit around six task-led sections instead of the previous feature-by-feature tab history.
 
-- Discovers native release controls rendered as links, buttons or submit inputs.
-- Accepts both current MissionChief labels: **Cancel Transport** and **Discharge patient**.
-- Captures the original label before clicking so an unchanged label cannot be mistaken for completion.
-- Still requires **Patient isn’t transported**, control removal, control disablement or a genuine post-click transition before success is recorded.
-- Adds no request, observer, interval or Toolkit-managed timer.
-- Preserves own-vehicle exclusion, bounded waits, sequential processing, cancellation and duplicate protection.
+- **Map** contains visibility, overlays and map tools.
+- **Missions** contains intelligence, resource planning, Patient Transport Sweep and response operations.
+- **Finance** contains Discord reports, Payout Flash and the local Financial Archive.
+- **Locations** contains quick jumps, bookmarks and map profiles.
+- **Appearance** clearly separates Toolkit interface themes from operational map skins.
+- **Settings** contains device layout, dock position, keyboard controls, Economy Mode, command-bar visibility and recovery.
 
-The verified release state, SHA-256 identity, public distribution and private recovery evidence are recorded in the [Release Control Panel](status/README.md).
+The single map launcher, explicit command states, current-section search and responsive navigation behave consistently under every interface theme. The verified release version, SHA-256 identity, public distribution and private recovery evidence remain recorded in the [Release Control Panel](status/README.md).
 
 ---
 
@@ -218,15 +218,13 @@ Responsive behaviour is part of the feature contract—not a cosmetic patch adde
 
 | Field | Verified value |
 |---|---|
-| **Version** | `8.2.7` |
-| **Release focus** | Native Cancel Transport and Discharge patient control activation |
+| **Version and release focus** | [Release Control Panel](status/README.md) |
 | **Canonical source** | `src/MissionChief_Map_Command_Toolkit.user.js` |
-| **Validated SHA-256** | `f686888356d3a8498782a1e656c855db7ce445f38a11a4c68909b0163e5adc38` |
-| **GitHub Release** | [`v8.2.7`](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/tag/v8.2.7) |
-| **Greasy Fork** | Verified against the stable release |
-| **Private backup** | `ee93565fb4ae0aef9c4a82308c392379ea1b598c` |
-| **Discord release delivery** | Posted |
-| **Hosted media audit** | 37 discovered · 33 referenced · 0 missing |
+| **Validated SHA-256** | [`dist/SHA256SUMS.txt`](dist/SHA256SUMS.txt) |
+| **GitHub Release** | [Latest verified release](https://github.com/Conroy1988/missionchief-toolkit-assets/releases/latest) |
+| **Greasy Fork** | [Stable channel](https://greasyfork.org/en/scripts/586018-missionchief-map-command-toolkit) |
+| **Private backup and Discord delivery** | [Release Control Panel](status/README.md) |
+| **Hosted media audit** | [Asset Health](.github/ASSET_HEALTH.md) |
 
 ```text
 Canonical source

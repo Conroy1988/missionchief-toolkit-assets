@@ -15,13 +15,13 @@ required={
 'visual scroll recovery':"scheduleVisualViewportStabilisation('visual-viewport-scroll')",
 'orientation recovery':"scheduleVisualViewportStabilisation('orientationchange')",
 'mobile 44px pin':'height:44px!important;min-height:44px!important;scroll-snap-align:start',
-'mobile 44px tab':'min-width:88px!important;height:44px!important;min-height:44px!important',
-'horizontal touch rail':'scroll-snap-type:x proximity!important',
+'mobile six-section navigation':'grid-template-columns:repeat(3,minmax(0,1fr)) !important;',
+'mobile 44px tab':'height:44px !important;\n            min-height:44px !important;',
 'touch press feedback':'filter:brightness(1.16) saturate(1.06)!important;opacity:.88!important',
 'visual bottom safe edge':'var(--mcms-visual-gap-bottom,0px)',
 'visual right safe edge':'var(--mcms-visual-gap-right,0px)',
-'full-height launcher toggle':'flex:0 0 44px!important;border-top:0!important',
-'tablet launcher geometry':'const menuWidth = 145;',
+'single launcher mobile geometry':'height:44px !important;\n            min-height:44px !important;',
+'tablet launcher geometry':'const menuWidth = 104;',
 'mobile launcher accounting':"const launchSlotCount = control.querySelector('.mcms-economy-btn') ? 3 : 2;",
 '44px pin floor':'let pinHeight = 44;',
 'multi-frame WebKit settling':'delays=isTouchLayoutActive()?[0,80,220,420]:[0]',
@@ -38,4 +38,6 @@ forbidden={
 }
 present=[name for name,token in forbidden.items() if token in text]
 if present: raise SystemExit('IOS SAFARI CONTRACT ERROR: '+', '.join(present))
+create=text[text.index('    function createControl(mapEl)'):text.index('    function commandSectionSlug(')]
+if 'mcms-dock-toggle-btn' in create: raise SystemExit('IOS SAFARI CONTRACT ERROR: retired arrow launcher returned')
 print('iOS/Safari usability contract passed')

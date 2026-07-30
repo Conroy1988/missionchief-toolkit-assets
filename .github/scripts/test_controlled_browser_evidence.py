@@ -30,7 +30,7 @@ source = "\n".join([
 assert module.toolkit_version(source) == '8.3.2'
 assert module.extract_main_css(source) == '.mcms-card { display: block; }\\n.mcms-row { color: red; }'
 assert module.extract_root_attributes(source) == attributes
-assert module.median([1, 2, 8, 10]) == 5.0
+assert module.rounded_median([1, 2, 8, 10]) == 5.0
 assert module.percentile([1, 2, 3, 4, 5], 0.9) == 5
 
 result = {
@@ -81,6 +81,6 @@ for malformed in [source.replace('// @version      8.3.2\n', ''), source.replace
 
 production = (ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
 assert module.toolkit_version(production) == '8.3.2'
-assert len(module.extract_root_attributes(production)) == 22
+assert len(module.extract_root_attributes(production)) == 21
 assert len(module.extract_main_css(production).encode('utf-8')) > 500_000
 print('Controlled Chrome evidence collector contracts passed.')

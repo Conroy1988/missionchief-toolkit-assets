@@ -8,22 +8,23 @@
 - **Pipeline v4 target median:** 4m 00s
 - **Expected reduction:** 87.6%
 - **Expected throughput:** 8.1×
-- **Measured Pipeline v4 median:** 19m 11s
-- **Measured implementation-ready → green median:** 57s
+- **Measured Pipeline v4 median:** 17m 51s
+- **Measured implementation-ready → green median:** 1m 06s
 
 ## Statistics
 
 | Metric | v3 baseline | v4 measured | v4 target |
 |---|---:|---:|---:|
-| Implementation-ready → green median | — | 57s | measured only |
-| PR → verified median | 32m 13s | 19m 11s | 4m 00s |
+| Implementation-ready → green median | — | 1m 06s | measured only |
+| PR → verified median | 32m 13s | 17m 51s | 4m 00s |
 | PR → verified P90 | 33m 24s | 65m 28s | 7m 00s |
-| Merge → verified median | 1m 40s | 56s | 1m 00s |
+| Merge → verified median | 1m 40s | 55s | 1m 00s |
 
 ## Release history
 
 | Version | Pipeline | Class | Implementation → green | Green → merge | PR → verified | Merge → GitHub | Merge → verified | Greasy Fork | Backup |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 8.4.0 | v4 | normal | 1m 19s | 8m 00s | 9m 44s | 34s | 48s | 14s | 8s |
 | 8.3.2 | v4 | normal | 57s | 55s | 65m 28s | 34s | 46s | 11s | 6s |
 | 8.3.1 | v4 | normal | 1m 15s | 38s | 17m 51s | 34s | 55s | 20s | 6s |
 | 8.2.7 | v4 | normal | 57s | 45s | 15m 27s | 2m 18s | 2m 31s | 13s | 6s |

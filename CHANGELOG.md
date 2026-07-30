@@ -1,5 +1,13 @@
 # Changelog
 
+## [9.0.1] - 2026-07-30
+
+### Incident Command Wire motion stability
+
+- Stopped routine layout, resize and unchanged-render reconciliation from seeking the live Incident Command Wire animation back to its retained starting index.
+- Limited deliberate reel repositioning to genuine content rebuilds and explicit navigation, preserving seamless continuous movement under normal MissionChief updates.
+- Added executable regression coverage for repeated non-restart reconciliation and deterministic forced-rebuild seeking.
+
 ## [9.0.0] - 2026-07-30
 
 ### Unified Command Interface

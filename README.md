@@ -117,7 +117,7 @@ Patient Transport Sweep remains deliberately bounded. It uses MissionChief-owned
 | **Reconciliation checkpoints** | Anchors complete periods to MissionChief revenue, spending and sum evidence |
 | **Variance preservation** | Keeps unexplained differences visible instead of inventing classifications |
 | **Payout presentations** | Provides optional visual and audio payout feedback with reduced-motion controls |
-| **Discord reporting** | Sends the reconciled model only through the saved Discord webhook configured by the user |
+| **Discord reporting** | Sends Simple, Informative or The Wolf finance reports only through the saved Discord webhook configured by the user |
 
 ---
 

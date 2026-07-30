@@ -26,7 +26,7 @@ Version 8 adds The Godfather as the eighth complete interface system while prese
 
 The Godfather uses original Toolkit-made marionette, wax-seal, rose, pinstripe, polished-wood and brass artwork. Its paired The Godfather Offer MP3 is lazy, theme-scoped and falls back safely when playback is unavailable.
 
-Most settings stay local to the browser. Financial reports can be sent through the saved Discord webhook configured by the user. Settings exports can contain that webhook and should be treated as private.
+Most settings stay local to the browser. Financial reports can be sent through the saved Discord webhook configured by the user, with Simple, Informative and The Wolf complexity levels. Settings exports can contain that webhook and should be treated as private.
 
 Install stable v7: https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js
 Source and releases: https://github.com/Conroy1988/missionchief-toolkit-assets

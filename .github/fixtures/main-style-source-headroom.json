@@ -100,25 +100,25 @@
     ]
   },
   "v8Candidate": {
-    "issue": 255,
-    "version": "8.3.2",
-    "sourceBytes": 1656814,
-    "sourceLines": 25272,
-    "sourceSha256": "e719dd7f26686895cd1ba9e31dd006c775134af86000eb7d32800feea6843cfa",
+    "issue": 595,
+    "version": "8.4.0",
+    "sourceBytes": 1667650,
+    "sourceLines": 25424,
+    "sourceSha256": "c87c4156744d8803fd6a5e6952ad466740e1f304dd13e6521d9950d8b04485c9",
     "templateBytes": 683558,
     "templateLines": 7858,
     "templateSha256": "8be4b32d5d4a001e15a5606ac28238fef22909e3276d791a3350851611602226",
     "canonicalCssSha256": "b1bf22273aa822f6966504771ee3a37210c32381d045ed374d7689992a1cd164",
-    "maxSourceBytes": 1676814,
-    "maxSourceLines": 25522,
+    "maxSourceBytes": 1687650,
+    "maxSourceLines": 25674,
     "minTemplateBytes": 500000,
-    "baseline": "8.3.1",
+    "baseline": "8.3.2",
     "approvedGrowth": {
-      "sourceBytes": 12270,
-      "sourceLines": 229,
+      "sourceBytes": 10836,
+      "sourceLines": 152,
       "templateBytes": 0,
       "templateLines": 0
     },
-    "scope": "Issue #255 same-value updateUI write suppression with rendered state-transition and framework-replacement proof"
+    "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   }
 }

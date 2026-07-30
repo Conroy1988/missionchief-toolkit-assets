@@ -15,10 +15,10 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "8.3.2";
-const EXPECTED_SHA = "e719dd7f26686895cd1ba9e31dd006c775134af86000eb7d32800feea6843cfa";
+const EXPECTED_VERSION = "8.4.0";
+const EXPECTED_SHA = "c87c4156744d8803fd6a5e6952ad466740e1f304dd13e6521d9950d8b04485c9";
 const REPEATS = 25;
-const HELPER_NAMES = ["updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText"];
+const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText"];
 
 function walk(node, visit) {
   if (!node || typeof node !== "object") return;
@@ -45,7 +45,7 @@ function extractFunctions(source, names) {
 function fixtureHtml() {
   const controlToggles = ["allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
   const panelToggles = ["clean", "markerFocus", "missionPulse", "roadPriority", "coverage", "shortcuts", "autoLoadAllVehicles", "allianceBuildingsMapBlocker", "majorIncidentFeed", "missionLockAudio", "payoutFlash", "payoutSound", "missionValue", "customVehicleBadges", "stuckDetector", "missionSpawn", "resourceGap", "allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
-  const settings = ["major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-report-mode", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
+  const settings = ["major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
   return `<!doctype html><html><body>
     <div id="mc-map-command-toolkit-control">
       ${controlToggles.map(key => `<button data-toggle="${key}"></button>`).join("")}
@@ -59,6 +59,8 @@ function fixtureHtml() {
       <button class="mcms-position-btn" data-position="bottomRight"></button><button class="mcms-position-btn" data-position="topLeft"></button>
       ${panelToggles.map(key => `<button data-toggle="${key}"><span class="mcms-pill"></span></button>`).join("")}
       ${settings.map(key => `<input data-setting="${key}">`).join("")}
+      <div data-discord-complexity-help></div>
+      <div data-discord-min-complexity="informative"></div><div data-discord-min-complexity="wolf"></div>
       <div class="mcms-economy-status"></div><div class="mcms-nudge-value"></div>
     </div>
     <div id="mc-map-command-toolkit-vehicle-status"></div>
@@ -75,7 +77,7 @@ function baseState() {
     payoutFlash: { enabled: true, soundEnabled: true, template: "command", threshold: 10000, durationMs: 5000, soundVolume: 0.35 },
     missionValue: true, customVehicleBadges: true, stuckDetector: { enabled: true, thresholdMin: 10 }, missionSpawn: { enabled: true },
     resourceGap: { enabled: true, radiusMi: 20 }, allianceCreditMinimum: 10000, transportSweep: { delayMs: 900, maxPerRun: 25 },
-    discordReport: { webhookName: "Toolkit", topCategories: 5, period: "daily", customStart: "", customEnd: "", includeComparison: true, includeChart: true, reportMode: "summary", includeRisk: true, includeForecast: true },
+    discordReport: { webhookName: "Toolkit", topCategories: 5, period: "daily", customStart: "", customEnd: "", includeComparison: true, includeChart: true, complexity: "informative", includeRisk: true, includeForecast: true },
     financialVault: { enabled: true, retentionDays: 90, ruleFeedEnabled: true },
   };
 }
@@ -148,6 +150,9 @@ function verifyState(window, state) {
     assert.equal(section.hidden, !active);
   }
   assert.equal(panel.querySelector(".mcms-nudge-value").textContent, `X ${state.nudge.x} / Y ${state.nudge.y}`);
+  assert.equal(panel.querySelector('[data-discord-complexity-help]').textContent.length > 0, true);
+  assert.equal(panel.querySelector('[data-discord-min-complexity="informative"]').hidden, false);
+  assert.equal(panel.querySelector('[data-discord-min-complexity="wolf"]').hidden, true);
 }
 
 function parseArgs(argv) { const result = {}; for (let i = 0; i < argv.length; i += 2) { const key = argv[i], value = argv[i + 1]; if (!key?.startsWith("--") || !value) throw new Error("Expected --key value arguments"); result[key.slice(2)] = value; } return result; }
@@ -169,8 +174,9 @@ export async function measureWriteSuppression() {
   const state = baseState();
   const sandbox = { console, globalThis: null, document: window.document, state, operationalStartupComplete: true,
     SCRIPT: { controlId: "mc-map-command-toolkit-control", panelId: "mc-map-command-toolkit-panel", vehicleStatusId: "mc-map-command-toolkit-vehicle-status" }, POSITIONS: { topLeft: {}, topRight: {}, bottomLeft: {}, bottomRight: {} },
+    FINANCE_REPORT_COMPLEXITIES: Object.freeze(["simple", "informative", "wolf"]), FINANCE_REPORT_COMPLEXITY_RANK: Object.freeze({ simple: 0, informative: 1, wolf: 2 }), FINANCE_REPORT_COMPLEXITY_COPY: Object.freeze({ simple: "simple", informative: "informative", wolf: "wolf" }),
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };
-  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v8.3.2.js" });
+  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v8.4.0.js" });
   const panel = window.document.getElementById(sandbox.SCRIPT.panelId);
   async function resetEvidence() { await flush(window); mutationRecords.length = 0; observer.takeRecords(); counters.reset(); profiler.begins = 0; profiler.ends = 0; for (const key of Object.keys(nestedCalls)) delete nestedCalls[key]; }
   async function capture(call) { const started = performance.now(); call(); const elapsed = performance.now() - started; await flush(window); mutationRecords.push(...observer.takeRecords()); return { counters: counters.snapshot(), mutations: summariseMutations(mutationRecords), elapsed }; }
@@ -217,7 +223,7 @@ export async function measureWriteSuppression() {
   return report;
 }
 
-function markdown(report) { return ["# Issue #255 — v8.3.2 `updateUI()` same-value write suppression", "", `- Before unchanged write attempts: ${report.before.writeAttempts.toLocaleString("en-GB")}`, `- After unchanged write attempts: ${report.after.writeAttempts}`, `- Before mutation records: ${report.before.mutationRecords.toLocaleString("en-GB")}`, `- After mutation records: ${report.after.mutationRecords}`, `- State transition changed writes: ${report.stateTransition.changed.counters.changedWriteAttempts}`, `- State transition mutation records: ${report.stateTransition.changed.mutations.records}`, `- Framework replacement changed writes: ${report.frameworkReplacement.changed.counters.changedWriteAttempts}`, `- Framework replacement mutation records: ${report.frameworkReplacement.changed.mutations.records}`, "", "The first changed-state and replacement-DOM passes still apply state. Their immediate stable repeats produce zero writes and zero mutation records.", "", `> ${report.interpretationBoundary}`, ""].join("\n"); }
+function markdown(report) { return [`# Issue #255 — Toolkit ${report.toolkitVersion} \`updateUI()\` same-value write suppression`, "", `- Before unchanged write attempts: ${report.before.writeAttempts.toLocaleString("en-GB")}`, `- After unchanged write attempts: ${report.after.writeAttempts}`, `- Before mutation records: ${report.before.mutationRecords.toLocaleString("en-GB")}`, `- After mutation records: ${report.after.mutationRecords}`, `- State transition changed writes: ${report.stateTransition.changed.counters.changedWriteAttempts}`, `- State transition mutation records: ${report.stateTransition.changed.mutations.records}`, `- Framework replacement changed writes: ${report.frameworkReplacement.changed.counters.changedWriteAttempts}`, `- Framework replacement mutation records: ${report.frameworkReplacement.changed.mutations.records}`, "", "The first changed-state and replacement-DOM passes still apply state. Their immediate stable repeats produce zero writes and zero mutation records.", "", `> ${report.interpretationBoundary}`, ""].join("\n"); }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
-if (isMain) { const options = parseArgs(process.argv.slice(2)); const report = await measureWriteSuppression(); if (options["json-output"]) { fs.mkdirSync(path.dirname(path.resolve(options["json-output"])), { recursive: true }); fs.writeFileSync(path.resolve(options["json-output"]), `${JSON.stringify(report, null, 2)}\n`); } if (options["markdown-output"]) { fs.mkdirSync(path.dirname(path.resolve(options["markdown-output"])), { recursive: true }); fs.writeFileSync(path.resolve(options["markdown-output"]), `${markdown(report)}\n`); } console.log(`Issue #255 v8.3.2 write suppression passed: ${report.before.writeAttempts} → ${report.after.writeAttempts} unchanged writes; ${report.before.mutationRecords} → ${report.after.mutationRecords} mutations.`); }
+if (isMain) { const options = parseArgs(process.argv.slice(2)); const report = await measureWriteSuppression(); if (options["json-output"]) { fs.mkdirSync(path.dirname(path.resolve(options["json-output"])), { recursive: true }); fs.writeFileSync(path.resolve(options["json-output"]), `${JSON.stringify(report, null, 2)}\n`); } if (options["markdown-output"]) { fs.mkdirSync(path.dirname(path.resolve(options["markdown-output"])), { recursive: true }); fs.writeFileSync(path.resolve(options["markdown-output"]), `${markdown(report)}\n`); } console.log(`Issue #255 write suppression retained by Toolkit ${report.toolkitVersion}: ${report.before.writeAttempts} → ${report.after.writeAttempts} unchanged writes; ${report.before.mutationRecords} → ${report.after.mutationRecords} mutations.`); }

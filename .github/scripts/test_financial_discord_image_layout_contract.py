@@ -13,7 +13,14 @@ import full_userscript_audit as audit
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 FIXTURE = ROOT / ".github" / "fixtures" / "financial-discord-image-layout-contract.json"
-FUNCTION_NAMES = ["fitFinancialCanvasText", "financialSnapshotRows", "drawFinancialSnapshotRow"]
+FUNCTION_NAMES = [
+    "normaliseDiscordReportComplexity",
+    "fitFinancialCanvasText",
+    "formatCompactCredits",
+    "financialGraphicDataCheck",
+    "financialSnapshotRows",
+    "drawFinancialSnapshotRow",
+]
 
 
 def extract_function(source: str, masked: str, name: str) -> str:
@@ -57,6 +64,7 @@ def main() -> int:
     harness = f'''"use strict";
 const assert = require("node:assert/strict");
 const fixtures = {fixture_json};
+const FINANCE_REPORT_COMPLEXITIES = Object.freeze(["simple", "informative", "wolf"]);
 function formatSignedCompactCredits(value) {{
     const numeric = Number(value) || 0;
     const sign = numeric > 0 ? "+" : numeric < 0 ? "-" : "";
@@ -69,6 +77,11 @@ function formatSignedCompactCredits(value) {{
                 ? `${{(magnitude / 1000).toFixed(1).replace(/\\.0$/, "")}}k`
                 : String(Math.round(magnitude));
     return `${{sign}}£${{compact}}`;
+}}
+function formatPercentageChange(value) {{
+    if (!Number.isFinite(Number(value))) return "N/A";
+    const rounded = Math.round(Number(value) * 10) / 10;
+    return `${{rounded > 0 ? "+" : ""}}${{rounded}}%`;
 }}
 {functions}
 class FakeContext {{
@@ -95,7 +108,17 @@ function baseReport(extra = {{}}) {{
         capitalInvestment: 2750000,
         activeIncomePerHour: 725000,
         incomePerHour: 700000,
+        operatingExpense: 150000,
         classificationConfidence: 98.5,
+        openingBalance: 9000000,
+        closingBalance: 10250000,
+        missionCount: 42,
+        averageMissionReward: 29000,
+        activityCount: 55,
+        ledgerComplete: true,
+        aggregateReconciled: true,
+        overviewStatus: "reconciled",
+        comparison: {{ incomeChange: 12.5 }},
         scorecard: {{ overall: 88 }},
         balanceCalculated: true,
         reconciliationDifference: 0,
@@ -119,6 +142,15 @@ for (const item of fixtures.auditRows) {{
         assert.ok(layout.value.fontSize >= 11, `${{item.name}}: ${{label}}`);
     }}
 }}
+for (const item of fixtures.complexityRows) {{
+    const rows = financialSnapshotRows(baseReport(), item.complexity);
+    assert.deepEqual(rows.map(row => row[0]), item.expectedLabels, item.complexity);
+    for (const [label, value] of rows) {{
+        const context = new FakeContext();
+        const layout = drawFinancialSnapshotRow(context, 832, 500, 290, label, value);
+        assert.ok(layout.label.right + layout.gap <= layout.value.left + 0.001, `${{item.complexity}} row overlaps: ${{label}}`);
+    }}
+}}
 for (const item of fixtures.stressRows) {{
     const context = new FakeContext();
     const layout = drawFinancialSnapshotRow(context, 832, 500, 290, item.label, item.value);
@@ -126,7 +158,7 @@ for (const item of fixtures.stressRows) {{
     assert.ok(layout.label.width <= 290, item.label);
     assert.ok(layout.value.width <= 142, item.value);
 }}
-console.log(`Financial Discord image layout contract passed: ${{fixtures.auditRows.length}} audit states, all snapshot rows and ${{fixtures.stressRows.length}} stress rows.`);
+console.log(`Financial Discord image layout contract passed: ${{fixtures.auditRows.length}} audit states, ${{fixtures.complexityRows.length}} report levels and ${{fixtures.stressRows.length}} stress rows.`);
 '''
     with tempfile.TemporaryDirectory(prefix="mcms-financial-image-") as temp:
         harness_path = Path(temp) / "financial-image-layout-contract.js"

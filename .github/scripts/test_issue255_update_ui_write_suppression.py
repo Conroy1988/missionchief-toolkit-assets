@@ -6,7 +6,8 @@ ROOT = Path(__file__).resolve().parents[2]
 source = (ROOT / 'src/MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
 metadata = re.search(r'(?m)^//\s*@version\s+([^\s]+)$', source)
 runtime = re.search(r"version:\s*'([^']+)'", source)
-assert metadata and runtime and metadata.group(1) == runtime.group(1) == '8.3.2'
+assert metadata and runtime and metadata.group(1) == runtime.group(1)
+assert tuple(map(int, metadata.group(1).split('.'))) >= (8, 3, 2)
 
 for name in ['updateUiToggleClass', 'updateUiSetStyleProperty', 'updateUiSetAttribute', 'updateUiSetDataset', 'updateUiSetProperty', 'updateUiSetText']:
     assert source.count(f'function {name}(') == 1, name
@@ -39,4 +40,4 @@ assert report['frameworkReplacement']['changed']['counters']['changedWriteAttemp
 assert report['frameworkReplacement']['changed']['mutations']['records'] > 0
 assert report['frameworkReplacement']['stableRepeat']['counters']['writeAttempts'] == 0
 assert report['frameworkReplacement']['stableRepeat']['mutations']['records'] == 0
-print('Issue #255 v8.3.2 updateUI same-value write suppression contract passed.')
+print(f'Issue #255 updateUI same-value write suppression contract retained by Toolkit {metadata.group(1)}.')

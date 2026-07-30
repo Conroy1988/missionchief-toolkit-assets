@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Collect controlled Chromium microbenchmarks for Toolkit CSS and guarded root writes.
+"""Controlled Chrome microbenchmarks for Toolkit CSS and guarded root writes.
 
-This is deliberately not a substitute for authenticated MissionChief live scenarios.
+This produces synthetic browser evidence only. It is not a substitute for
+an authenticated MissionChief runtime capture.
 """
 from __future__ import annotations
 
@@ -30,9 +31,8 @@ def toolkit_version(source: str) -> str:
 def extract_main_css(source: str) -> str:
     start = source.index('function installMainStyles()')
     marker = source.index('addStyle(`', start) + len('addStyle(`')
-    index = marker
     escaped = False
-    while index < len(source):
+    for index in range(marker, len(source)):
         char = source[index]
         if escaped:
             escaped = False
@@ -40,90 +40,81 @@ def extract_main_css(source: str) -> str:
             escaped = True
         elif char == '`':
             return source[marker:index]
-        index += 1
     raise ValueError('installMainStyles template terminator not found')
 
 
 def extract_root_attributes(source: str) -> list[str]:
     start = source.index('function applyRootAttributes()')
-    candidates = [
-        source.find('\n    function getStrongMarkerSignal', start),
-        source.find('\n    function ', start + len('function applyRootAttributes()')),
-    ]
-    valid = [value for value in candidates if value > start]
-    if not valid:
+    remainder = source[start + len('function applyRootAttributes()'):]
+    next_function = re.search(r'(?m)^\s*function\s+[A-Za-z_$][\w$]*\s*\(', remainder)
+    if not next_function:
         raise ValueError('applyRootAttributes boundary not found')
-    end = min(valid)
+    end = start + len('function applyRootAttributes()') + next_function.start()
     names = re.findall(r"setAttributeIfChanged\(root, '([^']+)'", source[start:end])
-    if len(names) != 22 or len(set(names)) != 22:
-        raise ValueError(f'expected 22 unique root attributes, got {len(names)}')
+    if not names or len(names) != len(set(names)):
+        raise ValueError(f'expected a non-empty unique root-attribute set, got {len(names)}')
     return names
 
 
-def median(values: list[float]) -> float:
+def rounded_median(values: list[float]) -> float:
     return round(statistics.median(values), 4)
 
 
-def percentile(values: list[float], percent: float) -> float:
+def percentile(values: list[float], fraction: float) -> float:
     if not values:
         return 0.0
     ordered = sorted(values)
-    rank = max(0, min(len(ordered) - 1, round((len(ordered) - 1) * percent)))
-    return round(ordered[rank], 4)
+    index = round((len(ordered) - 1) * fraction)
+    return round(ordered[max(0, min(index, len(ordered) - 1))], 4)
 
 
-def html_document(css: str, attrs: list[str], label: str, samples: int) -> str:
-    payload = json.dumps(css)
-    attrs_json = json.dumps(attrs)
+def html_document(css: str, attributes: list[str], label: str, samples: int) -> str:
+    css_json = json.dumps(css)
+    attributes_json = json.dumps(attributes)
+    label_json = json.dumps(label)
     return f'''<!doctype html><html><head><meta charset="utf-8"><title>MCMS controlled evidence</title></head><body>
 <div id="map_outer"><div id="map" class="leaflet-container"><div class="leaflet-pane leaflet-marker-pane"></div></div></div>
 <div id="missions" class="missions-panel mission-list"></div><div id="mc-map-command-panel" class="mcms-panel mcms-open"></div>
 <pre id="result">pending</pre><script>
-const CSS={payload}; const ATTRS={attrs_json}; const LABEL={json.dumps(label)}; const SAMPLES={samples};
+const CSS={css_json};const ATTRS={attributes_json};const LABEL={label_json};const SAMPLES={samples};
 for(let i=0;i<240;i++){{const n=document.createElement('div');n.className=`mcms-card mcms-row mcms-setting-row mcms-mission-row mcms-${{i%13}}`;n.textContent='Evidence '+i;document.body.appendChild(n);}}
-const longTasks=[]; const shifts=[];
+const longTasks=[];const shifts=[];
 try{{new PerformanceObserver(l=>longTasks.push(...l.getEntries().map(e=>e.duration))).observe({{type:'longtask',buffered:true}})}}catch(e){{}}
 try{{new PerformanceObserver(l=>shifts.push(...l.getEntries().filter(e=>!e.hadRecentInput).map(e=>e.value))).observe({{type:'layout-shift',buffered:true}})}}catch(e){{}}
-const inserts=[],layouts=[];
+const inserts=[];const layouts=[];
 for(let i=0;i<SAMPLES;i++){{
  const style=document.createElement('style');style.id='mc-map-command-style-'+i;style.textContent=CSS+`\n/* controlled-run:${{i}} */`;
  let t=performance.now();document.head.appendChild(style);inserts.push(performance.now()-t);
- t=performance.now();const nodes=document.querySelectorAll('.mcms-card,.leaflet-container,#mc-map-command-panel');let checksum=0;for(let j=0;j<nodes.length;j+=5){{const cs=getComputedStyle(nodes[j]);checksum+=nodes[j].offsetHeight+cs.display.length;}}layouts.push(performance.now()-t);style.remove();
+ t=performance.now();const nodes=document.querySelectorAll('.mcms-card,.leaflet-container,#mc-map-command-panel');let checksum=0;
+ for(let j=0;j<nodes.length;j+=5){{const cs=getComputedStyle(nodes[j]);checksum+=nodes[j].offsetHeight+cs.display.length;}}
+ layouts.push(performance.now()-t);style.remove();
 }}
 const root=document.documentElement;let writes=0;const nativeSet=root.setAttribute.bind(root);root.setAttribute=(n,v)=>{{writes++;nativeSet(n,v)}};
 function setAttributeIfChanged(el,n,v){{v=String(v);if(el.getAttribute(n)===v)return false;el.setAttribute(n,v);return true}}
 const values=Object.fromEntries(ATTRS.map((n,i)=>[n,`${{LABEL}}-${{i}}`]));
 function apply(){{for(const n of ATTRS)setAttributeIfChanged(root,n,values[n])}}
-apply();const initialWrites=writes;writes=0;apply();const unchangedWrites=writes;writes=0;values[ATTRS[ATTRS.length-1]]+='-changed';apply();const changedWrites=writes;writes=0;root.removeAttribute(ATTRS[0]);apply();const repairedWrites=writes;
+apply();const initialWrites=writes;writes=0;apply();const unchangedWrites=writes;writes=0;
+values[ATTRS[ATTRS.length-1]]+='-changed';apply();const changedWrites=writes;writes=0;
+root.removeAttribute(ATTRS[0]);apply();const repairedWrites=writes;
 setTimeout(()=>{{document.getElementById('result').textContent=JSON.stringify({{
- label:LABEL, cssBytes:new TextEncoder().encode(CSS).length, cssRuleEstimate:(CSS.match(/{{/g)||[]).length,
- styleInsertSamplesMs:inserts, forcedStyleLayoutSamplesMs:layouts,
+ label:LABEL,cssBytes:new TextEncoder().encode(CSS).length,cssRuleEstimate:(CSS.match(/{{/g)||[]).length,
+ styleInsertSamplesMs:inserts,forcedStyleLayoutSamplesMs:layouts,
  rootAttributeContract:{{attributeCount:ATTRS.length,initialWrites,unchangedWrites,changedWrites,repairedWrites}},
- longTasksMs:longTasks, layoutShiftTotal:shifts.reduce((a,b)=>a+b,0), userAgent:navigator.userAgent
+ longTasksMs:longTasks,layoutShiftTotal:shifts.reduce((a,b)=>a+b,0),userAgent:navigator.userAgent
 }})}},0);
 </script></body></html>'''
 
 
-def run_one(chromium: str, document_path: Path, width: int, height: int) -> dict:
+def run_one(chromium: str, document: Path, width: int, height: int) -> dict:
     profile = tempfile.mkdtemp(prefix='mcms-chromium-')
     command = [
-        chromium,
-        '--headless=new',
-        '--no-sandbox',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        f'--user-data-dir={profile}',
-        '--disable-background-networking',
-        '--disable-component-update',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--metrics-recording-only',
-        '--mute-audio',
-        '--run-all-compositor-stages-before-draw',
-        '--virtual-time-budget=3000',
-        f'--window-size={width},{height}',
-        '--dump-dom',
-        document_path.as_uri(),
+        chromium, '--headless=new', '--no-sandbox', '--disable-gpu',
+        '--disable-dev-shm-usage', f'--user-data-dir={profile}',
+        '--disable-background-networking', '--disable-component-update',
+        '--disable-default-apps', '--disable-sync', '--metrics-recording-only',
+        '--mute-audio', '--run-all-compositor-stages-before-draw',
+        '--virtual-time-budget=3000', f'--window-size={width},{height}',
+        '--dump-dom', document.as_uri(),
     ]
     try:
         process = subprocess.run(command, text=True, capture_output=True, timeout=90)
@@ -140,20 +131,15 @@ def run_one(chromium: str, document_path: Path, width: int, height: int) -> dict
 def render_markdown(result: dict) -> str:
     baseline = result['baseline']
     lines = [
-        f"# Controlled Chrome evidence — Toolkit v{baseline['version']}",
-        '',
-        '> Controlled synthetic Chromium evidence. It verifies repeatable micro-contracts, but it is **not** authenticated MissionChief runtime evidence and does not justify CSS modularisation by itself.',
-        '',
-        '## Baseline',
-        '',
+        f"# Controlled Chrome evidence — Toolkit v{baseline['version']}", '',
+        '> Controlled synthetic Chromium evidence. It verifies repeatable micro-contracts, but it is **not** authenticated MissionChief runtime evidence and does not justify CSS modularisation by itself.', '',
+        '## Baseline', '',
         f"- Source SHA-256: `{baseline['sourceSha256']}`",
         f"- Source: **{baseline['sourceBytes']:,} bytes**, **{baseline['sourceLines']:,} lines**",
         f"- Main embedded CSS: **{baseline['cssBytes']:,} bytes**, approximately **{baseline['cssRuleEstimate']:,}** rule blocks",
         f"- Guarded root attributes: **{baseline['rootAttributeCount']}**",
-        f"- Samples per viewport: **{result['environment']['samplesPerViewport']}** (first sample excluded from summary medians)",
-        '',
-        '## Results',
-        '',
+        f"- Samples per viewport: **{result['environment']['samplesPerViewport']}** (first sample excluded from summary medians)", '',
+        '## Results', '',
         '| Scenario | Viewport | CSS insertion median* | CSS insertion P90* | Forced style/layout median* | Forced style/layout P90* | Long tasks | Layout shift | Unchanged root writes |',
         '|---|---:|---:|---:|---:|---:|---:|---:|---:|',
     ]
@@ -167,53 +153,55 @@ def render_markdown(result: dict) -> str:
             f"{len(scenario['longTasksMs'])} | {scenario['layoutShiftTotal']:.6f} | {contract['unchangedWrites']} |"
         )
     lines += [
-        '',
-        '* The first sample is a warm-up and is excluded. Values are diagnostic, hardware-specific and are not release budgets.',
-        '',
-        '## Decisions',
-        '',
-        '- The guarded root-write contract remains correct: first application writes all missing attributes, an unchanged repeat writes zero, one changed value writes one and external tampering is repaired with one write.',
+        '', '* The first sample is a warm-up and is excluded. Values are diagnostic, hardware-specific and are not release budgets.', '',
+        '## Decisions', '',
+        '- The guarded root-write contract remains correct for the current authoritative attribute set: first application writes every missing attribute, an unchanged repeat writes zero, one changed value writes one and external tampering is repaired with one write.',
         '- The controlled Chrome measurements establish a current reproducible baseline across Desktop, Tablet and iOS-sized viewports.',
         '- This evidence does not contain MissionChief map, mission-window, settings or pan workloads. It does not prove a user-visible CSS bottleneck and does not authorise stylesheet modularisation.',
-        '- Equivalent authenticated MissionChief profiler scenarios remain required before changing style delivery.',
-        '',
+        '- Equivalent authenticated MissionChief profiler scenarios remain required before changing style delivery.', '',
     ]
     return '\n'.join(lines)
 
 
 def collect(source_path: Path, chromium: str, samples: int) -> dict:
     source = source_path.read_text(encoding='utf-8')
-    version = toolkit_version(source)
     css = extract_main_css(source)
-    attrs = extract_root_attributes(source)
+    attributes = extract_root_attributes(source)
     scenarios = []
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         for label, width, height in VIEWPORTS:
-            document_path = root / f'{label}.html'
-            document_path.write_text(html_document(css, attrs, label, samples), encoding='utf-8')
-            raw = run_one(chromium, document_path, width, height)
+            document = root / f'{label}.html'
+            document.write_text(html_document(css, attributes, label, samples), encoding='utf-8')
+            raw = run_one(chromium, document, width, height)
             raw['viewport'] = {'width': width, 'height': height}
-            insert_warm = raw['styleInsertSamplesMs'][1:]
-            layout_warm = raw['forcedStyleLayoutSamplesMs'][1:]
-            raw['styleInsertMedianMs'] = median(insert_warm)
-            raw['styleInsertP90Ms'] = percentile(insert_warm, 0.9)
-            raw['forcedStyleLayoutMedianMs'] = median(layout_warm)
-            raw['forcedStyleLayoutP90Ms'] = percentile(layout_warm, 0.9)
+            insert_samples = raw['styleInsertSamplesMs'][1:]
+            layout_samples = raw['forcedStyleLayoutSamplesMs'][1:]
+            raw['styleInsertMedianMs'] = rounded_median(insert_samples)
+            raw['styleInsertP90Ms'] = percentile(insert_samples, 0.9)
+            raw['forcedStyleLayoutMedianMs'] = rounded_median(layout_samples)
+            raw['forcedStyleLayoutP90Ms'] = percentile(layout_samples, 0.9)
             scenarios.append(raw)
     source_bytes = source_path.read_bytes()
-    result = {
+    expected_contract = {
+        'attributeCount': len(attributes),
+        'initialWrites': len(attributes),
+        'unchangedWrites': 0,
+        'changedWrites': 1,
+        'repairedWrites': 1,
+    }
+    return {
         'schemaVersion': 2,
         'evidenceClass': 'controlled-synthetic-browser',
         'tool': 'collect_controlled_browser_evidence.py',
         'baseline': {
-            'version': version,
+            'version': toolkit_version(source),
             'sourceSha256': hashlib.sha256(source_bytes).hexdigest(),
             'sourceBytes': len(source_bytes),
             'sourceLines': len(source.splitlines()),
             'cssBytes': len(css.encode('utf-8')),
             'cssRuleEstimate': css.count('{'),
-            'rootAttributeCount': len(attrs),
+            'rootAttributeCount': len(attributes),
         },
         'environment': {
             'browserExecutable': Path(chromium).name,
@@ -222,22 +210,12 @@ def collect(source_path: Path, chromium: str, samples: int) -> dict:
         },
         'scenarios': scenarios,
         'conclusions': {
-            'rootWriteSuppressionVerified': all(
-                scenario['rootAttributeContract'] == {
-                    'attributeCount': 22,
-                    'initialWrites': 22,
-                    'unchangedWrites': 0,
-                    'changedWrites': 1,
-                    'repairedWrites': 1,
-                }
-                for scenario in scenarios
-            ),
+            'rootWriteSuppressionVerified': all(scenario['rootAttributeContract'] == expected_contract for scenario in scenarios),
             'cssTargetProven': False,
             'liveMissionChiefEvidenceCaptured': False,
             'nextAction': 'Capture equivalent authenticated idle map, settings, mission-window and map-pan profiler scenarios before changing style delivery.',
         },
     }
-    return result
 
 
 def main() -> int:
@@ -248,7 +226,7 @@ def main() -> int:
     parser.add_argument('--chromium')
     parser.add_argument('--samples', type=int, default=DEFAULT_SAMPLES)
     args = parser.parse_args()
-    if args.samples < 3 or args.samples > 50:
+    if not 3 <= args.samples <= 50:
         raise SystemExit('--samples must be between 3 and 50')
     source_path = Path(args.source)
     chromium = args.chromium or shutil.which('google-chrome') or shutil.which('google-chrome-stable') or shutil.which('chromium') or shutil.which('chromium-browser')
@@ -268,6 +246,7 @@ def main() -> int:
         'scenarios': len(result['scenarios']),
         'samplesPerViewport': args.samples,
         'cssBytes': result['baseline']['cssBytes'],
+        'rootAttributeCount': result['baseline']['rootAttributeCount'],
         'rootContract': True,
     }))
     return 0

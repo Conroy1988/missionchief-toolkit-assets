@@ -22,6 +22,8 @@ node .github/scripts/test_issue564_incident_feed_attended_runtime.js
 node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs
 node .github/scripts/test_issue597_command_interface_runtime.mjs
 node .github/scripts/test_issue601_operational_pressure_runtime.mjs
+node .github/scripts/test_issue603_settings_persistence_runtime.mjs
+node .github/scripts/test_issue604_tablet_controls_runtime.mjs
 node .github/scripts/test_issue553_alliance_member_manager_menu_runtime.js
 node .github/scripts/test_issue553_alliance_member_manager_page_runtime.js
 echo "[preflight] Complete"

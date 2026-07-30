@@ -1,5 +1,18 @@
 # Changelog
 
+## [9.1.1] - 2026-07-30
+
+### Settings persistence and Tablet control recovery
+
+- Fixes the v9 cold-start ordering fault that attempted to migrate saved section state before the six-section command constants were initialised, silently falling back to defaults after an ordinary page refresh.
+- Preserves the full settings state in both MissionChief page storage and Tampermonkey userscript storage, with revision ordering, an automatic previous-state recovery copy and repair of a missing or corrupt storage layer.
+- Migrates valid v9 and retained legacy settings into the durable store without replacing user choices with new defaults.
+- Keeps private Discord webhook and Financial Archive records in their existing dedicated userscript stores; they are not copied into the general settings payload.
+- Expands the Tablet navigation rail and allows section labels to wrap normally instead of clipping or ellipsising.
+- Restores Tablet panel movement with a visible 44×44 drag grip, viewport clamping and saved position; iOS Mobile remains a fixed responsive bottom sheet.
+- Restores a persistent **Stuck** ON/OFF button to the main map Intelligence group while retaining the Missions-menu control and avoiding a new keyboard-shortcut conflict.
+- Adds executable cold-start, refresh, upgrade/origin migration, legacy recovery, corruption recovery, Tablet drag, touch-target and Stuck-control contracts for Issues #603 and #604.
+
 ## [9.1.0] - 2026-07-30
 
 ### Operational Pressure Board and Discord SITREP

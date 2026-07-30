@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.1.0
+## Current interface — v9.1.1
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.1.0` keeps the six-section Command Interface and adds a map-native Operational Pressure Board. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
+Version `9.1.1` keeps the six-section Command Interface and map-native Operational Pressure Board, while restoring reliable settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
 
 - **Map** contains visibility, overlays and map tools.
 - **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.
@@ -74,6 +74,8 @@ Version `9.1.0` keeps the six-section Command Interface and adds a map-native Op
 The board reconciles active personal and joined alliance missions against the available personal fleet so the same specialist vehicle cannot satisfy several missions at once. It shows Top Actions, shared resource shortfalls, Fleet Conflicts, reserve risk and patient/prisoner transport pressure. **Focus**, **Open** and **Pin** remain read-only navigation actions; the board never selects or dispatches vehicles.
 
 The matching **Operational SITREP** is posted only when the user selects **Generate & Post Operational SITREP**. It reuses the saved Finance Discord webhook, suppresses mentions and sends the same evidence snapshot shown on the board. The single map launcher, explicit command states, current-section search and responsive navigation continue to behave consistently under every interface theme.
+
+Toolkit settings survive normal page refreshes and userscript updates through a revisioned Tampermonkey copy plus the existing MissionChief page-storage copy. A previous good revision is retained for recovery, and legacy settings are migrated before defaults are considered. The Tablet panel uses a 44×44 drag grip and a wider readable navigation rail; iOS Mobile remains a fixed bottom sheet.
 
 ---
 

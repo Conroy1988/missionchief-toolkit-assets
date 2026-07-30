@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 601,
-    "version": "9.1.0",
-    "sourceBytes": 1784975,
-    "sourceLines": 27538,
-    "sourceSha256": "c5d554330e01bbfd7386c6cc12ea73689b27cc39a998432f06fb28bd5db10b08",
-    "templateBytes": 743619,
-    "templateLines": 8977,
-    "templateSha256": "2404f182780f805b5ecd91bbeab621b78a462b0e258d092a45bb70d7dae902ab",
-    "canonicalCssSha256": "d4b3e3bf6fef4c25c53eabb5b3dda8fa04fcde7a3130f0114afd58db60a57565",
+    "issue": 603,
+    "version": "9.1.1",
+    "sourceBytes": 1796276,
+    "sourceLines": 27746,
+    "sourceSha256": "631f016542f6cb0fa072fb201b826a99b5517a509a810dae762c0dca8db3c53f",
+    "templateBytes": 744801,
+    "templateLines": 9002,
+    "templateSha256": "e0c2e0e1defa205572a5f4783f515f8af58a89a4065ee05abd38ff1473a0ea92",
+    "canonicalCssSha256": "c31dd6d4baf512167223367f45b2c719b668ea1ec5920f8f8756c459e91b0f44",
     "maxSourceBytes": 1809975,
     "maxSourceLines": 27788,
     "minTemplateBytes": 500000,
-    "baseline": "9.0.1",
+    "baseline": "9.1.0",
     "approvedGrowth": {
-      "sourceBytes": 67049,
-      "sourceLines": 1122,
-      "templateBytes": 24732,
-      "templateLines": 396
+      "sourceBytes": 11301,
+      "sourceLines": 208,
+      "templateBytes": 1182,
+      "templateLines": 25
     },
-    "scope": "Issue #601 Operational Pressure Board, global fleet allocation, manual Discord SITREP and shared Desktop, Tablet and iOS geometry"
+    "scope": "Issues #603 and #604 refresh-safe settings persistence, upgrade recovery, Tablet navigation and drag repair, and restored Stuck map control"
   }
 }

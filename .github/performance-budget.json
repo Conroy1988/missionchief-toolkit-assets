@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-29-issue-255-update-ui-write-suppression",
-  "rationale": "Suppress only proven same-value writes in updateUI while preserving live element discovery and framework replacement recovery.",
+  "revision": "2026-07-30-issue-597-command-interface-v9",
+  "rationale": "Approve the measured stylesheet growth for the six-section v9 command interface while retaining zero-growth budgets for managed schedulers, DOM lookup primitives, HTML assignment sites, observers and network requests.",
   "transitionApproval": {
-    "issue": 255,
-    "version": "8.3.2",
+    "issue": 597,
+    "version": "9.0.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Live-value guards for central updateUI classes, attributes, styles, text and form properties with state-transition and DOM-replacement proof.",
+    "scope": "Shared Desktop, Tablet and iPhone command geometry, six task-led sections, grouped map controls and eight-theme presentation verified across 45 real Chromium renders.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -70,7 +70,7 @@
     },
     "css_rule_blocks": {
       "warnDelta": 25,
-      "failDelta": 236
+      "failDelta": 255
     },
     "set_interval_calls": {
       "warnDelta": 1,
@@ -201,6 +201,13 @@
       "version": "8.3.2",
       "approvedNetworkRequestDelta": 0,
       "scope": "Live-value guards for central updateUI classes, attributes, styles, text and form properties with state-transition and DOM-replacement proof.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 597,
+      "version": "9.0.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Six-section command interface, grouped map controls and shared responsive geometry across every supported theme and device class.",
       "approvedMutationObserverDelta": 0
     }
   ]

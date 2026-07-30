@@ -92,7 +92,8 @@ def main() -> int:
 
     upgrade = source[source.index("    function upgradeCommandInterface(") : source.index("    function commandInterfaceApplySearch(")]
     for token in [
-        "tabs.innerHTML = commandSectionNavigationMarkup();",
+        "tabs.replaceChildren();",
+        "tabs.insertAdjacentHTML('afterbegin', commandSectionNavigationMarkup());",
         "missions.append(...Array.from(missionOperations.childNodes));",
         "finance.append(...Array.from(payout.childNodes));",
         "wrapCommandSectionCards(section);",

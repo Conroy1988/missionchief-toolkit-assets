@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "7.0.0",
+  "userscriptVersion": "9.0.0",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -10,7 +10,8 @@
     "Umbrella",
     "Factorio",
     "007 Intelligence",
-    "Hyrule Command"
+    "Hyrule Command",
+    "The Godfather"
   ],
   "documentedModes": [
     "Desktop",
@@ -47,10 +48,10 @@
       "action": "Open or close Vehicle Code Status"
     }
   ],
-  "featureCount": 17,
+  "featureCount": 18,
   "publicDocumentCount": 3,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 7.0.0 is ahead of dashboard version 6.0.0."
+    "Validated guarded source transition 9.0.0 is ahead of dashboard version 8.4.0."
   ]
 }

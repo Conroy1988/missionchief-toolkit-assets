@@ -1,49 +1,96 @@
 {
   "tabs": [
-    { "key": "skins", "label": "Skins" },
-    { "key": "tools", "label": "Tools" },
-    { "key": "resources", "label": "Resources" },
-    { "key": "ops", "label": "Ops" },
-    { "key": "payouts", "label": "Payouts" },
-    { "key": "discord", "label": "Finance" },
-    { "key": "places", "label": "Places" },
-    { "key": "settings", "label": "Settings" }
+    {
+      "key": "map",
+      "label": "Map",
+      "title": "Map Controls",
+      "description": "Visibility, overlays and map tools"
+    },
+    {
+      "key": "missions",
+      "label": "Missions",
+      "title": "Mission Operations",
+      "description": "Intelligence, resources and response tools"
+    },
+    {
+      "key": "finance",
+      "label": "Finance",
+      "title": "Finance Command",
+      "description": "Reports, payouts and financial archive"
+    },
+    {
+      "key": "locations",
+      "label": "Locations",
+      "title": "Saved Locations",
+      "description": "Jumps, bookmarks and map profiles"
+    },
+    {
+      "key": "appearance",
+      "label": "Appearance",
+      "title": "Appearance",
+      "description": "Interface themes and map skins"
+    },
+    {
+      "key": "settings",
+      "label": "Settings",
+      "title": "Toolkit Settings",
+      "description": "Devices, controls and recovery"
+    }
   ],
+  "legacyPanelSources": {
+    "map": ["tools"],
+    "missions": ["resources", "ops"],
+    "finance": ["discord", "payouts"],
+    "locations": ["places"],
+    "appearance": ["skins"],
+    "settings": ["settings"]
+  },
+  "legacyStateMigration": {
+    "skins": "appearance",
+    "tools": "map",
+    "resources": "missions",
+    "ops": "missions",
+    "payouts": "finance",
+    "discord": "finance",
+    "places": "locations",
+    "fleet": "missions"
+  },
   "placements": {
-    "skins": [],
-    "tools": [
+    "map": [
       "makeToggleButton('allianceBuildingsMapBlocker'",
       "makeToggleButton('transportWatcher'",
       "makeToggleButton('unitCommitment'",
       "makeToggleButton('missionAge'"
     ],
-    "resources": [
+    "missions": [
       "data-action=\"scan-transport-sweep\"",
       "makeToggleButton('resourceGap'",
-      "makeToggleButton('autoLoadAllVehicles'"
-    ],
-    "ops": [
+      "makeToggleButton('autoLoadAllVehicles'",
       "makeToggleButton('majorIncidentFeed'",
       "makeToggleButton('missionLockAudio'",
       "data-action=\"open-vehicle-status\""
     ],
-    "payouts": [
+    "finance": [
       "makeToggleButton('payoutFlash'",
-      "data-action=\"test-payout-flash\""
-    ],
-    "discord": [
+      "data-action=\"test-payout-flash\"",
       "data-setting=\"discord-webhook\"",
       "data-action=\"finance-archive-scan\""
     ],
-    "places": [
+    "locations": [
       "mcms-quick-list",
       "mcms-bookmark-list",
       "data-profile-list"
     ],
+    "appearance": [
+      "mcms-ui-theme-grid",
+      "${coreThemeButtons}",
+      "${serviceThemeButtons}"
+    ],
     "settings": [
       "makeToggleButton('shortcuts'",
       "data-device-layout-status",
-      "data-action=\"export-config\""
+      "data-action=\"export-config\"",
+      "makeActionToggleButton('toggle-command-bar'"
     ]
   },
   "singlePlacementTokens": [
@@ -63,7 +110,8 @@
     "Umbrella",
     "Factorio",
     "007 Intelligence",
-    "Hyrule Command"
+    "Hyrule Command",
+    "The Godfather"
   ],
   "narrowLabelCases": [
     {

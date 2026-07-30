@@ -100,6 +100,7 @@ jobs:
           set -euo pipefail
           node .github/scripts/test_ui_mount_integration.mjs 2>&1 | tee ui-mount-integration.log
           node .github/scripts/test_issue255_update_ui_write_suppression_runtime.mjs 2>&1 | tee issue255-update-ui-measurement.log
+          node .github/scripts/test_issue597_command_interface_runtime.mjs 2>&1 | tee issue597-command-interface.log
 
       - name: Run deterministic runtime contracts
         shell: bash
@@ -107,7 +108,7 @@ jobs:
           set -euo pipefail
           bash .github/scripts/run_userscript_preflight.sh --contracts \
             2>&1 | tee runtime-contracts.log
-          cat ui-mount-integration.log issue255-update-ui-measurement.log runtime-contracts.log > runtime-lane.log
+          cat ui-mount-integration.log issue255-update-ui-measurement.log issue597-command-interface.log runtime-contracts.log > runtime-lane.log
 
       - name: Upload runtime diagnostics
         if: always()

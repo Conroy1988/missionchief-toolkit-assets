@@ -1,16 +1,15 @@
 {
   "fixedNow": 1784203200000,
   "tabs": [
-    "discord",
-    "ops",
-    "payouts",
-    "places",
-    "resources",
-    "settings",
-    "skins",
-    "tools"
+    "appearance",
+    "finance",
+    "locations",
+    "map",
+    "missions",
+    "settings"
   ],
   "actions": [
+    "clear-command-search",
     "clear-payout-history",
     "discord-clear",
     "discord-generate-post",
@@ -40,7 +39,8 @@
     "scan-transport-sweep",
     "start-transport-sweep",
     "stop-transport-sweep",
-    "test-payout-flash"
+    "test-payout-flash",
+    "toggle-command-search"
   ],
   "dynamicActions": [
     "bookmark-delete",
@@ -53,6 +53,7 @@
     "profile-load",
     "profile-save",
     "quick-pin",
+    "toggle-command-bar",
     "toggle-economy"
   ],
   "settings": [

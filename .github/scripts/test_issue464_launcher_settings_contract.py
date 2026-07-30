@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 text = (ROOT / 'src' / 'MissionChief_Map_Command_Toolkit.user.js').read_text(encoding='utf-8')
 fixture = json.loads((ROOT / '.github/fixtures/main-style-source-headroom.json').read_text(encoding='utf-8'))
-line_limit = fixture['v8Candidate']['maxSourceLines']
+line_limit = fixture['v9Candidate']['maxSourceLines']
 
 def section(start, end):
     first = text.index(start)
@@ -28,4 +28,4 @@ runtime = re.search(r"version:\s*'([^']+)'", text).group(1)
 assert metadata == runtime
 assert tuple(int(part) for part in metadata.split('.')[:3]) >= (8, 0, 0)
 assert len(text.splitlines()) <= line_limit
-print('v8 launcher, boot and Mission Age contract passed.')
+print('Launcher, boot and Mission Age contract passed through v9.')

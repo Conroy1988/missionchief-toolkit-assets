@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 2,
+  "evidenceClass": "controlled-synthetic-browser",
+  "tool": "collect_controlled_browser_evidence.py",
+  "baseline": {
+    "version": "8.3.2",
+    "sourceSha256": "e719dd7f26686895cd1ba9e31dd006c775134af86000eb7d32800feea6843cfa",
+    "sourceBytes": 1656814,
+    "sourceLines": 25272,
+    "cssBytes": 683558,
+    "cssRuleEstimate": 5379,
+    "rootAttributeCount": 21
+  },
+  "environment": {
+    "browserExecutable": "google-chrome",
+    "samplesPerViewport": 11,
+    "note": "Browser timings vary by runner and are not performance budgets."
+  },
+  "scenarios": [
+    {
+      "label": "desktop",
+      "cssBytes": 683558,
+      "cssRuleEstimate": 5379,
+      "styleInsertSamplesMs": [
+        34.79999999998836,
+        12.700000000011642,
+        12.899999999965075,
+        12.800000000046566,
+        12.900000000023283,
+        12.700000000011642,
+        12.599999999976717,
+        12.900000000023283,
+        12.700000000011642,
+        12.900000000023283,
+        12.5
+      ],
+      "forcedStyleLayoutSamplesMs": [
+        96.29999999998836,
+        15.599999999976717,
+        9.700000000011642,
+        9.699999999953434,
+        9.899999999965075,
+        9.600000000034925,
+        9.700000000011642,
+        9.799999999988358,
+        9.699999999953434,
+        9.5,
+        9.600000000034925
+      ],
+      "rootAttributeContract": {
+        "attributeCount": 21,
+        "initialWrites": 21,
+        "unchangedWrites": 0,
+        "changedWrites": 1,
+        "repairedWrites": 1
+      },
+      "longTasksMs": [438],
+      "layoutShiftTotal": 0,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.0.0 Safari/537.36",
+      "viewport": {"width": 1440, "height": 900},
+      "styleInsertMedianMs": 12.75,
+      "styleInsertP90Ms": 12.9,
+      "forcedStyleLayoutMedianMs": 9.7,
+      "forcedStyleLayoutP90Ms": 9.9
+    },
+    {
+      "label": "tablet",
+      "cssBytes": 683558,
+      "cssRuleEstimate": 5379,
+      "styleInsertSamplesMs": [
+        13.700000000011642,
+        19.5,
+        15.200000000011642,
+        14.5,
+        14.299999999988358,
+        13.700000000011642,
+        13.799999999988358,
+        14.599999999976717,
+        14.5,
+        14,
+        13.700000000011642
+      ],
+      "forcedStyleLayoutSamplesMs": [
+        20.79999999998836,
+        11.400000000023283,
+        12.5,
+        13.899999999965075,
+        11.600000000034925,
+        11.900000000023283,
+        11,
+        11.900000000023283,
+        11.700000000011642,
+        11.600000000034925,
+        11.200000000011642
+      ],
+      "rootAttributeContract": {
+        "attributeCount": 21,
+        "initialWrites": 21,
+        "unchangedWrites": 0,
+        "changedWrites": 1,
+        "repairedWrites": 1
+      },
+      "longTasksMs": [324],
+      "layoutShiftTotal": 0,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.0.0 Safari/537.36",
+      "viewport": {"width": 1024, "height": 768},
+      "styleInsertMedianMs": 14.4,
+      "styleInsertP90Ms": 15.2,
+      "forcedStyleLayoutMedianMs": 11.65,
+      "forcedStyleLayoutP90Ms": 12.5
+    },
+    {
+      "label": "ios",
+      "cssBytes": 683558,
+      "cssRuleEstimate": 5379,
+      "styleInsertSamplesMs": [
+        20.899999999965075,
+        20.400000000023283,
+        15.5,
+        14.300000000046566,
+        14.200000000011642,
+        13.799999999988358,
+        13.700000000011642,
+        14.099999999976717,
+        13.299999999988358,
+        13.299999999988358,
+        13.899999999965075
+      ],
+      "forcedStyleLayoutSamplesMs": [
+        24.5,
+        14,
+        11.299999999988358,
+        11.699999999953434,
+        12.900000000023283,
+        14.700000000011642,
+        12.600000000034925,
+        11.800000000046566,
+        11.099999999976717,
+        12.299999999988358,
+        11.5
+      ],
+      "rootAttributeContract": {
+        "attributeCount": 21,
+        "initialWrites": 21,
+        "unchangedWrites": 0,
+        "changedWrites": 1,
+        "repairedWrites": 1
+      },
+      "longTasksMs": [339],
+      "layoutShiftTotal": 0,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.0.0 Safari/537.36",
+      "viewport": {"width": 390, "height": 844},
+      "styleInsertMedianMs": 14,
+      "styleInsertP90Ms": 15.5,
+      "forcedStyleLayoutMedianMs": 12.05,
+      "forcedStyleLayoutP90Ms": 14
+    }
+  ],
+  "conclusions": {
+    "rootWriteSuppressionVerified": true,
+    "cssTargetProven": false,
+    "liveMissionChiefEvidenceCaptured": false,
+    "nextAction": "Capture equivalent authenticated idle map, settings, mission-window and map-pan profiler scenarios before changing style delivery."
+  }
+}

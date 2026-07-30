@@ -1,0 +1,87 @@
+name: Live Performance Capture Bundle
+
+run-name: Live capture bundle · ${{ github.event_name }}
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tools/build-live-performance-capture.mjs"
+      - "tools/validate-live-performance-report.mjs"
+      - "tools/build-render-probe-userscript.mjs"
+      - "tools/mcms-performance-profiler.user.js"
+      - ".github/scripts/test_live_performance_capture_bundle.mjs"
+      - ".github/workflows/live-performance-capture-bundle.yml"
+      - "docs/audits/live-performance-capture-v8.3.2.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build exact v8.3.2 capture bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact repository state
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          show-progress: false
+
+      - name: Prove development-only boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet "$BASE_SHA" HEAD -- src dist MissionChief_Map_Command_Toolkit.user.js status; then
+            echo "::error::Live capture tooling must not change production source, distribution or release state."
+            git diff --stat "$BASE_SHA" HEAD -- src dist MissionChief_Map_Command_Toolkit.user.js status
+            exit 1
+          fi
+
+      - name: Install exact JavaScript parser
+        run: npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund acorn@8.15.0
+
+      - name: Validate capture tooling
+        run: |
+          set -euo pipefail
+          node --check tools/build-live-performance-capture.mjs
+          node --check tools/validate-live-performance-report.mjs
+          node --check .github/scripts/test_live_performance_capture_bundle.mjs
+          node .github/scripts/test_live_performance_capture_bundle.mjs
+
+      - name: Build authenticated capture package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p capture-output
+          node tools/build-live-performance-capture.mjs \
+            --source src/MissionChief_Map_Command_Toolkit.user.js \
+            --profiler tools/mcms-performance-profiler.user.js \
+            --output capture-output/MissionChief_Toolkit_v8.3.2_Authenticated_Performance_Capture.user.js \
+            --manifest capture-output/capture-manifest.json \
+            --instructions capture-output/INSTRUCTIONS.md
+          cp tools/validate-live-performance-report.mjs capture-output/validate-live-performance-report.mjs
+          node --check capture-output/MissionChief_Toolkit_v8.3.2_Authenticated_Performance_Capture.user.js
+          test "$(jq -r '.toolkitVersion' capture-output/capture-manifest.json)" = "8.3.2"
+          test "$(jq -r '.canonicalSourceSha256' capture-output/capture-manifest.json)" = "e719dd7f26686895cd1ba9e31dd006c775134af86000eb7d32800feea6843cfa"
+          test "$(jq -r '.stableUpdateUrlsRemoved' capture-output/capture-manifest.json)" = "true"
+          test "$(jq -r '.productionSourceModified' capture-output/capture-manifest.json)" = "false"
+          ! grep -Eq '^//[[:space:]]*@(downloadURL|updateURL)[[:space:]]+' capture-output/MissionChief_Toolkit_v8.3.2_Authenticated_Performance_Capture.user.js
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.user.js
+          cmp --silent src/MissionChief_Map_Command_Toolkit.user.js dist/MissionChief_Map_Command_Toolkit.txt
+          sha256sum capture-output/* > capture-output/SHA256SUMS.txt
+
+      - name: Upload authenticated capture bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: missionchief-toolkit-v8.3.2-authenticated-performance-capture
+          path: capture-output/
+          if-no-files-found: error
+          retention-days: 90

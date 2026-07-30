@@ -39,6 +39,16 @@ function replaceMetadata(source, name, value) {
   return source.replace(pattern, `// @${name.padEnd(12)} ${value}`);
 }
 
+function removeStableUpdateMetadata(source) {
+  return source
+    .split("\n")
+    .filter(line => {
+      const trimmed = line.trimStart();
+      return !trimmed.startsWith("// @downloadURL") && !trimmed.startsWith("// @updateURL");
+    })
+    .join("\n");
+}
+
 function captureGuideSource() {
   return `
 (function installMcmsCaptureGuide() {
@@ -131,11 +141,11 @@ export function buildCaptureBundle(toolkitSource, profilerSource) {
   bundle = replaceMetadata(bundle, "namespace", "https://github.com/Conroy1988/missionchief-toolkit-assets/performance-capture");
   bundle = replaceMetadata(bundle, "version", `${toolkitVersion}-capture.1`);
   bundle = replaceMetadata(bundle, "description", "Development-only authenticated MissionChief performance capture. Disable the stable Toolkit while installed.");
-  bundle = bundle.replace(/^//\s*@(?:downloadURL|updateURL)\s+[^\n]+\n?/gmu, "");
+  bundle = removeStableUpdateMetadata(bundle);
 
   let profilerBody = stripUserscriptMetadata(profilerSource);
   const startupAnchor = "getStartupMetrics: () => window.__MCMS_STARTUP_METRICS__ || {},";
-  if ((profilerBody.match(new RegExp(startupAnchor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gu")) || []).length !== 1) {
+  if (profilerBody.split(startupAnchor).length - 1 !== 1) {
     throw new Error("Profiler startup-metrics anchor drifted");
   }
   profilerBody = profilerBody.replace(
@@ -150,7 +160,10 @@ export function buildCaptureBundle(toolkitSource, profilerSource) {
   const prelude = `\n// Development capture profile: ${CAPTURE_PROFILE}\n${profilerBody}\n${captureGuideSource()}\n`;
   bundle = bundle.slice(0, insertion) + prelude + bundle.slice(insertion);
 
-  if (/^\/\/\s*@(downloadURL|updateURL)\s+/mu.test(bundle)) throw new Error("Capture bundle must not carry stable update URLs");
+  const metadataBlock = bundle.slice(0, bundle.indexOf(metadataEndMarker));
+  if (metadataBlock.includes("@downloadURL") || metadataBlock.includes("@updateURL")) {
+    throw new Error("Capture bundle must not carry stable update URLs");
+  }
   if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"updateUI\")")) throw new Error("updateUI probe missing");
   if (!bundle.includes("globalThis.__MCMS_PROFILER__?.beginRender?.(\"renderOperationalPanels\")")) throw new Error("operational render probe missing");
   if (!bundle.includes(canonicalSourceSha256)) throw new Error("Canonical source authority missing from capture bundle");

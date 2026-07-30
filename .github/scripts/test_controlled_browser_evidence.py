@@ -17,14 +17,14 @@ source = "\n".join([
     '// ==UserScript==',
     '// @version      8.3.2',
     '// ==/UserScript==',
-    'function installMainStyles() {',
-    '    addStyle(`.mcms-card { display: block; }\\n.mcms-row { color: red; }`);',
-    '}',
-    'function applyRootAttributes() {',
-    '    const root = document.documentElement;',
-    *[f"    setAttributeIfChanged(root, '{name}', 'value');" for name in attributes],
-    '}',
-    'function getStrongMarkerSignal() {}',
+    '    function installMainStyles() {',
+    '        addStyle(`.mcms-card { display: block; }\\n.mcms-row { color: red; }`);',
+    '    }',
+    '    function applyRootAttributes() {',
+    '        const root = document.documentElement;',
+    *[f"        setAttributeIfChanged(root, '{name}', 'value');" for name in attributes],
+    '    }',
+    '    function getStrongMarkerSignal() {}',
 ])
 
 assert module.toolkit_version(source) == '8.3.2'

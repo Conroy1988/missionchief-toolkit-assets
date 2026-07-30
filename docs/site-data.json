@@ -89,6 +89,25 @@
             "feed",
             "navigation"
           ]
+        },
+        {
+          "name": "Operational Pressure Board",
+          "summary": "Opens from the map with shortcut B and reconciles current mission demand against the available personal fleet as one operation.",
+          "details": [
+            "Evidence-ordered Top Actions",
+            "Global specialist-vehicle allocation",
+            "Fleet Conflict and reserve-risk warnings",
+            "Patient and prisoner transport pressure",
+            "Focus, Open and Pin navigation only",
+            "Manual mention-safe Discord SITREP"
+          ],
+          "visual": "pressure-board",
+          "tags": [
+            "missions",
+            "vehicles",
+            "discord",
+            "shortcut"
+          ]
         }
       ]
     },
@@ -514,6 +533,10 @@
     {
       "key": "V",
       "action": "Open or close Vehicle Code Status"
+    },
+    {
+      "key": "B",
+      "action": "Open or close Operational Pressure Board"
     }
   ],
   "modes": [

@@ -1,5 +1,19 @@
 # Changelog
 
+## [9.1.0] - 2026-07-30
+
+### Operational Pressure Board and Discord SITREP
+
+- Adds a persistent **Pressure Board** button to the map Dashboard group with shortcut `B`, explicit `ACTIVE` / `OFF` state and a matching Missions-menu control.
+- Reconciles current personal and joined alliance mission demand against the available personal fleet as one operation, preventing the same specialist vehicle from being counted for several missions at once.
+- Presents evidence-ordered Top Actions, confirmed resource shortfall, specialist Fleet Conflicts, reserve risk and patient/prisoner transport pressure.
+- Adds read-only **Focus**, **Open** and **Pin** actions; no vehicle is selected or dispatched.
+- Adds a manual **Operational SITREP** using the same saved Finance Discord webhook and the same pressure snapshot displayed on the board.
+- Suppresses Discord mentions, excludes webhook data from the payload and keeps the embed inside Discord field and total-character limits.
+- Reuses existing mission snapshots, vehicle data, refresh ownership and Discord delivery infrastructure with no new polling loop, observer, managed scheduler or network-request site.
+- Preserves shared geometry across all eight interface themes, Desktop, Tablet and iOS bottom-sheet layouts, with 44px mobile touch targets and safe-area handling.
+- Adds Issue #601 fixture-backed allocation, conflict, ordering, payload, DOM interaction, theme-geometry and responsive-accessibility contracts.
+
 ## [9.0.1] - 2026-07-30
 
 ### Incident Command Wire motion stability

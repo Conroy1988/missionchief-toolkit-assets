@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v900) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v910) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,20 +58,22 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.0.0
+## Current interface — v9.1.0
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.0.0` rebuilds the Toolkit around six task-led sections instead of the previous feature-by-feature tab history.
+Version `9.1.0` keeps the six-section Command Interface and adds a map-native Operational Pressure Board. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
 
 - **Map** contains visibility, overlays and map tools.
-- **Missions** contains intelligence, resource planning, Patient Transport Sweep and response operations.
+- **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.
 - **Finance** contains Discord reports, Payout Flash and the local Financial Archive.
 - **Locations** contains quick jumps, bookmarks and map profiles.
 - **Appearance** clearly separates Toolkit interface themes from operational map skins.
 - **Settings** contains device layout, dock position, keyboard controls, Economy Mode, command-bar visibility and recovery.
 
-The single map launcher, explicit command states, current-section search and responsive navigation behave consistently under every interface theme. The verified release version, SHA-256 identity, public distribution and private recovery evidence remain recorded in the [Release Control Panel](status/README.md).
+The board reconciles active personal and joined alliance missions against the available personal fleet so the same specialist vehicle cannot satisfy several missions at once. It shows Top Actions, shared resource shortfalls, Fleet Conflicts, reserve risk and patient/prisoner transport pressure. **Focus**, **Open** and **Pin** remain read-only navigation actions; the board never selects or dispatches vehicles.
+
+The matching **Operational SITREP** is posted only when the user selects **Generate & Post Operational SITREP**. It reuses the saved Finance Discord webhook, suppresses mentions and sends the same evidence snapshot shown on the board. The single map launcher, explicit command states, current-section search and responsive navigation continue to behave consistently under every interface theme.
 
 ---
 
@@ -82,6 +84,8 @@ The single map launcher, explicit command states, current-section search and res
 | Capability | Operational purpose |
 |---|---|
 | **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
+| **Operational Pressure Board** | Opens from the map with shortcut `B` and combines mission priority, shared fleet demand, reserve risk and transport pressure into one evidence-led board |
+| **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |
 | **Unit Commitment** | Presents committed response context without replacing native dispatch controls |

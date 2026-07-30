@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-30-issue-597-command-interface-v9",
-  "rationale": "Approve the measured stylesheet growth for the six-section v9 command interface while retaining zero-growth budgets for managed schedulers, DOM lookup primitives, HTML assignment sites, observers and network requests.",
+  "revision": "2026-07-30-issue-601-operational-pressure-board-v9-1",
+  "rationale": "Approve the measured Issue #601 command-board and responsive-style growth while retaining zero-growth budgets for managed schedulers, direct DOM lookup primitives, HTML assignment sites, observers and network requests.",
   "transitionApproval": {
-    "issue": 597,
-    "version": "9.0.0",
+    "issue": 601,
+    "version": "9.1.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "Shared Desktop, Tablet and iPhone command geometry, six task-led sections, grouped map controls and eight-theme presentation verified across 45 real Chromium renders.",
+    "scope": "Operational Pressure Board, global one-vehicle allocation, map and Missions controls, manual mention-safe Discord SITREP, eight-theme geometry and Desktop, Tablet and iOS touch contracts.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -208,6 +208,13 @@
       "version": "9.0.0",
       "approvedNetworkRequestDelta": 0,
       "scope": "Six-section command interface, grouped map controls and shared responsive geometry across every supported theme and device class.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 599,
+      "version": "9.0.1",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "Incident Command Wire reconciliation ownership fix with continuous no-rewind runtime proof.",
       "approvedMutationObserverDelta": 0
     }
   ]

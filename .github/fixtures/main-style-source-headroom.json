@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 599,
-    "version": "9.0.1",
-    "sourceBytes": 1717926,
-    "sourceLines": 26416,
-    "sourceSha256": "948df0e7058a5fcce8fe3ad1c065f13ca41aa094177adc32872856af4db0ad5d",
-    "templateBytes": 718887,
-    "templateLines": 8581,
-    "templateSha256": "edddf17eea774c7974c26788209765d66fa746b53db385577daa330863bbb525",
-    "canonicalCssSha256": "312d6c25bf3ab40ead8022cf84616c1be2ae789c68de875a62c0b8ae6b546ce1",
-    "maxSourceBytes": 1737361,
-    "maxSourceLines": 26654,
+    "issue": 601,
+    "version": "9.1.0",
+    "sourceBytes": 1784975,
+    "sourceLines": 27538,
+    "sourceSha256": "c5d554330e01bbfd7386c6cc12ea73689b27cc39a998432f06fb28bd5db10b08",
+    "templateBytes": 743619,
+    "templateLines": 8977,
+    "templateSha256": "2404f182780f805b5ecd91bbeab621b78a462b0e258d092a45bb70d7dae902ab",
+    "canonicalCssSha256": "d4b3e3bf6fef4c25c53eabb5b3dda8fa04fcde7a3130f0114afd58db60a57565",
+    "maxSourceBytes": 1809975,
+    "maxSourceLines": 27788,
     "minTemplateBytes": 500000,
-    "baseline": "9.0.0",
+    "baseline": "9.0.1",
     "approvedGrowth": {
-      "sourceBytes": 319,
-      "sourceLines": 5,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 67049,
+      "sourceLines": 1122,
+      "templateBytes": 24732,
+      "templateLines": 396
     },
-    "scope": "Issue #599 Incident Command Wire reconciliation ownership fix and no-rewind runtime coverage"
+    "scope": "Issue #601 Operational Pressure Board, global fleet allocation, manual Discord SITREP and shared Desktop, Tablet and iOS geometry"
   }
 }

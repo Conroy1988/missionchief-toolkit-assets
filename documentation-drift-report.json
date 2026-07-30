@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "9.0.0",
+  "userscriptVersion": "9.1.0",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -46,12 +46,16 @@
     {
       "key": "V",
       "action": "Open or close Vehicle Code Status"
+    },
+    {
+      "key": "B",
+      "action": "Open or close Operational Pressure Board"
     }
   ],
-  "featureCount": 18,
+  "featureCount": 19,
   "publicDocumentCount": 3,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 9.0.0 is ahead of dashboard version 8.4.0."
+    "Validated guarded source transition 9.1.0 is ahead of dashboard version 9.0.1."
   ]
 }

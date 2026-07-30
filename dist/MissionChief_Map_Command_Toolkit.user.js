@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.0.1
+// @version      9.1.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,13 +453,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.0.1',
+        version: '9.1.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
         toastId: 'mc-map-command-toolkit-toast',
         payoutFlashId: 'mc-map-command-toolkit-payout-flash',
         vehicleStatusId: 'mc-map-command-toolkit-vehicle-status',
+        pressureBoardId: 'mc-map-command-toolkit-pressure-board',
         majorIncidentFeedId: 'mc-map-command-toolkit-major-incident-feed',
         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
         customVehicleBadgeStyleId: 'mcms-custom-vehicle-badge-style',
@@ -1250,6 +1251,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const resourceGapLabels = new Map();
     const resourceGapAnalysisCache = new Map();
     let resourceGapVehicleContextCache = { key: '', createdAt: 0, available: [] };
+    let operationalPressureCache = { key: '', snapshot: null };
+    let operationalPressureRefreshBusy = false;
+    let operationalSitrepBusy = false;
+    let operationalSitrepStatus = 'Operational SITREP ready for manual posting.';
+    let operationalSitrepStatusTone = 'neutral';
     const transportSweepRuntime = {
         running: false,
         stopRequested: false,
@@ -1379,6 +1385,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         stuckDetector: { enabled: true, thresholdMin: 20 },
         missionSpawn: { enabled: true },
         resourceGap: { enabled: false, radiusMi: 25 },
+        pressureBoard: { pinnedMissionIds: [] },
         transportSweep: { delayMs: 2000, maxPerRun: 25 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
         discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
@@ -1404,6 +1411,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
         missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
         resourceGap: { ...base.resourceGap, ...(parsed.resourceGap || {}) },
+        pressureBoard: { ...base.pressureBoard, ...(parsed.pressureBoard || {}) },
         transportSweep: { ...base.transportSweep, ...(parsed.transportSweep || {}) },
         majorIncidentFeed: { ...base.majorIncidentFeed, ...(parsed.majorIncidentFeed || {}) },
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
@@ -1449,6 +1457,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.missionSpawn.enabled = merged.missionSpawn.enabled !== false;
         merged.resourceGap.enabled = Boolean(merged.resourceGap.enabled);
         merged.resourceGap.radiusMi = RESOURCE_GAP_RADIUS_OPTIONS.includes(Number(merged.resourceGap.radiusMi)) ? Number(merged.resourceGap.radiusMi) : 25;
+        merged.pressureBoard.pinnedMissionIds = Array.from(new Set(
+        (Array.isArray(merged.pressureBoard.pinnedMissionIds) ? merged.pressureBoard.pinnedMissionIds : [])
+            .map(normaliseMissionId)
+            .filter(value => value !== null)
+            .map(String)
+        )).slice(-12);
         merged.transportSweep.delayMs = TRANSPORT_SWEEP_DELAY_OPTIONS.includes(Number(merged.transportSweep.delayMs)) ? Number(merged.transportSweep.delayMs) : 2000;
         merged.transportSweep.maxPerRun = Math.round(clamp(merged.transportSweep.maxPerRun, 1, TRANSPORT_SWEEP_MAX_REQUESTS, 25));
         merged.payoutFlash.enabled = merged.payoutFlash.enabled !== false;
@@ -1791,7 +1805,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
         .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -6261,6 +6275,402 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-table-head { min-height:28px !important; font-size:7.3px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-code { width:32px !important; height:25px !important; font-size:11px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-status { font-size:9.6px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-count { font-size:11.5px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-total-row { min-height:37px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.vehicleStatusId} .mcms-vcs-footnote { font-size:7.2px !important; }
         @media (prefers-reduced-motion:reduce) {#${SCRIPT.vehicleStatusId}.mcms-open,
         #${SCRIPT.vehicleStatusId}.mcms-vcs-loading .mcms-vcs-refresh { animation:none !important; }
+        }
+        #${SCRIPT.panelId} .mcms-operational-pressure-summary {
+            display:grid !important;
+            gap:3px !important;
+            margin-bottom:7px !important;
+            padding:9px 10px !important;
+            border:1px solid rgba(83,176,238,.25) !important;
+            border-radius:9px !important;
+            background:linear-gradient(135deg,rgba(24,104,158,.10),rgba(255,255,255,.025)) !important;
+        }#${SCRIPT.panelId} .mcms-operational-pressure-summary strong {
+            color:#dff4ff !important;
+            font-size:10px !important;
+            font-weight:950 !important;
+        }#${SCRIPT.panelId} .mcms-operational-pressure-summary span {
+            color:rgba(255,255,255,.68) !important;
+            font-size:8.5px !important;
+            font-weight:800 !important;
+            line-height:1.35 !important;
+        }#${SCRIPT.panelId} .mcms-operational-pressure-summary small {
+            color:rgba(255,255,255,.46) !important;
+            font-size:7.5px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#55c8ff;
+            --mcms-pressure-accent-rgb:85,200,255;
+            --mcms-pressure-bg:linear-gradient(150deg,rgba(12,23,34,.99),rgba(5,10,16,.995));
+            --mcms-pressure-panel:rgba(255,255,255,.052);
+            --mcms-pressure-line:rgba(255,255,255,.13);
+            --mcms-pressure-text:#f3f8fc;
+            --mcms-pressure-muted:#96aabe;
+            display:none !important;
+            position:fixed !important;
+            z-index:1006 !important;
+            top:68px !important;
+            right:14px !important;
+            width:min(720px,calc(100vw - 28px)) !important;
+            max-height:calc(100vh - 84px) !important;
+            overflow:auto !important;
+            padding:13px !important;
+            border:1px solid rgba(var(--mcms-pressure-accent-rgb),.52) !important;
+            border-radius:14px !important;
+            background:var(--mcms-pressure-bg) !important;
+            color:var(--mcms-pressure-text) !important;
+            box-shadow:0 22px 58px rgba(0,0,0,.58),inset 4px 0 var(--mcms-pressure-accent) !important;
+            backdrop-filter:blur(11px) saturate(118%) !important;
+            -webkit-backdrop-filter:blur(11px) saturate(118%) !important;
+            isolation:isolate !important;
+            overscroll-behavior:contain !important;
+        }#${SCRIPT.pressureBoardId},
+        #${SCRIPT.pressureBoardId} * { box-sizing:border-box !important; }#${SCRIPT.pressureBoardId}.mcms-open {
+            display:block !important;
+            animation:mcms-pressure-open 180ms cubic-bezier(.2,.78,.28,1) both !important;
+        }
+        @keyframes mcms-pressure-open {
+            from { opacity:0; transform:translateY(-10px) scale(.985); }
+            to { opacity:1; transform:translateY(0) scale(1); }
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-head {
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) auto !important;
+            align-items:center !important;
+            gap:10px !important;
+            padding-bottom:10px !important;
+            border-bottom:1px solid var(--mcms-pressure-line) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-heading { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-heading strong {
+            display:block !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:15px !important;
+            font-weight:950 !important;
+            line-height:1.12 !important;
+            letter-spacing:.48px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-heading span {
+            display:block !important;
+            margin-top:3px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:8.5px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-head-actions {
+            display:flex !important;
+            align-items:center !important;
+            gap:6px !important;
+        }#${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close) {
+            display:grid !important;
+            place-items:center !important;
+            min-width:32px !important;
+            height:32px !important;
+            margin:0 !important;
+            padding:0 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:rgba(255,255,255,.072) !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:16px !important;
+            font-weight:950 !important;
+            line-height:1 !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-sitrep {
+            min-width:66px !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:8px !important;
+            letter-spacing:.7px !important;
+        }#${SCRIPT.pressureBoardId} :is(button,[role="button"]):hover,
+        #${SCRIPT.pressureBoardId} :is(button,[role="button"]):focus-visible {
+            border-color:var(--mcms-pressure-accent) !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.16) !important;
+            outline:2px solid rgba(var(--mcms-pressure-accent-rgb),.42) !important;
+            outline-offset:1px !important;
+        }#${SCRIPT.pressureBoardId} button:disabled {
+            opacity:.58 !important;
+            cursor:wait !important;
+        }#${SCRIPT.pressureBoardId}.mcms-pressure-loading .mcms-pressure-refresh {
+            animation:mcms-vcs-spin .8s linear infinite !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-meta {
+            display:flex !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            padding:8px 2px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:8px !important;
+            font-weight:850 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-hero {
+            display:grid !important;
+            grid-template-columns:auto minmax(0,1fr) !important;
+            align-items:center !important;
+            gap:10px !important;
+            padding:10px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:10px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-signal {
+            padding:5px 8px !important;
+            border-radius:999px !important;
+            background:rgba(var(--mcms-pressure-accent-rgb),.16) !important;
+            color:var(--mcms-pressure-accent) !important;
+            font-size:7.5px !important;
+            font-weight:950 !important;
+            letter-spacing:.45px !important;
+            text-transform:uppercase !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-hero > strong {
+            color:var(--mcms-pressure-text) !important;
+            font-size:10px !important;
+            font-weight:900 !important;
+            line-height:1.35 !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="critical"] .mcms-pressure-hero {
+            border-color:rgba(255,83,83,.62) !important;
+            background:rgba(105,12,12,.28) !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="critical"] .mcms-pressure-signal {
+            background:rgba(255,72,72,.18) !important;
+            color:#ff9d9d !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="pressured"] .mcms-pressure-hero {
+            border-color:rgba(255,191,64,.54) !important;
+            background:rgba(111,67,7,.24) !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="pressured"] .mcms-pressure-signal {
+            background:rgba(255,190,58,.16) !important;
+            color:#ffd27b !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="stable"] .mcms-pressure-hero {
+            border-color:rgba(66,218,133,.50) !important;
+            background:rgba(10,83,45,.22) !important;
+        }#${SCRIPT.pressureBoardId}[data-severity="stable"] .mcms-pressure-signal {
+            background:rgba(66,218,133,.15) !important;
+            color:#87eab2 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-kpis {
+            display:grid !important;
+            grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+            gap:6px !important;
+            margin-top:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-kpis span {
+            min-width:0 !important;
+            padding:8px 6px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:9px !important;
+            background:rgba(255,255,255,.035) !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:900 !important;
+            text-align:center !important;
+            text-transform:uppercase !important;
+            letter-spacing:.35px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-kpis b {
+            display:block !important;
+            margin-bottom:3px !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:16px !important;
+            font-weight:950 !important;
+            line-height:1 !important;
+            font-variant-numeric:tabular-nums !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-body {
+            display:grid !important;
+            grid-template-columns:minmax(0,1.12fr) minmax(240px,.88fr) !important;
+            gap:8px !important;
+            margin-top:8px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-section {
+            min-width:0 !important;
+            padding:9px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:10px !important;
+            background:rgba(0,0,0,.13) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-section:first-child {
+            grid-row:span 2 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-section-head {
+            display:flex !important;
+            align-items:baseline !important;
+            justify-content:space-between !important;
+            gap:8px !important;
+            margin-bottom:7px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-section-head strong {
+            color:var(--mcms-pressure-text) !important;
+            font-size:9px !important;
+            font-weight:950 !important;
+            letter-spacing:.25px !important;
+            text-transform:uppercase !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-section-head span {
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:850 !important;
+            text-align:right !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-actions,
+        #${SCRIPT.pressureBoardId} .mcms-pressure-capacity {
+            display:grid !important;
+            gap:6px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action {
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) auto !important;
+            gap:8px !important;
+            padding:8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action.mcms-pressure-pinned {
+            border-color:rgba(var(--mcms-pressure-accent-rgb),.58) !important;
+            box-shadow:inset 3px 0 var(--mcms-pressure-accent) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action-copy { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-action-title {
+            min-width:0 !important;
+            overflow:hidden !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:9px !important;
+            font-weight:950 !important;
+            text-overflow:ellipsis !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action-title span {
+            margin-right:5px !important;
+            color:var(--mcms-pressure-accent) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action-meta,
+        #${SCRIPT.pressureBoardId} .mcms-pressure-action-reason {
+            margin-top:3px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7px !important;
+            font-weight:800 !important;
+            line-height:1.3 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action-reason { color:rgba(255,218,151,.82) !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-action-controls {
+            display:flex !important;
+            align-items:center !important;
+            gap:4px !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
+            min-width:42px !important;
+            min-height:30px !important;
+            padding:4px 7px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:7px !important;
+            background:rgba(255,255,255,.06) !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:7px !important;
+            font-weight:900 !important;
+            cursor:pointer !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row {
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) auto !important;
+            align-items:center !important;
+            gap:8px !important;
+            min-height:38px !important;
+            padding:6px 7px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:var(--mcms-pressure-panel) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row span { min-width:0 !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row strong {
+            display:block !important;
+            overflow:hidden !important;
+            color:var(--mcms-pressure-text) !important;
+            font-size:8px !important;
+            font-weight:900 !important;
+            text-overflow:ellipsis !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row small {
+            display:block !important;
+            margin-top:2px !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:6.7px !important;
+            font-weight:800 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row > b {
+            color:#95e8b5 !important;
+            font-size:8px !important;
+            font-weight:950 !important;
+            white-space:nowrap !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="warning"] > b { color:#ffd17a !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="critical"] {
+            border-color:rgba(255,83,83,.45) !important;
+            background:rgba(101,13,13,.22) !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-capacity-row[data-tone="critical"] > b { color:#ff9e9e !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-transport p,
+        #${SCRIPT.pressureBoardId} .mcms-pressure-empty {
+            margin:0 !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7.5px !important;
+            font-weight:800 !important;
+            line-height:1.4 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-empty {
+            padding:10px !important;
+            border:1px dashed var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            text-align:center !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-status,
+        #${SCRIPT.pressureBoardId} .mcms-pressure-foot {
+            margin-top:8px !important;
+            padding:7px 8px !important;
+            border:1px solid var(--mcms-pressure-line) !important;
+            border-radius:8px !important;
+            background:rgba(255,255,255,.03) !important;
+            color:var(--mcms-pressure-muted) !important;
+            font-size:7.5px !important;
+            font-weight:800 !important;
+            line-height:1.38 !important;
+        }#${SCRIPT.pressureBoardId} .mcms-pressure-status[data-tone="good"] { border-color:rgba(71,220,136,.48) !important; color:#96eab9 !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-status[data-tone="bad"] { border-color:rgba(255,83,83,.52) !important; color:#ffaaaa !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-status[data-tone="busy"] { border-color:rgba(var(--mcms-pressure-accent-rgb),.52) !important; color:var(--mcms-pressure-accent) !important; }#${SCRIPT.pressureBoardId} .mcms-pressure-foot {
+            margin-top:6px !important;
+            border:0 !important;
+            background:transparent !important;
+            color:rgba(255,255,255,.42) !important;
+            text-align:center !important;
+        }html[data-mcms-ui-theme="mapCommand"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#55c8ff;--mcms-pressure-accent-rgb:85,200,255;
+        }html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#ffe600;--mcms-pressure-accent-rgb:255,230,0;--mcms-pressure-bg:linear-gradient(150deg,rgba(6,9,12,.995),rgba(11,15,18,.995));
+        }html[data-mcms-ui-theme="fallout4"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#8cff9f;--mcms-pressure-accent-rgb:140,255,159;--mcms-pressure-bg:linear-gradient(150deg,rgba(8,22,12,.995),rgba(3,11,6,.995));
+        }html[data-mcms-ui-theme="umbrella"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#ff4b58;--mcms-pressure-accent-rgb:255,75,88;--mcms-pressure-bg:linear-gradient(150deg,rgba(16,18,21,.995),rgba(5,6,8,.995));
+        }html[data-mcms-ui-theme="factorio"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#ffad5b;--mcms-pressure-accent-rgb:255,173,91;--mcms-pressure-bg:linear-gradient(150deg,rgba(48,47,41,.995),rgba(20,21,18,.995));
+        }html[data-mcms-ui-theme="bond007"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#d9bd7a;--mcms-pressure-accent-rgb:217,189,122;--mcms-pressure-bg:linear-gradient(150deg,rgba(13,17,22,.995),rgba(2,4,7,.998));
+        }html[data-mcms-ui-theme="hyrule"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#7de4ff;--mcms-pressure-accent-rgb:125,228,255;--mcms-pressure-bg:linear-gradient(150deg,rgba(15,37,43,.995),rgba(7,20,22,.998));
+        }html[data-mcms-ui-theme="godfather"] #${SCRIPT.pressureBoardId} {
+            --mcms-pressure-accent:#d4ad68;--mcms-pressure-accent-rgb:212,173,104;--mcms-pressure-bg:linear-gradient(150deg,rgba(34,22,17,.995),rgba(13,7,6,.998));
+        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} {
+            top:max(10px,env(safe-area-inset-top)) !important;
+            right:10px !important;
+            width:min(700px,calc(100vw - 20px)) !important;
+            max-height:calc(100vh - 20px - env(safe-area-inset-bottom)) !important;
+            padding:14px !important;
+        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close),
+        html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
+            min-width:44px !important;
+            min-height:44px !important;
+        }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:76px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading strong { font-size:17px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading span,
+        html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-meta { font-size:10px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-title { font-size:11px !important; }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-action-meta,.mcms-pressure-action-reason,.mcms-pressure-section-head span,.mcms-pressure-capacity-row small,.mcms-pressure-transport p,.mcms-pressure-status,.mcms-pressure-foot) { font-size:9px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} {
+            top:auto !important;
+            right:0 !important;
+            bottom:0 !important;
+            left:0 !important;
+            width:100vw !important;
+            max-width:100vw !important;
+            max-height:min(88vh,calc(100dvh - env(safe-area-inset-top) - 8px)) !important;
+            padding:12px 9px calc(12px + env(safe-area-inset-bottom)) !important;
+            border-right:0 !important;
+            border-bottom:0 !important;
+            border-left:0 !important;
+            border-radius:16px 16px 0 0 !important;
+            overflow-x:hidden !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId}.mcms-open {
+            animation:mcms-pressure-mobile-open 190ms cubic-bezier(.2,.78,.28,1) both !important;
+        }
+        @keyframes mcms-pressure-mobile-open {
+            from { opacity:0; transform:translateY(24px); }
+            to { opacity:1; transform:translateY(0); }
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading strong { font-size:14px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-heading span { font-size:8.5px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-meta {
+            align-items:flex-start !important;
+            flex-direction:column !important;
+            gap:2px !important;
+            font-size:8px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-hero {
+            grid-template-columns:1fr !important;
+            gap:6px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-signal { justify-self:start !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-kpis { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-body { grid-template-columns:1fr !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-section:first-child { grid-row:auto !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action {
+            grid-template-columns:1fr !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls {
+            display:grid !important;
+            grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close),
+        html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
+            min-width:44px !important;
+            min-height:44px !important;
+        }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-sitrep { min-width:68px !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-title { font-size:10px !important; white-space:normal !important; }html[data-mcms-mobile-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-action-meta,.mcms-pressure-action-reason,.mcms-pressure-capacity-row small,.mcms-pressure-transport p,.mcms-pressure-status,.mcms-pressure-foot) { font-size:8px !important; }html:is([data-mcms-mobile-active="true"],[data-mcms-tablet-active="true"]) #${SCRIPT.pressureBoardId} :is(button,[role="button"]) {
+            touch-action:manipulation !important;
+            -webkit-touch-callout:none !important;
+        }
+        @media (prefers-reduced-motion:reduce) {
+            #${SCRIPT.pressureBoardId}.mcms-open,
+            #${SCRIPT.pressureBoardId}.mcms-pressure-loading .mcms-pressure-refresh { animation:none !important; }
         }
         @keyframes mcmsIncidentWireScan {
             0% { transform:translateX(-120%); opacity:0; }
@@ -14252,7 +14662,13 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const signal = normaliseSearchText(vehicleSearchSignal(vehicle));
         if (!signal) continue;
         const tokens = new Set(signal.split(' ').map(resourceSearchToken).filter(Boolean));
-        const prepared = { vehicle, signal, tokens, point: vehicleCoordinates(vehicle, markerById) };
+        const prepared = {
+            id: vehicleRecordId(vehicle) || `available-${available.length + 1}`,
+            vehicle,
+            signal,
+            tokens,
+            point: vehicleCoordinates(vehicle, markerById)
+        };
         available.push(prepared);
         for (const token of tokens) {
             const bucket = byToken.get(token) || [];
@@ -14336,6 +14752,312 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         resourceGapAnalysisCache.set(cacheKey, analysis);
         return analysis;
+    }
+
+    function operationalPressureRequirementKey(value) {
+        const parts = requirementSearchParts(value);
+        return parts.acronyms[0] || parts.cleaned || normaliseSearchText(value) || 'unknown-resource';
+    }
+
+    function formatOperationalPressureDuration(ms) {
+        const minutes = Math.max(0, Math.floor(Number(ms) / 60000));
+        if (minutes >= 24 * 60) return `${Math.floor(minutes / (24 * 60))}d ${Math.floor((minutes % (24 * 60)) / 60)}h`;
+        if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+        return `${minutes}m`;
+    }
+
+    function calculateOperationalPressureModel(missions, context, options = {}) {
+        const now = Number(options.now) || Date.now();
+        const radiusMi = Math.max(1, Number(options.radiusMi) || 25);
+        const pinnedMissionIds = new Set((options.pinnedMissionIds || []).map(String));
+        const available = Array.isArray(context?.available) ? context.available : [];
+        const missionRows = [];
+        const missionPressure = new Map();
+        let locationEvidenceMissing = false;
+
+        for (const mission of Array.isArray(missions) ? missions : []) {
+            const missionId = String(mission?.missionId || '');
+            if (!missionId) continue;
+            const ageMs = Number.isFinite(Number(mission.createdAt)) ? Math.max(0, now - Number(mission.createdAt)) : 0;
+            const pressure = {
+                mission,
+                missionId,
+                required: 0,
+                assigned: 0,
+                shortfall: 0,
+                ageMs,
+                unattended: mission.source === 'personal' && Math.max(0, Number(mission.unitsTotal) || 0) === 0,
+                isStuck: Boolean(mission.isStuck),
+                stuckForMs: Math.max(0, Number(mission.stuckForMs) || 0),
+                transport: mission.transport || null
+            };
+            missionPressure.set(missionId, pressure);
+            const missionPoint = Number.isFinite(Number(mission.lat)) && Number.isFinite(Number(mission.lng))
+                ? { lat: Number(mission.lat), lng: Number(mission.lng) }
+                : null;
+            if (!missionPoint && (mission.requirements || []).length) locationEvidenceMissing = true;
+            for (const requirement of mission.requirements || []) {
+                const count = Math.max(1, Math.round(Number(requirement?.count) || 1));
+                const name = String(requirement?.name || 'Required vehicle').trim() || 'Required vehicle';
+                const parts = requirementSearchParts(name);
+                const candidates = [];
+                for (const [preparedIndex, prepared] of available.entries()) {
+                    if (!preparedVehicleMatchesRequirement(prepared, parts)) continue;
+                    const distance = haversineMiles(missionPoint, prepared.point);
+                    if (distance === null) {
+                        locationEvidenceMissing = true;
+                        continue;
+                    }
+                    if (distance > radiusMi) continue;
+                    candidates.push({ id: String(prepared.id ?? `available-${preparedIndex + 1}`), distance });
+                }
+                candidates.sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id));
+                missionRows.push({
+                    mission,
+                    missionId,
+                    name,
+                    key: operationalPressureRequirementKey(name),
+                    count,
+                    candidates,
+                    assigned: 0,
+                    shortfall: 0
+                });
+                pressure.required += count;
+            }
+        }
+
+        const slots = [];
+        for (const row of missionRows) {
+            const pressure = missionPressure.get(row.missionId);
+            const baseUrgency =
+                (pressure?.unattended ? 80 : 0) +
+                (pressure?.isStuck ? 95 : 0) +
+                (pressure?.transport ? 40 : 0) +
+                Math.min(80, Math.floor((pressure?.ageMs || 0) / 3600000) * 4);
+            for (let index = 0; index < row.count; index += 1) slots.push({ row, baseUrgency, slot: index });
+        }
+        slots.sort((left, right) =>
+            left.row.candidates.length - right.row.candidates.length ||
+            right.baseUrgency - left.baseUrgency ||
+            left.row.key.localeCompare(right.row.key) ||
+            left.slot - right.slot
+        );
+
+        const allocatedVehicleIds = new Set();
+        for (const slot of slots) {
+            const candidate = slot.row.candidates.find(item => !allocatedVehicleIds.has(item.id));
+            const pressure = missionPressure.get(slot.row.missionId);
+            if (candidate) {
+                allocatedVehicleIds.add(candidate.id);
+                slot.row.assigned += 1;
+                if (pressure) pressure.assigned += 1;
+            } else {
+                slot.row.shortfall += 1;
+                if (pressure) pressure.shortfall += 1;
+            }
+        }
+
+        const requirementGroups = new Map();
+        for (const row of missionRows) {
+            let group = requirementGroups.get(row.key);
+            if (!group) {
+                group = {
+                    key: row.key,
+                    name: row.name,
+                    demand: 0,
+                    assigned: 0,
+                    shortfall: 0,
+                    candidateIds: new Set(),
+                    missionIds: new Set()
+                };
+                requirementGroups.set(row.key, group);
+            }
+            group.demand += row.count;
+            group.assigned += row.assigned;
+            group.shortfall += row.shortfall;
+            group.missionIds.add(row.missionId);
+            row.candidates.forEach(candidate => group.candidateIds.add(candidate.id));
+        }
+
+        const groups = Array.from(requirementGroups.values()).map(group => ({
+            key: group.key,
+            name: group.name,
+            demand: group.demand,
+            assigned: group.assigned,
+            shortfall: group.shortfall,
+            available: group.candidateIds.size,
+            reserve: group.candidateIds.size - group.demand,
+            missionCount: group.missionIds.size,
+            conflict: group.missionIds.size > 1 && group.demand > group.candidateIds.size
+        })).sort((left, right) =>
+            right.shortfall - left.shortfall ||
+            Number(right.conflict) - Number(left.conflict) ||
+            left.reserve - right.reserve ||
+            right.demand - left.demand ||
+            left.name.localeCompare(right.name)
+        );
+
+        const transport = { missions: 0, people: 0, patients: 0, prisoners: 0, general: 0 };
+        const actions = [];
+        for (const pressure of missionPressure.values()) {
+            const transportCount = pressure.transport ? Math.max(1, Number(pressure.transport.count) || 1) : 0;
+            if (pressure.transport) {
+                transport.missions += 1;
+                transport.people += transportCount;
+                if (pressure.transport.type === 'patient') transport.patients += transportCount;
+                else if (pressure.transport.type === 'prisoner') transport.prisoners += transportCount;
+                else transport.general += transportCount;
+            }
+            const reasons = [];
+            if (pressure.shortfall > 0) reasons.push(`${pressure.shortfall} resource slot${pressure.shortfall === 1 ? '' : 's'} unfilled`);
+            if (pressure.unattended) reasons.push('No personal units committed');
+            if (pressure.isStuck) reasons.push(`No progress for ${formatOperationalPressureDuration(pressure.stuckForMs)}`);
+            if (pressure.ageMs >= 8 * 3600000) reasons.push(`${formatOperationalPressureDuration(pressure.ageMs)} old`);
+            if (pressure.transport) reasons.push(`${pressure.transport.label || 'Transport required'}${transportCount > 1 ? ` ×${transportCount}` : ''}`);
+            const pinned = pinnedMissionIds.has(pressure.missionId);
+            const score =
+                (pinned ? 10000 : 0) +
+                pressure.shortfall * 120 +
+                (pressure.isStuck ? 95 + Math.min(60, Math.floor(pressure.stuckForMs / 600000)) : 0) +
+                (pressure.unattended ? 80 : 0) +
+                (pressure.transport ? 40 + Math.min(60, transportCount * 10) : 0) +
+                Math.min(100, Math.floor(pressure.ageMs / 3600000) * 4);
+            actions.push({
+                missionId: pressure.missionId,
+                caption: pressure.mission.caption || `Mission ${pressure.missionId}`,
+                address: pressure.mission.address || '',
+                source: pressure.mission.source || 'personal',
+                lat: pressure.mission.lat,
+                lng: pressure.mission.lng,
+                pinned,
+                score,
+                reasons,
+                shortfall: pressure.shortfall,
+                required: pressure.required,
+                assigned: pressure.assigned,
+                ageMs: pressure.ageMs,
+                unattended: pressure.unattended,
+                isStuck: pressure.isStuck,
+                transport: pressure.transport
+            });
+        }
+        actions.sort((left, right) =>
+            Number(right.pinned) - Number(left.pinned) ||
+            right.score - left.score ||
+            right.ageMs - left.ageMs ||
+            left.caption.localeCompare(right.caption)
+        );
+
+        const totalRequired = missionRows.reduce((sum, row) => sum + row.count, 0);
+        const totalAssigned = missionRows.reduce((sum, row) => sum + row.assigned, 0);
+        const totalShortfall = totalRequired - totalAssigned;
+        const actNow = actions.filter(action => action.reasons.length > 0);
+        const fleetConflicts = groups.filter(group => group.conflict);
+        const reserveRisks = groups.filter(group => group.demand > 0 && group.reserve <= 1);
+        const stuckCount = actions.filter(action => action.isStuck).length;
+        const unattendedCount = actions.filter(action => action.unattended).length;
+        const severity = totalShortfall > 0 || stuckCount > 0
+            ? 'critical'
+            : actNow.length > 0 || reserveRisks.length > 0 || transport.missions > 0
+                ? 'pressured'
+                : actions.length
+                    ? 'stable'
+                    : 'clear';
+        const summary = severity === 'critical'
+            ? `${totalShortfall} unfilled resource slot${totalShortfall === 1 ? '' : 's'} across ${actions.length} active mission${actions.length === 1 ? '' : 's'}.`
+            : severity === 'pressured'
+                ? `${actNow.length} mission${actNow.length === 1 ? '' : 's'} need attention; current resource demand is covered.`
+                : severity === 'stable'
+                    ? `${actions.length} active mission${actions.length === 1 ? '' : 's'} with no confirmed resource shortfall.`
+                    : 'No active personal or joined alliance missions are currently visible.';
+
+        return {
+            id: `pressure-${now}-${actions.length}-${totalRequired}-${totalShortfall}`,
+            generatedAt: now,
+            severity,
+            summary,
+            scope: String(options.scope || 'Personal missions and joined alliance incidents'),
+            radiusMi,
+            complete: Boolean(options.missionReady && options.vehicleReady && !locationEvidenceMissing),
+            missionReady: Boolean(options.missionReady),
+            vehicleReady: Boolean(options.vehicleReady),
+            locationEvidenceMissing,
+            missions: actions.length,
+            actNow,
+            topActions: actions.slice(0, 3),
+            unattendedCount,
+            stuckCount,
+            transport,
+            resourcePressure: {
+                required: totalRequired,
+                assigned: totalAssigned,
+                shortfall: totalShortfall,
+                allocatedVehicles: allocatedVehicleIds.size,
+                availableVehicles: available.length,
+                groups
+            },
+            fleetConflicts,
+            reserveRisks
+        };
+    }
+
+    function invalidateOperationalPressureSnapshot() {
+        operationalPressureCache = { key: '', snapshot: null };
+    }
+
+    function buildOperationalPressureSnapshot(force = false) {
+        if (force) invalidateOperationalPressureSnapshot();
+        const now = Date.now();
+        const context = buildResourceGapVehicleContext();
+        const pinnedMissionIds = state.pressureBoard.pinnedMissionIds || [];
+        const missions = Array.from(liveMissionSnapshots.values())
+            .filter(snapshot => snapshot?.source === 'personal' || (snapshot?.source === 'alliance' && snapshot?.qualified))
+            .map(snapshot => {
+                const stuck = missionStuckRecord(snapshot.missionId, now);
+                return {
+                    missionId: snapshot.missionId,
+                    caption: snapshot.caption,
+                    address: snapshot.address,
+                    source: snapshot.source,
+                    unitsTotal: Number(snapshot.units?.total) || 0,
+                    createdAt: snapshot.createdAt,
+                    isStuck: Boolean(stuck?.isStuck),
+                    stuckForMs: Number(stuck?.stuckForMs) || 0,
+                    transport: transportRequirementFromSnapshot(snapshot),
+                    requirements: resourceRequirementsFromSnapshot(snapshot).vehicles,
+                    lat: snapshot.lat,
+                    lng: snapshot.lng
+                };
+            });
+        const key = [
+            Math.floor(now / 60000),
+            context.key,
+            vehicleApiReady,
+            missionSnapshotReady,
+            Number(state.resourceGap.radiusMi) || 25,
+            pinnedMissionIds.join(','),
+            ...missions.map(mission => [
+                mission.missionId,
+                mission.unitsTotal,
+                mission.createdAt,
+                mission.isStuck,
+                Math.floor(mission.stuckForMs / 60000),
+                mission.transport?.type || '',
+                mission.transport?.count || 0,
+                mission.requirements.map(requirement => `${requirement.count}:${requirement.name}`).join(',')
+            ].join(':'))
+        ].join('|');
+        if (operationalPressureCache.key === key && operationalPressureCache.snapshot) return operationalPressureCache.snapshot;
+        const snapshot = calculateOperationalPressureModel(missions, context, {
+            now,
+            radiusMi: Number(state.resourceGap.radiusMi) || 25,
+            pinnedMissionIds,
+            missionReady: missionSnapshotReady,
+            vehicleReady: vehicleApiReady,
+            scope: 'Personal missions and joined alliance incidents'
+        });
+        operationalPressureCache = { key, snapshot };
+        return snapshot;
     }
 
     function makeResourceGapIcon(analysis) {
@@ -15072,6 +15794,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         state.unitCommitment || state.allianceCredits || state.resourceGap.enabled ||
         state.stuckDetector.enabled ||
         document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ||
+        operationalPressureBoardOpen() ||
         transportSweepRuntime.running
         );
     }
@@ -16708,6 +17431,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (state.stuckDetector.enabled) scheduleStuckMissionRefresh(80);
         if (state.transportWatcher) scheduleTransportWatcherRefresh(100);
         scheduleMajorIncidentFeedRender(0);
+        if (operationalPressureBoardOpen()) {
+            invalidateOperationalPressureSnapshot();
+            scheduleOperationalPanelsRender(0);
+        }
     }
 
     function scheduleMissionSnapshotRefresh(delay = 600) {
@@ -16832,7 +17559,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const panel = document.getElementById(SCRIPT.panelId);
         const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'missions');
         const vehicleStatusVisible = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
-        return opsPanelVisible || vehicleStatusVisible;
+        return opsPanelVisible || vehicleStatusVisible || operationalPressureBoardOpen();
     }
 
     function scheduleOperationalPanelsRender(delay = 500, force = false) {
@@ -16850,10 +17577,12 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const panel = document.getElementById(SCRIPT.panelId);
         const opsPanelVisible = Boolean(panel?.classList?.contains('mcms-open') && state.activeTab === 'missions');
         const vehicleStatusVisible = Boolean(document.getElementById(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open'));
-        if (!force && !opsPanelVisible && !vehicleStatusVisible) return;
+        const pressureBoardVisible = operationalPressureBoardOpen();
+        if (!force && !opsPanelVisible && !vehicleStatusVisible && !pressureBoardVisible) return;
         operationalPanelsLastRender = Date.now();
 
         if (vehicleStatusVisible) renderVehicleCodeStatus();
+        if (pressureBoardVisible || opsPanelVisible) renderOperationalPressureBoard(force);
         if (!opsPanelVisible || !panel) return;
 
         const qualifiedAlliance = qualifiedAllianceMissionCount();
@@ -17047,12 +17776,249 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return;
         }
 
+        const pressureBoard = operationalPressureBoardElement();
+        if (pressureBoard?.classList.contains('mcms-open')) {
+            pressureBoard.classList.remove('mcms-open');
+            pressureBoard.setAttribute('aria-hidden', 'true');
+        }
         drawer.classList.add('mcms-open');
         drawer.setAttribute('aria-hidden', 'false');
         updateUI();
         renderVehicleCodeStatus();
         refreshVehicleCodeStatus(false);
         runtimeSetTimeout(() => drawer.querySelector('.mcms-vcs-close')?.focus?.(), 0);
+    }
+
+    function operationalPressureBoardElement() {
+        return document.querySelector(`[id="${SCRIPT.pressureBoardId}"]`);
+    }
+
+    function operationalPressureBoardOpen() {
+        return Boolean(operationalPressureBoardElement()?.classList?.contains('mcms-open'));
+    }
+
+    function operationalPressureSeverityLabel(value) {
+        return value === 'critical' ? 'Critical pressure'
+            : value === 'pressured' ? 'Attention required'
+                : value === 'stable' ? 'Operation stable'
+                    : 'No active pressure';
+    }
+
+    function setOperationalSitrepStatus(message, tone = 'neutral') {
+        operationalSitrepStatus = String(message || '');
+        operationalSitrepStatusTone = ['neutral', 'good', 'bad', 'busy'].includes(tone) ? tone : 'neutral';
+        document.querySelectorAll('[data-operational-sitrep-status]').forEach(element => {
+            updateUiSetText(element, operationalSitrepStatus);
+            updateUiSetDataset(element, 'tone', operationalSitrepStatusTone);
+        });
+    }
+
+    function operationalPressureActionHtml(action) {
+        const source = action.source === 'alliance' ? 'ALLIANCE · JOINED' : 'PERSONAL';
+        const reasons = action.reasons.length ? action.reasons.join(' · ') : 'No immediate pressure signal';
+        return `<article class="mcms-pressure-action${action.pinned ? ' mcms-pressure-pinned' : ''}" data-pressure-mission="${escapeHtml(action.missionId)}">
+            <div class="mcms-pressure-action-copy">
+                <div class="mcms-pressure-action-title">${action.pinned ? '<span aria-label="Pinned mission">◆</span>' : ''}${allianceAwareHtml(action.caption)}</div>
+                <div class="mcms-pressure-action-meta">${escapeHtml(source)}${action.address ? ` · ${escapeHtml(action.address)}` : ''}</div>
+                <div class="mcms-pressure-action-reason">${escapeHtml(reasons)}</div>
+            </div>
+            <div class="mcms-pressure-action-controls" aria-label="Mission actions">
+                <button type="button" data-pressure-action="focus" data-mission-id="${escapeHtml(action.missionId)}">Focus</button>
+                <button type="button" data-pressure-action="open" data-mission-id="${escapeHtml(action.missionId)}">Open</button>
+                <button type="button" data-pressure-action="pin" data-mission-id="${escapeHtml(action.missionId)}" aria-pressed="${action.pinned ? 'true' : 'false'}">${action.pinned ? 'Unpin' : 'Pin'}</button>
+            </div>
+        </article>`;
+    }
+
+    function operationalPressureCapacityHtml(snapshot) {
+        const rows = snapshot.resourcePressure.groups.slice(0, 8);
+        if (!rows.length) return '<div class="mcms-pressure-empty">No current missing-vehicle requirements are exposed by MissionChief.</div>';
+        return rows.map(row => {
+            const tone = row.shortfall > 0 ? 'critical' : row.reserve <= 1 ? 'warning' : 'covered';
+            const label = row.shortfall > 0
+                ? `${row.shortfall} short`
+                : row.reserve <= 1
+                    ? `${Math.max(0, row.reserve)} reserve`
+                    : `${row.reserve} reserve`;
+            return `<div class="mcms-pressure-capacity-row" data-tone="${tone}">
+                <span><strong>${escapeHtml(row.name)}</strong><small>${row.missionCount} mission${row.missionCount === 1 ? '' : 's'} · ${row.assigned}/${row.demand} allocated${row.conflict ? ' · fleet conflict' : ''}</small></span>
+                <b>${escapeHtml(label)}</b>
+            </div>`;
+        }).join('');
+    }
+
+    function operationalPressureBoardBodyHtml(snapshot) {
+        const actions = snapshot.topActions.length
+            ? snapshot.topActions.map(operationalPressureActionHtml).join('')
+            : '<div class="mcms-pressure-empty">There are no active mission actions to prioritise.</div>';
+        const transportCopy = snapshot.transport.missions
+            ? `${snapshot.transport.missions} mission${snapshot.transport.missions === 1 ? '' : 's'} · ${snapshot.transport.people} transport${snapshot.transport.people === 1 ? '' : 's'}${snapshot.transport.patients ? ` · ${snapshot.transport.patients} patient` : ''}${snapshot.transport.prisoners ? ` · ${snapshot.transport.prisoners} prisoner` : ''}`
+            : 'No patient or prisoner transport demand is currently exposed.';
+        return `<section class="mcms-pressure-section">
+                <div class="mcms-pressure-section-head"><strong>Top actions</strong><span>Evidence ordered</span></div>
+                <div class="mcms-pressure-actions">${actions}</div>
+            </section>
+            <section class="mcms-pressure-section">
+                <div class="mcms-pressure-section-head"><strong>Fleet pressure</strong><span>${snapshot.resourcePressure.allocatedVehicles}/${snapshot.resourcePressure.availableVehicles} available vehicles allocated</span></div>
+                <div class="mcms-pressure-capacity">${operationalPressureCapacityHtml(snapshot)}</div>
+            </section>
+            <section class="mcms-pressure-section mcms-pressure-transport">
+                <div class="mcms-pressure-section-head"><strong>Transport pressure</strong><span>${snapshot.transport.missions ? 'Outstanding' : 'Clear'}</span></div>
+                <p>${escapeHtml(transportCopy)}</p>
+            </section>`;
+    }
+
+    function createOperationalPressureBoard() {
+        let board = operationalPressureBoardElement();
+        if (board) return board;
+        board = document.createElement('aside');
+        board.id = SCRIPT.pressureBoardId;
+        board.setAttribute('aria-label', 'Operational Pressure Board');
+        board.setAttribute('aria-hidden', 'true');
+        setInnerHtmlIfChanged(board, `<div class="mcms-pressure-head">
+                <div class="mcms-pressure-heading"><strong>OPERATIONAL PRESSURE BOARD</strong><span>Shared live command picture</span></div>
+                <div class="mcms-pressure-head-actions">
+                    <button class="mcms-pressure-sitrep" type="button" data-pressure-command="sitrep" title="Generate and post Operational SITREP">SITREP</button>
+                    <button class="mcms-pressure-refresh" type="button" data-pressure-command="refresh" title="Refresh pressure intelligence" aria-label="Refresh pressure intelligence">↻</button>
+                    <button class="mcms-pressure-close" type="button" data-pressure-command="close" title="Close Operational Pressure Board" aria-label="Close Operational Pressure Board">×</button>
+                </div>
+            </div>
+            <div class="mcms-pressure-meta"><span data-pressure-scope>Loading mission scope…</span><span data-pressure-updated>Updated —</span></div>
+            <div class="mcms-pressure-hero" data-pressure-severity="clear">
+                <span class="mcms-pressure-signal" data-pressure-signal>No active pressure</span>
+                <strong data-pressure-summary>Building operational picture…</strong>
+            </div>
+            <div class="mcms-pressure-kpis">
+                <span><b data-pressure-missions>0</b>Active missions</span>
+                <span><b data-pressure-act-now>0</b>Act now</span>
+                <span><b data-pressure-shortfall>0</b>Resource shortfall</span>
+                <span><b data-pressure-transports>0</b>Transports</span>
+            </div>
+            <div class="mcms-pressure-body" data-pressure-body></div>
+            <div class="mcms-pressure-status" data-operational-sitrep-status data-tone="neutral">Operational SITREP ready for manual posting.</div>
+            <div class="mcms-pressure-foot">Read-only intelligence. Focus, Open and Pin never select or dispatch vehicles.</div>`, 'pressure-board-shell-v1');
+        board.addEventListener('click', event => {
+            event.stopPropagation();
+            const command = closestEventTarget(event, '[data-pressure-command]');
+            if (command) {
+                event.preventDefault();
+                if (command.dataset.pressureCommand === 'close') closeOperationalPressureBoard();
+                else if (command.dataset.pressureCommand === 'refresh') refreshOperationalPressureBoard(true);
+                else if (command.dataset.pressureCommand === 'sitrep') postOperationalSitrep();
+                return;
+            }
+            const action = closestEventTarget(event, '[data-pressure-action][data-mission-id]');
+            if (!action) return;
+            event.preventDefault();
+            const missionId = action.dataset.missionId;
+            if (action.dataset.pressureAction === 'focus') focusMissionById(missionId, false);
+            else if (action.dataset.pressureAction === 'open') focusMissionById(missionId, true);
+            else if (action.dataset.pressureAction === 'pin') toggleOperationalPressurePin(missionId);
+        });
+        ['dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel', 'contextmenu', 'touchstart', 'touchmove', 'touchend'].forEach(eventName => {
+            board.addEventListener(eventName, event => event.stopPropagation(), { passive: false });
+        });
+        document.body.appendChild(board);
+        return board;
+    }
+
+    function renderOperationalPressureBoard(force = false) {
+        const board = operationalPressureBoardElement();
+        const menuSummary = document.querySelector('[data-operational-pressure-summary]');
+        if (!force && !operationalPressureBoardOpen() && !menuSummary) return;
+        const snapshot = buildOperationalPressureSnapshot(force);
+        if (menuSummary) {
+            setInnerHtmlIfChanged(menuSummary, `<strong>${escapeHtml(operationalPressureSeverityLabel(snapshot.severity))}</strong><span>${escapeHtml(snapshot.summary)}</span><small>${snapshot.resourcePressure.shortfall} short · ${snapshot.transport.missions} transport mission${snapshot.transport.missions === 1 ? '' : 's'} · updated ${escapeHtml(formatClockTime(snapshot.generatedAt))}</small>`, `pressure-menu:${snapshot.id}`);
+        }
+        if (!board || !board.classList.contains('mcms-open')) {
+            setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
+            return;
+        }
+        updateUiSetDataset(board, 'severity', snapshot.severity);
+        const hero = board.querySelector('.mcms-pressure-hero');
+        updateUiSetDataset(hero, 'pressureSeverity', snapshot.severity);
+        updateUiSetText(board.querySelector('[data-pressure-signal]'), operationalPressureSeverityLabel(snapshot.severity));
+        updateUiSetText(board.querySelector('[data-pressure-summary]'), snapshot.summary);
+        updateUiSetText(board.querySelector('[data-pressure-scope]'), `${snapshot.scope} · ${snapshot.radiusMi}mi resource radius${snapshot.complete ? '' : ' · partial evidence'}`);
+        updateUiSetText(board.querySelector('[data-pressure-updated]'), `Updated ${formatRefreshClockTime(snapshot.generatedAt)}`);
+        updateUiSetText(board.querySelector('[data-pressure-missions]'), snapshot.missions);
+        updateUiSetText(board.querySelector('[data-pressure-act-now]'), snapshot.actNow.length);
+        updateUiSetText(board.querySelector('[data-pressure-shortfall]'), snapshot.resourcePressure.shortfall);
+        updateUiSetText(board.querySelector('[data-pressure-transports]'), snapshot.transport.people);
+        setInnerHtmlIfChanged(board.querySelector('[data-pressure-body]'), operationalPressureBoardBodyHtml(snapshot), `pressure-body:${snapshot.id}:${snapshot.topActions.map(action => `${action.missionId}:${action.pinned}`).join('|')}`);
+        const refresh = board.querySelector('.mcms-pressure-refresh');
+        const sitrep = board.querySelector('.mcms-pressure-sitrep');
+        updateUiSetProperty(refresh, 'disabled', operationalPressureRefreshBusy);
+        updateUiSetProperty(sitrep, 'disabled', operationalSitrepBusy);
+        updateUiToggleClass(board, 'mcms-pressure-loading', operationalPressureRefreshBusy);
+        setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
+    }
+
+    async function refreshOperationalPressureBoard(force = false) {
+        if (operationalPressureRefreshBusy) return null;
+        operationalPressureRefreshBusy = true;
+        setOperationalSitrepStatus('Refreshing mission and fleet intelligence…', 'busy');
+        renderOperationalPressureBoard();
+        try {
+            refreshMissionSnapshots();
+            await refreshPersonalVehicleData(Boolean(force));
+            refreshMissionSnapshots();
+            invalidateOperationalPressureSnapshot();
+            const snapshot = buildOperationalPressureSnapshot(true);
+            setOperationalSitrepStatus(`Pressure picture refreshed at ${formatRefreshClockTime(snapshot.generatedAt)}.`, 'good');
+            return snapshot;
+        } catch (err) {
+            setOperationalSitrepStatus(err?.message || 'Pressure intelligence could not be refreshed.', 'bad');
+            return null;
+        } finally {
+            operationalPressureRefreshBusy = false;
+            renderOperationalPressureBoard(true);
+        }
+    }
+
+    function closeOperationalPressureBoard() {
+        const board = operationalPressureBoardElement();
+        if (!board) return;
+        board.classList.remove('mcms-open');
+        board.setAttribute('aria-hidden', 'true');
+        updateUI();
+    }
+
+    function toggleOperationalPressureBoard() {
+        const board = createOperationalPressureBoard();
+        const opening = !board.classList.contains('mcms-open');
+        if (!opening) {
+            closeOperationalPressureBoard();
+            return;
+        }
+        const vehicleStatus = document.querySelector(`[id="${SCRIPT.vehicleStatusId}"]`);
+        if (vehicleStatus?.classList.contains('mcms-open')) {
+            vehicleStatus.classList.remove('mcms-open');
+            vehicleStatus.setAttribute('aria-hidden', 'true');
+        }
+        board.classList.add('mcms-open');
+        board.setAttribute('aria-hidden', 'false');
+        updateUI();
+        renderOperationalPressureBoard(true);
+        refreshOperationalPressureBoard(false);
+        board.querySelector('.mcms-pressure-close')?.focus?.({ preventScroll: true });
+    }
+
+    function toggleOperationalPressurePin(missionId) {
+        const id = normaliseMissionId(missionId);
+        if (id === null) return;
+        const pins = new Set((state.pressureBoard.pinnedMissionIds || []).map(String));
+        const key = String(id);
+        if (pins.has(key)) pins.delete(key);
+        else {
+            pins.add(key);
+            while (pins.size > 12) pins.delete(pins.values().next().value);
+        }
+        state.pressureBoard.pinnedMissionIds = Array.from(pins);
+        saveState();
+        invalidateOperationalPressureSnapshot();
+        renderOperationalPressureBoard(true);
+        showToast(pins.has(key) ? 'Mission pinned to Pressure Board' : 'Mission unpinned');
     }
 
 
@@ -18162,6 +19128,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const vehicleStatus = document.getElementById(SCRIPT.vehicleStatusId);
         vehicleStatus?.classList.remove('mcms-open');
         vehicleStatus?.setAttribute('aria-hidden', 'true');
+        const pressureBoard = operationalPressureBoardElement();
+        pressureBoard?.classList.remove('mcms-open');
+        pressureBoard?.setAttribute('aria-hidden', 'true');
+        invalidateOperationalPressureSnapshot();
         missionSpawnArmed = false;
         runtimeClearTimeout(missionSpawnPrimeTimer);
         knownMissionIds.clear();
@@ -22523,6 +23493,122 @@ Create the private backup now?`);
         if (response.status < 200 || response.status >= 300) throw new Error(parseDiscordError(response));
         return response;
     }
+
+    function operationalSitrepMissionLink(action) {
+        const origin = String(pageWindow.location?.origin || 'https://www.missionchief.co.uk').replace(/\/+$/u, '');
+        return `${origin}/missions/${encodeURIComponent(action.missionId)}`;
+    }
+
+    function operationalSitrepActionsField(snapshot) {
+        if (!snapshot.topActions.length) return 'No active mission currently carries an immediate pressure signal.';
+        return truncateDiscord(snapshot.topActions.map((action, index) => {
+            const reasons = action.reasons.length ? action.reasons.join(' · ') : 'Monitor';
+            return `${index + 1}. **[${escapeDiscordMarkdown(action.caption)}](${operationalSitrepMissionLink(action)})** — ${escapeDiscordMarkdown(reasons)}`;
+        }).join('\n'), 1000);
+    }
+
+    function operationalSitrepCapacityField(snapshot) {
+        const rows = snapshot.resourcePressure.groups.slice(0, 8);
+        if (!rows.length) return 'No current missing-vehicle requirements are exposed.';
+        return truncateDiscord(rows.map(row => {
+            const status = row.shortfall > 0
+                ? `**${row.shortfall} short**`
+                : row.reserve <= 1
+                    ? `**${Math.max(0, row.reserve)} reserve**`
+                    : `${row.reserve} reserve`;
+            return `• **${escapeDiscordMarkdown(row.name)}** — ${row.assigned}/${row.demand} allocated · ${row.available} available · ${status}${row.conflict ? ' · fleet conflict' : ''}`;
+        }).join('\n'), 1000);
+    }
+
+    function buildOperationalSitrepPayload(snapshot) {
+        const colour = snapshot.severity === 'critical' ? 0xe74c3c
+            : snapshot.severity === 'pressured' ? 0xf1c40f
+                : snapshot.severity === 'stable' ? 0x2ecc71
+                    : 0x3498db;
+        const statusLines = [
+            `Active missions: **${snapshot.missions.toLocaleString('en-GB')}**`,
+            `Act now: **${snapshot.actNow.length.toLocaleString('en-GB')}**`,
+            `Resource slots: **${snapshot.resourcePressure.assigned}/${snapshot.resourcePressure.required} allocated**`,
+            `Confirmed shortfall: **${snapshot.resourcePressure.shortfall.toLocaleString('en-GB')}**`,
+            `Available fleet in scope: **${snapshot.resourcePressure.availableVehicles.toLocaleString('en-GB')}**`
+        ];
+        const transportValue = snapshot.transport.missions
+            ? [
+                `Outstanding transport missions: **${snapshot.transport.missions.toLocaleString('en-GB')}**`,
+                `People awaiting transport: **${snapshot.transport.people.toLocaleString('en-GB')}**`,
+                snapshot.transport.patients ? `Patients: **${snapshot.transport.patients.toLocaleString('en-GB')}**` : '',
+                snapshot.transport.prisoners ? `Prisoners: **${snapshot.transport.prisoners.toLocaleString('en-GB')}**` : ''
+            ].filter(Boolean).join('\n')
+            : 'No patient or prisoner transport demand is currently exposed.';
+        const conflicts = snapshot.fleetConflicts.length
+            ? truncateDiscord(snapshot.fleetConflicts.slice(0, 6).map(row => `• **${escapeDiscordMarkdown(row.name)}** — ${row.demand} required across ${row.missionCount} missions; ${row.available} available`).join('\n'), 1000)
+            : 'No confirmed cross-mission specialist fleet conflict.';
+        const embed = {
+            title: `Operational SITREP · ${operationalPressureSeverityLabel(snapshot.severity)}`,
+            description: truncateDiscord(`**${escapeDiscordMarkdown(snapshot.summary)}**\n${escapeDiscordMarkdown(snapshot.scope)} · ${snapshot.radiusMi}mi resource radius`, 4096),
+            color: colour,
+            fields: [
+                { name: 'Command Picture', value: truncateDiscord(statusLines.join('\n'), 1000), inline: true },
+                { name: 'Transport Pressure', value: truncateDiscord(transportValue, 1000), inline: true },
+                { name: 'Resource Pressure', value: operationalSitrepCapacityField(snapshot), inline: false },
+                { name: 'Fleet Conflicts', value: conflicts, inline: false },
+                { name: 'Top Actions', value: operationalSitrepActionsField(snapshot), inline: false },
+                {
+                    name: 'Evidence Scope',
+                    value: truncateDiscord(`${snapshot.complete ? 'Complete current snapshot' : 'Partial current snapshot'} · mission data ${snapshot.missionReady ? 'ready' : 'loading'} · fleet data ${snapshot.vehicleReady ? 'ready' : 'loading'}${snapshot.locationEvidenceMissing ? ' · some location evidence unavailable' : ''}\nRead-only briefing; no units were selected or dispatched.`, 1000),
+                    inline: false
+                }
+            ],
+            footer: { text: `${SCRIPT.name} v${SCRIPT.version} · Snapshot ${snapshot.id}` },
+            timestamp: new Date(snapshot.generatedAt).toISOString()
+        };
+        return {
+            username: 'MissionChief Operations',
+            allowed_mentions: { parse: [] },
+            embeds: fitDiscordEmbedsToBudget([embed])
+        };
+    }
+
+    async function postOperationalSitrep() {
+        if (operationalSitrepBusy) return;
+        let webhookUrl = '';
+        try {
+            webhookUrl = readDiscordWebhookInput({ save: true });
+            if (!webhookUrl) throw new Error('Save a Discord webhook in Finance before posting the SITREP.');
+        } catch (err) {
+            setOperationalSitrepStatus(err?.message || 'A valid Discord webhook is required.', 'bad');
+            showToast('Discord webhook required for SITREP');
+            state.activeTab = 'finance';
+            saveState();
+            openPanel();
+            updateUI();
+            return;
+        }
+        operationalSitrepBusy = true;
+        setOperationalSitrepStatus('Refreshing and posting the Operational SITREP…', 'busy');
+        renderOperationalPressureBoard();
+        try {
+            const snapshot = await refreshOperationalPressureBoard(true);
+            if (!snapshot) throw new Error('A current operational snapshot could not be verified, so the SITREP was not posted.');
+            const payload = buildOperationalSitrepPayload(snapshot);
+            const response = await sendDiscordWithRetry(() => discordHttpRequest({
+                method: 'POST',
+                url: discordWebhookEndpoint(webhookUrl, { wait: true }),
+                headers: { 'Content-Type': 'application/json' },
+                data: JSON.stringify(payload)
+            }));
+            if (response.status < 200 || response.status >= 300) throw new Error(parseDiscordError(response));
+            setOperationalSitrepStatus(`Operational SITREP posted at ${formatRefreshClockTime(Date.now())}.`, 'good');
+            showToast('Operational SITREP posted');
+        } catch (err) {
+            setOperationalSitrepStatus(err?.message || 'The Operational SITREP could not be posted.', 'bad');
+            showToast('Operational SITREP failed');
+        } finally {
+            operationalSitrepBusy = false;
+            renderOperationalPressureBoard();
+        }
+    }
+
     function clearDiscordPreviewChartUrl() {
         if (discordFinanceChartUrl) {
             try { URL.revokeObjectURL(discordFinanceChartUrl); } catch (err) {}
@@ -23320,11 +24406,13 @@ Create the private backup now?`);
         if (event.key === 'Escape') {
             const hadOpenUi = Boolean(
                 document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open') ||
-                document.getElementById(SCRIPT.vehicleStatusId)?.classList.contains('mcms-open')
+                document.getElementById(SCRIPT.vehicleStatusId)?.classList.contains('mcms-open') ||
+                operationalPressureBoardOpen()
             );
             if (state.cleanMode && state.shortcuts) toggleFeature('clean');
             closePanel({ restoreFocus: hadOpenUi });
             closeVehicleCodeStatus();
+            closeOperationalPressureBoard();
             if (hadOpenUi) event.preventDefault();
             return;
         }
@@ -23347,6 +24435,7 @@ Create the private backup now?`);
             return;
         }
         if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'v') { event.preventDefault(); toggleVehicleCodeStatus(); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && key === 'b') { event.preventDefault(); toggleOperationalPressureBoard(); return; }
         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'c') { event.preventDefault(); toggleFeature('clean'); return; }
         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'f') { event.preventDefault(); toggleFeature('markerFocus'); return; }
         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'p') { event.preventDefault(); toggleFeature('missionPulse'); return; }
@@ -23403,6 +24492,7 @@ Create the private backup now?`);
         transportWatcher: '↗',
         unitCommitment: '#',
         vehicleStatus: '▤',
+        pressureBoard: '▲',
         economyMode: '♻',
     });
 
@@ -23421,11 +24511,11 @@ Create the private backup now?`);
         `;
     }
 
-    function makeActionFloatButton(action, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel) {
+    function makeActionFloatButton(action, shortcut, label, title, tabletLabel = label, mobileLabel = tabletLabel, iconKey = 'vehicleStatus') {
         return `
             <button class="mcms-float-btn mcms-float-action-btn" type="button" data-action="${escapeHtml(action)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" aria-keyshortcuts="${escapeHtml(shortcut)}" aria-pressed="false">
                 <span class="mcms-float-key">${escapeHtml(shortcut)}</span>
-                <span class="mcms-float-icon" aria-hidden="true">${MAP_CONTROL_ICONS.vehicleStatus}</span>
+                <span class="mcms-float-icon" aria-hidden="true">${MAP_CONTROL_ICONS[iconKey] || '•'}</span>
                 <span class="mcms-float-copy">
                     <span class="mcms-float-label mcms-float-label-desktop">${escapeHtml(label)}</span>
                     <span class="mcms-float-label mcms-float-label-tablet">${escapeHtml(tabletLabel)}</span>
@@ -23549,6 +24639,7 @@ Create the private backup now?`);
                 <div class="mcms-control-group" data-control-group="dashboard" aria-label="Dashboard controls">
                     <span class="mcms-control-group-label">Dashboard</span>
                     ${makeActionFloatButton('open-vehicle-status', 'V', 'Vehicle Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Vehicle Codes', 'Codes')}
+                    ${makeActionFloatButton('open-pressure-board', 'B', 'Pressure Board', 'Open or close the Operational Pressure Board. Shortcut: B', 'Pressure Board', 'Pressure', 'pressureBoard')}
                 </div>
                 <div class="mcms-control-group" data-control-group="performance" aria-label="Performance controls">
                     <span class="mcms-control-group-label">Performance</span>
@@ -23908,9 +24999,18 @@ Create the private backup now?`);
                         <span class="mcms-iconbox">V</span>
                         <span class="mcms-text"><span class="mcms-label">Vehicle Codes</span><span class="mcms-pill">VIEW</span></span>
                     </button>
+                    ${makeActionToggleButton('open-pressure-board', '▲', 'Pressure Board', 'Open or close the live Operational Pressure Board. Shortcut: B', 'mcms-pressure-board-toggle')}
                 </div>
                 <div class="mcms-row"><span class="mcms-row-label">Stuck after</span><select class="mcms-select" data-setting="stuck-threshold"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">60 minutes</option></select></div>
                 <div class="mcms-status">Stuck detection resets its timer whenever missing requirements, patients, prisoners, progress value or your assigned-unit state changes.</div>
+                <div class="mcms-section-label">Operational Pressure &amp; SITREP</div>
+                <div class="mcms-operational-pressure-summary" data-operational-pressure-summary><strong>Building command picture…</strong><span>Open the board to reconcile mission demand against the available fleet.</span></div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="open-pressure-board">Open Pressure Board</button>
+                    <button class="mcms-small-btn" type="button" data-action="refresh-pressure-board">Refresh Intelligence</button>
+                </div>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="post-operational-sitrep">Generate &amp; Post Operational SITREP</button>
+                <div class="mcms-status mcms-discord-status" data-operational-sitrep-status data-tone="neutral">Operational SITREP ready for manual posting.</div>
                 <div class="mcms-section-label">Session Performance</div>
                 <div data-ops-session></div>
                 <div class="mcms-section-label">Completion History</div>
@@ -24250,6 +25350,9 @@ Create the private backup now?`);
         if (action === 'toggle-command-bar') { toggleCommandBar(); return; }
         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
+        if (action === 'open-pressure-board') { toggleOperationalPressureBoard(); return; }
+        if (action === 'refresh-pressure-board') { refreshOperationalPressureBoard(true); return; }
+        if (action === 'post-operational-sitrep') { postOperationalSitrep(); return; }
         if (action === 'scan-transport-sweep') { const queue = buildTransportSweepQueue(); showToast(queue.length ? `${queue.length} transport mission${queue.length === 1 ? '' : 's'} found` : 'No alliance patient transports found'); return; }
         if (action === 'start-transport-sweep') { startTransportSweep(); return; }
         if (action === 'stop-transport-sweep') { stopTransportSweep(); return; }
@@ -24549,6 +25652,15 @@ Create the private backup now?`);
                 updateUiSetText(vehicleStatusButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'OFF');
                 updateUiSetAttribute(vehicleStatusButton, 'aria-label', `Vehicle Code Status: ${open ? 'active' : 'off'}. Shortcut: V.`);
             }
+            const pressureBoardButton = control.querySelector('[data-action="open-pressure-board"]');
+            if (pressureBoardButton) {
+                const open = operationalPressureBoardOpen();
+                updateUiToggleClass(pressureBoardButton, 'mcms-on', open);
+                updateUiSetAttribute(pressureBoardButton, 'aria-pressed', String(open));
+                updateUiSetDataset(pressureBoardButton, 'mcmsState', open ? 'on' : 'off');
+                updateUiSetText(pressureBoardButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'OFF');
+                updateUiSetAttribute(pressureBoardButton, 'aria-label', `Operational Pressure Board: ${open ? 'active' : 'off'}. Shortcut: B.`);
+            }
             const economyButton = control.querySelector('.mcms-economy-btn');
             if (economyButton) {
                 const on = Boolean(state.economyMode);
@@ -24619,6 +25731,13 @@ Create the private backup now?`);
             updateUiSetText(pill, key === 'coverage' ? (on ? `${state.coverage.radiusMi}mi` : 'OFF') : (on ? 'ON' : 'OFF'));
             updateUiSetAttribute(btn, 'aria-pressed', String(on));
         });
+        const pressureBoardToggle = panel.querySelector('.mcms-pressure-board-toggle');
+        if (pressureBoardToggle) {
+            const open = operationalPressureBoardOpen();
+            updateUiToggleClass(pressureBoardToggle, 'mcms-on', open);
+            updateUiSetAttribute(pressureBoardToggle, 'aria-pressed', String(open));
+            updateUiSetText(pressureBoardToggle.querySelector('.mcms-pill'), open ? 'ACTIVE' : 'OFF');
+        }
         for (const [selector, on] of [
             ['.mcms-command-bar-setting', state.commandBarOpen !== false],
             ['.mcms-economy-setting', state.economyMode],
@@ -24687,6 +25806,7 @@ Create the private backup now?`);
         const financeRuleFeed = panel.querySelector('[data-setting="finance-rule-feed"]');
         if (financeRuleFeed) updateUiSetProperty(financeRuleFeed, 'value', String(state.financialVault.ruleFeedEnabled));
         setDiscordStatus(discordFinanceStatus, discordFinanceStatusTone);
+        setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
         if (panel.classList.contains('mcms-open') && state.activeTab === 'finance') renderFinanceVaultStatus();
         const economyStatus = panel.querySelector('.mcms-economy-status');
         updateUiSetText(economyStatus, state.economyMode
@@ -24728,12 +25848,14 @@ Create the private backup now?`);
                 target.id === SCRIPT.toastId ||
                 target.id === SCRIPT.payoutFlashId ||
                 target.id === SCRIPT.vehicleStatusId ||
+                target.id === SCRIPT.pressureBoardId ||
                 target.id === SCRIPT.majorIncidentFeedId ||
                 target.closest?.(`#${SCRIPT.controlId}`) ||
                 target.closest?.(`#${SCRIPT.panelId}`) ||
                 target.closest?.(`#${SCRIPT.toastId}`) ||
                 target.closest?.(`#${SCRIPT.payoutFlashId}`) ||
                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
+                target.closest?.(`#${SCRIPT.pressureBoardId}`) ||
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
                 false
             )
@@ -24784,8 +25906,8 @@ Create the private backup now?`);
     function mutationRemovesToolkitUi(mutation) {
         for (const node of mutation?.removedNodes || []) {
             if (!node || node.nodeType !== 1) continue;
-            if ([SCRIPT.panelId, SCRIPT.controlId, SCRIPT.majorIncidentFeedId].includes(node.id)) return true;
-            if (node.querySelector?.(`#${SCRIPT.panelId}, #${SCRIPT.controlId}, #${SCRIPT.majorIncidentFeedId}`)) return true;
+            if ([SCRIPT.panelId, SCRIPT.controlId, SCRIPT.pressureBoardId, SCRIPT.majorIncidentFeedId].includes(node.id)) return true;
+            if (node.querySelector?.(`#${SCRIPT.panelId}, #${SCRIPT.controlId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}`)) return true;
         }
         return false;
     }
@@ -24818,7 +25940,7 @@ Create the private backup now?`);
         if (!isAllianceBuildingsContext()) return null;
         const candidates = Array.from(document.querySelectorAll('#verband-gebauede-map, #verband-gebaeude-map, #map, #map_outer .leaflet-container, [id*="gebauede"][id*="map"], [id*="gebaeude"][id*="map"], .leaflet-container'));
         return candidates.find(element => {
-            if (!element || element.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.vehicleStatusId}`)) return false;
+            if (!element || element.closest(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}`)) return false;
             const rect = element.getBoundingClientRect?.();
             return !rect || rect.width >= 120 || rect.height >= 120 || element.id === 'map' || element.id === 'verband-gebauede-map' || element.id === 'verband-gebaeude-map';
         }) || null;

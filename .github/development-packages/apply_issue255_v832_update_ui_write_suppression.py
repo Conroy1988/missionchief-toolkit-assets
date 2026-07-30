@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the reviewed v8.3.2 Issue #255 package with two narrow package-generation corrections."""
+"""Execute the reviewed v8.3.2 Issue #255 package with narrow package-generation corrections."""
 from __future__ import annotations
 
 import subprocess
@@ -33,6 +33,21 @@ if toggle_class_count != 2:
 if payload.count(broken_toggle) != 1:
     raise RuntimeError(f"reviewed toggle-replacement defect count: {payload.count(broken_toggle)}")
 payload = payload.replace(broken_toggle, fixed_toggle, 1)
+
+check_anchor = '''for pattern, label in [
+    (r"\\.classList\\.toggle\\(", "class toggle"),'''
+dataset_fix = '''block, remaining_dataset_count = re.subn(
+    r"(?m)^(\\s+)([A-Za-z_$][\\w$]*)\\.dataset\\.([A-Za-z_$][\\w$]*)\\s*=\\s*([^;\\n]+);$",
+    lambda match: f"{match.group(1)}updateUiSetDataset({match.group(2)}, '{match.group(3)}', {match.group(4)});",
+    block,
+)
+if remaining_dataset_count != 1:
+    raise RuntimeError(f"remaining dataset writes: expected 1 match, found {remaining_dataset_count}")
+for pattern, label in [
+    (r"\\.classList\\.toggle\\(", "class toggle"),'''
+if payload.count(check_anchor) != 1:
+    raise RuntimeError(f"reviewed direct-write check anchor count: {payload.count(check_anchor)}")
+payload = payload.replace(check_anchor, dataset_fix, 1)
 
 runtime_path = ROOT / ".github/development-packages/.issue255-v832-runtime.py"
 runtime_path.write_text(payload, encoding="utf-8")

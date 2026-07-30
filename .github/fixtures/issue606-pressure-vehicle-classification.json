@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "matchingCases": [
+    {
+      "requirement": "Fire engine",
+      "typeId": 0,
+      "signal": "Pump Alpha",
+      "expected": true
+    },
+    {
+      "requirement": "Police cars",
+      "typeId": 116,
+      "signal": "Response Bravo",
+      "expected": true
+    },
+    {
+      "requirement": "Ambulance",
+      "typeId": 5,
+      "signal": "Medic Charlie",
+      "expected": true
+    },
+    {
+      "requirement": "Armed Response Vehicle (ARV)",
+      "typeId": 13,
+      "signal": "Trojan Delta",
+      "expected": true
+    },
+    {
+      "requirement": "Police helicopter",
+      "typeId": 11,
+      "signal": "India 99",
+      "expected": true
+    },
+    {
+      "requirement": "Fire Engine or Major Foam Tender",
+      "typeId": 75,
+      "signal": "Foam Echo",
+      "expected": true
+    },
+    {
+      "requirement": "Mountain Rescue 4x4 or SAR 4x4",
+      "typeId": 93,
+      "signal": "Rescue Foxtrot",
+      "expected": true
+    },
+    {
+      "requirement": "Fire engine",
+      "typeId": 5,
+      "signal": "Fire engine",
+      "expected": false
+    },
+    {
+      "requirement": "Fire engine",
+      "typeId": 999,
+      "signal": "Unit Golf",
+      "classificationSignal": "Fire engine",
+      "expected": true
+    },
+    {
+      "requirement": "Mobile Command Lab",
+      "typeId": 999,
+      "signal": "Mobile Command Lab Hotel",
+      "expected": true
+    }
+  ],
+  "mixedModel": {
+    "now": 1785412800000,
+    "radiusMi": 25,
+    "missions": [
+      {
+        "missionId": "fire",
+        "caption": "Fire",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Fire engine",
+            "count": 1
+          }
+        ],
+        "lat": 51.5074,
+        "lng": -0.1278
+      },
+      {
+        "missionId": "police",
+        "caption": "Police",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Police car",
+            "count": 1
+          }
+        ],
+        "lat": 51.5075,
+        "lng": -0.1279
+      },
+      {
+        "missionId": "medical-one",
+        "caption": "Medical one",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Ambulance",
+            "count": 1
+          }
+        ],
+        "lat": 51.5076,
+        "lng": -0.128
+      },
+      {
+        "missionId": "foam",
+        "caption": "Foam",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Fire Engine or Major Foam Tender",
+            "count": 1
+          }
+        ],
+        "lat": 51.5077,
+        "lng": -0.1281
+      },
+      {
+        "missionId": "armed",
+        "caption": "Armed",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Armed Response Vehicle (ARV)",
+            "count": 1
+          }
+        ],
+        "lat": 51.5078,
+        "lng": -0.1282
+      },
+      {
+        "missionId": "dog",
+        "caption": "Dog",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Dog Support Unit (DSU)",
+            "count": 1
+          }
+        ],
+        "lat": 51.5079,
+        "lng": -0.1283
+      },
+      {
+        "missionId": "medical-two",
+        "caption": "Medical two",
+        "source": "personal",
+        "unitsTotal": 1,
+        "createdAt": 1785412800000,
+        "requirements": [
+          {
+            "name": "Ambulance",
+            "count": 1
+          }
+        ],
+        "lat": 51.508,
+        "lng": -0.1284
+      }
+    ],
+    "availableVehicles": [
+      {
+        "id": "pump",
+        "typeId": 0,
+        "signal": "Pump Alpha",
+        "lat": 51.506,
+        "lng": -0.13
+      },
+      {
+        "id": "police",
+        "typeId": 8,
+        "signal": "Response Bravo",
+        "lat": 51.5061,
+        "lng": -0.1301
+      },
+      {
+        "id": "ambulance-near",
+        "typeId": 5,
+        "signal": "Medic Charlie",
+        "lat": 51.5062,
+        "lng": -0.1302
+      },
+      {
+        "id": "ambulance-unlocated",
+        "typeId": 5,
+        "signal": "Medic Delta"
+      },
+      {
+        "id": "foam",
+        "typeId": 75,
+        "signal": "Foam Echo",
+        "lat": 51.5063,
+        "lng": -0.1303
+      },
+      {
+        "id": "arv",
+        "typeId": 13,
+        "signal": "Trojan Foxtrot",
+        "lat": 51.5064,
+        "lng": -0.1304
+      },
+      {
+        "id": "dsu",
+        "typeId": 12,
+        "signal": "Kilo Golf",
+        "lat": 51.5065,
+        "lng": -0.1305
+      }
+    ],
+    "expected": {
+      "required": 7,
+      "assigned": 6,
+      "unverifiedLocation": 1,
+      "shortfall": 0,
+      "allocatedVehicles": 6,
+      "provisionalVehicles": 1,
+      "severity": "pressured"
+    }
+  }
+}

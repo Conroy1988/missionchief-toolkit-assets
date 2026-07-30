@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.1.1
+// @version      9.1.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -464,7 +464,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.1.1',
+        version: '9.1.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -12478,6 +12478,18 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return null;
     }
 
+    function vehicleTypeIdFromRecord(vehicle) {
+        if (!vehicle || typeof vehicle !== 'object') return null;
+        const containers = [vehicle, vehicle.options, vehicle.params, vehicle.vehicle, vehicle.data, vehicle.vehicleData, vehicle._vehicleData]
+            .filter(item => item && typeof item === 'object');
+        for (const item of containers) {
+            const raw = item.vehicle_type ?? item.vehicleType ?? item.vehicle_type_id ?? item.vehicleTypeId;
+            const typeId = Number(raw);
+            if (Number.isInteger(typeId) && typeId >= 0) return typeId;
+        }
+        return null;
+    }
+
     function normaliseVehicleApiPayload(payload) {
         if (Array.isArray(payload)) return payload.filter(item => item && typeof item === 'object');
         if (Array.isArray(payload?.result)) return payload.result.filter(item => item && typeof item === 'object');
@@ -14805,6 +14817,17 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, ' ').trim();
     }
 
+    const UK_VEHICLE_REQUIREMENT_CATALOGUE = Object.freeze([["fire-engine",[0,1,16,17,26,37,38,47],["fire engine","fire engines"]],["fire-engine-or-riv",[0,1,16,17,26,37,38,47,76],["fire engine or riv","fire engines or rivs"]],["aerial-appliance-truck",[2,17],["aerial appliance truck","aerial appliance trucks"]],["aerial-appliance-truck-or-rescue-stairs",[2,17,78],["aerial appliance truck or rescue stairs","aerial appliance trucks or rescue stairs"]],["fire-officer",[3,15,44,77],["fire officer","fire officers","fire officer or airfield firefighting command vehicle","fire officers or airfield firefighting command vehicles"]],["rescue-support-unit-or-rescue-pump",[4,16,38,43],["rescue support unit or rescue pump","rescue support units or rescue pumps"]],["rescue-support-vehicle",[4,16,38,43],["rescue support vehicle","rescue support vehicles"]],["fire-engine-rescue-support-vehicle-or-aerial-appliance-truck",[0,1,2,4,16,17,26,37,38,43,47],["fire engine rescue support vehicle or aerial appliance truck","fire engines rescue support vehicles or aerial appliance trucks"]],["fire-engine-or-rescue-support-vehicle",[0,1,4,16,17,26,37,38,43,47],["fire engine or rescue support vehicle","fire engines or rescue support vehicles"]],["basu",[14,39,46,49],["basu","basus","breathing apparatus support unit","breathing apparatus support units"]],["water-carrier",[6,26,36,41,50],["water carrier","water carriers"]],["drone",[89,90,91],["drone","drones"]],["operational-support-van-trailer-or-personal-sar-vehicle",[86,87,92],["operational support van trailer or personal sar vehicle"]],["control-van",[85],["control van","control vans"]],["iccu-or-ambulance-control-unit",[15,31,44,77],["iccu or ambulance control unit","iccu or ambulance control units","iccu or ambulance control unit or airfield firefighting command vehicle","iccu or ambulance control units or airfield firefighting command vehicles"]],["hazmat-unit-or-cbrn-vehicle",[7,32,39,48,49],["hazmat unit or cbrn vehicle","hazmat units or cbrn vehicles"]],["ambulance",[5],["ambulance","ambulances"]],["police-car",[8,12,13,19,24,25,51,52,56,82,116],["police car","police cars"]],["police-car-or-armed-response-vehicle",[8,12,13,19,24,25,51,52,56,82,116],["police car or armed response vehicle arv","police cars or armed response vehicles arvs"]],["hems",[9],["hems"]],["policehelicopter",[11],["policehelicopter","policehelicopters","police helicopter","police helicopters"]],["armed-response",[13,25,52,56,82],["armed response","armed response vehicle arv","armed response vehicles arvs","arv","arvs"]],["dog-support-unit",[12,53],["dog support unit dsu","dog support units dsus"]],["operational-team-leader",[20,31,34],["operational team leader","operational team leaders"]],["traffic-car",[24,25],["traffic car","traffic cars"]],["atv-carrier",[30],["atv carrier","atv carriers"]],["primary-response-vehicle",[27],["primary response vehicle","primary response vehicles","prv","prvs"]],["secondary-response-vehicle",[28],["secondary response vehicle","secondary response vehicles","srv","srvs"]],["welfare-vehicle",[29,39,45,49,115],["welfare vehicle","welfare vehicles"]],["ambulance-officer",[34],["ambulance officer","ambulance officers"]],["foam-unit",[35,36,37,38,42,75],["foam unit","foam units"]],["mass-casualty-equipment",[33],["mass casualty equipment"]],["mounted-unit",[55],["mounted unit","mounted units"]],["4x4-vehicle",[66,73,93],["4x4 vehicle","4x4 vehicles"]],["coastguard-rope-rescue-unit",[59],["coastguard rope rescue unit","coastguard rope rescue units"]],["flood-rescue-unit",[61],["flood rescue unit","flood rescue units"]],["crv",[57,58,59],["crv","crvs"]],["coastguard-commander",[60],["coastguard commander","coastguard commanders"]],["boat-trailer-or-inland-rescue-boat",[67,74],["boat trailer or inland rescue boat","boat trailers or inland rescue boats","inland rescue boat trailer","inland rescue boats trailer","inland rescue boat trailers","inland rescue boats trailers"]],["ilb-or-alb",[68,69],["ilb or alb","ilbs or albs","seagoing vessel","seagoing vessels","alb or ilb","albs or ilbs"]],["ilb",[68,69],["ilb","ilbs"]],["coastguard-rescue-helicopter",[64,65],["coastguard rescue helicopter","coastguard rescue helicopters"]],["alb",[69],["alb","albs"]],["mud-decontamination-unit",[62],["mud decontamination unit","mud decontamination units"]],["support-unit",[63],["support unit","support units"]],["rescue-watercraft-trailer",[70],["rescue watercraft trailer","rescue watercraft trailers"]],["coastguard-mud-rescue-unit",[58],["coastguard mud rescue unit","coastguard mud rescue units"]],["hovercraft-trailer",[71],["hovercraft trailer","hovercrafts trailer"]],["major-foam-tender",[75],["major foam tender","major foam tenders"]],["rescue-stair",[78,2,17],["rescue stair","rescue stairs"]],["airfield-firefighting-command-vehicle",[77],["airfield firefighting command vehicle","airfield firefighting command vehicles"]],["airfield-operations-vehicle",[79,80],["airfield operations vehicle","airfield operations vehicles"]],["riv",[76],["riv","rivs"]],["medical-equipment-trailer",[81],["medical equipment trailer","medical equipment trailers"]],["airfield-operations-supervisor",[80],["airfield operations supervisor","airfield operations supervisors"]],["armed-cell-van",[82],["armed cell van","armed cell vans"]],["medical-cycle-responder",[83],["medical cycle responder","medical cycle responders"]],["community-midwife",[95],["community midwife","community midwifes"]],["specialist-paramedic-rrv",[96],["specialist paramedic rrv","specialist paramedic rrvs"]],["rescue-dog",[101,102],["rescue dog","rescue dogs"]],["mountain-rescue-4x4",[99],["mountain rescue 4x4"]],["car-recovery",[104,105],["car to tow","cars to tow"]],["road-rail-unit",[107],["road rail unit"]],["eiu",[108],["eiu"]],["eod-commander",[109],["eod commander","eod commanders"]],["eod-response-vehicle",[110],["eod response vehicle","eod response vehicles"]],["eod-medium-equipment-van",[111],["eod medium equipment van","eod medium equipment vans"]],["eod-heavy-equipment-vehicle",[112],["eod heavy equipment vehicle","eod heavy equipment vehicles"]],["marine-eod-response-vehicle",[113],["marine eod response vehicle","marine eod response vehicles"]],["marine-eod-equipment-van",[114],["marine eod equipment van","marine eod equipment vans"]],["police-helicopter-or-drone",[11,89,90,91],["police helicopter or drone","police helicopters or drones"]],["riv-or-major-foam-tender",[75,76],["riv or major foam tender","rivs or major foam tenders"]],["fire-engine-or-major-foam-tender",[0,1,16,17,26,37,38,47,75],["fire engine or major foam tender","fire engines or major foam tenders"]],["fire-engine-riv-or-major-foam-tender",[0,1,16,17,26,37,38,47,75,76],["fire engine riv or major foam tender","fire engines rivs or major foam tenders"]],["mountain-rescue-4x4-or-sar-4x4",[93,99],["mountain rescue 4x4 or sar 4x4","mountain rescue 4x4s or sar 4x4s"]],["rrv-or-specialist-paramedic-rrv",[10,94,96],["rrv or specialist paramedic rrv","rrvs or specialist paramedic rrvs"]]]);
+    const UK_VEHICLE_REQUIREMENT_ALIAS_INDEX = new Map();
+    for (const [key, typeIds, aliases] of UK_VEHICLE_REQUIREMENT_CATALOGUE) {
+        const capability = Object.freeze({ key, typeIds: new Set(typeIds) });
+        for (const alias of aliases) UK_VEHICLE_REQUIREMENT_ALIAS_INDEX.set(alias, capability);
+    }
+
+    function resolveUkVehicleRequirement(value) {
+        return UK_VEHICLE_REQUIREMENT_ALIAS_INDEX.get(normaliseSearchText(value)) || null;
+    }
+
     function resourceSearchToken(value) {
         let token = normaliseSearchText(value);
         if (token.length > 4 && token.endsWith('ies')) token = `${token.slice(0, -3)}y`;
@@ -14818,7 +14841,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const cleaned = normaliseSearchText(original.replace(/\([^)]*\)/g, ' '));
         const stop = new Set(['vehicle', 'vehicles', 'unit', 'units', 'the', 'and', 'with', 'required', 'needed', 'personnel']);
         const tokens = cleaned.split(' ').filter(token => token.length > 1 && !stop.has(token)).map(resourceSearchToken).filter(Boolean);
-        return { cleaned, acronyms, tokens };
+        return { original, cleaned, acronyms, tokens, capability: resolveUkVehicleRequirement(original) };
     }
 
     function buildResourceGapVehicleContext() {
@@ -14829,31 +14852,56 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const markerById = new Map(getVehicleMarkerLayers().map(marker => [vehicleRecordId(marker), marker]).filter(([id]) => id !== null));
         const available = [];
         const byToken = new Map();
+        const byTypeId = new Map();
         for (const vehicle of getPersonalVehicleRecords()) {
-        if (vehicleStatusBucket(vehicle) !== 'available' || vehicleTargetInfo(vehicle).type !== null) continue;
-        const signal = normaliseSearchText(vehicleSearchSignal(vehicle));
-        if (!signal) continue;
-        const tokens = new Set(signal.split(' ').map(resourceSearchToken).filter(Boolean));
-        const prepared = {
-            id: vehicleRecordId(vehicle) || `available-${available.length + 1}`,
-            vehicle,
-            signal,
-            tokens,
-            point: vehicleCoordinates(vehicle, markerById)
-        };
-        available.push(prepared);
-        for (const token of tokens) {
-            const bucket = byToken.get(token) || [];
-            bucket.push(prepared);
-            byToken.set(token, bucket);
+            if (vehicleStatusBucket(vehicle) !== 'available' || vehicleTargetInfo(vehicle).type !== null) continue;
+            const id = vehicleRecordId(vehicle) || `available-${available.length + 1}`;
+            const classification = customVehicleClassificationFromRecord(vehicle) || customVehicleClassificationForId(id);
+            const typeId = vehicleTypeIdFromRecord(vehicle) ?? classification?.baseTypeId ?? null;
+            const signal = normaliseSearchText(vehicleSearchSignal(vehicle));
+            const classificationSignal = normaliseSearchText(classification?.category);
+            if (!signal && !classificationSignal && typeId === null) continue;
+            const tokens = new Set(signal.split(' ').map(resourceSearchToken).filter(Boolean));
+            const classificationTokens = new Set(classificationSignal.split(' ').map(resourceSearchToken).filter(Boolean));
+            const prepared = {
+                id,
+                vehicle,
+                typeId,
+                signal,
+                tokens,
+                classificationSignal,
+                classificationTokens,
+                point: vehicleCoordinates(vehicle, markerById)
+            };
+            available.push(prepared);
+            for (const token of new Set([...tokens, ...classificationTokens])) {
+                const bucket = byToken.get(token) || [];
+                bucket.push(prepared);
+                byToken.set(token, bucket);
+            }
+            if (typeId !== null) {
+                const bucket = byTypeId.get(typeId) || [];
+                bucket.push(prepared);
+                byTypeId.set(typeId, bucket);
+            }
         }
-        }
-        resourceGapVehicleContextCache = { key, createdAt: now, available, byToken };
+        resourceGapVehicleContextCache = { key, createdAt: now, available, byToken, byTypeId };
         return resourceGapVehicleContextCache;
     }
 
     function preparedVehicleMatchesRequirement(prepared, parts) {
-        if (!prepared?.signal) return false;
+        if (!prepared || !parts) return false;
+        if (parts.capability) {
+            const typeId = Number(prepared.typeId);
+            if (Number.isInteger(typeId) && typeId >= 0 && parts.capability.typeIds.has(typeId)) return true;
+            const categoryTokens = prepared.classificationTokens instanceof Set ? prepared.classificationTokens : new Set();
+            if (parts.acronyms.some(acronym => acronym && categoryTokens.has(resourceSearchToken(acronym)))) return true;
+            if (parts.cleaned && prepared.classificationSignal?.includes(parts.cleaned)) return true;
+            if (!parts.tokens.length || !prepared.classificationSignal) return false;
+            const categoryMatches = parts.tokens.filter(token => categoryTokens.has(token)).length;
+            return categoryMatches >= Math.max(1, Math.ceil(parts.tokens.length * 0.6));
+        }
+        if (!prepared.signal) return false;
         if (parts.acronyms.some(acronym => acronym && prepared.tokens.has(resourceSearchToken(acronym)))) return true;
         if (parts.cleaned && prepared.signal.includes(parts.cleaned)) return true;
         if (!parts.tokens.length) return false;
@@ -14893,6 +14941,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const rows = requirements.vehicles.map(requirement => {
         const parts = requirementSearchParts(requirement.name);
         const candidateSet = new Set();
+        for (const typeId of parts.capability?.typeIds || []) {
+            for (const prepared of context.byTypeId?.get(typeId) || []) candidateSet.add(prepared);
+        }
         for (const token of [...parts.tokens, ...parts.acronyms.map(resourceSearchToken)]) {
             for (const prepared of context.byToken?.get(token) || []) candidateSet.add(prepared);
         }
@@ -14928,7 +14979,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
     function operationalPressureRequirementKey(value) {
         const parts = requirementSearchParts(value);
-        return parts.acronyms[0] || parts.cleaned || normaliseSearchText(value) || 'unknown-resource';
+        return parts.capability?.key || parts.acronyms[0] || parts.cleaned || normaliseSearchText(value) || 'unknown-resource';
     }
 
     function formatOperationalPressureDuration(ms) {
@@ -14956,6 +15007,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 missionId,
                 required: 0,
                 assigned: 0,
+                unverified: 0,
                 shortfall: 0,
                 ageMs,
                 unattended: mission.source === 'personal' && Math.max(0, Number(mission.unitsTotal) || 0) === 0,
@@ -14973,15 +15025,25 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 const name = String(requirement?.name || 'Required vehicle').trim() || 'Required vehicle';
                 const parts = requirementSearchParts(name);
                 const candidates = [];
+                const recognisedCandidates = [];
+                const unlocatedCandidates = [];
+                const outsideRadiusCandidates = [];
                 for (const [preparedIndex, prepared] of available.entries()) {
                     if (!preparedVehicleMatchesRequirement(prepared, parts)) continue;
+                    const id = String(prepared.id ?? `available-${preparedIndex + 1}`);
                     const distance = haversineMiles(missionPoint, prepared.point);
+                    const candidate = { id, distance };
+                    recognisedCandidates.push(candidate);
                     if (distance === null) {
                         locationEvidenceMissing = true;
+                        unlocatedCandidates.push(candidate);
                         continue;
                     }
-                    if (distance > radiusMi) continue;
-                    candidates.push({ id: String(prepared.id ?? `available-${preparedIndex + 1}`), distance });
+                    if (distance > radiusMi) {
+                        outsideRadiusCandidates.push(candidate);
+                        continue;
+                    }
+                    candidates.push(candidate);
                 }
                 candidates.sort((left, right) => left.distance - right.distance || left.id.localeCompare(right.id));
                 missionRows.push({
@@ -14991,7 +15053,11 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     key: operationalPressureRequirementKey(name),
                     count,
                     candidates,
+                    recognisedCandidates,
+                    unlocatedCandidates,
+                    outsideRadiusCandidates,
                     assigned: 0,
+                    unverified: 0,
                     shortfall: 0
                 });
                 pressure.required += count;
@@ -15016,13 +15082,29 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         );
 
         const allocatedVehicleIds = new Set();
+        const provisionalVehicleIds = new Set();
+        const reservedVehicleIds = new Set();
+        const unresolvedSlots = [];
         for (const slot of slots) {
-            const candidate = slot.row.candidates.find(item => !allocatedVehicleIds.has(item.id));
+            const candidate = slot.row.candidates.find(item => !reservedVehicleIds.has(item.id));
             const pressure = missionPressure.get(slot.row.missionId);
             if (candidate) {
                 allocatedVehicleIds.add(candidate.id);
+                reservedVehicleIds.add(candidate.id);
                 slot.row.assigned += 1;
                 if (pressure) pressure.assigned += 1;
+            } else {
+                unresolvedSlots.push(slot);
+            }
+        }
+        for (const slot of unresolvedSlots) {
+            const pressure = missionPressure.get(slot.row.missionId);
+            const provisional = slot.row.unlocatedCandidates.find(item => !reservedVehicleIds.has(item.id));
+            if (provisional) {
+                provisionalVehicleIds.add(provisional.id);
+                reservedVehicleIds.add(provisional.id);
+                slot.row.unverified += 1;
+                if (pressure) pressure.unverified += 1;
             } else {
                 slot.row.shortfall += 1;
                 if (pressure) pressure.shortfall += 1;
@@ -15038,17 +15120,25 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     name: row.name,
                     demand: 0,
                     assigned: 0,
+                    unverified: 0,
                     shortfall: 0,
                     candidateIds: new Set(),
+                    recognisedIds: new Set(),
+                    unlocatedIds: new Set(),
+                    outsideRadiusIds: new Set(),
                     missionIds: new Set()
                 };
                 requirementGroups.set(row.key, group);
             }
             group.demand += row.count;
             group.assigned += row.assigned;
+            group.unverified += row.unverified;
             group.shortfall += row.shortfall;
             group.missionIds.add(row.missionId);
             row.candidates.forEach(candidate => group.candidateIds.add(candidate.id));
+            row.recognisedCandidates.forEach(candidate => group.recognisedIds.add(candidate.id));
+            row.unlocatedCandidates.forEach(candidate => group.unlocatedIds.add(candidate.id));
+            row.outsideRadiusCandidates.forEach(candidate => group.outsideRadiusIds.add(candidate.id));
         }
 
         const groups = Array.from(requirementGroups.values()).map(group => ({
@@ -15056,13 +15146,19 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             name: group.name,
             demand: group.demand,
             assigned: group.assigned,
+            unverified: group.unverified,
             shortfall: group.shortfall,
-            available: group.candidateIds.size,
-            reserve: group.candidateIds.size - group.demand,
+            available: group.recognisedIds.size,
+            confirmedAvailable: group.candidateIds.size,
+            unlocated: group.unlocatedIds.size,
+            outsideRadius: group.outsideRadiusIds.size,
+            reserve: group.recognisedIds.size - group.demand,
+            confirmedReserve: group.candidateIds.size - group.demand,
             missionCount: group.missionIds.size,
-            conflict: group.missionIds.size > 1 && group.demand > group.candidateIds.size
+            conflict: group.missionIds.size > 1 && group.demand > group.recognisedIds.size
         })).sort((left, right) =>
             right.shortfall - left.shortfall ||
+            right.unverified - left.unverified ||
             Number(right.conflict) - Number(left.conflict) ||
             left.reserve - right.reserve ||
             right.demand - left.demand ||
@@ -15081,7 +15177,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 else transport.general += transportCount;
             }
             const reasons = [];
-            if (pressure.shortfall > 0) reasons.push(`${pressure.shortfall} resource slot${pressure.shortfall === 1 ? '' : 's'} unfilled`);
+            if (pressure.shortfall > 0) reasons.push(`${pressure.shortfall} confirmed resource slot${pressure.shortfall === 1 ? '' : 's'} unfilled`);
+            if (pressure.unverified > 0) reasons.push(`${pressure.unverified} resource slot${pressure.unverified === 1 ? '' : 's'} need location evidence`);
             if (pressure.unattended) reasons.push('No personal units committed');
             if (pressure.isStuck) reasons.push(`No progress for ${formatOperationalPressureDuration(pressure.stuckForMs)}`);
             if (pressure.ageMs >= 8 * 3600000) reasons.push(`${formatOperationalPressureDuration(pressure.ageMs)} old`);
@@ -15090,6 +15187,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             const score =
                 (pinned ? 10000 : 0) +
                 pressure.shortfall * 120 +
+                pressure.unverified * 45 +
                 (pressure.isStuck ? 95 + Math.min(60, Math.floor(pressure.stuckForMs / 600000)) : 0) +
                 (pressure.unattended ? 80 : 0) +
                 (pressure.transport ? 40 + Math.min(60, transportCount * 10) : 0) +
@@ -15105,6 +15203,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 score,
                 reasons,
                 shortfall: pressure.shortfall,
+                unverified: pressure.unverified,
                 required: pressure.required,
                 assigned: pressure.assigned,
                 ageMs: pressure.ageMs,
@@ -15122,7 +15221,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
 
         const totalRequired = missionRows.reduce((sum, row) => sum + row.count, 0);
         const totalAssigned = missionRows.reduce((sum, row) => sum + row.assigned, 0);
-        const totalShortfall = totalRequired - totalAssigned;
+        const totalUnverified = missionRows.reduce((sum, row) => sum + row.unverified, 0);
+        const totalShortfall = missionRows.reduce((sum, row) => sum + row.shortfall, 0);
         const actNow = actions.filter(action => action.reasons.length > 0);
         const fleetConflicts = groups.filter(group => group.conflict);
         const reserveRisks = groups.filter(group => group.demand > 0 && group.reserve <= 1);
@@ -15130,21 +15230,23 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const unattendedCount = actions.filter(action => action.unattended).length;
         const severity = totalShortfall > 0 || stuckCount > 0
             ? 'critical'
-            : actNow.length > 0 || reserveRisks.length > 0 || transport.missions > 0
+            : totalUnverified > 0 || actNow.length > 0 || reserveRisks.length > 0 || transport.missions > 0
                 ? 'pressured'
                 : actions.length
                     ? 'stable'
                     : 'clear';
         const summary = severity === 'critical'
-            ? `${totalShortfall} unfilled resource slot${totalShortfall === 1 ? '' : 's'} across ${actions.length} active mission${actions.length === 1 ? '' : 's'}.`
+            ? `${totalShortfall} confirmed unfilled resource slot${totalShortfall === 1 ? '' : 's'} across ${actions.length} active mission${actions.length === 1 ? '' : 's'}${totalUnverified ? `; ${totalUnverified} more need location evidence` : ''}.`
             : severity === 'pressured'
-                ? `${actNow.length} mission${actNow.length === 1 ? '' : 's'} need attention; current resource demand is covered.`
+                ? totalUnverified
+                    ? `${totalUnverified} resource slot${totalUnverified === 1 ? '' : 's'} need location evidence; ${totalAssigned}/${totalRequired} are confirmed in radius.`
+                    : `${actNow.length} mission${actNow.length === 1 ? '' : 's'} need attention; current resource demand is covered.`
                 : severity === 'stable'
                     ? `${actions.length} active mission${actions.length === 1 ? '' : 's'} with no confirmed resource shortfall.`
                     : 'No active personal or joined alliance missions are currently visible.';
 
         return {
-            id: `pressure-${now}-${actions.length}-${totalRequired}-${totalShortfall}`,
+            id: `pressure-${now}-${actions.length}-${totalRequired}-${totalShortfall}-${totalUnverified}`,
             generatedAt: now,
             severity,
             summary,
@@ -15163,8 +15265,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             resourcePressure: {
                 required: totalRequired,
                 assigned: totalAssigned,
+                unverifiedLocation: totalUnverified,
                 shortfall: totalShortfall,
                 allocatedVehicles: allocatedVehicleIds.size,
+                provisionalVehicles: provisionalVehicleIds.size,
                 availableVehicles: available.length,
                 groups
             },
@@ -18006,14 +18110,19 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         const rows = snapshot.resourcePressure.groups.slice(0, 8);
         if (!rows.length) return '<div class="mcms-pressure-empty">No current missing-vehicle requirements are exposed by MissionChief.</div>';
         return rows.map(row => {
-            const tone = row.shortfall > 0 ? 'critical' : row.reserve <= 1 ? 'warning' : 'covered';
+            const tone = row.shortfall > 0 ? 'critical' : row.unverified > 0 || row.reserve <= 1 ? 'warning' : 'covered';
             const label = row.shortfall > 0
                 ? `${row.shortfall} short`
+                : row.unverified > 0
+                    ? `${row.unverified} location unknown`
                 : row.reserve <= 1
                     ? `${Math.max(0, row.reserve)} reserve`
                     : `${row.reserve} reserve`;
+            const locationEvidence = row.confirmedAvailable === row.available
+                ? `${row.available} recognised`
+                : `${row.available} recognised · ${row.confirmedAvailable} confirmed in radius${row.unlocated ? ` · ${row.unlocated} unlocated` : ''}${row.outsideRadius ? ` · ${row.outsideRadius} outside radius` : ''}`;
             return `<div class="mcms-pressure-capacity-row" data-tone="${tone}">
-                <span><strong>${escapeHtml(row.name)}</strong><small>${row.missionCount} mission${row.missionCount === 1 ? '' : 's'} · ${row.assigned}/${row.demand} allocated${row.conflict ? ' · fleet conflict' : ''}</small></span>
+                <span><strong>${escapeHtml(row.name)}</strong><small>${row.missionCount} mission${row.missionCount === 1 ? '' : 's'} · ${row.assigned}/${row.demand} confirmed · ${escapeHtml(locationEvidence)}${row.conflict ? ' · fleet conflict' : ''}</small></span>
                 <b>${escapeHtml(label)}</b>
             </div>`;
         }).join('');
@@ -18031,7 +18140,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 <div class="mcms-pressure-actions">${actions}</div>
             </section>
             <section class="mcms-pressure-section">
-                <div class="mcms-pressure-section-head"><strong>Fleet pressure</strong><span>${snapshot.resourcePressure.allocatedVehicles}/${snapshot.resourcePressure.availableVehicles} available vehicles allocated</span></div>
+                <div class="mcms-pressure-section-head"><strong>Fleet pressure</strong><span>${snapshot.resourcePressure.allocatedVehicles} confirmed${snapshot.resourcePressure.provisionalVehicles ? ` · ${snapshot.resourcePressure.provisionalVehicles} location-unverified` : ''} · ${snapshot.resourcePressure.availableVehicles} FMS 1/2 available</span></div>
                 <div class="mcms-pressure-capacity">${operationalPressureCapacityHtml(snapshot)}</div>
             </section>
             <section class="mcms-pressure-section mcms-pressure-transport">
@@ -18100,7 +18209,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!force && !operationalPressureBoardOpen() && !menuSummary) return;
         const snapshot = buildOperationalPressureSnapshot(force);
         if (menuSummary) {
-            setInnerHtmlIfChanged(menuSummary, `<strong>${escapeHtml(operationalPressureSeverityLabel(snapshot.severity))}</strong><span>${escapeHtml(snapshot.summary)}</span><small>${snapshot.resourcePressure.shortfall} short · ${snapshot.transport.missions} transport mission${snapshot.transport.missions === 1 ? '' : 's'} · updated ${escapeHtml(formatClockTime(snapshot.generatedAt))}</small>`, `pressure-menu:${snapshot.id}`);
+            setInnerHtmlIfChanged(menuSummary, `<strong>${escapeHtml(operationalPressureSeverityLabel(snapshot.severity))}</strong><span>${escapeHtml(snapshot.summary)}</span><small>${snapshot.resourcePressure.shortfall} confirmed short${snapshot.resourcePressure.unverifiedLocation ? ` · ${snapshot.resourcePressure.unverifiedLocation} location-unverified` : ''} · ${snapshot.transport.missions} transport mission${snapshot.transport.missions === 1 ? '' : 's'} · updated ${escapeHtml(formatClockTime(snapshot.generatedAt))}</small>`, `pressure-menu:${snapshot.id}`);
         }
         if (!board || !board.classList.contains('mcms-open')) {
             setOperationalSitrepStatus(operationalSitrepStatus, operationalSitrepStatusTone);
@@ -23698,10 +23807,15 @@ Create the private backup now?`);
         return truncateDiscord(rows.map(row => {
             const status = row.shortfall > 0
                 ? `**${row.shortfall} short**`
+                : row.unverified > 0
+                    ? `**${row.unverified} location-unverified**`
                 : row.reserve <= 1
                     ? `**${Math.max(0, row.reserve)} reserve**`
                     : `${row.reserve} reserve`;
-            return `• **${escapeDiscordMarkdown(row.name)}** — ${row.assigned}/${row.demand} allocated · ${row.available} available · ${status}${row.conflict ? ' · fleet conflict' : ''}`;
+            const evidence = row.confirmedAvailable === row.available
+                ? `${row.available} recognised`
+                : `${row.available} recognised · ${row.confirmedAvailable} confirmed in radius${row.unlocated ? ` · ${row.unlocated} unlocated` : ''}${row.outsideRadius ? ` · ${row.outsideRadius} outside radius` : ''}`;
+            return `• **${escapeDiscordMarkdown(row.name)}** — ${row.assigned}/${row.demand} confirmed · ${evidence} · ${status}${row.conflict ? ' · fleet conflict' : ''}`;
         }).join('\n'), 1000);
     }
 
@@ -23713,8 +23827,9 @@ Create the private backup now?`);
         const statusLines = [
             `Active missions: **${snapshot.missions.toLocaleString('en-GB')}**`,
             `Act now: **${snapshot.actNow.length.toLocaleString('en-GB')}**`,
-            `Resource slots: **${snapshot.resourcePressure.assigned}/${snapshot.resourcePressure.required} allocated**`,
+            `Resource slots: **${snapshot.resourcePressure.assigned}/${snapshot.resourcePressure.required} confirmed in radius**`,
             `Confirmed shortfall: **${snapshot.resourcePressure.shortfall.toLocaleString('en-GB')}**`,
+            `Location-unverified slots: **${snapshot.resourcePressure.unverifiedLocation.toLocaleString('en-GB')}**`,
             `Available fleet in scope: **${snapshot.resourcePressure.availableVehicles.toLocaleString('en-GB')}**`
         ];
         const transportValue = snapshot.transport.missions

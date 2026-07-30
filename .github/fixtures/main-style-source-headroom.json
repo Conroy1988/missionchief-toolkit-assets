@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 603,
-    "version": "9.1.1",
-    "sourceBytes": 1796276,
-    "sourceLines": 27746,
-    "sourceSha256": "631f016542f6cb0fa072fb201b826a99b5517a509a810dae762c0dca8db3c53f",
+    "issue": 606,
+    "version": "9.1.2",
+    "sourceBytes": 1810905,
+    "sourceLines": 27861,
+    "sourceSha256": "51d6d690de8ac42d225853c6a50b476ea9ccac3242d66a40a3975842696c9ae0",
     "templateBytes": 744801,
     "templateLines": 9002,
     "templateSha256": "e0c2e0e1defa205572a5f4783f515f8af58a89a4065ee05abd38ff1473a0ea92",
     "canonicalCssSha256": "c31dd6d4baf512167223367f45b2c719b668ea1ec5920f8f8756c459e91b0f44",
-    "maxSourceBytes": 1809975,
-    "maxSourceLines": 27788,
+    "maxSourceBytes": 1824604,
+    "maxSourceLines": 27903,
     "minTemplateBytes": 500000,
-    "baseline": "9.1.0",
+    "baseline": "9.1.1",
     "approvedGrowth": {
-      "sourceBytes": 11301,
-      "sourceLines": 208,
-      "templateBytes": 1182,
-      "templateLines": 25
+      "sourceBytes": 14629,
+      "sourceLines": 115,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issues #603 and #604 refresh-safe settings persistence, upgrade recovery, Tablet navigation and drag repair, and restored Stuck map control"
+    "scope": "Issue #606 canonical UK numeric vehicle classification, custom-callsign resilience, and explicit recognised, in-radius, outside-radius and location-unverified Pressure Board evidence"
   }
 }

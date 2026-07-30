@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v910) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v912) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.1.1
+## Current interface — v9.1.2
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.1.1` keeps the six-section Command Interface and map-native Operational Pressure Board, while restoring reliable settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
+Version `9.1.2` keeps the six-section Command Interface and map-native Operational Pressure Board, while resolving available units through MissionChief's canonical numeric vehicle types even when custom callsigns are used. It distinguishes recognised fleet, confirmed in-radius capacity and location-unverified capacity instead of presenting missing coordinates as zero availability. Reliable settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
 
 - **Map** contains visibility, overlays and map tools.
 - **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.
@@ -71,7 +71,7 @@ Version `9.1.1` keeps the six-section Command Interface and map-native Operation
 - **Appearance** clearly separates Toolkit interface themes from operational map skins.
 - **Settings** contains device layout, dock position, keyboard controls, Economy Mode, command-bar visibility and recovery.
 
-The board reconciles active personal and joined alliance missions against the available personal fleet so the same specialist vehicle cannot satisfy several missions at once. It shows Top Actions, shared resource shortfalls, Fleet Conflicts, reserve risk and patient/prisoner transport pressure. **Focus**, **Open** and **Pin** remain read-only navigation actions; the board never selects or dispatches vehicles.
+The board reconciles active personal and joined alliance missions against the available personal fleet so the same specialist vehicle cannot satisfy several missions at once. Canonical UK type IDs take priority over callsign text; own-vehicle classification evidence is considered next and fuzzy text is reserved for requirements with no catalogue entry. It shows Top Actions, confirmed shortfalls, partial location evidence, Fleet Conflicts, reserve risk and patient/prisoner transport pressure. **Focus**, **Open** and **Pin** remain read-only navigation actions; the board never selects or dispatches vehicles.
 
 The matching **Operational SITREP** is posted only when the user selects **Generate & Post Operational SITREP**. It reuses the saved Finance Discord webhook, suppresses mentions and sends the same evidence snapshot shown on the board. The single map launcher, explicit command states, current-section search and responsive navigation continue to behave consistently under every interface theme.
 

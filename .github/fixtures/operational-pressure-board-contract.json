@@ -60,12 +60,14 @@
   "availableVehicles": [
     {
       "id": "arv-1",
+      "typeId": 13,
       "signal": "armed response vehicle arv",
       "lat": 51.506,
       "lng": -0.13
     },
     {
       "id": "ambulance-1",
+      "typeId": 5,
       "signal": "ambulance",
       "lat": 51.509,
       "lng": -0.125

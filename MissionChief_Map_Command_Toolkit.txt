@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.1.2
+// @version      9.1.3
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -464,7 +464,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.1.2',
+        version: '9.1.3',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -6745,10 +6745,19 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         }html[data-mcms-ui-theme="godfather"] #${SCRIPT.pressureBoardId} {
             --mcms-pressure-accent:#d4ad68;--mcms-pressure-accent-rgb:212,173,104;--mcms-pressure-bg:linear-gradient(150deg,rgba(34,22,17,.995),rgba(13,7,6,.998));
         }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} {
-            top:max(10px,env(safe-area-inset-top)) !important;
+            --mcms-pressure-board-resolved-top:max(
+                var(--mcms-pressure-board-workspace-top,62px),
+                calc(var(--mcms-visual-offset-top,0px) + env(safe-area-inset-top) + 10px)
+            );
+            top:var(--mcms-pressure-board-resolved-top) !important;
             right:10px !important;
             width:min(700px,calc(100vw - 20px)) !important;
-            max-height:calc(100vh - 20px - env(safe-area-inset-bottom)) !important;
+            max-height:calc(
+                var(--mcms-visual-offset-top,0px) +
+                var(--mcms-visual-height,100dvh) -
+                var(--mcms-pressure-board-resolved-top) -
+                max(10px,env(safe-area-inset-bottom))
+            ) !important;
             padding:14px !important;
         }html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} :is(.mcms-pressure-sitrep,.mcms-pressure-refresh,.mcms-pressure-close),
         html[data-mcms-tablet-active="true"] #${SCRIPT.pressureBoardId} .mcms-pressure-action-controls button {
@@ -11098,7 +11107,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
     function setRootStylePropertyIfChanged(root,name,value){if(!root?.style||root.style.getPropertyValue(name)===value)return false;root.style.setProperty(name,value);return true;}
     function applyVisualViewportGeometry(root=document.documentElement,viewport=getViewportMetrics()){if(!root)return viewport;const layoutWidth=Math.max(viewport.width,Number(pageWindow.innerWidth)||Number(root.clientWidth)||viewport.width),layoutHeight=Math.max(viewport.height,Number(pageWindow.innerHeight)||Number(root.clientHeight)||viewport.height),rightGap=Math.max(0,layoutWidth-(viewport.offsetLeft+viewport.width)),bottomGap=Math.max(0,layoutHeight-(viewport.offsetTop+viewport.height)),keyboardLoss=Math.max(0,layoutHeight-viewport.height),keyboardOpen=isTouchLayoutActive()&&keyboardLoss>=Math.max(120,layoutHeight*.18),px=value=>`${Math.round(Math.max(0,Number(value)||0)*100)/100}px`;
     for(const [name,value] of [['--mcms-visual-offset-left',viewport.offsetLeft],['--mcms-visual-offset-top',viewport.offsetTop],['--mcms-visual-gap-right',rightGap],['--mcms-visual-gap-bottom',bottomGap],['--mcms-visual-width',viewport.width],['--mcms-visual-height',viewport.height]])setRootStylePropertyIfChanged(root,name,px(value));setAttributeIfChanged(root,'data-mcms-keyboard-open',String(Boolean(keyboardOpen)));return{...viewport,layoutWidth,layoutHeight,rightGap,bottomGap,keyboardOpen};}
-    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))positionPanelOverlay(true);scheduleMajorIncidentFeedLayout();}
+    function refreshTouchViewportLayout(){if(runtime.destroyed)return;applyRootAttributes();applyVisualViewportGeometry();refreshTabletModeUi();fitControlToMap();const panel=document.getElementById(SCRIPT.panelId);if(panel?.classList.contains('mcms-open'))positionPanelOverlay(true);if(operationalPressureBoardOpen())positionOperationalPressureBoard();scheduleMajorIncidentFeedLayout();}
     function scheduleVisualViewportStabilisation(reason='viewport'){const generation=++visualViewportRefreshGeneration,delays=isTouchLayoutActive()?[0,80,220,420]:[0];for(const delay of delays)pageWindow.setTimeout(()=>{if(runtime.destroyed||generation!==visualViewportRefreshGeneration)return;refreshTouchViewportLayout();},delay);return reason;}
     function hasCoarsePointer() {
         try {
@@ -18073,6 +18082,34 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         return Boolean(operationalPressureBoardElement()?.classList?.contains('mcms-open'));
     }
 
+    function resolveOperationalPressureBoardTabletGeometry(
+        viewport = getViewportMetrics(),
+        mapEl = getLargestLeafletMap()
+    ) {
+        let mapRect = null;
+        try { mapRect = mapEl?.getBoundingClientRect?.() || null; } catch (err) {}
+        const bounds = resolveDesktopPanelBounds(mapRect, viewport, 10);
+        const viewportBottom = (Number(viewport?.offsetTop) || 0) + Math.max(1, Number(viewport?.height) || 1);
+        return {
+            top: bounds.top,
+            maxHeight: Math.max(1, Math.floor(viewportBottom - bounds.top - 10))
+        };
+    }
+
+    function positionOperationalPressureBoard(
+        board = operationalPressureBoardElement(),
+        viewport = getViewportMetrics()
+    ) {
+        if (!board) return null;
+        if (!tabletModeActive || mobileModeActive) {
+            board.style.removeProperty('--mcms-pressure-board-workspace-top');
+            return null;
+        }
+        const geometry = resolveOperationalPressureBoardTabletGeometry(viewport);
+        setRootStylePropertyIfChanged(board, '--mcms-pressure-board-workspace-top', `${geometry.top}px`);
+        return geometry;
+    }
+
     function operationalPressureSeverityLabel(value) {
         return value === 'critical' ? 'Critical pressure'
             : value === 'pressured' ? 'Attention required'
@@ -18279,6 +18316,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         board.classList.add('mcms-open');
         board.setAttribute('aria-hidden', 'false');
+        positionOperationalPressureBoard(board);
         updateUI();
         renderOperationalPressureBoard(true);
         refreshOperationalPressureBoard(false);

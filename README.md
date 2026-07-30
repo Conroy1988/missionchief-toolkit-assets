@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v912) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v913) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.1.2
+## Current interface — v9.1.3
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.1.2` keeps the six-section Command Interface and map-native Operational Pressure Board, while resolving available units through MissionChief's canonical numeric vehicle types even when custom callsigns are used. It distinguishes recognised fleet, confirmed in-radius capacity and location-unverified capacity instead of presenting missing coordinates as zero availability. Reliable settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
+Version `9.1.3` keeps the six-section Command Interface and map-native Operational Pressure Board, while ensuring the complete board header remains below MissionChief's fixed navigation bar in Tablet mode. The board recalculates its usable top and height when opened, resized or rotated, preserving the complete title and action row inside the visible viewport. Canonical numeric vehicle recognition, custom callsign support, settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
 
 - **Map** contains visibility, overlays and map tools.
 - **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.

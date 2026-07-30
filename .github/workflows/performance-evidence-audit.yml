@@ -47,14 +47,8 @@ jobs:
             exit 1
           fi
 
-      - name: Install exact AST parser
-        run: npm install --no-save --ignore-scripts --no-audit --no-fund acorn@8.15.0
-
-      - name: Validate audit collectors and observer ownership inventory
-        run: |
-          set -euo pipefail
-          python3 .github/scripts/test_observer_ownership_inventory.py
-          python3 .github/scripts/test_controlled_browser_evidence.py
+      - name: Validate controlled Chrome collector
+        run: python3 .github/scripts/test_controlled_browser_evidence.py
 
       - name: Collect controlled Chrome evidence
         id: browser

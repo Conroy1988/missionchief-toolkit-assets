@@ -24,6 +24,9 @@ def main():
  assert 'data-mcms-reel-copy="primary"' in render and 'data-mcms-reel-copy="duplicate"' in render
  assert 'aria-hidden="true" tabindex="-1"' in source
  assert 'groupWidth / 85' in motion and "--mcms-incident-feed-duration" in motion
+ assert motion.count('majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex)')==1
+ assert motion.index('if (forceRestart) {') < motion.index('majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex)')
+ assert 'Layout, resize and unchanged-render reconciliation must not seek a' in motion
  assert 'translate3d(-50%,0,0)' in source
  assert 'translate3d(${-normalised * 100}%' not in source
  assert 'majorIncidentFeedScheduleAdvance' not in source and 'majorIncidentFeedAdvanceTimer' not in source

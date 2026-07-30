@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.0.0
+// @version      9.0.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.0.0',
+        version: '9.0.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -16141,9 +16141,14 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             track.style.setProperty('animation', 'none', 'important');
             void track.offsetWidth;
             track.style.removeProperty('animation');
+            if (count > 0) majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
+            else majorIncidentFeedSyncControls(feed);
+        } else {
+            // Layout, resize and unchanged-render reconciliation must not seek a
+            // healthy reel. Reapplying the retained index here rewinds the live
+            // CSS animation whenever MissionChief refreshes otherwise stable UI.
+            majorIncidentFeedSyncControls(feed);
         }
-        if (count > 0) majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex);
-        else majorIncidentFeedSyncControls(feed);
         majorIncidentFeedSyncReelState(feed);
         return count > 1;
     }

@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 597,
-    "version": "9.0.0",
-    "sourceBytes": 1717607,
-    "sourceLines": 26411,
-    "sourceSha256": "8f5925b7d5163d87442090c29a621d2680a0f4d6305de8eb77c3126adeb2fa9f",
+    "issue": 599,
+    "version": "9.0.1",
+    "sourceBytes": 1717926,
+    "sourceLines": 26416,
+    "sourceSha256": "948df0e7058a5fcce8fe3ad1c065f13ca41aa094177adc32872856af4db0ad5d",
     "templateBytes": 718887,
     "templateLines": 8581,
     "templateSha256": "edddf17eea774c7974c26788209765d66fa746b53db385577daa330863bbb525",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 1737361,
     "maxSourceLines": 26654,
     "minTemplateBytes": 500000,
-    "baseline": "8.4.0",
+    "baseline": "9.0.0",
     "approvedGrowth": {
-      "sourceBytes": 49957,
-      "sourceLines": 987,
-      "templateBytes": 35329,
-      "templateLines": 723
+      "sourceBytes": 319,
+      "sourceLines": 5,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #597 six-section Command Interface, grouped map controls, shared theme geometry and responsive Desktop/Tablet/iOS layouts"
+    "scope": "Issue #599 Incident Command Wire reconciliation ownership fix and no-rewind runtime coverage"
   }
 }

@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "9.0.0";
-const EXPECTED_SHA = "8f5925b7d5163d87442090c29a621d2680a0f4d6305de8eb77c3126adeb2fa9f";
+const EXPECTED_VERSION = "9.0.1";
+const EXPECTED_SHA = "948df0e7058a5fcce8fe3ad1c065f13ca41aa094177adc32872856af4db0ad5d";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
@@ -182,7 +182,7 @@ export async function measureWriteSuppression() {
     COMMAND_SECTION_META: Object.freeze({ map: { label: "Map", title: "Map Controls" }, missions: { label: "Missions", title: "Mission Operations" }, finance: { label: "Finance", title: "Finance Command" }, locations: { label: "Locations", title: "Saved Locations" }, appearance: { label: "Appearance", title: "Appearance" }, settings: { label: "Settings", title: "Toolkit Settings" } }),
     commandSearchQuery: "", mobileModeActive: false,
     applyRootAttributes: () => countNested("applyRootAttributes"), scheduleMajorIncidentFeedRender: () => countNested("scheduleMajorIncidentFeedRender"), removeMajorIncidentFeed: () => countNested("removeMajorIncidentFeed"), toolkitApplyCommandBarState: () => countNested("toolkitApplyCommandBarState"), refreshTabletModeUi: () => countNested("refreshTabletModeUi"), updateAllianceMemberManagerMenuControl: () => countNested("updateAllianceMemberManagerMenuControl"), renderTransportSweepPanel: () => countNested("renderTransportSweepPanel"), getDiscordWebhookUrl: () => "https://discord.invalid/webhook", setDiscordStatus: () => countNested("setDiscordStatus"), discordFinanceStatus: "ready", discordFinanceStatusTone: "success", renderFinanceVaultStatus: () => countNested("renderFinanceVaultStatus"), renderProfiles: () => countNested("renderProfiles"), operationalVisible: false, operationalUiIsVisible: () => sandbox.operationalVisible, renderOperationalPanels: () => countNested("renderOperationalPanels"), __MCMS_PROFILER__: profiler };
-  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v9.0.0.js" });
+  sandbox.globalThis = sandbox; vm.createContext(sandbox); vm.runInContext(`${functionSources.join("\n")}\nthis.__api={updateUI};`, sandbox, { filename: "update-ui-write-suppression-v9.0.1.js" });
   const panel = window.document.getElementById(sandbox.SCRIPT.panelId);
   async function resetEvidence() { await flush(window); mutationRecords.length = 0; observer.takeRecords(); counters.reset(); profiler.begins = 0; profiler.ends = 0; for (const key of Object.keys(nestedCalls)) delete nestedCalls[key]; }
   async function capture(call) { const started = performance.now(); call(); const elapsed = performance.now() - started; await flush(window); mutationRecords.push(...observer.takeRecords()); return { counters: counters.snapshot(), mutations: summariseMutations(mutationRecords), elapsed }; }

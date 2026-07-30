@@ -27,7 +27,11 @@ def main():
     assert 'No unattended qualifying major incidents currently active' in render
     motion=section(source,'    function refreshMajorIncidentFeedMotion(','    function scheduleMajorIncidentFeedMotion(')
     assert 'majorIncidentFeedCurrentIndex = 0;' not in motion
-    assert 'majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex)' in motion
+    assert motion.count('majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex)') == 1
+    restart = motion.index('if (forceRestart) {')
+    seek = motion.index('majorIncidentFeedApplyIndex(feed, majorIncidentFeedCurrentIndex)')
+    ordinary = motion.index('Layout, resize and unchanged-render reconciliation must not seek a')
+    assert restart < seek < ordinary
     radio=section(source,'    function captureRadioVehicleMessage(','    function installRadioMessageHook(')
     assert 'scheduleMissionSnapshotRefresh(state.majorIncidentFeed.enabled ? 90 : 850);' in radio
     print('Issue #564 Incident Feed attended-exclusion static contract passed.')

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      8.3.2
+// @version      8.4.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -453,7 +453,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '8.3.2',
+        version: '8.4.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -1062,6 +1062,21 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const TRANSPORT_SWEEP_DELAY_OPTIONS = [1500, 2000, 2500, 3000, 4000, 5000];
     const TRANSPORT_SWEEP_MAX_REQUESTS = 50;
     const TRANSPORT_SWEEP_MAX_CANDIDATES_PER_MISSION = 40;
+    const FINANCE_REPORT_COMPLEXITIES = Object.freeze(['simple', 'informative', 'wolf']);
+    const FINANCE_REPORT_COMPLEXITY_RANK = Object.freeze({ simple: 0, informative: 1, wolf: 2 });
+    const FINANCE_REPORT_COMPLEXITY_COPY = Object.freeze({
+        simple: 'Key numbers only: money in, money out, net change and balances in one clear Discord card.',
+        informative: 'A readable briefing with spending context, activity, leading categories, comparison and important alerts.',
+        wolf: 'The complete financial intelligence audit: scorecard, risk, forecast, drawdown, classifications and archive evidence.'
+    });
+    function normaliseLoadedDiscordReportComplexity(discordReport = {}) {
+        const requestedComplexity = String(discordReport?.complexity || '');
+        if (FINANCE_REPORT_COMPLEXITIES.includes(requestedComplexity)) return requestedComplexity;
+        const legacyReportMode = String(discordReport?.reportMode || '');
+        if (legacyReportMode === 'fullAudit') return 'wolf';
+        if (legacyReportMode === 'executive') return 'informative';
+        return 'informative';
+    }
     const LEGACY_THEME_MAP = { night: 'control', grey: 'urban', blue: 'nightshift', muted: 'rural', contrast: 'incident' };
     const POSITIONS = {
         tl: { label: 'Top left', short: 'TL' },
@@ -1275,7 +1290,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const payoutHistory = loadPayoutHistory();
     const sessionPerformance = loadSessionPerformance();
     let discordFinanceBusy = false;
-    let discordFinanceStatus = 'Select a reporting period, then generate and post the financial intelligence report.';
+    let discordFinanceStatus = 'Choose a period and report complexity, then generate and post the finance report.';
     let discordFinanceStatusTone = 'neutral';
     let financeVaultStatus = 'Local Financial Archive ready.';
     let financeVaultStatusTone = 'neutral';
@@ -1345,7 +1360,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         resourceGap: { enabled: false, radiusMi: 25 },
         transportSweep: { delayMs: 2000, maxPerRun: 25 },
         payoutFlash: { enabled: true, threshold: 10000, durationMs: 4000, template: 'gta5', soundEnabled: false, soundVolume: 0.35 },
-        discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, reportMode: 'fullAudit', includeForecast: true, includeRisk: true },
+        discordReport: { webhookName: 'MissionChief Finance', topCategories: 5, period: 'today', customStart: localIsoDate(new Date(Date.now() - 6 * 86400000)), customEnd: localIsoDate(), includeChart: true, includeComparison: true, complexity: 'informative', includeForecast: true, includeRisk: true },
         financialVault: { enabled: true, ruleFeedEnabled: true, retentionDays: 'all' },
         profiles: Array.from({ length: MAP_PROFILE_LIMIT }, () => null),
         nudge: { x: 0, y: 0 },
@@ -1432,7 +1447,8 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.discordReport.customEnd = /^\d{4}-\d{2}-\d{2}$/u.test(String(merged.discordReport.customEnd || '')) ? String(merged.discordReport.customEnd) : localIsoDate();
         merged.discordReport.includeChart = merged.discordReport.includeChart !== false;
         merged.discordReport.includeComparison = merged.discordReport.includeComparison !== false;
-        merged.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(merged.discordReport.reportMode)) ? String(merged.discordReport.reportMode) : 'fullAudit';
+        merged.discordReport.complexity = normaliseLoadedDiscordReportComplexity(parsed?.discordReport);
+        delete merged.discordReport.reportMode;
         merged.discordReport.includeForecast = merged.discordReport.includeForecast !== false;
         merged.discordReport.includeRisk = merged.discordReport.includeRisk !== false;
         merged.financialVault.enabled = merged.financialVault.enabled !== false;
@@ -18784,6 +18800,17 @@ Create the private backup now?`);
     const FINANCE_CHART_FILENAME = 'missionchief-financial-report.png';
     let discordFinanceChartUrl = '';
 
+    function normaliseDiscordReportComplexity(value) {
+        const requested = String(value || '');
+        return FINANCE_REPORT_COMPLEXITIES.includes(requested) ? requested : 'informative';
+    }
+
+    function discordReportComplexityAtLeast(minimum, value = state.discordReport.complexity) {
+        const requiredRank = FINANCE_REPORT_COMPLEXITY_RANK[normaliseDiscordReportComplexity(minimum)];
+        const currentRank = FINANCE_REPORT_COMPLEXITY_RANK[normaliseDiscordReportComplexity(value)];
+        return currentRank >= requiredRank;
+    }
+
     const FINANCE_RULE_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v1/classification-rules.json';
     const FINANCE_POLICY_FEED_URL = 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/financial-intelligence/v2/audit-policy.json';
     const FINANCE_RULE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -20088,6 +20115,10 @@ Create the private backup now?`);
         return `${sign}${amount.toLocaleString('en-GB')}`;
     }
 
+    function formatCompactCredits(value) {
+        return formatSignedCompactCredits(value).replace(/^\+/u, '');
+    }
+
     function reportTone(net) {
         return net > 0 ? 'positive' : net < 0 ? 'negative' : 'neutral';
     }
@@ -21026,7 +21057,7 @@ Create the private backup now?`);
             customEnd: state.discordReport.customEnd,
             includeChart: state.discordReport.includeChart,
             includeComparison: state.discordReport.includeComparison,
-            reportMode: state.discordReport.reportMode,
+            complexity: normaliseDiscordReportComplexity(state.discordReport.complexity),
             includeForecast: state.discordReport.includeForecast,
             includeRisk: state.discordReport.includeRisk,
             topCategories: state.discordReport.topCategories,
@@ -21038,7 +21069,8 @@ Create the private backup now?`);
 
     async function buildFinancialReport() {
         let period = resolveFinancialPeriod();
-        const comparisonEnabled = state.discordReport.includeComparison && period.id !== 'allAvailable';
+        const reportComplexity = normaliseDiscordReportComplexity(state.discordReport.complexity);
+        const comparisonEnabled = discordReportComplexityAtLeast('informative', reportComplexity) && state.discordReport.includeComparison && period.id !== 'allAvailable';
         const requiredStartMs = comparisonEnabled ? period.comparisonStartMs : period.startMs;
         setDiscordStatus('Updating GitHub intelligence and reading the MissionChief Financial Archive…', 'busy');
         await refreshFinancialIntelligenceFeeds(false);
@@ -21097,16 +21129,18 @@ Create the private backup now?`);
         const scorecard = calculateFinancialScorecard(current, comparison, { complete: ledger.complete && overviewAudit.status !== 'partial', balanceAvailable, reconciled: reconciliation.reconciled && aggregateVerified, closingBalance });
         let forecastSummary = current;
         let forecastPeriod = period;
-        if (state.discordReport.includeForecast && period.durationMs > 30 * 86400000) {
+        const forecastEnabled = reportComplexity === 'wolf' && state.discordReport.includeForecast;
+        if (forecastEnabled && period.durationMs > 30 * 86400000) {
             const recentStart = Math.max(period.startMs, period.endMs - 30 * 86400000);
             const recentTransactions = currentTransactions.filter(entry => entry.timestamp >= recentStart);
             forecastPeriod = { ...period, startMs: recentStart, durationMs: Math.max(1, period.endMs - recentStart), id: 'recent30' };
             forecastSummary = summariseFinancialTransactions(recentTransactions, forecastPeriod);
         }
-        const forecast = state.discordReport.includeForecast ? { ...buildFinancialForecast(forecastSummary, forecastPeriod, closingBalance), basisDays: Math.max(1, Math.round(forecastPeriod.durationMs / 86400000)) } : null;
+        const forecast = forecastEnabled ? { ...buildFinancialForecast(forecastSummary, forecastPeriod, closingBalance), basisDays: Math.max(1, Math.round(forecastPeriod.durationMs / 86400000)) } : null;
         const report = {
             generatedAt: Date.now(),
             signature: currentFinancialReportSignature(),
+            complexity: reportComplexity,
             period,
             reportDate: localIsoDate(),
             reportDateLabel: `${period.label} · ${period.rangeLabel}`,
@@ -21163,7 +21197,7 @@ Create the private backup now?`);
             chartBlob: null,
             ...current
         };
-        report.riskAlerts = state.discordReport.includeRisk ? buildFinancialRiskAlerts(current, comparison, {
+        report.riskAlerts = discordReportComplexityAtLeast('informative', reportComplexity) && state.discordReport.includeRisk ? buildFinancialRiskAlerts(current, comparison, {
             ledgerComplete: ledger.complete,
             drawdown,
             scorecard,
@@ -21223,9 +21257,9 @@ Create the private backup now?`);
         ].join('\n');
     }
 
-    function buildDiscordRiskField(report) {
+    function buildDiscordRiskField(report, limit = 8) {
         if (!report.riskAlerts?.length) return 'Risk analysis disabled.';
-        return truncateDiscord(report.riskAlerts.map(alert => {
+        return truncateDiscord(report.riskAlerts.slice(0, Math.max(1, Number(limit) || 8)).map(alert => {
             const symbol = alert.severity === 'high' ? '🔴' : alert.severity === 'medium' ? '🟠' : alert.severity === 'low' ? '🟡' : '🟢';
             return `${symbol} **${escapeDiscordMarkdown(alert.title)}** — ${escapeDiscordMarkdown(alert.detail)}`;
         }).join('\n'), 1000);
@@ -21269,7 +21303,7 @@ Create the private backup now?`);
     function fitDiscordEmbedsToBudget(embeds, maximum = 5900) {
         const result = embeds.map(embed => ({ ...embed, fields: (embed.fields || []).map(field => ({ ...field })) }));
         const count = () => result.reduce((sum, embed) => sum + discordEmbedCharacterCount(embed), 0);
-        const optionalNames = ['🏆 Highest Payouts', '📊 Previous Period', '🔭 Forecast', '🗄️ Archive Coverage'];
+        const optionalNames = ['🏆 Highest Payouts', '📊 Previous Period', '🔭 Forecast', '🗄️ Audit Evidence', '🧭 Data Check'];
         while (count() > maximum && optionalNames.length) {
             const name = optionalNames.shift();
             for (const embed of result) {
@@ -21284,59 +21318,127 @@ Create the private backup now?`);
         return result;
     }
 
+    function financialResultHeadline(report) {
+        const net = Math.round(Number(report?.net) || 0);
+        if (net > 0) return `You finished this period **${formatPlainCredits(net)} ahead**.`;
+        if (net < 0) return `You finished this period **${formatPlainCredits(Math.abs(net))} behind**.`;
+        return 'Your balance finished this period **unchanged**.';
+    }
+
+    function buildDiscordBalanceField(report, { includeDrawdown = false } = {}) {
+        if (report.openingBalance === null || report.closingBalance === null) return 'Opening and closing balances were unavailable.';
+        const lines = [
+            `Opening: **${formatPlainCredits(report.openingBalance)}**`,
+            `Closing: **${formatPlainCredits(report.closingBalance)}**`
+        ];
+        if (includeDrawdown) {
+            lines.push(`Peak: **${report.drawdown.peakBalance === null ? 'Unavailable' : formatPlainCredits(report.drawdown.peakBalance)}**`);
+            lines.push(`Largest drop from a peak: **${report.drawdown.largestDrawdown === null ? 'Unavailable' : formatPlainCredits(report.drawdown.largestDrawdown)}${report.drawdown.largestDrawdownPercent === null ? '' : ` · ${report.drawdown.largestDrawdownPercent.toLocaleString('en-GB')}%`}**`);
+        }
+        return truncateDiscord(lines.join('\n'));
+    }
+
+    function buildDiscordDataCheckField(report, { detailed = false } = {}) {
+        if (detailed) return truncateDiscord(buildDiscordDataQualityField(report));
+        if (!report.ledgerComplete) return '⚠️ **Partial** — not all requested MissionChief activity was available.';
+        if (report.aggregateReconciled) return '✅ **Checked** — the detailed ledger and available daily totals agree.';
+        if (report.overviewStatus === 'variance') return '⚠️ **Review advised** — MissionChief daily totals and ledger detail do not fully agree.';
+        return '✅ **Complete ledger** — daily total cross-checking was not fully available.';
+    }
+
+    function buildDiscordActivityField(report, { detailed = false } = {}) {
+        const rows = [
+            `Mission/transport rewards: **${report.missionCount.toLocaleString('en-GB')}**`,
+            `Transactions counted: **${report.activityCount.toLocaleString('en-GB')}**`,
+            `Average mission reward: **${formatPlainCredits(report.averageMissionReward)}**`
+        ];
+        if (detailed) {
+            rows.push(`Active time estimate: **${report.activeHours.toLocaleString('en-GB')}h**`);
+            rows.push(`Income per active hour: **${formatPlainCredits(report.activeIncomePerHour)}**`);
+            rows.push(`Alliance / personal share: **${report.allianceIncomePercent.toLocaleString('en-GB')}% / ${report.personalIncomePercent.toLocaleString('en-GB')}%**`);
+        }
+        return truncateDiscord(rows.join('\n'));
+    }
+
     function buildDiscordFinancialPayload(report, { withAttachment = false } = {}) {
-        const operatingTone = reportTone(report.operatingResult);
-        const colour = operatingTone === 'positive' ? 0x2ecc71 : operatingTone === 'negative' ? 0xe74c3c : 0xf1c40f;
+        const complexity = normaliseDiscordReportComplexity(report.complexity || state.discordReport.complexity);
+        const resultTone = reportTone(report.net);
+        const colour = resultTone === 'positive' ? 0x2ecc71 : resultTone === 'negative' ? 0xe74c3c : 0xf1c40f;
         const topLimit = state.discordReport.topCategories;
-        const condition = report.operatingResult > 0 ? 'POSITIVE OPERATING RESULT' : report.operatingResult < 0 ? 'NEGATIVE OPERATING RESULT' : 'OPERATING BREAK EVEN';
-        const description = [
+        const periodDescription = [
             `**${escapeDiscordMarkdown(report.period.label)}**`,
             escapeDiscordMarkdown(report.period.rangeLabel),
-            `${condition} · **${formatSignedCredits(report.operatingResult)}**`,
-            `Net credit movement after investment: **${formatSignedCredits(report.net)}**`,
-            `Daily aggregate audit: **${escapeDiscordMarkdown(report.overviewLabel || 'Detailed ledger only')}**`,
-            report.userName ? `Account: **${escapeDiscordMarkdown(report.userName)}**${report.userId ? ` · ID ${escapeDiscordMarkdown(report.userId)}` : ''}` : '',
             report.period.note ? `_${escapeDiscordMarkdown(report.period.note)}_` : ''
         ].filter(Boolean).join('\n');
-        const balanceLines = report.openingBalance === null || report.closingBalance === null
-            ? ['Balance data was unavailable.']
-            : [
-                `Opening: **${report.openingBalance.toLocaleString('en-GB')} Credits**`,
-                `Closing: **${report.closingBalance.toLocaleString('en-GB')} Credits**`,
-                `Peak: **${report.drawdown.peakBalance === null ? 'Unavailable' : report.drawdown.peakBalance.toLocaleString('en-GB')}**`,
-                `Largest drawdown: **${report.drawdown.largestDrawdown === null ? 'Unavailable' : formatPlainCredits(report.drawdown.largestDrawdown)}${report.drawdown.largestDrawdownPercent === null ? '' : ` · ${report.drawdown.largestDrawdownPercent.toLocaleString('en-GB')}%`}**`
-            ];
-        const productivity = [
-            `Missions/transport rewards: **${report.missionCount.toLocaleString('en-GB')}**`,
-            `Active time estimate: **${report.activeHours.toLocaleString('en-GB')}h**`,
-            `Active-hour income: **${formatPlainCredits(report.activeIncomePerHour)}**`,
-            `Calendar-hour income: **${formatPlainCredits(report.incomePerHour)}**`,
-            `Average / median mission: **${formatPlainCredits(report.averageMissionReward)} / ${formatPlainCredits(report.medianMissionReward)}**`,
-            `Alliance / personal share: **${report.allianceIncomePercent.toLocaleString('en-GB')}% / ${report.personalIncomePercent.toLocaleString('en-GB')}%**`
-        ].join('\n');
-        const executive = {
-            title: '📈 MissionChief Financial Command — Executive Audit',
-            description: truncateDiscord(description, 4096),
+        const commonFields = [
+            { name: '💰 Money In', value: `**${formatPlainCredits(report.income)}**`, inline: true },
+            { name: '💸 Money Out', value: `**${formatPlainCredits(report.spending)}**`, inline: true },
+            { name: report.net >= 0 ? '📈 Net Change' : '📉 Net Change', value: `**${formatSignedCredits(report.net)}**`, inline: true }
+        ];
+        const simple = {
+            title: '💷 MissionChief Finance Report',
+            description: truncateDiscord([periodDescription, financialResultHeadline(report)].filter(Boolean).join('\n\n'), 4096),
             color: colour,
             timestamp: new Date(report.generatedAt).toISOString(),
             fields: [
-                { name: '💰 Total Income', value: `**${formatPlainCredits(report.income)}**`, inline: true },
-                { name: '🧾 Operating Costs', value: `**${formatPlainCredits(report.operatingExpense)}**`, inline: true },
+                ...commonFields,
+                { name: '🏦 Balance', value: buildDiscordBalanceField(report), inline: true },
+                { name: '🚨 Activity', value: buildDiscordActivityField(report), inline: true },
+                { name: '✅ Data Check', value: buildDiscordDataCheckField(report), inline: false }
+            ],
+            footer: { text: `${SCRIPT.name} • Simple report • v${SCRIPT.version}` }
+        };
+        const informativeFields = [
+            ...commonFields,
+            { name: '🧾 Running Costs', value: `**${formatPlainCredits(report.operatingExpense)}**`, inline: true },
+            { name: '🏗️ Investment & Expansion', value: `**${formatPlainCredits(report.capitalInvestment)}**`, inline: true },
+            { name: report.operatingResult >= 0 ? '📊 Result Before Investment' : '⚠️ Result Before Investment', value: `**${formatSignedCredits(report.operatingResult)}**`, inline: true },
+            { name: '🏦 Balance', value: buildDiscordBalanceField(report), inline: true },
+            { name: '🚨 Activity', value: buildDiscordActivityField(report), inline: true },
+            { name: '🟢 Main Income Sources', value: buildDiscordCategoryBreakdown(report.incomeCategories, '+', topLimit), inline: false },
+            { name: '🔴 Main Spending', value: buildDiscordCategoryBreakdown(report.spendingCategories, '-', topLimit), inline: false }
+        ];
+        if (report.comparison && report.previous) informativeFields.push({ name: '📊 Previous Period', value: truncateDiscord(buildDiscordComparisonField(report)), inline: false });
+        if (report.riskAlerts?.length) informativeFields.push({ name: '💡 Things To Know', value: buildDiscordRiskField(report, 3), inline: false });
+        informativeFields.push({ name: '✅ Data Check', value: buildDiscordDataCheckField(report), inline: false });
+        const informative = {
+            title: '📊 MissionChief Finance — Informative Report',
+            description: truncateDiscord([
+                periodDescription,
+                financialResultHeadline(report),
+                `Before investment and expansion spending, the result was **${formatSignedCredits(report.operatingResult)}**.`
+            ].filter(Boolean).join('\n\n'), 4096),
+            color: colour,
+            timestamp: new Date(report.generatedAt).toISOString(),
+            fields: informativeFields,
+            footer: { text: `${SCRIPT.name} • Informative report • v${SCRIPT.version}` }
+        };
+        const wolfExecutive = {
+            title: '🐺 MissionChief Finance — The Wolf',
+            description: truncateDiscord([
+                periodDescription,
+                financialResultHeadline(report),
+                `Income was **${formatPlainCredits(report.income)}** and total spending was **${formatPlainCredits(report.spending)}**.`,
+                `Operating result before investment: **${formatSignedCredits(report.operatingResult)}**.`,
+                report.userName ? `Account: **${escapeDiscordMarkdown(report.userName)}**${report.userId ? ` · ID ${escapeDiscordMarkdown(report.userId)}` : ''}` : ''
+            ].filter(Boolean).join('\n'), 4096),
+            color: colour,
+            timestamp: new Date(report.generatedAt).toISOString(),
+            fields: [
+                ...commonFields,
+                { name: '🧾 Running Costs', value: `**${formatPlainCredits(report.operatingExpense)}**`, inline: true },
                 { name: '🏗️ Capital Deployed', value: `**${formatPlainCredits(report.capitalInvestment)}**`, inline: true },
-                { name: report.operatingResult >= 0 ? '📊 Operating Result' : '📉 Operating Result', value: `**${formatSignedCredits(report.operatingResult)}**`, inline: true },
-                { name: report.net >= 0 ? '🏦 Net Credit Movement' : '🚨 Net Credit Movement', value: `**${formatSignedCredits(report.net)}**`, inline: true },
-                { name: '🎯 Operating Margin', value: `**${report.operatingMarginPercent.toLocaleString('en-GB')}%**`, inline: true },
-                { name: '🏦 Liquidity & Drawdown', value: truncateDiscord(balanceLines.join('\n')), inline: true },
-                { name: '⚡ Productivity', value: truncateDiscord(productivity), inline: true },
+                { name: report.operatingResult >= 0 ? '📊 Operating Result' : '⚠️ Operating Result', value: `**${formatSignedCredits(report.operatingResult)}**`, inline: true },
+                { name: '🏦 Liquidity & Drawdown', value: buildDiscordBalanceField(report, { includeDrawdown: true }), inline: true },
+                { name: '⚡ Productivity', value: buildDiscordActivityField(report, { detailed: true }), inline: true },
                 { name: '🏅 Financial Scorecard', value: truncateDiscord(buildDiscordScorecardField(report)), inline: true },
                 { name: '🚨 Intelligence Alerts', value: buildDiscordRiskField(report), inline: false },
                 { name: '📊 Previous Period', value: truncateDiscord(buildDiscordComparisonField(report)), inline: false }
             ],
-            footer: { text: `${SCRIPT.name} • v${SCRIPT.version} • GitHub Intelligence ${activeFinancialRuleVersion} / ${activeFinancialPolicyVersion}` }
+            footer: { text: `${SCRIPT.name} • The Wolf • v${SCRIPT.version} • Intelligence ${activeFinancialRuleVersion} / ${activeFinancialPolicyVersion}` }
         };
-        if (withAttachment) executive.image = { url: `attachment://${FINANCE_CHART_FILENAME}` };
-        const audit = {
-            title: '🧠 Audit Intelligence & Capital Strategy',
+        const wolfAudit = {
+            title: '🧠 The Wolf — Detail & Evidence',
             color: 0x3498db,
             fields: [
                 { name: '🟢 Income Classification', value: buildDiscordCategoryBreakdown(report.incomeCategories, '+', topLimit), inline: false },
@@ -21344,17 +21446,19 @@ Create the private backup now?`);
                 { name: '🏗️ Capital Deployment', value: buildDiscordCategoryBreakdown(report.capitalCategories, '-', topLimit), inline: true },
                 { name: '🏆 Highest Payouts', value: buildDiscordTopPayouts(report, Math.min(5, topLimit)), inline: false },
                 { name: '🔭 Forecast', value: truncateDiscord(buildDiscordForecastField(report)), inline: true },
-                { name: '🗄️ Archive Coverage', value: truncateDiscord(buildDiscordDataQualityField(report)), inline: false }
+                { name: '🗄️ Audit Evidence', value: buildDiscordDataCheckField(report, { detailed: true }), inline: false }
             ],
             footer: { text: 'Operating performance is separated from capital investment. Forecasts are indicative, not guaranteed.' }
         };
-        const embeds = fitDiscordEmbedsToBudget(state.discordReport.reportMode === 'executive' ? [executive] : [executive, audit]);
+        let embeds = complexity === 'simple' ? [simple] : complexity === 'wolf' ? [wolfExecutive, wolfAudit] : [informative];
+        if (withAttachment) embeds[0].image = { url: `attachment://${FINANCE_CHART_FILENAME}` };
+        embeds = fitDiscordEmbedsToBudget(embeds);
         const payload = {
             username: state.discordReport.webhookName || 'MissionChief Finance',
             allowed_mentions: { parse: [] },
             embeds
         };
-        if (withAttachment) payload.attachments = [{ id: 0, filename: FINANCE_CHART_FILENAME, description: `${report.period.label} MissionChief financial command chart` }];
+        if (withAttachment) payload.attachments = [{ id: 0, filename: FINANCE_CHART_FILENAME, description: `${report.period.label} MissionChief ${complexity} finance report` }];
         return payload;
     }
     function roundRectPath(context, x, y, width, height, radius) {
@@ -21374,12 +21478,14 @@ Create the private backup now?`);
         context.fill();
         context.fillStyle = accent;
         context.fillRect(x, y, 5, height);
+        const labelLayout = fitFinancialCanvasText(context, String(label || '').toUpperCase(), width - 48, { weight: 700, size: 16, minSize: 11 });
         context.fillStyle = 'rgba(255,255,255,0.58)';
-        context.font = '700 18px Arial, sans-serif';
-        context.fillText(label.toUpperCase(), x + 24, y + 31);
+        context.font = `700 ${labelLayout.fontSize}px Arial, sans-serif`;
+        context.fillText(labelLayout.text, x + 24, y + 31);
+        const valueLayout = fitFinancialCanvasText(context, value, width - 48, { weight: 900, size: 31, minSize: 18 });
         context.fillStyle = '#ffffff';
-        context.font = '900 34px Arial, sans-serif';
-        context.fillText(value, x + 24, y + 75);
+        context.font = `900 ${valueLayout.fontSize}px Arial, sans-serif`;
+        context.fillText(valueLayout.text, x + 24, y + 75);
     }
 
     function fitFinancialCanvasText(context, value, maxWidth, { weight = 600, size = 15, minSize = 11 } = {}) {
@@ -21416,7 +21522,35 @@ Create the private backup now?`);
         return { text: renderedText, width: Math.min(measuredWidth, widthLimit), fontSize };
     }
 
-    function financialSnapshotRows(report) {
+    function financialGraphicDataCheck(report) {
+        if (!report?.ledgerComplete) return 'Partial';
+        if (report?.aggregateReconciled) return 'Checked';
+        if (report?.overviewStatus === 'variance') return 'Review';
+        return 'Complete ledger';
+    }
+
+    function financialSnapshotRows(report, complexity = 'wolf') {
+        const reportComplexity = normaliseDiscordReportComplexity(complexity);
+        if (reportComplexity === 'simple') {
+            return [
+                ['Opening balance', report.openingBalance === null ? 'Unavailable' : formatCompactCredits(report.openingBalance)],
+                ['Closing balance', report.closingBalance === null ? 'Unavailable' : formatCompactCredits(report.closingBalance)],
+                ['Mission rewards', Number(report.missionCount || 0).toLocaleString('en-GB')],
+                ['Average reward', formatCompactCredits(report.averageMissionReward || 0)],
+                ['Entries counted', Number(report.activityCount || 0).toLocaleString('en-GB')],
+                ['Data check', financialGraphicDataCheck(report)]
+            ];
+        }
+        if (reportComplexity === 'informative') {
+            return [
+                ['Before investment', formatSignedCompactCredits(report.operatingResult)],
+                ['Running costs', formatSignedCompactCredits(-Math.abs(report.operatingExpense || 0))],
+                ['Investment', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0))],
+                ['Mission rewards', Number(report.missionCount || 0).toLocaleString('en-GB')],
+                ['Average reward', formatCompactCredits(report.averageMissionReward || 0)],
+                ['Income vs previous', report.comparison ? formatPercentageChange(report.comparison.incomeChange) : 'Not compared']
+            ];
+        }
         const rawDifference = report?.reconciliationDifference;
         const hasDifference = rawDifference !== null && rawDifference !== undefined && Number.isFinite(Number(rawDifference));
         let auditRow;
@@ -21433,7 +21567,7 @@ Create the private backup now?`);
         return [
             ['Operating result', formatSignedCompactCredits(report.operatingResult)],
             ['Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0))],
-            ['Active-hour income', formatSignedCompactCredits(report.activeIncomePerHour || report.incomePerHour)],
+            ['Active-hour income', formatCompactCredits(report.activeIncomePerHour || report.incomePerHour)],
             ['Classification', `${Number(report.classificationConfidence || 0).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`],
             ['Condition score', `${Number(report.scorecard?.overall || 0).toLocaleString('en-GB', { maximumFractionDigits: 0 })}/100`],
             auditRow
@@ -21466,6 +21600,7 @@ Create the private backup now?`);
 
     async function buildFinancialChartBlob(report) {
         try {
+            const complexity = normaliseDiscordReportComplexity(report.complexity || state.discordReport.complexity);
             const canvas = document.createElement('canvas');
             canvas.width = 1200;
             canvas.height = 675;
@@ -21487,24 +21622,34 @@ Create the private backup now?`);
             context.fill();
             context.fillStyle = '#ffffff';
             context.font = '900 34px Arial, sans-serif';
-            context.fillText('MISSIONCHIEF FINANCIAL INTELLIGENCE', 54, 58);
+            const graphicTitle = complexity === 'simple'
+                ? 'MISSIONCHIEF FINANCE REPORT'
+                : complexity === 'informative'
+                    ? 'MISSIONCHIEF FINANCE BRIEFING'
+                    : 'MISSIONCHIEF FINANCIAL INTELLIGENCE';
+            context.fillText(graphicTitle, 54, 58);
             context.fillStyle = 'rgba(255,255,255,0.62)';
             context.font = '600 18px Arial, sans-serif';
-            context.fillText(report.period.label, 54, 89);
+            const complexityLabel = complexity === 'wolf' ? 'THE WOLF' : complexity.toUpperCase();
+            context.fillText(`${complexityLabel} · ${report.period.label}`, 54, 89);
             context.fillText(report.period.rangeLabel, 54, 116);
             roundRectPath(context, 1002, 38, 142, 70, 20);
-            context.fillStyle = report.net >= 0 ? 'rgba(46,204,113,0.18)' : 'rgba(231,76,60,0.18)';
+            context.fillStyle = report.net > 0 ? 'rgba(46,204,113,0.18)' : report.net < 0 ? 'rgba(231,76,60,0.18)' : 'rgba(241,196,15,0.18)';
             context.fill();
-            context.fillStyle = report.net >= 0 ? '#67e69b' : '#ff8378';
-            context.font = '900 30px Arial, sans-serif';
+            context.fillStyle = report.net > 0 ? '#67e69b' : report.net < 0 ? '#ff8378' : '#f4d35e';
+            context.font = `900 ${complexity === 'wolf' ? 30 : 22}px Arial, sans-serif`;
             context.textAlign = 'center';
-            context.fillText(report.grade.grade, 1073, 73);
-            context.font = '700 14px Arial, sans-serif';
-            context.fillText(`${report.grade.score}/100`, 1073, 96);
+            const resultLabel = report.net > 0 ? 'AHEAD' : report.net < 0 ? 'BEHIND' : 'EVEN';
+            context.fillText(complexity === 'wolf' ? report.grade.grade : resultLabel, 1073, 73);
+            context.font = '700 13px Arial, sans-serif';
+            context.fillText(complexity === 'wolf' ? `${report.grade.score}/100` : formatSignedCompactCredits(report.net), 1073, 96);
             context.textAlign = 'left';
-            drawFinancialMetricCard(context, 54, 148, 337, 98, 'Income', formatSignedCompactCredits(report.income), '#2ecc71');
-            drawFinancialMetricCard(context, 412, 148, 337, 98, 'Net movement', formatSignedCompactCredits(report.net), report.net >= 0 ? '#58a6ff' : '#ff6b61');
-            drawFinancialMetricCard(context, 770, 148, 374, 98, 'Capital deployed', formatSignedCompactCredits(-Math.abs(report.capitalInvestment || 0)), '#f1c40f');
+            const metricWidth = 261;
+            const metricGap = 15;
+            drawFinancialMetricCard(context, 54, 148, metricWidth, 98, 'Money in', formatSignedCompactCredits(report.income), '#2ecc71');
+            drawFinancialMetricCard(context, 54 + (metricWidth + metricGap), 148, metricWidth, 98, 'Money out', formatSignedCompactCredits(-Math.abs(report.spending || 0)), '#e74c3c');
+            drawFinancialMetricCard(context, 54 + 2 * (metricWidth + metricGap), 148, metricWidth, 98, 'Net change', formatSignedCompactCredits(report.net), report.net >= 0 ? '#58a6ff' : '#ff6b61');
+            drawFinancialMetricCard(context, 54 + 3 * (metricWidth + metricGap), 148, metricWidth, 98, 'Closing balance', report.closingBalance === null ? 'Unavailable' : formatCompactCredits(report.closingBalance), '#f1c40f');
             const chartX = 54;
             const chartY = 288;
             const chartW = 730;
@@ -21514,7 +21659,7 @@ Create the private backup now?`);
             context.fill();
             context.fillStyle = '#ffffff';
             context.font = '800 19px Arial, sans-serif';
-            context.fillText('CREDIT MOVEMENT TREND', chartX + 22, chartY + 32);
+            context.fillText('NET BALANCE MOVEMENT', chartX + 22, chartY + 32);
             const buckets = report.buckets.slice(-12);
             const maxMagnitude = Math.max(1, ...buckets.map(bucket => Math.abs(bucket.net)));
             const plotTop = chartY + 58;
@@ -21549,8 +21694,8 @@ Create the private backup now?`);
             context.fill();
             context.fillStyle = '#ffffff';
             context.font = '800 19px Arial, sans-serif';
-            context.fillText('OPERATING SNAPSHOT', detailX + 22, detailY + 32);
-            const lines = financialSnapshotRows(report);
+            context.fillText(complexity === 'simple' ? 'AT A GLANCE' : complexity === 'informative' ? 'USEFUL CONTEXT' : 'OPERATING SNAPSHOT', detailX + 22, detailY + 32);
+            const lines = financialSnapshotRows(report, complexity);
             lines.forEach((line, index) => {
                 const y = detailY + 65 + index * 29;
                 drawFinancialSnapshotRow(context, detailX + 22, y, detailW - 44, line[0], line[1]);
@@ -21560,7 +21705,7 @@ Create the private backup now?`);
             context.fillText(`${report.activityCount.toLocaleString('en-GB')} transactions · ${report.ledgerPages.toLocaleString('en-GB')} ledger pages · ${report.overviewRowsUsed ? `${report.overviewRowsUsed.toLocaleString('en-GB')} overview day${report.overviewRowsUsed === 1 ? '' : 's'}` : 'overview unavailable'} · Generated ${new Date(report.generatedAt).toLocaleString('en-GB')}`, 54, 620);
             context.fillStyle = 'rgba(255,255,255,0.27)';
             context.font = '600 12px Arial, sans-serif';
-            context.fillText(`${SCRIPT.name} v${SCRIPT.version} · Deterministic local financial audit · projections are estimates`, 54, 648);
+            context.fillText(`${SCRIPT.name} v${SCRIPT.version} · ${complexity === 'wolf' ? 'The Wolf financial intelligence' : `${complexityLabel} finance report`} · generated locally`, 54, 648);
             return await new Promise(resolve => {
                 canvas.toBlob(resolve, 'image/png', 0.92);
             });
@@ -22262,7 +22407,7 @@ Create the private backup now?`);
         if (!source.includes('id="financial-command"')) {
             const financialSection = `<section class="section" id="financial-command" data-title="Discord Financial Command" data-keywords="discord finance archive ledger audit github rules policy deep scan forecast risk capital investment webhook">
 <div class="head"><span class="num">19</span><div><h2>Discord Financial Command</h2><p class="summary">MissionChief ledger extraction, daily `/credits/overview` reconciliation, local historical archiving and GitHub-hosted financial intelligence.</p></div></div>
-<h3>Supreme financial audit</h3><p>The Discord tab can generate an Executive Brief or a complete Executive + Full Audit report. The audit separates operating income, other income, operating expenditure and capital investment so expansion spending does not automatically make healthy operations look unprofitable.</p>
+<h3>Discord finance reports</h3><p>Choose Simple for key numbers anyone can understand, Informative for useful context and comparisons, or The Wolf for the complete financial intelligence audit. Every level keeps income, spending, net change and balances first. Operating costs remain separate from investment and expansion so healthy activity is not made to look unprofitable.</p>
 <div class="grid"><div class="card"><h4>Financial scorecard</h4><p>Revenue, operating efficiency, liquidity, growth investment and audit confidence are scored independently.</p></div><div class="card"><h4>Daily aggregate audit</h4><p>MissionChief Revenue, Spendings and Sum rows verify complete days without double-counting the detailed ledger. Any unresolved variance remains visible.</p></div><div class="card"><h4>Risk intelligence</h4><p>Highlights overview variance, revenue contraction, concentration, aggressive investment, reserve drawdown, low runway and incomplete classification.</p></div><div class="card"><h4>Deep ledger scan</h4><p>All Available History reads every MissionChief credit-ledger page accessible to the account, with retries, progress reporting, safe cancellation and local checkpoint storage.</p></div><div class="card"><h4>GitHub intelligence</h4><p>Classification rules and audit thresholds are downloaded from the public Toolkit assets repository and cached locally. No player ledger or webhook data is uploaded.</p></div></div>
 <h3>Player-linked Local Financial Archive</h3><ol class="steps"><li>Keep Local Financial Archive enabled to retain discovered transactions by MissionChief player ID/name.</li><li>Select All Available History or run Deep Scan All Available to extend the archive as far back as MissionChief exposes.</li><li>Use Export Archive and Import Archive to transfer or merge history between your devices without exposing repository credentials.</li><li>Export All also includes the local archive and Discord webhook for complete private recovery.</li><li>GitHub hosts only public rules, audit policy and Toolkit assets; player financial data remains in the browser and private backups.</li></ol>
 <div class="call warn"><strong>Private backup:</strong> Export All includes the saved Discord webhook and local financial history. Store the JSON privately; anyone holding it may be able to post through the webhook and inspect the exported game ledger.</div>
@@ -22843,23 +22988,24 @@ Create the private backup now?`);
                 <div class="mcms-section-label">Discord Financial Command</div>
                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook URL</span><input class="mcms-input" type="password" autocomplete="off" spellcheck="false" data-setting="discord-webhook" placeholder="https://discord.com/api/webhooks/..."></div>
                 <div class="mcms-row mcms-discord-wide"><span class="mcms-row-label">Webhook name</span><input class="mcms-input" type="text" maxlength="80" data-setting="discord-name" value="MissionChief Finance"></div>
-                <div class="mcms-row"><span class="mcms-row-label">Report format</span><select class="mcms-select" data-setting="discord-report-mode"><option value="fullAudit">Executive + Full Audit</option><option value="executive">Executive Brief Only</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Report complexity</span><select class="mcms-select" data-setting="discord-complexity"><option value="simple">Simple</option><option value="informative">Informative</option><option value="wolf">The Wolf</option></select></div>
+                <div class="mcms-status mcms-discord-complexity-help" data-discord-complexity-help>${FINANCE_REPORT_COMPLEXITY_COPY.informative}</div>
                 <div class="mcms-row"><span class="mcms-row-label">Report period</span><select class="mcms-select" data-setting="discord-period"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="last24">Last 24 Hours</option><option value="last7">Last 7 Days</option><option value="last30">Last 30 Days</option><option value="last90">Last 90 Days</option><option value="last180">Last 180 Days</option><option value="last365">Last 365 Days</option><option value="allAvailable">All Available History</option><option value="session">Current Session</option><option value="sinceLast">Since Last Report</option><option value="custom">Custom Dates</option></select></div>
                 <div class="mcms-discord-date-grid">
                     <div class="mcms-row"><span class="mcms-row-label">From</span><input class="mcms-input" type="date" data-setting="discord-custom-start"></div>
                     <div class="mcms-row"><span class="mcms-row-label">To</span><input class="mcms-input" type="date" data-setting="discord-custom-end"></div>
                 </div>
-                <div class="mcms-row"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Risk intelligence</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
-                <div class="mcms-row"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+                <div class="mcms-row" data-discord-min-complexity="informative"><span class="mcms-row-label">Breakdown depth</span><select class="mcms-select" data-setting="discord-top-categories"><option value="3">Top 3</option><option value="5">Top 5</option><option value="8">Top 8</option></select></div>
+                <div class="mcms-row" data-discord-min-complexity="informative"><span class="mcms-row-label">Previous-period comparison</span><select class="mcms-select" data-setting="discord-comparison"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+                <div class="mcms-row" data-discord-min-complexity="informative"><span class="mcms-row-label">Important alerts</span><select class="mcms-select" data-setting="discord-risk"><option value="true">Included</option><option value="false">Disabled</option></select></div>
+                <div class="mcms-row" data-discord-min-complexity="wolf"><span class="mcms-row-label">Forecast intelligence</span><select class="mcms-select" data-setting="discord-forecast"><option value="true">Included</option><option value="false">Disabled</option></select></div>
                 <div class="mcms-row"><span class="mcms-row-label">Discord chart image</span><select class="mcms-select" data-setting="discord-chart"><option value="true">Attach chart</option><option value="false">Text only</option></select></div>
                 <div class="mcms-grid-2">
                     <button class="mcms-small-btn" type="button" data-action="discord-test">Test Connection</button>
                     <button class="mcms-small-btn" type="button" data-action="discord-clear">Clear Webhook</button>
                 </div>
-                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate & Post Audit</button>
-                <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Select a reporting period, then generate and post the financial intelligence report.</div>
+                <button class="mcms-small-btn" style="width:100% !important;margin-top:7px !important" type="button" data-action="discord-generate-post">Generate &amp; Post Report</button>
+                <div class="mcms-status mcms-discord-status" data-discord-status data-tone="neutral">Choose a period and report complexity, then generate and post the finance report.</div>
 
                 <div class="mcms-section-label">Player-Linked Local Financial Archive</div>
                 <div class="mcms-row"><span class="mcms-row-label">Local historical archive</span><select class="mcms-select" data-setting="finance-vault-enabled"><option value="true">Enabled</option><option value="false">Disabled</option></select></div>
@@ -23193,8 +23339,8 @@ Create the private backup now?`);
             saveState(); updateUI();
             return true;
         }
-        if (setting === 'discord-report-mode') {
-            state.discordReport.reportMode = ['executive', 'fullAudit'].includes(String(target.value)) ? String(target.value) : 'fullAudit';
+        if (setting === 'discord-complexity') {
+            state.discordReport.complexity = normaliseDiscordReportComplexity(target.value);
             invalidateDiscordFinancialPreview();
             saveState(); updateUI();
             return true;
@@ -23531,8 +23677,14 @@ Create the private backup now?`);
         if (discordComparison) updateUiSetProperty(discordComparison, 'value', String(state.discordReport.includeComparison));
         const discordChart = panel.querySelector('[data-setting="discord-chart"]');
         if (discordChart) updateUiSetProperty(discordChart, 'value', String(state.discordReport.includeChart));
-        const discordReportMode = panel.querySelector('[data-setting="discord-report-mode"]');
-        if (discordReportMode) updateUiSetProperty(discordReportMode, 'value', state.discordReport.reportMode);
+        const discordComplexity = panel.querySelector('[data-setting="discord-complexity"]');
+        if (discordComplexity) updateUiSetProperty(discordComplexity, 'value', normaliseDiscordReportComplexity(state.discordReport.complexity));
+        const discordComplexityHelp = panel.querySelector('[data-discord-complexity-help]');
+        if (discordComplexityHelp) updateUiSetText(discordComplexityHelp, FINANCE_REPORT_COMPLEXITY_COPY[normaliseDiscordReportComplexity(state.discordReport.complexity)]);
+        panel.querySelectorAll('[data-discord-min-complexity]').forEach(row => {
+            const visible = discordReportComplexityAtLeast(row.dataset.discordMinComplexity, state.discordReport.complexity);
+            updateUiSetProperty(row, 'hidden', !visible);
+        });
         const discordRisk = panel.querySelector('[data-setting="discord-risk"]');
         if (discordRisk) updateUiSetProperty(discordRisk, 'value', String(state.discordReport.includeRisk));
         const discordForecast = panel.querySelector('[data-setting="discord-forecast"]');

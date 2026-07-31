@@ -19,7 +19,7 @@ def main() -> int:
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
     assert metadata and runtime
-    assert metadata.group(1) == runtime.group(1) == "9.3.1"
+    assert metadata.group(1) == runtime.group(1) == "9.3.2"
 
     quick_places = section(source, "    const QUICK_PLACES = [", "    const SMART_BOOKMARK_LABEL_MAX")
     expected = [
@@ -48,14 +48,6 @@ def main() -> int:
         "quickPins: normaliseQuickPins(parsed.quickPins, base.quickPins)",
     ]:
         assert required in source, required
-
-    briefing = section(source, "    function updateBriefingBody()", "    function settingsBackupFilename(")
-    for required in [
-        "Wakefield, London and Newcastle replace Glasgow, Dundee and Stirling.",
-        "Any selected legacy Quick Jump pin follows its replacement automatically.",
-        "Your five custom bookmarks and saved map profiles remain exactly as configured.",
-    ]:
-        assert required in briefing, required
 
     print("Issue #614 Quick Jump catalogue and migration contract passed.")
     return 0

@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v931) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v932) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,11 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.3.1
+## Current interface — v9.3.2
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.3.1` refreshes the fixed Locations Quick Jumps to **Edinburgh, Fife, Wakefield, London and Newcastle**. Existing selected Glasgow, Dundee or Stirling screen pins follow their replacements automatically; custom bookmarks and saved map profiles are not changed.
+Version `9.3.2` corrects Toolkit Doctor’s Tablet responsive and overlay classifications. Doctor now snapshots the live interface before opening its diagnostic window, identifies the exact responsive component that failed and warns only when a foreign high-priority overlay genuinely intersects Toolkit controls.\n\nThe fixed Locations Quick Jumps remain **Edinburgh, Fife, Wakefield, London and Newcastle**. Legacy pin migration, custom bookmarks and saved map profiles are unchanged.
 
 The six daily command-experience tools introduced in v9.3.0 remain intact. **Toolkit Doctor** checks the installed version, interface ownership, saved-state recovery, map shell, UK intelligence and responsive bounds without copying secrets. **Full-Screen Map** maximises the operational workspace with persistent and `Escape` recovery. Tablet users can long-press the map for a configurable six-action **Quick Wheel**, and Desktop and Tablet keep independent Spacious, Standard, Compact or Command Centre density choices.
 

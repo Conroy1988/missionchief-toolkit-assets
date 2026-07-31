@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.3.1
+// @version      9.3.2
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -465,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.3.1',
+        version: '9.3.2',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -20825,7 +20825,103 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         });
     }
 
+    function toolkitDoctorRectInsideViewport(rect, viewport = getViewportMetrics(), tolerance = 2) {
+        if (!rect) return true;
+        const width = Number(rect.width);
+        const height = Number(rect.height);
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return false;
+        const allowance = Math.max(0, Number(tolerance) || 0);
+        const viewportLeft = Number(viewport?.offsetLeft) || 0;
+        const viewportTop = Number(viewport?.offsetTop) || 0;
+        const viewportRight = viewportLeft + Math.max(1, Number(viewport?.width) || 1);
+        const viewportBottom = viewportTop + Math.max(1, Number(viewport?.height) || 1);
+        return rect.top >= viewportTop - allowance && rect.left >= viewportLeft - allowance &&
+        rect.right <= viewportRight + allowance && rect.bottom <= viewportBottom + allowance;
+    }
+
+    function toolkitDoctorResponsiveStatus() {
+        const root = document.documentElement;
+        const expectedLayout = activeDeviceLayout;
+        const expectedDensity = interfaceDensityForLayout();
+        const layoutMatches = root.getAttribute('data-mcms-device-layout') === expectedLayout;
+        const densityMatches = root.getAttribute('data-mcms-density') === expectedDensity;
+        const panel = commandExperienceElement(SCRIPT.panelId);
+        const panelRelevant = Boolean(panel?.classList.contains('mcms-open') && isVisible(panel));
+        const panelInsideViewport = !panelRelevant || toolkitDoctorRectInsideViewport(panel.getBoundingClientRect());
+        const problems = [];
+        if (!layoutMatches) problems.push('device-layout attribute');
+        if (!densityMatches) problems.push('density attribute');
+        if (!panelInsideViewport) problems.push('open Settings panel bounds');
+        return {
+        healthy: problems.length === 0,
+        detail: problems.length
+            ? 'Needs reconciliation: ' + problems.join(', ') + '.'
+            : expectedLayout + ' geometry and ' + expectedDensity + ' density are within the visual viewport.'
+        };
+    }
+
+    function toolkitDoctorRectIntersectionArea(first, second) {
+        if (!first || !second) return 0;
+        const width = Math.max(0, Math.min(Number(first.right) || 0, Number(second.right) || 0) - Math.max(Number(first.left) || 0, Number(second.left) || 0));
+        const height = Math.max(0, Math.min(Number(first.bottom) || 0, Number(second.bottom) || 0) - Math.max(Number(first.top) || 0, Number(second.top) || 0));
+        return width * height;
+    }
+
+    function toolkitDoctorOwnedSurfaceSelector() {
+        return [
+        SCRIPT.controlId,
+        SCRIPT.panelId,
+        SCRIPT.toastId,
+        SCRIPT.payoutFlashId,
+        SCRIPT.vehicleStatusId,
+        SCRIPT.pressureBoardId,
+        SCRIPT.majorIncidentFeedId,
+        SCRIPT.transportSweepHudId,
+        SCRIPT.helpCenterId,
+        SCRIPT.commandExperienceModalId,
+        SCRIPT.quickWheelId,
+        SCRIPT.fullscreenExitId,
+        SCRIPT.cleanExitId,
+        SCRIPT.oldControlId,
+        SCRIPT.oldGeoLabelLayerId
+        ].filter(Boolean).map(id => '#' + id).join(',');
+    }
+
+    function toolkitDoctorOverlayConflictCount() {
+        const ownedSelector = toolkitDoctorOwnedSurfaceSelector();
+        const protectedElements = [
+        commandExperienceElement(SCRIPT.controlId),
+        commandExperienceElement(SCRIPT.panelId),
+        commandExperienceElement(SCRIPT.vehicleStatusId),
+        commandExperienceElement(SCRIPT.pressureBoardId),
+        commandExperienceElement(SCRIPT.majorIncidentFeedId),
+        commandExperienceElement(SCRIPT.transportSweepHudId),
+        commandExperienceElement(SCRIPT.fullscreenExitId),
+        commandExperienceElement(SCRIPT.cleanExitId)
+        ].filter(element => element && isVisible(element));
+        const protectedRects = protectedElements.map(element => element.getBoundingClientRect()).filter(rect => Number(rect.width) > 0 && Number(rect.height) > 0);
+        if (!protectedRects.length) return 0;
+        const countedRoots = [];
+        for (const element of Array.from(document.querySelectorAll('body *'))) {
+        if (element.closest?.(ownedSelector)) continue;
+        if (countedRoots.some(root => root.contains(element))) continue;
+        const style = pageWindow.getComputedStyle?.(element);
+        const zIndex = Number(style?.zIndex);
+        if ((style?.position !== 'fixed' && style?.position !== 'sticky') || zIndex < 1000 || !isVisible(element)) continue;
+        const rect = element.getBoundingClientRect();
+        if (Number(rect.width) <= 0 || Number(rect.height) <= 0) continue;
+        const competes = protectedRects.some(protectedRect => toolkitDoctorRectIntersectionArea(rect, protectedRect) >= 64);
+        if (!competes) continue;
+        countedRoots.push(element);
+        if (countedRoots.length >= 20) break;
+        }
+        return countedRoots.length;
+    }
+
     async function runToolkitDoctor() {
+        closeCommandExperienceModal({ restoreFocus: false });
+        const responsiveStatus = toolkitDoctorResponsiveStatus();
+        const overlayConflicts = toolkitDoctorOverlayConflictCount();
         renderToolkitDoctor(null, true);
         const checks = [];
         const add = (label, tone, detail) => checks.push({ label, tone, detail });
@@ -20860,29 +20956,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         add('UK intelligence', ukTone, ukDetail);
 
-        const rootLayout = document.documentElement.getAttribute('data-mcms-device-layout');
-        const expectedDensity = interfaceDensityForLayout();
-        const panel = commandExperienceElement(SCRIPT.panelId);
-        let layoutInsideViewport = true;
-        if (panel?.classList.contains('mcms-open')) {
-        const rect = panel.getBoundingClientRect();
-        const viewport = getViewportMetrics();
-        layoutInsideViewport = rect.top >= viewport.offsetTop - 2 && rect.left >= viewport.offsetLeft - 2 &&
-            rect.right <= viewport.offsetLeft + viewport.width + 2 && rect.bottom <= viewport.offsetTop + viewport.height + 2;
-        }
-        add('Responsive layout', rootLayout === activeDeviceLayout && document.documentElement.dataset.mcmsDensity === expectedDensity && layoutInsideViewport ? 'good' : 'warn',
-        rootLayout === activeDeviceLayout && layoutInsideViewport ? activeDeviceLayout + ' geometry and ' + expectedDensity + ' density are within the visual viewport.' : 'Responsive attributes or panel bounds need reconciliation.');
+        add('Responsive layout', responsiveStatus.healthy ? 'good' : 'warn', responsiveStatus.detail);
 
-        let overlayConflicts = 0;
-        for (const element of Array.from(document.querySelectorAll('body *'))) {
-        if (element.closest?.('#' + SCRIPT.controlId + ',#' + SCRIPT.panelId + ',#' + SCRIPT.commandExperienceModalId + ',#' + SCRIPT.quickWheelId)) continue;
-        const style = pageWindow.getComputedStyle?.(element);
-        const zIndex = Number(style?.zIndex);
-        if ((style?.position === 'fixed' || style?.position === 'sticky') && zIndex >= 1000 && isVisible(element)) overlayConflicts += 1;
-        if (overlayConflicts >= 20) break;
-        }
         add('Overlay safety', overlayConflicts ? 'warn' : 'good',
-        overlayConflicts ? overlayConflicts + ' visible high-priority page overlay' + (overlayConflicts === 1 ? '' : 's') + ' may compete for screen space.' : 'No competing high-priority page overlay was detected.');
+        overlayConflicts ? overlayConflicts + ' visible high-priority page overlay' + (overlayConflicts === 1 ? '' : 's') + ' intersects a Toolkit surface.' : 'No competing high-priority page overlay intersects Toolkit controls.');
 
         const report = {
         installedVersion: SCRIPT.version,
@@ -20900,7 +20977,9 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         try {
         saveState({ requireWrite: true });
         applyRootAttributes();
+        applyVisualViewportGeometry();
         ensureUi();
+        refreshTabletModeUi();
         applyMapFullscreenState();
         fitControlToMap();
         positionPanelOverlay(true);
@@ -20915,10 +20994,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>New Quick Jumps</b><p>Wakefield, London and Newcastle replace Glasgow, Dundee and Stirling.</p></article>' +
-            '<article><b>Screen Pins Preserved</b><p>Any selected legacy Quick Jump pin follows its replacement automatically.</p></article>' +
-            '<article><b>Bookmarks Untouched</b><p>Your five custom bookmarks and saved map profiles remain exactly as configured.</p></article>' +
-        '</div><p class="mcms-command-note">Edinburgh and Fife remain first. Open Locations to use the refreshed five-place command list.</p>';
+            '<article><b>Doctor Accuracy</b><p>Responsive checks now inspect the live Toolkit surface before the diagnostic window opens.</p></article>' +
+            '<article><b>Real Overlay Conflicts</b><p>Only visible page overlays that actually intersect Toolkit controls now raise a warning.</p></article>' +
+            '<article><b>Repair Reconciled</b><p>Repair UI now refreshes visual-viewport and Tablet layout state before rerunning Doctor.</p></article>' +
+        '</div><p class="mcms-command-note">Normal MissionChief navigation and Toolkit-owned operational panels no longer create persistent false warnings.</p>';
     }
 
     function openUpdateBriefing({ manual = false } = {}) {

@@ -1,10 +1,10 @@
 # MissionChief Map Command Toolkit
 
-## v9.3.1 candidate — Default Quick Jump refresh
+## v9.3.2 candidate — Toolkit Doctor diagnostic correctness
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 9.3.1 keeps Edinburgh and Fife first, then replaces Glasgow, Dundee and Stirling with Wakefield, London and Newcastle. Existing selected fixed-place screen pins migrate to their replacements, while all five custom bookmarks and saved map profiles remain untouched. Toolkit Doctor, Full-Screen Map, the Tablet Quick Wheel, encrypted settings transfer, independent Desktop/Tablet densities, Update Briefing and every retained native system from v9.3.0 remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
+Version 9.3.2 corrects Toolkit Doctor’s persistent Tablet responsive and overlay warnings. Doctor now snapshots the live interface before its progress modal opens, names the exact responsive component that failed, excludes every Toolkit-owned surface and warns only when a foreign fixed or sticky overlay genuinely intersects Toolkit controls. Normal MissionChief navigation no longer creates a false conflict. The Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps, legacy pin migration, custom bookmarks and every retained v9.3 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
 
 ### Retained native systems
 

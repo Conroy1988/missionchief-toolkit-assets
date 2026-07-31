@@ -14,7 +14,7 @@ const sandbox = {};
 vm.createContext(sandbox);
 vm.runInContext(
   source.slice(start, end) +
-    "\\nthis.__probe = { places: QUICK_PLACES, normalise: normaliseQuickPins };",
+    "\nthis.__probe = { places: QUICK_PLACES, normalise: normaliseQuickPins };",
   sandbox,
   { filename: "issue614-quick-places-runtime.js" },
 );

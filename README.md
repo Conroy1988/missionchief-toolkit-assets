@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v913) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v920) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,13 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.1.3
+## Current interface — v9.2.0
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.1.3` keeps the six-section Command Interface and map-native Operational Pressure Board, while ensuring the complete board header remains below MissionChief's fixed navigation bar in Tablet mode. The board recalculates its usable top and height when opened, resized or rotated, preserving the complete title and action row inside the visible viewport. Canonical numeric vehicle recognition, custom callsign support, settings persistence, readable Tablet navigation, Tablet panel dragging and the main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
+Version `9.2.0` connects live Operational Pressure Board requirements to the verified MissionChief UK Guide. Select **UK Intel** on any fleet-pressure row to open its qualifying units, numeric MissionChief vehicle types, crew range, course, academy, training duration, trained-crew qualifiers and associated personnel records. Unknown live labels remain visible as **Catalogue Drift** and can be opened in a review-before-submit report without sending private player data.
+
+Guide intelligence loads only when requested and is stored in an update-stable bounded cache. If the website is unavailable, the Toolkit falls back to the existing bundled UK vehicle catalogue without delaying startup or hiding the live requirement. The six-section Command Interface, map-native Pressure Board, Tablet header clearance, custom callsign support, settings persistence, readable Tablet navigation, Tablet panel dragging and main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
 
 - **Map** contains visibility, overlays and map tools.
 - **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.
@@ -87,6 +89,7 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 |---|---|
 | **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
 | **Operational Pressure Board** | Opens from the map with shortcut `B` and combines mission priority, shared fleet demand, reserve risk and transport pressure into one evidence-led board |
+| **MissionChief UK Knowledge Link** | Explains live requirements with verified units, crew, training and personnel evidence plus direct TKB Guide records |
 | **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |
@@ -253,6 +256,7 @@ GitHub remains authoritative. Greasy Fork is verified as the public distribution
 ## Security and engineering
 
 - Configuration remains local to the browser unless the user explicitly uses a supported reporting feature.
+- MissionChief UK Guide intelligence is downloaded only after a user opens **UK Intel**, is schema-validated and never includes player or mission-instance data.
 - Settings exports can contain the saved Discord webhook and must be treated as private operational material.
 - The Toolkit does not require a remote player account, remote telemetry service or separate player database.
 - `main` is canonical.

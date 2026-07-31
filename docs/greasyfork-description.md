@@ -4,7 +4,7 @@
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 9.3.1 keeps Edinburgh and Fife first, then replaces Glasgow, Dundee and Stirling with Wakefield, London and Newcastle. Existing selected fixed-place screen pins migrate to their replacements, while all five custom bookmarks and saved map profiles remain untouched. Toolkit Doctor, Full-Screen Map, the Tablet Quick Wheel, encrypted settings transfer, independent Desktop/Tablet densities, Update Briefing and every retained native system from v9.3.0 remain intact.
+Version 9.3.1 keeps Edinburgh and Fife first, then replaces Glasgow, Dundee and Stirling with Wakefield, London and Newcastle. Existing selected fixed-place screen pins migrate to their replacements, while all five custom bookmarks and saved map profiles remain untouched. Toolkit Doctor, Full-Screen Map, the Tablet Quick Wheel, encrypted settings transfer, independent Desktop/Tablet densities, Update Briefing and every retained native system from v9.3.0 remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
 
 ### Retained native systems
 

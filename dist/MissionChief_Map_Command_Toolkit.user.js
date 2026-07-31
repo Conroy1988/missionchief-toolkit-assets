@@ -20818,8 +20818,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         add('Version', versionResult?.state === 'update' ? 'warn' : versionResult?.state === 'latest' ? 'good' : 'warn',
         versionResult?.state === 'update' ? 'A verified Toolkit update is available.' : versionResult?.state === 'latest' ? 'Installed version matches the verified stable release.' : 'The stable release manifest could not be verified.');
 
-        const controls = document.querySelectorAll('#' + SCRIPT.controlId).length;
-        const panels = document.querySelectorAll('#' + SCRIPT.panelId).length;
+        const controls = document.querySelectorAll(`[id="${SCRIPT.controlId}"]`).length;
+        const panels = document.querySelectorAll(`[id="${SCRIPT.panelId}"]`).length;
         const runtimeHealthy = pageWindow[RUNTIME_KEY]?.version === SCRIPT.version && pageWindow[RUNTIME_KEY]?.destroyed !== true;
         add('Runtime ownership', runtimeHealthy && controls <= 1 && panels <= 1 ? 'good' : 'bad',
         runtimeHealthy && controls <= 1 && panels <= 1 ? 'One current Toolkit runtime owns the interface.' : 'Duplicate or stale Toolkit interface ownership was detected.');

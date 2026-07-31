@@ -15,8 +15,8 @@ import { instrumentSource } from "../../tools/build-render-probe-userscript.mjs"
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SOURCE_PATH = path.join(ROOT, "src/MissionChief_Map_Command_Toolkit.user.js");
 const BASELINE_PATH = path.join(ROOT, "docs/audits/issue-255/unchanged-update-ui.json");
-const EXPECTED_VERSION = "9.2.0";
-const EXPECTED_SHA = "d37ca38639b9d9df656da926b7f0721cd8c9193f96f54e903c4e3939550e7379";
+const EXPECTED_VERSION = "9.3.0";
+const EXPECTED_SHA = "b8d6119143b6dc4159864afe30c30ea92d672bd6d2f9a2b950361683adc304d7";
 const REPEATS = 25;
 const HELPER_NAMES = ["normaliseDiscordReportComplexity", "discordReportComplexityAtLeast", "updateUiToggleClass", "updateUiSetStyleProperty", "updateUiSetAttribute", "updateUiSetDataset", "updateUiSetProperty", "updateUiSetText", "commandInterfaceApplySearch", "updateCommandInterfaceHeader"];
 
@@ -44,8 +44,8 @@ function extractFunctions(source, names) {
 
 function fixtureHtml() {
   const controlToggles = ["allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment", "stuckDetector"];
-  const panelToggles = ["clean", "markerFocus", "missionPulse", "roadPriority", "coverage", "shortcuts", "autoLoadAllVehicles", "allianceBuildingsMapBlocker", "majorIncidentFeed", "missionLockAudio", "payoutFlash", "payoutSound", "missionValue", "customVehicleBadges", "stuckDetector", "missionSpawn", "resourceGap", "allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
-  const settings = ["major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
+  const panelToggles = ["clean", "markerFocus", "missionPulse", "roadPriority", "coverage", "shortcuts", "quickWheel", "autoLoadAllVehicles", "allianceBuildingsMapBlocker", "majorIncidentFeed", "missionLockAudio", "payoutFlash", "payoutSound", "missionValue", "customVehicleBadges", "stuckDetector", "missionSpawn", "resourceGap", "allianceMissions", "myMissions", "vehicles", "buildings", "allianceCredits", "missionAge", "transportWatcher", "unitCommitment"];
+  const settings = ["density-desktop", "density-tablet", ...Array.from({ length: 6 }, (_, index) => `quick-wheel-slot-${index}`), "major-incident-minimum", "coverage-radius", "alliance-credit-minimum", "transport-sweep-delay", "transport-sweep-max", "payout-template", "resource-gap-radius", "stuck-threshold", "payout-threshold", "payout-duration", "payout-volume", "discord-webhook", "discord-name", "discord-top-categories", "discord-period", "discord-custom-start", "discord-custom-end", "discord-comparison", "discord-chart", "discord-complexity", "discord-risk", "discord-forecast", "finance-vault-enabled", "finance-vault-retention", "finance-rule-feed"];
   return `<!doctype html><html><body>
     <div id="mc-map-command-toolkit-control">
       ${controlToggles.map(key => `<button data-toggle="${key}"><span class="mcms-float-label-desktop">${key}</span><span class="mcms-control-state"></span></button>`).join("")}
@@ -62,6 +62,7 @@ function fixtureHtml() {
       ${panelToggles.map(key => `<button data-toggle="${key}"><span class="mcms-pill"></span></button>`).join("")}
       <button class="mcms-action-toggle mcms-command-bar-setting"><span class="mcms-pill"></span></button>
       <button class="mcms-action-toggle mcms-economy-setting"><span class="mcms-pill"></span></button>
+      <button class="mcms-action-toggle mcms-fullscreen-setting"><span class="mcms-pill"></span></button>
       <button class="mcms-action-toggle mcms-pressure-board-toggle"><span class="mcms-pill"></span></button>
       ${settings.map(key => `<input data-setting="${key}">`).join("")}
       <div data-discord-complexity-help></div>
@@ -76,7 +77,9 @@ function baseState() {
   return {
     majorIncidentFeed: { enabled: false, minimumCredits: 25000 }, position: "bottomRight", nudge: { x: 0, y: 0 }, commandBarOpen: true,
     visibility: { allianceMissions: true, myMissions: true, vehicles: true, buildings: true }, allianceCredits: true, missionAge: true,
-    transportWatcher: true, unitCommitment: true, economyMode: false, activeTab: "map", uiTheme: "mapCommand", theme: "classic",
+    transportWatcher: true, unitCommitment: true, economyMode: false, fullscreenMap: false, activeTab: "map", uiTheme: "mapCommand", theme: "classic",
+    interfaceDensity: { desktop: "standard", tablet: "compact" },
+    quickWheel: { enabled: true, actions: ["myMissions", "allianceMissions", "vehicles", "buildings", "pressureBoard", "fullscreen"] },
     cleanMode: false, markerFocus: false, missionPulse: true, roadPriority: false, coverage: { enabled: true, radiusMi: 10 }, shortcuts: true,
     autoLoadAllVehicles: true, allianceBuildingsMap: true, missionLockAudio: true,
     payoutFlash: { enabled: true, soundEnabled: true, template: "command", threshold: 10000, durationMs: 5000, soundVolume: 0.35 },

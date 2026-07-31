@@ -1,5 +1,16 @@
 # Changelog
 
+## [9.3.1] - 2026-07-31
+
+### Default Quick Jumps
+
+- Keeps Edinburgh and Fife first, then replaces Glasgow, Dundee and Stirling with Wakefield, London and Newcastle.
+- Uses compact labels `WKFD`, `LDN` and `NCL` with city-centre targets and an area-aware London zoom.
+- Migrates any selected legacy screen pin to its corresponding replacement while removing obsolete fixed-place IDs.
+- Leaves all five user-created bookmarks, saved map profiles and unrelated settings unchanged.
+- Retains Toolkit Doctor responsive-layout and overlay-safety checks; the reported v9.3.0 tablet warnings remain available for live reconciliation through the existing Repair action.
+- Adds executable catalogue, coordinate, order, fresh-default and legacy-pin migration regressions for Issue #614.
+
 ## [9.3.0] - 2026-07-31
 
 ### Command Experience

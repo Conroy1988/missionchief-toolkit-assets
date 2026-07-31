@@ -19,7 +19,8 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.2.0"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1)
+    assert tuple(map(int, metadata.group(1).split("."))) >= (9, 2, 0)
     assert "// @connect      tkb-gaming.scot" in source
 
     knowledge = section(
@@ -48,8 +49,9 @@ def main() -> int:
     performance = json.loads(
         (ROOT / ".github" / "performance-budget.json").read_text(encoding="utf-8")
     )
-    assert performance["transitionApproval"]["issue"] == 610
-    assert performance["transitionApproval"]["approvedNetworkRequestDelta"] == 1
+    approvals = [performance["transitionApproval"], *performance["approvalHistory"]]
+    issue_610 = next(item for item in approvals if item["issue"] == 610)
+    assert issue_610["approvedNetworkRequestDelta"] == 1
     assert performance["absoluteLimits"]["network_request_calls"] == 6
 
     board = section(

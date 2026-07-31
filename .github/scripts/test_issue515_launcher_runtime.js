@@ -105,7 +105,8 @@ const sandbox = {
     String,
     document: documentStub,
     SCRIPT: { controlId: 'control', payoutFlashId: 'payout' },
-    state: { commandBarOpen: true, economyMode: false, majorIncidentFeed: { enabled: false } },
+    state: { commandBarOpen: true, economyMode: false, fullscreenMap: false, majorIncidentFeed: { enabled: false } },
+    fullscreenMapTarget: null,
     settingsPanelActivated: false,
     operationalStartupComplete: true,
     getLargestLeafletMap: () => null,
@@ -117,6 +118,8 @@ const sandbox = {
     scheduleEconomyLayerSync() {},
     scheduleMajorIncidentFeedRender() {},
     removeMajorIncidentFeed() {},
+    applyMapFullscreenState() {},
+    maybeShowUpdateBriefing() {},
     positionPayoutFlashOverlay() {},
 };
 vm.createContext(sandbox);

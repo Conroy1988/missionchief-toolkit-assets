@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.2.0
+// @version      9.3.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -465,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.2.0',
+        version: '9.3.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -477,6 +477,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
         customVehicleBadgeStyleId: 'mcms-custom-vehicle-badge-style',
         helpCenterId: 'mc-map-command-toolkit-help-center',
+        commandExperienceModalId: 'mc-map-command-toolkit-command-experience',
+        quickWheelId: 'mc-map-command-toolkit-quick-wheel',
+        fullscreenExitId: 'mc-map-command-toolkit-fullscreen-exit',
         cleanExitId: 'mcms-clean-exit',
         styleId: 'mc-map-command-toolkit-style-v4146',
         oldControlId: 'mc-map-command-skins-control',
@@ -894,7 +897,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '9.2.0',
+        guideVersion: '9.3.0',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1136,6 +1139,27 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     ];
 
     let settingsPersistenceMeta = { revision: 0, savedAt: 0, source: 'defaults' };
+    const COMMAND_DENSITIES = Object.freeze(['spacious', 'standard', 'compact', 'command']);
+    const QUICK_WHEEL_ACTIONS = Object.freeze({
+        myMissions: Object.freeze({ label: 'My Missions', icon: '1' }),
+        allianceMissions: Object.freeze({ label: 'Alliance', icon: '2' }),
+        vehicles: Object.freeze({ label: 'Vehicles', icon: '3' }),
+        buildings: Object.freeze({ label: 'Buildings', icon: '4' }),
+        pressureBoard: Object.freeze({ label: 'Pressure', icon: 'P' }),
+        fullscreen: Object.freeze({ label: 'Full Screen', icon: '⛶' }),
+        menu: Object.freeze({ label: 'Toolkit Menu', icon: 'M' }),
+        markerFocus: Object.freeze({ label: 'Marker Focus', icon: 'F' }),
+        roadPriority: Object.freeze({ label: 'Road Priority', icon: 'R' })
+    });
+    const DEFAULT_QUICK_WHEEL_ACTIONS = Object.freeze(['myMissions', 'allianceMissions', 'vehicles', 'buildings', 'pressureBoard', 'fullscreen']);
+    const SETTINGS_TRANSFER = Object.freeze({
+        format: 'MissionChief Map Command Toolkit Encrypted Settings Transfer',
+        schema: 1,
+        iterations: 310000,
+        saltBytes: 16,
+        ivBytes: 12,
+        maximumFileBytes: 150 * 1024 * 1024
+    });
     let state;
     let cachedMap = null;
     let cachedMapElement = null;
@@ -1352,6 +1376,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     let helpGuideLoadedAt = 0;
     let helpGuideLoadPromise = null;
     let helpCenterReturnFocus = null;
+    let commandExperienceReturnFocus = null;
+    let settingsTransferPending = null;
+    let toolkitDoctorReport = null;
+    let fullscreenMapTarget = null;
+    let quickWheelRestoreDragging = false;
+    let quickWheelReturnFocus = null;
     const COMMAND_SECTION_ORDER = Object.freeze(['map', 'missions', 'finance', 'locations', 'appearance', 'settings']);
     const COMMAND_SECTION_META = Object.freeze({
         map: Object.freeze({ label: 'Map', title: 'Map Controls', icon: '◎', description: 'Visibility, overlays and map tools' }),
@@ -1388,8 +1418,12 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         compactDock: false,
         commandBarOpen: true,
         economyMode: false,
+        fullscreenMap: false,
         tabletMode: 'auto',
         mobileMode: 'auto',
+        interfaceDensity: { desktop: 'standard', tablet: 'standard' },
+        quickWheel: { enabled: true, actions: [...DEFAULT_QUICK_WHEEL_ACTIONS] },
+        updateBriefing: { enabled: true, seenVersion: '' },
         shortcuts: true,
         autoLoadAllVehicles: false,
         allianceBuildingsMap: true,
@@ -1437,6 +1471,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         payoutFlash: { ...base.payoutFlash, ...(parsed.payoutFlash || {}) },
         discordReport: { ...base.discordReport, ...(parsed.discordReport || {}) },
         financialVault: { ...base.financialVault, ...(parsed.financialVault || {}) },
+        interfaceDensity: { ...base.interfaceDensity, ...(parsed.interfaceDensity || {}) },
+        quickWheel: { ...base.quickWheel, ...(parsed.quickWheel || {}) },
+        updateBriefing: { ...base.updateBriefing, ...(parsed.updateBriefing || {}) },
         profiles: Array.isArray(parsed.profiles) ? parsed.profiles.slice(0, MAP_PROFILE_LIMIT) : base.profiles,
         bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks.slice(0, 5) : base.bookmarks
         };
@@ -1458,6 +1495,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         merged.allianceCreditMinimum = [0, 5000, 10000, 15000, 20000].includes(Number(merged.allianceCreditMinimum)) ? Number(merged.allianceCreditMinimum) : 0;
         merged.commandBarOpen = merged.commandBarOpen !== false;
         merged.economyMode = Boolean(merged.economyMode);
+        merged.fullscreenMap = Boolean(merged.fullscreenMap);
         merged.autoLoadAllVehicles = merged.autoLoadAllVehicles === true;
         merged.customVehicleBadges = merged.customVehicleBadges !== false;
         merged.allianceBuildingsMap = merged.allianceBuildingsMap !== false;
@@ -1471,6 +1509,17 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         delete merged.missionRequirements;
         merged.tabletMode = ['auto', 'on', 'off'].includes(String(merged.tabletMode)) ? String(merged.tabletMode) : 'auto';
         merged.mobileMode = ['auto', 'on', 'off'].includes(String(merged.mobileMode)) ? String(merged.mobileMode) : 'auto';
+        merged.interfaceDensity.desktop = COMMAND_DENSITIES.includes(String(merged.interfaceDensity.desktop)) ? String(merged.interfaceDensity.desktop) : 'standard';
+        merged.interfaceDensity.tablet = COMMAND_DENSITIES.includes(String(merged.interfaceDensity.tablet)) ? String(merged.interfaceDensity.tablet) : 'standard';
+        merged.quickWheel.enabled = merged.quickWheel.enabled !== false;
+        merged.quickWheel.actions = (Array.isArray(merged.quickWheel.actions) ? merged.quickWheel.actions : DEFAULT_QUICK_WHEEL_ACTIONS)
+            .map(String).filter(action => QUICK_WHEEL_ACTIONS[action]).slice(0, 6);
+        for (const action of DEFAULT_QUICK_WHEEL_ACTIONS) {
+        if (merged.quickWheel.actions.length >= 6) break;
+        if (!merged.quickWheel.actions.includes(action)) merged.quickWheel.actions.push(action);
+        }
+        merged.updateBriefing.enabled = merged.updateBriefing.enabled !== false;
+        merged.updateBriefing.seenVersion = String(merged.updateBriefing.seenVersion || '').slice(0, 32);
         merged.transportWatcher = merged.transportWatcher !== false;
         merged.stuckDetector.enabled = merged.stuckDetector.enabled !== false;
         merged.stuckDetector.thresholdMin = Math.round(clamp(merged.stuckDetector.thresholdMin, STUCK_MIN_MINUTES, STUCK_MAX_MINUTES, 20));
@@ -1655,6 +1704,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
             return loaded;
         } catch (err) {}
         }
+        base.updateBriefing.seenVersion = SCRIPT.version;
         settingsPersistenceMeta = { revision: 0, savedAt: 0, source: 'defaults' };
         return base;
     }
@@ -1938,7 +1988,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
         .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -11192,7 +11242,90 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
                 grid-template-columns:1fr !important;
             }
         }
+        html[data-mcms-map-fullscreen="true"] body { overflow:hidden !important; }
+        html[data-mcms-map-fullscreen="true"] body :is(.navbar.navbar-fixed-top,#navbar,#footer,.footer) { visibility:hidden !important; pointer-events:none !important; }
+        html[data-mcms-map-fullscreen="true"] .mcms-map-fullscreen-target {
+            position:fixed !important; inset:0 !important; width:100vw !important; max-width:none !important;
+            height:100vh !important; height:100dvh !important; margin:0 !important; padding:0 !important;
+            border:0 !important; border-radius:0 !important; z-index:9000 !important;
+        }
+        html[data-mcms-map-fullscreen="true"] :is(#${SCRIPT.controlId},#${SCRIPT.panelId},#${SCRIPT.vehicleStatusId},#${SCRIPT.pressureBoardId},#${SCRIPT.majorIncidentFeedId}) { z-index:9400 !important; }
+        html[data-mcms-map-fullscreen="true"] :is(.modal,.modal-backdrop,[role="dialog"]) { z-index:9500 !important; }
+        #${SCRIPT.fullscreenExitId} {
+            position:fixed !important; top:max(10px,env(safe-area-inset-top)) !important; right:max(10px,env(safe-area-inset-right)) !important;
+            z-index:9600 !important; min-height:44px !important; padding:8px 14px !important; border:1px solid rgba(255,255,255,.35) !important;
+            border-radius:10px !important; background:rgba(12,20,28,.94) !important; color:#fff !important; font:800 11px/1 system-ui,sans-serif !important;
+            letter-spacing:.04em !important; box-shadow:0 8px 28px rgba(0,0,0,.48) !important; backdrop-filter:blur(12px) !important;
+        }
+        #${SCRIPT.fullscreenExitId}:focus-visible { outline:3px solid #66c7ff !important; outline-offset:3px !important; }
+        #${SCRIPT.commandExperienceModalId} {
+            position:fixed !important; inset:0 !important; z-index:2147483600 !important; display:grid !important; place-items:center !important;
+            padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)) !important;
+            background:radial-gradient(circle at 50% 15%,rgba(42,126,181,.22),transparent 42%),rgba(4,9,14,.82) !important;
+            backdrop-filter:blur(12px) saturate(110%) !important;
+        }
+        #${SCRIPT.commandExperienceModalId} .mcms-command-experience-card {
+            width:min(720px,100%) !important; max-height:min(820px,calc(100vh - 32px)) !important; max-height:min(820px,calc(100dvh - 32px)) !important;
+            display:grid !important; grid-template-rows:auto minmax(0,1fr) auto !important; overflow:hidden !important;
+            border:1px solid rgba(136,204,244,.38) !important; border-radius:18px !important;
+            background:linear-gradient(150deg,rgba(19,31,42,.98),rgba(7,13,20,.99)) !important; color:#eaf6ff !important;
+            box-shadow:0 28px 90px rgba(0,0,0,.68),inset 0 1px rgba(255,255,255,.08) !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
+        }
+        #${SCRIPT.commandExperienceModalId} header { display:flex !important; justify-content:space-between !important; gap:16px !important; padding:18px 20px 14px !important; border-bottom:1px solid rgba(255,255,255,.1) !important; }
+        #${SCRIPT.commandExperienceModalId} header span { color:#6fc8ff !important; font-size:10px !important; font-weight:900 !important; letter-spacing:.15em !important; }
+        #${SCRIPT.commandExperienceModalId} h2 { margin:4px 0 3px !important; color:#fff !important; font-size:23px !important; line-height:1.1 !important; }
+        #${SCRIPT.commandExperienceModalId} header p { margin:0 !important; color:#9eb2c2 !important; font-size:11px !important; }
+        #${SCRIPT.commandExperienceModalId} header > button { flex:0 0 42px !important; width:42px !important; height:42px !important; border:1px solid rgba(255,255,255,.2) !important; border-radius:11px !important; background:rgba(255,255,255,.06) !important; color:#fff !important; font-size:25px !important; }
+        #${SCRIPT.commandExperienceModalId} .mcms-command-experience-body { overflow:auto !important; padding:18px 20px !important; overscroll-behavior:contain !important; }
+        #${SCRIPT.commandExperienceModalId} footer { display:flex !important; justify-content:flex-end !important; flex-wrap:wrap !important; gap:9px !important; padding:13px 20px 17px !important; border-top:1px solid rgba(255,255,255,.1) !important; }
+        #${SCRIPT.commandExperienceModalId} button { min-height:40px !important; padding:8px 13px !important; border:1px solid rgba(255,255,255,.2) !important; border-radius:9px !important; background:#172531 !important; color:#eaf6ff !important; font-size:11px !important; font-weight:800 !important; cursor:pointer !important; }
+        #${SCRIPT.commandExperienceModalId} button.mcms-primary { border-color:#67c9ff !important; background:linear-gradient(135deg,#0877b4,#0b567f) !important; color:#fff !important; }
+        #${SCRIPT.commandExperienceModalId} button:focus-visible { outline:3px solid #7dd3ff !important; outline-offset:2px !important; }
+        .mcms-command-field { display:grid !important; gap:6px !important; margin:12px 0 !important; color:#bcd0de !important; font-size:11px !important; font-weight:800 !important; }
+        .mcms-command-field input { width:100% !important; min-height:46px !important; padding:10px 12px !important; border:1px solid rgba(121,202,249,.4) !important; border-radius:9px !important; background:#071018 !important; color:#fff !important; font-size:16px !important; }
+        .mcms-command-note,.mcms-command-inline-status { margin:12px 0 0 !important; color:#9db2c1 !important; font-size:11px !important; line-height:1.5 !important; }
+        .mcms-command-inline-status:not(:empty) { padding:10px 12px !important; border-left:3px solid #ffbd59 !important; background:rgba(255,189,89,.08) !important; color:#ffdca5 !important; }
+        .mcms-transfer-banner { padding:12px 14px !important; border:1px solid rgba(255,255,255,.14) !important; border-radius:11px !important; font-size:11px !important; line-height:1.5 !important; }
+        .mcms-transfer-banner.mcms-good { border-color:rgba(82,222,154,.4) !important; background:rgba(30,132,88,.12) !important; color:#b8f5d7 !important; }
+        .mcms-transfer-banner.mcms-warning { border-color:rgba(255,184,73,.48) !important; background:rgba(161,98,10,.13) !important; color:#ffe0a8 !important; }
+        .mcms-command-results { display:grid !important; gap:6px !important; margin:14px 0 0 !important; }
+        .mcms-command-results > div { display:grid !important; grid-template-columns:minmax(130px,.8fr) minmax(0,1.2fr) !important; gap:12px !important; padding:9px 11px !important; border-radius:8px !important; background:rgba(255,255,255,.045) !important; }
+        .mcms-command-results :is(dt,dd) { margin:0 !important; font-size:11px !important; }
+        .mcms-command-results dt { color:#9eb2c2 !important; }.mcms-command-results dd { color:#eaf6ff !important; font-weight:800 !important; text-align:right !important; }
+        .mcms-doctor-running { min-height:230px !important; display:grid !important; place-items:center !important; align-content:center !important; gap:10px !important; text-align:center !important; }
+        .mcms-doctor-running span { width:52px !important; height:52px !important; border:4px solid rgba(111,200,255,.22) !important; border-top-color:#6fc8ff !important; border-radius:50% !important; animation:mcmsDoctorSpin 1s linear infinite !important; }
+        .mcms-doctor-running strong { font-size:17px !important; }.mcms-doctor-running small { max-width:420px !important; color:#93a9b8 !important; }
+        @keyframes mcmsDoctorSpin { to { transform:rotate(360deg); } }
+        .mcms-doctor-summary { display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:8px !important; margin-bottom:12px !important; }
+        .mcms-doctor-summary > * { padding:10px !important; border-radius:9px !important; background:rgba(255,255,255,.05) !important; text-align:center !important; font-size:11px !important; }
+        .mcms-doctor-summary strong { color:#73e6ad !important; }.mcms-doctor-summary span:first-of-type { color:#ffd071 !important; }.mcms-doctor-summary span:last-child { color:#ff9494 !important; }
+        .mcms-doctor-results { display:grid !important; gap:8px !important; }.mcms-doctor-results article { display:grid !important; grid-template-columns:34px minmax(0,1fr) !important; gap:10px !important; padding:10px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:10px !important; background:rgba(255,255,255,.035) !important; }
+        .mcms-doctor-results article > b { width:30px !important; height:30px !important; display:grid !important; place-items:center !important; border-radius:50% !important; background:rgba(255,255,255,.08) !important; }.mcms-doctor-results article[data-tone="good"] > b { color:#6ee0a6 !important; }.mcms-doctor-results article[data-tone="warn"] > b { color:#ffca67 !important; }.mcms-doctor-results article[data-tone="bad"] > b { color:#ff8585 !important; }
+        .mcms-doctor-results strong { color:#fff !important; font-size:12px !important; }.mcms-doctor-results p { margin:3px 0 0 !important; color:#9eb2c2 !important; font-size:10px !important; line-height:1.4 !important; }
+        .mcms-update-version { display:flex !important; align-items:center !important; justify-content:space-between !important; margin-bottom:13px !important; padding:13px 15px !important; border:1px solid rgba(103,201,255,.32) !important; border-radius:11px !important; background:linear-gradient(120deg,rgba(12,114,166,.2),rgba(255,255,255,.03)) !important; }
+        .mcms-update-version span { color:#8bcff4 !important; font-size:9px !important; font-weight:900 !important; letter-spacing:.14em !important; }.mcms-update-version strong { color:#fff !important; font-size:24px !important; }
+        .mcms-update-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px !important; }.mcms-update-grid article { padding:11px 12px !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:10px !important; background:rgba(255,255,255,.035) !important; }.mcms-update-grid b { color:#7dd3ff !important; font-size:12px !important; }.mcms-update-grid p { margin:4px 0 0 !important; color:#a2b6c4 !important; font-size:10px !important; line-height:1.4 !important; }
+        #${SCRIPT.quickWheelId} { position:fixed !important; left:var(--mcms-wheel-x) !important; top:var(--mcms-wheel-y) !important; z-index:2147483500 !important; width:0 !important; height:0 !important; font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important; }
+        #${SCRIPT.quickWheelId} > button { position:absolute !important; left:0 !important; top:0 !important; width:76px !important; min-height:52px !important; transform:translate(-50%,-50%) !important; border:1px solid rgba(118,207,255,.55) !important; border-radius:12px !important; background:linear-gradient(150deg,rgba(25,47,62,.98),rgba(7,15,22,.98)) !important; color:#fff !important; box-shadow:0 8px 24px rgba(0,0,0,.56) !important; display:grid !important; place-items:center !important; align-content:center !important; gap:2px !important; }
+        #${SCRIPT.quickWheelId} > button b { color:#70d2ff !important; font-size:15px !important; }#${SCRIPT.quickWheelId} > button span { font-size:8px !important; font-weight:800 !important; text-align:center !important; }
+        #${SCRIPT.quickWheelId} > button:nth-child(1) { margin: -96px 0 0 0 !important; }#${SCRIPT.quickWheelId} > button:nth-child(2) { margin:-48px 0 0 84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(3) { margin:48px 0 0 84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(4) { margin:96px 0 0 0 !important; }#${SCRIPT.quickWheelId} > button:nth-child(5) { margin:48px 0 0 -84px !important; }#${SCRIPT.quickWheelId} > button:nth-child(6) { margin:-48px 0 0 -84px !important; }
+        #${SCRIPT.quickWheelId} > .mcms-quick-wheel-centre { width:54px !important; min-height:54px !important; margin:0 !important; border-radius:50% !important; border-color:#ff9e9e !important; color:#ffb2b2 !important; font-size:24px !important; }
+        #${SCRIPT.quickWheelId} > button:focus-visible { outline:3px solid #fff !important; outline-offset:3px !important; }
+        #${SCRIPT.panelId} .mcms-config-actions { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:48px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} .mcms-tab-panel { gap:11px !important; padding:13px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="spacious"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:11px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="compact"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:34px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="compact"] #${SCRIPT.panelId} .mcms-tab-panel { gap:5px !important; padding:7px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="compact"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:9px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-row,.mcms-toggle-btn,.mcms-action-toggle) { min-height:30px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} .mcms-tab-panel { gap:4px !important; padding:5px !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-row-label,.mcms-label,.mcms-status) { font-size:8px !important; line-height:1.25 !important; }
+        html:not([data-mcms-mobile-active="true"])[data-mcms-density="command"] #${SCRIPT.panelId} :is(.mcms-input,.mcms-select,.mcms-small-btn) { min-height:28px !important; font-size:9px !important; }
+        @media (max-width:620px) { #${SCRIPT.commandExperienceModalId} { padding:0 !important; }#${SCRIPT.commandExperienceModalId} .mcms-command-experience-card { width:100% !important; height:100% !important; max-height:none !important; border-radius:0 !important; }.mcms-update-grid { grid-template-columns:1fr !important; }#${SCRIPT.commandExperienceModalId} footer { justify-content:stretch !important; }#${SCRIPT.commandExperienceModalId} footer button { flex:1 1 140px !important; } }
         @media (prefers-reduced-motion:reduce) {
+            .mcms-doctor-running span { animation:none !important; }
+            #${SCRIPT.quickWheelId} > button { transition:none !important; }
             html[data-mcms-ui-theme] body #${SCRIPT.panelId} *,
             html[data-mcms-ui-theme] body #${SCRIPT.controlId} * {
                 scroll-behavior:auto !important;
@@ -11637,12 +11770,19 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         return tabletModeActive || mobileModeActive;
     }
 
+    function interfaceDensityForLayout(layout = activeDeviceLayout) {
+        if (layout === 'tablet') return state.interfaceDensity.tablet;
+        if (layout === 'desktop') return state.interfaceDensity.desktop;
+        return 'standard';
+    }
+
     function deviceLayoutStatusText() {
         const { width, height, orientation } = getViewportMetrics();
         const mobileLabel = state.mobileMode === 'auto' ? 'Mobile auto' : state.mobileMode === 'on' ? 'Mobile forced on' : 'Mobile forced off';
         const tabletLabel = state.tabletMode === 'auto' ? 'Tablet auto' : state.tabletMode === 'on' ? 'Tablet forced on' : 'Tablet forced off';
         const activeLabel = activeDeviceLayout === 'mobile' ? 'iOS mobile layout active' : activeDeviceLayout === 'tablet' ? 'tablet layout active' : 'desktop layout active';
-        return `${activeLabel} · ${mobileLabel} · ${tabletLabel} · ${Math.round(width)}×${Math.round(height)} ${orientation}`;
+        const densityLabel = interfaceDensityForLayout(activeDeviceLayout) === 'command' ? 'Command Centre density' : `${interfaceDensityForLayout(activeDeviceLayout)} density`;
+        return `${activeLabel} · ${densityLabel} · ${mobileLabel} · ${tabletLabel} · ${Math.round(width)}×${Math.round(height)} ${orientation}`;
     }
 
     function tabletModeStatusText() {
@@ -11657,6 +11797,10 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         const mobileSelect = panel.querySelector('[data-setting="mobile-mode"]');
         if (tabletSelect && document.activeElement !== tabletSelect) tabletSelect.value = state.tabletMode;
         if (mobileSelect && document.activeElement !== mobileSelect) mobileSelect.value = state.mobileMode;
+        const desktopDensity = panel.querySelector('[data-setting="density-desktop"]');
+        const tabletDensity = panel.querySelector('[data-setting="density-tablet"]');
+        if (desktopDensity && document.activeElement !== desktopDensity) desktopDensity.value = state.interfaceDensity.desktop;
+        if (tabletDensity && document.activeElement !== tabletDensity) tabletDensity.value = state.interfaceDensity.tablet;
         const status = panel.querySelector('[data-device-layout-status], [data-tablet-status]');
         if (status) status.textContent = tabletModeStatusText();
         const dragHandle = panel.querySelector('.mcms-drag-handle');
@@ -11910,6 +12054,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-compact-dock', String(Boolean(state.compactDock)));
         setAttributeIfChanged(root, 'data-mcms-command-bar-open', String(state.commandBarOpen !== false));
         setAttributeIfChanged(root, 'data-mcms-economy', String(Boolean(state.economyMode)));
+        setAttributeIfChanged(root, 'data-mcms-map-fullscreen', String(Boolean(state.fullscreenMap)));
         setAttributeIfChanged(root, 'data-mcms-alliance-buildings-map', state.allianceBuildingsMap === false ? 'disabled' : 'enabled');
         activeDeviceLayout = resolveDeviceLayout();
         tabletModeActive = resolveTabletMode(activeDeviceLayout);
@@ -11920,6 +12065,7 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
         setAttributeIfChanged(root, 'data-mcms-tablet-active', String(Boolean(tabletModeActive)));
         setAttributeIfChanged(root, 'data-mcms-mobile-mode', String(state.mobileMode));
         setAttributeIfChanged(root, 'data-mcms-mobile-active', String(Boolean(mobileModeActive)));
+        setAttributeIfChanged(root, 'data-mcms-density', interfaceDensityForLayout(activeDeviceLayout));
         setAttributeIfChanged(root, 'data-mcms-tablet-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-mobile-orientation', tabletViewport.orientation);
         setAttributeIfChanged(root, 'data-mcms-show-alliance-missions', String(Boolean(state.visibility.allianceMissions)));
@@ -16806,18 +16952,34 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         scheduleEnabledMapRefreshes({ includeSnapshots: deferredRefresh, positionPanel: true, refreshOperational: false, mapOnly: !deferredRefresh });
         };
 
+        const onTabletQuickWheel = event => {
+        if (activeDeviceLayout !== 'tablet' || !state.quickWheel.enabled) return;
+        const original = event?.originalEvent;
+        original?.preventDefault?.();
+        original?.stopPropagation?.();
+        const rect = map.getContainer?.().getBoundingClientRect?.();
+        const point = Number.isFinite(Number(original?.clientX)) && Number.isFinite(Number(original?.clientY))
+            ? { x: Number(original.clientX), y: Number(original.clientY) }
+            : rect && event?.containerPoint
+                ? { x: rect.left + Number(event.containerPoint.x), y: rect.top + Number(event.containerPoint.y) }
+                : null;
+        openTabletQuickWheel(point);
+        };
+
         try {
         map.on('layeradd', onLayerAdd);
         map.on('layerremove', onLayerRemove);
         map.on('overlayadd overlayremove', onNativeOverlayChange);
         map.on('movestart zoomstart', onMapMoveStart);
         map.on('moveend zoomend viewreset', onMapMove);
+        map.on('contextmenu', onTabletQuickWheel);
         runtime.mapBindings.push(
             { map, types: 'layeradd', handler: onLayerAdd },
             { map, types: 'layerremove', handler: onLayerRemove },
             { map, types: 'overlayadd overlayremove', handler: onNativeOverlayChange },
             { map, types: 'movestart zoomstart', handler: onMapMoveStart },
-            { map, types: 'moveend zoomend viewreset', handler: onMapMove }
+            { map, types: 'moveend zoomend viewreset', handler: onMapMove },
+            { map, types: 'contextmenu', handler: onTabletQuickWheel }
         );
         } catch (err) {}
     }
@@ -20153,6 +20315,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function applyLoadedConfiguration() {
+        closeTabletQuickWheel();
         const vehicleStatus = document.getElementById(SCRIPT.vehicleStatusId);
         vehicleStatus?.classList.remove('mcms-open');
         vehicleStatus?.setAttribute('aria-hidden', 'true');
@@ -20167,6 +20330,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (state.autoLoadAllVehicles) installAutoLoadAllVehicles();
         else stopAutoLoadAllVehicles();
         applyRootAttributes();
+        applyMapFullscreenState();
         renderQuickPlaces();
         renderBookmarks();
         renderProfiles();
@@ -20212,29 +20376,627 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         showToast('Profile deleted');
     }
 
-    function settingsBackupFilename(date = new Date()) {
-        const pad = value => String(value).padStart(2, '0');
-        return `MC Map Command PRIVATE Backup ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}.json`;
+    function commandExperienceElement(id) {
+        return document.querySelector(`#${id}`);
     }
 
-    function buildToolkitSettingsBackup(exportedAt = new Date()) {
-        const discordWebhook = getDiscordWebhookUrl();
-        const financeIdentity = financeVaultCredential();
-        const financialArchiveStore = loadFinanceVaultStore();
+    function closeCommandExperienceModal({ restoreFocus = true } = {}) {
+        const overlay = commandExperienceElement(SCRIPT.commandExperienceModalId);
+        if (!overlay) return false;
+        const acknowledgeBriefing = restoreFocus && overlay.dataset.kind === 'Update Briefing' && state.updateBriefing.seenVersion !== SCRIPT.version;
+        overlay.remove();
+        document.documentElement.removeAttribute('data-mcms-command-experience-open');
+        settingsTransferPending = null;
+        if (restoreFocus && commandExperienceReturnFocus?.isConnected) {
+        try { commandExperienceReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+        }
+        commandExperienceReturnFocus = null;
+        if (acknowledgeBriefing) {
+        state.updateBriefing.seenVersion = SCRIPT.version;
+        saveState();
+        }
+        return true;
+    }
+
+    function openCommandExperienceModal({ kind, title, subtitle, body, actions = '' }) {
+        closeCommandExperienceModal({ restoreFocus: false });
+        commandExperienceReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const overlay = document.createElement('div');
+        overlay.id = SCRIPT.commandExperienceModalId;
+        overlay.className = 'mcms-command-experience';
+        overlay.dataset.kind = String(kind || 'information');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'mcms-command-experience-title');
+        setInnerHtmlIfChanged(overlay,
+            '<div class="mcms-command-experience-card">' +
+                '<header><div><span>MAP COMMAND · ' + escapeHtml(String(kind || 'SYSTEM').toUpperCase()) + '</span>' +
+                '<h2 id="mcms-command-experience-title">' + escapeHtml(title) + '</h2>' +
+                '<p>' + escapeHtml(subtitle || '') + '</p></div>' +
+                '<button type="button" data-mcms-command-action="modal-close" aria-label="Close">×</button></header>' +
+                '<div class="mcms-command-experience-body">' + body + '</div>' +
+                '<footer>' + actions + '</footer>' +
+            '</div>');
+        document.body.appendChild(overlay);
+        document.documentElement.setAttribute('data-mcms-command-experience-open', 'true');
+        const focusTarget = overlay.querySelector('[autofocus], input, button, select, textarea');
+        try { focusTarget?.focus({ preventScroll: true }); } catch (err) {}
+        return overlay;
+    }
+
+    function findFullscreenMapTarget() {
+        const mapElement = toolkitPrimaryMapElement(getLargestLeafletMap(), document);
+        if (!mapElement) return null;
+        return mapElement.closest?.('#map_outer, #map-container, .map-container') || mapElement;
+    }
+
+    function applyMapFullscreenState() {
+        const enabled = Boolean(state.fullscreenMap);
+        let changed = false;
+        if (fullscreenMapTarget && (!enabled || fullscreenMapTarget.isConnected === false)) {
+        fullscreenMapTarget.classList.remove('mcms-map-fullscreen-target');
+        fullscreenMapTarget = null;
+        changed = true;
+        }
+        if (enabled) {
+        const nextTarget = findFullscreenMapTarget();
+        if (fullscreenMapTarget && fullscreenMapTarget !== nextTarget) { fullscreenMapTarget.classList.remove('mcms-map-fullscreen-target'); changed = true; }
+        if (fullscreenMapTarget !== nextTarget) changed = true;
+        fullscreenMapTarget = nextTarget;
+        if (fullscreenMapTarget && !fullscreenMapTarget.classList.contains('mcms-map-fullscreen-target')) { fullscreenMapTarget.classList.add('mcms-map-fullscreen-target'); changed = true; }
+        let exit = commandExperienceElement(SCRIPT.fullscreenExitId);
+        if (!exit) {
+            exit = document.createElement('button');
+            exit.id = SCRIPT.fullscreenExitId;
+            exit.type = 'button';
+            exit.textContent = 'Exit Full Screen';
+            exit.dataset.mcmsCommandAction = 'fullscreen-exit';
+            exit.setAttribute('aria-label', 'Exit full-screen map mode');
+            document.body.appendChild(exit);
+            changed = true;
+        }
+        } else {
+        const exit = commandExperienceElement(SCRIPT.fullscreenExitId);
+        if (exit) { exit.remove(); changed = true; }
+        }
+        changed = setAttributeIfChanged(document.documentElement, 'data-mcms-map-fullscreen', String(enabled)) || changed;
+        if (changed) {
+        try { findLeafletMapInstance(false)?.invalidateSize?.({ animate: false }); } catch (err) {}
+        }
+    }
+
+    function setMapFullscreen(enabled, announce = true) {
+        state.fullscreenMap = Boolean(enabled);
+        saveState();
+        applyRootAttributes();
+        applyMapFullscreenState();
+        fitControlToMap();
+        positionPanelOverlay(true);
+        if (announce) showToast(state.fullscreenMap ? 'Full-screen map active · Escape to restore' : 'Standard MissionChief view restored');
+    }
+
+    function quickWheelOptions(selected) {
+        return Object.entries(QUICK_WHEEL_ACTIONS).map(([key, item]) =>
+        '<option value="' + escapeHtml(key) + '"' + (key === selected ? ' selected' : '') + '>' + escapeHtml(item.label) + '</option>'
+        ).join('');
+    }
+
+    function closeTabletQuickWheel({ restoreFocus = false } = {}) {
+        const wheel = commandExperienceElement(SCRIPT.quickWheelId);
+        const focusTarget = restoreFocus ? quickWheelReturnFocus : null;
+        wheel?.remove();
+        if (quickWheelRestoreDragging) {
+        try { findLeafletMapInstance(false)?.dragging?.enable?.(); } catch (err) {}
+        }
+        quickWheelRestoreDragging = false;
+        quickWheelReturnFocus = null;
+        try { focusTarget?.isConnected && focusTarget.focus?.({ preventScroll: true }); } catch (err) {}
+        return Boolean(wheel);
+    }
+
+    function openTabletQuickWheel(point = null, { manual = false, returnFocus = null } = {}) {
+        if (!manual && (activeDeviceLayout !== 'tablet' || !state.quickWheel.enabled)) return false;
+        closeTabletQuickWheel();
+        const viewport = getViewportMetrics();
+        const radius = 116;
+        const x = clamp(point?.x, viewport.offsetLeft + radius + 12, viewport.offsetLeft + viewport.width - radius - 12, viewport.offsetLeft + viewport.width / 2);
+        const y = clamp(point?.y, viewport.offsetTop + radius + 12, viewport.offsetTop + viewport.height - radius - 12, viewport.offsetTop + viewport.height / 2);
+        const wheel = document.createElement('div');
+        wheel.id = SCRIPT.quickWheelId;
+        wheel.className = 'mcms-quick-wheel';
+        wheel.setAttribute('role', 'menu');
+        wheel.setAttribute('aria-label', 'Tablet Quick Wheel');
+        wheel.style.setProperty('--mcms-wheel-x', Math.round(x) + 'px');
+        wheel.style.setProperty('--mcms-wheel-y', Math.round(y) + 'px');
+        quickWheelReturnFocus = returnFocus?.isConnected ? returnFocus : null;
+        setInnerHtmlIfChanged(wheel, state.quickWheel.actions.map((action, index) => {
+        const item = QUICK_WHEEL_ACTIONS[action];
+        return '<button type="button" role="menuitem" style="--mcms-wheel-index:' + index + '" data-mcms-command-action="quick-wheel-command" data-command="' +
+            escapeHtml(action) + '" aria-label="' + escapeHtml(item.label) + '"><b>' + escapeHtml(item.icon) + '</b><span>' + escapeHtml(item.label) + '</span></button>';
+        }).join('') + '<button class="mcms-quick-wheel-centre" type="button" data-mcms-command-action="quick-wheel-close" aria-label="Close Quick Wheel">×</button>');
+        document.body.appendChild(wheel);
+        const map = findLeafletMapInstance(false);
+        try {
+        if (map?.dragging?.enabled?.()) {
+            map.dragging.disable();
+            quickWheelRestoreDragging = true;
+        }
+        } catch (err) {}
+        try { wheel.querySelector('[role="menuitem"]')?.focus({ preventScroll: true }); } catch (err) {}
+        return true;
+    }
+
+    function executeQuickWheelCommand(command) {
+        closeTabletQuickWheel();
+        if (['myMissions', 'allianceMissions', 'vehicles', 'buildings', 'markerFocus', 'roadPriority'].includes(command)) {
+        toggleFeature(command);
+        return;
+        }
+        if (command === 'pressureBoard') { toggleOperationalPressureBoard(); return; }
+        if (command === 'fullscreen') { setMapFullscreen(!state.fullscreenMap); return; }
+        if (command === 'menu') openPanel();
+    }
+
+    function settingsTransferBytesToBase64(bytes) {
+        let binary = '';
+        const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+        for (let offset = 0; offset < data.length; offset += 0x8000) {
+        binary += String.fromCharCode(...data.subarray(offset, offset + 0x8000));
+        }
+        return (pageWindow.btoa || globalThis.btoa)(binary);
+    }
+
+    function settingsTransferBase64ToBytes(value) {
+        const binary = (pageWindow.atob || globalThis.atob)(String(value || ''));
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        return bytes;
+    }
+
+    function settingsTransferCrypto() {
+        const cryptoApi = pageWindow.crypto || globalThis.crypto;
+        if (!cryptoApi?.subtle || typeof cryptoApi.getRandomValues !== 'function') throw new Error('Encrypted transfer requires Web Crypto support.');
+        return cryptoApi;
+    }
+
+    function settingsTransferAdditionalData() {
+        return new TextEncoder().encode(SETTINGS_TRANSFER.format + '|' + SETTINGS_TRANSFER.schema);
+    }
+
+    async function settingsTransferKey(passphrase, salt, iterations = SETTINGS_TRANSFER.iterations) {
+        const cryptoApi = settingsTransferCrypto();
+        const keyMaterial = await cryptoApi.subtle.importKey(
+            'raw', new TextEncoder().encode(String(passphrase || '')), { name: 'PBKDF2' }, false, ['deriveKey']
+        );
+        return cryptoApi.subtle.deriveKey(
+            { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt', 'decrypt']
+        );
+    }
+
+    function validateSettingsTransferEnvelope(value) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('The encrypted transfer file is invalid.');
+        if (value.format !== SETTINGS_TRANSFER.format || Number(value.schema) !== SETTINGS_TRANSFER.schema) throw new Error('This is not a supported encrypted Toolkit transfer.');
+        if (value.crypto?.cipher !== 'AES-GCM' || value.crypto?.kdf !== 'PBKDF2-SHA-256') throw new Error('The encrypted transfer algorithm is not supported.');
+        const iterations = Number(value.crypto.iterations);
+        if (!Number.isInteger(iterations) || iterations < 200000 || iterations > 2000000) throw new Error('The encrypted transfer key settings are invalid.');
+        const salt = settingsTransferBase64ToBytes(value.crypto.salt);
+        const iv = settingsTransferBase64ToBytes(value.crypto.iv);
+        const ciphertext = settingsTransferBase64ToBytes(value.ciphertext);
+        if (salt.length !== SETTINGS_TRANSFER.saltBytes || iv.length !== SETTINGS_TRANSFER.ivBytes || ciphertext.length < 17) throw new Error('The encrypted transfer payload is incomplete.');
+        return { envelope: value, iterations, salt, iv, ciphertext };
+    }
+
+    async function encryptToolkitSettings(passphrase, exportedAt = new Date()) {
+        if (String(passphrase || '').length < 12) throw new Error('Use a passphrase of at least 12 characters.');
+        const cryptoApi = settingsTransferCrypto();
+        const salt = cryptoApi.getRandomValues(new Uint8Array(SETTINGS_TRANSFER.saltBytes));
+        const iv = cryptoApi.getRandomValues(new Uint8Array(SETTINGS_TRANSFER.ivBytes));
+        const key = await settingsTransferKey(passphrase, salt);
+        const plaintext = new TextEncoder().encode(JSON.stringify(buildToolkitSettingsBackup(exportedAt, { includeSecrets: true })));
+        const ciphertext = await cryptoApi.subtle.encrypt(
+            { name: 'AES-GCM', iv, additionalData: settingsTransferAdditionalData(), tagLength: 128 },
+            key,
+            plaintext
+        );
         return {
-            format: 'MissionChief Map Command Toolkit Private Settings Backup',
-            schema: 4,
+        format: SETTINGS_TRANSFER.format,
+        schema: SETTINGS_TRANSFER.schema,
+        version: SCRIPT.version,
+        createdAt: exportedAt.toISOString(),
+        crypto: {
+            cipher: 'AES-GCM',
+            kdf: 'PBKDF2-SHA-256',
+            hash: 'SHA-256',
+            iterations: SETTINGS_TRANSFER.iterations,
+            salt: settingsTransferBytesToBase64(salt),
+            iv: settingsTransferBytesToBase64(iv)
+        },
+        ciphertext: settingsTransferBytesToBase64(ciphertext)
+        };
+    }
+
+    async function decryptToolkitSettings(envelope, passphrase) {
+        const validated = validateSettingsTransferEnvelope(envelope);
+        try {
+        const key = await settingsTransferKey(passphrase, validated.salt, validated.iterations);
+        const plaintext = await settingsTransferCrypto().subtle.decrypt(
+            { name: 'AES-GCM', iv: validated.iv, additionalData: settingsTransferAdditionalData(), tagLength: 128 },
+            key,
+            validated.ciphertext
+        );
+        const parsed = JSON.parse(new TextDecoder().decode(plaintext));
+        if (!extractImportedToolkitState(parsed)) throw new Error('The decrypted file does not contain Toolkit settings.');
+        return parsed;
+        } catch (err) {
+        if (err?.message?.includes('does not contain')) throw err;
+        throw new Error('The passphrase is wrong or the encrypted file has been altered.');
+        }
+    }
+
+    function settingsTransferPreview(parsed, { legacy = false } = {}) {
+        const importedState = extractImportedToolkitState(parsed);
+        if (!importedState) throw new Error('The file does not contain MissionChief Map Command settings.');
+        const privateImport = describePrivateImport(parsed);
+        const profiles = Array.isArray(importedState.profiles) ? importedState.profiles.filter(Boolean).length : 0;
+        const bookmarks = Array.isArray(importedState.bookmarks) ? importedState.bookmarks.filter(Boolean).length : 0;
+        const historyProfiles = Object.keys(privateImport.importedStore.value?.profiles || {}).length;
+        return {
+        parsed,
+        legacy,
+        rows: [
+            ['Toolkit settings', Object.keys(importedState).length + ' groups'],
+            ['Map profiles', String(profiles)],
+            ['Bookmarks', String(bookmarks)],
+            ['Discord webhook', privateImport.importedWebhook.present && privateImport.importedWebhook.value.trim() ? 'Included · redacted' : 'Not included'],
+            ['Financial Archive', historyProfiles ? historyProfiles + ' player profile' + (historyProfiles === 1 ? '' : 's') : 'Not included'],
+            ['Source protection', legacy ? 'Legacy unencrypted file' : 'AES-GCM authenticated']
+        ]
+        };
+    }
+
+    function renderSettingsTransferPreview(preview) {
+        const body =
+            '<div class="mcms-transfer-banner ' + (preview.legacy ? 'mcms-warning' : 'mcms-good') + '">' +
+            (preview.legacy ? 'Legacy plaintext backup detected. Continue only if you trust this private file.' : 'Passphrase accepted. Secret values remain hidden in this preview.') +
+            '</div><dl class="mcms-command-results">' +
+            preview.rows.map(([label, value]) => '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd></div>').join('') +
+            '</dl><p class="mcms-command-note">Import is atomic: the current installation is restored if any validation or storage write fails.</p>' +
+            '<div class="mcms-command-inline-status" data-transfer-status aria-live="polite"></div>';
+        openCommandExperienceModal({
+        kind: 'Secure Transfer',
+        title: 'Review settings import',
+        subtitle: 'No webhook URL, token or private ledger content is displayed.',
+        body,
+        actions: '<button type="button" data-mcms-command-action="modal-close">Cancel</button><button class="mcms-primary" type="button" data-mcms-command-action="transfer-apply">Import Settings</button>'
+        });
+        settingsTransferPending = { type: 'preview', preview };
+    }
+
+    function openEncryptedSettingsExport() {
+        const body =
+            '<div class="mcms-transfer-banner mcms-good">Discord webhook settings and Financial Archive history will be encrypted before they leave this device.</div>' +
+            '<label class="mcms-command-field"><span>Passphrase</span><input type="password" autocomplete="new-password" data-transfer-passphrase autofocus></label>' +
+            '<label class="mcms-command-field"><span>Confirm passphrase</span><input type="password" autocomplete="new-password" data-transfer-passphrase-confirm></label>' +
+            '<p class="mcms-command-note">Use at least 12 characters. The passphrase is never stored and cannot be recovered.</p>' +
+            '<div class="mcms-command-inline-status" data-transfer-status aria-live="polite"></div>';
+        openCommandExperienceModal({
+        kind: 'Secure Transfer',
+        title: 'Create encrypted settings transfer',
+        subtitle: 'AES-256-GCM · PBKDF2-SHA-256 · authenticated against tampering',
+        body,
+        actions: '<button type="button" data-mcms-command-action="modal-close">Cancel</button><button class="mcms-primary" type="button" data-mcms-command-action="transfer-encrypt">Create Encrypted Backup</button>'
+        });
+    }
+
+    async function createEncryptedSettingsExport() {
+        const overlay = commandExperienceElement(SCRIPT.commandExperienceModalId);
+        const passphrase = overlay?.querySelector('[data-transfer-passphrase]')?.value || '';
+        const confirmation = overlay?.querySelector('[data-transfer-passphrase-confirm]')?.value || '';
+        const status = overlay?.querySelector('[data-transfer-status]');
+        if (passphrase !== confirmation) { if (status) status.textContent = 'Passphrases do not match.'; return; }
+        try {
+        if (status) status.textContent = 'Encrypting private Toolkit settings…';
+        const exportedAt = new Date();
+        const envelope = await encryptToolkitSettings(passphrase, exportedAt);
+        const BlobConstructor = pageWindow.Blob || globalThis.Blob;
+        downloadToolkitSettingsBlob(
+            new BlobConstructor([JSON.stringify(envelope, null, 2)], { type: 'application/json' }),
+            settingsBackupFilename(exportedAt, 'encrypted')
+        );
+        closeCommandExperienceModal();
+        showToast('Encrypted Toolkit transfer created');
+        } catch (err) {
+        if (status) status.textContent = err?.message || 'Encrypted export failed.';
+        }
+    }
+
+    function exportSafeToolkitSettings() {
+        try {
+        const exportedAt = new Date();
+        const backup = buildToolkitSettingsBackup(exportedAt, { includeSecrets: false });
+        const BlobConstructor = pageWindow.Blob || globalThis.Blob;
+        downloadToolkitSettingsBlob(
+            new BlobConstructor([JSON.stringify(backup, null, 2)], { type: 'application/json' }),
+            settingsBackupFilename(exportedAt, 'safe')
+        );
+        showToast('Safe settings export created · private integrations excluded');
+        } catch (err) {
+        showToast('Safe export failed');
+        }
+    }
+
+    function openEncryptedSettingsImport(envelope) {
+        validateSettingsTransferEnvelope(envelope);
+        const body =
+            '<div class="mcms-transfer-banner mcms-good">Encrypted Toolkit transfer detected. The contents remain sealed until the passphrase is verified.</div>' +
+            '<label class="mcms-command-field"><span>Passphrase</span><input type="password" autocomplete="current-password" data-transfer-passphrase autofocus></label>' +
+            '<div class="mcms-command-inline-status" data-transfer-status aria-live="polite"></div>';
+        openCommandExperienceModal({
+        kind: 'Secure Transfer',
+        title: 'Unlock settings transfer',
+        subtitle: 'Wrong passphrases and altered files fail closed.',
+        body,
+        actions: '<button type="button" data-mcms-command-action="modal-close">Cancel</button><button class="mcms-primary" type="button" data-mcms-command-action="transfer-decrypt">Unlock &amp; Review</button>'
+        });
+        settingsTransferPending = { type: 'encrypted', envelope };
+    }
+
+    async function unlockEncryptedSettingsImport() {
+        const pending = settingsTransferPending;
+        const overlay = commandExperienceElement(SCRIPT.commandExperienceModalId);
+        const passphrase = overlay?.querySelector('[data-transfer-passphrase]')?.value || '';
+        const status = overlay?.querySelector('[data-transfer-status]');
+        if (pending?.type !== 'encrypted') return;
+        try {
+        if (status) status.textContent = 'Authenticating encrypted transfer…';
+        const parsed = await decryptToolkitSettings(pending.envelope, passphrase);
+        renderSettingsTransferPreview(settingsTransferPreview(parsed));
+        } catch (err) {
+        if (status) status.textContent = err?.message || 'The encrypted transfer could not be unlocked.';
+        }
+    }
+
+    function applyPendingSettingsTransfer() {
+        const preview = settingsTransferPending?.preview;
+        if (!preview?.parsed) return;
+        try {
+        const imported = applyImportedToolkitSettings(preview.parsed);
+        const additions = [imported.webhook && 'Discord webhook', imported.credential && 'archive identity', imported.vaultHistory && 'financial history'].filter(Boolean);
+        closeCommandExperienceModal();
+        showToast(additions.length ? 'Settings imported · ' + additions.join(', ') : 'Toolkit settings imported');
+        } catch (err) {
+        const status = document.querySelector('#' + SCRIPT.commandExperienceModalId + ' [data-transfer-status]');
+        if (status) status.textContent = err?.message || 'Import failed.';
+        else showToast('Import failed: ' + (err?.message || 'invalid settings file'));
+        }
+    }
+
+    function toolkitDoctorSafeText(report) {
+        const lines = [
+        'MissionChief Map Command Toolkit Doctor',
+        'Installed version: ' + report.installedVersion,
+        'Available version: ' + report.availableVersion,
+        'Device layout: ' + report.deviceLayout,
+        ''
+        ];
+        for (const check of report.checks) lines.push('[' + check.tone.toUpperCase() + '] ' + check.label + ': ' + check.detail);
+        lines.push('', 'Secrets, player identity, balances, coordinates and operational data were excluded.');
+        return lines.join('\n');
+    }
+
+    function renderToolkitDoctor(report, running = false) {
+        toolkitDoctorReport = report || null;
+        const checks = report?.checks || [];
+        const body = running
+        ? '<div class="mcms-doctor-running"><span></span><strong>Running safe diagnostics…</strong><small>Checking the Toolkit, map shell, saved settings and public UK intelligence endpoints.</small></div>'
+        : '<div class="mcms-doctor-summary"><strong>' + checks.filter(item => item.tone === 'good').length + ' passed</strong><span>' +
+            checks.filter(item => item.tone === 'warn').length + ' warnings</span><span>' + checks.filter(item => item.tone === 'bad').length + ' failures</span></div>' +
+            '<div class="mcms-doctor-results">' + checks.map(item =>
+            '<article data-tone="' + escapeHtml(item.tone) + '"><b>' + (item.tone === 'good' ? '✓' : item.tone === 'warn' ? '!' : '×') +
+            '</b><div><strong>' + escapeHtml(item.label) + '</strong><p>' + escapeHtml(item.detail) + '</p></div></article>'
+            ).join('') + '</div><p class="mcms-command-note">The report excludes webhook URLs, tokens, player identity, balances, coordinates and mission data.</p>';
+        openCommandExperienceModal({
+        kind: 'Toolkit Doctor',
+        title: running ? 'Diagnostics in progress' : 'Toolkit health report',
+        subtitle: running ? 'User-triggered checks only; no background monitor was added.' : 'Installed ' + report.installedVersion + ' · ' + report.deviceLayout,
+        body,
+        actions: running ? '<button type="button" data-mcms-command-action="modal-close">Run in Background</button>' :
+            '<button type="button" data-mcms-command-action="doctor-copy">Copy Safe Report</button><button type="button" data-mcms-command-action="doctor-repair">Repair UI</button><button class="mcms-primary" type="button" data-mcms-command-action="doctor-run">Run Again</button>'
+        });
+    }
+
+    async function runToolkitDoctor() {
+        renderToolkitDoctor(null, true);
+        const checks = [];
+        const add = (label, tone, detail) => checks.push({ label, tone, detail });
+        const versionResult = await runVersionStatusCheck(true);
+        const availableVersion = versionResult?.manifest?.version || 'Unavailable';
+        add('Version', versionResult?.state === 'update' ? 'warn' : versionResult?.state === 'latest' ? 'good' : 'warn',
+        versionResult?.state === 'update' ? 'A verified Toolkit update is available.' : versionResult?.state === 'latest' ? 'Installed version matches the verified stable release.' : 'The stable release manifest could not be verified.');
+
+        const controls = document.querySelectorAll(`[id="${SCRIPT.controlId}"]`).length;
+        const panels = document.querySelectorAll(`[id="${SCRIPT.panelId}"]`).length;
+        const runtimeHealthy = pageWindow[RUNTIME_KEY]?.version === SCRIPT.version && pageWindow[RUNTIME_KEY]?.destroyed !== true;
+        add('Runtime ownership', runtimeHealthy && controls <= 1 && panels <= 1 ? 'good' : 'bad',
+        runtimeHealthy && controls <= 1 && panels <= 1 ? 'One current Toolkit runtime owns the interface.' : 'Duplicate or stale Toolkit interface ownership was detected.');
+
+        const candidates = settingsPersistenceCandidates();
+        const durable = candidates.some(item => item.source === 'tampermonkey-primary');
+        const pageCopy = candidates.some(item => item.source === 'page-primary');
+        add('Saved settings', durable && pageCopy ? 'good' : candidates.length ? 'warn' : 'bad',
+        durable && pageCopy ? 'Primary and recovery-compatible settings copies are readable.' : candidates.length ? 'Settings are readable, but one persistence copy needs repair.' : 'No valid saved settings copy could be read.');
+
+        const mapElement = toolkitPrimaryMapElement(getLargestLeafletMap(), document);
+        add('Map controls', mapElement && controls === 1 ? 'good' : 'bad',
+        mapElement && controls === 1 ? 'The primary map and Toolkit launcher are mounted.' : 'The primary map or Toolkit launcher is missing.');
+
+        let ukTone = 'good';
+        let ukDetail = 'MissionChief UK Guide capability, unit and personnel data is reachable.';
+        try { await fetchUkKnowledgePayload(); }
+        catch (err) {
+        const cached = readUkKnowledgeCache();
+        ukTone = cached.payload ? 'warn' : 'bad';
+        ukDetail = cached.payload ? 'The live UK Guide check failed; a validated offline cache remains available.' : 'The UK Guide is unreachable and no validated cache is available.';
+        }
+        add('UK intelligence', ukTone, ukDetail);
+
+        const rootLayout = document.documentElement.getAttribute('data-mcms-device-layout');
+        const expectedDensity = interfaceDensityForLayout();
+        const panel = commandExperienceElement(SCRIPT.panelId);
+        let layoutInsideViewport = true;
+        if (panel?.classList.contains('mcms-open')) {
+        const rect = panel.getBoundingClientRect();
+        const viewport = getViewportMetrics();
+        layoutInsideViewport = rect.top >= viewport.offsetTop - 2 && rect.left >= viewport.offsetLeft - 2 &&
+            rect.right <= viewport.offsetLeft + viewport.width + 2 && rect.bottom <= viewport.offsetTop + viewport.height + 2;
+        }
+        add('Responsive layout', rootLayout === activeDeviceLayout && document.documentElement.dataset.mcmsDensity === expectedDensity && layoutInsideViewport ? 'good' : 'warn',
+        rootLayout === activeDeviceLayout && layoutInsideViewport ? activeDeviceLayout + ' geometry and ' + expectedDensity + ' density are within the visual viewport.' : 'Responsive attributes or panel bounds need reconciliation.');
+
+        let overlayConflicts = 0;
+        for (const element of Array.from(document.querySelectorAll('body *'))) {
+        if (element.closest?.('#' + SCRIPT.controlId + ',#' + SCRIPT.panelId + ',#' + SCRIPT.commandExperienceModalId + ',#' + SCRIPT.quickWheelId)) continue;
+        const style = pageWindow.getComputedStyle?.(element);
+        const zIndex = Number(style?.zIndex);
+        if ((style?.position === 'fixed' || style?.position === 'sticky') && zIndex >= 1000 && isVisible(element)) overlayConflicts += 1;
+        if (overlayConflicts >= 20) break;
+        }
+        add('Overlay safety', overlayConflicts ? 'warn' : 'good',
+        overlayConflicts ? overlayConflicts + ' visible high-priority page overlay' + (overlayConflicts === 1 ? '' : 's') + ' may compete for screen space.' : 'No competing high-priority page overlay was detected.');
+
+        const report = {
+        installedVersion: SCRIPT.version,
+        availableVersion,
+        deviceLayout: activeDeviceLayout + ' · ' + interfaceDensityForLayout(),
+        checks
+        };
+        const activeModal = commandExperienceElement(SCRIPT.commandExperienceModalId);
+        if (activeModal?.dataset.kind === 'Toolkit Doctor') renderToolkitDoctor(report);
+        else toolkitDoctorReport = report;
+        return report;
+    }
+
+    function repairToolkitUi() {
+        try {
+        saveState({ requireWrite: true });
+        applyRootAttributes();
+        ensureUi();
+        applyMapFullscreenState();
+        fitControlToMap();
+        positionPanelOverlay(true);
+        try { findLeafletMapInstance(false)?.invalidateSize?.({ animate: false }); } catch (err) {}
+        showToast('Toolkit interface and settings copies repaired');
+        void runToolkitDoctor();
+        } catch (err) {
+        showToast('Repair failed: ' + (err?.message || 'settings storage unavailable'));
+        }
+    }
+
+    function updateBriefingBody() {
+        return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
+        '<div class="mcms-update-grid">' +
+            '<article><b>Doctor</b><p>One-button diagnostics and safe UI repair in Settings.</p></article>' +
+            '<article><b>Full Screen</b><p>Maximise the operational map and press Escape to restore.</p></article>' +
+            '<article><b>Tablet Wheel</b><p>Long-press the map for six configurable commands.</p></article>' +
+            '<article><b>Secure Transfer</b><p>Move all settings, including Discord webhooks, inside passphrase encryption.</p></article>' +
+            '<article><b>Density</b><p>Choose separate Desktop and Tablet interface spacing.</p></article>' +
+            '<article><b>Briefings</b><p>Reopen this summary from Settings whenever required.</p></article>' +
+        '</div><p class="mcms-command-note">Your v9.2 settings were preserved. Full Screen and the Tablet Quick Wheel remain under your control.</p>';
+    }
+
+    function openUpdateBriefing({ manual = false } = {}) {
+        if (!manual && !state.updateBriefing.enabled) return false;
+        openCommandExperienceModal({
+        kind: 'Update Briefing',
+        title: 'Command Experience upgraded',
+        subtitle: 'Six new tools are ready in Toolkit Settings.',
+        body: updateBriefingBody(),
+        actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
+        });
+        return true;
+    }
+
+    function dismissUpdateBriefing(disable = false) {
+        state.updateBriefing.seenVersion = SCRIPT.version;
+        if (disable) state.updateBriefing.enabled = false;
+        saveState();
+        closeCommandExperienceModal();
+        showToast(disable ? 'Automatic update briefings disabled' : 'Update briefing acknowledged');
+    }
+
+    function maybeShowUpdateBriefing() {
+        if (!state.updateBriefing.enabled || state.updateBriefing.seenVersion === SCRIPT.version) return false;
+        if (Date.now() - bootStartedAt < 2000 || document.hidden || transportSweepRuntime.running) return false;
+        if (commandExperienceElement(SCRIPT.commandExperienceModalId) || document.documentElement.hasAttribute('data-mcms-help-open')) return false;
+        const blockingDialog = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"],.modal.in,.modal.show')).some(element =>
+        element.id !== SCRIPT.commandExperienceModalId && isVisible(element)
+        );
+        if (blockingDialog) return false;
+        return openUpdateBriefing();
+    }
+
+    function handleCommandExperienceAction(event) {
+        const button = closestEventTarget(event, '[data-mcms-command-action]');
+        if (!button) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        const action = button.dataset.mcmsCommandAction;
+        if (action === 'modal-close') { closeCommandExperienceModal(); return true; }
+        if (action === 'fullscreen-exit') { setMapFullscreen(false); return true; }
+        if (action === 'quick-wheel-close') { closeTabletQuickWheel({ restoreFocus: true }); return true; }
+        if (action === 'quick-wheel-command') { executeQuickWheelCommand(button.dataset.command); return true; }
+        if (action === 'transfer-encrypt') { void createEncryptedSettingsExport(); return true; }
+        if (action === 'transfer-decrypt') { void unlockEncryptedSettingsImport(); return true; }
+        if (action === 'transfer-apply') { applyPendingSettingsTransfer(); return true; }
+        if (action === 'doctor-run') { void runToolkitDoctor(); return true; }
+        if (action === 'doctor-repair') { repairToolkitUi(); return true; }
+        if (action === 'doctor-copy') {
+        if (!toolkitDoctorReport) return true;
+        const reportText = toolkitDoctorSafeText(toolkitDoctorReport);
+        const clipboard = (pageWindow.navigator || globalThis.navigator)?.clipboard;
+        if (typeof clipboard?.writeText !== 'function') { pageWindow.prompt('Copy the privacy-safe Toolkit Doctor report:', reportText); return true; }
+        Promise.resolve(clipboard.writeText(reportText))
+            .then(() => showToast('Safe diagnostic report copied'))
+            .catch(() => showToast('Copy unavailable · select the report manually'));
+        return true;
+        }
+        if (action === 'briefing-dismiss') { dismissUpdateBriefing(false); return true; }
+        if (action === 'briefing-disable') { dismissUpdateBriefing(true); return true; }
+        return true;
+    }
+
+    function settingsBackupFilename(date = new Date(), protection = 'encrypted') {
+        const pad = value => String(value).padStart(2, '0');
+        const label = protection === 'safe' ? 'Safe Settings' : 'Encrypted Settings';
+        const extension = protection === 'safe' ? 'json' : 'mcms';
+        return `MC Map Command ${label} ${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}.${extension}`;
+    }
+
+    function buildToolkitSettingsBackup(exportedAt = new Date(), { includeSecrets = true } = {}) {
+        const discordWebhook = includeSecrets ? getDiscordWebhookUrl() : '';
+        const financeIdentity = includeSecrets ? financeVaultCredential() : null;
+        const financialArchiveStore = includeSecrets ? loadFinanceVaultStore() : { schema: FINANCE_VAULT_SCHEMA, profiles: {} };
+        return {
+            format: includeSecrets ? 'MissionChief Map Command Toolkit Private Settings Backup' : 'MissionChief Map Command Toolkit Safe Settings Backup',
+            schema: 5,
             version: SCRIPT.version,
             exportedAt: exportedAt.toISOString(),
             state: clonePlainData(state),
-            integrations: {
+            integrations: includeSecrets ? {
                 discordWebhook,
                 financialArchiveIdentity: clonePlainData(financeIdentity)
-            },
-            financialArchiveStore: clonePlainData(financialArchiveStore),
+            } : {},
+            ...(includeSecrets ? { financialArchiveStore: clonePlainData(financialArchiveStore) } : {}),
+            secretsExcluded: !includeSecrets,
             containsPrivateCredentials: Boolean(discordWebhook),
             containsFinancialHistory: Boolean(financialArchiveStore?.profiles && Object.keys(financialArchiveStore.profiles).length),
-            privateCredentialNotice: 'This private backup may contain your Discord webhook token and locally stored MissionChief financial history. Anyone holding it may be able to post through the webhook and inspect the exported game ledger.'
+            privateCredentialNotice: includeSecrets
+                ? 'This payload must remain inside the authenticated encrypted transfer envelope.'
+                : 'Discord webhooks, Financial Archive identity and financial history were deliberately excluded.'
         };
     }
 
@@ -20251,60 +21013,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         runtimeSetTimeout(() => urlApi.revokeObjectURL(url), 2500);
     }
 
-    async function exportToolkitConfig() {
-        try {
-            const privateItems = [];
-            if (getDiscordWebhookUrl()) privateItems.push('your Discord webhook URL and token');
-            if (loadFinanceVaultStore()?.profiles && Object.keys(loadFinanceVaultStore().profiles).length) privateItems.push('your locally stored MissionChief financial history');
-            if (privateItems.length) {
-                const accepted = pageWindow.confirm(`PRIVATE BACKUP WARNING
-
-This export contains ${privateItems.join(', ')}. Anyone with the file may be able to post to your Discord channel or inspect the exported game ledger.
-
-Store it privately and never upload it to a public website or support ticket.
-
-Create the private backup now?`);
-                if (!accepted) {
-                    showToast('Private settings export cancelled');
-                    return;
-                }
-            }
-            const exportedAt = new Date();
-            const filename = settingsBackupFilename(exportedAt);
-            const json = JSON.stringify(buildToolkitSettingsBackup(exportedAt), null, 2);
-            const BlobConstructor = pageWindow.Blob || globalThis.Blob;
-            const FileConstructor = pageWindow.File || globalThis.File;
-            const blob = new BlobConstructor([json], { type: 'application/json' });
-            const shareNavigator = pageWindow.navigator || globalThis.navigator;
-
-            if (activeDeviceLayout === 'mobile' && typeof FileConstructor === 'function' && typeof shareNavigator?.share === 'function') {
-                const file = new FileConstructor([json], filename, { type: 'application/json' });
-                let canShareFile = false;
-                try {
-                    canShareFile = typeof shareNavigator.canShare !== 'function' || shareNavigator.canShare({ files: [file] });
-                } catch (err) {}
-                if (canShareFile) {
-                    try {
-                        await shareNavigator.share({
-                            files: [file],
-                            title: 'MC Map Command private settings backup'
-                        });
-                        showToast('All toolkit settings exported');
-                        return;
-                    } catch (err) {
-                        if (err?.name === 'AbortError') {
-                            showToast('Settings export cancelled');
-                            return;
-                        }
-                    }
-                }
-            }
-
-            downloadToolkitSettingsBlob(blob, filename);
-            showToast('All toolkit settings exported');
-        } catch (err) {
-            showToast('Export failed: settings file could not be created');
-        }
+    function exportToolkitConfig() {
+        openEncryptedSettingsExport();
     }
 
     function looksLikeToolkitState(value) {
@@ -20417,9 +21127,6 @@ Create the private backup now?`);
         if (!importedState) throw new Error('The file does not contain MissionChief Map Command settings.');
 
         const { importedWebhook, importedCredential, importedStore } = describePrivateImport(parsed);
-        const normalisedWebhook = importedWebhook.present ? normaliseDiscordWebhookUrl(importedWebhook.value) : '';
-        const normalisedCredential = importedCredential.present ? normaliseImportedFinanceVaultCredential(importedCredential.value) : null;
-        const normalisedVaultStore = importedStore.present ? normaliseImportedFinanceVaultStore(importedStore.value) : null;
         const previousState = clonePlainData(state);
         const previousStateRaw = settingsLocalStorageGet(SCRIPT.storageState);
         const previousSettingsVaultRaw = gmGetValueSafe(SCRIPT.settingsVaultState, null);
@@ -20429,11 +21136,14 @@ Create the private backup now?`);
         const previousVaultRaw = gmGetValueSafe(SCRIPT.financeVaultState, null);
 
         try {
+            const normalisedWebhook = importedWebhook.present ? normaliseDiscordWebhookUrl(importedWebhook.value) : '';
+            const normalisedCredential = importedCredential.present ? normaliseImportedFinanceVaultCredential(importedCredential.value) : null;
+            const normalisedVaultStore = importedStore.present ? normaliseImportedFinanceVaultStore(importedStore.value) : null;
             state = normaliseLoadedState(importedState, defaultState());
             saveState({ requireWrite: true });
             if (importedWebhook.present) saveDiscordWebhookUrl(normalisedWebhook);
-            if (normalisedCredential) saveFinanceVaultCredential(normalisedCredential);
-            if (normalisedVaultStore) saveFinanceVaultStore(normalisedVaultStore);
+            if (normalisedCredential && !saveFinanceVaultCredential(normalisedCredential)) throw new Error('Financial Archive identity storage is unavailable.');
+            if (normalisedVaultStore && !saveFinanceVaultStore(normalisedVaultStore)) throw new Error('Financial Archive storage is unavailable.');
             invalidateFinanceVaultMemory();
             loadCachedFinancialRules();
             loadCachedFinancialPolicy();
@@ -20474,7 +21184,7 @@ Create the private backup now?`);
 
     function importToolkitConfigFile(file) {
         if (!file) return;
-        if (Number(file.size) > 150 * 1024 * 1024) {
+        if (Number(file.size) > SETTINGS_TRANSFER.maximumFileBytes) {
             showToast('Import failed: settings file is too large');
             return;
         }
@@ -20482,17 +21192,11 @@ Create the private backup now?`);
         reader.onload = () => {
             try {
                 const parsed = JSON.parse(String(reader.result || ''));
-                const privateImport = describePrivateImport(parsed);
-                if (privateImport.privateItems.length) {
-                    const accepted = pageWindow.confirm(`PRIVATE BACKUP IMPORT WARNING\n\nThis file contains ${privateImport.privateItems.join(', ')}. Importing it can replace your saved Discord connection, Financial Archive identity or local financial history.\n\nOnly continue if you trust where this backup came from.\n\nImport this private backup now?`);
-                    if (!accepted) {
-                        showToast('Private settings import cancelled');
-                        return;
-                    }
+                if (parsed?.format === SETTINGS_TRANSFER.format) {
+                    openEncryptedSettingsImport(parsed);
+                    return;
                 }
-                const imported = applyImportedToolkitSettings(parsed);
-                const additions = [imported.webhook && 'webhook', imported.credential && 'archive identity', imported.vaultHistory && 'financial history'].filter(Boolean);
-                showToast(additions.length ? `All toolkit settings imported · ${additions.join(', ')}` : 'Toolkit settings imported · existing private integrations kept');
+                renderSettingsTransferPreview(settingsTransferPreview(parsed, { legacy: true }));
             } catch (err) {
                 showToast(`Import failed: ${err?.message || 'invalid settings file'}`);
             }
@@ -24881,7 +25585,7 @@ Create the private backup now?`);
         if (feature === 'stuckDetector') showToast(state.stuckDetector.enabled ? `Stuck detector on · ${state.stuckDetector.thresholdMin} min` : 'Stuck detector off');
         else if (feature === 'missionSpawn') showToast(state.missionSpawn.enabled ? 'New mission animation on' : 'New mission animation off'); }
     function handleInterfaceShellToggle(feature) {
-        if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else return false; return true; }
+        if (feature === 'clean') state.cleanMode = !state.cleanMode; else if (feature === 'shortcuts') state.shortcuts = !state.shortcuts; else if (feature === 'compactDock') state.compactDock = !state.compactDock; else if (feature === 'quickWheel') state.quickWheel.enabled = !state.quickWheel.enabled; else return false; return true; }
     function toggleFeature(feature) {
         handleMapVisibilityToggle(feature);
         handleMissionWindowToggle(feature);
@@ -24942,6 +25646,10 @@ Create the private backup now?`);
         }
         if (feature === 'resourceGap') {
             showToast(state.resourceGap.enabled ? `Resource Gap on · ${state.resourceGap.radiusMi}mi` : 'Resource Gap off');
+        }
+        if (feature === 'quickWheel') {
+            if (!state.quickWheel.enabled) closeTabletQuickWheel();
+            showToast(state.quickWheel.enabled ? 'Tablet Quick Wheel on' : 'Tablet Quick Wheel off');
         }
     }
     function parseTime(value, fallback) {
@@ -25466,8 +26174,11 @@ Create the private backup now?`);
     }
 
     function handleKeyboard(event) {
+        if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
+        if (event.key === 'Escape' && closeCommandExperienceModal()) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
         if (event.key === 'Escape') {
+            if (state.fullscreenMap) { event.preventDefault(); setMapFullscreen(false); return; }
             const hadOpenUi = Boolean(
                 document.getElementById(SCRIPT.panelId)?.classList.contains('mcms-open') ||
                 document.getElementById(SCRIPT.vehicleStatusId)?.classList.contains('mcms-open') ||
@@ -26160,6 +26871,10 @@ Create the private backup now?`);
                 <div class="mcms-row"><span class="mcms-row-label">Tablet Mode</span><select class="mcms-select" data-setting="tablet-mode"><option value="auto">Auto detect</option><option value="on">Always on</option><option value="off">Always off</option></select></div>
                 <div class="mcms-status" data-device-layout-status>Detecting device layout…</div>
                 <div class="mcms-status">Mobile Mode is tuned for iPhone Safari with Tampermonkey: a map-aware 5×2 command grid in portrait, a compact single-row dock where space allows, full-width safe-area bottom sheets, 16px form controls to prevent Safari input zoom, and Visual Viewport handling for the iOS keyboard. Tablet and desktop layouts remain separate and unchanged.</div>
+                <div class="mcms-section-label">Interface density</div>
+                <div class="mcms-row"><span class="mcms-row-label">Desktop density</span><select class="mcms-select" data-setting="density-desktop"><option value="spacious">Spacious</option><option value="standard">Standard</option><option value="compact">Compact</option><option value="command">Command Centre</option></select></div>
+                <div class="mcms-row"><span class="mcms-row-label">Tablet density</span><select class="mcms-select" data-setting="density-tablet"><option value="spacious">Spacious</option><option value="standard">Standard</option><option value="compact">Compact</option><option value="command">Command Centre</option></select></div>
+                <div class="mcms-status">Desktop and Tablet density are stored independently. iOS Mobile Mode keeps its protected touch-safe sizing.</div>
                 <div class="mcms-section-label">Dock position</div>
                 <div class="mcms-position-grid">${positionButtons}</div>
                 <div class="mcms-desktop-position-controls">
@@ -26185,10 +26900,18 @@ Create the private backup now?`);
                 <div class="mcms-grid-2">
                     ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–8. Vehicle Codes: V. Menu: M.')}
                 </div>
+                <div class="mcms-section-label">Tablet Quick Wheel</div>
+                <div class="mcms-grid-2">
+                    ${makeToggleButton('quickWheel', '◉', 'Quick Wheel', 'Long-press the map in Tablet Mode to open six touch-friendly commands.')}
+                    <button class="mcms-small-btn" id="mcms-open-quick-wheel-setting" type="button" data-action="open-tablet-quick-wheel">Open Wheel</button>
+                </div>
+                <div class="mcms-quick-wheel-settings">${state.quickWheel.actions.map((action, index) => `<div class="mcms-row"><span class="mcms-row-label">Wheel slot ${index + 1}</span><select class="mcms-select" data-setting="quick-wheel-slot-${index}">${quickWheelOptions(action)}</select></div>`).join('')}</div>
+                <div class="mcms-status">Tablet long-press uses MissionChief’s Leaflet tap-hold gesture, so ordinary taps and map panning remain native until the hold is confirmed.</div>
                 <div class="mcms-row"><span class="mcms-row-label">Major incident threshold</span><select class="mcms-select" data-setting="major-incident-minimum"><option value="10000">10,000+ credits</option><option value="25000">25,000+ credits</option><option value="50000">50,000+ credits</option><option value="100000">100,000+ credits</option></select></div>
                 <div class="mcms-section-label">Map command bar</div>
                 <div class="mcms-grid-2">
                     ${makeActionToggleButton('toggle-command-bar', '▤', 'Command Bar', 'Show or hide the grouped map command controls while keeping the Toolkit launcher available.', 'mcms-command-bar-setting')}
+                    ${makeActionToggleButton('toggle-map-fullscreen', '⛶', 'Full Screen', 'Maximise the operational map. Escape and the persistent restore button always exit.', 'mcms-fullscreen-setting')}
                 </div>
                 <div class="mcms-status">The Toolkit launcher and live version status remain available when the command bar is hidden. Open Settings to restore it at any time.</div>
                 <div class="mcms-section-label">Economy Mode</div>
@@ -26196,14 +26919,20 @@ Create the private backup now?`);
                     ${makeActionToggleButton('toggle-economy', '♻', 'Economy Mode', 'Reduce decorative animation, map-layer pressure and background refresh frequency without disabling operational modules.', 'mcms-economy-setting')}
                 </div>
                 <div class="mcms-status mcms-economy-status">Economy Mode preserves every module while reducing animations, map-layer pressure and background refresh frequency.</div>
+                <div class="mcms-section-label">Maintenance &amp; guidance</div>
+                <div class="mcms-grid-2">
+                    <button class="mcms-small-btn" type="button" data-action="toolkit-doctor">Run Toolkit Doctor</button>
+                    <button class="mcms-small-btn" type="button" data-action="open-update-briefing">Open Update Briefing</button>
+                </div>
                 <div class="mcms-section-label">Backup &amp; recovery</div>
                 <div class="mcms-config-actions">
-                    <button class="mcms-small-btn" type="button" data-action="export-config" title="Export every toolkit setting, private integration, profile, bookmark and Financial Archive history" aria-label="Export all toolkit settings">Export All</button>
-                    <button class="mcms-small-btn" type="button" data-action="import-config" title="Import a current or legacy toolkit settings backup" aria-label="Import all toolkit settings">Import All</button>
+                    <button class="mcms-small-btn" type="button" data-action="export-config" title="Encrypt every Toolkit setting, Discord webhook and Financial Archive record with a passphrase" aria-label="Create encrypted settings transfer">Encrypted Export</button>
+                    <button class="mcms-small-btn" type="button" data-action="import-config" title="Import an encrypted or legacy Toolkit settings backup" aria-label="Import Toolkit settings">Import</button>
+                    <button class="mcms-small-btn" type="button" data-action="export-safe-config" title="Export settings without Discord webhook, archive identity or financial history" aria-label="Export safe settings without private integrations">Safe Export</button>
                     <button class="mcms-small-btn" type="button" data-action="reset-config">Reset</button>
                 </div>
-                <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json" data-import-config-file>
-                <div class="mcms-status">Backups include every persistent toolkit preference, desktop/Tablet/iOS layout choice, profile, bookmark, saved Discord webhook and local Financial Archive history. A clear private-file warning is shown before export and import. Store the JSON securely. Current and legacy toolkit backup files are supported.</div>
+                <input class="mcms-hidden-file" type="file" accept="application/json,text/json,.json,.mcms" data-import-config-file>
+                <div class="mcms-status">Encrypted Export includes every preference, profile, bookmark, Discord webhook and local Financial Archive record inside AES-256-GCM passphrase encryption. Safe Export is plaintext but deliberately excludes all integrations, identity and financial history. Legacy JSON backups remain importable through a redacted review step.</div>
             </section>
             <div class="mcms-footer">
                 <span>Unified command interface · Desktop, Tablet and iOS · all themes share one operational layout.</span>
@@ -26431,7 +27160,12 @@ Create the private backup now?`);
         if (action === 'profile-load') { loadMapProfile(Number(button.dataset.slot)); return; }
         if (action === 'profile-delete') { deleteMapProfile(Number(button.dataset.slot)); return; }
         if (action === 'export-config') { exportToolkitConfig(); return; }
+        if (action === 'export-safe-config') { exportSafeToolkitSettings(); return; }
         if (action === 'import-config') { document.querySelector(`#${SCRIPT.panelId} [data-import-config-file]`)?.click?.(); return; }
+        if (action === 'toolkit-doctor') { void runToolkitDoctor(); return; }
+        if (action === 'toggle-map-fullscreen') { setMapFullscreen(!state.fullscreenMap); return; }
+        if (action === 'open-tablet-quick-wheel') { openTabletQuickWheel(null, { manual: true, returnFocus: button }); return; }
+        if (action === 'open-update-briefing') { openUpdateBriefing({ manual: true }); return; }
         if (action === 'reset-config') { resetToolkitConfiguration(); return; }
         if (action === 'discord-test') { testDiscordWebhook(); return; }
         if (action === 'discord-generate-post') { postDiscordFinancialReport(); return; }
@@ -26553,6 +27287,21 @@ Create the private backup now?`);
         const setting = target.dataset.setting;
         if (!setting) return;
         if (handleDeviceLayoutSettingChange(target, setting)) return;
+        if (setting === 'density-desktop' || setting === 'density-tablet') {
+            const key = setting === 'density-desktop' ? 'desktop' : 'tablet';
+            state.interfaceDensity[key] = COMMAND_DENSITIES.includes(String(target.value)) ? String(target.value) : 'standard';
+            saveState(); applyRootAttributes(); refreshTabletModeUi(); fitControlToMap(); positionPanelOverlay(true); updateUI();
+            showToast(`${key === 'desktop' ? 'Desktop' : 'Tablet'} density: ${state.interfaceDensity[key] === 'command' ? 'Command Centre' : state.interfaceDensity[key]}`);
+            return;
+        }
+        if (/^quick-wheel-slot-[0-5]$/u.test(setting)) {
+            const index = Number(setting.slice(-1));
+            const action = QUICK_WHEEL_ACTIONS[target.value] ? target.value : DEFAULT_QUICK_WHEEL_ACTIONS[index];
+            state.quickWheel.actions[index] = action;
+            saveState(); updateUI();
+            showToast(`Quick Wheel slot ${index + 1}: ${QUICK_WHEEL_ACTIONS[action].label}`);
+            return;
+        }
         if (setting === 'major-incident-minimum') {
             state.majorIncidentFeed.minimumCredits = MAJOR_INCIDENT_FEED_MINIMUM_OPTIONS.includes(Number(target.value)) ? Number(target.value) : 25000;
             saveState();
@@ -26773,6 +27522,7 @@ Create the private backup now?`);
             roadPriority: state.roadPriority,
             coverage: state.coverage.enabled,
             shortcuts: state.shortcuts,
+            quickWheel: state.quickWheel.enabled,
             autoLoadAllVehicles: state.autoLoadAllVehicles,
             allianceBuildingsMapBlocker: state.allianceBuildingsMap === false,
             majorIncidentFeed: state.majorIncidentFeed.enabled,
@@ -26811,6 +27561,7 @@ Create the private backup now?`);
         for (const [selector, on] of [
             ['.mcms-command-bar-setting', state.commandBarOpen !== false],
             ['.mcms-economy-setting', state.economyMode],
+            ['.mcms-fullscreen-setting', state.fullscreenMap],
         ]) {
             const button = panel.querySelector(selector);
             if (!button) continue;
@@ -26819,6 +27570,10 @@ Create the private backup now?`);
             updateUiSetText(button.querySelector('.mcms-pill'), on ? 'ON' : 'OFF');
         }
         updateAllianceMemberManagerMenuControl();
+        state.quickWheel.actions.forEach((action, index) => {
+            const select = panel.querySelector(`[data-setting="quick-wheel-slot-${index}"]`);
+            if (select && document.activeElement !== select) updateUiSetProperty(select, 'value', action);
+        });
         const majorIncidentMinimum = panel.querySelector('[data-setting="major-incident-minimum"]');
         if (majorIncidentMinimum) updateUiSetProperty(majorIncidentMinimum, 'value', String(state.majorIncidentFeed.minimumCredits));
         const radius = panel.querySelector('[data-setting="coverage-radius"]');
@@ -26895,6 +27650,7 @@ Create the private backup now?`);
         const control = createControl(mapEl);
         if (settingsPanelActivated && !document.getElementById(SCRIPT.panelId)) createPanel();
         if (control) ensureVersionStatusButton();
+        if (state.fullscreenMap || fullscreenMapTarget) applyMapFullscreenState();
         if (mapEl) {
             const map = findLeafletMapInstance(false);
             if (state.economyMode && map) { applyLeafletEconomyPolicy(map); scheduleEconomyLayerSync(0); }
@@ -26904,6 +27660,7 @@ Create the private backup now?`);
             if (payoutOverlay?.classList.contains('mcms-payout-active')) positionPayoutFlashOverlay(payoutOverlay, mapEl);
         }
         toolkitApplyCommandBarState(control);
+        maybeShowUpdateBriefing();
         return Boolean(control || document.getElementById(SCRIPT.controlId));
     }
 
@@ -26920,6 +27677,9 @@ Create the private backup now?`);
                 target.id === SCRIPT.vehicleStatusId ||
                 target.id === SCRIPT.pressureBoardId ||
                 target.id === SCRIPT.majorIncidentFeedId ||
+                target.id === SCRIPT.commandExperienceModalId ||
+                target.id === SCRIPT.quickWheelId ||
+                target.id === SCRIPT.fullscreenExitId ||
                 target.closest?.(`#${SCRIPT.controlId}`) ||
                 target.closest?.(`#${SCRIPT.panelId}`) ||
                 target.closest?.(`#${SCRIPT.toastId}`) ||
@@ -26927,6 +27687,9 @@ Create the private backup now?`);
                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
                 target.closest?.(`#${SCRIPT.pressureBoardId}`) ||
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
+                target.closest?.(`#${SCRIPT.commandExperienceModalId}`) ||
+                target.closest?.(`#${SCRIPT.quickWheelId}`) ||
+                target.closest?.(`#${SCRIPT.fullscreenExitId}`) ||
                 false
             )
         );
@@ -27665,6 +28428,7 @@ Create the private backup now?`);
         runtimeListen(document, 'keydown', handleKeyboard);
         runtimeListen(document, 'pointerdown', () => unlockPayoutAudio(), { once: true, capture: true });
         runtimeListen(document, 'click', event => {
+            if (handleCommandExperienceAction(event)) return;
             runtimeSetTimeout(refreshSuppression, 0);
             if (suppressNextOutsideClick) {
                 event.preventDefault();
@@ -27792,6 +28556,11 @@ Create the private backup now?`);
             disposePayoutMediaAudio();
             try { payoutAudioContext?.close?.(); } catch (err) {}
             clearDiscordPreviewChartUrl();
+            closeTabletQuickWheel();
+            closeCommandExperienceModal({ restoreFocus: false });
+            fullscreenMapTarget?.classList?.remove('mcms-map-fullscreen-target');
+            fullscreenMapTarget = null;
+            commandExperienceElement(SCRIPT.fullscreenExitId)?.remove();
             closeHelpCenter({ restoreFocus: false });
             disposeVersionStatus();
             helpGuideDocumentCache = '';
@@ -27808,7 +28577,7 @@ Create the private backup now?`);
             markerRegistryCache.clear();
             removeOldInstances();
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

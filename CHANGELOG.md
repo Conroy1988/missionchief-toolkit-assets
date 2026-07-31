@@ -1,5 +1,19 @@
 # Changelog
 
+## [9.3.0] - 2026-07-31
+
+### Command Experience
+
+- Adds a user-triggered **Toolkit Doctor** for version, runtime ownership, saved-state recovery, map mount, UK intelligence, responsive bounds and overlay-conflict checks; copied reports exclude secrets and private operational data.
+- Adds a recoverable **Full-Screen Map** that hides surrounding MissionChief page chrome, preserves Toolkit controls and always exposes an exit action plus the `Escape` key.
+- Adds a configurable six-action **Tablet Quick Wheel** on the map's native long-press/context-menu gesture, with bounded visual-viewport geometry and temporary map-drag suspension only while open.
+- Replaces the exposed full settings-export path with a versioned authenticated **AES-256-GCM** transfer using PBKDF2-SHA-256, a random salt and IV, and a passphrase of at least 12 characters.
+- Includes the saved Discord webhook, Financial Archive identity and history only inside the encrypted transfer; the separate safe JSON export explicitly excludes all private integrations and history.
+- Adds separate **Spacious**, **Standard**, **Compact** and **Command Centre** density choices for Desktop and Tablet while retaining the fixed iOS bottom-sheet density.
+- Adds a deferrable, once-per-version **Update Briefing** with an explicit opt-out and a permanent manual reopen action in Settings.
+- Preserves the six request sites and every existing scheduler, observer, managed listener, direct DOM lookup and HTML-assignment budget.
+- Adds executable authenticated-encryption, tamper, wrong-passphrase, secret-redaction, fullscreen, Tablet-wheel, density and update-deferral contracts for Issue #612.
+
 ## [9.2.0] - 2026-07-31
 
 ### MissionChief UK Knowledge Link

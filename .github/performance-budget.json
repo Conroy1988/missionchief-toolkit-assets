@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-31-issue-610-uk-knowledge-link-v9-2",
-  "rationale": "Approve one explicit, user-triggered and lifecycle-managed Guide request callsite for Issue #610 while retaining zero-growth budgets for managed schedulers, direct DOM lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-07-31-issue-612-command-experience-v9-3",
+  "rationale": "Approve the measured Issue #612 command-experience source and responsive-style growth while retaining zero growth in request sites, managed schedulers, raw listeners, direct DOM lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 610,
-    "version": "9.2.0",
-    "approvedNetworkRequestDelta": 1,
-    "scope": "User-triggered MissionChief UK Guide capability, unit and personnel enrichment with schema validation, bounded durable cache, offline fallback, privacy-safe catalogue-drift reporting and deterministic request cancellation.",
+    "issue": 612,
+    "version": "9.3.0",
+    "approvedNetworkRequestDelta": 0,
+    "scope": "User-triggered Toolkit Doctor, recoverable full-screen map, lifecycle-bound Tablet Quick Wheel, authenticated settings transfer including Discord webhooks, independent Desktop and Tablet density and a deferrable once-per-version update briefing.",
     "approvedMutationObserverDelta": 0
   },
   "requiredSourceFragments": [
@@ -222,6 +222,13 @@
       "version": "9.1.0",
       "approvedNetworkRequestDelta": 0,
       "scope": "Operational Pressure Board, global one-vehicle allocation, map and Missions controls, manual mention-safe Discord SITREP, eight-theme geometry and Desktop, Tablet and iOS touch contracts.",
+      "approvedMutationObserverDelta": 0
+    },
+    {
+      "issue": 610,
+      "version": "9.2.0",
+      "approvedNetworkRequestDelta": 1,
+      "scope": "User-triggered MissionChief UK Guide capability, unit and personnel enrichment with schema validation, bounded durable cache, offline fallback, privacy-safe catalogue-drift reporting and deterministic request cancellation.",
       "approvedMutationObserverDelta": 0
     }
   ]

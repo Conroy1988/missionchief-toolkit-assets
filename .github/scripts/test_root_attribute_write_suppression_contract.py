@@ -31,7 +31,7 @@ def main() -> int:
 
     assert "element.getAttribute(name) === nextValue" in helper
     assert "element.setAttribute(name, nextValue)" in helper
-    assert apply_root.count("setAttributeIfChanged(root,") == 21
+    assert apply_root.count("setAttributeIfChanged(root,") == 23
     assert "data-mcms-critical-view" not in apply_root
     assert "root.setAttribute(" not in apply_root
     assert apply_root.index("setAttributeIfChanged(root, 'data-mcms-economy'") < apply_root.index("activeDeviceLayout = resolveDeviceLayout()")
@@ -56,7 +56,8 @@ const calculations = {{ layout: 0, tablet: 0, mobile: 0, viewport: 0 }};
 const state = {{
     uiTheme: "mapCommand", theme: "nightshift", cleanMode: false, markerFocus: true,
     missionPulse: false, roadPriority: true, compactDock: false, commandBarOpen: true,
-    economyMode: false, allianceBuildingsMap: true, tabletMode: "auto", mobileMode: "auto",
+    economyMode: false, fullscreenMap: false, allianceBuildingsMap: true, tabletMode: "auto", mobileMode: "auto",
+    interfaceDensity: {{ desktop: "compact", tablet: "command" }},
     visibility: {{ allianceMissions: true, myMissions: false, vehicles: true, buildings: false }}
 }};
 function normaliseUiTheme(value) {{ return String(value); }}
@@ -64,12 +65,14 @@ function resolveDeviceLayout() {{ calculations.layout += 1; return nextLayout; }
 function resolveTabletMode(layout) {{ calculations.tablet += 1; return layout === "tablet"; }}
 function resolveMobileMode(layout) {{ calculations.mobile += 1; return layout === "mobile"; }}
 function getViewportMetrics() {{ calculations.viewport += 1; return {{ orientation }}; }}
+function interfaceDensityForLayout(layout = activeDeviceLayout) {{ return layout === "tablet" ? state.interfaceDensity.tablet : layout === "desktop" ? state.interfaceDensity.desktop : "standard"; }}
 {helper}
 {apply_root}
 const expected = {{
     "data-mcms-ui-theme": "mapCommand", "data-mc-map-skin": "nightshift", "data-mcms-clean": "false",
     "data-mcms-marker-focus": "true", "data-mcms-mission-pulse": "false", "data-mcms-road-priority": "true",
     "data-mcms-compact-dock": "false", "data-mcms-command-bar-open": "true", "data-mcms-economy": "false",
+    "data-mcms-map-fullscreen": "false", "data-mcms-density": "compact",
     "data-mcms-alliance-buildings-map": "enabled", "data-mcms-device-layout": "desktop", "data-mcms-tablet-mode": "auto",
     "data-mcms-tablet-active": "false", "data-mcms-mobile-mode": "auto", "data-mcms-mobile-active": "false",
     "data-mcms-tablet-orientation": "landscape", "data-mcms-mobile-orientation": "landscape",
@@ -77,7 +80,7 @@ const expected = {{
     "data-mcms-show-vehicles": "true", "data-mcms-show-buildings": "false"
 }};
 applyRootAttributes();
-assert.equal(root.calls.length, 21, "first call writes every missing attribute");
+assert.equal(root.calls.length, 23, "first call writes every missing attribute");
 assert.deepEqual(Object.fromEntries(root.attributes), expected, "first call preserves all baseline values");
 assert.deepEqual(calculations, {{ layout: 1, tablet: 1, mobile: 1, viewport: 1 }});
 root.clearCalls();
@@ -99,6 +102,7 @@ root.clearCalls();
 applyRootAttributes();
 assert.deepEqual(root.calls, [
     ["data-mcms-device-layout", "tablet"], ["data-mcms-tablet-active", "true"],
+    ["data-mcms-density", "command"],
     ["data-mcms-tablet-orientation", "portrait"], ["data-mcms-mobile-orientation", "portrait"]
 ], "layout and orientation changes preserve ordering");
 assert.equal(activeDeviceLayout, "tablet");

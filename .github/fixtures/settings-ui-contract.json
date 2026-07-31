@@ -15,6 +15,7 @@
     "discord-generate-post",
     "discord-test",
     "export-config",
+    "export-safe-config",
     "finance-archive-cancel",
     "finance-archive-clear",
     "finance-archive-export",
@@ -29,6 +30,8 @@
     "nudge-up",
     "open-help-center",
     "open-pressure-board",
+    "open-tablet-quick-wheel",
+    "open-update-briefing",
     "open-vehicle-status",
     "panel-down",
     "panel-left",
@@ -43,7 +46,8 @@
     "start-transport-sweep",
     "stop-transport-sweep",
     "test-payout-flash",
-    "toggle-command-search"
+    "toggle-command-search",
+    "toolkit-doctor"
   ],
   "dynamicActions": [
     "bookmark-delete",
@@ -56,7 +60,9 @@
     "profile-load",
     "profile-save",
     "quick-pin",
+    "quickWheel",
     "toggle-command-bar",
+    "toggle-map-fullscreen",
     "toggle-economy"
   ],
   "settings": [
@@ -73,6 +79,8 @@
     "discord-risk",
     "discord-top-categories",
     "discord-webhook",
+    "density-desktop",
+    "density-tablet",
     "finance-rule-feed",
     "finance-vault-enabled",
     "finance-vault-retention",
@@ -83,6 +91,7 @@
     "payout-test-amount",
     "payout-threshold",
     "payout-volume",
+    "quick-wheel-slot-${index}",
     "resource-gap-radius",
     "stuck-threshold",
     "tablet-mode",
@@ -115,6 +124,7 @@
     "payoutSound",
     "resourceGap",
     "roadPriority",
+    "quickWheel",
     "shortcuts",
     "stuckDetector",
     "transportWatcher",
@@ -145,6 +155,7 @@
     "payoutSound": "payoutFlash.soundEnabled",
     "resourceGap": "resourceGap.enabled",
     "roadPriority": "roadPriority",
+    "quickWheel": "quickWheel.enabled",
     "shortcuts": "shortcuts",
     "stuckDetector": "stuckDetector.enabled",
     "transportWatcher": "transportWatcher",
@@ -345,11 +356,13 @@
   "extractedInterfaceShellToggleRoutes": [
     "clean",
     "compactDock",
+    "quickWheel",
     "shortcuts"
   ],
   "extractedInterfaceShellToggleStatePaths": {
     "clean": "cleanMode",
     "compactDock": "compactDock",
+    "quickWheel": "quickWheel.enabled",
     "shortcuts": "shortcuts"
   }
 }

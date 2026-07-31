@@ -24,7 +24,9 @@ external_dynamic = {
     "profile-delete",
     "profile-load",
     "profile-save",
+    "quickWheel",
     "toggle-command-bar",
+    "toggle-map-fullscreen",
     "toggle-economy",
 }
 expected_actions = sorted(

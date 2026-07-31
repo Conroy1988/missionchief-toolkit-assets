@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v920) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v930) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,13 +58,13 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.2.0
+## Current interface — v9.3.0
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.2.0` connects live Operational Pressure Board requirements to the verified MissionChief UK Guide. Select **UK Intel** on any fleet-pressure row to open its qualifying units, numeric MissionChief vehicle types, crew range, course, academy, training duration, trained-crew qualifiers and associated personnel records. Unknown live labels remain visible as **Catalogue Drift** and can be opened in a review-before-submit report without sending private player data.
+Version `9.3.0` adds six daily command-experience tools. **Toolkit Doctor** checks the installed version, interface ownership, saved-state recovery, map shell, UK intelligence and responsive bounds without copying secrets. **Full-Screen Map** maximises the operational workspace with persistent and `Escape` recovery. Tablet users can long-press the map for a configurable six-action **Quick Wheel**, and Desktop and Tablet now keep independent Spacious, Standard, Compact or Command Centre density choices.
 
-Guide intelligence loads only when requested and is stored in an update-stable bounded cache. If the website is unavailable, the Toolkit falls back to the existing bundled UK vehicle catalogue without delaying startup or hiding the live requirement. The six-section Command Interface, map-native Pressure Board, Tablet header clearance, custom callsign support, settings persistence, readable Tablet navigation, Tablet panel dragging and main-map **Stuck** overlay control remain intact. Press `B` or select **Pressure Board** from the Dashboard group to open one shared command picture without leaving the map.
+Full settings transfer is now passphrase-encrypted and authenticated before leaving the browser. It includes the Discord webhook and Financial Archive only inside AES-256-GCM ciphertext; a separate safe JSON export omits private integrations, archive identity and history. A once-per-version **Update Briefing** introduces changes after a safe deferred startup and can always be reopened from Settings. MissionChief UK Knowledge Link, the six-section Command Interface, map-native Pressure Board, Tablet header clearance, custom callsigns and every retained v9.2 system remain intact.
 
 - **Map** contains visibility, overlays and map tools.
 - **Missions** contains intelligence, the Operational Pressure Board, resource planning, Patient Transport Sweep and response operations.
@@ -90,6 +90,8 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 | **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
 | **Operational Pressure Board** | Opens from the map with shortcut `B` and combines mission priority, shared fleet demand, reserve risk and transport pressure into one evidence-led board |
 | **MissionChief UK Knowledge Link** | Explains live requirements with verified units, crew, training and personnel evidence plus direct TKB Guide records |
+| **Toolkit Doctor** | Runs privacy-safe diagnostics for version, runtime ownership, persistence, map mount, public Guide reachability and responsive geometry |
+| **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes six configurable long-press actions on Tablet |
 | **Operational SITREP** | Manually posts the current board snapshot to the saved Discord webhook with mention suppression and no automatic dispatch or posting |
 | **Mission Age map timers** | Adds compact age badges above personal missions; shortcut `6` toggles the surface |
 | **Mission Value** | Shows verified mission value inside opened MissionChief windows |
@@ -115,7 +117,8 @@ Patient Transport Sweep remains deliberately bounded. It uses MissionChief-owned
 | **Coverage rings** | Adds readable response-range context around selected locations |
 | **Smart Bookmark Labels** | Creates compact place labels, pins and touch previews |
 | **Profiles and layouts** | Preserves distinct command presentations without changing MissionChief data |
-| **Responsive modes** | Reflows the command surface for Desktop, Tablet and iOS Mobile Mode |
+| **Responsive modes** | Reflows the command surface for Desktop, Tablet and iOS Mobile Mode, with separate Desktop and Tablet density choices |
+| **Update Briefing** | Explains each installed release once, defers around active dialogs and transport work, and remains manually reopenable |
 
 ### Finance and recovery command
 
@@ -257,7 +260,7 @@ GitHub remains authoritative. Greasy Fork is verified as the public distribution
 
 - Configuration remains local to the browser unless the user explicitly uses a supported reporting feature.
 - MissionChief UK Guide intelligence is downloaded only after a user opens **UK Intel**, is schema-validated and never includes player or mission-instance data.
-- Settings exports can contain the saved Discord webhook and must be treated as private operational material.
+- Full settings transfer includes the saved Discord webhook and Financial Archive only inside passphrase-authenticated AES-256-GCM ciphertext; safe JSON exports exclude those private values.
 - The Toolkit does not require a remote player account, remote telemetry service or separate player database.
 - `main` is canonical.
 - Confirmed work is tracked through GitHub Issues.

@@ -45,6 +45,8 @@
     "data-mcms-compact-dock",
     "data-mcms-command-bar-open",
     "data-mcms-economy",
+    "data-mcms-map-fullscreen",
+    "data-mcms-density",
     "data-mcms-map-moving",
     "data-mcms-alliance-buildings-map",
     "data-mcms-alliance-buildings-page",
@@ -59,7 +61,8 @@
     "data-mcms-show-my-missions",
     "data-mcms-show-vehicles",
     "data-mcms-show-buildings",
-    "data-mcms-help-open"
+    "data-mcms-help-open",
+    "data-mcms-command-experience-open"
   ],
   "cleanupCaches": [
     "missionSnapshotCache",
@@ -83,6 +86,8 @@
     "stopPayoutFlashAnimation",
     "disposePayoutMediaAudio",
     "clearDiscordPreviewChartUrl",
+    "closeTabletQuickWheel",
+    "closeCommandExperienceModal",
     "stopDesktopPanelWorkspaceObservation",
     "removeOldInstances"
   ]

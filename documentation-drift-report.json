@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "status": "passed",
-  "userscriptVersion": "9.3.2",
+  "userscriptVersion": "9.4.0",
   "versionState": "source-transition",
   "documentedThemes": [
     "Map Command",
@@ -50,12 +50,16 @@
     {
       "key": "B",
       "action": "Open or close Operational Pressure Board"
+    },
+    {
+      "key": "K",
+      "action": "Open Toolkit Command Palette"
     }
   ],
-  "featureCount": 19,
+  "featureCount": 20,
   "publicDocumentCount": 3,
   "failures": [],
   "warnings": [
-    "Validated guarded source transition 9.3.2 is ahead of dashboard version 9.3.1."
+    "Validated guarded source transition 9.4.0 is ahead of dashboard version 9.3.2."
   ]
 }

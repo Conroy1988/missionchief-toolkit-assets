@@ -122,25 +122,25 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 616,
-    "version": "9.3.2",
-    "sourceBytes": 1918605,
-    "sourceLines": 29469,
-    "sourceSha256": "a76a650ec61b9266ce2f32c3adfbf2b612deef12c3242355cd1b9f06033af0b2",
-    "templateBytes": 774580,
-    "templateLines": 9318,
-    "templateSha256": "09af8b70a50ec4f37e5efbffe28616f5d71e50ee50f934fe0f80c5fb3bb2f9db",
-    "canonicalCssSha256": "6d2866cab38b435676ec9725f905fc91e140434cd3bac7d8df08ee47e218f74c",
-    "maxSourceBytes": 1932417,
-    "maxSourceLines": 29537,
+    "issue": 618,
+    "version": "9.4.0",
+    "sourceBytes": 1961542,
+    "sourceLines": 30017,
+    "sourceSha256": "f544e065795e29165f653b64a08b83a8eefccb26c7a7744496cd4dc99bf64f90",
+    "templateBytes": 786166,
+    "templateLines": 9383,
+    "templateSha256": "f34cb026ae5f324dc73889e22dbd7fd4cb3891d44b2ecd8b40340f5e3a1b9769",
+    "canonicalCssSha256": "d22fbc6d0dd89a4fecfa2c61940e3fffa6b056e814af97c61cfce23755441ff4",
+    "maxSourceBytes": 1981542,
+    "maxSourceLines": 30317,
     "minTemplateBytes": 500000,
-    "baseline": "9.3.1",
+    "baseline": "9.3.2",
     "approvedGrowth": {
-      "sourceBytes": 3730,
-      "sourceLines": 79,
-      "templateBytes": 0,
-      "templateLines": 0
+      "sourceBytes": 42937,
+      "sourceLines": 548,
+      "templateBytes": 11586,
+      "templateLines": 65
     },
-    "scope": "Issue #616 Toolkit Doctor responsive and overlay diagnostic correctness"
+    "scope": "Issue #618 local global Command Palette, complete runtime catalogue and responsive keyboard/touch surface"
   }
 }

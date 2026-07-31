@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "project": {
     "repository": "https://github.com/Conroy1988/missionchief-toolkit-assets",
     "issues": "https://github.com/Conroy1988/missionchief-toolkit-assets/issues",
@@ -53,6 +53,10 @@
     {
       "key": "B",
       "action": "Open or close Operational Pressure Board"
+    },
+    {
+      "key": "K",
+      "action": "Open Toolkit Command Palette"
     }
   ],
   "requiredSourceTokens": [
@@ -77,7 +81,8 @@
     "Resource Gap",
     "Operational Pressure Board",
     "Operational SITREP",
-    "Economy Mode"
+    "Economy Mode",
+    "Toolkit Command Palette"
   ],
   "installUrls": [
     "https://update.greasyfork.org/scripts/586018/MissionChief%20Map%20Command%20Toolkit.user.js",
@@ -96,7 +101,8 @@
     "Financial intelligence",
     "Payout presentations",
     "Economy Mode",
-    "Desktop, Tablet and iOS Mobile Mode"
+    "Desktop, Tablet and iOS Mobile Mode",
+    "Toolkit Command Palette"
   ],
   "publicDocumentation": {
     "readmeRequiredTokens": [
@@ -109,7 +115,8 @@
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",
-      "The Godfather"
+      "The Godfather",
+      "Toolkit Command Palette"
     ],
     "readmeForbiddenTokens": [
       "Operational Window Suite",
@@ -134,7 +141,8 @@
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",
-      "The Godfather"
+      "The Godfather",
+      "Toolkit Command Palette"
     ],
     "helpForbiddenTokens": [
       "Operational Window Suite",
@@ -159,7 +167,8 @@
       "Economy Mode",
       "saved Discord webhook",
       "eight complete interface systems",
-      "The Godfather"
+      "The Godfather",
+      "Toolkit Command Palette"
     ],
     "greasyForkForbiddenTokens": [
       "Operational Window Suite",

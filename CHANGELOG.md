@@ -1,5 +1,19 @@
 # Changelog
 
+## [9.4.0] - 2026-07-31
+
+### Toolkit Command Palette
+
+- Adds a global, local-only Command Palette for active missions, personal vehicles, known buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions.
+- Opens from the permanent map-bar **Palette** control, the plain `K` shortcut, Settings or an optional Tablet Quick Wheel slot.
+- Ranks exact titles and complete phrases ahead of partial token matches, with examples including Wakefield, stuck vehicles and full screen.
+- Focuses missions through the existing mission pathway, locates vehicles and buildings on the map where possible, and falls back to MissionChief’s native lightbox route.
+- Opens the exact Settings section and command card for configuration results instead of duplicating any control.
+- Supports touch, mouse, arrow keys, Home/End, Enter, Escape, contained Tab focus, focus restoration, screen-reader result state and iOS safe areas.
+- Builds the searchable snapshot only when opened and adds no network request, poller, observer, interval, timeout or animation-frame scheduler.
+- Excludes automatic dispatch and destructive maintenance actions; MissionChief remains authoritative for every operational action.
+- Adds static and rendered runtime regressions for Issue #618.
+
 ## [9.3.2] - 2026-07-31
 
 ### Toolkit Doctor diagnostic correctness

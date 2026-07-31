@@ -19,7 +19,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.3.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.4.0"
 
     state = section(source, "    function defaultState()", "    function normaliseLoadedState(")
     for required in [
@@ -165,9 +165,9 @@ def main() -> int:
     performance = json.loads(
         (ROOT / ".github" / "performance-budget.json").read_text(encoding="utf-8")
     )
-    assert performance["transitionApproval"]["issue"] == 612
-    assert performance["transitionApproval"]["version"] == "9.3.0"
-    assert performance["transitionApproval"]["approvedNetworkRequestDelta"] == 0
+    approvals = [performance["transitionApproval"], *performance["approvalHistory"]]
+    issue_612 = next(item for item in approvals if item["issue"] == 612 and item["version"] == "9.3.0")
+    assert issue_612["approvedNetworkRequestDelta"] == 0
     assert performance["absoluteLimits"]["network_request_calls"] == 6
     print("Issue #612 command experience static contract passed.")
     return 0

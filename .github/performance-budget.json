@@ -1,13 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-07-31-issue-612-command-experience-v9-3",
-  "rationale": "Approve the measured Issue #612 command-experience source and responsive-style growth while retaining zero growth in request sites, managed schedulers, raw listeners, direct DOM lookup primitives, HTML assignment sites and observers.",
+  "revision": "2026-07-31-issue-618-command-palette-v9-4",
+  "rationale": "Approve the measured Issue #618 local Command Palette source, responsive-style growth and three lifecycle-managed dialog listeners while retaining zero growth in requests, schedulers, raw listeners, DOM lookup primitives, HTML assignment sites and observers.",
   "transitionApproval": {
-    "issue": 612,
-    "version": "9.3.0",
+    "issue": 618,
+    "version": "9.4.0",
     "approvedNetworkRequestDelta": 0,
-    "scope": "User-triggered Toolkit Doctor, recoverable full-screen map, lifecycle-bound Tablet Quick Wheel, authenticated settings transfer including Discord webhooks, independent Desktop and Tablet density and a deferrable once-per-version update briefing.",
-    "approvedMutationObserverDelta": 0
+    "scope": "User-triggered local Command Palette for current missions, vehicles, buildings, locations, Settings and safe actions with responsive keyboard and touch operation.",
+    "approvedMutationObserverDelta": 0,
+    "approvedManagedListenerDelta": 3
   },
   "requiredSourceFragments": [
     "@run-at       document-start",
@@ -113,8 +114,8 @@
       "failDelta": 0
     },
     "runtime_listener_calls": {
-      "warnDelta": 0,
-      "failDelta": 0
+      "warnDelta": 2,
+      "failDelta": 3
     },
     "runtime_observer_track_calls": {
       "warnDelta": 0,
@@ -154,6 +155,13 @@
     }
   },
   "approvalHistory": [
+    {
+      "issue": 612,
+      "version": "9.3.0",
+      "approvedNetworkRequestDelta": 0,
+      "scope": "User-triggered Toolkit Doctor, recoverable full-screen map, lifecycle-bound Tablet Quick Wheel, authenticated settings transfer including Discord webhooks, independent Desktop and Tablet density and a deferrable once-per-version update briefing.",
+      "approvedMutationObserverDelta": 0
+    },
     {
       "issue": 553,
       "version": "8.1.5",

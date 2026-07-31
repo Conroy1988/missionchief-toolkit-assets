@@ -18,7 +18,7 @@ def main() -> int:
     source = SOURCE.read_text(encoding="utf-8")
     metadata = re.search(r"(?m)^//\s*@version\s+([^\s]+)$", source)
     runtime = re.search(r"version:\s*'([^']+)'", source)
-    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.3.2"
+    assert metadata and runtime and metadata.group(1) == runtime.group(1) == "9.4.0"
 
     doctor = section(source, "    function toolkitDoctorSafeText(", "    function updateBriefingBody(")
     for required in [
@@ -53,15 +53,6 @@ def main() -> int:
         "runtimeSetInterval(",
     ]:
         assert forbidden not in doctor, forbidden
-
-    briefing = section(source, "    function updateBriefingBody()", "    function settingsBackupFilename(")
-    for required in [
-        "Doctor Accuracy",
-        "Real Overlay Conflicts",
-        "Repair Reconciled",
-        "Normal MissionChief navigation",
-    ]:
-        assert required in briefing, required
 
     print("Issue #616 Toolkit Doctor static contract passed.")
     return 0

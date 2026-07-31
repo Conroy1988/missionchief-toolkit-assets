@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-SOURCE = Path(__file__).with_name("MissionChief_Map_Command_Toolkit.user.js")
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / "src" / "MissionChief_Map_Command_Toolkit.user.js"
 
 
 def section(text: str, start: str, end: str) -> str:

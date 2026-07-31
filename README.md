@@ -58,11 +58,13 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.3.2
+## Current interface — v9.4.0
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.3.2` corrects Toolkit Doctor’s Tablet responsive and overlay classifications. Doctor now snapshots the live interface before opening its diagnostic window, identifies the exact responsive component that failed and warns only when a foreign high-priority overlay genuinely intersects Toolkit controls.\n\nThe fixed Locations Quick Jumps remain **Edinburgh, Fife, Wakefield, London and Newcastle**. Legacy pin migration, custom bookmarks and saved map profiles are unchanged.
+Version `9.4.0` adds the global **Toolkit Command Palette**. Press `K`, select the permanent **Palette** map control, open it from Settings or assign it to the Tablet Quick Wheel. Search active missions, personal vehicles, buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions without leaving the map.
+
+Results are ranked locally from the live runtime snapshot only when the Palette opens. It adds no network request or background task, never selects or dispatches a vehicle and routes every result through an existing Toolkit or MissionChief-native pathway. The fixed Locations Quick Jumps remain **Edinburgh, Fife, Wakefield, London and Newcastle**.
 
 The six daily command-experience tools introduced in v9.3.0 remain intact. **Toolkit Doctor** checks the installed version, interface ownership, saved-state recovery, map shell, UK intelligence and responsive bounds without copying secrets. **Full-Screen Map** maximises the operational workspace with persistent and `Escape` recovery. Tablet users can long-press the map for a configurable six-action **Quick Wheel**, and Desktop and Tablet keep independent Spacious, Standard, Compact or Command Centre density choices.
 
@@ -91,6 +93,7 @@ Toolkit settings survive normal page refreshes and userscript updates through a 
 |---|---|
 | **Incident Command Wire** | Broadcasts the priority incident sequence with an expanded queue and direct map navigation |
 | **Operational Pressure Board** | Opens from the map with shortcut `B` and combines mission priority, shared fleet demand, reserve risk and transport pressure into one evidence-led board |
+| **Toolkit Command Palette** | Opens with `K` and searches live missions, vehicles, buildings, locations, Settings and safe commands from one responsive surface |
 | **MissionChief UK Knowledge Link** | Explains live requirements with verified units, crew, training and personnel evidence plus direct TKB Guide records |
 | **Toolkit Doctor** | Runs privacy-safe diagnostics for version, runtime ownership, persistence, map mount, public Guide reachability and responsive geometry |
 | **Full-Screen Map and Tablet Quick Wheel** | Maximises the map with guaranteed recovery and exposes six configurable long-press actions on Tablet |
@@ -119,6 +122,7 @@ Patient Transport Sweep remains deliberately bounded. It uses MissionChief-owned
 | **Coverage rings** | Adds readable response-range context around selected locations |
 | **Smart Bookmark Labels** | Creates compact place labels, pins and touch previews |
 | **Profiles and layouts** | Preserves distinct command presentations without changing MissionChief data |
+| **Toolkit Command Palette** | Finds Quick Places, bookmarks, map profiles, map records and existing Toolkit controls without duplicating or automating them |
 | **Responsive modes** | Reflows the command surface for Desktop, Tablet and iOS Mobile Mode, with separate Desktop and Tablet density choices |
 | **Update Briefing** | Explains each installed release once, defers around active dialogs and transport work, and remains manually reopenable |
 

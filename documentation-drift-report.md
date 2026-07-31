@@ -2,13 +2,13 @@
 
 ✅ **Status:** PASSED
 
-- Toolkit version: **9.3.2**
+- Toolkit version: **9.4.0**
 - Version state: **source-transition**
-- Features: **19**
+- Features: **20**
 - Themes: **8**
 - Modes: **3**
-- Shortcuts: **8**
+- Shortcuts: **9**
 - Public documentation surfaces checked: **3**
 
 ## Warnings
-- Validated guarded source transition 9.3.2 is ahead of dashboard version 9.3.1.
+- Validated guarded source transition 9.4.0 is ahead of dashboard version 9.3.2.

@@ -1,13 +1,14 @@
 # MissionChief Map Command Toolkit
 
-## v9.3.2 candidate — Toolkit Doctor diagnostic correctness
+## v9.4.0 candidate — Toolkit Command Palette
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 9.3.2 corrects Toolkit Doctor’s persistent Tablet responsive and overlay warnings. Doctor now snapshots the live interface before its progress modal opens, names the exact responsive component that failed, excludes every Toolkit-owned surface and warns only when a foreign fixed or sticky overlay genuinely intersects Toolkit controls. Normal MissionChief navigation no longer creates a false conflict. The Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps, legacy pin migration, custom bookmarks and every retained v9.3 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
+Version 9.4.0 adds the global Toolkit Command Palette. Press K, use the permanent Palette map control, open it from Settings or assign it to a Tablet Quick Wheel slot. It searches active missions, personal vehicles, known buildings, Quick Places, bookmarks, map profiles, Settings cards and safe Toolkit actions from a local snapshot built only when opened. Results use existing MissionChief or Toolkit pathways, never select or dispatch a vehicle and add no request, poller, observer or scheduler. The Edinburgh, Fife, Wakefield, London and Newcastle Quick Jumps and every retained v9.3 system remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
 
 ### Retained native systems
 
+- Global Toolkit Command Palette with K shortcut, touch operation and optional Tablet Quick Wheel access
 - Mission Age map timers and shortcut `6`
 - Mission Value
 - Patient Transport Sweep using MissionChief’s native Discharge patient control

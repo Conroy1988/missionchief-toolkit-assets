@@ -62,6 +62,7 @@
     "data-mcms-show-vehicles",
     "data-mcms-show-buildings",
     "data-mcms-help-open",
+    "data-mcms-command-palette-open",
     "data-mcms-command-experience-open"
   ],
   "cleanupCaches": [
@@ -86,6 +87,7 @@
     "stopPayoutFlashAnimation",
     "disposePayoutMediaAudio",
     "clearDiscordPreviewChartUrl",
+    "closeCommandPalette",
     "closeTabletQuickWheel",
     "closeCommandExperienceModal",
     "stopDesktopPanelWorkspaceObservation",

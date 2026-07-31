@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.3.2
+// @version      9.4.0
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -465,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.3.2',
+        version: '9.4.0',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -477,6 +477,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         transportSweepHudId: 'mc-map-command-toolkit-transport-sweep-hud',
         customVehicleBadgeStyleId: 'mcms-custom-vehicle-badge-style',
         helpCenterId: 'mc-map-command-toolkit-help-center',
+        commandPaletteId: 'mc-map-command-toolkit-command-palette',
         commandExperienceModalId: 'mc-map-command-toolkit-command-experience',
         quickWheelId: 'mc-map-command-toolkit-quick-wheel',
         fullscreenExitId: 'mc-map-command-toolkit-fullscreen-exit',
@@ -1163,6 +1164,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         buildings: Object.freeze({ label: 'Buildings', icon: '4' }),
         pressureBoard: Object.freeze({ label: 'Pressure', icon: 'P' }),
         fullscreen: Object.freeze({ label: 'Full Screen', icon: '⛶' }),
+        commandPalette: Object.freeze({ label: 'Palette', icon: '⌕' }),
         menu: Object.freeze({ label: 'Toolkit Menu', icon: 'M' }),
         markerFocus: Object.freeze({ label: 'Marker Focus', icon: 'F' }),
         roadPriority: Object.freeze({ label: 'Road Priority', icon: 'R' })
@@ -1407,6 +1409,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         appearance: Object.freeze({ label: 'Appearance', title: 'Appearance', icon: '◈', description: 'Interface themes and map skins' }),
         settings: Object.freeze({ label: 'Settings', title: 'Toolkit Settings', icon: '⚙', description: 'Devices, controls and recovery' }),
     });
+    const COMMAND_PALETTE_RESULT_LIMIT = 30;
+    const COMMAND_PALETTE_KIND_META = Object.freeze({
+        action: Object.freeze({ label: 'COMMAND', icon: '⌘', priority: 7 }),
+        mission: Object.freeze({ label: 'MISSION', icon: '◆', priority: 6 }),
+        vehicle: Object.freeze({ label: 'VEHICLE', icon: '▰', priority: 5 }),
+        building: Object.freeze({ label: 'BUILDING', icon: '▦', priority: 4 }),
+        location: Object.freeze({ label: 'LOCATION', icon: '⌖', priority: 3 }),
+        setting: Object.freeze({ label: 'SETTING', icon: '⚙', priority: 2 })
+    });
     const LEGACY_COMMAND_SECTION_MAP = Object.freeze({
         skins: 'appearance',
         tools: 'map',
@@ -1419,6 +1430,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     });
     let commandSearchOpen = false;
     let commandSearchQuery = '';
+    let commandPaletteEntries = [];
+    let commandPaletteResults = [];
+    let commandPaletteSelectedIndex = 0;
+    let commandPaletteReturnFocus = null;
     state = loadState();
 
     function defaultState() {
@@ -2004,7 +2019,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     }
 
     function removeOldInstances() {
-        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
+        document.querySelectorAll(`#${SCRIPT.controlId}, #${SCRIPT.panelId}, #${SCRIPT.toastId}, #${SCRIPT.payoutFlashId}, #${SCRIPT.vehicleStatusId}, #${SCRIPT.pressureBoardId}, #${SCRIPT.majorIncidentFeedId}, #${SCRIPT.helpCenterId}, #${SCRIPT.commandPaletteId}, #${SCRIPT.commandExperienceModalId}, #${SCRIPT.quickWheelId}, #${SCRIPT.fullscreenExitId}, #${SCRIPT.oldControlId}, #${SCRIPT.cleanExitId}, #${SCRIPT.oldGeoLabelLayerId}`)
         .forEach(el => el.remove());
 
         document.querySelectorAll('style').forEach(style => {
@@ -11274,6 +11289,71 @@ html[data-mc-map-skin="default"] .leaflet-tile-pane img.leaflet-tile { filter: n
             letter-spacing:.04em !important; box-shadow:0 8px 28px rgba(0,0,0,.48) !important; backdrop-filter:blur(12px) !important;
         }
         #${SCRIPT.fullscreenExitId}:focus-visible { outline:3px solid #66c7ff !important; outline-offset:3px !important; }
+        #${SCRIPT.commandPaletteId} {
+            --mcms-palette-accent:#6fd0ff; --mcms-palette-accent-rgb:111,208,255; --mcms-palette-bg:#08131d; --mcms-palette-panel:#111f2a;
+            position:fixed !important; inset:0 !important; z-index:2147483640 !important; display:grid !important; place-items:start center !important;
+            box-sizing:border-box !important; padding:max(7vh,24px) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left)) !important;
+            background:radial-gradient(circle at 50% 0,rgba(var(--mcms-palette-accent-rgb),.2),transparent 40%),rgba(2,7,12,.82) !important;
+            backdrop-filter:blur(12px) saturate(112%) !important; -webkit-backdrop-filter:blur(12px) saturate(112%) !important;
+            font-family:system-ui,-apple-system,"Segoe UI",sans-serif !important;
+        }
+        #${SCRIPT.commandPaletteId},#${SCRIPT.commandPaletteId} * { box-sizing:border-box !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-window {
+            width:min(780px,100%) !important; max-height:min(760px,calc(var(--mcms-visual-height,100dvh) - max(14vh,48px))) !important;
+            display:grid !important; grid-template-rows:auto minmax(0,1fr) auto !important; overflow:hidden !important;
+            border:1px solid rgba(var(--mcms-palette-accent-rgb),.5) !important; border-radius:18px !important;
+            background:linear-gradient(155deg,rgba(20,35,47,.99),rgba(5,12,18,.995)) !important; color:#edf8ff !important;
+            box-shadow:0 28px 90px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.05) inset,0 0 52px rgba(var(--mcms-palette-accent-rgb),.12) !important;
+        }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-head { display:grid !important; gap:11px !important; padding:16px 17px 14px !important; border-bottom:1px solid rgba(255,255,255,.1) !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-brand { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-title { min-width:0 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-title span { display:block !important; color:var(--mcms-palette-accent) !important; font-size:9px !important; font-weight:950 !important; letter-spacing:.16em !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-title strong { display:block !important; margin-top:3px !important; overflow:hidden !important; color:#fff !important; font-size:19px !important; line-height:1.1 !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-close { flex:0 0 42px !important; width:42px !important; height:42px !important; min-height:42px !important; padding:0 !important; border:1px solid rgba(255,255,255,.2) !important; border-radius:11px !important; background:rgba(255,255,255,.055) !important; color:#fff !important; font:500 25px/1 system-ui,sans-serif !important; cursor:pointer !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-search { position:relative !important; display:grid !important; grid-template-columns:42px minmax(0,1fr) auto !important; align-items:center !important; min-height:54px !important; overflow:hidden !important; border:1px solid rgba(var(--mcms-palette-accent-rgb),.48) !important; border-radius:12px !important; background:#030a10 !important; box-shadow:0 0 0 3px rgba(var(--mcms-palette-accent-rgb),.06) !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-search > span { display:grid !important; place-items:center !important; color:var(--mcms-palette-accent) !important; font-size:21px !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-search input { width:100% !important; min-width:0 !important; height:52px !important; padding:0 8px 0 0 !important; border:0 !important; outline:0 !important; background:transparent !important; color:#fff !important; font-size:17px !important; font-weight:700 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-search input::placeholder { color:#7f95a5 !important; opacity:1 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-search kbd { margin-right:10px !important; padding:4px 7px !important; border:1px solid rgba(255,255,255,.18) !important; border-radius:6px !important; background:rgba(255,255,255,.055) !important; color:#a9bdca !important; font:800 9px/1 system-ui,sans-serif !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-results { min-height:130px !important; overflow:auto !important; overscroll-behavior:contain !important; padding:8px !important; scroll-padding:8px !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-result { appearance:none !important; -webkit-appearance:none !important; width:100% !important; min-height:58px !important; display:grid !important; grid-template-columns:38px minmax(0,1fr) auto !important; align-items:center !important; gap:10px !important; margin:0 0 5px !important; padding:8px 10px !important; border:1px solid transparent !important; border-radius:10px !important; background:rgba(255,255,255,.025) !important; color:#eaf6ff !important; text-align:left !important; cursor:pointer !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-result:last-child { margin-bottom:0 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-result:hover,#${SCRIPT.commandPaletteId} .mcms-command-palette-result[aria-selected="true"] { border-color:rgba(var(--mcms-palette-accent-rgb),.62) !important; background:linear-gradient(110deg,rgba(var(--mcms-palette-accent-rgb),.18),rgba(255,255,255,.035)) !important; box-shadow:0 0 18px rgba(var(--mcms-palette-accent-rgb),.08) inset !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-kind-icon { display:grid !important; place-items:center !important; width:36px !important; height:36px !important; border:1px solid rgba(var(--mcms-palette-accent-rgb),.34) !important; border-radius:9px !important; background:rgba(var(--mcms-palette-accent-rgb),.1) !important; color:var(--mcms-palette-accent) !important; font-size:15px !important; font-weight:950 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-copy { min-width:0 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-copy strong { display:block !important; overflow:hidden !important; color:#fff !important; font-size:12px !important; line-height:1.25 !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-copy small { display:block !important; margin-top:3px !important; overflow:hidden !important; color:#91a8b8 !important; font-size:9.5px !important; line-height:1.3 !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-kind { align-self:center !important; padding:4px 6px !important; border:1px solid rgba(255,255,255,.12) !important; border-radius:6px !important; color:#91a9b9 !important; font-size:7px !important; font-weight:950 !important; letter-spacing:.1em !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-empty { min-height:180px !important; display:grid !important; place-items:center !important; align-content:center !important; gap:5px !important; padding:24px !important; color:#8ca2b1 !important; text-align:center !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-empty strong { color:#dceaf2 !important; font-size:14px !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-empty span { max-width:440px !important; font-size:10px !important; line-height:1.45 !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-foot { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important; padding:10px 16px 12px !important; border-top:1px solid rgba(255,255,255,.09) !important; color:#8299a9 !important; font-size:8.5px !important; }
+        #${SCRIPT.commandPaletteId} .mcms-command-palette-foot span:last-child { color:var(--mcms-palette-accent) !important; font-weight:850 !important; text-align:right !important; }
+        #${SCRIPT.commandPaletteId} :is(button,input):focus-visible { outline:3px solid var(--mcms-palette-accent) !important; outline-offset:2px !important; }
+        .leaflet-marker-icon.mcms-command-palette-focus { animation:mcmsCommandPaletteFocus 1.8s ease-out both !important; }
+        .mcms-command-card.mcms-command-palette-target { animation:mcmsCommandPaletteCard 1.8s ease-out both !important; }
+        @keyframes mcmsCommandPaletteFocus { 0%,100%{filter:none} 20%,60%{filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 17px var(--mcms-palette-accent,#62cfff)) brightness(1.28);transform:scale(1.12)} }
+        @keyframes mcmsCommandPaletteCard { 0%,100%{box-shadow:inherit} 20%,65%{border-color:#72d5ff;box-shadow:0 0 0 2px rgba(114,213,255,.38),0 0 28px rgba(77,193,248,.26)} }
+        html[data-mcms-ui-theme="cyberpunk"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#00f0ff;--mcms-palette-accent-rgb:0,240,255}
+        html[data-mcms-ui-theme="fallout4"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#9af26f;--mcms-palette-accent-rgb:154,242,111}
+        html[data-mcms-ui-theme="umbrella"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#ff5965;--mcms-palette-accent-rgb:255,89,101}
+        html[data-mcms-ui-theme="factorio"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#f6a34c;--mcms-palette-accent-rgb:246,163,76}
+        html[data-mcms-ui-theme="bond007"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#d8bd72;--mcms-palette-accent-rgb:216,189,114}
+        html[data-mcms-ui-theme="hyrule"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#59e3df;--mcms-palette-accent-rgb:89,227,223}
+        html[data-mcms-ui-theme="godfather"] #${SCRIPT.commandPaletteId}{--mcms-palette-accent:#d3ae5b;--mcms-palette-accent-rgb:211,174,91}
+        html[data-mcms-economy="true"] #${SCRIPT.commandPaletteId} { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+        @media (max-width:620px) {
+            #${SCRIPT.commandPaletteId} { place-items:stretch !important; padding:0 !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-window { width:100% !important; height:var(--mcms-visual-height,100dvh) !important; max-height:none !important; border:0 !important; border-radius:0 !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-head { padding:max(10px,env(safe-area-inset-top)) 10px 10px !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-search { min-height:50px !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-search input { height:48px !important; font-size:16px !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-result { min-height:60px !important; grid-template-columns:38px minmax(0,1fr) !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-kind { display:none !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-foot { padding-bottom:max(10px,env(safe-area-inset-bottom)) !important; }
+            #${SCRIPT.commandPaletteId} .mcms-command-palette-foot span:first-child { display:none !important; }
+        }
         #${SCRIPT.commandExperienceModalId} {
             position:fixed !important; inset:0 !important; z-index:2147483600 !important; display:grid !important; place-items:center !important;
             padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)) !important;
@@ -20550,6 +20630,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         }
         if (command === 'pressureBoard') { toggleOperationalPressureBoard(); return; }
         if (command === 'fullscreen') { setMapFullscreen(!state.fullscreenMap); return; }
+        if (command === 'commandPalette') { openCommandPalette(); return; }
         if (command === 'menu') openPanel();
     }
 
@@ -20878,6 +20959,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         SCRIPT.majorIncidentFeedId,
         SCRIPT.transportSweepHudId,
         SCRIPT.helpCenterId,
+        SCRIPT.commandPaletteId,
         SCRIPT.commandExperienceModalId,
         SCRIPT.quickWheelId,
         SCRIPT.fullscreenExitId,
@@ -20994,18 +21076,18 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>Doctor Accuracy</b><p>Responsive checks now inspect the live Toolkit surface before the diagnostic window opens.</p></article>' +
-            '<article><b>Real Overlay Conflicts</b><p>Only visible page overlays that actually intersect Toolkit controls now raise a warning.</p></article>' +
-            '<article><b>Repair Reconciled</b><p>Repair UI now refreshes visual-viewport and Tablet layout state before rerunning Doctor.</p></article>' +
-        '</div><p class="mcms-command-note">Normal MissionChief navigation and Toolkit-owned operational panels no longer create persistent false warnings.</p>';
+            '<article><b>Search Everything</b><p>Find active missions, personal vehicles, buildings, locations, settings and safe Toolkit actions from one place.</p></article>' +
+            '<article><b>Keyboard &amp; Touch</b><p>Press K from the map, tap Palette in the command bar or add it to the Tablet Quick Wheel.</p></article>' +
+            '<article><b>Local &amp; Safe</b><p>Results are built only when opened, add no background polling and never dispatch a vehicle automatically.</p></article>' +
+        '</div><p class="mcms-command-note">Try Wakefield, stuck vehicles or full screen. Arrow keys and touch both use the same ranked results.</p>';
     }
 
     function openUpdateBriefing({ manual = false } = {}) {
         if (!manual && !state.updateBriefing.enabled) return false;
         openCommandExperienceModal({
         kind: 'Update Briefing',
-        title: 'Command Experience upgraded',
-        subtitle: 'Six new tools are ready in Toolkit Settings.',
+        title: 'Command Palette online',
+        subtitle: 'One search now reaches the whole Toolkit.',
         body: updateBriefingBody(),
         actions: '<button type="button" data-mcms-command-action="briefing-disable">Don’t Show Again</button><button class="mcms-primary" type="button" data-mcms-command-action="briefing-dismiss">Got It</button>'
         });
@@ -21023,7 +21105,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function maybeShowUpdateBriefing() {
         if (!state.updateBriefing.enabled || state.updateBriefing.seenVersion === SCRIPT.version) return false;
         if (Date.now() - bootStartedAt < 2000 || document.hidden || transportSweepRuntime.running) return false;
-        if (commandExperienceElement(SCRIPT.commandExperienceModalId) || document.documentElement.hasAttribute('data-mcms-help-open')) return false;
+        if (commandExperienceElement(SCRIPT.commandExperienceModalId) || commandExperienceElement(SCRIPT.commandPaletteId) || document.documentElement.hasAttribute('data-mcms-help-open')) return false;
         const blockingDialog = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"],.modal.in,.modal.show')).some(element =>
         element.id !== SCRIPT.commandExperienceModalId && isVisible(element)
         );
@@ -25993,6 +26075,454 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         panel.classList.contains('mcms-open') ? closePanel() : openPanel();
     }
 
+    function commandPaletteNormalise(value) {
+        return String(value || '')
+            .normalize('NFKD')
+            .replace(/[\u0300-\u036f]/gu, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gu, ' ')
+            .replace(/\s+/gu, ' ')
+            .trim();
+    }
+
+    function commandPaletteRecordValue(record, keys) {
+        if (!record || typeof record !== 'object') return '';
+        const containers = [record, record.options, record.params, record.vehicle, record.building, record.data, record.vehicleData, record._vehicleData]
+            .filter(item => item && typeof item === 'object');
+        for (const container of containers) {
+            for (const key of keys) {
+                const value = container[key];
+                if (value !== undefined && value !== null && String(value).trim()) return String(value).replace(/\s+/gu, ' ').trim();
+            }
+        }
+        return '';
+    }
+
+    function commandPalettePoint(source) {
+        if (!source) return null;
+        try {
+            const point = source.getLatLng?.();
+            if (Number.isFinite(Number(point?.lat)) && Number.isFinite(Number(point?.lng))) return { lat: Number(point.lat), lng: Number(point.lng) };
+        } catch (err) {}
+        const latlng = source._latlng || source.latlng || source.position || source.options?.latlng;
+        const lat = Number(source.lat ?? source.latitude ?? source.options?.lat ?? source.options?.latitude ?? latlng?.lat);
+        const lng = Number(source.lng ?? source.lon ?? source.longitude ?? source.options?.lng ?? source.options?.lon ?? source.options?.longitude ?? latlng?.lng ?? latlng?.lon);
+        return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    }
+
+    function commandPaletteAddEntry(entries, seen, entry) {
+        const kind = COMMAND_PALETTE_KIND_META[entry?.kind] ? entry.kind : 'action';
+        const title = String(entry?.title || '').replace(/\s+/gu, ' ').trim();
+        if (!title || typeof entry?.execute !== 'function') return;
+        const id = String(entry.id || `${kind}:${title}`);
+        if (seen.has(id)) return;
+        seen.add(id);
+        const detail = String(entry.detail || '').replace(/\s+/gu, ' ').trim();
+        entries.push({
+            ...entry,
+            id,
+            kind,
+            title,
+            detail,
+            featured: Boolean(entry.featured),
+            searchText: commandPaletteNormalise(`${title} ${detail} ${entry.terms || ''}`)
+        });
+    }
+
+    function commandPaletteFocusMapRecord(kind, id, source, title) {
+        const point = commandPalettePoint(source);
+        const map = findLeafletMapInstance(false);
+        if (map && point) {
+            try {
+                const zoom = Math.max(13, Number(map.getZoom?.()) || 13);
+                map.setView([point.lat, point.lng], zoom, state.economyMode ? { animate: false } : undefined);
+                document.querySelectorAll('.leaflet-marker-icon.mcms-command-palette-focus').forEach(icon => icon.classList.remove('mcms-command-palette-focus'));
+                source?._icon?.classList?.add('mcms-command-palette-focus');
+                source?.openPopup?.();
+                showToast(title || `${kind} located`);
+                return true;
+            } catch (err) {}
+        }
+        if (id && ['vehicle', 'building'].includes(kind)) {
+            const path = `/${kind === 'vehicle' ? 'vehicles' : 'buildings'}/${encodeURIComponent(id)}`;
+            try {
+                if (typeof pageWindow.lightboxOpen === 'function') pageWindow.lightboxOpen(path);
+                else pageWindow.location.href = path;
+                return true;
+            } catch (err) {}
+        }
+        showToast(`${kind === 'vehicle' ? 'Vehicle' : 'Building'} is no longer available`);
+        return false;
+    }
+
+    function commandPaletteOpenSetting(section, cardSlug = '') {
+        const key = COMMAND_SECTION_ORDER.includes(section) ? section : 'settings';
+        openPanel();
+        setActiveTab(key);
+        const panel = commandExperienceElement(SCRIPT.panelId);
+        panel?.querySelectorAll?.('.mcms-command-card.mcms-command-palette-target').forEach(card => card.classList.remove('mcms-command-palette-target'));
+        const selector = cardSlug ? `.mcms-tab-panel[data-panel="${key}"] .mcms-command-card[data-command-card="${cardSlug}"]` : `.mcms-tab-panel[data-panel="${key}"]`;
+        const target = panel?.querySelector?.(selector);
+        if (!target) return false;
+        if (target.classList?.contains('mcms-command-card')) target.classList.add('mcms-command-palette-target');
+        try { target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' }); } catch (err) { target.scrollIntoView?.(); }
+        return true;
+    }
+
+    function commandPaletteActionEntries(entries, seen) {
+        const add = (id, title, detail, terms, execute, featured = false) => commandPaletteAddEntry(entries, seen, {
+            id: `action:${id}`, kind: 'action', title, detail, terms, execute, featured
+        });
+        const toggle = (id, title, enabled, feature, terms = '') => add(
+            id,
+            `${enabled ? 'Disable' : 'Enable'} ${title}`,
+            `Toolkit command · currently ${enabled ? 'on' : 'off'}`,
+            `${title} toggle turn on off ${terms}`,
+            () => toggleFeature(feature)
+        );
+
+        add('settings', 'Open Toolkit Settings', 'Open the unified command interface', 'menu preferences configuration', () => openPanel(), true);
+        add('pressure-board', `${operationalPressureBoardOpen() ? 'Close' : 'Open'} Operational Pressure Board`, 'Live demand and response pressure across active missions', 'mission board dashboard demand radar', () => toggleOperationalPressureBoard(), true);
+        add('vehicle-codes', `${commandExperienceElement(SCRIPT.vehicleStatusId)?.classList?.contains('mcms-open') ? 'Close' : 'Open'} Vehicle Code Status`, 'Inspect current personal-unit availability by FMS code', 'vehicles units availability status fms codes', () => toggleVehicleCodeStatus(), true);
+        add('fullscreen', `${state.fullscreenMap ? 'Exit' : 'Enter'} Full-Screen Map`, `Map full-screen mode · currently ${state.fullscreenMap ? 'on' : 'off'}`, 'fullscreen maximise maximize restore', () => setMapFullscreen(!state.fullscreenMap), true);
+        add('doctor', 'Run Toolkit Doctor', 'Safe user-triggered diagnostics and UI repair', 'health report warning repair diagnostic', () => { void runToolkitDoctor(); }, true);
+        add('help', 'Open Help Centre', 'Search the complete Toolkit guide', 'documentation instructions support guide', () => openHelpCenter());
+        add('briefing', 'Open Update Briefing', `Review what changed in Toolkit ${SCRIPT.version}`, 'release notes whats new version', () => openUpdateBriefing({ manual: true }));
+        add('quick-wheel', 'Open Tablet Quick Wheel', 'Show the configured six-slot touch command wheel', 'tablet touch long press radial wheel', () => openTabletQuickWheel(null, { manual: true }));
+        add('command-bar', `${state.commandBarOpen === false ? 'Show' : 'Hide'} Map Command Bar`, `Persistent map command controls · currently ${state.commandBarOpen === false ? 'hidden' : 'shown'}`, 'dock toolbar collapse expand', () => toggleCommandBar());
+        add('economy', `${state.economyMode ? 'Disable' : 'Enable'} Economy Mode`, `Performance mode · currently ${state.economyMode ? 'on' : 'off'}`, 'performance cpu gpu low power', () => setEconomyMode(!state.economyMode, true), true);
+
+        toggle('personal-missions', 'Personal Missions', state.visibility.myMissions, 'myMissions', 'mine visibility markers');
+        toggle('alliance-missions', 'Alliance Missions', state.visibility.allianceMissions, 'allianceMissions', 'shared visibility markers');
+        toggle('vehicles', 'Vehicle Markers', state.visibility.vehicles, 'vehicles', 'units visibility');
+        toggle('buildings', 'Building Markers', state.visibility.buildings, 'buildings', 'stations visibility');
+        toggle('stuck', 'Stuck Mission Detection', state.stuckDetector.enabled, 'stuckDetector', 'stuck vehicles stalled incidents labels');
+        toggle('major-feed', 'Major Incident Feed', state.majorIncidentFeed.enabled, 'majorIncidentFeed', 'ticker news wire');
+        toggle('mission-age', 'Mission Age Labels', state.missionAge, 'missionAge', 'old incidents time');
+        toggle('transport', 'Transport Watcher', state.transportWatcher, 'transportWatcher', 'patients prisoners amber');
+        toggle('unit-count', 'Unit Commitment Count', state.unitCommitment, 'unitCommitment', 'responding on scene');
+        toggle('marker-focus', 'Marker Focus', state.markerFocus, 'markerFocus', 'dim buildings vehicles missions');
+        toggle('mission-pulse', 'Mission Pulse', state.missionPulse, 'missionPulse', 'animation markers');
+        toggle('road-priority', 'Road Priority', state.roadPriority, 'roadPriority', 'contrast roads map');
+        toggle('clean-mode', 'Clean Mode', state.cleanMode, 'clean', 'screenshot hide controls');
+    }
+
+    function commandPaletteMissionEntries(entries, seen) {
+        const now = Date.now();
+        for (const marker of getMissionMarkerIndex().markers) {
+            const snapshot = liveMissionSnapshots.get(missionIdFromMarker(marker)) || missionSnapshotFromMarker(marker, now);
+            if (!snapshot?.missionId) continue;
+            const source = snapshot.source === 'alliance' ? 'Alliance mission' : snapshot.source === 'personal' ? 'Personal mission' : 'Active mission';
+            const location = snapshot.postcode || snapshot.city || snapshot.address || '';
+            const units = Math.max(0, Number(snapshot.units?.total) || 0);
+            const detail = [source, location, units ? `${units} personal unit${units === 1 ? '' : 's'} committed` : ''].filter(Boolean).join(' · ');
+            commandPaletteAddEntry(entries, seen, {
+                id: `mission:${snapshot.missionId}`,
+                kind: 'mission',
+                title: snapshot.caption || `Mission ${snapshot.missionId}`,
+                detail,
+                terms: `${snapshot.missionId} ${snapshot.address || ''} ${snapshot.postcode || ''} ${snapshot.city || ''} ${snapshot.missingText || ''} ${source}`,
+                execute: () => focusMissionById(snapshot.missionId, true)
+            });
+        }
+    }
+
+    function commandPaletteVehicleEntries(entries, seen) {
+        const markerById = new Map(getVehicleMarkerLayers().map(marker => [vehicleRecordId(marker), marker]).filter(([id]) => id !== null));
+        for (const record of getPersonalVehicleRecords()) {
+            const id = vehicleRecordId(record);
+            if (!id) continue;
+            const marker = markerById.get(id) || record;
+            const classification = customVehicleClassificationFromRecord(record) || customVehicleClassificationForId(id);
+            const caption = commandPaletteRecordValue(record, ['caption', 'name', 'title']);
+            const type = classification?.category || commandPaletteRecordValue(record, ['vehicle_type_caption', 'vehicleTypeCaption', 'vehicle_type_name', 'vehicleTypeName', 'type_caption', 'typeCaption']);
+            const title = caption || type || `Vehicle ${id}`;
+            const status = vehicleStatusCode(record);
+            const bucket = vehicleStatusBucket(record);
+            const target = vehicleTargetInfo(record);
+            const detail = [`FMS ${status === null ? '?' : status}`, type && type !== title ? type : '', bucket === 'other' ? '' : bucket, target.type ? `${target.type} ${target.id}` : ''].filter(Boolean).join(' · ');
+            commandPaletteAddEntry(entries, seen, {
+                id: `vehicle:${id}`,
+                kind: 'vehicle',
+                title,
+                detail,
+                terms: `${id} ${vehicleSearchSignal(record)} ${classification?.category || ''} ${status ?? ''} ${bucket}`,
+                execute: () => commandPaletteFocusMapRecord('vehicle', id, marker, title)
+            });
+        }
+    }
+
+    function commandPaletteBuildingEntries(entries, seen) {
+        const layers = getBuildingMarkerLayers().filter(Boolean);
+        const layerById = new Map(layers.map(layer => [getBuildingLayerId(layer), layer]).filter(([id]) => id !== null));
+        const records = new Map(getBuildingRecordIndex().recordsById);
+        for (const layer of layers) {
+            const id = getBuildingLayerId(layer);
+            if (id !== null && !records.has(id)) records.set(id, getBuildingRecordForLayer(layer) || layer);
+        }
+        const currentUserId = currentUserIdCached();
+        for (const [id, record] of records.entries()) {
+            const layer = layerById.get(String(id)) || record;
+            const title = commandPaletteRecordValue(record, ['caption', 'name', 'title', 'building_name', 'buildingName']) || `Building ${id}`;
+            const type = commandPaletteRecordValue(record, ['building_type_caption', 'buildingTypeCaption', 'building_type_name', 'buildingTypeName', 'type_caption', 'typeCaption']);
+            const ownerId = commandPaletteRecordValue(record, ['user_id', 'userId', 'owner_id', 'ownerId']);
+            const ownership = currentUserId !== null && ownerId && ownerId !== currentUserId ? 'Alliance building' : 'Personal building';
+            commandPaletteAddEntry(entries, seen, {
+                id: `building:${id}`,
+                kind: 'building',
+                title,
+                detail: [ownership, type].filter(Boolean).join(' · '),
+                terms: `${id} ${type} ${ownership}`,
+                execute: () => commandPaletteFocusMapRecord('building', String(id), layer, title)
+            });
+        }
+    }
+
+    function commandPaletteLocationEntries(entries, seen) {
+        for (const place of QUICK_PLACES) {
+            commandPaletteAddEntry(entries, seen, {
+                id: `location:quick:${place.id}`,
+                kind: 'location',
+                title: place.name,
+                detail: `Quick Place · ${place.label}`,
+                terms: `map jump city place ${place.id}`,
+                featured: true,
+                execute: () => { if (setMapView(place.lat, place.lng, place.zoom)) showToast(place.name); }
+            });
+        }
+        state.bookmarks.forEach((bookmark, index) => {
+            if (!bookmark) return;
+            commandPaletteAddEntry(entries, seen, {
+                id: `location:bookmark:${index}`,
+                kind: 'location',
+                title: bookmark.name || `Bookmark ${index + 1}`,
+                detail: `Custom bookmark · ${bookmarkScreenLabel(bookmark)}`,
+                terms: `saved location slot ${index + 1} ${bookmark.shortLabel || ''}`,
+                execute: () => goBookmark(index)
+            });
+        });
+        state.profiles.forEach((profile, index) => {
+            if (!profile) return;
+            commandPaletteAddEntry(entries, seen, {
+                id: `location:profile:${index}`,
+                kind: 'location',
+                title: profile.name || `Map Profile ${index + 1}`,
+                detail: 'Saved map profile · load visibility, skin and map view',
+                terms: `profile preset slot ${index + 1}`,
+                execute: () => loadMapProfile(index)
+            });
+        });
+    }
+
+    function commandPaletteSettingEntries(entries, seen) {
+        const panel = commandExperienceElement(SCRIPT.panelId) || createPanel();
+        for (const section of Array.from(panel?.querySelectorAll?.('.mcms-tab-panel[data-panel]') || [])) {
+            const sectionKey = section.dataset.panel;
+            const meta = COMMAND_SECTION_META[sectionKey];
+            if (!meta) continue;
+            commandPaletteAddEntry(entries, seen, {
+                id: `setting:section:${sectionKey}`,
+                kind: 'setting',
+                title: meta.title,
+                detail: meta.description,
+                terms: `${meta.label} section tab preferences`,
+                execute: () => commandPaletteOpenSetting(sectionKey)
+            });
+            for (const card of Array.from(section.querySelectorAll('.mcms-command-card[data-command-card]'))) {
+                const heading = String(card.querySelector('.mcms-section-label')?.textContent || card.dataset.commandCard || '').replace(/\s+/gu, ' ').trim();
+                if (!heading) continue;
+                const attributes = Array.from(card.querySelectorAll('[title],[data-toggle],[data-action],[data-setting]')).map(element =>
+                    `${element.title || ''} ${element.dataset.toggle || ''} ${element.dataset.action || ''} ${element.dataset.setting || ''}`
+                ).join(' ');
+                commandPaletteAddEntry(entries, seen, {
+                    id: `setting:${sectionKey}:${card.dataset.commandCard}`,
+                    kind: 'setting',
+                    title: heading,
+                    detail: `${meta.title} · open exact control group`,
+                    terms: `${card.textContent || ''} ${attributes}`,
+                    execute: () => commandPaletteOpenSetting(sectionKey, card.dataset.commandCard)
+                });
+            }
+        }
+    }
+
+    function buildCommandPaletteEntries() {
+        const entries = [];
+        const seen = new Set();
+        commandPaletteActionEntries(entries, seen);
+        commandPaletteMissionEntries(entries, seen);
+        commandPaletteVehicleEntries(entries, seen);
+        commandPaletteBuildingEntries(entries, seen);
+        commandPaletteLocationEntries(entries, seen);
+        commandPaletteSettingEntries(entries, seen);
+        return entries;
+    }
+
+    function commandPaletteEntryScore(entry, query) {
+        const cleanQuery = commandPaletteNormalise(query);
+        const meta = COMMAND_PALETTE_KIND_META[entry.kind] || COMMAND_PALETTE_KIND_META.action;
+        if (!cleanQuery) return entry.featured ? 1000 + meta.priority : -1;
+        const title = commandPaletteNormalise(entry.title);
+        const detail = commandPaletteNormalise(entry.detail);
+        const search = entry.searchText || `${title} ${detail}`;
+        const tokens = cleanQuery.split(' ').filter(Boolean);
+        if (!tokens.every(token => search.includes(token))) return -1;
+        let score = meta.priority * 4;
+        if (title === cleanQuery) score += 1000;
+        else if (title.startsWith(cleanQuery)) score += 760;
+        else if (title.includes(cleanQuery)) score += 560;
+        else if (search.includes(cleanQuery)) score += 360;
+        for (const token of tokens) {
+            if (title.split(' ').some(word => word.startsWith(token))) score += 80;
+            else if (detail.includes(token)) score += 28;
+            else score += 12;
+        }
+        if (entry.featured) score += 18;
+        return score;
+    }
+
+    function commandPaletteSearch(query = '') {
+        return commandPaletteEntries
+            .map(entry => ({ entry, score: commandPaletteEntryScore(entry, query) }))
+            .filter(result => result.score >= 0)
+            .sort((left, right) => right.score - left.score || left.entry.title.localeCompare(right.entry.title))
+            .slice(0, COMMAND_PALETTE_RESULT_LIMIT)
+            .map(result => result.entry);
+    }
+
+    function commandPaletteUpdateSelection(overlay = commandExperienceElement(SCRIPT.commandPaletteId), nextIndex = commandPaletteSelectedIndex) {
+        if (!overlay || !commandPaletteResults.length) return false;
+        commandPaletteSelectedIndex = (Number(nextIndex) % commandPaletteResults.length + commandPaletteResults.length) % commandPaletteResults.length;
+        const options = Array.from(overlay.querySelectorAll('[data-command-palette-result]'));
+        options.forEach((option, index) => option.setAttribute('aria-selected', String(index === commandPaletteSelectedIndex)));
+        const active = options[commandPaletteSelectedIndex];
+        const input = overlay.querySelector('[data-command-palette-input]');
+        if (active?.id) input?.setAttribute('aria-activedescendant', active.id);
+        try { active?.scrollIntoView?.({ block: 'nearest' }); } catch (err) {}
+        return true;
+    }
+
+    function renderCommandPalette(query = '', overlay = commandExperienceElement(SCRIPT.commandPaletteId)) {
+        if (!overlay) return 0;
+        commandPaletteResults = commandPaletteSearch(query);
+        commandPaletteSelectedIndex = Math.min(commandPaletteSelectedIndex, Math.max(0, commandPaletteResults.length - 1));
+        const results = overlay.querySelector('[data-command-palette-results]');
+        const status = overlay.querySelector('[data-command-palette-status]');
+        const html = commandPaletteResults.length ? commandPaletteResults.map((entry, index) => {
+            const meta = COMMAND_PALETTE_KIND_META[entry.kind] || COMMAND_PALETTE_KIND_META.action;
+            return `<button id="mcms-command-palette-option-${index}" class="mcms-command-palette-result" type="button" role="option" data-command-palette-result="${index}" aria-selected="${index === commandPaletteSelectedIndex}"><span class="mcms-command-palette-kind-icon" aria-hidden="true">${meta.icon}</span><span class="mcms-command-palette-copy"><strong>${escapeHtml(entry.title)}</strong><small>${escapeHtml(entry.detail || meta.label)}</small></span><span class="mcms-command-palette-kind">${meta.label}</span></button>`;
+        }).join('') : `<div class="mcms-command-palette-empty"><strong>No matching command</strong><span>Try a mission name, vehicle, building, place, setting or a shorter command phrase.</span></div>`;
+        setInnerHtmlIfChanged(results, html, `${query}:${commandPaletteResults.map(entry => entry.id).join('|')}`);
+        if (status) status.textContent = commandPaletteResults.length
+            ? `${commandPaletteResults.length} result${commandPaletteResults.length === 1 ? '' : 's'} · ${query ? 'ranked locally' : 'quick access'}`
+            : 'No results';
+        commandPaletteUpdateSelection(overlay);
+        return commandPaletteResults.length;
+    }
+
+    function executeCommandPaletteResult(index = commandPaletteSelectedIndex) {
+        const entry = commandPaletteResults[Number(index)];
+        if (!entry) return false;
+        closeCommandPalette({ restoreFocus: false });
+        try {
+            entry.execute();
+            return true;
+        } catch (err) {
+            showToast('Command could not be completed');
+            return false;
+        }
+    }
+
+    function commandPaletteTrapFocus(event, overlay) {
+        if (event.key !== 'Tab') return false;
+        const focusable = Array.from(overlay.querySelectorAll('button:not([disabled]),input:not([disabled]),[tabindex]:not([tabindex="-1"])')).filter(isVisible);
+        if (!focusable.length) return false;
+        const current = focusable.indexOf(document.activeElement);
+        const next = event.shiftKey ? (current <= 0 ? focusable.length - 1 : current - 1) : (current < 0 || current >= focusable.length - 1 ? 0 : current + 1);
+        event.preventDefault();
+        focusable[next].focus({ preventScroll: true });
+        return true;
+    }
+
+    function createCommandPalette() {
+        const existing = commandExperienceElement(SCRIPT.commandPaletteId);
+        if (existing) return existing;
+        const overlay = document.createElement('div');
+        overlay.id = SCRIPT.commandPaletteId;
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'mcms-command-palette-title');
+        setInnerHtmlIfChanged(overlay, `
+            <section class="mcms-command-palette-window">
+                <header class="mcms-command-palette-head">
+                    <div class="mcms-command-palette-brand"><div class="mcms-command-palette-title"><span>GLOBAL COMMAND SEARCH</span><strong id="mcms-command-palette-title">Toolkit Command Palette</strong></div><button class="mcms-command-palette-close" type="button" data-command-palette-close aria-label="Close Command Palette">×</button></div>
+                    <label class="mcms-command-palette-search"><span aria-hidden="true">⌕</span><input type="search" inputmode="search" autocomplete="off" autocapitalize="none" spellcheck="false" data-command-palette-input role="combobox" aria-autocomplete="list" aria-controls="mcms-command-palette-results" aria-expanded="true" placeholder="Search missions, vehicles, buildings, locations, settings or commands"><kbd>K</kbd></label>
+                </header>
+                <div id="mcms-command-palette-results" class="mcms-command-palette-results" data-command-palette-results role="listbox" aria-label="Command Palette results"></div>
+                <footer class="mcms-command-palette-foot"><span>↑↓ select · Enter run · Esc close</span><span data-command-palette-status aria-live="polite"></span></footer>
+            </section>
+        `);
+        runtimeListen(overlay, 'input', event => {
+            if (!event.target?.matches?.('[data-command-palette-input]')) return;
+            commandPaletteSelectedIndex = 0;
+            renderCommandPalette(event.target.value, overlay);
+        });
+        runtimeListen(overlay, 'click', event => {
+            if (event.target === overlay || closestEventTarget(event, '[data-command-palette-close]')) { closeCommandPalette({ restoreFocus: true }); return; }
+            const result = closestEventTarget(event, '[data-command-palette-result]');
+            if (result) executeCommandPaletteResult(Number(result.dataset.commandPaletteResult));
+        });
+        runtimeListen(overlay, 'keydown', event => {
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeCommandPalette({ restoreFocus: true }); return; }
+            if (event.key === 'ArrowDown') { event.preventDefault(); commandPaletteUpdateSelection(overlay, commandPaletteSelectedIndex + 1); return; }
+            if (event.key === 'ArrowUp') { event.preventDefault(); commandPaletteUpdateSelection(overlay, commandPaletteSelectedIndex - 1); return; }
+            if (event.key === 'Home') { event.preventDefault(); commandPaletteUpdateSelection(overlay, 0); return; }
+            if (event.key === 'End') { event.preventDefault(); commandPaletteUpdateSelection(overlay, commandPaletteResults.length - 1); return; }
+            if (event.key === 'Enter') { event.preventDefault(); executeCommandPaletteResult(); return; }
+            commandPaletteTrapFocus(event, overlay);
+        });
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function openCommandPalette({ returnFocus = null } = {}) {
+        const existing = commandExperienceElement(SCRIPT.commandPaletteId);
+        if (existing) {
+            existing.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
+            return existing;
+        }
+        commandPaletteReturnFocus = returnFocus instanceof HTMLElement ? returnFocus : document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        closeTabletQuickWheel({ restoreFocus: false });
+        closeCommandExperienceModal({ restoreFocus: false });
+        closeHelpCenter({ restoreFocus: false });
+        closePanel();
+        commandPaletteEntries = buildCommandPaletteEntries();
+        commandPaletteResults = [];
+        commandPaletteSelectedIndex = 0;
+        const overlay = createCommandPalette();
+        document.documentElement.setAttribute('data-mcms-command-palette-open', 'true');
+        renderCommandPalette('', overlay);
+        updateUI();
+        overlay.querySelector('[data-command-palette-input]')?.focus?.({ preventScroll: true });
+        return overlay;
+    }
+
+    function closeCommandPalette({ restoreFocus = true } = {}) {
+        const overlay = commandExperienceElement(SCRIPT.commandPaletteId);
+        if (!overlay) return false;
+        overlay.remove();
+        document.documentElement.removeAttribute('data-mcms-command-palette-open');
+        commandPaletteEntries = [];
+        commandPaletteResults = [];
+        commandPaletteSelectedIndex = 0;
+        if (restoreFocus && commandPaletteReturnFocus?.isConnected) {
+            try { commandPaletteReturnFocus.focus({ preventScroll: true }); } catch (err) {}
+        }
+        commandPaletteReturnFocus = null;
+        updateUI();
+        return true;
+    }
+
     function closeHelpCenter({ restoreFocus = true } = {}) {
         const overlay = document.getElementById(SCRIPT.helpCenterId);
         if (!overlay?.classList.contains('mcms-open')) return false;
@@ -26266,6 +26796,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     }
 
     function handleKeyboard(event) {
+        if (event.key === 'Escape' && closeCommandPalette({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeTabletQuickWheel({ restoreFocus: true })) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeCommandExperienceModal()) { event.preventDefault(); return; }
         if (event.key === 'Escape' && closeHelpCenter()) { event.preventDefault(); return; }
@@ -26286,6 +26817,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         if (!state.shortcuts || isTypingTarget(event.target)) return;
         const key = String(event.key || '').toLowerCase();
         if (!event.ctrlKey && !event.altKey && !event.metaKey && key === 'm') { event.preventDefault(); togglePanel(); return; }
+        if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey && !event.repeat && key === 'k') { event.preventDefault(); openCommandPalette({ returnFocus: event.target }); return; }
         if (!event.ctrlKey && !event.altKey && !event.metaKey && !event.repeat && /^[1-9]$/.test(event.key)) {
             const visibilityShortcut = {
                 '1': 'myMissions',
@@ -26361,6 +26893,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
         stuckDetector: '!',
         vehicleStatus: '▤',
         pressureBoard: '▲',
+        commandPalette: '⌕',
         economyMode: '♻',
     });
 
@@ -26512,6 +27045,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                     <span class="mcms-control-group-label">Dashboard</span>
                     ${makeActionFloatButton('open-vehicle-status', 'V', 'Vehicle Codes', 'Open or close Vehicle Code Status. Shortcut: V', 'Vehicle Codes', 'Codes')}
                     ${makeActionFloatButton('open-pressure-board', 'B', 'Pressure Board', 'Open or close the Operational Pressure Board. Shortcut: B', 'Pressure Board', 'Pressure', 'pressureBoard')}
+                    ${makeActionFloatButton('open-command-palette', 'K', 'Command Palette', 'Search missions, vehicles, buildings, locations, settings and Toolkit commands. Shortcut: K', 'Palette', 'Search', 'commandPalette')}
                 </div>
                 <div class="mcms-control-group" data-control-group="performance" aria-label="Performance controls">
                     <span class="mcms-control-group-label">Performance</span>
@@ -26990,7 +27524,8 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 </div>
                 <div class="mcms-section-label">Input</div>
                 <div class="mcms-grid-2">
-                    ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Map tools: 1–8. Vehicle Codes: V. Menu: M.')}
+                    ${makeToggleButton('shortcuts', '⌨', 'Keys', 'Keyboard shortcuts on/off. Command Palette: K. Map tools: 1–8. Vehicle Codes: V. Menu: M.')}
+                    <button class="mcms-small-btn" type="button" data-action="open-command-palette">Open Command Palette</button>
                 </div>
                 <div class="mcms-section-label">Tablet Quick Wheel</div>
                 <div class="mcms-grid-2">
@@ -27237,6 +27772,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             return;
         }
         if (action === 'open-help-center') { openHelpCenter(); return; }
+        if (action === 'open-command-palette') { openCommandPalette({ returnFocus: button }); return; }
         if (action === 'toggle-command-bar') { toggleCommandBar(); return; }
         if (action === 'toggle-economy') { setEconomyMode(!state.economyMode, true); return; }
         if (action === 'open-vehicle-status') { toggleVehicleCodeStatus(); return; }
@@ -27572,6 +28108,15 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 updateUiSetText(pressureBoardButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'OFF');
                 updateUiSetAttribute(pressureBoardButton, 'aria-label', `Operational Pressure Board: ${open ? 'active' : 'off'}. Shortcut: B.`);
             }
+            const commandPaletteButton = control.querySelector('[data-action="open-command-palette"]');
+            if (commandPaletteButton) {
+                const open = Boolean(commandExperienceElement(SCRIPT.commandPaletteId));
+                updateUiToggleClass(commandPaletteButton, 'mcms-on', open);
+                updateUiSetAttribute(commandPaletteButton, 'aria-pressed', String(open));
+                updateUiSetDataset(commandPaletteButton, 'mcmsState', open ? 'on' : 'off');
+                updateUiSetText(commandPaletteButton.querySelector('.mcms-control-state'), open ? 'ACTIVE' : 'READY');
+                updateUiSetAttribute(commandPaletteButton, 'aria-label', `Toolkit Command Palette: ${open ? 'active' : 'ready'}. Shortcut: K.`);
+            }
             const economyButton = control.querySelector('.mcms-economy-btn');
             if (economyButton) {
                 const on = Boolean(state.economyMode);
@@ -27769,6 +28314,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.id === SCRIPT.vehicleStatusId ||
                 target.id === SCRIPT.pressureBoardId ||
                 target.id === SCRIPT.majorIncidentFeedId ||
+                target.id === SCRIPT.commandPaletteId ||
                 target.id === SCRIPT.commandExperienceModalId ||
                 target.id === SCRIPT.quickWheelId ||
                 target.id === SCRIPT.fullscreenExitId ||
@@ -27779,6 +28325,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
                 target.closest?.(`#${SCRIPT.vehicleStatusId}`) ||
                 target.closest?.(`#${SCRIPT.pressureBoardId}`) ||
                 target.closest?.(`#${SCRIPT.majorIncidentFeedId}`) ||
+                target.closest?.(`#${SCRIPT.commandPaletteId}`) ||
                 target.closest?.(`#${SCRIPT.commandExperienceModalId}`) ||
                 target.closest?.(`#${SCRIPT.quickWheelId}`) ||
                 target.closest?.(`#${SCRIPT.fullscreenExitId}`) ||
@@ -28649,6 +29196,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             try { payoutAudioContext?.close?.(); } catch (err) {}
             clearDiscordPreviewChartUrl();
             closeTabletQuickWheel();
+            closeCommandPalette({ restoreFocus: false });
             closeCommandExperienceModal({ restoreFocus: false });
             fullscreenMapTarget?.classList?.remove('mcms-map-fullscreen-target');
             fullscreenMapTarget = null;
@@ -28669,7 +29217,7 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
             markerRegistryCache.clear();
             removeOldInstances();
             const root = document.documentElement;
-            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
+            for (const attribute of ['data-mcms-ui-theme', 'data-mc-map-skin', 'data-mcms-clean', 'data-mcms-marker-focus', 'data-mcms-mission-pulse', 'data-mcms-road-priority', 'data-mcms-compact-dock', 'data-mcms-command-bar-open', 'data-mcms-economy', 'data-mcms-map-fullscreen', 'data-mcms-density', 'data-mcms-map-moving', 'data-mcms-alliance-buildings-map', 'data-mcms-alliance-buildings-page', 'data-mcms-device-layout', 'data-mcms-tablet-mode', 'data-mcms-tablet-active', 'data-mcms-tablet-orientation', 'data-mcms-mobile-mode', 'data-mcms-mobile-active', 'data-mcms-mobile-orientation', 'data-mcms-show-alliance-missions', 'data-mcms-show-my-missions', 'data-mcms-show-vehicles', 'data-mcms-show-buildings', 'data-mcms-help-open', 'data-mcms-command-palette-open', 'data-mcms-command-experience-open']) root.removeAttribute(attribute);
         });
         if (state.economyMode) runtimeSetTimeout(() => setEconomyMode(true, false), 420);
         console.debug(`[${SCRIPT.name}] v${SCRIPT.version} audited runtime ready.`);

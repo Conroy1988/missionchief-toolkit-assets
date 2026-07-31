@@ -202,6 +202,23 @@
       "description": "Make the map faster to read, easier to navigate and more useful during busy sessions.",
       "features": [
         {
+          "name": "Toolkit Command Palette",
+          "summary": "Searches live missions, personal vehicles, buildings, locations, Settings cards and safe Toolkit actions from one responsive surface.",
+          "details": [
+            "K shortcut and permanent map control",
+            "Touch, mouse and complete keyboard operation",
+            "Local snapshot built only when opened",
+            "No automatic dispatch or background task"
+          ],
+          "visual": "command-palette",
+          "tags": [
+            "search",
+            "commands",
+            "navigation",
+            "shortcut"
+          ]
+        },
+        {
           "name": "Smart Bookmark Labels",
           "summary": "Creates compact place labels while preserving access to the complete location name.",
           "details": [
@@ -537,6 +554,10 @@
     {
       "key": "B",
       "action": "Open or close Operational Pressure Board"
+    },
+    {
+      "key": "K",
+      "action": "Open Toolkit Command Palette"
     }
   ],
   "modes": [

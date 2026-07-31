@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MissionChief Map Command Toolkit
 // @namespace    https://github.com/Conroy1988/missionchief-map-command-toolkit
-// @version      9.3.0
+// @version      9.3.1
 // @description  MissionChief operational map command centre.
 // @author       Conroy1988
 // @license      MIT
@@ -465,7 +465,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
     const SCRIPT = {
         name: 'MissionChief Map Command Toolkit',
-        version: '9.3.0',
+        version: '9.3.1',
         author: 'Conroy1988',
         controlId: 'mc-map-command-toolkit-control',
         panelId: 'mc-map-command-toolkit-panel',
@@ -897,7 +897,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     pageWindow.__MC_MAP_COMMAND_TOOLKIT_V130__ = true;
 
     const HELP_CENTER = Object.freeze({
-        guideVersion: '9.3.0',
+        guideVersion: '9.3.1',
         rawUrl: 'https://raw.githubusercontent.com/Conroy1988/missionchief-toolkit-assets/main/help/index.html',
         sourceUrl: 'https://github.com/Conroy1988/missionchief-toolkit-assets/blob/main/help/index.html',
         requestTimeoutMs: 15000
@@ -1107,10 +1107,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
     const QUICK_PLACES = [
         { id: 'edi', label: 'EDI', name: 'Edinburgh', lat: 55.9533, lng: -3.1883, zoom: 11 },
         { id: 'fife', label: 'FIFE', name: 'Fife', lat: 56.2082, lng: -3.1495, zoom: 10 },
-        { id: 'glas', label: 'GLAS', name: 'Glasgow', lat: 55.8642, lng: -4.2518, zoom: 11 },
-        { id: 'dund', label: 'DUND', name: 'Dundee', lat: 56.4620, lng: -2.9707, zoom: 11 },
-        { id: 'stir', label: 'STIR', name: 'Stirling', lat: 56.1165, lng: -3.9369, zoom: 11 }
+        { id: 'wake', label: 'WKFD', name: 'Wakefield', lat: 53.6833, lng: -1.4977, zoom: 11 },
+        { id: 'lond', label: 'LDN', name: 'London', lat: 51.5074, lng: -0.1278, zoom: 10 },
+        { id: 'newc', label: 'NCL', name: 'Newcastle', lat: 54.9783, lng: -1.6178, zoom: 11 }
     ];
+    const LEGACY_QUICK_PLACE_REPLACEMENTS = Object.freeze({
+        glas: 'wake',
+        dund: 'lond',
+        stir: 'newc'
+    });
+
+    function normaliseQuickPins(loadedQuickPins, defaultQuickPins) {
+        const loaded = loadedQuickPins && typeof loadedQuickPins === 'object' ? loadedQuickPins : {};
+        const merged = { ...defaultQuickPins, ...loaded };
+        for (const [legacyId, replacementId] of Object.entries(LEGACY_QUICK_PLACE_REPLACEMENTS)) {
+        if (loaded[legacyId] === true && !Object.prototype.hasOwnProperty.call(loaded, replacementId)) {
+            merged[replacementId] = true;
+        }
+        }
+        return Object.fromEntries(QUICK_PLACES.map(place => [place.id, Boolean(merged[place.id])]));
+    }
 
 
     const SMART_BOOKMARK_LABEL_MAX = 12;
@@ -1460,7 +1476,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
         ...parsed,
         nudge: { ...base.nudge, ...(parsed.nudge || {}) },
         visibility: { ...base.visibility, ...(parsed.visibility || {}) },
-        quickPins: { ...base.quickPins, ...(parsed.quickPins || {}) },
+        quickPins: normaliseQuickPins(parsed.quickPins, base.quickPins),
         coverage: { ...base.coverage, ...(parsed.coverage || {}) },
         stuckDetector: { ...base.stuckDetector, ...(parsed.stuckDetector || {}) },
         missionSpawn: { ...base.missionSpawn, ...(parsed.missionSpawn || {}) },
@@ -20899,13 +20915,10 @@ The sweep opens verified alliance-owned FMS 5 patient vehicles and uses MissionC
     function updateBriefingBody() {
         return '<div class="mcms-update-version"><span>NOW INSTALLED</span><strong>v' + escapeHtml(SCRIPT.version) + '</strong></div>' +
         '<div class="mcms-update-grid">' +
-            '<article><b>Doctor</b><p>One-button diagnostics and safe UI repair in Settings.</p></article>' +
-            '<article><b>Full Screen</b><p>Maximise the operational map and press Escape to restore.</p></article>' +
-            '<article><b>Tablet Wheel</b><p>Long-press the map for six configurable commands.</p></article>' +
-            '<article><b>Secure Transfer</b><p>Move all settings, including Discord webhooks, inside passphrase encryption.</p></article>' +
-            '<article><b>Density</b><p>Choose separate Desktop and Tablet interface spacing.</p></article>' +
-            '<article><b>Briefings</b><p>Reopen this summary from Settings whenever required.</p></article>' +
-        '</div><p class="mcms-command-note">Your v9.2 settings were preserved. Full Screen and the Tablet Quick Wheel remain under your control.</p>';
+            '<article><b>New Quick Jumps</b><p>Wakefield, London and Newcastle replace Glasgow, Dundee and Stirling.</p></article>' +
+            '<article><b>Screen Pins Preserved</b><p>Any selected legacy Quick Jump pin follows its replacement automatically.</p></article>' +
+            '<article><b>Bookmarks Untouched</b><p>Your five custom bookmarks and saved map profiles remain exactly as configured.</p></article>' +
+        '</div><p class="mcms-command-note">Edinburgh and Fife remain first. Open Locations to use the refreshed five-place command list.</p>';
     }
 
     function openUpdateBriefing({ manual = false } = {}) {

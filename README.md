@@ -27,7 +27,7 @@
 [![Canonical validation](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml/badge.svg)](https://github.com/Conroy1988/missionchief-toolkit-assets/actions/workflows/validate-userscript.yml)
 [![Licence](https://img.shields.io/badge/LICENCE-MIT-111827)](#licence-and-attribution)
 
-[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v930) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
+[**Command brief**](#command-brief) · [**Current interface**](#current-interface--v931) · [**Systems**](#operational-divisions) · [**Interfaces**](#eight-complete-interface-systems) · [**Devices**](#field-terminal-coverage) · [**Install**](#install-and-update) · [**Release control**](#release-and-recovery-control)
 
 </div>
 
@@ -58,11 +58,13 @@ MissionChief spreads operational information across the map, mission windows, ve
 
 ---
 
-## Current interface — v9.3.0
+## Current interface — v9.3.1
 
 ### One command system across desktop, tablet and iPhone
 
-Version `9.3.0` adds six daily command-experience tools. **Toolkit Doctor** checks the installed version, interface ownership, saved-state recovery, map shell, UK intelligence and responsive bounds without copying secrets. **Full-Screen Map** maximises the operational workspace with persistent and `Escape` recovery. Tablet users can long-press the map for a configurable six-action **Quick Wheel**, and Desktop and Tablet now keep independent Spacious, Standard, Compact or Command Centre density choices.
+Version `9.3.1` refreshes the fixed Locations Quick Jumps to **Edinburgh, Fife, Wakefield, London and Newcastle**. Existing selected Glasgow, Dundee or Stirling screen pins follow their replacements automatically; custom bookmarks and saved map profiles are not changed.
+
+The six daily command-experience tools introduced in v9.3.0 remain intact. **Toolkit Doctor** checks the installed version, interface ownership, saved-state recovery, map shell, UK intelligence and responsive bounds without copying secrets. **Full-Screen Map** maximises the operational workspace with persistent and `Escape` recovery. Tablet users can long-press the map for a configurable six-action **Quick Wheel**, and Desktop and Tablet keep independent Spacious, Standard, Compact or Command Centre density choices.
 
 Full settings transfer is now passphrase-encrypted and authenticated before leaving the browser. It includes the Discord webhook and Financial Archive only inside AES-256-GCM ciphertext; a separate safe JSON export omits private integrations, archive identity and history. A once-per-version **Update Briefing** introduces changes after a safe deferred startup and can always be reopened from Settings. MissionChief UK Knowledge Link, the six-section Command Interface, map-native Pressure Board, Tablet header clearance, custom callsigns and every retained v9.2 system remain intact.
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "subsystem": "installMainStyles",
   "originalVersion": "4.20.20",
   "candidateVersion": "5.0.7",
@@ -122,11 +122,11 @@
     "scope": "Issue #595 Discord finance complexity, plain-language payloads and adaptive report graphic"
   },
   "v9Candidate": {
-    "issue": 612,
-    "version": "9.3.0",
-    "sourceBytes": 1914417,
-    "sourceLines": 29377,
-    "sourceSha256": "76da67f7d69db2d0780427ee8b4dd7e79a2e1d3e0e4539e84a4f3b75ea4ef23d",
+    "issue": 614,
+    "version": "9.3.1",
+    "sourceBytes": 1914875,
+    "sourceLines": 29390,
+    "sourceSha256": "667a4c2125452bef7988ee929b7ee32ab73378d7dee8da536881e81893be2fa0",
     "templateBytes": 774580,
     "templateLines": 9318,
     "templateSha256": "09af8b70a50ec4f37e5efbffe28616f5d71e50ee50f934fe0f80c5fb3bb2f9db",
@@ -134,13 +134,13 @@
     "maxSourceBytes": 1932417,
     "maxSourceLines": 29537,
     "minTemplateBytes": 500000,
-    "baseline": "9.2.0",
+    "baseline": "9.3.0",
     "approvedGrowth": {
-      "sourceBytes": 59121,
-      "sourceLines": 769,
-      "templateBytes": 14991,
-      "templateLines": 83
+      "sourceBytes": 458,
+      "sourceLines": 13,
+      "templateBytes": 0,
+      "templateLines": 0
     },
-    "scope": "Issue #612 user-triggered diagnostics, recoverable full-screen map, Tablet Quick Wheel, authenticated private settings transfer, interface density and deferrable update briefing"
+    "scope": "Issue #614 default Quick Jump refresh with legacy fixed-pin migration and unchanged custom bookmarks"
   }
 }

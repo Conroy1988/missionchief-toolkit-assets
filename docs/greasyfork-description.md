@@ -1,10 +1,10 @@
 # MissionChief Map Command Toolkit
 
-## v9.3.0 candidate — Command Experience
+## v9.3.1 candidate — Default Quick Jump refresh
 
 A native MissionChief map command and operational-support userscript for Desktop, Tablet/iPad and iOS.
 
-Version 9.3.0 adds six daily command-experience tools: a privacy-safe **Toolkit Doctor**, recoverable **Full-Screen Map**, configurable six-action **Tablet Quick Wheel**, separate Desktop and Tablet interface densities, and a once-per-version **Update Briefing**. Full settings transfer now uses authenticated AES-256-GCM passphrase encryption and includes the saved Discord webhook plus Financial Archive only inside ciphertext; a separate safe JSON export excludes private integrations, archive identity and history. MissionChief UK Knowledge Link, numeric vehicle recognition, custom callsigns, Tablet header clearance, readable and draggable Tablet controls and the Stuck button remain intact while preserving The One We Knew Before: MissionChief remains authoritative, navigation actions stay read-only and every retained Toolkit system keeps deterministic teardown.
+Version 9.3.1 keeps Edinburgh and Fife first, then replaces Glasgow, Dundee and Stirling with Wakefield, London and Newcastle. Existing selected fixed-place screen pins migrate to their replacements, while all five custom bookmarks and saved map profiles remain untouched. Toolkit Doctor, Full-Screen Map, the Tablet Quick Wheel, encrypted settings transfer, independent Desktop/Tablet densities, Update Briefing and every retained native system from v9.3.0 remain intact. This preserves The One We Knew Before: MissionChief remains authoritative and every retained Toolkit system keeps deterministic teardown.
 
 ### Retained native systems
 

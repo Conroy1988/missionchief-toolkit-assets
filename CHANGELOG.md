@@ -1,5 +1,17 @@
 # Changelog
 
+## [9.3.2] - 2026-07-31
+
+### Toolkit Doctor diagnostic correctness
+
+- Fixes persistent Tablet `Responsive layout` and `Overlay safety` warnings that could remain after **Repair UI**.
+- Snapshots the live Toolkit interface before mounting the Doctor progress modal and reports the exact failed layout attribute, density attribute or open-panel bound.
+- Excludes every Toolkit-owned control, board, HUD, Help surface and recovery control from competing-overlay detection.
+- Warns only when a visible foreign fixed or sticky overlay meaningfully intersects a Toolkit surface, while consolidating nested overlay descendants.
+- Refreshes visual-viewport variables and Tablet presentation state during Repair before geometry reconciliation and the automatic rerun.
+- Preserves real collision detection, copied-report privacy, Desktop/Tablet/iOS behaviour and the zero-observer, zero-poller, zero-request diagnostic contract.
+- Adds static and rendered runtime regressions for Issue #616.
+
 ## [9.3.1] - 2026-07-31
 
 ### Default Quick Jumps
